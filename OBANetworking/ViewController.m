@@ -7,16 +7,23 @@
 //
 
 #import "ViewController.h"
+@import OBANetworkingKit;
 
 @interface ViewController ()
-
+@property(nonatomic,strong) OBANetworkRequestBuilder *networkRequestBuilder;
 @end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+
+    NSURL *URL = [NSURL URLWithString:@"http://api.pugetsound.onebusaway.org/"];
+    self.networkRequestBuilder = [[OBANetworkRequestBuilder alloc] initWithBaseURL:URL];
+
+    CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(CurrentTimeOperation * op) {
+        NSLog(@"%@", op);
+    }];
 }
 
 
