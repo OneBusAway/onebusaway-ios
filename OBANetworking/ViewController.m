@@ -23,7 +23,7 @@
 
     CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(CurrentTimeOperation * op) {
         NSLog(@"%@", op);
-    }];
+    }];(void)operation;
 }
 
 

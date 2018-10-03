@@ -13,7 +13,6 @@
 		931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DD2163F5530034D8FA /* Assets.xcassets */; };
 		931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */; };
 		931B93E42163F5530034D8FA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93E32163F5530034D8FA /* main.m */; };
-		931B93EE2163F5540034D8FA /* OBANetworkingTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93ED2163F5540034D8FA /* OBANetworkingTests.m */; };
 		931B9406216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */; };
 		931B940D216419C20034D8FA /* OBANetworkingKitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B940C216419C20034D8FA /* OBANetworkingKitTests.m */; };
 		931B940F216419C20034D8FA /* OBANetworkingKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B93FF216419C20034D8FA /* OBANetworkingKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -28,16 +27,12 @@
 		931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B9428216422120034D8FA /* OBAOperation+Internal.h */; };
 		931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943821642EE40034D8FA /* CurrentTimeOperation.swift */; };
 		931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */; };
+		931B94442164409B0034D8FA /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
+		931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
+		931B94462164409B0034D8FA /* Quick.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943E21643D430034D8FA /* Quick.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		931B93EA2163F5540034D8FA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931B93D02163F5520034D8FA;
-			remoteInfo = OBANetworking;
-		};
 		931B9407216419C20034D8FA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
@@ -86,9 +81,6 @@
 		931B93E02163F5530034D8FA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		931B93E22163F5530034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B93E32163F5530034D8FA /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		931B93E92163F5540034D8FA /* OBANetworkingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBANetworkingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		931B93ED2163F5540034D8FA /* OBANetworkingTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkingTests.m; sourceTree = "<group>"; };
-		931B93EF2163F5540034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B93FD216419C20034D8FA /* OBANetworkingKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBANetworkingKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93FF216419C20034D8FA /* OBANetworkingKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkingKit.h; sourceTree = "<group>"; };
 		931B9400216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -104,6 +96,9 @@
 		931B9428216422120034D8FA /* OBAOperation+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAOperation+Internal.h"; sourceTree = "<group>"; };
 		931B943821642EE40034D8FA /* CurrentTimeOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeOperation.swift; sourceTree = "<group>"; };
 		931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestBuilder.swift; sourceTree = "<group>"; };
+		931B943D21643D430034D8FA /* Nimble.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Nimble.framework; path = Carthage/Build/iOS/Nimble.framework; sourceTree = "<group>"; };
+		931B943E21643D430034D8FA /* Quick.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Quick.framework; path = Carthage/Build/iOS/Quick.framework; sourceTree = "<group>"; };
+		931B943F21643D430034D8FA /* OHHTTPStubs.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OHHTTPStubs.framework; path = Carthage/Build/iOS/OHHTTPStubs.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,13 +107,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931B93E62163F5540034D8FA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,6 +121,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				931B94442164409B0034D8FA /* Nimble.framework in Frameworks */,
+				931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */,
+				931B94462164409B0034D8FA /* Quick.framework in Frameworks */,
 				931B9406216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -144,10 +135,10 @@
 			isa = PBXGroup;
 			children = (
 				931B93D32163F5520034D8FA /* OBANetworking */,
-				931B93EC2163F5540034D8FA /* OBANetworkingTests */,
 				931B93FE216419C20034D8FA /* OBANetworkingKit */,
 				931B940B216419C20034D8FA /* OBANetworkingKitTests */,
 				931B93D22163F5520034D8FA /* Products */,
+				931B943C21643D420034D8FA /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -155,7 +146,6 @@
 			isa = PBXGroup;
 			children = (
 				931B93D12163F5520034D8FA /* OBANetworking.app */,
-				931B93E92163F5540034D8FA /* OBANetworkingTests.xctest */,
 				931B93FD216419C20034D8FA /* OBANetworkingKit.framework */,
 				931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */,
 			);
@@ -176,15 +166,6 @@
 				931B93E32163F5530034D8FA /* main.m */,
 			);
 			path = OBANetworking;
-			sourceTree = "<group>";
-		};
-		931B93EC2163F5540034D8FA /* OBANetworkingTests */ = {
-			isa = PBXGroup;
-			children = (
-				931B93ED2163F5540034D8FA /* OBANetworkingTests.m */,
-				931B93EF2163F5540034D8FA /* Info.plist */,
-			);
-			path = OBANetworkingTests;
 			sourceTree = "<group>";
 		};
 		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
@@ -230,6 +211,16 @@
 			path = "Network Operations";
 			sourceTree = "<group>";
 		};
+		931B943C21643D420034D8FA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				931B943D21643D430034D8FA /* Nimble.framework */,
+				931B943F21643D430034D8FA /* OHHTTPStubs.framework */,
+				931B943E21643D430034D8FA /* Quick.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -267,24 +258,6 @@
 			productReference = 931B93D12163F5520034D8FA /* OBANetworking.app */;
 			productType = "com.apple.product-type.application";
 		};
-		931B93E82163F5540034D8FA /* OBANetworkingTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 931B93F52163F5540034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingTests" */;
-			buildPhases = (
-				931B93E52163F5540034D8FA /* Sources */,
-				931B93E62163F5540034D8FA /* Frameworks */,
-				931B93E72163F5540034D8FA /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				931B93EB2163F5540034D8FA /* PBXTargetDependency */,
-			);
-			name = OBANetworkingTests;
-			productName = OBANetworkingTests;
-			productReference = 931B93E92163F5540034D8FA /* OBANetworkingTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		931B93FC216419C20034D8FA /* OBANetworkingKit */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 931B9414216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingKit" */;
@@ -310,6 +283,7 @@
 				931B9401216419C20034D8FA /* Sources */,
 				931B9402216419C20034D8FA /* Frameworks */,
 				931B9403216419C20034D8FA /* Resources */,
+				931B9443216440620034D8FA /* Carthage */,
 			);
 			buildRules = (
 			);
@@ -333,10 +307,6 @@
 				TargetAttributes = {
 					931B93D02163F5520034D8FA = {
 						CreatedOnToolsVersion = 10.0;
-					};
-					931B93E82163F5540034D8FA = {
-						CreatedOnToolsVersion = 10.0;
-						TestTargetID = 931B93D02163F5520034D8FA;
 					};
 					931B93FC216419C20034D8FA = {
 						CreatedOnToolsVersion = 10.0;
@@ -362,7 +332,6 @@
 			projectRoot = "";
 			targets = (
 				931B93D02163F5520034D8FA /* OBANetworking */,
-				931B93E82163F5540034D8FA /* OBANetworkingTests */,
 				931B93FC216419C20034D8FA /* OBANetworkingKit */,
 				931B9404216419C20034D8FA /* OBANetworkingKitTests */,
 			);
@@ -377,13 +346,6 @@
 				931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */,
 				931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */,
 				931B93DC2163F5520034D8FA /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931B93E72163F5540034D8FA /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -403,6 +365,30 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		931B9443216440620034D8FA /* Carthage */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/Quick.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/Nimble.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/OHHTTPStubs.framework",
+			);
+			name = Carthage;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		931B93CD2163F5520034D8FA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -411,14 +397,6 @@
 				931B93D92163F5520034D8FA /* ViewController.m in Sources */,
 				931B93E42163F5530034D8FA /* main.m in Sources */,
 				931B93D62163F5520034D8FA /* AppDelegate.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931B93E52163F5540034D8FA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931B93EE2163F5540034D8FA /* OBANetworkingTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -445,11 +423,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		931B93EB2163F5540034D8FA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931B93D02163F5520034D8FA /* OBANetworking */;
-			targetProxy = 931B93EA2163F5540034D8FA /* PBXContainerItemProxy */;
-		};
 		931B9408216419C20034D8FA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
@@ -635,44 +608,6 @@
 			};
 			name = Release;
 		};
-		931B93F62163F5540034D8FA /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				INFOPLIST_FILE = OBANetworkingTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
-			};
-			name = Debug;
-		};
-		931B93F72163F5540034D8FA /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				INFOPLIST_FILE = OBANetworkingTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
-			};
-			name = Release;
-		};
 		931B9415216419C20034D8FA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -738,6 +673,10 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworkingKitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -757,6 +696,10 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworkingKitTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -787,15 +730,6 @@
 			buildConfigurations = (
 				931B93F32163F5540034D8FA /* Debug */,
 				931B93F42163F5540034D8FA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		931B93F52163F5540034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				931B93F62163F5540034D8FA /* Debug */,
-				931B93F72163F5540034D8FA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

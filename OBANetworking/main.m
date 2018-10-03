@@ -9,8 +9,29 @@
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
-int main(int argc, char * argv[]) {
+@interface TestAppDelegate : UIResponder <UIApplicationDelegate>
+@end
+@implementation TestAppDelegate
+@end
+
+int main(int argc, char *argv[]) {
     @autoreleasepool {
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+
+#if DEBUG
+        NSLog(@"Bundle Path: %@", [NSBundle mainBundle].bundlePath);
+#endif
+
+        NSDictionary *processInfoEnv = [NSProcessInfo processInfo].environment;
+
+        BOOL executingTests = [[processInfoEnv[@"XCInjectBundle"] pathExtension] isEqual:@"xctest"];
+        if (!executingTests) {
+            executingTests = !!processInfoEnv[@"XCInjectBundleInto"];
+        }
+
+        NSString *appDelegateClass = executingTests ? @"TestAppDelegate" : @"AppDelegate";
+
+        int retVal = UIApplicationMain(argc, argv, nil, appDelegateClass);
+        return retVal;
     }
 }
+
