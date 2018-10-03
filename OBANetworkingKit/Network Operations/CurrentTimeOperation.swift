@@ -9,15 +9,28 @@
 import Foundation
 
 public class CurrentTimeOperation: NetworkOperation {
+    @objc public var currentTime: String? {
+        guard
+            let response = response,
+            let dateString = response.allHeaderFields["Date"] as? String
+        else {
+            return nil
+        }
 
-    private func foo() {
-//        - (OBAModelServiceRequest*)requestCurrentTimeWithCompletionBlock:(OBADataSourceCompletion)completion {
-//            return [self request:self.obaJsonDataSource
-//                url:@"/api/where/current-time.json"
-//                args:nil
-//                selector:nil
-//                completionBlock:completion];
-//        }
+        return dateString
     }
 
+    // MARK: - API Call and URL Construction
+
+    public static let apiPath = "/api/where/current-time.json"
+
+    public override class func buildURL(withBaseURL URL: URL, params: [AnyHashable : Any]?) -> URL {
+        var components = URLComponents(url: URL, resolvingAgainstBaseURL: false)!
+        components.path = apiPath
+        if let params = params {
+            components.queryItems = NetworkHelpers.dictionary(toQueryItems: params)
+        }
+
+        return components.url!
+    }
 }

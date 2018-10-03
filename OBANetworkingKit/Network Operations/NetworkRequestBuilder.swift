@@ -23,8 +23,9 @@ public class NetworkRequestBuilder: NSObject {
     }
 
     // MARK: - Current Time
-    @objc public func getCurrentTime(completion: ((_ operation: CurrentTimeOperation) -> Void)?) -> CurrentTimeOperation {
-        let url = URL(string: "/api/where/current-time.json", relativeTo: baseURL)!
+    @discardableResult @objc
+    public func getCurrentTime(completion: ((_ operation: CurrentTimeOperation) -> Void)?) -> CurrentTimeOperation {
+        let url = CurrentTimeOperation.buildURL(withBaseURL: baseURL, params: nil)
         let operation = CurrentTimeOperation(url: url)
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }

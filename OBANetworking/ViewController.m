@@ -22,7 +22,7 @@
     self.networkRequestBuilder = [[OBANetworkRequestBuilder alloc] initWithBaseURL:URL];
 
     CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(CurrentTimeOperation * op) {
-        NSLog(@"%@", op);
+        NSLog(@"Current Time: %@", op.currentTime);
     }];(void)operation;
 }
 

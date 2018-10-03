@@ -57,6 +57,11 @@
     return request;
 }
 
++ (NSURL*)buildURLWithBaseURL:(NSURL*)URL params:(nullable NSDictionary*)params {
+    assert(NO);
+    return nil;
+}
+
 #pragma mark - Cancel
 
 - (void)cancel {
