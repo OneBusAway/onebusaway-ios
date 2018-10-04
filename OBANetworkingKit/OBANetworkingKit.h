@@ -20,3 +20,4 @@ FOUNDATION_EXPORT const unsigned char OBANetworkingKitVersionString[];
 #import <OBANetworkingKit/OBANetworkHelpers.h>
 #import <OBANetworkingKit/OBANetworkOperation.h>
 #import <OBANetworkingKit/OBANetworkQueue.h>
+#import <OBANetworkingKit/OBAWrappedResponseNetworkOperation.h>

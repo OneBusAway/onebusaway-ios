@@ -42,9 +42,7 @@
             return;
         }
 
-        self.data = data;
-        self.response = (NSHTTPURLResponse*)response;
-        self.error = error;
+        [self setData:data response:(NSHTTPURLResponse*)response error:error];
 
         [self finish];
     }];
@@ -52,14 +50,15 @@
     [self.dataTask resume];
 }
 
+- (void)setData:(NSData*)data response:(NSHTTPURLResponse*)response error:(NSError*)error {
+    self.data = data;
+    self.response = response;
+    self.error = error;
+}
+
 - (NSURLRequest*)URLRequest {
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.URL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
     return request;
-}
-
-+ (NSURL*)buildURLWithBaseURL:(NSURL*)URL params:(nullable NSDictionary*)params {
-    assert(NO);
-    return nil;
 }
 
 #pragma mark - Cancel

@@ -24,12 +24,10 @@ public class CurrentTimeOperation: NetworkOperation {
 
     public static let apiPath = "/api/where/current-time.json"
 
-    public override class func buildURL(withBaseURL URL: URL, params: [AnyHashable : Any]?) -> URL {
-        var components = URLComponents(url: URL, resolvingAgainstBaseURL: false)!
+    public class func buildURL(baseURL: URL, queryItems: [URLQueryItem]) -> URL {
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.path = apiPath
-        if let params = params {
-            components.queryItems = NetworkHelpers.dictionary(toQueryItems: params)
-        }
+        components.queryItems = queryItems
 
         return components.url!
     }

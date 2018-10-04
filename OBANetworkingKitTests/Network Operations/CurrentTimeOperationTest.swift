@@ -25,6 +25,7 @@ class CurrentTimeOperationTests: QuickSpec {
                     return OHHTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Date": "October 2, 2018 19:42:00 PDT"])
                 }
             }
+            afterSuite { OHHTTPStubs.removeAllStubs() }
 
             it("has a currentTime value set") {
                 waitUntil { done in

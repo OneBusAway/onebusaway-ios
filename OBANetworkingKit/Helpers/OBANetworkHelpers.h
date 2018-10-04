@@ -14,6 +14,7 @@ NS_SWIFT_NAME(NetworkHelpers)
 @interface OBANetworkHelpers : NSObject
 
 + (NSArray<NSURLQueryItem*>*)dictionaryToQueryItems:(nullable NSDictionary*)dictionary;
++ (NSString*)escapePathVariable:(NSString*)pathVariable;
 
 @end
 
