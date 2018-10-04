@@ -10,7 +10,7 @@
 
 @implementation OBANetworkHelpers
 
-+ (NSArray<NSURLQueryItem*>*)dictionaryToQueryItems:(nullable NSDictionary*)dictionary; {
++ (NSArray<NSURLQueryItem*>*)dictionaryToQueryItems:(nullable NSDictionary*)dictionary {
     if (!dictionary) {
         return @[];
     }

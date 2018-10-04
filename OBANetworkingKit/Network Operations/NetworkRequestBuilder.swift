@@ -7,10 +7,11 @@
 //
 
 import Foundation
+import CoreLocation
+import MapKit
 
 //- (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
 //- (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
-//- (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
 //- (AnyPromise*)requestShapeForID:(NSString*)shapeID;
 //- (AnyPromise*)requestStopsForRegion:(MKCoordinateRegion)region;
 //- (AnyPromise*)requestStopsForQuery:(NSString*)query region:(nullable CLCircularRegion*)region;
@@ -22,11 +23,13 @@ import Foundation
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
+//- (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
 //x (AnyPromise*)requestVehicleForID:(NSString*)vehicleID;
 //x (AnyPromise*)requestCurrentTime;
 
 public typealias CurrentTimeCompletion = (_ operation: CurrentTimeOperation) -> Void
 public typealias GetVehicleCompletion = (_ operation: RequestVehicleOperation) -> Void
+public typealias GetStopsCompletion = (_ operation: StopsOperation) -> Void
 
 @objc(OBANetworkRequestBuilder)
 public class NetworkRequestBuilder: NSObject {
@@ -44,7 +47,7 @@ public class NetworkRequestBuilder: NSObject {
 
     // MARK: - Query Items
 
-    private var queryItems: [URLQueryItem] {
+    private var defaultQueryItems: [URLQueryItem] {
         var items = [URLQueryItem]()
         items.append(URLQueryItem(name: "key", value: "org.onebusaway.iphone"))
         items.append(URLQueryItem(name: "app_uid", value: "BD88D98C-A72D-47BE-8F4A-C60467239736"))
@@ -58,7 +61,7 @@ public class NetworkRequestBuilder: NSObject {
 
     @discardableResult @objc
     public func getVehicle(_ vehicleID: String, completion: GetVehicleCompletion?) -> RequestVehicleOperation {
-        let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: queryItems)
+        let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = RequestVehicleOperation(url: url)
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
@@ -72,7 +75,7 @@ public class NetworkRequestBuilder: NSObject {
 
     @discardableResult @objc
     public func getCurrentTime(completion: CurrentTimeCompletion?) -> CurrentTimeOperation {
-        let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: queryItems)
+        let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = CurrentTimeOperation(url: url)
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
@@ -80,6 +83,35 @@ public class NetworkRequestBuilder: NSObject {
 
         networkQueue.add(operation)
 
+        return operation
+    }
+
+    // MARK: - Stops
+
+    @discardableResult @objc
+    public func getStops(coordinate: CLLocationCoordinate2D, completion: GetStopsCompletion?) -> StopsOperation {
+        let url = StopsOperation.buildURL(coordinate: coordinate, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return getStops(url: url, completion: completion)
+    }
+
+    @discardableResult @objc
+    public func getStops(region: MKCoordinateRegion, completion: GetStopsCompletion?) -> StopsOperation {
+        let url = StopsOperation.buildURL(region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return getStops(url: url, completion: completion)
+    }
+
+    @discardableResult @objc
+    public func getStops(circularRegion: CLCircularRegion, query: String, completion: GetStopsCompletion?) -> StopsOperation {
+        let url = StopsOperation.buildURL(circularRegion: circularRegion, query: query, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return getStops(url: url, completion: completion)
+    }
+
+    private func getStops(url: URL, completion: GetStopsCompletion?) -> StopsOperation {
+        let operation = StopsOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
         return operation
     }
 }

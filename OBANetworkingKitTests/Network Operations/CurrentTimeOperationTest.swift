@@ -12,16 +12,12 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class CurrentTimeOperationTests: QuickSpec {
+class CurrentTimeOperationTests: OperationTest {
 
-    override func spec() {
-        let host = "www.example.com"
-        let baseURLString = "https://\(host)"
-        let builder = NetworkRequestBuilder(baseURL: URL(string: baseURLString)!)
-
+    private func testSuccessfulAPICall() {
         describe("A successful API call") {
             beforeSuite {
-                stub(condition: isHost(host) && isPath(CurrentTimeOperation.apiPath)) { _ in
+                stub(condition: isHost(self.host) && isPath(CurrentTimeOperation.apiPath)) { _ in
                     return OHHTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Date": "October 2, 2018 19:42:00 PDT"])
                 }
             }
@@ -29,12 +25,16 @@ class CurrentTimeOperationTests: QuickSpec {
 
             it("has a currentTime value set") {
                 waitUntil { done in
-                    builder.getCurrentTime { op in
+                    self.builder.getCurrentTime { op in
                         expect(op.currentTime).to(equal("October 2, 2018 19:42:00 PDT"))
                         done()
                     }
                 }
             }
         }
+    }
+
+    override func spec() {
+        testSuccessfulAPICall()
     }
 }

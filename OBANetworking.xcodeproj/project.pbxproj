@@ -85,6 +85,9 @@
 		931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */; };
 		931B94BB216569720034D8FA /* OBAWrappedResponseNetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B94BC216569720034D8FA /* OBAWrappedResponseNetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */; };
+		931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BD216682E10034D8FA /* StopsOperation.swift */; };
+		931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BF21668FA90034D8FA /* StopsOperationTest.swift */; };
+		931B94C221668FEB0034D8FA /* OperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C121668FEB0034D8FA /* OperationTest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -210,6 +213,9 @@
 		931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vehicle_for_id_4011.json; sourceTree = "<group>"; };
 		931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAWrappedResponseNetworkOperation.h; sourceTree = "<group>"; };
 		931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAWrappedResponseNetworkOperation.m; sourceTree = "<group>"; };
+		931B94BD216682E10034D8FA /* StopsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperation.swift; sourceTree = "<group>"; };
+		931B94BF21668FA90034D8FA /* StopsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperationTest.swift; sourceTree = "<group>"; };
+		931B94C121668FEB0034D8FA /* OperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationTest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -324,6 +330,7 @@
 				931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */,
 				931B943821642EE40034D8FA /* CurrentTimeOperation.swift */,
 				931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */,
+				931B94BD216682E10034D8FA /* StopsOperation.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -341,8 +348,10 @@
 		931B9447216443180034D8FA /* Network Operations */ = {
 			isa = PBXGroup;
 			children = (
+				931B94C121668FEB0034D8FA /* OperationTest.swift */,
 				931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */,
 				931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */,
+				931B94BF21668FA90034D8FA /* StopsOperationTest.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -652,6 +661,7 @@
 				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
+				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
 				931B94BC216569720034D8FA /* OBAWrappedResponseNetworkOperation.m in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
@@ -662,8 +672,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
+				931B94C221668FEB0034D8FA /* OperationTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
