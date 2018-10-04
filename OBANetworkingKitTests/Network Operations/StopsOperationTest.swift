@@ -20,16 +20,26 @@ class StopsOperationTest: OperationTest {
             let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
 
             beforeSuite {
-                stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath)) { _ in
-                    return self.JSONFile(named: "stops_for_location_downtown_seattle1.json")
-                }
+                return OHHTTPStubs.stubRequests(passingTest: { req -> Bool in
+                    guard let url = req.url else {
+                        return false
+                    }
+
+                    let sameHost = url.host == self.host
+                    let samePath = url.path == StopsOperation.apiPath
+
+                    return sameHost && samePath
+                }, withStubResponse: { (req) -> OHHTTPStubsResponse in
+                    let file = self.JSONFile(named: "stops_for_location_seattle.json")
+                    return file
+                })
             }
             afterSuite { OHHTTPStubs.removeAllStubs() }
 
             it("returns the expected list of stops") {
-                waitUntil { done in
+                waitUntil(timeout: 240.0) { done in
                     self.builder.getStops(coordinate: coordinate) { op in
-                        expect(op.entry).toNot(beNil())
+                        expect(op.entries?.first).toNot(beNil())
                         done()
                     }
                 }

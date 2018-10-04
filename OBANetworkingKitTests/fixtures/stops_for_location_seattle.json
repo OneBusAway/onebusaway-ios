@@ -1,0 +1,958 @@
+{
+  "code": 200,
+  "currentTime": 1538695215908,
+  "data": {
+    "limitExceeded": false,
+    "list": [
+      {
+        "code": "10914",
+        "direction": "S",
+        "id": "1_10914",
+        "lat": 47.656422,
+        "locationType": 0,
+        "lon": -122.312164,
+        "name": "15th Ave NE & NE Campus Pkwy",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100228",
+          "1_100447",
+          "1_100264",
+          "1_100059",
+          "1_100088",
+          "1_100162",
+          "40_102640",
+          "40_100511",
+          "40_100451",
+          "40_586"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "10917",
+        "direction": "S",
+        "id": "1_10917",
+        "lat": 47.655048,
+        "locationType": 0,
+        "lon": -122.312195,
+        "name": "15th Ave NE & NE 40th St",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100228",
+          "1_100254",
+          "1_100273",
+          "1_100059",
+          "1_100088",
+          "1_100162",
+          "1_100168",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451",
+          "40_586"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "25240",
+        "direction": "SW",
+        "id": "1_25240",
+        "lat": 47.650547,
+        "locationType": 0,
+        "lon": -122.304283,
+        "name": "Montlake Blvd NE & NE Pacific Pl - Bay 4",
+        "routeIds": [
+          "1_100224",
+          "1_100225",
+          "1_100265",
+          "1_100267",
+          "1_100215"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "25765",
+        "direction": "NE",
+        "id": "1_25765",
+        "lat": 47.651367,
+        "locationType": 0,
+        "lon": -122.303604,
+        "name": "Montlake Blvd NE & NE Pacific Pl - Bay 3",
+        "routeIds": [
+          "1_100254",
+          "1_100273",
+          "1_100341",
+          "98_869-28"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29240",
+        "direction": "SE",
+        "id": "1_29240",
+        "lat": 47.652245,
+        "locationType": 0,
+        "lon": -122.311211,
+        "name": "NE Pacific St & 15th Ave NE",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100225",
+          "1_100228",
+          "1_100254",
+          "1_100265",
+          "1_100267",
+          "1_100273",
+          "1_100059",
+          "1_100088",
+          "1_100162",
+          "1_100168",
+          "1_100215",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451",
+          "40_586"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29242",
+        "direction": "NE",
+        "id": "1_29242",
+        "lat": 47.65049,
+        "locationType": 0,
+        "lon": -122.306839,
+        "name": "NE Pacific Pl & NE Pacific St",
+        "routeIds": [
+          "1_100224",
+          "1_100225",
+          "1_100254",
+          "1_100265",
+          "1_100267",
+          "1_100273",
+          "1_100215"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29243",
+        "direction": "E",
+        "id": "1_29243",
+        "lat": 47.650509,
+        "locationType": 0,
+        "lon": -122.305923,
+        "name": "NE Pacific Pl & NE Pacific St",
+        "routeIds": [
+          "1_100224"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29247",
+        "direction": "SE",
+        "id": "1_29247",
+        "lat": 47.649143,
+        "locationType": 0,
+        "lon": -122.30497,
+        "name": "NE Pacific St & Montlake Blvd NE - Bay 1",
+        "routeIds": [
+          "1_100223",
+          "1_100228",
+          "1_100059",
+          "1_100088",
+          "1_100162",
+          "1_100168",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29405",
+        "direction": "NW",
+        "id": "1_29405",
+        "lat": 47.649727,
+        "locationType": 0,
+        "lon": -122.305817,
+        "name": "NE Pacific St & Montlake Blvd NE - Bay 2",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100225",
+          "1_100228",
+          "1_100265",
+          "1_100267",
+          "1_100059",
+          "1_100162",
+          "1_100168",
+          "1_100215",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29420",
+        "direction": "NW",
+        "id": "1_29420",
+        "lat": 47.652351,
+        "locationType": 0,
+        "lon": -122.311089,
+        "name": "NE Pacific St & 15th Ave NE",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100225",
+          "1_100228",
+          "1_100265",
+          "1_100267",
+          "1_100059",
+          "1_100162",
+          "1_100168",
+          "1_100215",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "29440",
+        "direction": "N",
+        "id": "1_29440",
+        "lat": 47.655708,
+        "locationType": 0,
+        "lon": -122.311974,
+        "name": "15th Ave NE & NE Campus Pkwy",
+        "routeIds": [
+          "1_100223",
+          "1_100224",
+          "1_100228",
+          "1_100059",
+          "1_100162",
+          "1_100168",
+          "40_100235",
+          "40_102640",
+          "40_100511",
+          "40_100451"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75402",
+        "direction": "SW",
+        "id": "1_75402",
+        "lat": 47.652336,
+        "locationType": 0,
+        "lon": -122.306412,
+        "name": "Stevens Way & Rainier Vis",
+        "routeIds": [
+          "1_100184",
+          "1_100193",
+          "1_100259",
+          "1_100269",
+          "1_100273",
+          "1_100168",
+          "1_100214",
+          "40_100235"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75403",
+        "direction": "S",
+        "id": "1_75403",
+        "lat": 47.654365,
+        "locationType": 0,
+        "lon": -122.305214,
+        "name": "Stevens Way & Benton Ln",
+        "routeIds": [
+          "1_100184",
+          "1_100193",
+          "1_100259",
+          "1_100269",
+          "1_100273",
+          "1_100168",
+          "1_100214",
+          "40_100235",
+          "29_810",
+          "29_821",
+          "29_855",
+          "29_860",
+          "29_871",
+          "29_880"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75404",
+        "direction": "W",
+        "id": "1_75404",
+        "lat": 47.652149,
+        "locationType": 0,
+        "lon": -122.308495,
+        "name": "Stevens Way & Garfield Ln",
+        "routeIds": [
+          "1_100184",
+          "1_100193",
+          "1_100259",
+          "1_100269",
+          "1_100273",
+          "1_100168",
+          "1_100214",
+          "40_100235",
+          "29_810",
+          "29_821",
+          "29_855",
+          "29_860",
+          "29_871",
+          "29_880"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75405",
+        "direction": "W",
+        "id": "1_75405",
+        "lat": 47.655102,
+        "locationType": 0,
+        "lon": -122.310921,
+        "name": "Grant Ln & Stevens Way",
+        "routeIds": [
+          "1_100184",
+          "1_100193",
+          "1_100259",
+          "1_100269",
+          "1_100273",
+          "1_100168",
+          "1_100214",
+          "40_100235",
+          "29_810",
+          "29_821",
+          "29_855",
+          "29_860",
+          "29_871",
+          "29_880"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75406",
+        "direction": "S",
+        "id": "1_75406",
+        "lat": 47.656876,
+        "locationType": 0,
+        "lon": -122.304909,
+        "name": "Stevens Way & Pend Oreille Rd",
+        "routeIds": [
+          "1_100184",
+          "1_100193",
+          "1_100259",
+          "1_100269",
+          "1_100273",
+          "1_100168",
+          "1_100214",
+          "40_100235",
+          "29_810",
+          "29_821",
+          "29_855",
+          "29_860",
+          "29_871",
+          "29_880"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75410",
+        "direction": "NE",
+        "id": "1_75410",
+        "lat": 47.657257,
+        "locationType": 0,
+        "lon": -122.304573,
+        "name": "Stevens Way & Pend Oreille Rd",
+        "routeIds": [
+          "1_100184",
+          "1_100269",
+          "1_100214"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75412",
+        "direction": "SE",
+        "id": "1_75412",
+        "lat": 47.655045,
+        "locationType": 0,
+        "lon": -122.311172,
+        "name": "Grant Ln & George Washington Lane",
+        "routeIds": [
+          "1_100184",
+          "1_100269",
+          "1_100214"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75414",
+        "direction": "N",
+        "id": "1_75414",
+        "lat": 47.653713,
+        "locationType": 0,
+        "lon": -122.305023,
+        "name": "Stevens Way & Benton Ln",
+        "routeIds": [
+          "1_100184",
+          "1_100269",
+          "1_100214"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75415",
+        "direction": "NE",
+        "id": "1_75415",
+        "lat": 47.652329,
+        "locationType": 0,
+        "lon": -122.306099,
+        "name": "Stevens Way & Rainier Vis",
+        "routeIds": [
+          "1_100269",
+          "1_100214"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "75417",
+        "direction": "E",
+        "id": "1_75417",
+        "lat": 47.652046,
+        "locationType": 0,
+        "lon": -122.308693,
+        "name": "Stevens Way & Okanogan Ln",
+        "routeIds": [
+          "1_100184",
+          "1_100269",
+          "1_100214"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "98360",
+        "direction": "E",
+        "id": "1_98360",
+        "lat": 47.650875,
+        "locationType": 0,
+        "lon": -122.304581,
+        "name": "NE Pacific Pl & Montlake Blvd NE",
+        "routeIds": [
+          "1_100225"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "99604",
+        "direction": "",
+        "id": "1_99604",
+        "lat": 47.649704,
+        "locationType": 0,
+        "lon": -122.303955,
+        "name": "UW / Husky Stadium Link Station",
+        "routeIds": [
+          "40_100479"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "3081",
+        "direction": "SW",
+        "id": "29_3081",
+        "lat": 47.652397,
+        "locationType": 0,
+        "lon": -122.306221,
+        "name": "W Stevens Way NE & Rainier Vista",
+        "routeIds": [
+          "29_810",
+          "29_821",
+          "29_855",
+          "29_860",
+          "29_871",
+          "29_880"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "4073",
+        "direction": "SE",
+        "id": "3_19473",
+        "lat": 47.649575,
+        "locationType": 0,
+        "lon": -122.30579,
+        "name": "University of Washington Station",
+        "routeIds": [
+          "40_586"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      },
+      {
+        "code": "755003",
+        "direction": "SW",
+        "id": "98_755003",
+        "lat": 47.649497,
+        "locationType": 0,
+        "lon": -122.303808,
+        "name": "UW Link Station / UW Link Station",
+        "routeIds": [
+          "98_869-28"
+        ],
+        "wheelchairBoarding": "UNKNOWN"
+      }
+    ],
+    "outOfRange": false,
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "98",
+          "lang": "en",
+          "name": "Seattle Children's Hospital",
+          "phone": "",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "https://www.luum.com/commute/content/shuttles"
+        },
+        {
+          "disclaimer": "",
+          "email": "riders@commtrans.org",
+          "fareUrl": "",
+          "id": "29",
+          "lang": "en",
+          "name": "Community Transit",
+          "phone": "(800) 562-1375",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.communitytransit.org/"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ Dist-Montlake-Capitol Hill-Downtown Seattle",
+          "id": "1_100223",
+          "longName": "",
+          "shortName": "43",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/043/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Ballard - Montlake",
+          "id": "1_100224",
+          "longName": "",
+          "shortName": "44",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/044/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Mt Baker - University District",
+          "id": "1_100228",
+          "longName": "",
+          "shortName": "48",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/048/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Broadway - Downtown Seattle",
+          "id": "1_100447",
+          "longName": "",
+          "shortName": "49",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/049/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "University District - Eastlake - Downtown Seattle",
+          "id": "1_100264",
+          "longName": "",
+          "shortName": "70",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/070/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "South Renton P&R - University District",
+          "id": "1_100059",
+          "longName": "",
+          "shortName": "167",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/167/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Twin Lakes P&R - University District",
+          "id": "1_100088",
+          "longName": "",
+          "shortName": "197",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/197/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Issaquah - University District",
+          "id": "1_100162",
+          "longName": "",
+          "shortName": "271",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/271/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Overlake P&R - University District",
+          "id": "40_102640",
+          "longName": "",
+          "shortName": "541",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/541"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Redmond - University District",
+          "id": "40_100511",
+          "longName": "Redmond - University District",
+          "shortName": "542",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/542"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Issaquah - University District - Northgate",
+          "id": "40_100451",
+          "longName": "Issaquah - Northgate",
+          "shortName": "556",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/556"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "",
+          "id": "40_586",
+          "longName": "Tacoma - U. District",
+          "shortName": "586",
+          "textColor": "",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Lake City  - University District",
+          "id": "1_100254",
+          "longName": "",
+          "shortName": "65",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/065/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Laurelhurst - University District",
+          "id": "1_100273",
+          "longName": "",
+          "shortName": "78",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/078/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Juanita - University District",
+          "id": "1_100168",
+          "longName": "",
+          "shortName": "277",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/277/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Kirkland - University District",
+          "id": "40_100235",
+          "longName": "Kirkland - University District",
+          "shortName": "540",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/540"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Loyal Heights - University District",
+          "id": "1_100225",
+          "longName": "",
+          "shortName": "45",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/045/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Wedgwood - University District - Downtown Seattle",
+          "id": "1_100265",
+          "longName": "",
+          "shortName": "71",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/071/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Jackson Park - Univ District - Downtown Seattle",
+          "id": "1_100267",
+          "longName": "",
+          "shortName": "73",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/073/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Aurora Village TC - University District",
+          "id": "1_100215",
+          "longName": "",
+          "shortName": "373",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/373/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Bear Creek P&R - Lakeside School",
+          "id": "1_100341",
+          "longName": "",
+          "shortName": "982",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/982/n0.html"
+        },
+        {
+          "agencyId": "98",
+          "color": "",
+          "description": "",
+          "id": "98_869-28",
+          "longName": "",
+          "shortName": "Gold",
+          "textColor": "",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Fremont - Central Magnolia",
+          "id": "1_100184",
+          "longName": "",
+          "shortName": "31",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/031/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District-Fremont-Interbay-Seattle Center West",
+          "id": "1_100193",
+          "longName": "",
+          "shortName": "32",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/032/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Roosevelt - University District",
+          "id": "1_100259",
+          "longName": "",
+          "shortName": "67",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/067/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Lake City - Sand Point - Univ District",
+          "id": "1_100269",
+          "longName": "",
+          "shortName": "75",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/075/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "UW/Cascadia College - University District",
+          "id": "1_100214",
+          "longName": "",
+          "shortName": "372",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/372/n0.html"
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_810",
+          "longName": "McCollum Park - University District",
+          "shortName": "810",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_821",
+          "longName": "Marysville - University District",
+          "shortName": "821",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_855",
+          "longName": "Lynnwood - University District",
+          "shortName": "855",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_860",
+          "longName": "McCollum Park - University District",
+          "shortName": "860",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_871",
+          "longName": "Edmonds P&R - University District",
+          "shortName": "871",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_880",
+          "longName": "Mukilteo - University District",
+          "shortName": "880",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "SeaTac - Seattle",
+          "id": "40_100479",
+          "longName": "",
+          "shortName": "Link light rail",
+          "textColor": "",
+          "type": 0,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/599"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

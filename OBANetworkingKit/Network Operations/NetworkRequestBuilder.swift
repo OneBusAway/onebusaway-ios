@@ -109,7 +109,9 @@ public class NetworkRequestBuilder: NSObject {
     private func getStops(url: URL, completion: GetStopsCompletion?) -> StopsOperation {
         let operation = StopsOperation(url: url)
         operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
+            if let operation = operation {
+                completion?(operation)
+            }
         }
         networkQueue.add(operation)
         return operation

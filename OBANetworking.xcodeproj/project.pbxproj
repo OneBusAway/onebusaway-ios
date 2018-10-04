@@ -34,60 +34,13 @@
 		931B944F216460090034D8FA /* OBANetworkHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B944D216460090034D8FA /* OBANetworkHelpers.m */; };
 		931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */; };
 		931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */; };
-		931B94872165250A0034D8FA /* trip_details_1_18196913_no_trip.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94572165250A0034D8FA /* trip_details_1_18196913_no_trip.json */; };
-		931B94882165250A0034D8FA /* routes_for_location_queryfail.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94582165250A0034D8FA /* routes_for_location_queryfail.json */; };
-		931B94892165250A0034D8FA /* route_hart_5.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94592165250A0034D8FA /* route_hart_5.json */; };
-		931B948A2165250A0034D8FA /* agency_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945A2165250A0034D8FA /* agency_1.json */; };
-		931B948B2165250A0034D8FA /* routes_for_location_query.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945B2165250A0034D8FA /* routes_for_location_query.json */; };
-		931B948C2165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945C2165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json */; };
-		931B948D2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945D2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_6497.json */; };
-		931B948E2165250A0034D8FA /* current_time.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945E2165250A0034D8FA /* current_time.json */; };
-		931B948F2165250A0034D8FA /* test_badjson.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B945F2165250A0034D8FA /* test_badjson.json */; };
-		931B94902165250A0034D8FA /* route_1_10.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94602165250A0034D8FA /* route_1_10.json */; };
-		931B94912165250A0034D8FA /* routes_for_location_outofrange.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94612165250A0034D8FA /* routes_for_location_outofrange.json */; };
-		931B94922165250A0034D8FA /* arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94622165250A0034D8FA /* arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json */; };
-		931B94932165250A0034D8FA /* schedule_for_stop_1_75403.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94632165250A0034D8FA /* schedule_for_stop_1_75403.json */; };
-		931B94942165250A0034D8FA /* urimap.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94642165250A0034D8FA /* urimap.json */; };
-		931B94952165250A0034D8FA /* agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94652165250A0034D8FA /* agencies_with_coverage.json */; };
-		931B94962165250A0034D8FA /* stops_for_route_1_44.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94662165250A0034D8FA /* stops_for_route_1_44.json */; };
-		931B94972165250A0034D8FA /* agencies_with_coverage_tampa.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94672165250A0034D8FA /* agencies_with_coverage_tampa.json */; };
-		931B94982165250A0034D8FA /* arrivals_and_departures_for_stop_psta_4077_alerts.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94682165250A0034D8FA /* arrivals_and_departures_for_stop_psta_4077_alerts.json */; };
-		931B94992165250A0034D8FA /* arrivals_and_departures_for_stop_1_29261.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94692165250A0034D8FA /* arrivals_and_departures_for_stop_1_29261.json */; };
-		931B949A2165250A0034D8FA /* stop_1_29261.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946A2165250A0034D8FA /* stop_1_29261.json */; };
-		931B949B2165250A0034D8FA /* stops_for_route_1_44_noshapes.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946B2165250A0034D8FA /* stops_for_route_1_44_noshapes.json */; };
-		931B949C2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_3105.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946C2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_3105.json */; };
-		931B949D2165250A0034D8FA /* bike_rental_tampa_all.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946D2165250A0034D8FA /* bike_rental_tampa_all.json */; };
-		931B949E2165250A0034D8FA /* stops_for_location_queryfail.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946E2165250A0034D8FA /* stops_for_location_queryfail.json */; };
-		931B949F2165250A0034D8FA /* stops_for_location_query.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B946F2165250A0034D8FA /* stops_for_location_query.json */; };
-		931B94A02165250A0034D8FA /* trip_1_18196913.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94702165250A0034D8FA /* trip_1_18196913.json */; };
-		931B94A12165250A0034D8FA /* trip_details_1_18196913_no_status.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94712165250A0034D8FA /* trip_details_1_18196913_no_status.json */; };
-		931B94A22165250A0034D8FA /* trips_for_route_hart_5_no_status.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94722165250A0034D8FA /* trips_for_route_hart_5_no_status.json */; };
-		931B94A32165250A0034D8FA /* shape_1_40046045.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94732165250A0034D8FA /* shape_1_40046045.json */; };
-		931B94A42165250A0034D8FA /* stops_for_location_downtown_seattle1.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94742165250A0034D8FA /* stops_for_location_downtown_seattle1.json */; };
-		931B94A52165250A0034D8FA /* arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94752165250A0034D8FA /* arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json */; };
-		931B94A62165250A0034D8FA /* stop_ids_for_agency_40.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94762165250A0034D8FA /* stop_ids_for_agency_40.json */; };
-		931B94A72165250A0034D8FA /* trip_details_1_18196913_no_schedule.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94772165250A0034D8FA /* trip_details_1_18196913_no_schedule.json */; };
-		931B94A82165250A0034D8FA /* routes_for_location_downtown_seattle1.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94782165250A0034D8FA /* routes_for_location_downtown_seattle1.json */; };
-		931B94A92165250A0034D8FA /* schedule_for_stop_1_75403_with_date.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94792165250A0034D8FA /* schedule_for_stop_1_75403_with_date.json */; };
-		931B94AA2165250A0034D8FA /* stops_for_location_outofrange.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947A2165250A0034D8FA /* stops_for_location_outofrange.json */; };
-		931B94AB2165250A0034D8FA /* route_ids_for_agency_40.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947B2165250A0034D8FA /* route_ids_for_agency_40.json */; };
-		931B94AC2165250A0034D8FA /* arrivals_and_departures_for_stop_dart_4041_alerts.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947C2165250A0034D8FA /* arrivals_and_departures_for_stop_dart_4041_alerts.json */; };
-		931B94AD2165250A0034D8FA /* trips_for_location_outofrange.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947D2165250A0034D8FA /* trips_for_location_outofrange.json */; };
-		931B94AE2165250A0034D8FA /* trips_for_location_test1.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947E2165250A0034D8FA /* trips_for_location_test1.json */; };
-		931B94AF2165250A0034D8FA /* test_404_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B947F2165250A0034D8FA /* test_404_1.json */; };
-		931B94B02165250A0034D8FA /* trips_for_route_hart_5.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94802165250A0034D8FA /* trips_for_route_hart_5.json */; };
-		931B94B12165250A0034D8FA /* trip_details_1_18196913.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94812165250A0034D8FA /* trip_details_1_18196913.json */; };
-		931B94B22165250A0034D8FA /* arrivals_and_departurse_for_stop_total_stops_in_trip.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94822165250A0034D8FA /* arrivals_and_departurse_for_stop_total_stops_in_trip.json */; };
-		931B94B32165250A0034D8FA /* arrivals_and_departures_for_stop_1_75403.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94832165250A0034D8FA /* arrivals_and_departures_for_stop_1_75403.json */; };
-		931B94B42165250A0034D8FA /* stops_for_location_downtown_seattle.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94842165250A0034D8FA /* stops_for_location_downtown_seattle.json */; };
-		931B94B52165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11670_route_alerts.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94852165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11670_route_alerts.json */; };
-		931B94B62165250A0034D8FA /* arrivals_and_departures_for_stop_1_10020.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94862165250A0034D8FA /* arrivals_and_departures_for_stop_1_10020.json */; };
 		931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */; };
 		931B94BB216569720034D8FA /* OBAWrappedResponseNetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B94BC216569720034D8FA /* OBAWrappedResponseNetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */; };
 		931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BD216682E10034D8FA /* StopsOperation.swift */; };
 		931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BF21668FA90034D8FA /* StopsOperationTest.swift */; };
 		931B94C221668FEB0034D8FA /* OperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C121668FEB0034D8FA /* OperationTest.swift */; };
+		931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -162,60 +115,13 @@
 		931B944D216460090034D8FA /* OBANetworkHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkHelpers.m; sourceTree = "<group>"; };
 		931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperation.swift; sourceTree = "<group>"; };
 		931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperationTest.swift; sourceTree = "<group>"; };
-		931B94572165250A0034D8FA /* trip_details_1_18196913_no_trip.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_details_1_18196913_no_trip.json; sourceTree = "<group>"; };
-		931B94582165250A0034D8FA /* routes_for_location_queryfail.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = routes_for_location_queryfail.json; sourceTree = "<group>"; };
-		931B94592165250A0034D8FA /* route_hart_5.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = route_hart_5.json; sourceTree = "<group>"; };
-		931B945A2165250A0034D8FA /* agency_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agency_1.json; sourceTree = "<group>"; };
-		931B945B2165250A0034D8FA /* routes_for_location_query.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = routes_for_location_query.json; sourceTree = "<group>"; };
-		931B945C2165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json; sourceTree = "<group>"; };
-		931B945D2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_6497.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_hart_6497.json; sourceTree = "<group>"; };
-		931B945E2165250A0034D8FA /* current_time.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = current_time.json; sourceTree = "<group>"; };
-		931B945F2165250A0034D8FA /* test_badjson.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_badjson.json; sourceTree = "<group>"; };
-		931B94602165250A0034D8FA /* route_1_10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = route_1_10.json; sourceTree = "<group>"; };
-		931B94612165250A0034D8FA /* routes_for_location_outofrange.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = routes_for_location_outofrange.json; sourceTree = "<group>"; };
-		931B94622165250A0034D8FA /* arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json; sourceTree = "<group>"; };
-		931B94632165250A0034D8FA /* schedule_for_stop_1_75403.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = schedule_for_stop_1_75403.json; sourceTree = "<group>"; };
-		931B94642165250A0034D8FA /* urimap.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = urimap.json; sourceTree = "<group>"; };
-		931B94652165250A0034D8FA /* agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agencies_with_coverage.json; sourceTree = "<group>"; };
-		931B94662165250A0034D8FA /* stops_for_route_1_44.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_route_1_44.json; sourceTree = "<group>"; };
-		931B94672165250A0034D8FA /* agencies_with_coverage_tampa.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agencies_with_coverage_tampa.json; sourceTree = "<group>"; };
-		931B94682165250A0034D8FA /* arrivals_and_departures_for_stop_psta_4077_alerts.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_psta_4077_alerts.json; sourceTree = "<group>"; };
-		931B94692165250A0034D8FA /* arrivals_and_departures_for_stop_1_29261.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_1_29261.json; sourceTree = "<group>"; };
-		931B946A2165250A0034D8FA /* stop_1_29261.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stop_1_29261.json; sourceTree = "<group>"; };
-		931B946B2165250A0034D8FA /* stops_for_route_1_44_noshapes.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_route_1_44_noshapes.json; sourceTree = "<group>"; };
-		931B946C2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_3105.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_hart_3105.json; sourceTree = "<group>"; };
-		931B946D2165250A0034D8FA /* bike_rental_tampa_all.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = bike_rental_tampa_all.json; sourceTree = "<group>"; };
-		931B946E2165250A0034D8FA /* stops_for_location_queryfail.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_queryfail.json; sourceTree = "<group>"; };
-		931B946F2165250A0034D8FA /* stops_for_location_query.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_query.json; sourceTree = "<group>"; };
-		931B94702165250A0034D8FA /* trip_1_18196913.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_1_18196913.json; sourceTree = "<group>"; };
-		931B94712165250A0034D8FA /* trip_details_1_18196913_no_status.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_details_1_18196913_no_status.json; sourceTree = "<group>"; };
-		931B94722165250A0034D8FA /* trips_for_route_hart_5_no_status.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trips_for_route_hart_5_no_status.json; sourceTree = "<group>"; };
-		931B94732165250A0034D8FA /* shape_1_40046045.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = shape_1_40046045.json; sourceTree = "<group>"; };
-		931B94742165250A0034D8FA /* stops_for_location_downtown_seattle1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_downtown_seattle1.json; sourceTree = "<group>"; };
-		931B94752165250A0034D8FA /* arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json; sourceTree = "<group>"; };
-		931B94762165250A0034D8FA /* stop_ids_for_agency_40.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stop_ids_for_agency_40.json; sourceTree = "<group>"; };
-		931B94772165250A0034D8FA /* trip_details_1_18196913_no_schedule.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_details_1_18196913_no_schedule.json; sourceTree = "<group>"; };
-		931B94782165250A0034D8FA /* routes_for_location_downtown_seattle1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = routes_for_location_downtown_seattle1.json; sourceTree = "<group>"; };
-		931B94792165250A0034D8FA /* schedule_for_stop_1_75403_with_date.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = schedule_for_stop_1_75403_with_date.json; sourceTree = "<group>"; };
-		931B947A2165250A0034D8FA /* stops_for_location_outofrange.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_outofrange.json; sourceTree = "<group>"; };
-		931B947B2165250A0034D8FA /* route_ids_for_agency_40.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = route_ids_for_agency_40.json; sourceTree = "<group>"; };
-		931B947C2165250A0034D8FA /* arrivals_and_departures_for_stop_dart_4041_alerts.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_dart_4041_alerts.json; sourceTree = "<group>"; };
-		931B947D2165250A0034D8FA /* trips_for_location_outofrange.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trips_for_location_outofrange.json; sourceTree = "<group>"; };
-		931B947E2165250A0034D8FA /* trips_for_location_test1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trips_for_location_test1.json; sourceTree = "<group>"; };
-		931B947F2165250A0034D8FA /* test_404_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = test_404_1.json; sourceTree = "<group>"; };
-		931B94802165250A0034D8FA /* trips_for_route_hart_5.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trips_for_route_hart_5.json; sourceTree = "<group>"; };
-		931B94812165250A0034D8FA /* trip_details_1_18196913.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_details_1_18196913.json; sourceTree = "<group>"; };
-		931B94822165250A0034D8FA /* arrivals_and_departurse_for_stop_total_stops_in_trip.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departurse_for_stop_total_stops_in_trip.json; sourceTree = "<group>"; };
-		931B94832165250A0034D8FA /* arrivals_and_departures_for_stop_1_75403.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_1_75403.json; sourceTree = "<group>"; };
-		931B94842165250A0034D8FA /* stops_for_location_downtown_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_downtown_seattle.json; sourceTree = "<group>"; };
-		931B94852165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11670_route_alerts.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_mts_11670_route_alerts.json; sourceTree = "<group>"; };
-		931B94862165250A0034D8FA /* arrivals_and_departures_for_stop_1_10020.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_1_10020.json; sourceTree = "<group>"; };
 		931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vehicle_for_id_4011.json; sourceTree = "<group>"; };
 		931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAWrappedResponseNetworkOperation.h; sourceTree = "<group>"; };
 		931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAWrappedResponseNetworkOperation.m; sourceTree = "<group>"; };
 		931B94BD216682E10034D8FA /* StopsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperation.swift; sourceTree = "<group>"; };
 		931B94BF21668FA90034D8FA /* StopsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperationTest.swift; sourceTree = "<group>"; };
 		931B94C121668FEB0034D8FA /* OperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationTest.swift; sourceTree = "<group>"; };
+		931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -368,55 +274,8 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */,
 				931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */,
-				931B94572165250A0034D8FA /* trip_details_1_18196913_no_trip.json */,
-				931B94582165250A0034D8FA /* routes_for_location_queryfail.json */,
-				931B94592165250A0034D8FA /* route_hart_5.json */,
-				931B945A2165250A0034D8FA /* agency_1.json */,
-				931B945B2165250A0034D8FA /* routes_for_location_query.json */,
-				931B945C2165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json */,
-				931B945D2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_6497.json */,
-				931B945E2165250A0034D8FA /* current_time.json */,
-				931B945F2165250A0034D8FA /* test_badjson.json */,
-				931B94602165250A0034D8FA /* route_1_10.json */,
-				931B94612165250A0034D8FA /* routes_for_location_outofrange.json */,
-				931B94622165250A0034D8FA /* arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json */,
-				931B94632165250A0034D8FA /* schedule_for_stop_1_75403.json */,
-				931B94642165250A0034D8FA /* urimap.json */,
-				931B94652165250A0034D8FA /* agencies_with_coverage.json */,
-				931B94662165250A0034D8FA /* stops_for_route_1_44.json */,
-				931B94672165250A0034D8FA /* agencies_with_coverage_tampa.json */,
-				931B94682165250A0034D8FA /* arrivals_and_departures_for_stop_psta_4077_alerts.json */,
-				931B94692165250A0034D8FA /* arrivals_and_departures_for_stop_1_29261.json */,
-				931B946A2165250A0034D8FA /* stop_1_29261.json */,
-				931B946B2165250A0034D8FA /* stops_for_route_1_44_noshapes.json */,
-				931B946C2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_3105.json */,
-				931B946D2165250A0034D8FA /* bike_rental_tampa_all.json */,
-				931B946E2165250A0034D8FA /* stops_for_location_queryfail.json */,
-				931B946F2165250A0034D8FA /* stops_for_location_query.json */,
-				931B94702165250A0034D8FA /* trip_1_18196913.json */,
-				931B94712165250A0034D8FA /* trip_details_1_18196913_no_status.json */,
-				931B94722165250A0034D8FA /* trips_for_route_hart_5_no_status.json */,
-				931B94732165250A0034D8FA /* shape_1_40046045.json */,
-				931B94742165250A0034D8FA /* stops_for_location_downtown_seattle1.json */,
-				931B94752165250A0034D8FA /* arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json */,
-				931B94762165250A0034D8FA /* stop_ids_for_agency_40.json */,
-				931B94772165250A0034D8FA /* trip_details_1_18196913_no_schedule.json */,
-				931B94782165250A0034D8FA /* routes_for_location_downtown_seattle1.json */,
-				931B94792165250A0034D8FA /* schedule_for_stop_1_75403_with_date.json */,
-				931B947A2165250A0034D8FA /* stops_for_location_outofrange.json */,
-				931B947B2165250A0034D8FA /* route_ids_for_agency_40.json */,
-				931B947C2165250A0034D8FA /* arrivals_and_departures_for_stop_dart_4041_alerts.json */,
-				931B947D2165250A0034D8FA /* trips_for_location_outofrange.json */,
-				931B947E2165250A0034D8FA /* trips_for_location_test1.json */,
-				931B947F2165250A0034D8FA /* test_404_1.json */,
-				931B94802165250A0034D8FA /* trips_for_route_hart_5.json */,
-				931B94812165250A0034D8FA /* trip_details_1_18196913.json */,
-				931B94822165250A0034D8FA /* arrivals_and_departurse_for_stop_total_stops_in_trip.json */,
-				931B94832165250A0034D8FA /* arrivals_and_departures_for_stop_1_75403.json */,
-				931B94842165250A0034D8FA /* stops_for_location_downtown_seattle.json */,
-				931B94852165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11670_route_alerts.json */,
-				931B94862165250A0034D8FA /* arrivals_and_departures_for_stop_1_10020.json */,
 			);
 			path = fixtures;
 			sourceTree = "<group>";
@@ -563,55 +422,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				931B94972165250A0034D8FA /* agencies_with_coverage_tampa.json in Resources */,
-				931B94AC2165250A0034D8FA /* arrivals_and_departures_for_stop_dart_4041_alerts.json in Resources */,
-				931B948F2165250A0034D8FA /* test_badjson.json in Resources */,
-				931B949A2165250A0034D8FA /* stop_1_29261.json in Resources */,
-				931B948A2165250A0034D8FA /* agency_1.json in Resources */,
-				931B94A22165250A0034D8FA /* trips_for_route_hart_5_no_status.json in Resources */,
-				931B94902165250A0034D8FA /* route_1_10.json in Resources */,
-				931B948C2165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11671_filter_route_alerts.json in Resources */,
-				931B94A62165250A0034D8FA /* stop_ids_for_agency_40.json in Resources */,
-				931B949C2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_3105.json in Resources */,
-				931B94922165250A0034D8FA /* arrivals_and_departures_for_stop_mts_13353_route_and_stop_alerts.json in Resources */,
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
-				931B94AA2165250A0034D8FA /* stops_for_location_outofrange.json in Resources */,
-				931B94A52165250A0034D8FA /* arrivals_and_departures_for_stop_hart_1622_one_past_arrival.json in Resources */,
-				931B94AE2165250A0034D8FA /* trips_for_location_test1.json in Resources */,
-				931B94962165250A0034D8FA /* stops_for_route_1_44.json in Resources */,
-				931B948E2165250A0034D8FA /* current_time.json in Resources */,
-				931B948D2165250A0034D8FA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */,
-				931B949F2165250A0034D8FA /* stops_for_location_query.json in Resources */,
-				931B94AD2165250A0034D8FA /* trips_for_location_outofrange.json in Resources */,
-				931B949E2165250A0034D8FA /* stops_for_location_queryfail.json in Resources */,
-				931B94AF2165250A0034D8FA /* test_404_1.json in Resources */,
-				931B94992165250A0034D8FA /* arrivals_and_departures_for_stop_1_29261.json in Resources */,
-				931B94B62165250A0034D8FA /* arrivals_and_departures_for_stop_1_10020.json in Resources */,
-				931B94A42165250A0034D8FA /* stops_for_location_downtown_seattle1.json in Resources */,
-				931B94B52165250A0034D8FA /* arrivals_and_departures_for_stop_mts_11670_route_alerts.json in Resources */,
-				931B94982165250A0034D8FA /* arrivals_and_departures_for_stop_psta_4077_alerts.json in Resources */,
-				931B94872165250A0034D8FA /* trip_details_1_18196913_no_trip.json in Resources */,
-				931B94932165250A0034D8FA /* schedule_for_stop_1_75403.json in Resources */,
-				931B94A72165250A0034D8FA /* trip_details_1_18196913_no_schedule.json in Resources */,
-				931B94912165250A0034D8FA /* routes_for_location_outofrange.json in Resources */,
-				931B94952165250A0034D8FA /* agencies_with_coverage.json in Resources */,
-				931B94AB2165250A0034D8FA /* route_ids_for_agency_40.json in Resources */,
-				931B948B2165250A0034D8FA /* routes_for_location_query.json in Resources */,
-				931B94A12165250A0034D8FA /* trip_details_1_18196913_no_status.json in Resources */,
-				931B94B32165250A0034D8FA /* arrivals_and_departures_for_stop_1_75403.json in Resources */,
-				931B94942165250A0034D8FA /* urimap.json in Resources */,
-				931B94B02165250A0034D8FA /* trips_for_route_hart_5.json in Resources */,
-				931B949B2165250A0034D8FA /* stops_for_route_1_44_noshapes.json in Resources */,
-				931B949D2165250A0034D8FA /* bike_rental_tampa_all.json in Resources */,
-				931B94A32165250A0034D8FA /* shape_1_40046045.json in Resources */,
-				931B94882165250A0034D8FA /* routes_for_location_queryfail.json in Resources */,
-				931B94A92165250A0034D8FA /* schedule_for_stop_1_75403_with_date.json in Resources */,
-				931B94B12165250A0034D8FA /* trip_details_1_18196913.json in Resources */,
-				931B94B42165250A0034D8FA /* stops_for_location_downtown_seattle.json in Resources */,
-				931B94A02165250A0034D8FA /* trip_1_18196913.json in Resources */,
-				931B94892165250A0034D8FA /* route_hart_5.json in Resources */,
-				931B94A82165250A0034D8FA /* routes_for_location_downtown_seattle1.json in Resources */,
-				931B94B22165250A0034D8FA /* arrivals_and_departurse_for_stop_total_stops_in_trip.json in Resources */,
+				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

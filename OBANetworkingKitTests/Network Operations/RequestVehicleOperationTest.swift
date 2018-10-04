@@ -30,10 +30,10 @@ class RequestVehicleOperationTest: OperationTest {
             it("has a currentTime value set") {
                 waitUntil { done in
                     self.builder.getVehicle(vehicleID) { op in
-                        expect(op.entry).toNot(beNil())
+                        expect(op.entries).toNot(beNil())
                         expect(op.references).toNot(beNil())
 
-                        let entry = op.entry as! [String: AnyObject]
+                        let entry = op.entries?.first as! [String: AnyObject]
                         let lastUpdateTime = entry["lastUpdateTime"] as! Int
                         expect(lastUpdateTime).to(equal(1538584269000))
 

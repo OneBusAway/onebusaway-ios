@@ -10,8 +10,8 @@
 #import <OBANetworkingKit/OBAOperation+Internal.h>
 
 @interface OBAWrappedResponseNetworkOperation ()
-@property(nonatomic,strong,nullable,readwrite) id entry;
-@property(nonatomic,strong,nullable,readwrite) id references;
+@property(nonatomic,strong,nullable,readwrite) NSArray<NSDictionary*> *entries;
+@property(nonatomic,strong,nullable,readwrite) NSDictionary *references;
 @end
 
 @implementation OBAWrappedResponseNetworkOperation
@@ -36,8 +36,17 @@
 
         self.response = [[NSHTTPURLResponse alloc] initWithURL:self.response.URL statusCode:statusCode HTTPVersion:nil headerFields:self.response.allHeaderFields];
 
-        self.entry = [[decodedBody valueForKey:@"data"] valueForKey:@"entry"];
-        self.references = [[decodedBody valueForKey:@"data"] valueForKey:@"references"];
+        NSDictionary *dataField = decodedBody[@"data"];
+
+        NSDictionary *entry = dataField[@"entry"];
+        if (entry) {
+            self.entries = @[entry];
+        }
+        else {
+            self.entries = dataField[@"list"];
+        }
+
+        self.references = dataField[@"references"];
     }
 }
 

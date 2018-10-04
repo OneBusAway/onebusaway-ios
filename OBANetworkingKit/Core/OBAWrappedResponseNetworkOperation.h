@@ -14,8 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 NS_SWIFT_NAME(WrappedResponseNetworkOperation)
 @interface OBAWrappedResponseNetworkOperation : OBANetworkOperation
 
-@property(nonatomic,strong,nullable,readonly) id entry;
-@property(nonatomic,strong,nullable,readonly) id references;
+@property(nonatomic,strong,nullable,readonly) NSArray<NSDictionary*> *entries;
+@property(nonatomic,strong,nullable,readonly) NSDictionary *references;
 
 @end
 
