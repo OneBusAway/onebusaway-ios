@@ -36,3 +36,13 @@ public extension OperationTest where Self: XCTestCase {
         )
     }
 }
+
+public extension URLComponents {
+    public func queryItemValueMatching(name: String) -> String? {
+        guard let queryItems = queryItems else {
+            return nil
+        }
+
+        return queryItems.filter({$0.name == name}).first?.value
+    }
+}

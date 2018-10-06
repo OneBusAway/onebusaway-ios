@@ -41,6 +41,8 @@
 		931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */; };
 		931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94C52166DF5F0034D8FA /* stops_for_location_seattle_span.json */; };
 		931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C72168388E0034D8FA /* TestCaseExtensions.swift */; };
+		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
+		932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -122,6 +124,8 @@
 		931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle.json; sourceTree = "<group>"; };
 		931B94C52166DF5F0034D8FA /* stops_for_location_seattle_span.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle_span.json; sourceTree = "<group>"; };
 		931B94C72168388E0034D8FA /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
+		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
+		932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopTest.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -205,6 +209,7 @@
 		931B940B216419C20034D8FA /* OBANetworkingKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				932AAF9A21695E590070BF56 /* Helpers */,
 				931B94562165250A0034D8FA /* fixtures */,
 				931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */,
 				931B9447216443180034D8FA /* Network Operations */,
@@ -236,6 +241,7 @@
 				931B943821642EE40034D8FA /* CurrentTimeOperation.swift */,
 				931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */,
 				931B94BD216682E10034D8FA /* StopsOperation.swift */,
+				932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -255,7 +261,7 @@
 				931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */,
 				931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */,
 				931B94BF21668FA90034D8FA /* StopsOperationTest.swift */,
-				931B94C72168388E0034D8FA /* TestCaseExtensions.swift */,
+				932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -277,6 +283,14 @@
 				931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */,
 			);
 			path = fixtures;
+			sourceTree = "<group>";
+		};
+		932AAF9A21695E590070BF56 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				931B94C72168388E0034D8FA /* TestCaseExtensions.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -469,6 +483,7 @@
 			files = (
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
 				931B944F216460090034D8FA /* OBANetworkHelpers.m in Sources */,
+				932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */,
 				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
@@ -483,6 +498,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */,
 				931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,

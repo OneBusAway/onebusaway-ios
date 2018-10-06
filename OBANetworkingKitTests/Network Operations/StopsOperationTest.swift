@@ -47,14 +47,14 @@ class StopsOperationTest: XCTestCase, OperationTest {
         let url = StopsOperation.buildURL(circularRegion: region, query: "query!", baseURL: baseURL, defaultQueryItems: [])
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
-        let lat = components?.queryItems?.filter({$0.name == "lat"}).first
-        let lon = components?.queryItems?.filter({$0.name == "lon"}).first
-        let query = components?.queryItems?.filter({$0.name == "query"}).first
-        let radius = components?.queryItems?.filter({$0.name == "radius"}).first
-        expect(lat?.value).to(equal("47.624"))
-        expect(lon?.value).to(equal("-122.32"))
-        expect(query?.value).to(equal("query!"))
-        expect(radius?.value).to(equal("15000"))
+        let lat = components?.queryItemValueMatching(name: "lat")
+        let lon = components?.queryItemValueMatching(name: "lon")
+        let query = components?.queryItemValueMatching(name: "query")
+        let radius = components?.queryItemValueMatching(name: "radius")
+        expect(lat).to(equal("47.624"))
+        expect(lon).to(equal("-122.32"))
+        expect(query).to(equal("query!"))
+        expect(radius).to(equal("15000"))
     }
 
     // MARK: - Stops in Coordinate Region

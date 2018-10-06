@@ -10,11 +10,8 @@ import Foundation
 import CoreLocation
 import MapKit
 
-//- (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
-//- (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
+
 //- (AnyPromise*)requestShapeForID:(NSString*)shapeID;
-//- (AnyPromise*)requestStopsForRegion:(MKCoordinateRegion)region;
-//- (AnyPromise*)requestStopsForQuery:(NSString*)query region:(nullable CLCircularRegion*)region;
 //- (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
 //- (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
@@ -23,7 +20,12 @@ import MapKit
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
-//- (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
+//- (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
+//- (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
+
+//x (AnyPromise*)requestStopsForRegion:(MKCoordinateRegion)region;
+//x (AnyPromise*)requestStopsForQuery:(NSString*)query region:(nullable CLCircularRegion*)region;
+//x (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
 //x (AnyPromise*)requestVehicleForID:(NSString*)vehicleID;
 //x (AnyPromise*)requestCurrentTime;
 
