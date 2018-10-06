@@ -27,7 +27,7 @@ import MapKit
 //x (AnyPromise*)requestVehicleForID:(NSString*)vehicleID;
 //x (AnyPromise*)requestCurrentTime;
 
-public typealias NetworkCompletionBlock = (_ operation: WrappedResponseNetworkOperation) -> Void
+public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Void
 
 @objc(OBANetworkRequestBuilder)
 public class NetworkRequestBuilder: NSObject {

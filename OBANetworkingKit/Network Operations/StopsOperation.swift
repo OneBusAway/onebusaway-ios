@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
-public class StopsOperation: WrappedResponseNetworkOperation {
+public class StopsOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction
 

@@ -34,8 +34,8 @@
 		931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */; };
 		931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */; };
 		931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */; };
-		931B94BB216569720034D8FA /* OBAWrappedResponseNetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B94BC216569720034D8FA /* OBAWrappedResponseNetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */; };
+		931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B94B9216569720034D8FA /* OBARESTAPIOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BA216569720034D8FA /* OBARESTAPIOperation.m */; };
 		931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BD216682E10034D8FA /* StopsOperation.swift */; };
 		931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BF21668FA90034D8FA /* StopsOperationTest.swift */; };
 		931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */; };
@@ -115,8 +115,8 @@
 		931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperation.swift; sourceTree = "<group>"; };
 		931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperationTest.swift; sourceTree = "<group>"; };
 		931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vehicle_for_id_4011.json; sourceTree = "<group>"; };
-		931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAWrappedResponseNetworkOperation.h; sourceTree = "<group>"; };
-		931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAWrappedResponseNetworkOperation.m; sourceTree = "<group>"; };
+		931B94B9216569720034D8FA /* OBARESTAPIOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBARESTAPIOperation.h; sourceTree = "<group>"; };
+		931B94BA216569720034D8FA /* OBARESTAPIOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBARESTAPIOperation.m; sourceTree = "<group>"; };
 		931B94BD216682E10034D8FA /* StopsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperation.swift; sourceTree = "<group>"; };
 		931B94BF21668FA90034D8FA /* StopsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperationTest.swift; sourceTree = "<group>"; };
 		931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle.json; sourceTree = "<group>"; };
@@ -221,8 +221,8 @@
 				931B9428216422120034D8FA /* OBAOperation+Internal.h */,
 				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
 				931B942521641FB50034D8FA /* OBANetworkOperation.m */,
-				931B94B9216569720034D8FA /* OBAWrappedResponseNetworkOperation.h */,
-				931B94BA216569720034D8FA /* OBAWrappedResponseNetworkOperation.m */,
+				931B94B9216569720034D8FA /* OBARESTAPIOperation.h */,
+				931B94BA216569720034D8FA /* OBARESTAPIOperation.m */,
 				931B942021641BC30034D8FA /* OBANetworkQueue.h */,
 				931B942121641BC30034D8FA /* OBANetworkQueue.m */,
 			);
@@ -288,7 +288,7 @@
 			files = (
 				931B942221641BC30034D8FA /* OBANetworkQueue.h in Headers */,
 				931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */,
-				931B94BB216569720034D8FA /* OBAWrappedResponseNetworkOperation.h in Headers */,
+				931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */,
 				931B940F216419C20034D8FA /* OBANetworkingKit.h in Headers */,
 				931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */,
 				931B944E216460090034D8FA /* OBANetworkHelpers.h in Headers */,
@@ -474,7 +474,7 @@
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
-				931B94BC216569720034D8FA /* OBAWrappedResponseNetworkOperation.m in Sources */,
+				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

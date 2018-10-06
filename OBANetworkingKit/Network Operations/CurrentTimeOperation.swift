@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class CurrentTimeOperation: WrappedResponseNetworkOperation {
+public class CurrentTimeOperation: RESTAPIOperation {
     @objc public var currentTime: String? {
         guard
             let response = response,

@@ -1,5 +1,5 @@
 //
-//  OBAWrappedResponseNetworkOperation.h
+//  OBARESTAPIOperation.h
 //  OBANetworkingKit
 //
 //  Created by Aaron Brethorst on 10/3/18.
@@ -11,8 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-NS_SWIFT_NAME(WrappedResponseNetworkOperation)
-@interface OBAWrappedResponseNetworkOperation : OBANetworkOperation
+NS_SWIFT_NAME(RESTAPIOperation)
+@interface OBARESTAPIOperation : OBANetworkOperation
 
 @property(nonatomic,strong,nullable,readonly) NSArray<NSDictionary*> *entries;
 @property(nonatomic,strong,nullable,readonly) NSDictionary *references;

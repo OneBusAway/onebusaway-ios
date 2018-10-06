@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class RequestVehicleOperation: WrappedResponseNetworkOperation {
+public class RequestVehicleOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction
 
