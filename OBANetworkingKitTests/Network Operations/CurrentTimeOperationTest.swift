@@ -25,6 +25,9 @@ class CurrentTimeTests: XCTestCase, OperationTest {
 
         waitUntil { (done) in
             self.builder.getCurrentTime { op in
+                guard let op = op as? CurrentTimeOperation else {
+                    return
+                }
                 expect(op.currentTime).to(equal("October 2, 2018 19:42:00 PDT"))
                 done()
             }

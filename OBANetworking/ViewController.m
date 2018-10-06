@@ -21,8 +21,8 @@
     NSURL *URL = [NSURL URLWithString:@"http://api.pugetsound.onebusaway.org/"];
     self.networkRequestBuilder = [[OBANetworkRequestBuilder alloc] initWithBaseURL:URL];
 
-    CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(CurrentTimeOperation * op) {
-        NSLog(@"Current Time: %@", op.currentTime);
+    CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(OBAWrappedResponseNetworkOperation * op) {
+        NSLog(@"Current Time: %@", ((CurrentTimeOperation*)op).currentTime);
     }];(void)operation;
 }
 
