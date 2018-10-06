@@ -20,6 +20,10 @@ public extension OperationTest where Self: XCTestCase {
         return "https://\(host)"
     }
 
+    public var baseURL: URL {
+        return URL(string: baseURLString)!
+    }
+
     public var builder: NetworkRequestBuilder {
         return NetworkRequestBuilder(baseURL: URL(string: baseURLString)!)
     }

@@ -30,7 +30,8 @@ public class StopsOperation: RESTAPIOperation {
     }
 
     public class func buildURL(circularRegion: CLCircularRegion, query: String, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-        let radius = max(15000.0, circularRegion.radius)
+        // make sure radius is greater than zero and less than 15000
+        let radius = max(min(15000.0, circularRegion.radius), 1.0)
         let queryItems = NetworkHelpers.dictionary(toQueryItems: [
             "lat": circularRegion.center.latitude, "lon": circularRegion.center.longitude,
             "query": query, "radius": radius
