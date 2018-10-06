@@ -43,6 +43,7 @@
 		931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C72168388E0034D8FA /* TestCaseExtensions.swift */; };
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
 		932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */; };
+		932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -126,6 +127,7 @@
 		931B94C72168388E0034D8FA /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
 		932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopTest.swift; sourceTree = "<group>"; };
+		932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-1_11420.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -278,6 +280,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */,
 				931B94C52166DF5F0034D8FA /* stops_for_location_seattle_span.json */,
 				931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */,
 				931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */,
@@ -436,6 +439,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
+				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
 			);

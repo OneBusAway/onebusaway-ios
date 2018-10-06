@@ -19,6 +19,45 @@ class ArrivalDepartureForStopTest: XCTestCase, OperationTest {
     let vehicleID = "vehicle_123"
     let stopSequence = 1
 
+    override func tearDown() {
+        super.tearDown()
+        OHHTTPStubs.removeAllStubs()
+    }
+
+    func testOperation_success() {
+        let apiPath = ArrivalDepartureForStopOperation.buildAPIPath(stopID: stopID)
+        let expectedParams: [String: String] = [
+            "tripId": tripID,
+            "serviceDate": String(serviceDate),
+            "vehicleId": vehicleID,
+            "stopSequence": String(stopSequence)
+            ]
+
+        stub(condition: isHost(self.host) &&
+                        isPath(apiPath) &&
+                        containsQueryParams(expectedParams)) { _ in
+            return self.JSONFile(named: "arrival-and-departure-for-stop-1_11420.json")
+        }
+
+        waitUntil { done in
+            self.builder.getArrivalDepartureForStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, completion: { (op) in
+
+                expect(op.entries).toNot(beNil())
+                let entry = op.entries!.first!
+                expect(entry["arrivalEnabled"] as? Bool) == true
+
+                expect(op.references).toNot(beNil())
+
+                let agencies = op.references!["agencies"] as! [Any]
+                expect(agencies.count) == 1
+
+                done()
+            })
+        }
+    }
+
+    // MARK: - URL Construction Tests
+
     /// Validate that a good URL is constructed when all needed data is passed in.
     func testBuildURL_withAllData() {
         let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: [])

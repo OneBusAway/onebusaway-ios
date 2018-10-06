@@ -114,4 +114,17 @@ public class NetworkRequestBuilder: NSObject {
         networkQueue.add(operation)
         return operation
     }
+
+    // MARK: - Arrival and Departure for Stop
+
+    @discardableResult @objc
+    public func getArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: NetworkCompletionBlock?) -> ArrivalDepartureForStopOperation {
+        let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        let operation = ArrivalDepartureForStopOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+        return operation
+    }
 }

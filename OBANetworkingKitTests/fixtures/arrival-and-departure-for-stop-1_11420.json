@@ -1,0 +1,173 @@
+{
+  "code": 200,
+  "currentTime": 1538843618369,
+  "data": {
+    "entry": {
+      "arrivalEnabled": true,
+      "blockTripSequence": 8,
+      "departureEnabled": true,
+      "distanceFromStop": 1188.0736825143758,
+      "frequency": null,
+      "lastUpdateTime": 1538843544000,
+      "numberOfStopsAway": 5,
+      "predicted": true,
+      "predictedArrivalInterval": null,
+      "predictedArrivalTime": 1538844086000,
+      "predictedDepartureInterval": null,
+      "predictedDepartureTime": 1538844086000,
+      "routeId": "1_100002",
+      "routeLongName": "",
+      "routeShortName": "10",
+      "scheduledArrivalInterval": null,
+      "scheduledArrivalTime": 1538844086000,
+      "scheduledDepartureInterval": null,
+      "scheduledDepartureTime": 1538844086000,
+      "serviceDate": 1538809200000,
+      "situationIds": [
+
+      ],
+      "status": "default",
+      "stopId": "1_11420",
+      "stopSequence": 4,
+      "totalStopsInTrip": 13,
+      "tripHeadsign": "Downtown Seattle",
+      "tripId": "1_40989208",
+      "tripStatus": {
+        "activeTripId": "1_40989145",
+        "blockTripSequence": 7,
+        "closestStop": "1_11640",
+        "closestStopTimeOffset": -1,
+        "distanceAlongTrip": 4988.351913164464,
+        "frequency": null,
+        "lastKnownDistanceAlongTrip": 0,
+        "lastKnownLocation": {
+          "lat": 47.63409423828125,
+          "lon": -122.31189727783203
+        },
+        "lastKnownOrientation": 0,
+        "lastLocationUpdateTime": 1538843544000,
+        "lastUpdateTime": 1538843544000,
+        "nextStop": "1_11370",
+        "nextStopTimeOffset": 65,
+        "orientation": 90,
+        "phase": "in_progress",
+        "position": {
+          "lat": 47.63411138261327,
+          "lon": -122.311905
+        },
+        "predicted": true,
+        "scheduleDeviation": 989,
+        "scheduledDistanceAlongTrip": 4988.351913164464,
+        "serviceDate": 1538809200000,
+        "situationIds": [
+
+        ],
+        "status": "SCHEDULED",
+        "totalDistanceAlongTrip": 5228.622883765362,
+        "vehicleId": "1_7012"
+      },
+      "vehicleId": "1_7012"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Capitol Hill - Downtown Seattle",
+          "id": "1_100002",
+          "longName": "",
+          "shortName": "10",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/010/n0.html"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "11420",
+          "direction": "S",
+          "id": "1_11420",
+          "lat": 47.62397,
+          "locationType": 0,
+          "lon": -122.312714,
+          "name": "15th Ave E & E Mercer St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11640",
+          "direction": "N",
+          "id": "1_11640",
+          "lat": 47.634079,
+          "locationType": 0,
+          "lon": -122.311798,
+          "name": "Grandview Pl E & E Garfield St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11370",
+          "direction": "S",
+          "id": "1_11370",
+          "lat": 47.6325,
+          "locationType": 0,
+          "lon": -122.312607,
+          "name": "15th Ave E & E Galer St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "1_5126281",
+          "directionId": "1",
+          "id": "1_40989208",
+          "routeId": "1_100002",
+          "routeShortName": "",
+          "serviceId": "1_19799",
+          "shapeId": "1_20010002",
+          "timeZone": "",
+          "tripHeadsign": "Downtown Seattle",
+          "tripShortName": "LOCAL"
+        },
+        {
+          "blockId": "1_5126281",
+          "directionId": "0",
+          "id": "1_40989145",
+          "routeId": "1_100002",
+          "routeShortName": "",
+          "serviceId": "1_19799",
+          "shapeId": "1_11010006",
+          "timeZone": "",
+          "tripHeadsign": "Capitol Hill Via 15th Ave E",
+          "tripShortName": "LOCAL"
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}
