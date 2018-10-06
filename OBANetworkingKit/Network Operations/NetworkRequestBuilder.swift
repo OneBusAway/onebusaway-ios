@@ -29,7 +29,6 @@ import MapKit
 
 public typealias CurrentTimeCompletion = (_ operation: CurrentTimeOperation) -> Void
 public typealias GetVehicleCompletion = (_ operation: RequestVehicleOperation) -> Void
-public typealias GetStopsCompletion = (_ operation: StopsOperation) -> Void
 
 @objc(OBANetworkRequestBuilder)
 public class NetworkRequestBuilder: NSObject {

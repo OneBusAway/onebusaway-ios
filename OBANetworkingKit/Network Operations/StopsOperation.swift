@@ -10,6 +10,8 @@ import Foundation
 import CoreLocation
 import MapKit
 
+public typealias GetStopsCompletion = (_ operation: StopsOperation) -> Void
+
 public class StopsOperation: WrappedResponseNetworkOperation {
 
     // MARK: - API Call and URL Construction

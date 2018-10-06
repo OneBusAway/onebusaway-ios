@@ -7,47 +7,58 @@
 //
 
 import XCTest
-import Quick
 import Nimble
 import OHHTTPStubs
 import CoreLocation
+import MapKit
 @testable import OBANetworkingKit
 
-class StopsOperationTest: OperationTest {
+class StopsOperationTest: XCTestCase, OperationTest {
 
-    private func testStopsNearCoordinate() {
-        describe("Retrieving stops near a coordinate") {
-            let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
+    override func tearDown() {
+        super.tearDown()
+        OHHTTPStubs.removeAllStubs()
+    }
 
-            beforeSuite {
-                return OHHTTPStubs.stubRequests(passingTest: { req -> Bool in
-                    guard let url = req.url else {
-                        return false
-                    }
+    func testRetrievingStopsNearCoordinate() {
+        let coordinate = CLLocationCoordinate2D(latitude: 47.624, longitude: -122.32)
+        let expectedParams = ["lat": "47.624", "lon": "-122.32"]
 
-                    let sameHost = url.host == self.host
-                    let samePath = url.path == StopsOperation.apiPath
+        stub(condition: isHost(self.host) &&
+            isPath(StopsOperation.apiPath) &&
+            containsQueryParams(expectedParams)) { _ in
+                return self.JSONFile(named: "stops_for_location_seattle.json")
+        }
 
-                    return sameHost && samePath
-                }, withStubResponse: { (req) -> OHHTTPStubsResponse in
-                    let file = self.JSONFile(named: "stops_for_location_seattle.json")
-                    return file
-                })
-            }
-            afterSuite { OHHTTPStubs.removeAllStubs() }
-
-            it("returns the expected list of stops") {
-                waitUntil(timeout: 240.0) { done in
-                    self.builder.getStops(coordinate: coordinate) { op in
-                        expect(op.entries?.first).toNot(beNil())
-                        done()
-                    }
-                }
+        waitUntil { done in
+            self.builder.getStops(coordinate: coordinate) { op in
+                expect(op.entries?.first).toNot(beNil())
+                done()
             }
         }
     }
 
-    override func spec() {
-        testStopsNearCoordinate()
+    func testRetrievingStopsInACoordinateRegions() {
+        let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
+        let span = MKCoordinateSpan(latitudeDelta: 0.0015, longitudeDelta: 0.0015)
+        let region = MKCoordinateRegion(center: coordinate, span: span)
+
+        let expectedParams = [
+            "lat": "47.6230999",
+            "lon": "-122.3132122",
+            "latSpan": "0.0015",
+            "lonSpan": "0.0015"
+        ]
+
+        stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath) && containsQueryParams(expectedParams)) { _ in
+            return self.JSONFile(named: "stops_for_location_seattle_span.json")
+        }
+
+        waitUntil { done in
+            self.builder.getStops(region: region) { op in
+                expect(op.entries?.count).to(equal(1))
+                done()
+            }
+        }
     }
 }
