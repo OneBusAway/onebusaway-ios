@@ -44,6 +44,9 @@
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
 		932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */; };
 		932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */; };
+		932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFA1216983810070BF56 /* ShapeOperation.swift */; };
+		932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFA32169840B0070BF56 /* ShapeOperationTest.swift */; };
+		932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAFA5216984E90070BF56 /* shape_1_20010002.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -128,6 +131,9 @@
 		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
 		932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopTest.swift; sourceTree = "<group>"; };
 		932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-1_11420.json"; sourceTree = "<group>"; };
+		932AAFA1216983810070BF56 /* ShapeOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeOperation.swift; sourceTree = "<group>"; };
+		932AAFA32169840B0070BF56 /* ShapeOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeOperationTest.swift; sourceTree = "<group>"; };
+		932AAFA5216984E90070BF56 /* shape_1_20010002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = shape_1_20010002.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -244,6 +250,7 @@
 				931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */,
 				931B94BD216682E10034D8FA /* StopsOperation.swift */,
 				932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */,
+				932AAFA1216983810070BF56 /* ShapeOperation.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -264,6 +271,7 @@
 				931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */,
 				931B94BF21668FA90034D8FA /* StopsOperationTest.swift */,
 				932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */,
+				932AAFA32169840B0070BF56 /* ShapeOperationTest.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -280,6 +288,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				932AAFA5216984E90070BF56 /* shape_1_20010002.json */,
 				932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */,
 				931B94C52166DF5F0034D8FA /* stops_for_location_seattle_span.json */,
 				931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */,
@@ -439,6 +448,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
+				932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */,
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
@@ -493,6 +503,7 @@
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
+				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 			);
@@ -505,6 +516,7 @@
 				932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */,
 				931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
+				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 			);

@@ -1,0 +1,30 @@
+{
+  "code": 200,
+  "currentTime": 1538843618705,
+  "data": {
+    "entry": {
+      "length": 65,
+      "levels": "",
+      "points": "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
+    },
+    "references": {
+      "agencies": [
+
+      ],
+      "routes": [
+
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

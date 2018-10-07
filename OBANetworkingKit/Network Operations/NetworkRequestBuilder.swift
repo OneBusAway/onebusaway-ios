@@ -10,8 +10,6 @@ import Foundation
 import CoreLocation
 import MapKit
 
-
-//- (AnyPromise*)requestShapeForID:(NSString*)shapeID;
 //- (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
 //- (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
@@ -20,9 +18,10 @@ import MapKit
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
-//- (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
-//- (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
 
+//x (AnyPromise*)requestShapeForID:(NSString*)shapeID;
+//x (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
+//x (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
 //x (AnyPromise*)requestStopsForRegion:(MKCoordinateRegion)region;
 //x (AnyPromise*)requestStopsForQuery:(NSString*)query region:(nullable CLCircularRegion*)region;
 //x (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
@@ -124,6 +123,20 @@ public class NetworkRequestBuilder: NSObject {
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
         }
+        networkQueue.add(operation)
+        return operation
+    }
+
+    // MARK: - Shapes
+
+    @discardableResult @objc
+    public func getShape(id: String, completion: NetworkCompletionBlock?) -> ShapeOperation {
+        let url = ShapeOperation.buildURL(shapeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = ShapeOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+
         networkQueue.add(operation)
         return operation
     }
