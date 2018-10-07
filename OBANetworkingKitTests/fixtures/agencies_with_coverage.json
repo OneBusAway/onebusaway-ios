@@ -1,1 +1,236 @@
-{"currentTime":1343587067098,"text":"OK","data":{"limitExceeded":false,"references":{"stops":[],"situations":[],"trips":[],"routes":[],"agencies":[{"id":"3","privateService":false,"phone":"(253)581-8000","timezone":"America/Los_Angeles","disclaimer":"Route and arrival data provided by permission of Pierce Transit","name":"Pierce Transit","lang":"en","url":"http://www.piercetransit.org"},{"id":"1","privateService":false,"phone":"206-553-3000","timezone":"America/Los_Angeles","disclaimer":"Transit scheduling, geographic, and real-time data provided by permission of King County.  Some real-time info provided by UW Intelligent Transportation Systems.","name":"Metro Transit","lang":"en","url":"http://metro.kingcounty.gov"},{"id":"KMD","privateService":false,"phone":"206-684-1515","timezone":"America/Los_Angeles","disclaimer":"","name":"King County Marine Division","lang":"en","url":"http://www.kingcounty.gov/transportation/kcdot/Marine.aspx"},{"id":"19","privateService":false,"phone":"(360) 786-1881","timezone":"America/Los_Angeles","disclaimer":"","name":"Intercity Transit","lang":"en","url":"http://www.Intercitytransit.com"},{"id":"40","privateService":false,"phone":"1-888 889-6368","timezone":"America/Los_Angeles","disclaimer":"","name":"Sound Transit","lang":"en","url":"http://www.soundtransit.org/"},{"id":"35","privateService":false,"phone":"","timezone":"America/Los_Angeles","disclaimer":"","name":"Washington State Ferries","lang":"en","url":"http://www.wsdot.wa.gov/ferries/"},{"id":"23","privateService":false,"phone":"206-684-7623","timezone":"America/Los_Angeles","disclaimer":"","name":"City of Seattle","lang":"en","url":"http://www.seattle.gov"},{"id":"sch","privateService":false,"phone":"","timezone":"America/Los_Angeles","disclaimer":"","name":"Seattle Children's Hospital Shuttle (TP)","lang":"","url":"http://seattlechildrens.org/"},{"id":"29","privateService":false,"phone":"(800) 562-1375","timezone":"America/Los_Angeles","disclaimer":"","name":"Community Transit","lang":"en","url":"http://www.communitytransit.org/"}]},"list":[{"lonSpan":0.4404830000000004,"lon":-122.4051325,"agencyId":"3","lat":47.221315000000004,"latSpan":0.3370399999999947},{"lonSpan":0.720901000000012,"lon":-122.1462785,"agencyId":"1","lat":47.5607395,"latSpan":0.743251800000003},{"lonSpan":0.12679299999999216,"lon":-122.4013255,"agencyId":"KMD","lat":47.5562878,"latSpan":0.09069440000000384},{"lonSpan":0.5509799999999956,"lon":-122.701637,"agencyId":"19","lat":47.093563,"latSpan":0.3208920000000006},{"lonSpan":0.6211090000000041,"lon":-122.32948350000001,"agencyId":"40","lat":47.53460901232127,"latSpan":0.8893780246425322},{"lonSpan":1.0904000000000025,"lon":-122.8512,"agencyId":"35","lat":47.974759500000005,"latSpan":1.3364809999999991},{"lonSpan":0.0063560000000109085,"lon":-122.335392,"agencyId":"23","lat":47.62047575,"latSpan":0.01439669999999893},{"lonSpan":0.08019999999999072,"lon":-122.2963,"agencyId":"sch","lat":47.645849999999996,"latSpan":0.06689999999999685},{"lonSpan":0.7845559960612292,"lon":-121.99324610403991,"agencyId":"29","lat":47.93473589072802,"latSpan":0.6879611712804206}]},"code":200,"version":2}
+{
+  "code": 200,
+  "currentTime": 1538843577849,
+  "data": {
+    "limitExceeded": false,
+    "list": [
+      {
+        "agencyId": "98",
+        "lat": 47.6470785,
+        "latSpan": 0.06330499999999972,
+        "lon": -122.296449,
+        "lonSpan": 0.07930600000000254
+      },
+      {
+        "agencyId": "3",
+        "lat": 47.230847499999996,
+        "latSpan": 0.31803900000000596,
+        "lon": -122.4183065,
+        "lonSpan": 0.41413299999999253
+      },
+      {
+        "agencyId": "97",
+        "lat": 47.9477555,
+        "latSpan": 0.1356090000000023,
+        "lon": -122.2443695,
+        "lonSpan": 0.12402300000000821
+      },
+      {
+        "agencyId": "96",
+        "lat": 47.616611000000006,
+        "latSpan": 0.009205999999998937,
+        "lon": -122.34336049999999,
+        "lonSpan": 0.012896999999995273
+      },
+      {
+        "agencyId": "1",
+        "lat": 47.560728,
+        "latSpan": 0.743228000000002,
+        "lon": -122.09015249999999,
+        "lonSpan": 0.8329389999999961
+      },
+      {
+        "agencyId": "95",
+        "lat": 47.974607000000006,
+        "latSpan": 1.3380679999999998,
+        "lon": -122.851435,
+        "lonSpan": 1.0939520000000016
+      },
+      {
+        "agencyId": "KMD",
+        "lat": 47.557251,
+        "latSpan": 0.0926199999999966,
+        "lon": -122.4019665,
+        "lonSpan": 0.12551099999998883
+      },
+      {
+        "agencyId": "19",
+        "lat": 47.0870625,
+        "latSpan": 0.3078909999999979,
+        "lon": -122.70123050000001,
+        "lonSpan": 0.5517929999999893
+      },
+      {
+        "agencyId": "40",
+        "lat": 47.532444,
+        "latSpan": 0.8850059999999971,
+        "lon": -122.329459,
+        "lonSpan": 0.621138000000002
+      },
+      {
+        "agencyId": "23",
+        "lat": 47.613395499999996,
+        "latSpan": 0.02854099999999704,
+        "lon": -122.3263055,
+        "lonSpan": 0.024529000000001133
+      },
+      {
+        "agencyId": "29",
+        "lat": 47.9387495,
+        "latSpan": 0.6799350000000004,
+        "lon": -121.99284,
+        "lonSpan": 0.7837480000000028
+      }
+    ],
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "98",
+          "lang": "en",
+          "name": "Seattle Children's Hospital",
+          "phone": "",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "https://www.luum.com/commute/content/shuttles"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "3",
+          "lang": "EN",
+          "name": "Pierce Transit",
+          "phone": "(253)581-8000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.piercetransit.org"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "97",
+          "lang": "en",
+          "name": "Everett Transit",
+          "phone": "",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.everetttransit.org/"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "96",
+          "lang": "EN",
+          "name": "SeattleCenterMonorail",
+          "phone": "2069052620",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.seattlemonorail.com"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "95",
+          "lang": "en",
+          "name": "Washington State Ferries",
+          "phone": "",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.wsdot.wa.gov/ferries/"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "KMD",
+          "lang": "EN",
+          "name": "Kingcounty Marine Divison",
+          "phone": "206-684-1515",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.kingcounty.gov/transportation/kcdot/Marine.aspx"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "19",
+          "lang": "en",
+          "name": "Intercity Transit",
+          "phone": "(360) 786-1881",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.Intercitytransit.com"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "23",
+          "lang": "EN",
+          "name": "City of Seattle",
+          "phone": "206-684-7623",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.seattle.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "riders@commtrans.org",
+          "fareUrl": "",
+          "id": "29",
+          "lang": "en",
+          "name": "Community Transit",
+          "phone": "(800) 562-1375",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.communitytransit.org/"
+        }
+      ],
+      "routes": [
+
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}
