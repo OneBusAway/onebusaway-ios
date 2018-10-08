@@ -50,6 +50,9 @@
 		932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFA821698B110070BF56 /* AgenciesWithCoverageOperation.swift */; };
 		932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */; };
 		932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */; };
+		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
+		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
+		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -140,6 +143,9 @@
 		932AAFA821698B110070BF56 /* AgenciesWithCoverageOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenciesWithCoverageOperation.swift; sourceTree = "<group>"; };
 		932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenciesWithCoverageOperationTest.swift; sourceTree = "<group>"; };
 		932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agencies_with_coverage.json; sourceTree = "<group>"; };
+		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
+		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
+		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -258,6 +264,7 @@
 				932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */,
 				932AAFA1216983810070BF56 /* ShapeOperation.swift */,
 				932AAFA821698B110070BF56 /* AgenciesWithCoverageOperation.swift */,
+				9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -280,6 +287,7 @@
 				932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */,
 				932AAFA32169840B0070BF56 /* ShapeOperationTest.swift */,
 				932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */,
+				9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -296,6 +304,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */,
 				932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */,
 				932AAFA5216984E90070BF56 /* shape_1_20010002.json */,
 				932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */,
@@ -457,6 +466,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
+				9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */,
 				932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */,
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
@@ -511,6 +521,7 @@
 				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
+				9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */,
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
@@ -530,6 +541,7 @@
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
+				9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */,
 				932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

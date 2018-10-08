@@ -13,7 +13,6 @@ import MapKit
 // @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 // @objc public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
-//- (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
 //- (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
 //- (AnyPromise*)placemarksForAddress:(NSString*)address;
@@ -22,6 +21,7 @@ import MapKit
 
 // Done:
 
+//x (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //x @objc public func requestAgenciesWithCoverage() -> PromiseWrapper
 //x (AnyPromise*)requestShapeForID:(NSString*)shapeID;
 //x (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
@@ -131,6 +131,20 @@ public class NetworkRequestBuilder: NSObject {
         return operation
     }
 
+    // MARK: - Search
+
+    // MARK: - Stops for Route
+    @discardableResult @objc
+    public func getStopsForRoute(id: String, completion: NetworkCompletionBlock?) -> StopsForRouteOperation {
+        let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = StopsForRouteOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+        return operation
+    }
+
     // MARK: - Shapes
 
     @discardableResult @objc
@@ -146,6 +160,7 @@ public class NetworkRequestBuilder: NSObject {
     }
 
     // MARK: - Agencies
+
     @discardableResult @objc
     public func getAgenciesWithCoverage(completion: NetworkCompletionBlock?) -> AgenciesWithCoverageOperation {
         let url = AgenciesWithCoverageOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)

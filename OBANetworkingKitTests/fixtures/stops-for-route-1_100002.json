@@ -1,0 +1,1370 @@
+{
+  "code": 200,
+  "currentTime": 1539033245268,
+  "data": {
+    "entry": {
+      "polylines": [
+        {
+          "length": 65,
+          "levels": "",
+          "points": "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
+        },
+        {
+          "length": 24,
+          "levels": "",
+          "points": "uzqaHr{tiVCIm@oBo@mBk@mBo@mBm@oBm@oB{A}EgAeDUw@o@mBQi@Oi@Ws@oAeEc@qAI[o@oBUu@ESC]@}AaF?"
+        },
+        {
+          "length": 3,
+          "levels": "",
+          "points": "casaHn}riV_@?sB?"
+        },
+        {
+          "length": 3,
+          "levels": "",
+          "points": "cqsaHbtriVu@cASY"
+        },
+        {
+          "length": 4,
+          "levels": "",
+          "points": "kwsaHt|qiVAcC?qA?yD"
+        },
+        {
+          "length": 4,
+          "levels": "",
+          "points": "owsaH|gqiVAaG?eB?]"
+        },
+        {
+          "length": 3,
+          "levels": "",
+          "points": "wwsaHljpiV?{A?_A"
+        },
+        {
+          "length": 3,
+          "levels": "",
+          "points": "_etaH`epiVaB?iBC"
+        },
+        {
+          "length": 2,
+          "levels": "",
+          "points": "kltaH|dpiVcEC"
+        },
+        {
+          "length": 7,
+          "levels": "",
+          "points": "wstaHxdpiVcDA_@?aCCaD?i@?kB?"
+        },
+        {
+          "length": 14,
+          "levels": "",
+          "points": "oluaHpdpiVy@?i@?{IEe@?kHG?oBe@CuHAI?AnCTOr@M|FB"
+        },
+        {
+          "length": 25,
+          "levels": "",
+          "points": "enraHlatiVDLj@jBl@lBl@nBn@lBl@nBl@lBd@~AFLj@jBp@pBLb@Pf@X`APh@HPDTn@pBl@jBdEsDo@oBm@oBm@oBi@cB"
+        },
+        {
+          "length": 2,
+          "levels": "",
+          "points": "q`raH`buiVj@hB"
+        },
+        {
+          "length": 30,
+          "levels": "",
+          "points": "c~qaH|guiVl@k@vCiCfEsDzAwAhB_BlCcCnC_ClCaCtBmBVUnCcCnBcB\\[nCaCbB}Ab@_@`@]FMHIFQL_@fD?~B@`@?D?d@?~BuB?iC?}D"
+        }
+      ],
+      "routeId": "1_100002",
+      "stopGroupings": [
+        {
+          "ordered": true,
+          "stopGroups": [
+            {
+              "id": "0",
+              "name": {
+                "name": "Capitol Hill Via 15th Ave E",
+                "names": [
+                  "Capitol Hill Via 15th Ave E"
+                ],
+                "type": "destination"
+              },
+              "polylines": [
+                {
+                  "length": 86,
+                  "levels": "",
+                  "points": "uzqaHr{tiVCIm@oBo@mBk@mBo@mBm@oBm@oB{A}EgAeDUw@o@mBQi@Oi@Ws@oAeEc@qAI[o@oBUu@ESC]@}AaF?aFC_@?sB?cCiBuC}BqAcAu@cASYSa@OWWw@So@Mw@Ks@KmAE_AAoB?cCAcC?qA?yD?cCAcCAaG?eB?]AcCAaC?_CAcD?{A?_AiBA_CIaDC[?aB?iBC_@?cECc@?C?cDA_@?aCCaD?i@?kB?yCAy@?i@?{IEe@?kHG?oBe@CuHAI?AnCTOr@M|FB"
+                },
+                {
+                  "length": 25,
+                  "levels": "",
+                  "points": "enraHlatiVDLj@jBl@lBl@nBn@lBl@nBl@lBd@~AFLj@jBp@pBLb@Pf@X`APh@HPDTn@pBl@jBdEsDo@oBm@oBm@oBi@cB"
+                }
+              ],
+              "stopIds": [
+                "1_1085",
+                "1_1110",
+                "1_1120",
+                "1_1180",
+                "1_11130",
+                "1_11132",
+                "1_13460",
+                "1_29268",
+                "1_29270",
+                "1_29277",
+                "1_29273",
+                "1_11570",
+                "1_11590",
+                "1_11600",
+                "1_11610",
+                "1_11620",
+                "1_11630",
+                "1_11640",
+                "1_11370"
+              ],
+              "subGroups": [
+
+              ]
+            },
+            {
+              "id": "1",
+              "name": {
+                "name": "Downtown Seattle",
+                "names": [
+                  "Downtown Seattle"
+                ],
+                "type": "destination"
+              },
+              "polylines": [
+                {
+                  "length": 65,
+                  "levels": "",
+                  "points": "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
+                },
+                {
+                  "length": 46,
+                  "levels": "",
+                  "points": "enraHlatiVDLj@jBl@lBl@nBn@lBl@nBl@lBd@~AFLj@jBp@pBLb@j@hBPh@HPDTl@k@vCiCfEsDzAwAhB_BlCcCnC_ClCaCtBmBVUnCcCnBcB\\[nCaCbB}Ab@_@`@]FMHIFQL_@fD?~B@`@?D?d@?~BuB?iC?}D"
+                }
+              ],
+              "stopIds": [
+                "1_11370",
+                "1_11390",
+                "1_11400",
+                "1_11410",
+                "1_11420",
+                "1_11430",
+                "1_29261",
+                "1_29301",
+                "1_29264",
+                "1_29266",
+                "1_13441",
+                "1_11100",
+                "1_1085",
+                "1_1110",
+                "1_450",
+                "1_480",
+                "1_500",
+                "1_515",
+                "1_1471"
+              ],
+              "subGroups": [
+
+              ]
+            }
+          ],
+          "type": "direction"
+        }
+      ],
+      "stopIds": [
+        "1_1085",
+        "1_1110",
+        "1_11100",
+        "1_11130",
+        "1_11132",
+        "1_1120",
+        "1_11370",
+        "1_11390",
+        "1_11400",
+        "1_11410",
+        "1_11420",
+        "1_11430",
+        "1_11570",
+        "1_11590",
+        "1_11600",
+        "1_11610",
+        "1_11620",
+        "1_11630",
+        "1_11640",
+        "1_1180",
+        "1_13441",
+        "1_13460",
+        "1_1471",
+        "1_29261",
+        "1_29264",
+        "1_29266",
+        "1_29268",
+        "1_29270",
+        "1_29273",
+        "1_29277",
+        "1_29301",
+        "1_450",
+        "1_480",
+        "1_500",
+        "1_515"
+      ]
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Capitol Hill - Downtown Seattle",
+          "id": "1_100002",
+          "longName": "",
+          "shortName": "10",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/010/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Prentice St - Rainier Beach - Downtown Seattle",
+          "id": "1_100263",
+          "longName": "",
+          "shortName": "7",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/007/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Madison Park - Capitol Hill - Downtown Seattle",
+          "id": "1_100009",
+          "longName": "",
+          "shortName": "11",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/011/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ Dist-Montlake-Capitol Hill-Downtown Seattle",
+          "id": "1_100223",
+          "longName": "",
+          "shortName": "43",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/043/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Summit - Downtown Seattle",
+          "id": "1_100227",
+          "longName": "",
+          "shortName": "47",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/047/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Broadway - Downtown Seattle",
+          "id": "1_100447",
+          "longName": "",
+          "shortName": "49",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/049/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Kent Station - Southcenter - Downtown Seattle",
+          "id": "1_100045",
+          "longName": "",
+          "shortName": "150",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/150/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Capitol Hill - Mt. Si",
+          "id": "1_102650",
+          "longName": "",
+          "shortName": "Trailhead Direct Mt. Si",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/636/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Black Diamond - Downtown Seattle",
+          "id": "1_100041",
+          "longName": "",
+          "shortName": "143",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/143/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Lake Meridian P&R - Downtown Seattle",
+          "id": "1_100475",
+          "longName": "",
+          "shortName": "157",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/157/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Kent East Hill - Downtown Seattle",
+          "id": "1_100051",
+          "longName": "",
+          "shortName": "158",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/158/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Timberlane - Kent Station - Downtown Seattle",
+          "id": "1_100052",
+          "longName": "",
+          "shortName": "159",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/159/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Twin Lakes P&R-Federal Way Way TC-Downtown Seattle",
+          "id": "1_100070",
+          "longName": "",
+          "shortName": "179",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/179/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Star Lake - Downtown Seattle",
+          "id": "1_100084",
+          "longName": "",
+          "shortName": "192",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/192/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "",
+          "id": "40_577",
+          "longName": "Federal Way - Seattle",
+          "shortName": "577",
+          "textColor": "",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Redmond - Seattle",
+          "id": "40_100236",
+          "longName": "Redmond - Seattle",
+          "shortName": "545",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/545"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Kinnear - Downtown Seattle",
+          "id": "1_100001",
+          "longName": "",
+          "shortName": "1",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/001/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "West Queen Anne - Downtown Seattle - Madrona",
+          "id": "1_100089",
+          "longName": "",
+          "shortName": "2",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/002/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "East Queen Anne - Downtown Seattle - Judkins Park",
+          "id": "1_100219",
+          "longName": "",
+          "shortName": "4",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/004/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Seattle Pacific - Downtown Seattle",
+          "id": "1_100028",
+          "longName": "",
+          "shortName": "13",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/013/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Mt Baker - Downtown Seattle",
+          "id": "1_100039",
+          "longName": "",
+          "shortName": "14",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/014/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Othello Station - Beacon Hill - Downtown Seattle",
+          "id": "1_100210",
+          "longName": "",
+          "shortName": "36",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/036/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "University District - Eastlake - Downtown Seattle",
+          "id": "1_100264",
+          "longName": "",
+          "shortName": "70",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/070/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Renton Transit Center - Skyway - Downtown Seattle",
+          "id": "1_100005",
+          "longName": "",
+          "shortName": "106",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/106/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Seattle Center - Capitol Hill - Rainier Beach",
+          "id": "1_100275",
+          "longName": "",
+          "shortName": "8",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/008/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "North Queen Anne - Downtown Seattle - Madrona",
+          "id": "1_100173",
+          "longName": "",
+          "shortName": "3",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/003/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Loyal Heights-Sunset Hill-Ballard-Downtown Seattle",
+          "id": "1_100062",
+          "longName": "",
+          "shortName": "17",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/017/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "North Beach - Ballard - Downtown Seattle",
+          "id": "1_100071",
+          "longName": "",
+          "shortName": "18",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/018/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgte-Ballard-Fremont-Westlake-Downtown Seattle",
+          "id": "1_102574",
+          "longName": "",
+          "shortName": "40",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/040/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Sand Point - Green Lake - Downtown Seattle",
+          "id": "1_100252",
+          "longName": "",
+          "shortName": "62",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/062/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Downtown Seattle - Lakeside School",
+          "id": "1_100350",
+          "longName": "",
+          "shortName": "994",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/994/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Shoreline CC - Greenwood - Downtown Seattle",
+          "id": "1_100229",
+          "longName": "",
+          "shortName": "5",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/005/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Blue Ridge - Crown Hill - Downtown Seattle",
+          "id": "1_100044",
+          "longName": "",
+          "shortName": "15",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/015/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Magnolia - Downtown Seattle",
+          "id": "1_100081",
+          "longName": "",
+          "shortName": "19",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/019/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Arbor Heights-Westwood Village-Downtown Seattle",
+          "id": "1_100101",
+          "longName": "",
+          "shortName": "21",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/021/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "West Magnolia - Downtown Seattle",
+          "id": "1_100132",
+          "longName": "",
+          "shortName": "24",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/024/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "East Green Lake - Downtown Seattle",
+          "id": "1_100151",
+          "longName": "",
+          "shortName": "26",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/026/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Whittier Heights - Fremont - Downtown Seattle",
+          "id": "1_100169",
+          "longName": "",
+          "shortName": "28",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/028/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Discovery Park - Downtown Seattle",
+          "id": "1_100194",
+          "longName": "",
+          "shortName": "33",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/033/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Fauntleroy Ferry - Downtown Seattle",
+          "id": "1_100014",
+          "longName": "",
+          "shortName": "116",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/116/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Tahlequah - Vashon - Downtown Seattle",
+          "id": "1_100016",
+          "longName": "",
+          "shortName": "118",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/118/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Dockton - Vashon - Downtown Seattle",
+          "id": "1_100017",
+          "longName": "",
+          "shortName": "119",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/119/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Tukwila International Blvd Sta - Downtown Seattle",
+          "id": "1_100023",
+          "longName": "",
+          "shortName": "124",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/124/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Burien TC - Georgetown - Downtown Seattle",
+          "id": "1_100030",
+          "longName": "",
+          "shortName": "131",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/131/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Burien TC - South Park - Downtown Seattle",
+          "id": "1_100031",
+          "longName": "",
+          "shortName": "132",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/132/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Blue Ridge/Crown Hill - Ballard - Downtown Seattle",
+          "id": "1_102581",
+          "longName": "D-Line Rapid Ride",
+          "shortName": "D Line",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/travel-options/bus/rapidride/d-line/"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "1085",
+          "direction": "SW",
+          "id": "1_1085",
+          "lat": 47.613377,
+          "locationType": 0,
+          "lon": -122.332603,
+          "name": "Pine St & 9th Ave",
+          "routeIds": [
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100045",
+            "1_102650"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "1110",
+          "direction": "SW",
+          "id": "1_1110",
+          "lat": 47.611767,
+          "locationType": 0,
+          "lon": -122.336456,
+          "name": "Pine St & 5th Ave",
+          "routeIds": [
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100223",
+            "1_100227",
+            "1_100447"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11100",
+          "direction": "W",
+          "id": "1_11100",
+          "lat": 47.615299,
+          "locationType": 0,
+          "lon": -122.327271,
+          "name": "E Pine St & Bellevue Ave",
+          "routeIds": [
+            "1_100002",
+            "1_100009",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_102650"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11130",
+          "direction": "E",
+          "id": "1_11130",
+          "lat": 47.612369,
+          "locationType": 0,
+          "lon": -122.33136,
+          "name": "Pike St & Convention Pl",
+          "routeIds": [
+            "1_100002",
+            "1_100223",
+            "1_100227"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11132",
+          "direction": "E",
+          "id": "1_11132",
+          "lat": 47.613579,
+          "locationType": 0,
+          "lon": -122.328445,
+          "name": "Pike St & Boren Ave",
+          "routeIds": [
+            "1_100002",
+            "1_100223",
+            "1_100227"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "1120",
+          "direction": "W",
+          "id": "1_1120",
+          "lat": 47.611103,
+          "locationType": 0,
+          "lon": -122.338028,
+          "name": "Pine St & 4th Ave",
+          "routeIds": [
+            "1_100002",
+            "1_100009",
+            "1_100227",
+            "1_100447",
+            "1_100041",
+            "1_100475",
+            "1_100051",
+            "1_100052",
+            "1_100070",
+            "1_100084",
+            "40_577"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11370",
+          "direction": "S",
+          "id": "1_11370",
+          "lat": 47.6325,
+          "locationType": 0,
+          "lon": -122.312607,
+          "name": "15th Ave E & E Galer St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11390",
+          "direction": "S",
+          "id": "1_11390",
+          "lat": 47.628479,
+          "locationType": 0,
+          "lon": -122.312668,
+          "name": "15th Ave E & E Prospect St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11400",
+          "direction": "S",
+          "id": "1_11400",
+          "lat": 47.626682,
+          "locationType": 0,
+          "lon": -122.312668,
+          "name": "15th Ave E & E Aloha St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11410",
+          "direction": "S",
+          "id": "1_11410",
+          "lat": 47.625027,
+          "locationType": 0,
+          "lon": -122.312698,
+          "name": "15th Ave E & E Roy St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11420",
+          "direction": "S",
+          "id": "1_11420",
+          "lat": 47.62397,
+          "locationType": 0,
+          "lon": -122.312714,
+          "name": "15th Ave E & E Mercer St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11430",
+          "direction": "S",
+          "id": "1_11430",
+          "lat": 47.622894,
+          "locationType": 0,
+          "lon": -122.312737,
+          "name": "15th Ave E & E Republican St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11570",
+          "direction": "N",
+          "id": "1_11570",
+          "lat": 47.62257,
+          "locationType": 0,
+          "lon": -122.312538,
+          "name": "15th Ave E & E Harrison St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11590",
+          "direction": "N",
+          "id": "1_11590",
+          "lat": 47.625423,
+          "locationType": 0,
+          "lon": -122.312492,
+          "name": "15th Ave E & E Roy St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11600",
+          "direction": "N",
+          "id": "1_11600",
+          "lat": 47.627098,
+          "locationType": 0,
+          "lon": -122.312469,
+          "name": "15th Ave E & E Aloha St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11610",
+          "direction": "N",
+          "id": "1_11610",
+          "lat": 47.628902,
+          "locationType": 0,
+          "lon": -122.312454,
+          "name": "15th Ave E & E Prospect St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11620",
+          "direction": "N",
+          "id": "1_11620",
+          "lat": 47.630833,
+          "locationType": 0,
+          "lon": -122.312424,
+          "name": "15th Ave E & E Highland Dr",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11630",
+          "direction": "N",
+          "id": "1_11630",
+          "lat": 47.632523,
+          "locationType": 0,
+          "lon": -122.311821,
+          "name": "Grandview Pl E & E Galer St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "11640",
+          "direction": "N",
+          "id": "1_11640",
+          "lat": 47.634079,
+          "locationType": 0,
+          "lon": -122.311798,
+          "name": "Grandview Pl E & E Garfield St",
+          "routeIds": [
+            "1_100002"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "1180",
+          "direction": "NE",
+          "id": "1_1180",
+          "lat": 47.610134,
+          "locationType": 0,
+          "lon": -122.336685,
+          "name": "Pike St & 4th Ave",
+          "routeIds": [
+            "1_100002",
+            "1_100009",
+            "1_100223",
+            "1_100227",
+            "1_100447"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "13441",
+          "direction": "S",
+          "id": "1_13441",
+          "lat": 47.616734,
+          "locationType": 0,
+          "lon": -122.326889,
+          "name": "Bellevue Ave & E Olive Way",
+          "routeIds": [
+            "1_100002",
+            "1_100223",
+            "1_100227"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "13460",
+          "direction": "N",
+          "id": "1_13460",
+          "lat": 47.616509,
+          "locationType": 0,
+          "lon": -122.326691,
+          "name": "Bellevue Ave & E Olive St",
+          "routeIds": [
+            "1_100002",
+            "1_100223",
+            "1_100227",
+            "40_100236"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "1471",
+          "direction": "E",
+          "id": "1_1471",
+          "lat": 47.599129,
+          "locationType": 0,
+          "lon": -122.328041,
+          "name": "S Jackson St & 5th Ave S",
+          "routeIds": [
+            "1_100001",
+            "1_100089",
+            "1_100219",
+            "1_100263",
+            "1_100002",
+            "1_100028",
+            "1_100039",
+            "1_100210",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100264",
+            "1_100005"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29261",
+          "direction": "W",
+          "id": "1_29261",
+          "lat": 47.620033,
+          "locationType": 0,
+          "lon": -122.313202,
+          "name": "E John St & 15th Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29264",
+          "direction": "W",
+          "id": "1_29264",
+          "lat": 47.619972,
+          "locationType": 0,
+          "lon": -122.321304,
+          "name": "E Olive Way & Broadway  E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223",
+            "1_102650"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29266",
+          "direction": "SW",
+          "id": "1_29266",
+          "lat": 47.619152,
+          "locationType": 0,
+          "lon": -122.325119,
+          "name": "E Olive Way & Summit Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29268",
+          "direction": "NE",
+          "id": "1_29268",
+          "lat": 47.619129,
+          "locationType": 0,
+          "lon": -122.324883,
+          "name": "E Olive Way & Summit Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29270",
+          "direction": "E",
+          "id": "1_29270",
+          "lat": 47.619846,
+          "locationType": 0,
+          "lon": -122.320473,
+          "name": "E John St & Broadway  E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223",
+            "1_102650"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29273",
+          "direction": "E",
+          "id": "1_29273",
+          "lat": 47.619892,
+          "locationType": 0,
+          "lon": -122.313042,
+          "name": "E John St & 15th Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29277",
+          "direction": "E",
+          "id": "1_29277",
+          "lat": 47.619873,
+          "locationType": 0,
+          "lon": -122.316429,
+          "name": "E John St & 12th Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29301",
+          "direction": "W",
+          "id": "1_29301",
+          "lat": 47.620003,
+          "locationType": 0,
+          "lon": -122.317535,
+          "name": "E John St & 12th Ave E",
+          "routeIds": [
+            "1_100275",
+            "1_100002",
+            "1_100223"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "450",
+          "direction": "SE",
+          "id": "1_450",
+          "lat": 47.60825,
+          "locationType": 0,
+          "lon": -122.336548,
+          "name": "3rd Ave & Union St",
+          "routeIds": [
+            "1_100001",
+            "1_100089",
+            "1_100173",
+            "1_100219",
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100028",
+            "1_100039",
+            "1_100062",
+            "1_100071",
+            "1_100210",
+            "1_102574",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100252",
+            "1_100264"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "480",
+          "direction": "SE",
+          "id": "1_480",
+          "lat": 47.604996,
+          "locationType": 0,
+          "lon": -122.333572,
+          "name": "3rd Ave & Marion St",
+          "routeIds": [
+            "1_100001",
+            "1_100089",
+            "1_100173",
+            "1_100219",
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100028",
+            "1_100039",
+            "1_100062",
+            "1_100071",
+            "1_100210",
+            "1_102574",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100252",
+            "1_100264",
+            "1_100350"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "500",
+          "direction": "SE",
+          "id": "1_500",
+          "lat": 47.602234,
+          "locationType": 0,
+          "lon": -122.331047,
+          "name": "3rd Ave & James St",
+          "routeIds": [
+            "1_100001",
+            "1_100089",
+            "1_100219",
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100028",
+            "1_100039",
+            "1_100062",
+            "1_100071",
+            "1_100210",
+            "1_102574",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100252",
+            "1_100264"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "515",
+          "direction": "S",
+          "id": "1_515",
+          "lat": 47.600239,
+          "locationType": 0,
+          "lon": -122.330376,
+          "name": "3rd Ave S & S Main St",
+          "routeIds": [
+            "1_100001",
+            "1_100089",
+            "1_100219",
+            "1_100229",
+            "1_100263",
+            "1_100002",
+            "1_100009",
+            "1_100028",
+            "1_100039",
+            "1_100044",
+            "1_100062",
+            "1_100071",
+            "1_100081",
+            "1_100101",
+            "1_100132",
+            "1_100151",
+            "1_100169",
+            "1_100194",
+            "1_100210",
+            "1_102574",
+            "1_100223",
+            "1_100227",
+            "1_100447",
+            "1_100264",
+            "1_100014",
+            "1_100016",
+            "1_100017",
+            "1_100023",
+            "1_100030",
+            "1_100031",
+            "1_102581"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}
