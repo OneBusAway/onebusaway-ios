@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C90216C5644008A31A4 /* RouteSearchOperation.swift */; };
+		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
+		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
@@ -94,6 +97,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		93058C90216C5644008A31A4 /* RouteSearchOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperation.swift; sourceTree = "<group>"; };
+		93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperationTest.swift; sourceTree = "<group>"; };
+		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
+		93058C97216CE29F008A31A4 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -177,6 +184,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		93058C96216CE260008A31A4 /* PrivateModule */ = {
+			isa = PBXGroup;
+			children = (
+				931B9428216422120034D8FA /* OBAOperation+Internal.h */,
+				93058C97216CE29F008A31A4 /* module.modulemap */,
+			);
+			path = PrivateModule;
+			sourceTree = "<group>";
+		};
 		931B93C82163F5520034D8FA = {
 			isa = PBXGroup;
 			children = (
@@ -217,6 +233,7 @@
 		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
 			isa = PBXGroup;
 			children = (
+				93058C96216CE260008A31A4 /* PrivateModule */,
 				931B944B21645FBD0034D8FA /* Helpers */,
 				931B943621642D880034D8FA /* Network Operations */,
 				931B941B21641A700034D8FA /* Core */,
@@ -243,7 +260,6 @@
 			children = (
 				931B941C21641A7F0034D8FA /* OBAOperation.h */,
 				931B941D21641A7F0034D8FA /* OBAOperation.m */,
-				931B9428216422120034D8FA /* OBAOperation+Internal.h */,
 				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
 				931B942521641FB50034D8FA /* OBANetworkOperation.m */,
 				931B94B9216569720034D8FA /* OBARESTAPIOperation.h */,
@@ -265,6 +281,7 @@
 				932AAFA1216983810070BF56 /* ShapeOperation.swift */,
 				932AAFA821698B110070BF56 /* AgenciesWithCoverageOperation.swift */,
 				9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */,
+				93058C90216C5644008A31A4 /* RouteSearchOperation.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -288,6 +305,7 @@
 				932AAFA32169840B0070BF56 /* ShapeOperationTest.swift */,
 				932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */,
 				9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */,
+				93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */,
 			);
 			path = "Network Operations";
 			sourceTree = "<group>";
@@ -304,6 +322,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93058C94216CDCCE008A31A4 /* routes-for-location-10.json */,
 				9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */,
 				932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */,
 				932AAFA5216984E90070BF56 /* shape_1_20010002.json */,
@@ -470,6 +489,7 @@
 				932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */,
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
+				93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */,
 				932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
 			);
@@ -526,6 +546,7 @@
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
+				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 			);
@@ -537,6 +558,7 @@
 			files = (
 				932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */,
 				931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */,
+				93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
@@ -642,6 +664,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBANetworkingKit/PrivateModule";
 			};
 			name = Debug;
 		};
@@ -694,6 +717,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBANetworkingKit/PrivateModule";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

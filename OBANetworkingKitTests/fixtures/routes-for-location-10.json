@@ -1,0 +1,51 @@
+{
+  "code": 200,
+  "currentTime": 1539089653642,
+  "data": {
+    "limitExceeded": false,
+    "list": [
+      {
+        "agencyId": "1",
+        "color": "",
+        "description": "Capitol Hill - Downtown Seattle",
+        "id": "1_100002",
+        "longName": "",
+        "shortName": "10",
+        "textColor": "",
+        "type": 3,
+        "url": "http://metro.kingcounty.gov/schedules/010/n0.html"
+      }
+    ],
+    "outOfRange": false,
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        }
+      ],
+      "routes": [
+
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

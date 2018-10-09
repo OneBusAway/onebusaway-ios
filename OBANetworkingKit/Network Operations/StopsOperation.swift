@@ -12,6 +12,16 @@ import MapKit
 
 public class StopsOperation: RESTAPIOperation {
 
+    public private(set) var outOfRange = false
+
+    public override func dataFieldsDidSet() {
+        if  let decodedJSONBody = decodedJSONBody as? [AnyHashable: Any],
+            let outOfRange = decodedJSONBody["outOfRange"] as? Bool
+        {
+            self.outOfRange = outOfRange
+        }
+    }
+
     // MARK: - API Call and URL Construction
 
     public static let apiPath = "/api/where/stops-for-location.json"

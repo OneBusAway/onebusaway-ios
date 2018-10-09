@@ -14,13 +14,13 @@ import MapKit
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 // @objc public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
-//- (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
 //- (AnyPromise*)placemarksForAddress:(NSString*)address;
 //- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
 
+//x (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
 //x (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //x @objc public func requestAgenciesWithCoverage() -> PromiseWrapper
 //x (AnyPromise*)requestShapeForID:(NSString*)shapeID;
@@ -134,10 +134,24 @@ public class NetworkRequestBuilder: NSObject {
     // MARK: - Search
 
     // MARK: - Stops for Route
+
     @discardableResult @objc
     public func getStopsForRoute(id: String, completion: NetworkCompletionBlock?) -> StopsForRouteOperation {
         let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = StopsForRouteOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+        return operation
+    }
+
+    // MARK: - Search for Route
+
+    @discardableResult @objc
+    public func getRoute(query: String, region: CLCircularRegion, completion: NetworkCompletionBlock?) -> RouteSearchOperation {
+        let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        let operation = RouteSearchOperation(url: url)
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
         }
