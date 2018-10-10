@@ -40,14 +40,23 @@ public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Voi
 public class NetworkRequestBuilder: NSObject {
     private let baseURL: URL
     private let networkQueue: NetworkQueue
+    private let defaultQueryItems: [URLQueryItem]
 
-    @objc public init(baseURL: URL, networkQueue: NetworkQueue) {
+    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: NetworkQueue) {
         self.baseURL = baseURL
+
+        var queryItems = [URLQueryItem]()
+        queryItems.append(URLQueryItem(name: "key", value: apiKey))
+        queryItems.append(URLQueryItem(name: "app_uid", value: uuid))
+        queryItems.append(URLQueryItem(name: "app_ver", value: appVersion))
+        queryItems.append(URLQueryItem(name: "version", value: "2"))
+        self.defaultQueryItems = queryItems
+
         self.networkQueue = networkQueue
     }
 
-    @objc public convenience init(baseURL: URL) {
-        self.init(baseURL: baseURL, networkQueue: NetworkQueue())
+    @objc public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
+        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: NetworkQueue())
     }
 
     // MARK: - Vehicle with ID
@@ -136,16 +145,6 @@ public class NetworkRequestBuilder: NSObject {
     }
 
     // MARK: - Private Internal Helpers
-
-    private var defaultQueryItems: [URLQueryItem] {
-        var items = [URLQueryItem]()
-        items.append(URLQueryItem(name: "key", value: "org.onebusaway.iphone"))
-        items.append(URLQueryItem(name: "app_uid", value: "BD88D98C-A72D-47BE-8F4A-C60467239736"))
-        items.append(URLQueryItem(name: "app_ver", value: "20181001.23"))
-        items.append(URLQueryItem(name: "version", value: "2"))
-
-        return items
-    }
 
     private func buildAndEnqueueOperation<T>(type: T.Type, url: URL, completionBlock: NetworkCompletionBlock?) -> T where T: RESTAPIOperation {
         let operation = type.init(url: url)

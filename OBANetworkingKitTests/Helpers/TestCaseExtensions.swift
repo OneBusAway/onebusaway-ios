@@ -25,7 +25,8 @@ public extension OperationTest where Self: XCTestCase {
     }
 
     public var builder: NetworkRequestBuilder {
-        return NetworkRequestBuilder(baseURL: URL(string: baseURLString)!)
+        let url = URL(string: baseURLString)!
+        return NetworkRequestBuilder(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
     }
 
     public func JSONFile(named name: String) -> OHHTTPStubsResponse{
