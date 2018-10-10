@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
-// @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
+
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 // @objc public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
@@ -20,6 +20,8 @@ import MapKit
 
 // Done:
 
+
+//x @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
 //x (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
 //x (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
 //x @objc public func requestAgenciesWithCoverage() -> PromiseWrapper
@@ -48,7 +50,92 @@ public class NetworkRequestBuilder: NSObject {
         self.init(baseURL: baseURL, networkQueue: NetworkQueue())
     }
 
-    // MARK: - Query Items
+    // MARK: - Vehicle with ID
+
+    @discardableResult @objc
+    public func getVehicle(_ vehicleID: String, completion: NetworkCompletionBlock?) -> RequestVehicleOperation {
+        let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: RequestVehicleOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Current Time
+
+    @discardableResult @objc
+    public func getCurrentTime(completion: NetworkCompletionBlock?) -> CurrentTimeOperation {
+        let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: CurrentTimeOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Stops
+
+    @discardableResult @objc
+    public func getStops(coordinate: CLLocationCoordinate2D, completion: NetworkCompletionBlock?) -> StopsOperation {
+        let url = StopsOperation.buildURL(coordinate: coordinate, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+    }
+
+    @discardableResult @objc
+    public func getStops(region: MKCoordinateRegion, completion: NetworkCompletionBlock?) -> StopsOperation {
+        let url = StopsOperation.buildURL(region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+    }
+
+    @discardableResult @objc
+    public func getStops(circularRegion: CLCircularRegion, query: String, completion: NetworkCompletionBlock?) -> StopsOperation {
+        let url = StopsOperation.buildURL(circularRegion: circularRegion, query: query, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Arrival and Departure for Stop
+
+    @discardableResult @objc
+    public func getArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: NetworkCompletionBlock?) -> ArrivalDepartureForStopOperation {
+        let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: ArrivalDepartureForStopOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Trip Details
+    @objc @discardableResult
+    public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: NetworkCompletionBlock?) -> TripDetailsOperation {
+        let url = TripDetailsOperation.buildURL(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: TripDetailsOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Search
+
+    // MARK: - Stops for Route
+
+    @discardableResult @objc
+    public func getStopsForRoute(id: String, completion: NetworkCompletionBlock?) -> StopsForRouteOperation {
+        let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopsForRouteOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Search for Route
+
+    @discardableResult @objc
+    public func getRoute(query: String, region: CLCircularRegion, completion: NetworkCompletionBlock?) -> RouteSearchOperation {
+        let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Shapes
+
+    @discardableResult @objc
+    public func getShape(id: String, completion: NetworkCompletionBlock?) -> ShapeOperation {
+        let url = ShapeOperation.buildURL(shapeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: ShapeOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Agencies
+
+    @discardableResult @objc
+    public func getAgenciesWithCoverage(completion: NetworkCompletionBlock?) -> AgenciesWithCoverageOperation {
+        let url = AgenciesWithCoverageOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: AgenciesWithCoverageOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Private Internal Helpers
 
     private var defaultQueryItems: [URLQueryItem] {
         var items = [URLQueryItem]()
@@ -60,130 +147,14 @@ public class NetworkRequestBuilder: NSObject {
         return items
     }
 
-    // MARK: - Vehicle with ID
-
-    @discardableResult @objc
-    public func getVehicle(_ vehicleID: String, completion: NetworkCompletionBlock?) -> RequestVehicleOperation {
-        let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = RequestVehicleOperation(url: url)
+    private func buildAndEnqueueOperation<T>(type: T.Type, url: URL, completionBlock: NetworkCompletionBlock?) -> T where T: RESTAPIOperation {
+        let operation = type.init(url: url)
         operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-
-        return operation
-    }
-
-    // MARK: - Current Time
-
-    @discardableResult @objc
-    public func getCurrentTime(completion: NetworkCompletionBlock?) -> CurrentTimeOperation {
-        let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = CurrentTimeOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
+            if let operation = operation { completionBlock?(operation) }
         }
 
         networkQueue.add(operation)
 
-        return operation
-    }
-
-    // MARK: - Stops
-
-    @discardableResult @objc
-    public func getStops(coordinate: CLLocationCoordinate2D, completion: NetworkCompletionBlock?) -> StopsOperation {
-        let url = StopsOperation.buildURL(coordinate: coordinate, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return getStops(url: url, completion: completion)
-    }
-
-    @discardableResult @objc
-    public func getStops(region: MKCoordinateRegion, completion: NetworkCompletionBlock?) -> StopsOperation {
-        let url = StopsOperation.buildURL(region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return getStops(url: url, completion: completion)
-    }
-
-    @discardableResult @objc
-    public func getStops(circularRegion: CLCircularRegion, query: String, completion: NetworkCompletionBlock?) -> StopsOperation {
-        let url = StopsOperation.buildURL(circularRegion: circularRegion, query: query, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return getStops(url: url, completion: completion)
-    }
-
-    private func getStops(url: URL, completion: NetworkCompletionBlock?) -> StopsOperation {
-        let operation = StopsOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-        return operation
-    }
-
-    // MARK: - Arrival and Departure for Stop
-
-    @discardableResult @objc
-    public func getArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: NetworkCompletionBlock?) -> ArrivalDepartureForStopOperation {
-        let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        let operation = ArrivalDepartureForStopOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-        return operation
-    }
-
-    // MARK: - Search
-
-    // MARK: - Stops for Route
-
-    @discardableResult @objc
-    public func getStopsForRoute(id: String, completion: NetworkCompletionBlock?) -> StopsForRouteOperation {
-        let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = StopsForRouteOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-        return operation
-    }
-
-    // MARK: - Search for Route
-
-    @discardableResult @objc
-    public func getRoute(query: String, region: CLCircularRegion, completion: NetworkCompletionBlock?) -> RouteSearchOperation {
-        let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        let operation = RouteSearchOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-        return operation
-    }
-
-    // MARK: - Shapes
-
-    @discardableResult @objc
-    public func getShape(id: String, completion: NetworkCompletionBlock?) -> ShapeOperation {
-        let url = ShapeOperation.buildURL(shapeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = ShapeOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-
-        networkQueue.add(operation)
-        return operation
-    }
-
-    // MARK: - Agencies
-
-    @discardableResult @objc
-    public func getAgenciesWithCoverage(completion: NetworkCompletionBlock?) -> AgenciesWithCoverageOperation {
-        let url = AgenciesWithCoverageOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = AgenciesWithCoverageOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-
-        networkQueue.add(operation)
         return operation
     }
 }
