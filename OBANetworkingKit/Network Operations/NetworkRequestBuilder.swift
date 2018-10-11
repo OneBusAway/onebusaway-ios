@@ -14,13 +14,13 @@ import MapKit
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 // @objc public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
-//- (AnyPromise*)placemarksForAddress:(NSString*)address;
+
 //- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
 
-
+//x (AnyPromise*)placemarksForAddress:(NSString*)address;
 //x @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
 //x (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
 //x (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
@@ -35,6 +35,7 @@ import MapKit
 //x (AnyPromise*)requestCurrentTime;
 
 public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Void
+public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchOperation) -> Void
 
 @objc(OBANetworkRequestBuilder)
 public class NetworkRequestBuilder: NSObject {
@@ -126,6 +127,18 @@ public class NetworkRequestBuilder: NSObject {
     public func getRoute(query: String, region: CLCircularRegion, completion: NetworkCompletionBlock?) -> RouteSearchOperation {
         let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Search for Placemarks/Local Search
+    @discardableResult @objc
+    public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> PlacemarkSearchOperation {
+        let operation = PlacemarkSearchOperation(query: query, region: region)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+
+        return operation
     }
 
     // MARK: - Shapes

@@ -65,6 +65,7 @@
 
 - (void)cancel {
     [super cancel];
+    [self.dataTask cancel];
     [self finish];
 }
 
