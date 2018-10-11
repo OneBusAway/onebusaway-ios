@@ -12,9 +12,7 @@ import MapKit
 
 
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
-// @objc public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
-//- (AnyPromise*)requestStopsForPlacemark:(OBAPlacemark*)placemark;
-
+// public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
