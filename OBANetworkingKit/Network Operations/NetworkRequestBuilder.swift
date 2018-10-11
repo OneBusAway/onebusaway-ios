@@ -12,12 +12,12 @@ import MapKit
 
 
 // public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
-// public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
 
+//x public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //x (AnyPromise*)placemarksForAddress:(NSString*)address;
 //x @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
 //x (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
@@ -94,10 +94,18 @@ public class NetworkRequestBuilder: NSObject {
         return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
     }
 
+    // MARK: - Arrivals and Departures for Stop
+
+    @discardableResult @objc
+    public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: NetworkCompletionBlock?) -> StopArrivalsAndDeparturesOperation {
+        let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopArrivalsAndDeparturesOperation.self, url: url, completionBlock: completion)
+    }
+
     // MARK: - Arrival and Departure for Stop
 
     @discardableResult @objc
-    public func getArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: NetworkCompletionBlock?) -> ArrivalDepartureForStopOperation {
+    public func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: NetworkCompletionBlock?) -> ArrivalDepartureForStopOperation {
         let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: ArrivalDepartureForStopOperation.self, url: url, completionBlock: completion)
     }

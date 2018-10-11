@@ -40,7 +40,7 @@ class ArrivalDepartureForStopTest: XCTestCase, OperationTest {
         }
 
         waitUntil { done in
-            self.builder.getArrivalDepartureForStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, completion: { (op) in
+            self.builder.getTripArrivalDepartureForStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, completion: { (op) in
 
                 expect(op.entries).toNot(beNil())
                 let entry = op.entries!.first!

@@ -1,0 +1,383 @@
+{
+  "code": 200,
+  "currentTime": 1539266462779,
+  "data": {
+    "entry": {
+      "arrivalsAndDepartures": [
+        {
+          "arrivalEnabled": true,
+          "blockTripSequence": 1,
+          "departureEnabled": true,
+          "distanceFromStop": 1569.8599892053462,
+          "frequency": null,
+          "lastUpdateTime": 1539266398000,
+          "numberOfStopsAway": 4,
+          "predicted": true,
+          "predictedArrivalInterval": null,
+          "predictedArrivalTime": 1539266756000,
+          "predictedDepartureInterval": null,
+          "predictedDepartureTime": 1539266756000,
+          "routeId": "1_100269",
+          "routeLongName": "",
+          "routeShortName": "75",
+          "scheduledArrivalInterval": null,
+          "scheduledArrivalTime": 1539266640000,
+          "scheduledDepartureInterval": null,
+          "scheduledDepartureTime": 1539266640000,
+          "serviceDate": 1539241200000,
+          "situationIds": [
+
+          ],
+          "status": "default",
+          "stopId": "1_75414",
+          "stopSequence": 5,
+          "totalStopsInTrip": 47,
+          "tripHeadsign": "Northgate Lake City",
+          "tripId": "1_39683959",
+          "tripStatus": {
+            "activeTripId": "1_39683959",
+            "blockTripSequence": 1,
+            "closestStop": "1_26368",
+            "closestStopTimeOffset": -2,
+            "distanceAlongTrip": 9.114963670912402,
+            "frequency": null,
+            "lastKnownDistanceAlongTrip": 0,
+            "lastKnownLocation": {
+              "lat": 47.6535758972168,
+              "lon": -122.31675720214844
+            },
+            "lastKnownOrientation": 0,
+            "lastLocationUpdateTime": 1539266398000,
+            "lastUpdateTime": 1539266398000,
+            "nextStop": "1_9575",
+            "nextStopTimeOffset": 118,
+            "orientation": 357.77603875936535,
+            "phase": "in_progress",
+            "position": {
+              "lat": 47.653575281956215,
+              "lon": -122.3166735103726
+            },
+            "predicted": true,
+            "scheduleDeviation": 116,
+            "scheduledDistanceAlongTrip": 9.114963670912402,
+            "serviceDate": 1539241200000,
+            "situationIds": [
+
+            ],
+            "status": "SCHEDULED",
+            "totalDistanceAlongTrip": 16012.916672135983,
+            "vehicleId": "1_3686"
+          },
+          "vehicleId": "1_3686"
+        }
+      ],
+      "nearbyStopIds": [
+        "1_75403"
+      ],
+      "situationIds": [
+
+      ],
+      "stopId": "1_75414"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        },
+        {
+          "disclaimer": "",
+          "email": "riders@commtrans.org",
+          "fareUrl": "",
+          "id": "29",
+          "lang": "en",
+          "name": "Community Transit",
+          "phone": "(800) 562-1375",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.communitytransit.org/"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Fremont - Central Magnolia",
+          "id": "1_100184",
+          "longName": "",
+          "shortName": "31",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/031/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Lake City - Sand Point - Univ District",
+          "id": "1_100269",
+          "longName": "",
+          "shortName": "75",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/075/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "UW/Cascadia College - University District",
+          "id": "1_100214",
+          "longName": "",
+          "shortName": "372",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/372/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District-Fremont-Interbay-Seattle Center West",
+          "id": "1_100193",
+          "longName": "",
+          "shortName": "32",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/032/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Lake City  - University District",
+          "id": "1_100254",
+          "longName": "",
+          "shortName": "65",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/065/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Roosevelt - University District",
+          "id": "1_100259",
+          "longName": "",
+          "shortName": "67",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/067/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Laurelhurst - University District",
+          "id": "1_100273",
+          "longName": "",
+          "shortName": "78",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/078/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Juanita - University District",
+          "id": "1_100168",
+          "longName": "",
+          "shortName": "277",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/277/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Kirkland - University District",
+          "id": "40_100235",
+          "longName": "Kirkland - University District",
+          "shortName": "540",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/540"
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_810",
+          "longName": "McCollum Park - University District",
+          "shortName": "810",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_821",
+          "longName": "Marysville - University District",
+          "shortName": "821",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_855",
+          "longName": "Lynnwood - University District",
+          "shortName": "855",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_860",
+          "longName": "McCollum Park - University District",
+          "shortName": "860",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_871",
+          "longName": "Edmonds P&R - University District",
+          "shortName": "871",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "29",
+          "color": "0070c0",
+          "description": "",
+          "id": "29_880",
+          "longName": "Mukilteo - University District",
+          "shortName": "880",
+          "textColor": "ffffff",
+          "type": 3,
+          "url": ""
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "75414",
+          "direction": "N",
+          "id": "1_75414",
+          "lat": 47.653713,
+          "locationType": 0,
+          "lon": -122.305023,
+          "name": "Stevens Way & Benton Ln",
+          "routeIds": [
+            "1_100184",
+            "1_100269",
+            "1_100214"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "26368",
+          "direction": "E",
+          "id": "1_26368",
+          "lat": 47.653511,
+          "locationType": 0,
+          "lon": -122.316795,
+          "name": "NE Pacific St & NE Boat St",
+          "routeIds": [
+            "1_100184",
+            "1_100193",
+            "1_100269"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "9575",
+          "direction": "E",
+          "id": "1_9575",
+          "lat": 47.655918,
+          "locationType": 0,
+          "lon": -122.313354,
+          "name": "NE Campus Pkwy & University Way NE - Bay 2",
+          "routeIds": [
+            "1_100184",
+            "1_100254",
+            "1_100269",
+            "1_100214"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "75403",
+          "direction": "S",
+          "id": "1_75403",
+          "lat": 47.654365,
+          "locationType": 0,
+          "lon": -122.305214,
+          "name": "Stevens Way & Benton Ln",
+          "routeIds": [
+            "1_100184",
+            "1_100193",
+            "1_100259",
+            "1_100269",
+            "1_100273",
+            "1_100168",
+            "1_100214",
+            "40_100235",
+            "29_810",
+            "29_821",
+            "29_855",
+            "29_860",
+            "29_871",
+            "29_880"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "1_5093764",
+          "directionId": "0",
+          "id": "1_39683959",
+          "routeId": "1_100269",
+          "routeShortName": "",
+          "serviceId": "1_137160",
+          "shapeId": "1_11075157",
+          "timeZone": "",
+          "tripHeadsign": "Northgate Lake City",
+          "tripShortName": "LOCAL"
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}
