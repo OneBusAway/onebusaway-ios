@@ -265,7 +265,7 @@
 				932AAF9A21695E590070BF56 /* Helpers */,
 				931B94562165250A0034D8FA /* fixtures */,
 				931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */,
-				931B9447216443180034D8FA /* Network Operations */,
+				931B9447216443180034D8FA /* REST API Tests */,
 				931B940E216419C20034D8FA /* Info.plist */,
 			);
 			path = OBANetworkingKitTests;
@@ -314,7 +314,7 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		931B9447216443180034D8FA /* Network Operations */ = {
+		931B9447216443180034D8FA /* REST API Tests */ = {
 			isa = PBXGroup;
 			children = (
 				931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */,
@@ -329,7 +329,7 @@
 				931CE26E216F819F00161A6C /* PlacemarkSearchOperationTest.swift */,
 				931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */,
 			);
-			path = "Network Operations";
+			path = "REST API Tests";
 			sourceTree = "<group>";
 		};
 		931B944B21645FBD0034D8FA /* Helpers */ = {
