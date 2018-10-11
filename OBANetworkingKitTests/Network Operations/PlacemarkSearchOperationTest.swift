@@ -23,7 +23,7 @@ class PlacemarkSearchOperationTest: XCTestCase, OperationTest {
         let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         let region = MKCoordinateRegion(center: center, span: span)
 
-        waitUntil { done in
+        waitUntil(timeout: 5.0) { done in
             self.builder.getPlacemarks(query: "Starbucks", region: region) { (op) in
                 let mapItems = op.response!.mapItems
                 expect(mapItems.count) > 0

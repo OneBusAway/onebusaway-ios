@@ -1,5 +1,5 @@
 //
-//  NetworkRequestBuilder.swift
+//  RESTAPIService.swift
 //  OBANetworkingKit
 //
 //  Created by Aaron Brethorst on 10/2/18.
@@ -35,8 +35,8 @@ import MapKit
 public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Void
 public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchOperation) -> Void
 
-@objc(OBANetworkRequestBuilder)
-public class NetworkRequestBuilder: NSObject {
+@objc(OBARESTAPIService)
+public class RESTAPIService: NSObject {
     private let baseURL: URL
     private let networkQueue: NetworkQueue
     private let defaultQueryItems: [URLQueryItem]

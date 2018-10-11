@@ -10,7 +10,7 @@
 @import OBANetworkingKit;
 
 @interface ViewController ()
-@property(nonatomic,strong) OBANetworkRequestBuilder *networkRequestBuilder;
+@property(nonatomic,strong) OBARESTAPIService *apiService;
 @end
 
 @implementation ViewController
@@ -19,9 +19,9 @@
     [super viewDidLoad];
 
     NSURL *URL = [NSURL URLWithString:@"http://api.pugetsound.onebusaway.org/"];
-    self.networkRequestBuilder = [[OBANetworkRequestBuilder alloc] initWithBaseURL:URL apiKey:@"org.onebusaway.iphone" uuid:@"BD88D98C-A72D-47BE-8F4A-C60467239736" appVersion:@"20181001.23"];
+    self.apiService = [[OBARESTAPIService alloc] initWithBaseURL:URL apiKey:@"org.onebusaway.iphone" uuid:@"BD88D98C-A72D-47BE-8F4A-C60467239736" appVersion:@"20181001.23"];
 
-    CurrentTimeOperation *operation = [self.networkRequestBuilder getCurrentTimeWithCompletion:^(OBARESTAPIOperation * op) {
+    CurrentTimeOperation *operation = [self.apiService getCurrentTimeWithCompletion:^(OBARESTAPIOperation * op) {
         NSLog(@"Current Time: %@", ((CurrentTimeOperation*)op).currentTime);
     }];(void)operation;
 }

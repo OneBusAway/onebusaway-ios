@@ -28,7 +28,7 @@
 		931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B942521641FB50034D8FA /* OBANetworkOperation.m */; };
 		931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B9428216422120034D8FA /* OBAOperation+Internal.h */; };
 		931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943821642EE40034D8FA /* CurrentTimeOperation.swift */; };
-		931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */; };
+		931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943A216430E70034D8FA /* RESTAPIService.swift */; };
 		931B94442164409B0034D8FA /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
 		931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
 		931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */; };
@@ -132,7 +132,7 @@
 		931B942521641FB50034D8FA /* OBANetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkOperation.m; sourceTree = "<group>"; };
 		931B9428216422120034D8FA /* OBAOperation+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAOperation+Internal.h"; sourceTree = "<group>"; };
 		931B943821642EE40034D8FA /* CurrentTimeOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeOperation.swift; sourceTree = "<group>"; };
-		931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkRequestBuilder.swift; sourceTree = "<group>"; };
+		931B943A216430E70034D8FA /* RESTAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIService.swift; sourceTree = "<group>"; };
 		931B943D21643D430034D8FA /* Nimble.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Nimble.framework; path = Carthage/Build/iOS/Nimble.framework; sourceTree = "<group>"; };
 		931B943F21643D430034D8FA /* OHHTTPStubs.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OHHTTPStubs.framework; path = Carthage/Build/iOS/OHHTTPStubs.framework; sourceTree = "<group>"; };
 		931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBANetworkingKitTests-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -251,7 +251,7 @@
 			children = (
 				93058C96216CE260008A31A4 /* PrivateModule */,
 				931B944B21645FBD0034D8FA /* Helpers */,
-				931B943621642D880034D8FA /* Network Operations */,
+				931B943621642D880034D8FA /* OBA REST API */,
 				931B941B21641A700034D8FA /* Core */,
 				931B93FF216419C20034D8FA /* OBANetworkingKit.h */,
 				931B9400216419C20034D8FA /* Info.plist */,
@@ -278,18 +278,18 @@
 				931B941D21641A7F0034D8FA /* OBAOperation.m */,
 				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
 				931B942521641FB50034D8FA /* OBANetworkOperation.m */,
-				931B94B9216569720034D8FA /* OBARESTAPIOperation.h */,
-				931B94BA216569720034D8FA /* OBARESTAPIOperation.m */,
 				931B942021641BC30034D8FA /* OBANetworkQueue.h */,
 				931B942121641BC30034D8FA /* OBANetworkQueue.m */,
 			);
 			path = Core;
 			sourceTree = "<group>";
 		};
-		931B943621642D880034D8FA /* Network Operations */ = {
+		931B943621642D880034D8FA /* OBA REST API */ = {
 			isa = PBXGroup;
 			children = (
-				931B943A216430E70034D8FA /* NetworkRequestBuilder.swift */,
+				931B943A216430E70034D8FA /* RESTAPIService.swift */,
+				931B94B9216569720034D8FA /* OBARESTAPIOperation.h */,
+				931B94BA216569720034D8FA /* OBARESTAPIOperation.m */,
 				931B943821642EE40034D8FA /* CurrentTimeOperation.swift */,
 				931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */,
 				931B94BD216682E10034D8FA /* StopsOperation.swift */,
@@ -302,7 +302,7 @@
 				931CE26C216E42AD00161A6C /* PlacemarkSearchOperation.swift */,
 				931CE272216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift */,
 			);
-			path = "Network Operations";
+			path = "OBA REST API";
 			sourceTree = "<group>";
 		};
 		931B943C21643D420034D8FA /* Frameworks */ = {
@@ -573,7 +573,7 @@
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
-				931B943B216430E70034D8FA /* NetworkRequestBuilder.swift in Sources */,
+				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
