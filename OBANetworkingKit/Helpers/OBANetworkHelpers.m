@@ -33,4 +33,15 @@
     return [escaped stringByReplacingOccurrencesOfString:@"/" withString:@"%2F"];
 }
 
++ (NSData*)dictionaryToHTTPBodyData:(NSDictionary*)dictionary {
+    NSMutableArray *parts = [[NSMutableArray alloc] init];
+
+    for (id key in dictionary) {
+        NSString *keyString = [key description];
+
+        [parts addObject:[NSString stringWithFormat:@"%@=%@", [keyString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]], [[dictionary[key] description] stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]]]];
+    }
+    return [[parts componentsJoinedByString:@"&"] dataUsingEncoding:NSUTF8StringEncoding];
+}
+
 @end

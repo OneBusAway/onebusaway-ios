@@ -15,6 +15,7 @@ NS_SWIFT_NAME(NetworkHelpers)
 
 + (NSArray<NSURLQueryItem*>*)dictionaryToQueryItems:(nullable NSDictionary*)dictionary;
 + (NSString*)escapePathVariable:(NSString*)pathVariable;
++ (NSData*)dictionaryToHTTPBodyData:(NSDictionary*)dictionary;
 
 @end
 

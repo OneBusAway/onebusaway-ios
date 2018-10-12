@@ -12,14 +12,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 NS_SWIFT_NAME(NetworkOperation)
 @interface OBANetworkOperation : OBAOperation
+@property(nonatomic,copy,readonly) NSURLRequest *request;
 @property(nonatomic,strong,nullable,readonly) NSData *data;
 @property(nonatomic,copy,nullable,readonly) NSError *error;
 @property(nonatomic,strong,nullable,readonly) NSHTTPURLResponse *response;
 
-- (instancetype)initWithURL:(NSURL*)URL NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithURLRequest:(NSURLRequest*)request NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithURL:(NSURL*)URL;
 - (instancetype)init NS_UNAVAILABLE;
-
-- (NSURLRequest*)URLRequest;
 
 @end
 

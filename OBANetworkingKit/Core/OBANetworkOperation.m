@@ -10,7 +10,7 @@
 #import <OBANetworkingKit/OBAOperation+Internal.h>
 
 @interface OBANetworkOperation ()
-@property(nonatomic,copy) NSURL *URL;
+@property(nonatomic,copy,readwrite) NSURLRequest *request;
 @property(nonatomic,strong,nullable,readwrite) NSData *data;
 @property(nonatomic,copy,nullable,readwrite) NSError *error;
 @property(nonatomic,strong,nullable,readwrite) NSHTTPURLResponse *response;
@@ -19,14 +19,19 @@
 
 @implementation OBANetworkOperation
 
-- (instancetype)initWithURL:(NSURL*)URL {
+- (instancetype)initWithURLRequest:(NSURLRequest *)request {
     self = [super init];
 
     if (self) {
-        _URL = [URL copy];
-        self.name = _URL.absoluteString;
+        _request = [request copy];
+        self.name = _request.URL.absoluteString;
     }
     return self;
+}
+
+- (instancetype)initWithURL:(NSURL*)URL {
+    NSURLRequest *request = [[NSURLRequest alloc] initWithURL:URL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
+    return [self initWithURLRequest:request];
 }
 
 - (void)start {
@@ -35,7 +40,7 @@
     NSURLSession *session = [NSURLSession sharedSession];
 
     __weak __typeof__(self) weakSelf = self;
-    self.dataTask = [session dataTaskWithRequest:[self URLRequest] completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+    self.dataTask = [session dataTaskWithRequest:[self request] completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
         __typeof__(self) self = weakSelf;
 
         if (self.isCancelled) {
@@ -54,11 +59,6 @@
     self.data = data;
     self.response = response;
     self.error = error;
-}
-
-- (NSURLRequest*)URLRequest {
-    NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:self.URL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10.0];
-    return request;
 }
 
 #pragma mark - Cancel

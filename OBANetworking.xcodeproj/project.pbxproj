@@ -69,6 +69,7 @@
 		9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */; };
 		936978922170DAF40053DF37 /* puget_sound_alerts.pb in Resources */ = {isa = PBXBuildFile; fileRef = 936978912170DAF40053DF37 /* puget_sound_alerts.pb */; };
 		936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */; };
+		936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978952170DD0A0053DF37 /* StopProblemOperation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -179,6 +180,7 @@
 		9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsOperation.swift; sourceTree = "<group>"; };
 		936978912170DAF40053DF37 /* puget_sound_alerts.pb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = puget_sound_alerts.pb; sourceTree = "<group>"; };
 		936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsOperationTest.swift; sourceTree = "<group>"; };
+		936978952170DD0A0053DF37 /* StopProblemOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemOperation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -314,6 +316,7 @@
 				931CE26C216E42AD00161A6C /* PlacemarkSearchOperation.swift */,
 				931CE272216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift */,
 				9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */,
+				936978952170DD0A0053DF37 /* StopProblemOperation.swift */,
 			);
 			path = "OBA REST API";
 			sourceTree = "<group>";
@@ -608,6 +611,7 @@
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
+				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,

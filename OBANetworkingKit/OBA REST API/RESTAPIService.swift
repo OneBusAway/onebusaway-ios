@@ -165,6 +165,7 @@ public class RESTAPIService: NSObject {
     }
 
     // MARK: - Regional Alerts
+
     @discardableResult @objc
     public func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation {
         let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
@@ -175,6 +176,20 @@ public class RESTAPIService: NSObject {
         networkQueue.add(operation)
         return operation
     }
+
+    // MARK: - Problem Reporting
+    @discardableResult @objc
+    public func postStopProblem(stopID: String, code: String, comment: String, location: CLLocation?, completion: NetworkCompletionBlock?) -> StopProblemOperation {
+        let request = StopProblemOperation.buildURLRequest(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = StopProblemOperation(urlRequest: request)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+        return operation
+    }
+
+    // reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
     // MARK: - Private Internal Helpers
 
