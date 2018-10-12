@@ -11,12 +11,12 @@ import CoreLocation
 import MapKit
 
 
-// public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 //- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 //- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
 
 // Done:
 
+//x public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
 //x public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
 //x (AnyPromise*)placemarksForAddress:(NSString*)address;
 //x @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
@@ -34,6 +34,7 @@ import MapKit
 
 public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Void
 public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchOperation) -> Void
+public typealias RegionalAlertsCompletionBlock = (_ operation: RegionalAlertsOperation) -> Void
 
 @objc(OBARESTAPIService)
 public class RESTAPIService: NSObject {
@@ -161,6 +162,18 @@ public class RESTAPIService: NSObject {
     public func getAgenciesWithCoverage(completion: NetworkCompletionBlock?) -> AgenciesWithCoverageOperation {
         let url = AgenciesWithCoverageOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: AgenciesWithCoverageOperation.self, url: url, completionBlock: completion)
+    }
+
+    // MARK: - Regional Alerts
+    @discardableResult @objc
+    public func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation {
+        let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = RegionalAlertsOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+        networkQueue.add(operation)
+        return operation
     }
 
     // MARK: - Private Internal Helpers

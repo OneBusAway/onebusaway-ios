@@ -29,7 +29,15 @@ public extension OperationTest where Self: XCTestCase {
         return RESTAPIService(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
     }
 
-    public func JSONFile(named name: String) -> OHHTTPStubsResponse{
+    public func dataFile(named name: String) -> OHHTTPStubsResponse {
+        return OHHTTPStubsResponse(
+            fileAtPath: OHPathForFile(name, type(of: self))!,
+            statusCode: 200,
+            headers: ["Content-Type": "application/octet-stream"]
+        )
+    }
+
+    public func JSONFile(named name: String) -> OHHTTPStubsResponse {
         return OHHTTPStubsResponse(
             fileAtPath: OHPathForFile(name, type(of: self))!,
             statusCode: 200,
