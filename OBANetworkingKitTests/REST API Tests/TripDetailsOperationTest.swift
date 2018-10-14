@@ -11,12 +11,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class TripDetailsOperationTest: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class TripDetailsOperationTest: OBATestCase {
     func testStopsForRouteAPIPath() {
         expect(TripDetailsOperation.buildAPIPath(tripID: "Hello/World")) == "/api/where/trip-details/Hello%2FWorld.json"
     }

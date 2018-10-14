@@ -11,18 +11,12 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class ArrivalDepartureForStopTest: XCTestCase, OperationTest {
-
+class ArrivalDepartureForStopTest: OBATestCase {
     let stopID = "stop_123"
     let tripID = "trip_123"
     let serviceDate: Int64 = 1234567890
     let vehicleID = "vehicle_123"
     let stopSequence = 1
-
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
 
     func testOperation_success() {
         let apiPath = ArrivalDepartureForStopOperation.buildAPIPath(stopID: stopID)

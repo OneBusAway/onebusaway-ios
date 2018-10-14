@@ -12,12 +12,7 @@ import OHHTTPStubs
 import MapKit
 @testable import OBANetworkingKit
 
-class PlacemarkSearchOperationTest: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class PlacemarkSearchOperationTest: OBATestCase {
     func testPlacemarkSearch() {
         let center = CLLocationCoordinate2D(latitude: 47.623650, longitude: -122.312572)
         let span = MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -29,7 +24,7 @@ class PlacemarkSearchOperationTest: XCTestCase, OperationTest {
                 expect(mapItems.count) > 0
                 let starbucks = mapItems.first!
                 expect(starbucks.name) == "Starbucks"
-                expect(starbucks.phoneNumber) == "‭+1 (206) 323-4988‬"
+                expect(starbucks.phoneNumber?.starts(with: "‭+1 (206)")).to(beTrue())
 
                 let region = op.response!.boundingRegion
                 expect(region.center.latitude).to(beCloseTo(center.latitude, within: 0.1))

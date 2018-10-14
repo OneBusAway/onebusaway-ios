@@ -40,7 +40,7 @@ public typealias RegionalAlertsCompletionBlock = (_ operation: RegionalAlertsOpe
 public class RESTAPIService: NSObject {
     private let baseURL: URL
     private let networkQueue: NetworkQueue
-    private let defaultQueryItems: [URLQueryItem]
+    internal let defaultQueryItems: [URLQueryItem]
 
     @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: NetworkQueue) {
         self.baseURL = baseURL
@@ -178,15 +178,11 @@ public class RESTAPIService: NSObject {
     }
 
     // MARK: - Problem Reporting
+
     @discardableResult @objc
-    public func postStopProblem(stopID: String, code: String, comment: String, location: CLLocation?, completion: NetworkCompletionBlock?) -> StopProblemOperation {
-        let request = StopProblemOperation.buildURLRequest(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = StopProblemOperation(urlRequest: request)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.add(operation)
-        return operation
+    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: NetworkCompletionBlock?) -> StopProblemOperation {
+        let url = StopProblemOperation.buildURL(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url, completionBlock: completion)
     }
 
     // reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;

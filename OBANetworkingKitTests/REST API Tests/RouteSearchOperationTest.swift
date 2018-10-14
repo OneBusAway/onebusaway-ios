@@ -12,12 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBANetworkingKit
 
-class RouteSearchOperationTest: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class RouteSearchOperationTest: OBATestCase {
     func testSearchForRoute() {
         let query = "Link"
         let center = CLLocationCoordinate2D(latitude: 47.0, longitude: -122)

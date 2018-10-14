@@ -11,15 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class ShapeOperationTest: XCTestCase, OperationTest {
-    // http://api.pugetsound.onebusaway.org/api/where/shape/1_20010002.json?key=org.onebusaway.iphone&app_uid=BD88D98C-A72D-47BE-8F4A-C60467239736&app_ver=20181001.23&version=2
-
+class ShapeOperationTest: OBATestCase {
     let shapeID = "1_20010002"
-
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
 
     func testShapeAPIPath() {
         expect(ShapeOperation.buildAPIPath(shapeID: self.shapeID)) == "/api/where/shape/\(shapeID).json"

@@ -11,13 +11,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class CurrentTimeTests: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class CurrentTimeTests: OBATestCase {
     func testSuccessfulAPICall() {
         stub(condition: isHost(self.host) && isPath(CurrentTimeOperation.apiPath)) { _ in
             return OHHTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Date": "October 2, 2018 19:42:00 PDT"])

@@ -13,12 +13,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class RegionalAlertsOperationTest: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class RegionalAlertsOperationTest: OBATestCase {
     func testRegionalAlertsAPIPath() {
         expect(RegionalAlertsOperation.buildAPIPath(agencyID: "Hello/World")) == "/api/gtfs_realtime/alerts-for-agency/Hello%2FWorld.pb"
     }

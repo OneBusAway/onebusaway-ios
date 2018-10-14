@@ -13,13 +13,8 @@ import CoreLocation
 import MapKit
 @testable import OBANetworkingKit
 
-class StopsOperationTest: XCTestCase, OperationTest {
+class StopsOperationTest: OBATestCase {
     let defaultCoordinate = CLLocationCoordinate2D(latitude: 47.624, longitude: -122.32)
-
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
 
     // MARK: - Stops Near Coordinate
 

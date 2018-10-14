@@ -11,12 +11,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class StopArrivalsAndDeparturesOperationTest: XCTestCase, OperationTest {
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class StopArrivalsAndDeparturesOperationTest: OBATestCase {
     func testAPIPath() {
         expect(StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: "Hello/World")) == "/api/where/arrivals-and-departures-for-stop/Hello%2FWorld.json"
     }

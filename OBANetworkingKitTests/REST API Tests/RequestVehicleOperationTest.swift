@@ -11,13 +11,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class RequestVehicleOperationSpec: XCTestCase, OperationTest {
-
-    override func tearDown() {
-        super.tearDown()
-        OHHTTPStubs.removeAllStubs()
-    }
-
+class RequestVehicleOperationSpec: OBATestCase {
     func testSuccessfulVehicleRequest() {
         let vehicleID = "4011"
         let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
