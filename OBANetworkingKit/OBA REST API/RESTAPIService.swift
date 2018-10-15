@@ -10,28 +10,6 @@ import Foundation
 import CoreLocation
 import MapKit
 
-
-//- (OBAModelServiceRequest*)reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
-//- (OBAModelServiceRequest*)reportProblemWithTrip:(OBAReportProblemWithTripV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
-
-// Done:
-
-//x public func requestRegionalAlerts() -> Promise<[AgencyAlert]>
-//x public func requestStopArrivalsAndDepartures(withID stopID: String, minutesBefore: UInt, minutesAfter: UInt) -> PromiseWrapper
-//x (AnyPromise*)placemarksForAddress:(NSString*)address;
-//x @objc public func requestTripDetails(tripInstance: OBATripInstanceRef) -> PromiseWrapper
-//x (AnyPromise*)requestRoutesForQuery:(NSString*)routeQuery region:(CLCircularRegion*)region;
-//x (AnyPromise*)requestStopsForRoute:(NSString*)routeID;
-//x @objc public func requestAgenciesWithCoverage() -> PromiseWrapper
-//x (AnyPromise*)requestShapeForID:(NSString*)shapeID;
-//x (AnyPromise*)requestArrivalAndDeparture:(OBAArrivalAndDepartureInstanceRef*)instanceRef;
-//x (AnyPromise*)requestArrivalAndDepartureWithConvertible:(id<OBAArrivalAndDepartureConvertible>)convertible;
-//x (AnyPromise*)requestStopsForRegion:(MKCoordinateRegion)region;
-//x (AnyPromise*)requestStopsForQuery:(NSString*)query region:(nullable CLCircularRegion*)region;
-//x (AnyPromise*)requestStopsNear:(CLLocationCoordinate2D)coordinate;
-//x (AnyPromise*)requestVehicleForID:(NSString*)vehicleID;
-//x (AnyPromise*)requestCurrentTime;
-
 public typealias NetworkCompletionBlock = (_ operation: RESTAPIOperation) -> Void
 public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchOperation) -> Void
 public typealias RegionalAlertsCompletionBlock = (_ operation: RegionalAlertsOperation) -> Void
@@ -61,6 +39,18 @@ public class RESTAPIService: NSObject {
 
     // MARK: - Vehicle with ID
 
+    /// Provides information on the vehicle with the specified ID.
+    ///
+    /// - Important: Vehicle IDs are seldom not identical to the IDs that
+    /// are physically printed on buses. For example, in Puget Sound, a
+    /// KC Metro bus that has the number `1234` printed on its side will
+    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - Parameters:
+    ///   - vehicleID: Vehicle ID string
+    ///   - completion: An optional completion block
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getVehicle(_ vehicleID: String, completion: NetworkCompletionBlock?) -> RequestVehicleOperation {
         let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
@@ -69,6 +59,10 @@ public class RESTAPIService: NSObject {
 
     // MARK: - Current Time
 
+    /// Retrieves the current system time of the OneBusAway server.
+    ///
+    /// - Parameter completion: An optional completion block
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getCurrentTime(completion: NetworkCompletionBlock?) -> CurrentTimeOperation {
         let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
@@ -112,6 +106,7 @@ public class RESTAPIService: NSObject {
     }
 
     // MARK: - Trip Details
+
     @objc @discardableResult
     public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: NetworkCompletionBlock?) -> TripDetailsOperation {
         let url = TripDetailsOperation.buildURL(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate, baseURL: baseURL, queryItems: defaultQueryItems)
