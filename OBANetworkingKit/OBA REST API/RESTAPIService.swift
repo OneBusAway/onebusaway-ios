@@ -115,15 +115,11 @@ public class RESTAPIService: NSObject {
 
     // MARK: - Search
 
-    // MARK: - Stops for Route
-
     @discardableResult @objc
     public func getStopsForRoute(id: String, completion: NetworkCompletionBlock?) -> StopsForRouteOperation {
         let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopsForRouteOperation.self, url: url, completionBlock: completion)
     }
-
-    // MARK: - Search for Route
 
     @discardableResult @objc
     public func getRoute(query: String, region: CLCircularRegion, completion: NetworkCompletionBlock?) -> RouteSearchOperation {
@@ -131,7 +127,6 @@ public class RESTAPIService: NSObject {
         return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url, completionBlock: completion)
     }
 
-    // MARK: - Search for Placemarks/Local Search
     @discardableResult @objc
     public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> PlacemarkSearchOperation {
         let operation = PlacemarkSearchOperation(query: query, region: region)
