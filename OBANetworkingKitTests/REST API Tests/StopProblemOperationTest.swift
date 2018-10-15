@@ -12,8 +12,6 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBANetworkingKit
 
-// TODO: FIXME. It's a GET operation!
-
 class StopProblemOperationTest: OBATestCase {
     let stopID = "1_1234"
     let comment = "comment comment comment"

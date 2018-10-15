@@ -9,7 +9,7 @@
 import Foundation
 import CoreLocation
 
-@objc(OBAStopProblemType)
+@objc(OBAStopProblemCode)
 public enum StopProblemCode: Int {
     case nameWrong
     case numberWrong

@@ -73,6 +73,9 @@
 		93697898217122460053DF37 /* StopProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93697897217122460053DF37 /* StopProblemOperationTest.swift */; };
 		937BB7302173AFCC00BE5635 /* OBATestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB72F2173AFCC00BE5635 /* OBATestCase.swift */; };
 		937BB7332173DC4D00BE5635 /* report_stop_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB7322173DC4D00BE5635 /* report_stop_problem.json */; };
+		937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */; };
+		937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7362174384100BE5635 /* TripProblemOperationTest.swift */; };
+		937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB73821743A2800BE5635 /* report_trip_problem.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -187,6 +190,9 @@
 		93697897217122460053DF37 /* StopProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemOperationTest.swift; sourceTree = "<group>"; };
 		937BB72F2173AFCC00BE5635 /* OBATestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBATestCase.swift; sourceTree = "<group>"; };
 		937BB7322173DC4D00BE5635 /* report_stop_problem.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = report_stop_problem.json; sourceTree = "<group>"; };
+		937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperation.swift; sourceTree = "<group>"; };
+		937BB7362174384100BE5635 /* TripProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperationTest.swift; sourceTree = "<group>"; };
+		937BB73821743A2800BE5635 /* report_trip_problem.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = report_trip_problem.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -284,9 +290,9 @@
 			children = (
 				932AAF9A21695E590070BF56 /* Helpers */,
 				931B94562165250A0034D8FA /* fixtures */,
-				931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */,
 				931B9447216443180034D8FA /* REST API Tests */,
 				931B940E216419C20034D8FA /* Info.plist */,
+				931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */,
 			);
 			path = OBANetworkingKitTests;
 			sourceTree = "<group>";
@@ -323,6 +329,7 @@
 				931CE272216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift */,
 				9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */,
 				936978952170DD0A0053DF37 /* StopProblemOperation.swift */,
+				937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */,
 			);
 			path = "OBA REST API";
 			sourceTree = "<group>";
@@ -352,6 +359,7 @@
 				931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */,
 				936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */,
 				93697897217122460053DF37 /* StopProblemOperationTest.swift */,
+				937BB7362174384100BE5635 /* TripProblemOperationTest.swift */,
 			);
 			path = "REST API Tests";
 			sourceTree = "<group>";
@@ -380,6 +388,7 @@
 				931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */,
 				931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */,
 				937BB7322173DC4D00BE5635 /* report_stop_problem.json */,
+				937BB73821743A2800BE5635 /* report_trip_problem.json */,
 			);
 			path = fixtures;
 			sourceTree = "<group>";
@@ -560,6 +569,7 @@
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
 				93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */,
+				937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */,
 				932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */,
 				931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
@@ -622,6 +632,7 @@
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
+				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
@@ -644,6 +655,7 @@
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
+				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,
 				9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */,

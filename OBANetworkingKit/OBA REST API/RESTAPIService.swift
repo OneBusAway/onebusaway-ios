@@ -185,7 +185,11 @@ public class RESTAPIService: NSObject {
         return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url, completionBlock: completion)
     }
 
-    // reportProblemWithStop:(OBAReportProblemWithStopV2 *)problem completionBlock:(OBADataSourceCompletion)completion;
+    @discardableResult @objc
+    public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: NetworkCompletionBlock?) -> TripProblemOperation {
+        let url = TripProblemOperation.buildURL(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: TripProblemOperation.self, url: url, completionBlock: completion)
+    }
 
     // MARK: - Private Internal Helpers
 
