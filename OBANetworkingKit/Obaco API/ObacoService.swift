@@ -8,14 +8,25 @@
 
 import Foundation
 
-@objc(OBAObacoService)
-class ObacoService: NSObject {
-    // TODO
+public typealias WeatherCompletionBlock = (_ operation: WeatherOperation) -> Void
 
-    //    @discardableResult @objc
-    //    public func getWeather(regionID: String) -> WeatherOperation {
-    //        //
-    //    }
+@objc(OBAObacoService)
+public class ObacoService: APIService {
+
+    // MARK: - Weather
+
+    @discardableResult @objc
+    public func getWeather(regionID: String, completion: WeatherCompletionBlock?) -> WeatherOperation {
+        let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = WeatherOperation(url: url)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+
+        networkQueue.add(operation)
+
+        return operation
+    }
     //
     //    /// Creates an alarm object on the server
     //    ///

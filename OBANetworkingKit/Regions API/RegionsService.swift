@@ -12,7 +12,7 @@ import Foundation
 public class RegionsService: APIService {
 
     @discardableResult @objc
-    public func getRegions(completion: NetworkCompletionBlock?) -> RegionsOperation {
+    public func getRegions(completion: RESTAPICompletionBlock?) -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = RegionsOperation(url: url)
 

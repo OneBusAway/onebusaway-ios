@@ -13,6 +13,27 @@ import OBANetworkingKit
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
 
+    // MARK: - Obaco API Service
+
+    public var obacoHost: String {
+        return "alerts.example.com"
+    }
+
+    public var obacoURLString: String {
+        return "https://\(obacoHost)"
+    }
+
+    public var obacoURL: URL {
+        return URL(string: obacoURLString)!
+    }
+
+    public var obacoService: ObacoService {
+        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+
+
+    // MARK: - Regions API Service
+
     public var regionsHost: String {
         return "regions.example.com"
     }
