@@ -54,9 +54,6 @@ public class StopProblemOperation: RESTAPIOperation {
             args["userLocationAccuracy"] = location.horizontalAccuracy
         }
 
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = apiPath
-        components.queryItems = NetworkHelpers.dictionary(toQueryItems: args) + queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
     }
 }

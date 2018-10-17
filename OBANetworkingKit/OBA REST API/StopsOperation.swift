@@ -14,8 +14,8 @@ public class StopsOperation: RESTAPIOperation {
 
     public private(set) var outOfRange = false
 
-    public override func dataFieldsDidSet() {
-        if  let decodedJSONBody = decodedJSONBody as? [AnyHashable: Any],
+    public override func _dataFieldsDidSet() {
+        if  let decodedJSONBody = _decodedJSONBody as? [AnyHashable: Any],
             let outOfRange = decodedJSONBody["outOfRange"] as? Bool
         {
             self.outOfRange = outOfRange
@@ -28,7 +28,7 @@ public class StopsOperation: RESTAPIOperation {
 
     public class func buildURL(coordinate: CLLocationCoordinate2D, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
         let queryItems = NetworkHelpers.dictionary(toQueryItems: ["lat": coordinate.latitude, "lon": coordinate.longitude])
-        return buildURL(baseURL: baseURL, queryItems: queryItems + defaultQueryItems)
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }
 
     public class func buildURL(region: MKCoordinateRegion, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
@@ -36,7 +36,7 @@ public class StopsOperation: RESTAPIOperation {
             "lat": region.center.latitude, "lon": region.center.longitude,
             "latSpan": region.span.latitudeDelta, "lonSpan": region.span.longitudeDelta
         ])
-        return buildURL(baseURL: baseURL, queryItems: queryItems + defaultQueryItems)
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }
 
     public class func buildURL(circularRegion: CLCircularRegion, query: String, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
@@ -46,13 +46,6 @@ public class StopsOperation: RESTAPIOperation {
             "lat": circularRegion.center.latitude, "lon": circularRegion.center.longitude,
             "query": query, "radius": radius
         ])
-        return buildURL(baseURL: baseURL, queryItems: queryItems + defaultQueryItems)
-    }
-
-    public class func buildURL(baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = apiPath
-        components.queryItems = queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }
 }

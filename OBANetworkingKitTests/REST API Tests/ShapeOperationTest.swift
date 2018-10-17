@@ -26,7 +26,7 @@ class ShapeOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getShape(id: self.shapeID) { op in
+            self.restService.getShape(id: self.shapeID) { op in
                 expect(op.entries).toNot(beNil())
                 expect(op.references).toNot(beNil())
 

@@ -20,8 +20,6 @@ public class ArrivalDepartureForStopOperation: RESTAPIOperation {
     }
 
     public class func buildURL(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(stopID: stopID)
 
         var args: [String: Any] = [
             "serviceDate": serviceDate,
@@ -36,7 +34,6 @@ public class ArrivalDepartureForStopOperation: RESTAPIOperation {
             args["stopSequence"] = stopSequence
         }
 
-        components.queryItems = NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
     }
 }

@@ -24,7 +24,7 @@ class StopsForRouteOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getStopsForRoute(id: routeID) { op in
+            self.restService.getStopsForRoute(id: routeID) { op in
                 expect(op.entries?.count) == 1
 
                 let entry = op.entries!.first!

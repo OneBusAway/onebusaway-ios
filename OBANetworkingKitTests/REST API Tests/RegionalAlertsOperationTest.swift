@@ -29,7 +29,7 @@ class RegionalAlertsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getRegionalAlerts(agencyID: agencyID) { op in
+            self.restService.getRegionalAlerts(agencyID: agencyID) { op in
                 expect(op.data).toNot(beNil())
                 done()
             }

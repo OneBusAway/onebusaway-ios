@@ -19,9 +19,6 @@ public class StopsForRouteOperation: RESTAPIOperation {
     }
 
     public class func buildURL(routeID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(routeID: routeID)
-        components.queryItems = queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(routeID: routeID), queryItems: queryItems)
     }
 }

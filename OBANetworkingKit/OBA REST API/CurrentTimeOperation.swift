@@ -25,10 +25,6 @@ public class CurrentTimeOperation: RESTAPIOperation {
     public static let apiPath = "/api/where/current-time.json"
 
     public class func buildURL(baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = apiPath
-        components.queryItems = queryItems
-
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems)
     }
 }

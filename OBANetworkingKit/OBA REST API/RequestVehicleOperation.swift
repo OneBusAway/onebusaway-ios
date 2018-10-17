@@ -19,9 +19,6 @@ public class RequestVehicleOperation: RESTAPIOperation {
     }
 
     public class func buildURL(vehicleID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(vehicleID: vehicleID)
-        components.queryItems = queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(vehicleID: vehicleID), queryItems: queryItems)
     }
 }

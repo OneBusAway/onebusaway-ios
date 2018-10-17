@@ -25,7 +25,7 @@ class StopProblemOperationTest: OBATestCase {
     ]
 
     func testURLConstruction() {
-        let url = StopProblemOperation.buildURL(stopID: stopID, code: .locationWrong, comment: comment, location: location, baseURL: baseURL, queryItems: builder.defaultQueryItems)
+        let url = StopProblemOperation.buildURL(stopID: stopID, code: .locationWrong, comment: comment, location: location, baseURL: baseURL, queryItems: restService.defaultQueryItems)
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
         expect(components?.queryItemValueMatching(name: "code")) == "stop_location_wrong"
@@ -43,7 +43,7 @@ class StopProblemOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getStopProblem(stopID: self.stopID, code: .locationWrong, comment: self.comment, location: self.location) { (op) in
+            self.restService.getStopProblem(stopID: self.stopID, code: .locationWrong, comment: self.comment, location: self.location) { (op) in
                 expect(op.response!.statusCode) == 200
                 done()
             }

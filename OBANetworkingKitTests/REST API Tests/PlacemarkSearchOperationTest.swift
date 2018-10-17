@@ -19,7 +19,7 @@ class PlacemarkSearchOperationTest: OBATestCase {
         let region = MKCoordinateRegion(center: center, span: span)
 
         waitUntil(timeout: 5.0) { done in
-            self.builder.getPlacemarks(query: "Starbucks", region: region) { (op) in
+            self.restService.getPlacemarks(query: "Starbucks", region: region) { (op) in
                 let mapItems = op.response!.mapItems
                 expect(mapItems.count) > 0
                 let starbucks = mapItems.first!

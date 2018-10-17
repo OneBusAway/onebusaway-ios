@@ -20,9 +20,6 @@ public class ShapeOperation: RESTAPIOperation {
     }
 
     public class func buildURL(shapeID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(shapeID: shapeID)
-        components.queryItems = queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(shapeID: shapeID), queryItems: queryItems)
     }
 }

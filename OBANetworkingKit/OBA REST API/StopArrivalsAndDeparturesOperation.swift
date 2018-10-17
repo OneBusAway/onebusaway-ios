@@ -18,14 +18,11 @@ public class StopArrivalsAndDeparturesOperation: RESTAPIOperation {
     }
 
     public class func buildURL(stopID: String, minutesBefore: UInt, minutesAfter: UInt, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(stopID: stopID)
+        let args: [String: Any] = [
+            "minutesBefore": minutesBefore,
+            "minutesAfter": minutesAfter
+        ]
 
-        var args: [String: Any] = [:]
-        args["minutesBefore"] = minutesBefore
-        args["minutesAfter"] = minutesAfter
-
-        components.queryItems = NetworkHelpers.dictionary(toQueryItems: args) + queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
     }
 }

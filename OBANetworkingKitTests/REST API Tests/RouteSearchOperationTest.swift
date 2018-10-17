@@ -24,7 +24,7 @@ class RouteSearchOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getRoute(query: query, region: region) { op in
+            self.restService.getRoute(query: query, region: region) { op in
                 let routeSearchOp = op as! RouteSearchOperation
 
                 expect(routeSearchOp.outOfRange) == false

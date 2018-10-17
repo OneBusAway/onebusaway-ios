@@ -17,10 +17,6 @@ public class RegionalAlertsOperation: NetworkOperation {
     }
 
     public class func buildURL(agencyID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = buildAPIPath(agencyID: agencyID)
-
-        components.queryItems = queryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(agencyID: agencyID), queryItems: queryItems)
     }
 }

@@ -20,15 +20,18 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setData:(NSData*)data response:(NSHTTPURLResponse*)response error:(NSError*)error;
 @property(nonatomic,copy,nullable,readwrite) NSError *error;
 @property(nonatomic,strong,nullable,readwrite) NSHTTPURLResponse *response;
+
++ (NSURL*)_buildURLFromBaseURL:(NSURL*)URL path:(NSString*)path queryItems:(NSArray<NSURLQueryItem*>*)queryItems;
 @end
 
 @interface OBARESTAPIOperation (Internal)
 /**
  The full JSON body decoded from `data`. Only available after `-setData:response:error:` is called.
  */
-@property(nonatomic,strong,nullable,readonly) id decodedJSONBody;
+@property(nonatomic,strong,nullable,readonly) id _decodedJSONBody;
 
-- (void)dataFieldsDidSet;
+- (void)_dataFieldsDidSet;
+
 @end
 
 NS_ASSUME_NONNULL_END

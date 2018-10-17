@@ -9,7 +9,19 @@
 import Foundation
 
 @objc(OBARegionsService)
-public class RegionsService: NSObject {
+public class RegionsService: APIService {
 
+    @discardableResult @objc
+    public func getRegions(completion: NetworkCompletionBlock?) -> RegionsOperation {
+        let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = RegionsOperation(url: url)
 
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+
+        networkQueue.add(operation)
+
+        return operation
+    }
 }

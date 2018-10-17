@@ -28,7 +28,7 @@ class StopsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getStops(coordinate: self.defaultCoordinate) { op in
+            self.restService.getStops(coordinate: self.defaultCoordinate) { op in
                 expect(op.entries?.first).toNot(beNil())
                 done()
             }
@@ -71,7 +71,7 @@ class StopsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getStops(region: region) { op in
+            self.restService.getStops(region: region) { op in
                 expect(op.entries?.count).to(equal(1))
                 done()
             }

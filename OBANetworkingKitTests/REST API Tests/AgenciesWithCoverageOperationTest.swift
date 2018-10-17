@@ -18,7 +18,7 @@ class AgenciesWithCoverageOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getAgenciesWithCoverage { op in
+            self.restService.getAgenciesWithCoverage { op in
 
                 let entries = op.entries!
                 expect(entries).toNot(beNil())

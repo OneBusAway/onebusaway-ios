@@ -15,31 +15,13 @@ public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchO
 public typealias RegionalAlertsCompletionBlock = (_ operation: RegionalAlertsOperation) -> Void
 
 @objc(OBARESTAPIService)
-public class RESTAPIService: NSObject {
-    private let baseURL: URL
-    private let networkQueue: NetworkQueue
-    internal let defaultQueryItems: [URLQueryItem]
-
-    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: NetworkQueue) {
-        self.baseURL = baseURL
-
-        var queryItems = [URLQueryItem]()
-        queryItems.append(URLQueryItem(name: "key", value: apiKey))
-        queryItems.append(URLQueryItem(name: "app_uid", value: uuid))
-        queryItems.append(URLQueryItem(name: "app_ver", value: appVersion))
-        queryItems.append(URLQueryItem(name: "version", value: "2"))
-        self.defaultQueryItems = queryItems
-
-        self.networkQueue = networkQueue
-    }
-
-    @objc public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
-        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: NetworkQueue())
-    }
+public class RESTAPIService: APIService {
 
     // MARK: - Vehicle with ID
 
     /// Provides information on the vehicle with the specified ID.
+    ///
+    /// API Endpoint: `/api/where/vehicle/{id}.json`
     ///
     /// - Important: Vehicle IDs are seldom not identical to the IDs that
     /// are physically printed on buses. For example, in Puget Sound, a
@@ -61,6 +43,9 @@ public class RESTAPIService: NSObject {
 
     /// Retrieves the current system time of the OneBusAway server.
     ///
+    /// - API Endpoint: `/api/where/current-time.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/current-time.html)
+    ///
     /// - Parameter completion: An optional completion block
     /// - Returns: The enqueued network operation.
     @discardableResult @objc
@@ -71,18 +56,54 @@ public class RESTAPIService: NSObject {
 
     // MARK: - Stops
 
+    /// Retrieves stops in the vicinity of `coordinate`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Parameters:
+    ///   - coordinate: The coordinate around which to search for stops.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getStops(coordinate: CLLocationCoordinate2D, completion: NetworkCompletionBlock?) -> StopsOperation {
         let url = StopsOperation.buildURL(coordinate: coordinate, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
     }
 
+    /// Retrieves stops within `region`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Important: Depending on the number of stops located within `region`, you may only receive back
+    /// a subset of the total list of stops within `region`. Zoom in (i.e. provide a smaller region) to
+    /// better guarantee that you will receive a full list.
+    ///
+    /// - Parameters:
+    ///   - region: A coordinate region from which to search for stops.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getStops(region: MKCoordinateRegion, completion: NetworkCompletionBlock?) -> StopsOperation {
         let url = StopsOperation.buildURL(region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
     }
 
+    /// Retrieves stops within `circularRegion`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Important: Depending on the number of stops located within `circularRegion`, you may only receive back
+    /// a subset of the total list of stops within `circularRegion`. Zoom in (i.e. provide a smaller region) to
+    /// better guarantee that you will receive a full list.
+    ///
+    /// - Parameters:
+    ///   - circularRegion: A circular region from which to search for stops.
+    ///   - query: A search query for a specific stop code.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getStops(circularRegion: CLCircularRegion, query: String, completion: NetworkCompletionBlock?) -> StopsOperation {
         let url = StopsOperation.buildURL(circularRegion: circularRegion, query: query, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
@@ -91,6 +112,15 @@ public class RESTAPIService: NSObject {
 
     // MARK: - Arrivals and Departures for Stop
 
+    /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
+    /// `minutesBefore` to `minutesAfter`.
+    ///
+    /// - Parameters:
+    ///   - id: The stop ID
+    ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
+    ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: NetworkCompletionBlock?) -> StopArrivalsAndDeparturesOperation {
         let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter, baseURL: baseURL, queryItems: defaultQueryItems)

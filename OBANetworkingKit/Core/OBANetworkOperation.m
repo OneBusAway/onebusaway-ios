@@ -69,4 +69,18 @@
     [self finish];
 }
 
+#pragma mark - URL Construction
+
++ (NSURL*)_buildURLFromBaseURL:(NSURL*)URL path:(NSString*)path queryItems:(NSArray<NSURLQueryItem*>*)queryItems {
+    NSURLComponents *components = [[NSURLComponents alloc] initWithURL:URL resolvingAgainstBaseURL:NO];
+    components.path = path;
+    components.queryItems = queryItems;
+
+    NSURL *fullURL = components.URL;
+
+    assert(fullURL);
+
+    return fullURL;
+}
+
 @end

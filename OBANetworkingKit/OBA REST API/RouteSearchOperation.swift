@@ -15,8 +15,8 @@ public class RouteSearchOperation: RESTAPIOperation {
 
     public private(set) var outOfRange = false
 
-    override public func dataFieldsDidSet() {
-        if  let decodedJSONBody = decodedJSONBody as? [AnyHashable: Any],
+    override public func _dataFieldsDidSet() {
+        if  let decodedJSONBody = _decodedJSONBody as? [AnyHashable: Any],
             let outOfRange = decodedJSONBody["outOfRange"] as? Bool
         {
             self.outOfRange = outOfRange
@@ -36,11 +36,7 @@ public class RouteSearchOperation: RESTAPIOperation {
     private static let regionalRadius: CLLocationDistance = 40000.0
 
     public class func buildURL(searchQuery: String, region: CLCircularRegion, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = apiPath
-
         let radius = max(region.radius, regionalRadius)
-
         let args: [String: Any] = [
             "lat": region.center.latitude,
             "lon": region.center.longitude,
@@ -48,7 +44,6 @@ public class RouteSearchOperation: RESTAPIOperation {
             "radius": String(radius)
         ]
 
-        components.queryItems = NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems
-        return components.url!
+        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
     }
 }

@@ -12,7 +12,7 @@
 @interface OBARESTAPIOperation ()
 @property(nonatomic,strong,nullable,readwrite) NSArray<NSDictionary*> *entries;
 @property(nonatomic,strong,nullable,readwrite) NSDictionary *references;
-@property(nonatomic,strong,nullable,readwrite) id decodedJSONBody;
+@property(nonatomic,strong,nullable,readwrite) id _decodedJSONBody;
 @end
 
 @implementation OBARESTAPIOperation
@@ -25,19 +25,19 @@
     }
 
     NSError *jsonError = nil;
-    self.decodedJSONBody = [NSJSONSerialization JSONObjectWithData:self.data options:0 error:&jsonError];
+    self._decodedJSONBody = [NSJSONSerialization JSONObjectWithData:self.data options:0 error:&jsonError];
 
     if (jsonError) {
         self.error = jsonError;
         return;
     }
 
-    if ([self.decodedJSONBody respondsToSelector:@selector(valueForKey:)]) {
-        NSInteger statusCode = [[self.decodedJSONBody valueForKey:@"code"] integerValue];
+    if ([self._decodedJSONBody respondsToSelector:@selector(valueForKey:)]) {
+        NSInteger statusCode = [[self._decodedJSONBody valueForKey:@"code"] integerValue];
 
         self.response = [[NSHTTPURLResponse alloc] initWithURL:self.response.URL statusCode:statusCode HTTPVersion:nil headerFields:self.response.allHeaderFields];
 
-        NSDictionary *dataField = self.decodedJSONBody[@"data"];
+        NSDictionary *dataField = self._decodedJSONBody[@"data"];
 
         NSDictionary *entry = dataField[@"entry"];
         if (entry) {
@@ -50,10 +50,10 @@
         self.references = dataField[@"references"];
     }
 
-    [self dataFieldsDidSet];
+    [self _dataFieldsDidSet];
 }
 
-- (void)dataFieldsDidSet {
+- (void)_dataFieldsDidSet {
     // nop
 }
 

@@ -37,7 +37,7 @@ class StopArrivalsAndDeparturesOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.builder.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 5, minutesAfter: 10) { op in
+            self.restService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: 5, minutesAfter: 10) { op in
                 let entries = op.entries!
                 expect(entries.count) == 1
                 let entry = entries.first!

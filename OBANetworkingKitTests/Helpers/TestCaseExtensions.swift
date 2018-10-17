@@ -12,6 +12,25 @@ import OBANetworkingKit
 
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
+
+    public var regionsHost: String {
+        return "regions.example.com"
+    }
+
+    public var regionsURLString: String {
+        return "https://\(regionsHost)"
+    }
+
+    public var regionsURL: URL {
+        return URL(string: regionsURLString)!
+    }
+
+    public var regionsService: RegionsService {
+        return RegionsService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+
+    // MARK: - REST API Service
+
     public var host: String {
         return "www.example.com"
     }
@@ -24,10 +43,12 @@ public extension OperationTest where Self: XCTestCase {
         return URL(string: baseURLString)!
     }
 
-    public var builder: RESTAPIService {
+    public var restService: RESTAPIService {
         let url = URL(string: baseURLString)!
         return RESTAPIService(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
     }
+
+    // MARK: - Data Loading
 
     public func dataFile(named name: String) -> OHHTTPStubsResponse {
         return OHHTTPStubsResponse(

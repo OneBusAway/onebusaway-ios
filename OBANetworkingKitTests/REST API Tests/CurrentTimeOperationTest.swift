@@ -18,7 +18,7 @@ class CurrentTimeTests: OBATestCase {
         }
 
         waitUntil { (done) in
-            self.builder.getCurrentTime { op in
+            self.restService.getCurrentTime { op in
                 guard let op = op as? CurrentTimeOperation else {
                     return
                 }
