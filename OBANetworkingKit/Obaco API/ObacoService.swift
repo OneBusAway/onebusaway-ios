@@ -79,10 +79,4 @@ public class ObacoService: APIService {
 
         return op
     }
-
-    //    /// Returns a PromiseWrapper that resolves to an OBATripDetailsV2 object.
-    //    ///
-    //    /// - Parameter vehicleID: The vehicle for which to retrieve trip details.
-    //    /// - Returns: a PromiseWrapper that resolves to trip details.
-    //    @objc public func requestVehicleTrip(_ vehicleID: String) -> PromiseWrapper
 }

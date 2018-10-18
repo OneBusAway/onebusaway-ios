@@ -1,0 +1,160 @@
+{
+  "code": 200,
+  "currentTime": 1539906566824,
+  "data": {
+    "entry": {
+      "frequency": null,
+      "schedule": null,
+      "serviceDate": 1539846000000,
+      "situationIds": [
+
+      ],
+      "status": {
+        "activeTripId": "1_40956737",
+        "blockTripSequence": 3,
+        "closestStop": "1_1180",
+        "closestStopTimeOffset": 0,
+        "distanceAlongTrip": 962.5101482900391,
+        "frequency": null,
+        "lastKnownDistanceAlongTrip": 0,
+        "lastKnownLocation": {
+          "lat": 47.610191345214844,
+          "lon": -122.33673858642578
+        },
+        "lastKnownOrientation": 0,
+        "lastLocationUpdateTime": 1539906465000,
+        "lastUpdateTime": 1539906465000,
+        "nextStop": "1_1180",
+        "nextStopTimeOffset": 0,
+        "orientation": 22.89055165603119,
+        "phase": "in_progress",
+        "position": {
+          "lat": 47.61019135935368,
+          "lon": -122.33673814889917
+        },
+        "predicted": true,
+        "scheduleDeviation": 345,
+        "scheduledDistanceAlongTrip": 962.5101482900391,
+        "serviceDate": 1539846000000,
+        "situationIds": [
+
+        ],
+        "status": "SCHEDULED",
+        "totalDistanceAlongTrip": 7376.834593544655,
+        "vehicleId": "1_2799"
+      },
+      "tripId": "1_40956737"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Madison Park - Capitol Hill - Downtown Seattle",
+          "id": "1_100009",
+          "longName": "",
+          "shortName": "11",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/011/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Capitol Hill - Downtown Seattle",
+          "id": "1_100002",
+          "longName": "",
+          "shortName": "10",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/010/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ Dist-Montlake-Capitol Hill-Downtown Seattle",
+          "id": "1_100223",
+          "longName": "",
+          "shortName": "43",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/043/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Summit - Downtown Seattle",
+          "id": "1_100227",
+          "longName": "",
+          "shortName": "47",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/047/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Broadway - Downtown Seattle",
+          "id": "1_100447",
+          "longName": "",
+          "shortName": "49",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/049/n0.html"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "1180",
+          "direction": "NE",
+          "id": "1_1180",
+          "lat": 47.610134,
+          "locationType": 0,
+          "lon": -122.336685,
+          "name": "Pike St & 4th Ave",
+          "routeIds": [
+            "1_100002",
+            "1_100009",
+            "1_100223",
+            "1_100227",
+            "1_100447"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "1_5123710",
+          "directionId": "0",
+          "id": "1_40956737",
+          "routeId": "1_100009",
+          "routeShortName": "",
+          "serviceId": "1_137160",
+          "shapeId": "1_11011051",
+          "timeZone": "",
+          "tripHeadsign": "Madison Park Via E Madison St",
+          "tripShortName": "LOCAL"
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

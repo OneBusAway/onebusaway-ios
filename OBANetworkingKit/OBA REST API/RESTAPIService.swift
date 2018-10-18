@@ -39,6 +39,12 @@ public class RESTAPIService: APIService {
         return buildAndEnqueueOperation(type: RequestVehicleOperation.self, url: url, completionBlock: completion)
     }
 
+    @discardableResult @objc
+    public func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation {
+        let url = VehicleTripOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: VehicleTripOperation.self, url: url, completionBlock: completion)
+    }
+
     // MARK: - Current Time
 
     /// Retrieves the current system time of the OneBusAway server.
