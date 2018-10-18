@@ -1,5 +1,5 @@
 //
-//  CreateAlarmOperationTest.swift
+//  AlarmOperationTest.swift
 //  OBANetworkingKitTests
 //
 //  Created by Aaron Brethorst on 10/17/18.
@@ -11,7 +11,7 @@ import Nimble
 import OHHTTPStubs
 @testable import OBANetworkingKit
 
-class CreateAlarmOperationTest: OBATestCase {
+class AlarmOperationTest: OBATestCase {
 
     let secondsBefore = 600.0
     let stopID = "XO"
@@ -52,6 +52,25 @@ class CreateAlarmOperationTest: OBATestCase {
 
                 done()
             }
+        }
+    }
+
+    func testSuccessfulAlarmDeletion() {
+        let apiPath = "/regions/1/alarms/1234567890"
+        let url = URL(string: "http://alerts.example.com/regions/1/alarms/1234567890")!
+
+        stub(condition: isHost(self.obacoHost) &&
+            isPath(apiPath) &&
+            isMethodDELETE()
+        ) { _ in
+            return OHHTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
+        }
+
+        waitUntil { done in
+            self.obacoService.deleteAlarm(url: url, completion: { op in
+                expect(op.response!.statusCode) == 200
+                done()
+            })
         }
     }
 }

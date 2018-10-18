@@ -84,7 +84,7 @@
 		93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */; };
 		93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */ = {isa = PBXBuildFile; fileRef = 93FAAAA52177EC2D0086D9DE /* pugetsound-weather.json */; };
 		93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAAA217858C20086D9DE /* CreateAlarmOperation.swift */; };
-		93FAAAAD21785DB40086D9DE /* CreateAlarmOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */; };
+		93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAAC21785DB40086D9DE /* AlarmOperationTest.swift */; };
 		93FAAAAF2178D5060086D9DE /* create_alarm.json in Resources */ = {isa = PBXBuildFile; fileRef = 93FAAAAE2178D5060086D9DE /* create_alarm.json */; };
 /* End PBXBuildFile section */
 
@@ -211,7 +211,7 @@
 		93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOperationTest.swift; sourceTree = "<group>"; };
 		93FAAAA52177EC2D0086D9DE /* pugetsound-weather.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "pugetsound-weather.json"; sourceTree = "<group>"; };
 		93FAAAAA217858C20086D9DE /* CreateAlarmOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAlarmOperation.swift; sourceTree = "<group>"; };
-		93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAlarmOperationTest.swift; sourceTree = "<group>"; };
+		93FAAAAC21785DB40086D9DE /* AlarmOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmOperationTest.swift; sourceTree = "<group>"; };
 		93FAAAAE2178D5060086D9DE /* create_alarm.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = create_alarm.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -459,7 +459,7 @@
 			isa = PBXGroup;
 			children = (
 				93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */,
-				93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */,
+				93FAAAAC21785DB40086D9DE /* AlarmOperationTest.swift */,
 			);
 			path = "Obaco API Tests";
 			sourceTree = "<group>";
@@ -710,7 +710,7 @@
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
-				93FAAAAD21785DB40086D9DE /* CreateAlarmOperationTest.swift in Sources */,
+				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,
