@@ -15,6 +15,10 @@ public extension OperationTest where Self: XCTestCase {
 
     // MARK: - Obaco API Service
 
+    public var obacoRegionID: String {
+        return "1"
+    }
+
     public var obacoHost: String {
         return "alerts.example.com"
     }
@@ -28,7 +32,7 @@ public extension OperationTest where Self: XCTestCase {
     }
 
     public var obacoService: ObacoService {
-        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: NetworkQueue())
     }
 
 

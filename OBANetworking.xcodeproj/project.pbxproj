@@ -83,6 +83,9 @@
 		93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAA02177E85E0086D9DE /* WeatherOperation.swift */; };
 		93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */; };
 		93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */ = {isa = PBXBuildFile; fileRef = 93FAAAA52177EC2D0086D9DE /* pugetsound-weather.json */; };
+		93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAAA217858C20086D9DE /* CreateAlarmOperation.swift */; };
+		93FAAAAD21785DB40086D9DE /* CreateAlarmOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */; };
+		93FAAAAF2178D5060086D9DE /* create_alarm.json in Resources */ = {isa = PBXBuildFile; fileRef = 93FAAAAE2178D5060086D9DE /* create_alarm.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -207,6 +210,9 @@
 		93FAAAA02177E85E0086D9DE /* WeatherOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOperation.swift; sourceTree = "<group>"; };
 		93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherOperationTest.swift; sourceTree = "<group>"; };
 		93FAAAA52177EC2D0086D9DE /* pugetsound-weather.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "pugetsound-weather.json"; sourceTree = "<group>"; };
+		93FAAAAA217858C20086D9DE /* CreateAlarmOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAlarmOperation.swift; sourceTree = "<group>"; };
+		93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAlarmOperationTest.swift; sourceTree = "<group>"; };
+		93FAAAAE2178D5060086D9DE /* create_alarm.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = create_alarm.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -393,6 +399,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93FAAAAE2178D5060086D9DE /* create_alarm.json */,
 				93FAAAA52177EC2D0086D9DE /* pugetsound-weather.json */,
 				93FAAA9E2177E27C0086D9DE /* regions-v3.json */,
 				936978912170DAF40053DF37 /* puget_sound_alerts.pb */,
@@ -417,6 +424,7 @@
 			children = (
 				931CE279216F941D00161A6C /* ObacoService.swift */,
 				93FAAAA02177E85E0086D9DE /* WeatherOperation.swift */,
+				93FAAAAA217858C20086D9DE /* CreateAlarmOperation.swift */,
 			);
 			path = "Obaco API";
 			sourceTree = "<group>";
@@ -451,6 +459,7 @@
 			isa = PBXGroup;
 			children = (
 				93FAAAA32177EB6B0086D9DE /* WeatherOperationTest.swift */,
+				93FAAAAC21785DB40086D9DE /* CreateAlarmOperationTest.swift */,
 			);
 			path = "Obaco API Tests";
 			sourceTree = "<group>";
@@ -606,6 +615,7 @@
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
 				93FAAA9F2177E27C0086D9DE /* regions-v3.json in Resources */,
+				93FAAAAF2178D5060086D9DE /* create_alarm.json in Resources */,
 				93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */,
 				937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */,
 				932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */,
@@ -664,6 +674,7 @@
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
+				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
 				9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */,
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
@@ -699,6 +710,7 @@
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
+				93FAAAAD21785DB40086D9DE /* CreateAlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,

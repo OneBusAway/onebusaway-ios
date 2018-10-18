@@ -9,9 +9,19 @@
 import Foundation
 
 public typealias WeatherCompletionBlock = (_ operation: WeatherOperation) -> Void
+public typealias CreateAlarmCompletionBlock = (_ operation: CreateAlarmOperation) -> Void
+public typealias DeleteAlarmCompletionBlock = (_ operation: NetworkOperation) -> Void
+
 
 @objc(OBAObacoService)
 public class ObacoService: APIService {
+
+    private let regionID: String
+
+    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: NetworkQueue) {
+        self.regionID = regionID
+        super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue)
+    }
 
     // MARK: - Weather
 
@@ -27,15 +37,36 @@ public class ObacoService: APIService {
 
         return operation
     }
-    //
-    //    /// Creates an alarm object on the server
-    //    ///
-    //    /// - Parameters:
-    //    ///   - alarm: The local alarm object
-    //    ///   - userPushNotificationID: The user's unique push notification ID
-    //    /// - Returns: A promise that fulfills into an URL object
-    //    @objc internal func createAlarm(_ alarm: OBAAlarm, userPushNotificationID: String) -> PromiseWrapper
-    //
+
+    // MARK: - Alarms
+
+    @discardableResult @objc
+    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String, completion: CreateAlarmCompletionBlock?) -> CreateAlarmOperation {
+        let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
+        let operation = CreateAlarmOperation(urlRequest: request)
+        operation.completionBlock = { [weak operation] in
+            if let operation = operation { completion?(operation) }
+        }
+
+        networkQueue.add(operation)
+
+        return operation
+    }
+
+    @discardableResult @objc
+    public func deleteAlarm(url: URL, completion: DeleteAlarmCompletionBlock?) -> NetworkOperation {
+        let request = NSMutableURLRequest(url: url)
+        request.httpMethod = "DELETE"
+        let op = NetworkOperation(urlRequest: request as URLRequest)
+        op.completionBlock = { [weak op] in
+            if let op = op { completion?(op) }
+        }
+
+        networkQueue.add(op)
+
+        return op
+    }
+
     //    /// Returns a PromiseWrapper that resolves to an array of `MatchingAgencyVehicle` objects,
     //    /// suitable for passing along to `requestVehicleTrip()`.
     //    ///
