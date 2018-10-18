@@ -11,7 +11,7 @@ import Foundation
 public typealias WeatherCompletionBlock = (_ operation: WeatherOperation) -> Void
 public typealias CreateAlarmCompletionBlock = (_ operation: CreateAlarmOperation) -> Void
 public typealias DeleteAlarmCompletionBlock = (_ operation: NetworkOperation) -> Void
-
+public typealias VehiclesCompletionBlock = (_ operation: MatchingVehiclesOperation) -> Void
 
 @objc(OBAObacoService)
 public class ObacoService: APIService {
@@ -67,14 +67,19 @@ public class ObacoService: APIService {
         return op
     }
 
-    //    /// Returns a PromiseWrapper that resolves to an array of `MatchingAgencyVehicle` objects,
-    //    /// suitable for passing along to `requestVehicleTrip()`.
-    //    ///
-    //    /// - Parameter matching: A substring that must appear in all returned vehicles
-    //    /// - Parameter region: The region from which to load all vehicle IDs
-    //    /// - Returns: A `PromiseWrapper` that resolves to `[MatchingAgencyVehicle]`
-    //    @objc public func requestVehicles(matching: String, in region: OBARegionV2) -> PromiseWrapper
-    //
+    @discardableResult @objc
+    public func getVehicles(matching query: String, completion: VehiclesCompletionBlock?) -> MatchingVehiclesOperation {
+        let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
+        let op = MatchingVehiclesOperation(url: url)
+        op.completionBlock = { [weak op] in
+            if let op = op { completion?(op) }
+        }
+
+        networkQueue.add(op)
+
+        return op
+    }
+
     //    /// Returns a PromiseWrapper that resolves to an OBATripDetailsV2 object.
     //    ///
     //    /// - Parameter vehicleID: The vehicle for which to retrieve trip details.

@@ -23,8 +23,8 @@ class PlacemarkSearchOperationTest: OBATestCase {
                 let mapItems = op.response!.mapItems
                 expect(mapItems.count) > 0
                 let starbucks = mapItems.first!
-                expect(starbucks.name) == "Starbucks"
-                expect(starbucks.phoneNumber?.starts(with: "‭+1 (206)")).to(beTrue())
+                expect(starbucks.name).to(contain("Starbucks"))
+                expect(starbucks.phoneNumber!).to(contain("(206)"))
 
                 let region = op.response!.boundingRegion
                 expect(region.center.latitude).to(beCloseTo(center.latitude, within: 0.1))
