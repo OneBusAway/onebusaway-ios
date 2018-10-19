@@ -171,6 +171,17 @@ public class RESTAPIService: APIService {
 
     // MARK: - Trip Details
 
+    /// Get extended details for a specific trip.
+    ///
+    /// - API Endpoint: `/api/where/trip-details/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-details.html)
+    ///
+    /// - Parameters:
+    ///   - tripID: The ID of the trip.
+    ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
+    ///   - serviceDate: The service date for this trip.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @objc @discardableResult
     public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> TripDetailsOperation {
         let url = TripDetailsOperation.buildURL(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate, baseURL: baseURL, queryItems: defaultQueryItems)
@@ -179,18 +190,50 @@ public class RESTAPIService: APIService {
 
     // MARK: - Search
 
+    /// Retrieve the set of stops serving a particular route, including groups by direction of travel.
+    ///
+    /// The `stops-for-route` method first and foremost provides a method for retrieving the set of stops
+    /// that serve a particular route. In addition to the full set of stops, we provide various
+    /// "stop groupings" that are used to group the stops into useful collections. Currently, the main
+    /// grouping provided organizes the set of stops by direction of travel for the route. Finally,
+    /// this method also returns a set of polylines that can be used to draw the path traveled by the route.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-route/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-route.html)
+    ///
+    /// - Parameters:
+    ///   - id: The route ID.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getStopsForRoute(id: String, completion: RESTAPICompletionBlock?) -> StopsForRouteOperation {
         let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopsForRouteOperation.self, url: url, completionBlock: completion)
     }
 
+    /// Search for routes within a region, by name
+    ///
+    /// - API Endpoint: `/api/where/routes-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/routes-for-location.html)
+    ///
+    /// - Parameters:
+    ///   - query: Search query
+    ///   - region: The circular region from which to return results.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation {
         let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url, completionBlock: completion)
     }
 
+    /// Performs a local search and returns matching results
+    ///
+    /// - Parameters:
+    ///   - query: The term for which to search.
+    ///   - region: The coordinate region in which to search.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> PlacemarkSearchOperation {
         let operation = PlacemarkSearchOperation(query: query, region: region)
