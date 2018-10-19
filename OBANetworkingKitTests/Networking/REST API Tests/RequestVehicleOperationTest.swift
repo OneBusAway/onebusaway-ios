@@ -25,7 +25,7 @@ class RequestVehicleOperationSpec: OBATestCase {
                 expect(op.entries).toNot(beNil())
                 expect(op.references).toNot(beNil())
 
-                let entry = op.entries?.first as! [String: AnyObject]
+                let entry = op.entries!.first!
                 let lastUpdateTime = entry["lastUpdateTime"] as! Int
                 expect(lastUpdateTime).to(equal(1538584269000))
 

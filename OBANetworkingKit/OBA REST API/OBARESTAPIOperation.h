@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 NS_SWIFT_NAME(RESTAPIOperation)
 @interface OBARESTAPIOperation : OBANetworkOperation
 
-@property(nonatomic,strong,nullable,readonly) NSArray<NSDictionary*> *entries;
+@property(nonatomic,strong,nullable,readonly) NSArray<NSDictionary<NSString*,id>*> *entries;
 @property(nonatomic,strong,nullable,readonly) NSDictionary *references;
 
 @end
