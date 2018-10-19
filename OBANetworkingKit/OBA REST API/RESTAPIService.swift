@@ -39,6 +39,21 @@ public class RESTAPIService: APIService {
         return buildAndEnqueueOperation(type: RequestVehicleOperation.self, url: url, completionBlock: completion)
     }
 
+    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
+    ///
+    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
+    ///
+    /// - Important: Vehicle IDs are seldom not identical to the IDs that
+    /// are physically printed on buses. For example, in Puget Sound, a
+    /// KC Metro bus that has the number `1234` printed on its side will
+    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - Parameters:
+    ///   - vehicleID: The ID of the vehicle
+    ///   - completion: An optional completion block
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation {
         let url = VehicleTripOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
@@ -135,6 +150,19 @@ public class RESTAPIService: APIService {
 
     // MARK: - Arrival and Departure for Stop
 
+    /// Get info about a single arrival and departure for a stop
+    ///
+    /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrival-and-departure-for-stop.html)
+    ///
+    /// - Parameters:
+    ///   - stopID: The ID of the stop.
+    ///   - tripID: The trip id of the arriving transit vehicle.
+    ///   - serviceDate: The service date of the arriving transit vehicle.
+    ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
+    ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation {
         let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
