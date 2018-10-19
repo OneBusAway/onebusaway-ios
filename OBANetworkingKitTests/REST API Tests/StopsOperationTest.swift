@@ -52,6 +52,28 @@ class StopsOperationTest: OBATestCase {
         expect(radius).to(equal("15000"))
     }
 
+    func testQueryInCircularRegion() {
+        let region = CLCircularRegion(center: defaultCoordinate, radius: 30000, identifier: "ident")
+        let expectedParams: [String: String] = [
+            "lat": String(defaultCoordinate.latitude),
+            "lon": String(defaultCoordinate.longitude),
+            "query": "query!",
+            "radius": "15000"
+        ]
+
+        stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath) && containsQueryParams(expectedParams)) { _ in
+            return self.JSONFile(named: "stops_for_location_seattle_span.json")
+        }
+
+        waitUntil { done in
+            self.restService.getStops(circularRegion: region, query: "query!") { op in
+                let entries = op.entries!
+                expect(entries.count) == 1
+                done()
+            }
+        }
+    }
+
     // MARK: - Stops in Coordinate Region
 
     func testRetrievingStopsInACoordinateRegions() {
