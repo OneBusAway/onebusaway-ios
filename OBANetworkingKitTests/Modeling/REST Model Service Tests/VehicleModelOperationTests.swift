@@ -26,6 +26,9 @@ class VehicleModelOperationTests: OBATestCase {
             let op = self.restModelService.getVehicle(self.vehicleID)
             op.completionBlock = {
                 expect(op.vehicles.count) == 1
+
+                // abxoxo - todo test property values!  
+
                 done()
             }
         }

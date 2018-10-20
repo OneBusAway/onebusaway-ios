@@ -40,8 +40,12 @@ public class VehicleStatus: NSObject, Decodable {
         lastUpdateTime = try container.decode(Date.self, forKey: .lastUpdateTime)
         lastLocationUpdateTime = try container.decode(Date.self, forKey: .lastLocationUpdateTime)
 
-        let locationModel = try container.decode(LocationModel.self, forKey: .location)
-        location = CLLocation(latitude: locationModel.latitude, longitude: locationModel.longitude)
+        if let locationModel = try? container.decode(LocationModel.self, forKey: .location) {
+            location = CLLocation(latitude: locationModel.latitude, longitude: locationModel.longitude)
+        }
+        else {
+            location = nil
+        }
 
         tripID = try container.decode(String.self, forKey: .tripID)
     }
