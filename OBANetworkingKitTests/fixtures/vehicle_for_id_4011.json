@@ -5,7 +5,7 @@
     "entry": {
       "lastLocationUpdateTime": 0,
       "lastUpdateTime": 1538584269000,
-      "location": null,
+      "location": {"lat": 47.608246, "lon": -122.336166},
       "phase": "in_progress",
       "status": "SCHEDULED",
       "tripId": "40_40804394",

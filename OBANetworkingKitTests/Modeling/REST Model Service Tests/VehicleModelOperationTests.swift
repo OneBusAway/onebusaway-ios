@@ -27,7 +27,14 @@ class VehicleModelOperationTests: OBATestCase {
             op.completionBlock = {
                 expect(op.vehicles.count) == 1
 
-                // abxoxo - todo test property values!  
+                let vehicle = op.vehicles.first!
+
+                expect(vehicle.lastLocationUpdateTime).to(beNil())
+                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 09, minute: 31, second: 09)
+                expect(vehicle.location!.coordinate.latitude) == 47.608246
+                expect(vehicle.location!.coordinate.longitude) == -122.336166
+                expect(vehicle.phase) == "in_progress"
+                expect(vehicle.status) == "SCHEDULED"
 
                 done()
             }

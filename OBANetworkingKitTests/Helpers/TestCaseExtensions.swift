@@ -10,6 +10,13 @@ import XCTest
 import OHHTTPStubs
 import OBANetworkingKit
 
+public extension Date {
+    public static func fromComponents(year: Int, month: Int, day: Int, hour: Int, minute: Int, second: Int) -> Date {
+        let components = DateComponents(calendar: Calendar(identifier: .gregorian), timeZone: TimeZone.current, era: nil, year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: nil, weekday: nil, weekdayOrdinal: nil, quarter: nil, weekOfMonth: nil, weekOfYear: nil, yearForWeekOfYear: nil)
+        return components.date!
+    }
+}
+
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
 
@@ -40,7 +47,6 @@ public extension OperationTest where Self: XCTestCase {
     public var obacoService: ObacoService {
         return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue())
     }
-
 
     // MARK: - Regions API Service
 
