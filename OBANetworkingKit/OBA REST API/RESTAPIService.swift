@@ -237,10 +237,9 @@ public class RESTAPIService: APIService {
     @discardableResult @objc
     public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock? = nil) -> PlacemarkSearchOperation {
         let operation = PlacemarkSearchOperation(query: query, region: region)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.addOperation(operation)
+        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
+
+        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
 
         return operation
     }
@@ -267,10 +266,9 @@ public class RESTAPIService: APIService {
     public func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock? = nil) -> RegionalAlertsOperation {
         let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = RegionalAlertsOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
-        networkQueue.addOperation(operation)
+        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
+        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+
         return operation
     }
 
@@ -292,11 +290,10 @@ public class RESTAPIService: APIService {
 
     private func buildAndEnqueueOperation<T>(type: T.Type, url: URL, completionBlock: RESTAPICompletionBlock?) -> T where T: RESTAPIOperation {
         let operation = type.init(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completionBlock?(operation) }
-        }
+        var operations: [Operation] = [operation]
 
-        networkQueue.addOperation(operation)
+        operations.append(operationify(completionBlock: completionBlock, dependentOn: operation))
+        networkQueue.addOperations(operations, waitUntilFinished: false)
 
         return operation
     }

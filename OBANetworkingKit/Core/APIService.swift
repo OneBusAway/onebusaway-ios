@@ -29,4 +29,13 @@ public class APIService: NSObject {
     @objc public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
         self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue())
     }
+
+    func operationify<T>(completionBlock: ((T) -> Void)?, dependentOn operation: T) -> BlockOperation where T: OBAOperation {
+        let blockOp = BlockOperation { [unowned operation] in
+            completionBlock?(operation)
+        }
+        blockOp.addDependency(operation)
+
+        return blockOp
+    }
 }

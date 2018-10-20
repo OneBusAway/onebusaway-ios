@@ -29,11 +29,9 @@ public class ObacoService: APIService {
     public func getWeather(regionID: String, completion: WeatherCompletionBlock?) -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = WeatherOperation(url: url)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
+        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
 
-        networkQueue.addOperation(operation)
+        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
 
         return operation
     }
@@ -43,12 +41,11 @@ public class ObacoService: APIService {
     @discardableResult @objc
     public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String, completion: CreateAlarmCompletionBlock?) -> CreateAlarmOperation {
         let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = CreateAlarmOperation(urlRequest: request)
-        operation.completionBlock = { [weak operation] in
-            if let operation = operation { completion?(operation) }
-        }
 
-        networkQueue.addOperation(operation)
+        let operation = CreateAlarmOperation(urlRequest: request)
+        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
+
+        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
 
         return operation
     }
@@ -57,12 +54,11 @@ public class ObacoService: APIService {
     public func deleteAlarm(url: URL, completion: DeleteAlarmCompletionBlock?) -> NetworkOperation {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
-        let op = NetworkOperation(urlRequest: request as URLRequest)
-        op.completionBlock = { [weak op] in
-            if let op = op { completion?(op) }
-        }
 
-        networkQueue.addOperation(op)
+        let op = NetworkOperation(urlRequest: request as URLRequest)
+        let completionOp = operationify(completionBlock: completion, dependentOn: op)
+
+        networkQueue.addOperations([op, completionOp], waitUntilFinished: false)
 
         return op
     }
@@ -70,13 +66,12 @@ public class ObacoService: APIService {
     @discardableResult @objc
     public func getVehicles(matching query: String, completion: VehiclesCompletionBlock?) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
-        let op = MatchingVehiclesOperation(url: url)
-        op.completionBlock = { [weak op] in
-            if let op = op { completion?(op) }
-        }
 
-        networkQueue.addOperation(op)
+        let operation = MatchingVehiclesOperation(url: url)
+        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
 
-        return op
+        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+
+        return operation
     }
 }
