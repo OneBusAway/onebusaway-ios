@@ -69,7 +69,6 @@
 		933FFF3921795403006682C3 /* trip-for-vehicle-1_2799.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */; };
 		933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */; };
 		933FFF3E2179AF7E006682C3 /* VehicleModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */; };
-		933FFF40217A4919006682C3 /* RESTDataOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3F217A4919006682C3 /* RESTDataOperation.swift */; };
 		933FFF45217A7FC0006682C3 /* DictionaryDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */; };
 		933FFF46217A7FC0006682C3 /* DictionaryEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */; };
 		933FFF4B217A7FD9006682C3 /* DictionaryErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */; };
@@ -210,7 +209,6 @@
 		933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "trip-for-vehicle-1_2799.json"; sourceTree = "<group>"; };
 		933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIModelService.swift; sourceTree = "<group>"; };
 		933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleModelOperation.swift; sourceTree = "<group>"; };
-		933FFF3F217A4919006682C3 /* RESTDataOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTDataOperation.swift; sourceTree = "<group>"; };
 		933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryDecodingTests.swift; sourceTree = "<group>"; };
 		933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryEncodingTests.swift; sourceTree = "<group>"; };
 		933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryErrors.swift; sourceTree = "<group>"; };
@@ -485,7 +483,6 @@
 			children = (
 				933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */,
 				933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */,
-				933FFF3F217A4919006682C3 /* RESTDataOperation.swift */,
 			);
 			path = "REST Model Service";
 			sourceTree = "<group>";
@@ -788,7 +785,6 @@
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
-				933FFF40217A4919006682C3 /* RESTDataOperation.swift in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

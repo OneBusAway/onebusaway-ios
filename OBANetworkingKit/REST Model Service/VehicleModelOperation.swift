@@ -13,10 +13,11 @@ public class Vehicle: NSObject, Codable {
 }
 
 @objc(OBAVehicleModelOperation)
-public class VehicleModelOperation: RESTDataOperation {
+public class VehicleModelOperation: Operation {
+    public var apiOperation: RESTAPIOperation?
     public private(set) var vehicles: [Vehicle] = []
 
-    override func processData() {
+    override public func main() {
         guard
             let apiOperation = apiOperation,
             let entries = apiOperation.entries

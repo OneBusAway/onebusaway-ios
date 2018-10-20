@@ -15,9 +15,9 @@ public extension OperationTest where Self: XCTestCase {
 
     // MARK: - REST Model Service
 
-//    public var restModelService: RESTAPIModelService {
-//        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
-//    }
+    public var restModelService: RESTAPIModelService {
+        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
+    }
 
     // MARK: - Obaco API Service
 

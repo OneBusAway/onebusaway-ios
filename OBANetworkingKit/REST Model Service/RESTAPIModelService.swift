@@ -13,18 +13,20 @@ public class RESTAPIModelService: NSObject {
     private let dataQueue: OperationQueue
     private let apiService: RESTAPIService
 
-    init(apiService: RESTAPIService, dataQueue: OperationQueue) {
+    public init(apiService: RESTAPIService, dataQueue: OperationQueue) {
         self.apiService = apiService
         self.dataQueue = dataQueue
     }
 
-    public func getVehicle(_ vehicleID: String) {
+    public func getVehicle(_ vehicleID: String) -> VehicleModelOperation {
         let service = apiService.getVehicle(vehicleID)
         let data = VehicleModelOperation()
 
         transferData(from: service, to: data) { [unowned service, unowned data] in
             data.apiOperation = service
         }
+
+        return data
     }
 
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
@@ -33,8 +35,7 @@ public class RESTAPIModelService: NSObject {
         transferOperation.addDependency(serviceOperation)
         dataOperation.addDependency(transferOperation)
 
-        dataQueue.addOperation(transfer)
-        dataQueue.addOperation(dataOperation)
+        dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
     }
 
     /*
