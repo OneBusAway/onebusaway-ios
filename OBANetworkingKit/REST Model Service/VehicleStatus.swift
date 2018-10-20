@@ -26,11 +26,13 @@ public class VehicleStatus: NSObject, Decodable {
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
     let tripID: String
 
+    /// the current journey phase of the vehicle
     let phase: String
 
+    /// status modifiers for the vehicle
     let status: String
 
-//    let tripStatus: TripStatus
+    let tripStatus: TripStatus
 
     private enum CodingKeys: String, CodingKey {
         case vehicleID = "vehicleId"
@@ -40,7 +42,7 @@ public class VehicleStatus: NSObject, Decodable {
         case tripID = "tripId"
         case phase = "phase"
         case status = "status"
-//        case tripStatus = "tripStatus"
+        case tripStatus = "tripStatus"
     }
 
     public required init(from decoder: Decoder) throws {
@@ -59,15 +61,8 @@ public class VehicleStatus: NSObject, Decodable {
         tripID = try container.decode(String.self, forKey: .tripID)
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)
-
-        if let locationModel = try? container.decode(LocationModel.self, forKey: .location) {
-            location = CLLocation(latitude: locationModel.latitude, longitude: locationModel.longitude)
-        }
-        else {
-            location = nil
-        }
-
-//        tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
+        location = try? CLLocation(container: container, key: .location)
+        tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
     }
 
     public static func decodeEntries(_ entries: [[String: Any]]) throws -> [VehicleStatus] {
@@ -79,15 +74,5 @@ public class VehicleStatus: NSObject, Decodable {
         }
 
         return vehicles
-    }
-}
-
-private struct LocationModel: Codable {
-    let latitude: Double
-    let longitude: Double
-
-    enum CodingKeys: String, CodingKey {
-        case latitude = "lat"
-        case longitude = "lon"
     }
 }
