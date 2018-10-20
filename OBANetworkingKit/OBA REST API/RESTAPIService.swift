@@ -240,7 +240,7 @@ public class RESTAPIService: APIService {
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
         }
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
 
         return operation
     }
@@ -270,7 +270,7 @@ public class RESTAPIService: APIService {
         operation.completionBlock = { [weak operation] in
             if let operation = operation { completion?(operation) }
         }
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
         return operation
     }
 
@@ -296,7 +296,7 @@ public class RESTAPIService: APIService {
             if let operation = operation { completionBlock?(operation) }
         }
 
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
 
         return operation
     }

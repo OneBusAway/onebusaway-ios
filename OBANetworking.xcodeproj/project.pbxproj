@@ -22,8 +22,6 @@
 		931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B941C21641A7F0034D8FA /* OBAOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B941D21641A7F0034D8FA /* OBAOperation.m */; };
-		931B942221641BC30034D8FA /* OBANetworkQueue.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B942021641BC30034D8FA /* OBANetworkQueue.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B942121641BC30034D8FA /* OBANetworkQueue.m */; };
 		931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B942421641FB50034D8FA /* OBANetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B942521641FB50034D8FA /* OBANetworkOperation.m */; };
 		931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B9428216422120034D8FA /* OBAOperation+Internal.h */; };
@@ -78,6 +76,7 @@
 		933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */; };
 		933FFF4D217A7FD9006682C3 /* DictionaryEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */; };
 		933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */; };
+		933FFF53217A8D4A006682C3 /* VehicleModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */; };
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
@@ -163,8 +162,6 @@
 		931B940E216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B941C21641A7F0034D8FA /* OBAOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAOperation.h; sourceTree = "<group>"; };
 		931B941D21641A7F0034D8FA /* OBAOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAOperation.m; sourceTree = "<group>"; };
-		931B942021641BC30034D8FA /* OBANetworkQueue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkQueue.h; sourceTree = "<group>"; };
-		931B942121641BC30034D8FA /* OBANetworkQueue.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkQueue.m; sourceTree = "<group>"; };
 		931B942421641FB50034D8FA /* OBANetworkOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkOperation.h; sourceTree = "<group>"; };
 		931B942521641FB50034D8FA /* OBANetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkOperation.m; sourceTree = "<group>"; };
 		931B9428216422120034D8FA /* OBAOperation+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAOperation+Internal.h"; sourceTree = "<group>"; };
@@ -220,6 +217,7 @@
 		933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryCodingKey.swift; sourceTree = "<group>"; };
 		933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryEncoder.swift; sourceTree = "<group>"; };
 		933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryDecoder.swift; sourceTree = "<group>"; };
+		933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleModelOperationTests.swift; sourceTree = "<group>"; };
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
 		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
@@ -339,6 +337,7 @@
 		931B940B216419C20034D8FA /* OBANetworkingKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				933FFF50217A8D2A006682C3 /* Modeling */,
 				933FFF4F217A8C88006682C3 /* Networking */,
 				933FFF42217A7FC0006682C3 /* DictionaryCodingTests */,
 				932AAF9A21695E590070BF56 /* Helpers */,
@@ -357,8 +356,6 @@
 				931B941D21641A7F0034D8FA /* OBAOperation.m */,
 				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
 				931B942521641FB50034D8FA /* OBANetworkOperation.m */,
-				931B942021641BC30034D8FA /* OBANetworkQueue.h */,
-				931B942121641BC30034D8FA /* OBANetworkQueue.m */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -523,6 +520,22 @@
 			path = Networking;
 			sourceTree = "<group>";
 		};
+		933FFF50217A8D2A006682C3 /* Modeling */ = {
+			isa = PBXGroup;
+			children = (
+				933FFF51217A8D36006682C3 /* REST Model Service Tests */,
+			);
+			path = Modeling;
+			sourceTree = "<group>";
+		};
+		933FFF51217A8D36006682C3 /* REST Model Service Tests */ = {
+			isa = PBXGroup;
+			children = (
+				933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */,
+			);
+			path = "REST Model Service Tests";
+			sourceTree = "<group>";
+		};
 		93FAAA9B2177E0F30086D9DE /* Region API Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -548,7 +561,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				931B942221641BC30034D8FA /* OBANetworkQueue.h in Headers */,
 				931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */,
 				931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */,
 				931B940F216419C20034D8FA /* OBANetworkingKit.h in Headers */,
@@ -755,7 +767,6 @@
 				933FFF4D217A7FD9006682C3 /* DictionaryEncoder.swift in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
-				931B942321641BC30034D8FA /* OBANetworkQueue.m in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
 				933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */,
@@ -802,6 +813,7 @@
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
+				933FFF53217A8D4A006682C3 /* VehicleModelOperationTests.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 				933FFF45217A7FC0006682C3 /* DictionaryDecodingTests.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,

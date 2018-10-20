@@ -20,7 +20,7 @@ public class RegionsService: APIService {
             if let operation = operation { completion?(operation) }
         }
 
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
 
         return operation
     }

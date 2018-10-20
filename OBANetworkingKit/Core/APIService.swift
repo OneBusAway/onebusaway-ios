@@ -10,10 +10,10 @@ import Foundation
 
 public class APIService: NSObject {
     let baseURL: URL
-    let networkQueue: NetworkQueue
+    let networkQueue: OperationQueue
     let defaultQueryItems: [URLQueryItem]
 
-    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: NetworkQueue) {
+    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue) {
         self.baseURL = baseURL
 
         var queryItems = [URLQueryItem]()
@@ -27,6 +27,6 @@ public class APIService: NSObject {
     }
 
     @objc public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
-        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: NetworkQueue())
+        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue())
     }
 }

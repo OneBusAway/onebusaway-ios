@@ -13,6 +13,12 @@ import OBANetworkingKit
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
 
+    // MARK: - REST Model Service
+
+//    public var restModelService: RESTAPIModelService {
+//        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
+//    }
+
     // MARK: - Obaco API Service
 
     public var obacoRegionID: String {
@@ -32,7 +38,7 @@ public extension OperationTest where Self: XCTestCase {
     }
 
     public var obacoService: ObacoService {
-        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: NetworkQueue())
+        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue())
     }
 
 

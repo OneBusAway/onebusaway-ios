@@ -18,7 +18,7 @@ public class ObacoService: APIService {
 
     private let regionID: String
 
-    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: NetworkQueue) {
+    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: OperationQueue) {
         self.regionID = regionID
         super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue)
     }
@@ -33,7 +33,7 @@ public class ObacoService: APIService {
             if let operation = operation { completion?(operation) }
         }
 
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
 
         return operation
     }
@@ -48,7 +48,7 @@ public class ObacoService: APIService {
             if let operation = operation { completion?(operation) }
         }
 
-        networkQueue.add(operation)
+        networkQueue.addOperation(operation)
 
         return operation
     }
@@ -62,7 +62,7 @@ public class ObacoService: APIService {
             if let op = op { completion?(op) }
         }
 
-        networkQueue.add(op)
+        networkQueue.addOperation(op)
 
         return op
     }
@@ -75,7 +75,7 @@ public class ObacoService: APIService {
             if let op = op { completion?(op) }
         }
 
-        networkQueue.add(op)
+        networkQueue.addOperation(op)
 
         return op
     }
