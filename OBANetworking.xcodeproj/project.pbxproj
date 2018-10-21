@@ -17,6 +17,7 @@
 		93158B8F217C05FB00E16DBA /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8E217C05FB00E16DBA /* References.swift */; };
 		93158B91217C0B0A00E16DBA /* Agency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B90217C0B0A00E16DBA /* Agency.swift */; };
 		93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B92217C189500E16DBA /* RESTModelOperation.swift */; };
+		93158B95217C1C2400E16DBA /* Frequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B94217C1C2400E16DBA /* Frequency.swift */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
@@ -158,6 +159,7 @@
 		93158B8E217C05FB00E16DBA /* References.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		93158B90217C0B0A00E16DBA /* Agency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agency.swift; sourceTree = "<group>"; };
 		93158B92217C189500E16DBA /* RESTModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTModelOperation.swift; sourceTree = "<group>"; };
+		93158B94217C1C2400E16DBA /* Frequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frequency.swift; sourceTree = "<group>"; };
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -504,6 +506,7 @@
 				93158B8A217B9D5900E16DBA /* InternalTypes.swift */,
 				93158B8E217C05FB00E16DBA /* References.swift */,
 				93158B90217C0B0A00E16DBA /* Agency.swift */,
+				93158B94217C1C2400E16DBA /* Frequency.swift */,
 			);
 			path = "REST Model Service";
 			sourceTree = "<group>";
@@ -811,6 +814,7 @@
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
+				93158B95217C1C2400E16DBA /* Frequency.swift in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,

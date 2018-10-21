@@ -17,7 +17,7 @@ public class TripStatus: NSObject, Decodable {
     let closestStop: String
     let closestStopTimeOffset: Int
     let distanceAlongTrip: Double
-//    let frequency: Frequency
+    let frequency: Frequency?
     let lastKnownDistanceAlongTrip: Int
     let lastKnownLocation: CLLocation?
     let lastKnownOrientation: Int
@@ -43,7 +43,7 @@ public class TripStatus: NSObject, Decodable {
         case situationIDs = "situationIds"
         case status, totalDistanceAlongTrip
         case vehicleID = "vehicleId"
-//        case frequency
+        case frequency
     }
 
     public required init(from decoder: Decoder) throws {
@@ -54,7 +54,7 @@ public class TripStatus: NSObject, Decodable {
         closestStop = try container.decode(String.self, forKey: .closestStop)
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
-//        frequency = try container.decode(Frequency.self, forKey: .frequency)
+        frequency = try? container.decode(Frequency.self, forKey: .frequency)
         lastKnownDistanceAlongTrip = try container.decode(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decode(Int.self, forKey: .lastKnownOrientation)

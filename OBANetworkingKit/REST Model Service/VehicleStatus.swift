@@ -32,6 +32,7 @@ public class VehicleStatus: NSObject, Decodable {
     /// status modifiers for the vehicle
     let status: String
 
+    /// Provides additional status information for the vehicle's trip.
     let tripStatus: TripStatus
 
     private enum CodingKeys: String, CodingKey {
