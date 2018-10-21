@@ -11,6 +11,8 @@
 		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
 		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
 		9309DCA4217D0B3200E750D0 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA3217D0B3200E750D0 /* Route.swift */; };
+		9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA5217D0E9500E750D0 /* Stop.swift */; };
+		9309DCA8217D117900E750D0 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
 		93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
 		93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
 		93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8A217B9D5900E16DBA /* InternalTypes.swift */; };
@@ -158,6 +160,8 @@
 		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
 		93058C97216CE29F008A31A4 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
 		9309DCA3217D0B3200E750D0 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
+		9309DCA5217D0E9500E750D0 /* Stop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stop.swift; sourceTree = "<group>"; };
+		9309DCA7217D117900E750D0 /* ModelHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelHelpers.swift; sourceTree = "<group>"; };
 		93158B86217B991700E16DBA /* VehicleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatus.swift; sourceTree = "<group>"; };
 		93158B88217B9B2900E16DBA /* TripStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStatus.swift; sourceTree = "<group>"; };
 		93158B8A217B9D5900E16DBA /* InternalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
@@ -324,6 +328,7 @@
 				93158B90217C0B0A00E16DBA /* Agency.swift */,
 				93158B94217C1C2400E16DBA /* Frequency.swift */,
 				9309DCA3217D0B3200E750D0 /* Route.swift */,
+				9309DCA5217D0E9500E750D0 /* Stop.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -469,6 +474,7 @@
 				933FFF41217A7F7B006682C3 /* DictionaryCoding */,
 				931B944C216460090034D8FA /* OBANetworkHelpers.h */,
 				931B944D216460090034D8FA /* OBANetworkHelpers.m */,
+				9309DCA7217D117900E750D0 /* ModelHelpers.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -829,6 +835,7 @@
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
 				933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */,
 				9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */,
+				9309DCA8217D117900E750D0 /* ModelHelpers.swift in Sources */,
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
@@ -847,6 +854,7 @@
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
+				9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				93158B95217C1C2400E16DBA /* Frequency.swift in Sources */,

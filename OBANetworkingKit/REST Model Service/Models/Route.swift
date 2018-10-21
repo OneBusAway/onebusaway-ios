@@ -8,7 +8,8 @@
 
 import Foundation
 
-public enum RouteType: Int {
+@objc(OBARouteType)
+public enum RouteType: Int, Decodable {
     /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
     case lightRail = 0
 
@@ -35,6 +36,11 @@ public enum RouteType: Int {
 
     /// An unknown route type. Shouldn't ever happen.
     case unknown = 999
+
+    public init(from decoder: Decoder) throws {
+        let val = try decoder.singleValueContainer().decode(Int.self)
+        self = RouteType(rawValue: val) ?? .unknown
+    }
 }
 
 public class Route: NSObject, Decodable {
@@ -70,14 +76,7 @@ public class Route: NSObject, Decodable {
         longName = try container.decode(String.self, forKey: .longName)
         shortName = try container.decode(String.self, forKey: .shortName)
         textColor = try container.decode(String.self, forKey: .textColor)
-
-        if let rawRouteType = try? container.decode(Int.self, forKey: .routeType) {
-            routeType = RouteType(rawValue: rawRouteType) ?? .unknown
-        }
-        else {
-            routeType = .unknown
-        }
-
+        routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try container.decode(URL.self, forKey: .routeURL)
     }
 }

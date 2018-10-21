@@ -77,7 +77,19 @@ extension ReferencesTests {
         let references = self.references!
         let stops = references.stops
 
-        // ABXOXO - todo!
+        expect(stops.count) == 26
+
+        let stop = stops.first!
+        expect(stop.code) == "6497"
+        expect(stop.direction).to(beNil())
+        expect(stop.id) == "Hillsborough Area Regional Transit_6497"
+        expect(stop.location.coordinate.latitude).to(beCloseTo(28.066419, within: 0.01))
+        expect(stop.location.coordinate.longitude).to(beCloseTo(-82.429872, within: 0.01))
+        expect(stop.locationType) == .stop
+        expect(stop.name) == "University Area Transit Center"
+        expect(stop.routeIDs.count) == 10
+        expect(stop.routeIDs.first!) == "Hillsborough Area Regional Transit_1"
+        expect(stop.wheelchairBoarding) == .unknown
     }
 }
 

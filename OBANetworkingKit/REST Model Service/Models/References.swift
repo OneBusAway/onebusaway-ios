@@ -89,21 +89,6 @@ public class Situation: NSObject, Decodable {
 }
 
 // TODO: Flesh me out!
-public class Stop: NSObject, Decodable {
-    let name: String
-
-    private enum CodingKeys: String, CodingKey {
-        case name
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        name = try container.decode(String.self, forKey: .name)
-    }
-}
-
-// TODO: Flesh me out!
 public class Trip: NSObject, Decodable {
     let shortName: String
     let headsign: String
