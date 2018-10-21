@@ -1,0 +1,229 @@
+{
+  "code": 200,
+  "currentTime": 1538584296543,
+  "data": {
+    "entry": {
+      "lastLocationUpdateTime": 0,
+      "lastUpdateTime": 1538584269000,
+      "location": {"lat": 47.608246, "lon": -122.336166},
+      "phase": "in_progress",
+      "status": "SCHEDULED",
+      "tripId": "40_40804394",
+      "tripStatus": {
+        "activeTripId": "40_40804394",
+        "blockTripSequence": 3,
+        "closestStop": "1_532",
+        "closestStopTimeOffset": -7,
+        "distanceAlongTrip": 25959.06571520127,
+        "frequency": {
+          "startTime": 1289579400000,
+          "endTime": 1289602799000,
+          "headway": 600
+        },
+        "lastKnownDistanceAlongTrip": 0,
+        "lastKnownLocation": null,
+        "lastKnownOrientation": 0,
+        "lastLocationUpdateTime": 0,
+        "lastUpdateTime": 1538584269000,
+        "nextStop": "1_565",
+        "nextStopTimeOffset": 144,
+        "orientation": 132.02883674001336,
+        "phase": "in_progress",
+        "position": {
+          "lat": 47.6033984741234,
+          "lon": -122.33187636812438
+        },
+        "predicted": true,
+        "scheduleDeviation": 219,
+        "scheduledDistanceAlongTrip": 25959.06571520127,
+        "serviceDate": 1538550000000,
+        "situationIds": [
+
+        ],
+        "status": "SCHEDULED",
+        "totalDistanceAlongTrip": 32491.729956693864,
+        "vehicleId": "40_11"
+      },
+      "vehicleId": "40_11"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "SeaTac - Seattle",
+          "id": "40_100479",
+          "longName": "",
+          "shortName": "Link light rail",
+          "textColor": "",
+          "type": 0,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/599"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Lake City - Northgate TC - Downtown Seattle",
+          "id": "1_100221",
+          "longName": "",
+          "shortName": "41",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/041/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Sand Point - Downtown Seattle",
+          "id": "1_100268",
+          "longName": "",
+          "shortName": "74",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/074/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Renton Transit Center - Downtown Seattle",
+          "id": "1_100003",
+          "longName": "",
+          "shortName": "101",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/101/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Fairwood - Downtown Seattle",
+          "id": "1_100487",
+          "longName": "",
+          "shortName": "102",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/102/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Kent Station - Southcenter - Downtown Seattle",
+          "id": "1_100045",
+          "longName": "",
+          "shortName": "150",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/150/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Brickyard P&R - Kirkland TC - Downtown Seattle",
+          "id": "1_100146",
+          "longName": "",
+          "shortName": "255",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/255/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Bellevue - Seattle",
+          "id": "40_100239",
+          "longName": "Bellevue - Seattle",
+          "shortName": "550",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/550"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "532",
+          "direction": "NW",
+          "id": "1_532",
+          "lat": 47.603199,
+          "locationType": 0,
+          "lon": -122.331581,
+          "name": "Pioneer Sq Station - Bay A",
+          "routeIds": [
+            "1_100221",
+            "1_100268",
+            "1_100003",
+            "1_100487",
+            "1_100045",
+            "1_100146",
+            "40_100239",
+            "40_100479"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "565",
+          "direction": "NW",
+          "id": "1_565",
+          "lat": 47.608246,
+          "locationType": 0,
+          "lon": -122.336166,
+          "name": "University St Station - Bay A",
+          "routeIds": [
+            "1_100221",
+            "1_100268",
+            "1_100003",
+            "1_100487",
+            "1_100045",
+            "1_100146",
+            "40_100239",
+            "40_100479"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "40_5112923",
+          "directionId": "1",
+          "id": "40_40804394",
+          "routeId": "40_100479",
+          "routeShortName": "",
+          "serviceId": "1_134019",
+          "shapeId": "1_10599016",
+          "timeZone": "",
+          "tripHeadsign": "University Of Washington Station",
+          "tripShortName": "LOCAL"
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

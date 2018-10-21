@@ -12,13 +12,25 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBANetworkingKit
 
+
 class VehicleModelOperationTests: OBATestCase {
-
     let vehicleID = "40_11"
+    lazy var apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
 
-    func testLoadingVehicle_failure_garbageData() {
-        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
+    func stubVehicle4011() {
+        stubJSON(fileName: "vehicle_for_id_4011.json")
+    }
 
+    func stubJSON(fileName: String) {
+        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
+            return self.JSONFile(named: fileName)
+        }
+    }
+}
+
+// MARK: - Vehicle Status
+extension VehicleModelOperationTests {
+    func testLoading_vehicleStatus_failure_garbageData() {
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
             return self.file(named: "captive_portal.html", contentType: "text/html")
         }
@@ -34,11 +46,7 @@ class VehicleModelOperationTests: OBATestCase {
     }
 
     func testLoading_vehicleStatus_success() {
-        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
-
-        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "vehicle_for_id_4011.json")
-        }
+        stubVehicle4011()
 
         waitUntil { done in
             let op = self.restModelService.getVehicle(self.vehicleID)
@@ -49,7 +57,7 @@ class VehicleModelOperationTests: OBATestCase {
 
                 // Vehicle Status
                 expect(vehicle.lastLocationUpdateTime).to(beNil())
-                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 09, minute: 31, second: 09)
+                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 16, minute: 31, second: 09)
                 expect(vehicle.location!.coordinate.latitude) == 47.608246
                 expect(vehicle.location!.coordinate.longitude) == -122.336166
                 expect(vehicle.phase) == "in_progress"
@@ -59,13 +67,12 @@ class VehicleModelOperationTests: OBATestCase {
             }
         }
     }
+}
 
+// MARK: - Trip Status
+extension VehicleModelOperationTests {
     func testLoading_tripStatus_success() {
-        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
-
-        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "vehicle_for_id_4011.json")
-        }
+        stubVehicle4011()
 
         waitUntil { done in
             let op = self.restModelService.getVehicle(self.vehicleID)
@@ -79,7 +86,6 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(tripStatus.closestStop) == "1_532"
                 expect(tripStatus.closestStopTimeOffset) == -7
                 expect(tripStatus.distanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
-                //                expect(tripStatus.frequency) == ???
                 expect(tripStatus.lastKnownDistanceAlongTrip) == 0
                 expect(tripStatus.lastKnownLocation).to(beNil())
                 expect(tripStatus.lastKnownOrientation) == 0
@@ -94,7 +100,7 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(tripStatus.predicted).to(beTrue())
                 expect(tripStatus.scheduleDeviation) == 219
                 expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
-                expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 00, minute: 00, second: 00)
+                expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 07, minute: 00, second: 00)
                 expect(tripStatus.situationIDs) == []
                 expect(tripStatus.status) == "SCHEDULED"
                 expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(32491.73, within: 0.01))
@@ -104,13 +110,12 @@ class VehicleModelOperationTests: OBATestCase {
             }
         }
     }
+}
 
+// MARK: - References
+extension VehicleModelOperationTests {
     func testLoading_references_success() {
-        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
-
-        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "vehicle_for_id_4011.json")
-        }
+        stubVehicle4011()
 
         waitUntil { done in
             let op = self.restModelService.getVehicle(self.vehicleID)
@@ -124,6 +129,28 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(references.situations.count) == 0
                 expect(references.stops.count) == 2
                 expect(references.trips.count) == 1
+
+                done()
+            }
+        }
+    }
+}
+
+// MARK: - Frequency
+extension VehicleModelOperationTests {
+    func testLoading_frequency_success() {
+        stubJSON(fileName: "frequency-vehicle.json")
+
+        waitUntil { done in
+            let op = self.restModelService.getVehicle(self.vehicleID)
+            op.completionBlock = {
+                let frequency = op.vehicles.first!.tripStatus.frequency!
+
+                expect(frequency).toNot(beNil())
+                expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)
+                
+                expect(frequency.endTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59)
+                expect(frequency.headway) == 600
 
                 done()
             }
