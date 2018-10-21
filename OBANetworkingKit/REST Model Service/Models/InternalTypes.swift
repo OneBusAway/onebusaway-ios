@@ -9,7 +9,7 @@
 import Foundation
 import CoreLocation
 
-internal struct LocationModel: Codable {
+struct LocationModel: Codable {
     let latitude: Double
     let longitude: Double
 
@@ -19,7 +19,7 @@ internal struct LocationModel: Codable {
     }
 }
 
-internal extension CLLocation {
+extension CLLocation {
     convenience init(locationModel: LocationModel) {
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
     }
@@ -27,5 +27,14 @@ internal extension CLLocation {
     convenience init<K>(container: KeyedDecodingContainer<K>, key: K) throws where K: CodingKey {
         let locationModel = try container.decode(LocationModel.self, forKey: key)
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
+    }
+}
+
+extension DictionaryDecoder {
+    public class func restApiServiceDecoder() -> DictionaryDecoder {
+        let decoder = DictionaryDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+
+        return decoder
     }
 }

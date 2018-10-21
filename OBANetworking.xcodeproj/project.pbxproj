@@ -19,6 +19,9 @@
 		93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B92217C189500E16DBA /* RESTModelOperation.swift */; };
 		93158B95217C1C2400E16DBA /* Frequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B94217C1C2400E16DBA /* Frequency.swift */; };
 		93158B9A217CDB9A00E16DBA /* frequency-vehicle.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B99217CDB9A00E16DBA /* frequency-vehicle.json */; };
+		93158B9C217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */; };
+		93158B9E217CE18E00E16DBA /* ReferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B9D217CE18E00E16DBA /* ReferencesTests.swift */; };
+		93158BA0217CE2AD00E16DBA /* references.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9F217CE2AD00E16DBA /* references.json */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
@@ -162,6 +165,9 @@
 		93158B92217C189500E16DBA /* RESTModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTModelOperation.swift; sourceTree = "<group>"; };
 		93158B94217C1C2400E16DBA /* Frequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Frequency.swift; sourceTree = "<group>"; };
 		93158B99217CDB9A00E16DBA /* frequency-vehicle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "frequency-vehicle.json"; sourceTree = "<group>"; };
+		93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_hart_6497.json; sourceTree = "<group>"; };
+		93158B9D217CE18E00E16DBA /* ReferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencesTests.swift; sourceTree = "<group>"; };
+		93158B9F217CE2AD00E16DBA /* references.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = references.json; sourceTree = "<group>"; };
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -467,6 +473,8 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93158B9F217CE2AD00E16DBA /* references.json */,
+				93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */,
 				93158B99217CDB9A00E16DBA /* frequency-vehicle.json */,
 				93158B8C217BC66500E16DBA /* captive_portal.html */,
 				933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */,
@@ -572,6 +580,7 @@
 			isa = PBXGroup;
 			children = (
 				933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */,
+				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -738,12 +747,14 @@
 				931CE26B216E361300161A6C /* trip_details_1_18196913.json in Resources */,
 				936978922170DAF40053DF37 /* puget_sound_alerts.pb in Resources */,
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
+				93158BA0217CE2AD00E16DBA /* references.json in Resources */,
 				9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */,
 				933FFF3921795403006682C3 /* trip-for-vehicle-1_2799.json in Resources */,
 				932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */,
 				937BB7332173DC4D00BE5635 /* report_stop_problem.json in Resources */,
 				932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */,
 				931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */,
+				93158B9C217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */,
 				93158B9A217CDB9A00E16DBA /* frequency-vehicle.json in Resources */,
 				933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */,
 				93FAAA9F2177E27C0086D9DE /* regions-v3.json in Resources */,
@@ -857,6 +868,7 @@
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				933FFF46217A7FC0006682C3 /* DictionaryEncodingTests.swift in Sources */,
+				93158B9E217CE18E00E16DBA /* ReferencesTests.swift in Sources */,
 				936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,

@@ -10,7 +10,7 @@ import Foundation
 
 public class Agency: NSObject, Decodable {
     let disclaimer: String
-    let email: String
+    let email: String?
     let fareURL: URL?
     let id: String
     let language: String
@@ -37,7 +37,7 @@ public class Agency: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         disclaimer = try container.decode(String.self, forKey: .disclaimer)
-        email = try container.decode(String.self, forKey: .email)
+        email = try? container.decode(String.self, forKey: .email)
         fareURL = try? container.decode(URL.self, forKey: .fareURL)
 
         id = try container.decode(String.self, forKey: .id)

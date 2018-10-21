@@ -18,6 +18,8 @@ public class RESTAPIModelService: NSObject {
         self.dataQueue = dataQueue
     }
 
+    // MARK: - Vehicles
+
     public func getVehicle(_ vehicleID: String) -> VehicleModelOperation {
         let service = apiService.getVehicle(vehicleID)
         let data = VehicleModelOperation()
@@ -29,6 +31,8 @@ public class RESTAPIModelService: NSObject {
         return data
     }
 
+    // MARK: - Private Internal Helpers
+
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
         let transferOperation = BlockOperation(block: transfer)
 
@@ -39,23 +43,26 @@ public class RESTAPIModelService: NSObject {
     }
 
     /*
- @objc public func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
- @objc public func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
- @objc public func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
- @objc public func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
- @objc public func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
- @objc public func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock?) -> StopsOperation
- @objc public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) -> StopArrivalsAndDeparturesOperation
- @objc public func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation
- @objc public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> TripDetailsOperation
- @objc public func getStopsForRoute(id: String, completion: RESTAPICompletionBlock?) -> StopsForRouteOperation
- @objc public func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation
- @objc public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> PlacemarkSearchOperation
- @objc public func getShape(id: String, completion: RESTAPICompletionBlock?) -> ShapeOperation
- @objc public func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation
- @objc public func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
- @objc public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: RESTAPICompletionBlock?) -> StopProblemOperation
- @objc public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
+func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
+func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
+func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
+func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
+func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock?) -> StopsOperation
+func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) fivalsAndDeparturesOperation
+func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, f: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation
+func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> fsOperation
+func getStopsForRoute(id: String, completion: RESTAPICompletionBlock?) -> StopsForRouteOperation
+func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation
+func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
+func getShape(id: String, completion: RESTAPICompletionBlock?) -> ShapeOperation
+func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation
+func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
+func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
+func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
+
+DONE:
+
+func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
  */
 
 }

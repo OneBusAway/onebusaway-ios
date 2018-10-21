@@ -18,6 +18,22 @@ public extension Date {
     }
 }
 
+public extension XCTestCase {
+    func loadData(file: String) -> Data {
+        let path = OHPathForFile(file, type(of: self))!
+        let data = NSData(contentsOfFile: path)!
+
+        return data as Data
+    }
+
+    func loadJSONDictionary(file: String) -> [String: Any] {
+        let data = loadData(file: file)
+        let json = try! JSONSerialization.jsonObject(with: data, options: [])
+
+        return (json as! [String: Any])
+    }
+}
+
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
 

@@ -12,7 +12,6 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBANetworkingKit
 
-
 class VehicleModelOperationTests: OBATestCase {
     let vehicleID = "40_11"
     lazy var apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)

@@ -65,8 +65,7 @@ public class References: NSObject, Decodable {
     }
 
     public static func decodeReferences(_ data: [String: Any]) throws -> References {
-        let decoder = DictionaryDecoder()
-        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let decoder = DictionaryDecoder.restApiServiceDecoder()
 
         let references = try decoder.decode(References.self, from: data)
 
