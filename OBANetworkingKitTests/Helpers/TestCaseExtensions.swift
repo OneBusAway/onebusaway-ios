@@ -88,18 +88,18 @@ public extension OperationTest where Self: XCTestCase {
     // MARK: - Data Loading
 
     public func dataFile(named name: String) -> OHHTTPStubsResponse {
-        return OHHTTPStubsResponse(
-            fileAtPath: OHPathForFile(name, type(of: self))!,
-            statusCode: 200,
-            headers: ["Content-Type": "application/octet-stream"]
-        )
+        return file(named: name, contentType: "application/octet-stream")
     }
 
     public func JSONFile(named name: String) -> OHHTTPStubsResponse {
+        return file(named: name, contentType: "application/json")
+    }
+
+    public func file(named name: String, contentType: String, statusCode: Int = 200) -> OHHTTPStubsResponse {
         return OHHTTPStubsResponse(
             fileAtPath: OHPathForFile(name, type(of: self))!,
-            statusCode: 200,
-            headers: ["Content-Type":"application/json"]
+            statusCode: Int32(statusCode),
+            headers: ["Content-Type": contentType]
         )
     }
 }

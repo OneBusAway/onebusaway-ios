@@ -29,7 +29,7 @@ class RequestVehicleOperationSpec: OBATestCase {
                 let lastUpdateTime = entry["lastUpdateTime"] as! Int
                 expect(lastUpdateTime).to(equal(1538584269000))
 
-                let references = op.references as! [String: AnyObject]
+                let references = op.references!
                 let agencies = references["agencies"] as! [AnyObject]
                 expect(agencies.count).to(equal(2))
 

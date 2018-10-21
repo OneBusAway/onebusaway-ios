@@ -13,6 +13,10 @@
 		93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
 		93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
 		93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8A217B9D5900E16DBA /* InternalTypes.swift */; };
+		93158B8D217BC66500E16DBA /* captive_portal.html in Resources */ = {isa = PBXBuildFile; fileRef = 93158B8C217BC66500E16DBA /* captive_portal.html */; };
+		93158B8F217C05FB00E16DBA /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8E217C05FB00E16DBA /* References.swift */; };
+		93158B91217C0B0A00E16DBA /* Agency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B90217C0B0A00E16DBA /* Agency.swift */; };
+		93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B92217C189500E16DBA /* RESTModelOperation.swift */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
@@ -150,6 +154,10 @@
 		93158B86217B991700E16DBA /* VehicleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatus.swift; sourceTree = "<group>"; };
 		93158B88217B9B2900E16DBA /* TripStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStatus.swift; sourceTree = "<group>"; };
 		93158B8A217B9D5900E16DBA /* InternalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
+		93158B8C217BC66500E16DBA /* captive_portal.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = captive_portal.html; sourceTree = "<group>"; };
+		93158B8E217C05FB00E16DBA /* References.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
+		93158B90217C0B0A00E16DBA /* Agency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agency.swift; sourceTree = "<group>"; };
+		93158B92217C189500E16DBA /* RESTModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTModelOperation.swift; sourceTree = "<group>"; };
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -433,6 +441,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93158B8C217BC66500E16DBA /* captive_portal.html */,
 				933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */,
 				933FFF32217946CA006682C3 /* vehicles-query-1_1.json */,
 				93FAAAAE2178D5060086D9DE /* create_alarm.json */,
@@ -488,10 +497,13 @@
 			isa = PBXGroup;
 			children = (
 				933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */,
+				93158B92217C189500E16DBA /* RESTModelOperation.swift */,
 				933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */,
 				93158B86217B991700E16DBA /* VehicleStatus.swift */,
 				93158B88217B9B2900E16DBA /* TripStatus.swift */,
 				93158B8A217B9D5900E16DBA /* InternalTypes.swift */,
+				93158B8E217C05FB00E16DBA /* References.swift */,
+				93158B90217C0B0A00E16DBA /* Agency.swift */,
 			);
 			path = "REST Model Service";
 			sourceTree = "<group>";
@@ -716,6 +728,7 @@
 				93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */,
 				937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */,
 				932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */,
+				93158B8D217BC66500E16DBA /* captive_portal.html in Resources */,
 				931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */,
 				93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
@@ -786,9 +799,12 @@
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
+				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleModelOperation.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
 				933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */,
+				93158B8F217C05FB00E16DBA /* References.swift in Sources */,
+				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,

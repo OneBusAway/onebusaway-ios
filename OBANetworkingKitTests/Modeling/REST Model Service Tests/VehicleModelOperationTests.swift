@@ -16,7 +16,24 @@ class VehicleModelOperationTests: OBATestCase {
 
     let vehicleID = "40_11"
 
-    func testLoadingVehicle_success() {
+    func testLoadingVehicle_failure_garbageData() {
+        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
+
+        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
+            return self.file(named: "captive_portal.html", contentType: "text/html")
+        }
+
+        waitUntil { done in
+            let op = self.restModelService.getVehicle(self.vehicleID)
+            op.completionBlock = {
+                expect(op.vehicles.count) == 0
+
+                done()
+            }
+        }
+    }
+
+    func testLoading_vehicleStatus_success() {
         let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
 
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
@@ -29,7 +46,6 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(op.vehicles.count) == 1
 
                 let vehicle = op.vehicles.first!
-                let tripStatus = vehicle.tripStatus
 
                 // Vehicle Status
                 expect(vehicle.lastLocationUpdateTime).to(beNil())
@@ -39,6 +55,23 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(vehicle.phase) == "in_progress"
                 expect(vehicle.status) == "SCHEDULED"
 
+                done()
+            }
+        }
+    }
+
+    func testLoading_tripStatus_success() {
+        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
+
+        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
+            return self.JSONFile(named: "vehicle_for_id_4011.json")
+        }
+
+        waitUntil { done in
+            let op = self.restModelService.getVehicle(self.vehicleID)
+            op.completionBlock = {
+                let tripStatus = op.vehicles.first!.tripStatus
+
                 // Trip Status
                 expect(tripStatus).toNot(beNil())
                 expect(tripStatus.activeTripID) == "40_40804394"
@@ -46,7 +79,7 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(tripStatus.closestStop) == "1_532"
                 expect(tripStatus.closestStopTimeOffset) == -7
                 expect(tripStatus.distanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
-//                expect(tripStatus.frequency) == ???
+                //                expect(tripStatus.frequency) == ???
                 expect(tripStatus.lastKnownDistanceAlongTrip) == 0
                 expect(tripStatus.lastKnownLocation).to(beNil())
                 expect(tripStatus.lastKnownOrientation) == 0
@@ -66,6 +99,31 @@ class VehicleModelOperationTests: OBATestCase {
                 expect(tripStatus.status) == "SCHEDULED"
                 expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(32491.73, within: 0.01))
                 expect(tripStatus.vehicleID) == "40_11"
+
+                done()
+            }
+        }
+    }
+
+    func testLoading_references_success() {
+        let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
+
+        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
+            return self.JSONFile(named: "vehicle_for_id_4011.json")
+        }
+
+        waitUntil { done in
+            let op = self.restModelService.getVehicle(self.vehicleID)
+            op.completionBlock = {
+                let references = op.references!
+
+                expect(references).toNot(beNil())
+
+                expect(references.agencies.count) == 2
+                expect(references.routes.count) == 8
+                expect(references.situations.count) == 0
+                expect(references.stops.count) == 2
+                expect(references.trips.count) == 1
 
                 done()
             }

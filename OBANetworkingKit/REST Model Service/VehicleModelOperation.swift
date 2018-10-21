@@ -9,23 +9,19 @@
 import Foundation
 
 @objc(OBAVehicleModelOperation)
-public class VehicleModelOperation: Operation {
-    public var apiOperation: RESTAPIOperation?
+public class VehicleModelOperation: RESTModelOperation {
     public private(set) var vehicles: [VehicleStatus] = []
 
     override public func main() {
-        guard
-            let apiOperation = apiOperation,
-            let entries = apiOperation.entries
-        else {
-            return
-        }
+        super.main()
 
-        do {
-            self.vehicles = try VehicleStatus.decodeEntries(entries)
-        }
-        catch {
-            print("Unable to decode vehicle from data: \(error)")
+        if let entries = apiOperation?.entries {
+            do {
+                self.vehicles = try VehicleStatus.decodeEntries(entries)
+            }
+            catch {
+                print("Unable to decode vehicle from data: \(error)")
+            }
         }
     }
 }
