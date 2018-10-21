@@ -74,21 +74,6 @@ public class References: NSObject, Decodable {
 }
 
 // TODO: Flesh me out!
-public class Route: NSObject, Decodable {
-    let shortName: String
-
-    private enum CodingKeys: String, CodingKey {
-        case shortName
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        shortName = try container.decode(String.self, forKey: .shortName)
-    }
-}
-
-// TODO: Flesh me out!
 public class Situation: NSObject, Decodable {
     let id: String
 

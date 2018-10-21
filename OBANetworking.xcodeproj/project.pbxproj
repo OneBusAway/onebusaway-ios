@@ -10,6 +10,7 @@
 		93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C90216C5644008A31A4 /* RouteSearchOperation.swift */; };
 		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
 		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
+		9309DCA4217D0B3200E750D0 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA3217D0B3200E750D0 /* Route.swift */; };
 		93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
 		93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
 		93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8A217B9D5900E16DBA /* InternalTypes.swift */; };
@@ -156,6 +157,7 @@
 		93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperationTest.swift; sourceTree = "<group>"; };
 		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
 		93058C97216CE29F008A31A4 /* module.modulemap */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.module-map"; path = module.modulemap; sourceTree = "<group>"; };
+		9309DCA3217D0B3200E750D0 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		93158B86217B991700E16DBA /* VehicleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatus.swift; sourceTree = "<group>"; };
 		93158B88217B9B2900E16DBA /* TripStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStatus.swift; sourceTree = "<group>"; };
 		93158B8A217B9D5900E16DBA /* InternalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
@@ -321,6 +323,7 @@
 				93158B8E217C05FB00E16DBA /* References.swift */,
 				93158B90217C0B0A00E16DBA /* Agency.swift */,
 				93158B94217C1C2400E16DBA /* Frequency.swift */,
+				9309DCA3217D0B3200E750D0 /* Route.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -836,6 +839,7 @@
 				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleModelOperation.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
+				9309DCA4217D0B3200E750D0 /* Route.swift in Sources */,
 				933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */,
 				93158B8F217C05FB00E16DBA /* References.swift in Sources */,
 				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,

@@ -26,8 +26,7 @@ class ReferencesTests: OBATestCase {
 // MARK: - Agencies
 extension ReferencesTests {
     func test_agencies_success() {
-        let references = self.references!
-        let agencies = references.agencies
+        let agencies = self.references!.agencies
 
         expect(agencies.count) == 1
 
@@ -46,10 +45,19 @@ extension ReferencesTests {
 // MARK: - Routes
 extension ReferencesTests {
     func test_routes_success() {
-        let references = self.references!
-        let routes = references.routes
+        let routes = self.references!.routes
+        expect(routes.count) == 16
 
-        // ABXOXO - todo!
+        let route = routes.first!
+        expect(route.agencyID) == "Hillsborough Area Regional Transit"
+        expect(route.color) == "09346D"
+        expect(route.routeDescription) == ""
+        expect(route.id) == "Hillsborough Area Regional Transit_1"
+        expect(route.longName) == "Florida Avenue"
+        expect(route.shortName) == "1"
+        expect(route.textColor) == "FFFFFF"
+        expect(route.routeType) == .bus
+        expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
     }
 }
 
