@@ -295,6 +295,28 @@
 			path = PrivateModule;
 			sourceTree = "<group>";
 		};
+		93158B96217C22A000E16DBA /* Operations */ = {
+			isa = PBXGroup;
+			children = (
+				93158B92217C189500E16DBA /* RESTModelOperation.swift */,
+				933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */,
+			);
+			path = Operations;
+			sourceTree = "<group>";
+		};
+		93158B98217C22BD00E16DBA /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				93158B8A217B9D5900E16DBA /* InternalTypes.swift */,
+				93158B86217B991700E16DBA /* VehicleStatus.swift */,
+				93158B88217B9B2900E16DBA /* TripStatus.swift */,
+				93158B8E217C05FB00E16DBA /* References.swift */,
+				93158B90217C0B0A00E16DBA /* Agency.swift */,
+				93158B94217C1C2400E16DBA /* Frequency.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		931B93C82163F5520034D8FA = {
 			isa = PBXGroup;
 			children = (
@@ -499,14 +521,8 @@
 			isa = PBXGroup;
 			children = (
 				933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */,
-				93158B92217C189500E16DBA /* RESTModelOperation.swift */,
-				933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */,
-				93158B86217B991700E16DBA /* VehicleStatus.swift */,
-				93158B88217B9B2900E16DBA /* TripStatus.swift */,
-				93158B8A217B9D5900E16DBA /* InternalTypes.swift */,
-				93158B8E217C05FB00E16DBA /* References.swift */,
-				93158B90217C0B0A00E16DBA /* Agency.swift */,
-				93158B94217C1C2400E16DBA /* Frequency.swift */,
+				93158B98217C22BD00E16DBA /* Models */,
+				93158B96217C22A000E16DBA /* Operations */,
 			);
 			path = "REST Model Service";
 			sourceTree = "<group>";
