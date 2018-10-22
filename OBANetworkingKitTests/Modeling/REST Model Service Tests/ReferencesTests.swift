@@ -96,9 +96,21 @@ extension ReferencesTests {
 // MARK: - Trips
 extension ReferencesTests {
     func test_trips_success() {
-        let references = self.references!
-        let trips = references.trips
+        let trips = self.references!.trips
 
-        // ABXOXO - todo!
+        expect(trips.count) == 30
+
+        let trip = trips.first!
+
+        expect(trip.blockID) == "Hillsborough Area Regional Transit_288317"
+        expect(trip.direction).to(beNil())
+        expect(trip.id) == "Hillsborough Area Regional Transit_99283"
+        expect(trip.routeID) == "Hillsborough Area Regional Transit_9"
+        expect(trip.routeShortName).to(beNil())
+        expect(trip.shortName).to(beNil())
+        expect(trip.serviceID) == "Hillsborough Area Regional Transit_We"
+        expect(trip.timeZone).to(beNil())
+        expect(trip.shapeID) == "Hillsborough Area Regional Transit_38042"
+        expect(trip.headsign) == "Downtown to UATC via 15th St"
     }
 }

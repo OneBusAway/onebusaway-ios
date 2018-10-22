@@ -87,21 +87,3 @@ public class Situation: NSObject, Decodable {
         id = try container.decode(String.self, forKey: .id)
     }
 }
-
-// TODO: Flesh me out!
-public class Trip: NSObject, Decodable {
-    let shortName: String
-    let headsign: String
-
-    private enum CodingKeys: String, CodingKey {
-        case shortName = "tripShortName"
-        case headsign = "tripHeadsign"
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        shortName = try container.decode(String.self, forKey: .shortName)
-        headsign = try container.decode(String.self, forKey: .headsign)
-    }
-}

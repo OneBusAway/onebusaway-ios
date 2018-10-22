@@ -13,6 +13,7 @@
 		9309DCA4217D0B3200E750D0 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA3217D0B3200E750D0 /* Route.swift */; };
 		9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA5217D0E9500E750D0 /* Stop.swift */; };
 		9309DCA8217D117900E750D0 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
+		9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA9217D8ED200E750D0 /* Trip.swift */; };
 		93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
 		93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
 		93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8A217B9D5900E16DBA /* InternalTypes.swift */; };
@@ -162,6 +163,7 @@
 		9309DCA3217D0B3200E750D0 /* Route.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Route.swift; sourceTree = "<group>"; };
 		9309DCA5217D0E9500E750D0 /* Stop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stop.swift; sourceTree = "<group>"; };
 		9309DCA7217D117900E750D0 /* ModelHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelHelpers.swift; sourceTree = "<group>"; };
+		9309DCA9217D8ED200E750D0 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		93158B86217B991700E16DBA /* VehicleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatus.swift; sourceTree = "<group>"; };
 		93158B88217B9B2900E16DBA /* TripStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStatus.swift; sourceTree = "<group>"; };
 		93158B8A217B9D5900E16DBA /* InternalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
@@ -329,6 +331,7 @@
 				93158B94217C1C2400E16DBA /* Frequency.swift */,
 				9309DCA3217D0B3200E750D0 /* Route.swift */,
 				9309DCA5217D0E9500E750D0 /* Stop.swift */,
+				9309DCA9217D8ED200E750D0 /* Trip.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -818,6 +821,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */,
 				931CE27D216F944E00161A6C /* RegionsService.swift in Sources */,
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
