@@ -72,18 +72,3 @@ public class References: NSObject, Decodable {
         return references
     }
 }
-
-// TODO: Flesh me out!
-public class Situation: NSObject, Decodable {
-    let id: String
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        id = try container.decode(String.self, forKey: .id)
-    }
-}

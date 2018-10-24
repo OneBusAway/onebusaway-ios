@@ -68,6 +68,8 @@
 		931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */ = {isa = PBXBuildFile; fileRef = 931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */; };
 		931CE27A216F941D00161A6C /* ObacoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE279216F941D00161A6C /* ObacoService.swift */; };
 		931CE27D216F944E00161A6C /* RegionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE27C216F944E00161A6C /* RegionsService.swift */; };
+		932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */ = {isa = PBXBuildFile; fileRef = 932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */; };
+		932A6F2A218022AF0008654F /* Situation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932A6F29218022AF0008654F /* Situation.swift */; };
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
 		932AAF9E216962D20070BF56 /* ArrivalDepartureForStopTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */; };
 		932AAFA021696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */; };
@@ -224,6 +226,8 @@
 		931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrivals-and-departures-for-stop-1_75414.json"; sourceTree = "<group>"; };
 		931CE279216F941D00161A6C /* ObacoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObacoService.swift; sourceTree = "<group>"; };
 		931CE27C216F944E00161A6C /* RegionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsService.swift; sourceTree = "<group>"; };
+		932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-MTS_11589.json"; sourceTree = "<group>"; };
+		932A6F29218022AF0008654F /* Situation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Situation.swift; sourceTree = "<group>"; };
 		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
 		932AAF9D216962D20070BF56 /* ArrivalDepartureForStopTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopTest.swift; sourceTree = "<group>"; };
 		932AAF9F21696C170070BF56 /* arrival-and-departure-for-stop-1_11420.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-1_11420.json"; sourceTree = "<group>"; };
@@ -332,6 +336,7 @@
 				9309DCA3217D0B3200E750D0 /* Route.swift */,
 				9309DCA5217D0E9500E750D0 /* Stop.swift */,
 				9309DCA9217D8ED200E750D0 /* Trip.swift */,
+				932A6F29218022AF0008654F /* Situation.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -485,6 +490,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */,
 				93158B9F217CE2AD00E16DBA /* references.json */,
 				93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */,
 				93158B99217CDB9A00E16DBA /* frequency-vehicle.json */,
@@ -776,6 +782,7 @@
 				932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */,
 				93158B8D217BC66500E16DBA /* captive_portal.html in Resources */,
 				931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */,
+				932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */,
 				93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
 			);
@@ -833,6 +840,7 @@
 				93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */,
 				933FFF4D217A7FD9006682C3 /* DictionaryEncoder.swift in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
+				932A6F2A218022AF0008654F /* Situation.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
 				93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,

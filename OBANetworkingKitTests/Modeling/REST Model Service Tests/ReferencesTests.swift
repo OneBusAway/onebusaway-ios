@@ -64,10 +64,28 @@ extension ReferencesTests {
 // MARK: - Situations
 extension ReferencesTests {
     func test_situations_success() {
-        let references = self.references!
-        let situations = references.situations
+        let json = loadJSONDictionary(file: "arrival-and-departure-for-stop-MTS_11589.json")
+        let data = json["data"] as! [String: Any]
+        let refsDictionary = data["references"] as! [String: Any]
+        let refs = try! References.decodeReferences(refsDictionary)
+        let situations = refs.situations
 
-        // ABXOXO - todo!
+        expect(situations.count) == 1
+
+        let TBD = nil
+
+        let situation = situations.first!
+        expect(situation.activeWindows) == TBD
+        expect(situation.affectedEntities) == TBD
+        expect(situation.consequences) == TBD
+        expect(situation.createdAt) == TBD
+        expect(situation.situationDescription) == TBD
+        expect(situation.id) == TBD
+        expect(situation.publicationWindows) == TBD
+        expect(situation.reason) == TBD
+        expect(situation.severity) == TBD
+        expect(situation.summary) == TBD
+        expect(situation.url) == TBD        
     }
 }
 
