@@ -19,7 +19,7 @@ public class Situation: NSObject, Decodable {
     let reason: String
     let severity: String
     let summary: TranslatedString
-    let url: URL
+    let url: URL?
 
     enum CodingKeys: String, CodingKey {
         case activeWindows
@@ -48,7 +48,7 @@ public class Situation: NSObject, Decodable {
         reason = try container.decode(String.self, forKey: .reason)
         severity = try container.decode(String.self, forKey: .severity)
         summary = try container.decode(TranslatedString.self, forKey: .summary)
-        url = try container.decode(URL.self, forKey: .url)
+        url = try? container.decode(URL.self, forKey: .url)
     }
 }
 

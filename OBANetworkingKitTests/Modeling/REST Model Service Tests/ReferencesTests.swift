@@ -72,20 +72,33 @@ extension ReferencesTests {
 
         expect(situations.count) == 1
 
-        let TBD = nil
-
         let situation = situations.first!
-        expect(situation.activeWindows) == TBD
-        expect(situation.affectedEntities) == TBD
-        expect(situation.consequences) == TBD
-        expect(situation.createdAt) == TBD
-        expect(situation.situationDescription) == TBD
-        expect(situation.id) == TBD
-        expect(situation.publicationWindows) == TBD
-        expect(situation.reason) == TBD
-        expect(situation.severity) == TBD
-        expect(situation.summary) == TBD
-        expect(situation.url) == TBD        
+
+        let activeWindow = situation.activeWindows.first!
+        expect(activeWindow.from) == 1539781200
+        expect(activeWindow.to) == 1539826200
+
+        let entity = situation.affectedEntities.first!
+        expect(entity.routeID) == "MTS_10"
+
+        let consequence = situation.consequences.first!
+        expect(consequence.condition) == "detour"
+        expect(consequence.conditionDetails!.diversionPath) == "ue}aHt~hiVYxHt@lIxAjD|`@pb@tDbHh@|EHvEU~l@fAfN`C~E|DvDbIvB|NdClMxCbEbA`CxDfB`FLrKsNl]gA{@gPGKjF"
+        expect(consequence.conditionDetails?.stopIDs) == ["1_9972", "1_9974"]
+
+        expect(situation.createdAt) == Date.fromComponents(year: 2018, month: 10, day: 13, hour: 02, minute: 26, second: 33)
+
+        let desc = situation.situationDescription
+        expect(desc.lang) == "en"
+        expect(desc.value) == "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops."
+
+        expect(situation.id) == "MTS_RTA:11638227"
+        expect(situation.publicationWindows) == []
+        expect(situation.reason) == "CONSTRUCTION"
+        expect(situation.severity) == ""
+        expect(situation.summary.lang) == "en"
+        expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
+        expect(situation.url).to(beNil())
     }
 }
 
