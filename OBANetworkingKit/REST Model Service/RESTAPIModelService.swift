@@ -20,16 +20,9 @@ public class RESTAPIModelService: NSObject {
 
     // MARK: - Vehicles
 
-    public func getVehicle(_ vehicleID: String) -> VehicleStatusModelOperation {
+    public func getVehicleStatus(_ vehicleID: String) -> VehicleStatusModelOperation {
         let service = apiService.getVehicle(vehicleID)
         let data = VehicleStatusModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-
-        return data
-    }
 
         transferData(from: service, to: data) { [unowned service, unowned data] in
             data.apiOperation = service

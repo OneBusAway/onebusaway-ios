@@ -35,7 +35,7 @@ extension VehicleStatusModelOperationTests {
         }
 
         waitUntil { done in
-            let op = self.restModelService.getVehicle(self.vehicleID)
+            let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
                 expect(op.vehicles.count) == 0
 
@@ -48,7 +48,7 @@ extension VehicleStatusModelOperationTests {
         stubVehicle4011()
 
         waitUntil { done in
-            let op = self.restModelService.getVehicle(self.vehicleID)
+            let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
                 expect(op.vehicles.count) == 1
 
@@ -74,7 +74,7 @@ extension VehicleStatusModelOperationTests {
         stubVehicle4011()
 
         waitUntil { done in
-            let op = self.restModelService.getVehicle(self.vehicleID)
+            let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
                 let tripStatus = op.vehicles.first!.tripStatus
 
@@ -112,12 +112,12 @@ extension VehicleStatusModelOperationTests {
 }
 
 // MARK: - References
-extension VehicleStatussModelOperationTests {
+extension VehicleStatusModelOperationTests {
     func testLoading_references_success() {
         stubVehicle4011()
 
         waitUntil { done in
-            let op = self.restModelService.getVehicle(self.vehicleID)
+            let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
                 let references = op.references!
 
@@ -141,7 +141,7 @@ extension VehicleStatusModelOperationTests {
         stubJSON(fileName: "frequency-vehicle.json")
 
         waitUntil { done in
-            let op = self.restModelService.getVehicle(self.vehicleID)
+            let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
                 let frequency = op.vehicles.first!.tripStatus.frequency!
 
