@@ -20,9 +20,46 @@ public class RESTAPIModelService: NSObject {
 
     // MARK: - Vehicles
 
+    /// Provides information on the vehicle with the specified ID.
+    ///
+    /// API Endpoint: `/api/where/vehicle/{id}.json`
+    ///
+    /// - Important: Vehicle IDs are seldom not identical to the IDs that
+    /// are physically printed on buses. For example, in Puget Sound, a
+    /// KC Metro bus that has the number `1234` printed on its side will
+    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - Parameter vehicleID: Vehicle ID string
+    /// - Returns: The enqueued model operation.
     public func getVehicleStatus(_ vehicleID: String) -> VehicleStatusModelOperation {
         let service = apiService.getVehicle(vehicleID)
         let data = VehicleStatusModelOperation()
+
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
+
+        return data
+    }
+
+    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
+    ///
+    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
+    ///
+    /// - Important: Vehicle IDs are seldom not identical to the IDs that
+    /// are physically printed on buses. For example, in Puget Sound, a
+    /// KC Metro bus that has the number `1234` printed on its side will
+    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - Parameters:
+    ///   - vehicleID: The ID of the vehicle
+    /// - Returns: The enqueued model operation.
+    public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
+        let service = apiService.getVehicleTrip(vehicleID: vehicleID)
+        let data = TripDetailsModelOperation()
 
         transferData(from: service, to: data) { [unowned service, unowned data] in
             data.apiOperation = service
@@ -43,7 +80,10 @@ public class RESTAPIModelService: NSObject {
     }
 
     /*
+In Progress:
 func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
+
+ TODO:
 func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
 func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation

@@ -102,6 +102,6 @@ public class Stop: NSObject, Decodable {
 
         locationType = try container.decode(StopLocationType.self, forKey: .locationType)
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
-        wheelchairBoarding = try container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)
+        wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 }
