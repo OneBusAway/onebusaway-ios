@@ -86,14 +86,14 @@
 		933FFF3721794D8D006682C3 /* VehicleTripOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3621794D8D006682C3 /* VehicleTripOperationTest.swift */; };
 		933FFF3921795403006682C3 /* trip-for-vehicle-1_2799.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */; };
 		933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */; };
-		933FFF3E2179AF7E006682C3 /* VehicleModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */; };
+		933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3D2179AF7E006682C3 /* VehicleStatusModelOperation.swift */; };
 		933FFF45217A7FC0006682C3 /* DictionaryDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */; };
 		933FFF46217A7FC0006682C3 /* DictionaryEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */; };
 		933FFF4B217A7FD9006682C3 /* DictionaryErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */; };
 		933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */; };
 		933FFF4D217A7FD9006682C3 /* DictionaryEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */; };
 		933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */; };
-		933FFF53217A8D4A006682C3 /* VehicleModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */; };
+		933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */; };
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
@@ -244,14 +244,14 @@
 		933FFF3621794D8D006682C3 /* VehicleTripOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleTripOperationTest.swift; sourceTree = "<group>"; };
 		933FFF3821795403006682C3 /* trip-for-vehicle-1_2799.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "trip-for-vehicle-1_2799.json"; sourceTree = "<group>"; };
 		933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIModelService.swift; sourceTree = "<group>"; };
-		933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleModelOperation.swift; sourceTree = "<group>"; };
+		933FFF3D2179AF7E006682C3 /* VehicleStatusModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModelOperation.swift; sourceTree = "<group>"; };
 		933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryDecodingTests.swift; sourceTree = "<group>"; };
 		933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryEncodingTests.swift; sourceTree = "<group>"; };
 		933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryErrors.swift; sourceTree = "<group>"; };
 		933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryCodingKey.swift; sourceTree = "<group>"; };
 		933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryEncoder.swift; sourceTree = "<group>"; };
 		933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryDecoder.swift; sourceTree = "<group>"; };
-		933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleModelOperationTests.swift; sourceTree = "<group>"; };
+		933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModelOperationTests.swift; sourceTree = "<group>"; };
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
 		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
@@ -319,7 +319,7 @@
 			isa = PBXGroup;
 			children = (
 				93158B92217C189500E16DBA /* RESTModelOperation.swift */,
-				933FFF3D2179AF7E006682C3 /* VehicleModelOperation.swift */,
+				933FFF3D2179AF7E006682C3 /* VehicleStatusModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -597,7 +597,7 @@
 		933FFF51217A8D36006682C3 /* REST Model Service Tests */ = {
 			isa = PBXGroup;
 			children = (
-				933FFF52217A8D4A006682C3 /* VehicleModelOperationTests.swift */,
+				933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */,
 				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
 			);
 			path = "REST Model Service Tests";
@@ -856,7 +856,7 @@
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
 				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
-				933FFF3E2179AF7E006682C3 /* VehicleModelOperation.swift in Sources */,
+				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
 				9309DCA4217D0B3200E750D0 /* Route.swift in Sources */,
 				933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */,
@@ -897,7 +897,7 @@
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
-				933FFF53217A8D4A006682C3 /* VehicleModelOperationTests.swift in Sources */,
+				933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */,
 				931B94C82168388E0034D8FA /* TestCaseExtensions.swift in Sources */,
 				933FFF45217A7FC0006682C3 /* DictionaryDecodingTests.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,

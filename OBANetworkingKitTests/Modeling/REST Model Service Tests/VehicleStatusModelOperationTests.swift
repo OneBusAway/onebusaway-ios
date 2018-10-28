@@ -1,5 +1,5 @@
 //
-//  VehicleModelOperationTests.swift
+//  VehicleStatussModelOperationTests.swift
 //  OBANetworkingKitTests
 //
 //  Created by Aaron Brethorst on 10/19/18.
@@ -12,7 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBANetworkingKit
 
-class VehicleModelOperationTests: OBATestCase {
+class VehicleStatusModelOperationTests: OBATestCase {
     let vehicleID = "40_11"
     lazy var apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
 
@@ -28,7 +28,7 @@ class VehicleModelOperationTests: OBATestCase {
 }
 
 // MARK: - Vehicle Status
-extension VehicleModelOperationTests {
+extension VehicleStatusModelOperationTests {
     func testLoading_vehicleStatus_failure_garbageData() {
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
             return self.file(named: "captive_portal.html", contentType: "text/html")
@@ -69,7 +69,7 @@ extension VehicleModelOperationTests {
 }
 
 // MARK: - Trip Status
-extension VehicleModelOperationTests {
+extension VehicleStatusModelOperationTests {
     func testLoading_tripStatus_success() {
         stubVehicle4011()
 
@@ -112,7 +112,7 @@ extension VehicleModelOperationTests {
 }
 
 // MARK: - References
-extension VehicleModelOperationTests {
+extension VehicleStatussModelOperationTests {
     func testLoading_references_success() {
         stubVehicle4011()
 
@@ -136,7 +136,7 @@ extension VehicleModelOperationTests {
 }
 
 // MARK: - Frequency
-extension VehicleModelOperationTests {
+extension VehicleStatusModelOperationTests {
     func testLoading_frequency_success() {
         stubJSON(fileName: "frequency-vehicle.json")
 

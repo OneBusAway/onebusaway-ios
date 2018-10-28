@@ -1,5 +1,5 @@
 //
-//  VehicleModelOperation.swift
+//  VehicleStatusModelOperation.swift
 //  OBANetworkingKit
 //
 //  Created by Aaron Brethorst on 10/18/18.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-@objc(OBAVehicleModelOperation)
-public class VehicleModelOperation: RESTModelOperation {
+@objc(OBAVehicleStatusModelOperation)
+public class VehicleStatusModelOperation: RESTModelOperation {
     public private(set) var vehicles: [VehicleStatus] = []
 
     override public func main() {
