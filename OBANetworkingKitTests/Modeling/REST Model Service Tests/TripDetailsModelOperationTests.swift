@@ -21,10 +21,6 @@ class TripDetailsModelOperationTests: OBATestCase {
             return self.JSONFile(named: "trip_details_1_18196913.json")
         }
     }
-}
-
-// MARK: - Vehicle Status
-extension TripDetailsModelOperationTests {
 
     func testLoading_tripDetails_success() {
         stubVehicle11234()
@@ -32,7 +28,6 @@ extension TripDetailsModelOperationTests {
         waitUntil { done in
             let op = self.restModelService.getTripDetails(vehicleID: self.vehicleID)
             op.completionBlock = {
-
                 let tripDetails = op.tripDetails!
                 expect(tripDetails).toNot(beNil())
 

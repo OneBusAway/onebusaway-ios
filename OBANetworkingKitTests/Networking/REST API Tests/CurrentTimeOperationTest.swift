@@ -14,15 +14,13 @@ import OHHTTPStubs
 class CurrentTimeTests: OBATestCase {
     func testSuccessfulAPICall() {
         stub(condition: isHost(self.host) && isPath(CurrentTimeOperation.apiPath)) { _ in
-            return OHHTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Date": "October 2, 2018 19:42:00 PDT"])
+            return self.JSONFile(named: "current_time.json")
         }
 
         waitUntil { (done) in
             self.restService.getCurrentTime { op in
-                guard let op = op as? CurrentTimeOperation else {
-                    return
-                }
-                expect(op.currentTime).to(equal("October 2, 2018 19:42:00 PDT"))
+                let op = op as! CurrentTimeOperation
+                expect(op.currentTime!).to(beCloseTo(Date.fromComponents(year: 2012, month: 07, day: 29, hour: 18, minute: 37, second: 48), within: 1.0))
                 done()
             }
         }

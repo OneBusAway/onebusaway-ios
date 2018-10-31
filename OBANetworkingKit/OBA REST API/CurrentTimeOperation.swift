@@ -9,15 +9,14 @@
 import Foundation
 
 public class CurrentTimeOperation: RESTAPIOperation {
-    @objc public var currentTime: String? {
+    @objc public var currentTime: Date? {
         guard
-            let response = response,
-            let dateString = response.allHeaderFields["Date"] as? String
-        else {
+            let decodedBody = _decodedJSONBody as? [String: Any],
+            let currentTime = decodedBody["currentTime"] as? Double else {
             return nil
         }
 
-        return dateString
+        return Date(timeIntervalSince1970: currentTime / 1000.0)
     }
 
     // MARK: - API Call and URL Construction

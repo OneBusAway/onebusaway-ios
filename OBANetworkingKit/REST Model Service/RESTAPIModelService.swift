@@ -68,6 +68,19 @@ public class RESTAPIModelService: NSObject {
         return data
     }
 
+    // MARK: - Miscellaneous
+
+    public func getCurrentTime() -> CurrentTimeModelOperation {
+        let service = apiService.getCurrentTime()
+        let data = CurrentTimeModelOperation()
+
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
+
+        return data
+    }
+
     // MARK: - Private Internal Helpers
 
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
