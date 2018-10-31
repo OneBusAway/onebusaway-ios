@@ -81,7 +81,6 @@ public class RESTAPIModelService: NSObject {
 
     /*
 In Progress:
-func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
 
  TODO:
 func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
@@ -103,6 +102,8 @@ func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stop
 DONE:
 
 func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
+func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
+
  */
 
 }

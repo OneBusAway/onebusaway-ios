@@ -16,7 +16,6 @@
 		9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA9217D8ED200E750D0 /* Trip.swift */; };
 		93158B87217B991700E16DBA /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
 		93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
-		93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8A217B9D5900E16DBA /* InternalTypes.swift */; };
 		93158B8D217BC66500E16DBA /* captive_portal.html in Resources */ = {isa = PBXBuildFile; fileRef = 93158B8C217BC66500E16DBA /* captive_portal.html */; };
 		93158B8F217C05FB00E16DBA /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8E217C05FB00E16DBA /* References.swift */; };
 		93158B91217C0B0A00E16DBA /* Agency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B90217C0B0A00E16DBA /* Agency.swift */; };
@@ -27,6 +26,7 @@
 		93158B9E217CE18E00E16DBA /* ReferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B9D217CE18E00E16DBA /* ReferencesTests.swift */; };
 		93158BA0217CE2AD00E16DBA /* references.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9F217CE2AD00E16DBA /* references.json */; };
 		931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */; };
+		931A7CD52189332D00FA3025 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
@@ -171,7 +171,6 @@
 		9309DCA9217D8ED200E750D0 /* Trip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Trip.swift; sourceTree = "<group>"; };
 		93158B86217B991700E16DBA /* VehicleStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatus.swift; sourceTree = "<group>"; };
 		93158B88217B9B2900E16DBA /* TripStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripStatus.swift; sourceTree = "<group>"; };
-		93158B8A217B9D5900E16DBA /* InternalTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
 		93158B8C217BC66500E16DBA /* captive_portal.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = captive_portal.html; sourceTree = "<group>"; };
 		93158B8E217C05FB00E16DBA /* References.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = References.swift; sourceTree = "<group>"; };
 		93158B90217C0B0A00E16DBA /* Agency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Agency.swift; sourceTree = "<group>"; };
@@ -182,6 +181,7 @@
 		93158B9D217CE18E00E16DBA /* ReferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencesTests.swift; sourceTree = "<group>"; };
 		93158B9F217CE2AD00E16DBA /* references.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = references.json; sourceTree = "<group>"; };
 		931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperationTests.swift; sourceTree = "<group>"; };
+		931A7CD42189332D00FA3025 /* InternalTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -315,6 +315,7 @@
 		93058C96216CE260008A31A4 /* PrivateModule */ = {
 			isa = PBXGroup;
 			children = (
+				931A7CD42189332D00FA3025 /* InternalTypes.swift */,
 				931B9428216422120034D8FA /* OBAOperation+Internal.h */,
 				93058C97216CE29F008A31A4 /* module.modulemap */,
 			);
@@ -334,17 +335,16 @@
 		93158B98217C22BD00E16DBA /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				93158B8A217B9D5900E16DBA /* InternalTypes.swift */,
-				93158B86217B991700E16DBA /* VehicleStatus.swift */,
-				93158B88217B9B2900E16DBA /* TripStatus.swift */,
-				93158B8E217C05FB00E16DBA /* References.swift */,
 				93158B90217C0B0A00E16DBA /* Agency.swift */,
 				93158B94217C1C2400E16DBA /* Frequency.swift */,
+				93158B8E217C05FB00E16DBA /* References.swift */,
 				9309DCA3217D0B3200E750D0 /* Route.swift */,
+				932A6F29218022AF0008654F /* Situation.swift */,
 				9309DCA5217D0E9500E750D0 /* Stop.swift */,
 				9309DCA9217D8ED200E750D0 /* Trip.swift */,
-				932A6F29218022AF0008654F /* Situation.swift */,
 				93EC531B2185874C00C974AB /* TripDetails.swift */,
+				93158B88217B9B2900E16DBA /* TripStatus.swift */,
+				93158B86217B991700E16DBA /* VehicleStatus.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -840,6 +840,7 @@
 				9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */,
 				931CE27D216F944E00161A6C /* RegionsService.swift in Sources */,
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
+				931A7CD52189332D00FA3025 /* InternalTypes.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
 				933FFF4B217A7FD9006682C3 /* DictionaryErrors.swift in Sources */,
@@ -851,7 +852,6 @@
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				932A6F2A218022AF0008654F /* Situation.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
-				93158B8B217B9D5900E16DBA /* InternalTypes.swift in Sources */,
 				93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
