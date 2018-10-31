@@ -70,6 +70,11 @@ public class RESTAPIModelService: NSObject {
 
     // MARK: - Miscellaneous
 
+    /// Retrieves the server's current date and time.
+    ///
+    /// Useful for easily verifying that a given OBA server URL is working correctly.
+    ///
+    /// - Returns: The enqueued model operation.
     public func getCurrentTime() -> CurrentTimeModelOperation {
         let service = apiService.getCurrentTime()
         let data = CurrentTimeModelOperation()
@@ -94,10 +99,10 @@ public class RESTAPIModelService: NSObject {
 
     /*
 In Progress:
+func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
 
  TODO:
-func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
-func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
+
 func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) fivalsAndDeparturesOperation
@@ -116,6 +121,7 @@ DONE:
 
 func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
 func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
+func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
 
  */
 
