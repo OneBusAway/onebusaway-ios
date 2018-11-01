@@ -32,9 +32,21 @@ apiService.getAgenciesWithCoverage { (op) in
 //: ## Stops
 
 let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
-let stopsOp = modelService.getStops(coordinate: coordinate)
-stopsOp.completionBlock = {
-    for stop in stopsOp.stops {
+let coordinateRegion = MKCoordinateRegion(center: coordinate, latitudinalMeters: 200.0, longitudinalMeters: 200.0)
+
+let coordinateStopsOp = modelService.getStops(coordinate: coordinate)
+coordinateStopsOp.completionBlock = {
+    print("Stops near Coordinate")
+    for stop in coordinateStopsOp.stops {
+        print("• Stop: \(stop.name): \(stop)")
+    }
+}
+
+let regionStopsOp = modelService.getStops(region: coordinateRegion)
+regionStopsOp.completionBlock = {
+    let regionStops = regionStopsOp.stops
+    print("Stops within Region")
+    for stop in regionStops {
         print("• Stop: \(stop.name): \(stop)")
     }
 }

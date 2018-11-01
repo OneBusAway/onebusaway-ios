@@ -8,6 +8,7 @@
 
 import CoreLocation
 import Foundation
+import MapKit
 
 @objc(OBARESTAPIModelService)
 public class RESTAPIModelService: NSObject {
@@ -108,6 +109,29 @@ public class RESTAPIModelService: NSObject {
         return data
     }
 
+    /// Retrieves stops within `region`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Important: Depending on the number of stops located within `region`, you may only receive back
+    /// a subset of the total list of stops within `region`. Zoom in (i.e. provide a smaller region) to
+    /// better guarantee that you will receive a full list.
+    ///
+    /// - Parameters:
+    ///   - region: A coordinate region from which to search for stops.
+    /// - Returns: The enqueued model operation.
+    public func getStops(region: MKCoordinateRegion) -> StopsModelOperation {
+        let service = apiService.getStops(region: region)
+        let data = StopsModelOperation()
+
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
+
+        return data
+    }
+
     // MARK: - Private Internal Helpers
 
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
@@ -123,8 +147,6 @@ public class RESTAPIModelService: NSObject {
 In Progress:
 
  TODO:
-
-func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) fivalsAndDeparturesOperation
 func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, f: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation
@@ -144,5 +166,6 @@ func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> Req
 func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
 func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
 func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
+func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
  */
 }
