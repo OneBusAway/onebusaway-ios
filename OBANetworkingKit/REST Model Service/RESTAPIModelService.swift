@@ -6,6 +6,7 @@
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
+import CoreLocation
 import Foundation
 
 @objc(OBARESTAPIModelService)
@@ -86,6 +87,27 @@ public class RESTAPIModelService: NSObject {
         return data
     }
 
+    // MARK: - Stops
+
+    /// Retrieves stops in the vicinity of `coordinate`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Parameters:
+    ///   - coordinate: The coordinate around which to search for stops.
+    /// - Returns: The enqueued model operation.
+    public func getStops(coordinate: CLLocationCoordinate2D) -> StopsModelOperation {
+        let service = apiService.getStops(coordinate: coordinate)
+        let data = StopsModelOperation()
+
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
+
+        return data
+    }
+
     // MARK: - Private Internal Helpers
 
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
@@ -99,7 +121,6 @@ public class RESTAPIModelService: NSObject {
 
     /*
 In Progress:
-func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
 
  TODO:
 
@@ -122,7 +143,6 @@ DONE:
 func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
 func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
 func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
-
+func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
  */
-
 }

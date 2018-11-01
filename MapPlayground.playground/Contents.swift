@@ -1,7 +1,12 @@
-//: A MapKit based Playground
+/*:
+
+ # OneBusAway Model and Networking Services
+
+ */
 
 import OBANetworkingKit
 import MapKit
+import CoreLocation
 import PlaygroundSupport
 
 PlaygroundPage.current.needsIndefiniteExecution = true
@@ -11,16 +16,29 @@ let apiKey = "test"
 let uuid = UUID().uuidString
 let appVersion = "playground"
 let queue = OperationQueue()
+queue.maxConcurrentOperationCount = 1
 let apiService = RESTAPIService(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: queue)
 let modelService = RESTAPIModelService(apiService: apiService, dataQueue: queue)
 
+//: ## Agencies
+
 apiService.getAgenciesWithCoverage { (op) in
-    if let entries = op.entries {
-        for a in entries {
-            print("Agency: \(a)")
-        }
+    print("Agencies")
+    for a in (op.entries ?? []) {
+        print("• Agency: \(a)")
     }
 }
+
+//: ## Stops
+
+let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)
+let stopsOp = modelService.getStops(coordinate: coordinate)
+stopsOp.completionBlock = {
+    for stop in stopsOp.stops {
+        print("• Stop: \(stop.name): \(stop)")
+    }
+}
+
 
 //let appleParkWayCoordinates = CLLocationCoordinate2DMake(37.334922, -122.009033)
 //

@@ -48,33 +48,33 @@ public class Stop: NSObject, Decodable {
     /// The stop_code field contains short text or a number that uniquely identifies the stop for passengers.
     /// The stop_code can be the same as stop_id if it is passenger-facing. This field should be left blank
     /// for stops without a code presented to passengers.
-    let code: String
+    public let code: String
 
     /// A cardinal direction: N, E, S, W.
-    let direction: String?
+    public let direction: String?
 
     /// The stop_id field contains an ID that uniquely identifies a stop, station, or station entrance.
     ///
     /// Multiple routes may use the same stop. The stop_id is used by systems as an internal identifier
     /// of this record (e.g., primary key in database), and therefore the stop_id must be dataset unique.
-    let id: String
+    public let id: String
 
     /// The coordinates of the stop.
-    let location: CLLocation
+    public let location: CLLocation
 
     /// Identifies whether this stop represents a stop, station, or station entrance.
-    let locationType: StopLocationType
+    public let locationType: StopLocationType
 
     /// A human-readable name for this stop.
-    let name: String
+    public let name: String
 
     /// A list of route IDs served by this stop.
     ///
     /// Route IDs correspond to values in References.
-    let routeIDs: [String]
+    public let routeIDs: [String]
 
     /// Denotes the availability of wheelchair boarding at this stop.
-    let wheelchairBoarding: WheelchairBoarding
+    public let wheelchairBoarding: WheelchairBoarding
 
     private enum CodingKeys: String, CodingKey {
         case code

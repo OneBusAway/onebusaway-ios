@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E13F218B5DE900FD5FDB /* StopsModelOperation.swift */; };
+		9303E142218B617700FD5FDB /* StopsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E141218B617700FD5FDB /* StopsModelOperationTests.swift */; };
 		93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C90216C5644008A31A4 /* RouteSearchOperation.swift */; };
 		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
 		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
@@ -164,6 +166,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9303E13F218B5DE900FD5FDB /* StopsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsModelOperation.swift; sourceTree = "<group>"; };
+		9303E141218B617700FD5FDB /* StopsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsModelOperationTests.swift; sourceTree = "<group>"; };
 		93058C90216C5644008A31A4 /* RouteSearchOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperation.swift; sourceTree = "<group>"; };
 		93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperationTest.swift; sourceTree = "<group>"; };
 		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
@@ -335,6 +339,7 @@
 				931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */,
 				93EC53192185714400C974AB /* TripDetailsModelOperation.swift */,
 				933FFF3D2179AF7E006682C3 /* VehicleStatusModelOperation.swift */,
+				9303E13F218B5DE900FD5FDB /* StopsModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -625,6 +630,7 @@
 				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
 				931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */,
 				931A7CD92189362200FA3025 /* CurrentTimeModelOperationTests.swift */,
+				9303E141218B617700FD5FDB /* StopsModelOperationTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -886,6 +892,7 @@
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
 				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
+				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
 				9309DCA4217D0B3200E750D0 /* Route.swift in Sources */,
@@ -921,6 +928,7 @@
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */,
+				9303E142218B617700FD5FDB /* StopsModelOperationTests.swift in Sources */,
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				933FFF46217A7FC0006682C3 /* DictionaryEncodingTests.swift in Sources */,
