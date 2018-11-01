@@ -36,13 +36,7 @@ public class RESTAPIModelService: NSObject {
     /// - Returns: The enqueued model operation.
     public func getVehicleStatus(_ vehicleID: String) -> VehicleStatusModelOperation {
         let service = apiService.getVehicle(vehicleID)
-        let data = VehicleStatusModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-
-        return data
+        return generateModels(type: VehicleStatusModelOperation.self, serviceOperation: service)
     }
 
     /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
@@ -61,13 +55,7 @@ public class RESTAPIModelService: NSObject {
     /// - Returns: The enqueued model operation.
     public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
         let service = apiService.getVehicleTrip(vehicleID: vehicleID)
-        let data = TripDetailsModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-
-        return data
+        return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
     }
 
     // MARK: - Miscellaneous
@@ -79,13 +67,7 @@ public class RESTAPIModelService: NSObject {
     /// - Returns: The enqueued model operation.
     public func getCurrentTime() -> CurrentTimeModelOperation {
         let service = apiService.getCurrentTime()
-        let data = CurrentTimeModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-
-        return data
+        return generateModels(type: CurrentTimeModelOperation.self, serviceOperation: service)
     }
 
     // MARK: - Stops
@@ -100,13 +82,7 @@ public class RESTAPIModelService: NSObject {
     /// - Returns: The enqueued model operation.
     public func getStops(coordinate: CLLocationCoordinate2D) -> StopsModelOperation {
         let service = apiService.getStops(coordinate: coordinate)
-        let data = StopsModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-
-        return data
+        return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
 
     /// Retrieves stops within `region`.
@@ -123,16 +99,37 @@ public class RESTAPIModelService: NSObject {
     /// - Returns: The enqueued model operation.
     public func getStops(region: MKCoordinateRegion) -> StopsModelOperation {
         let service = apiService.getStops(region: region)
-        let data = StopsModelOperation()
+        return generateModels(type: StopsModelOperation.self, serviceOperation: service)
+    }
 
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
+    /// Retrieves stops within `circularRegion`.
+    ///
+    /// - API Endpoint: `/api/where/stops-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
+    ///
+    /// - Important: Depending on the number of stops located within `circularRegion`, you may only receive back
+    /// a subset of the total list of stops within `circularRegion`. Zoom in (i.e. provide a smaller region) to
+    /// better guarantee that you will receive a full list.
+    ///
+    /// - Parameters:
+    ///   - circularRegion: A circular region from which to search for stops.
+    ///   - query: A search query for a specific stop code.
+    /// - Returns: The enqueued model operation.
+    public func getStops(circularRegion: CLCircularRegion, query: String) -> StopsModelOperation {
+        let service = apiService.getStops(circularRegion: circularRegion, query: query)
+        return generateModels(type: StopsModelOperation.self, serviceOperation: service)
+    }
+
+    // MARK: - Private Internal Helpers
+
+    private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
+        let data = type.init()
+        transferData(from: serviceOperation, to: data) { [unowned serviceOperation, unowned data] in
+            data.apiOperation = serviceOperation
         }
 
         return data
     }
-
-    // MARK: - Private Internal Helpers
 
     private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
         let transferOperation = BlockOperation(block: transfer)
@@ -147,7 +144,6 @@ public class RESTAPIModelService: NSObject {
 In Progress:
 
  TODO:
-func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock?) -> StopsOperation
 func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) fivalsAndDeparturesOperation
 func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, f: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation
 func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> fsOperation
@@ -159,13 +155,5 @@ func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWit
 func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
 func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
 func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
-
-DONE:
-
-func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock?) -> RequestVehicleOperation
-func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock?) -> VehicleTripOperation
-func getCurrentTime(completion: RESTAPICompletionBlock?) -> CurrentTimeOperation
-func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock?) -> StopsOperation
-func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock?) -> StopsOperation
  */
 }

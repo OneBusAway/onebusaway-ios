@@ -62,4 +62,17 @@ class StopsModelOperationTests: OBATestCase {
             }
         }
     }
+
+    func testLoading_circularRegion_success() {
+        stubApiCall()
+
+        waitUntil { done in
+            let circularRegion = CLCircularRegion(center: self.coordinate, radius: 100.0, identifier: "query")
+            let op = self.restModelService.getStops(circularRegion: circularRegion, query: "query")
+            op.completionBlock = {
+                self.checkExpectations(op)
+                done()
+            }
+        }
+    }
 }

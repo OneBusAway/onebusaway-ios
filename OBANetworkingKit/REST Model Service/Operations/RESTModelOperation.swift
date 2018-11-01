@@ -13,6 +13,10 @@ public class RESTModelOperation: Operation {
     public var apiOperation: RESTAPIOperation?
     public private(set) var references: References?
 
+    required public override init() {
+        super.init()
+    }
+
     override public func main() {
         if let references = apiOperation?.references {
             do {
