@@ -65,14 +65,4 @@ public class VehicleStatus: NSObject, Decodable {
         location = try? CLLocation(container: container, key: .location)
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
     }
-
-    public static func decodeEntries(_ entries: [[String: Any]]) throws -> [VehicleStatus] {
-        let decoder = DictionaryDecoder.restApiServiceDecoder()
-
-        let vehicles = try entries.compactMap { vehicleDict -> VehicleStatus? in
-            return try decoder.decode(VehicleStatus.self, from: vehicleDict)
-        }
-
-        return vehicles
-    }
 }
