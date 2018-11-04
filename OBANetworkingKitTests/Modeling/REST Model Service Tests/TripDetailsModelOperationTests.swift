@@ -32,7 +32,11 @@ class TripDetailsModelOperationTests: OBATestCase {
                 expect(tripDetails).toNot(beNil())
 
                 expect(tripDetails.frequency).to(beNil())
+
                 expect(tripDetails.tripID) == "1_18196913"
+                let trip = tripDetails.trip
+                expect(trip.headsign) == "LAKE CITY WEDGWOOD"
+
                 expect(tripDetails.serviceDate) == Date.fromComponents(year: 2012, month: 07, day: 30, hour: 07, minute: 00, second: 00)
                 expect(tripDetails.timeZone) == "America/Los_Angeles"
 
@@ -46,7 +50,10 @@ class TripDetailsModelOperationTests: OBATestCase {
                 expect(stopTime.stopID) == "1_9610"
 
                 expect(tripDetails.previousTripID) == "1_18196851"
+                expect(tripDetails.previousTrip!.headsign) == "UNIVERSITY DISTRICT ROOSEVELT"
+
                 expect(tripDetails.nextTripID) == "1_18196555"
+                expect(tripDetails.nextTrip!.headsign) == "UNIVERSITY DISTRICT WEDGWOOD"
 
                 expect(tripDetails.situationIDs.count) == 0
 
