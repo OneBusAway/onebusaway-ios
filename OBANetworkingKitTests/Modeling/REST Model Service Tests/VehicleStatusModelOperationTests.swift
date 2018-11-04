@@ -80,9 +80,15 @@ extension VehicleStatusModelOperationTests {
 
                 // Trip Status
                 expect(tripStatus).toNot(beNil())
+
                 expect(tripStatus.activeTripID) == "40_40804394"
+                expect(tripStatus.activeTrip.headsign) == "University Of Washington Station"
+
                 expect(tripStatus.blockTripSequence) == 3
-                expect(tripStatus.closestStop) == "1_532"
+
+                expect(tripStatus.closestStopID) == "1_532"
+                expect(tripStatus.closestStop.name) == "Pioneer Sq Station - Bay A"
+
                 expect(tripStatus.closestStopTimeOffset) == -7
                 expect(tripStatus.distanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
                 expect(tripStatus.lastKnownDistanceAlongTrip) == 0
@@ -90,7 +96,10 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.lastKnownOrientation) == 0
                 expect(tripStatus.lastLocationUpdateTime) == 0
                 expect(tripStatus.lastUpdateTime) == 1538584269000
-                expect(tripStatus.nextStop) == "1_565"
+
+                expect(tripStatus.nextStopID) == "1_565"
+                expect(tripStatus.nextStop!.name) == "University St Station - Bay A"
+
                 expect(tripStatus.nextStopTimeOffset) == 144
                 expect(tripStatus.orientation).to(beCloseTo(132.0288, within: 0.1))
                 expect(tripStatus.phase) == "in_progress"
