@@ -8,15 +8,17 @@
 
 import Foundation
 
-public class StopArrivals: NSObject, Decodable, HasReferences {
-    let arrivalsAndDepartures: [ArrivalDeparture]
+public class StopArrivals: NSObject, Decodable {
+    public let arrivalsAndDepartures: [ArrivalDeparture]
 
     let nearbyStopIDs: [String]
-    var nearbyStops = [Stop]()
+    public let nearbyStops: [Stop]
 
     let situationIDs: [String]
+    public let situations: [Situation]
 
     let stopID: String
+    public let stop: Stop
 
     private enum CodingKeys: String, CodingKey {
         case arrivalsAndDepartures
@@ -27,16 +29,17 @@ public class StopArrivals: NSObject, Decodable, HasReferences {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
-        nearbyStopIDs = try container.decode([String].self, forKey: .nearbyStopIDs)
-        situationIDs = try container.decode([String].self, forKey: .situationIDs)
-        stopID = try container.decode(String.self, forKey: .stopID)
-    }
+        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
 
-    func loadReferences(_ references: References) {
-        nearbyStops = references.stops.filter { nearbyStopIDs.contains($0.id) }
-        // abxoxo todo:
-        // situationIDs
-        // stopID
+        arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
+
+        nearbyStopIDs = try container.decode([String].self, forKey: .nearbyStopIDs)
+        nearbyStops = references.stopsWithIDs(nearbyStopIDs)
+
+        situationIDs = try container.decode([String].self, forKey: .situationIDs)
+        situations = references.situationsWithIDs(situationIDs)
+
+        stopID = try container.decode(String.self, forKey: .stopID)
+        stop = references.stopWithID(stopID)!
     }
 }

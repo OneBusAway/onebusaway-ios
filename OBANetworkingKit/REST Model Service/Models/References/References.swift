@@ -8,10 +8,6 @@
 
 import Foundation
 
-protocol HasReferences {
-    func loadReferences(_ references: References)
-}
-
 @objc(OBAReferences)
 public class References: NSObject, Decodable {
     let agencies: [Agency]
@@ -19,6 +15,8 @@ public class References: NSObject, Decodable {
     let situations: [Situation]
     let stops: [Stop]
     let trips: [Trip]
+
+    // MARK: - Initialization
 
     private enum CodingKeys: String, CodingKey {
         case agencies, routes, situations, stops, trips
@@ -75,4 +73,62 @@ public class References: NSObject, Decodable {
 
         return references
     }
+}
+
+// MARK: - Finders
+extension References {
+
+    // MARK: - Agencies
+
+    public func agencyWithID(_ id: String?) -> Agency? {
+        guard let id = id else {
+            return nil
+        }
+        return agencies.first { $0.id == id }
+    }
+
+    // MARK: - Routes
+
+    public func routeWithID(_ id: String?) -> Route? {
+        guard let id = id else {
+            return nil
+        }
+        return routes.first { $0.id == id }
+    }
+
+    // MARK: - Situations
+
+    public func situationWithID(_ id: String?) -> Situation? {
+        guard let id = id else {
+            return nil
+        }
+        return situations.first { $0.id == id }
+    }
+
+    public func situationsWithIDs(_ ids: [String]) -> [Situation] {
+        return situations.filter { ids.contains($0.id) }
+    }
+
+    // MARK: - Stops
+
+    public func stopWithID(_ id: String?) -> Stop? {
+        guard let id = id else {
+            return nil
+        }
+        return stops.first { $0.id == id }
+    }
+
+    public func stopsWithIDs(_ ids: [String]) -> [Stop] {
+        return stops.filter { ids.contains($0.id) }
+    }
+
+    // MARK: - Trips
+
+    public func tripWithID(_ id: String?) -> Trip? {
+        guard let id = id else {
+            return nil
+        }
+        return trips.first { $0.id == id }
+    }
+
 }

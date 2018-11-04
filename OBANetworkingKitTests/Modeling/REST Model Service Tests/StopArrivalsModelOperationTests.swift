@@ -32,8 +32,15 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 let arrivals = op.stopArrivals!
 
                 expect(arrivals.nearbyStopIDs.count) == 4
+                expect(arrivals.nearbyStops.count) == 4
+                expect(arrivals.nearbyStops.first!.name) == "15th Ave NE & NE Campus Pkwy"
+
                 expect(arrivals.situationIDs.count) == 0
+                expect(arrivals.situations.count) == 0
+
                 expect(arrivals.stopID) == "1_10914"
+                expect(arrivals.stop.name) == "15th Ave NE & NE Campus Pkwy"
+
                 expect(arrivals.arrivalsAndDepartures.count) == 1
 
                 let arrDep = arrivals.arrivalsAndDepartures.first!

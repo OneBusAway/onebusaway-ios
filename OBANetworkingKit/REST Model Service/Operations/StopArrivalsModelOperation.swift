@@ -14,9 +14,5 @@ public class StopArrivalsModelOperation: RESTModelOperation {
     override public func main() {
         super.main()
         stopArrivals = decodeModels(type: StopArrivals.self).first
-
-        if let references = references {
-            stopArrivals?.loadReferences(references)
-        }
     }
 }
