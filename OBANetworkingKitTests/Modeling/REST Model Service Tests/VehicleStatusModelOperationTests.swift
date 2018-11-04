@@ -76,7 +76,23 @@ extension VehicleStatusModelOperationTests {
         waitUntil { done in
             let op = self.restModelService.getVehicleStatus(self.vehicleID)
             op.completionBlock = {
-                let tripStatus = op.vehicles.first!.tripStatus
+                let vehicle = op.vehicles.first!
+
+                expect(vehicle.vehicleID) == "40_11"
+
+                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 16, minute: 31, second: 09)
+                expect(vehicle.lastLocationUpdateTime).to(beNil())
+                expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6082))
+                expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3362))
+
+                expect(vehicle.tripID) == "40_40804394"
+                expect(vehicle.trip.routeShortName).to(beNil())
+                expect(vehicle.trip.shortName) == "LOCAL"
+
+                expect(vehicle.phase) == "in_progress"
+                expect(vehicle.status) == "SCHEDULED"
+
+                let tripStatus = vehicle.tripStatus
 
                 // Trip Status
                 expect(tripStatus).toNot(beNil())

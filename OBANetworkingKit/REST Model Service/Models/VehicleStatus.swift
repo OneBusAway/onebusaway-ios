@@ -26,6 +26,9 @@ public class VehicleStatus: NSObject, Decodable {
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
     let tripID: String
 
+    /// The vehicle's current trip
+    public let trip: Trip
+
     /// the current journey phase of the vehicle
     let phase: String
 
@@ -48,6 +51,7 @@ public class VehicleStatus: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
 
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
         lastUpdateTime = try container.decode(Date.self, forKey: .lastUpdateTime)
@@ -60,6 +64,8 @@ public class VehicleStatus: NSObject, Decodable {
         }
 
         tripID = try container.decode(String.self, forKey: .tripID)
+        trip = references.tripWithID(tripID)!
+
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)
         location = try? CLLocation(container: container, key: .location)
