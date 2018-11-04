@@ -9,15 +9,26 @@
 import Foundation
 
 public class StopArrivals: NSObject, Decodable {
+
+    /// Upcoming and just-passed vehicle arrivals and departures.
     public let arrivalsAndDepartures: [ArrivalDeparture]
 
+    /// A list of nearby stop IDs.
     let nearbyStopIDs: [String]
+
+    /// A list of nearby `Stop`s.
     public let nearbyStops: [Stop]
 
+    /// A list of active service alert IDs.
     let situationIDs: [String]
+
+    /// Active service alerts.
     public let situations: [Situation]
 
+    /// The stop ID for the stop this represents.
     let stopID: String
+
+    /// The stop to which this object refers.
     public let stop: Stop
 
     private enum CodingKeys: String, CodingKey {

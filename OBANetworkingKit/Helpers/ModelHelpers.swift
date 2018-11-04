@@ -21,4 +21,17 @@ class ModelHelpers: NSObject {
     static func nilifyBlankValue(_ str: String) -> String? {
         return str.count > 0 ? str : nil
     }
+
+    /// Converts a date that represents the 1970 epoch date to nil
+    ///
+    /// - Parameter date: A date
+    /// - Returns: Nil if the date was represented by the value `0` and the date otherwise.
+    static func nilifyEpochDate(_ date: Date) -> Date? {
+        if date == Date(timeIntervalSince1970: 0) {
+            return nil
+        }
+        else {
+            return date
+        }
+    }
 }
