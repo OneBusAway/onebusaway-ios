@@ -1,5 +1,5 @@
 //
-//  ArrivalDepartureForStopOperation.swift
+//  TripArrivalDepartureOperation.swift
 //  OBANetworkingKit
 //
 //  Created by Aaron Brethorst on 10/6/18.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-@objc(OBAArrivalDepartureForStopOperation)
-public class ArrivalDepartureForStopOperation: RESTAPIOperation {
+@objc(OBATripArrivalDepartureOperation)
+public class TripArrivalDepartureOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction
 

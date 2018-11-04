@@ -167,9 +167,9 @@ public class RESTAPIService: APIService {
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @discardableResult @objc
-    public func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: RESTAPICompletionBlock? = nil) -> ArrivalDepartureForStopOperation {
-        let url = ArrivalDepartureForStopOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: ArrivalDepartureForStopOperation.self, url: url, completionBlock: completion)
+    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: RESTAPICompletionBlock? = nil) -> TripArrivalDepartureOperation {
+        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: TripArrivalDepartureOperation.self, url: url, completionBlock: completion)
     }
 
     // MARK: - Trip Details

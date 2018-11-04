@@ -133,9 +133,26 @@ public class RESTAPIModelService: NSObject {
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - Returns: The enqueued model operation.
-    func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsModelOperation {
+    public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsModelOperation {
         let service = apiService.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         return generateModels(type: StopArrivalsModelOperation.self, serviceOperation: service)
+    }
+
+    /// Get info about a single arrival and departure at a stop
+    ///
+    /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrival-and-departure-for-stop.html)
+    ///
+    /// - Parameters:
+    ///   - stopID: The ID of the stop.
+    ///   - tripID: The trip id of the arriving transit vehicle.
+    ///   - serviceDate: The service date of the arriving transit vehicle.
+    ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
+    ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
+    /// - Returns: The enqueued model operation.
+    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
+        let service = apiService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
+        return generateModels(type: TripArrivalsModelOperation.self, serviceOperation: service)
     }
 
     // MARK: - Private Internal Helpers
@@ -162,8 +179,6 @@ public class RESTAPIModelService: NSObject {
 In Progress:
 
  TODO:
-func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock?) fivalsAndDeparturesOperation
-func getTripArrivalDepartureForStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, f: RESTAPICompletionBlock?) -> ArrivalDepartureForStopOperation
 func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> fsOperation
 func getStopsForRoute(id: String, completion: RESTAPICompletionBlock?) -> StopsForRouteOperation
 func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation

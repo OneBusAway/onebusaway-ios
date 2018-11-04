@@ -80,7 +80,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     let stopSequence: Int
 
     /// The number of stops in this active trip
-    let totalStopsInTrip: Int
+    let totalStopsInTrip: Int?
 
     /// The trip headsign that potentially overrides the trip headsign in the referenced `Trip` element
     let tripHeadsign: String?
@@ -160,7 +160,7 @@ public class ArrivalDeparture: NSObject, Decodable {
         stop = references.stopWithID(stopID)!
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
-        totalStopsInTrip = try container.decode(Int.self, forKey: .totalStopsInTrip)
+        totalStopsInTrip = try? container.decode(Int.self, forKey: .totalStopsInTrip)
         tripHeadsign = ModelHelpers.nilifyBlankValue((try? container.decode(String.self, forKey: .tripHeadsign)) ?? "")
 
         tripID = try container.decode(String.self, forKey: .tripID)
