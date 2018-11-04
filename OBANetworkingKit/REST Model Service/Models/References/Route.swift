@@ -52,7 +52,7 @@ public class Route: NSObject, Decodable {
     let shortName: String
     let textColor: String
     let routeType: RouteType
-    let routeURL: URL
+    let routeURL: URL?
 
     private enum CodingKeys: String, CodingKey {
         case agencyID = "agencyId"
@@ -77,6 +77,6 @@ public class Route: NSObject, Decodable {
         shortName = try container.decode(String.self, forKey: .shortName)
         textColor = try container.decode(String.self, forKey: .textColor)
         routeType = try container.decode(RouteType.self, forKey: .routeType)
-        routeURL = try container.decode(URL.self, forKey: .routeURL)
+        routeURL = try? container.decode(URL.self, forKey: .routeURL)
     }
 }

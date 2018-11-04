@@ -14,16 +14,6 @@ public class TripDetailsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
-
-        guard let entry = apiOperation?.entries?.first else {
-            return
-        }
-
-        do {
-            self.tripDetails = try DictionaryDecoder.decodeModel(entry, type: TripDetails.self)
-        }
-        catch {
-            print("Unable to decode trip details from data: \(error)")
-        }
+        tripDetails = decodeModels(type: TripDetails.self).first
     }
 }

@@ -8,6 +8,10 @@
 
 import Foundation
 
+protocol HasReferences {
+    func loadReferences(_ references: References)
+}
+
 @objc(OBAReferences)
 public class References: NSObject, Decodable {
     let agencies: [Agency]

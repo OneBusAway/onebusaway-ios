@@ -38,12 +38,6 @@ extension DictionaryDecoder {
         return decoder
     }
 
-    public class func decodeModel<T>(_ entry: [String: Any], type: T.Type) throws -> T where T: Decodable {
-        let decoder = DictionaryDecoder.restApiServiceDecoder()
-
-        return try decoder.decode(type, from: entry)
-    }
-
     public class func decodeModels<T>(_ entries: [[String: Any]], type: T.Type) throws -> [T] where T: Decodable {
         let decoder = DictionaryDecoder.restApiServiceDecoder()
 

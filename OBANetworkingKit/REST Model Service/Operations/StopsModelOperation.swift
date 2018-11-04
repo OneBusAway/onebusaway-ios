@@ -13,16 +13,6 @@ public class StopsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
-
-        guard let entries = apiOperation?.entries else {
-            return
-        }
-
-        do {
-            self.stops = try DictionaryDecoder.decodeModels(entries, type: Stop.self)
-        }
-        catch {
-            print("Unable to decode stops from data: \(error)")
-        }
+        stops = decodeModels(type: Stop.self)
     }
 }

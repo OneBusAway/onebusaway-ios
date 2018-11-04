@@ -120,6 +120,24 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
 
+    // MARK: - Arrivals and Departures
+
+    /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
+    /// `minutesBefore` to `minutesAfter`.
+    ///
+    /// - API Endpoint: `/api/where/arrivals-and-departures-for-stop/{id}.json`
+    /// - [View REST API Documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrivals-and-departures-for-stop.html)
+    ///
+    /// - Parameters:
+    ///   - id: The stop ID
+    ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
+    ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
+    /// - Returns: The enqueued model operation.
+    func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsModelOperation {
+        let service = apiService.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
+        return generateModels(type: StopArrivalsModelOperation.self, serviceOperation: service)
+    }
+
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {

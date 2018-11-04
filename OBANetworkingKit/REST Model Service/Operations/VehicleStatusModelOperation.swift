@@ -14,16 +14,6 @@ public class VehicleStatusModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
-
-        guard let entries = apiOperation?.entries else {
-            return
-        }
-
-        do {
-            self.vehicles = try DictionaryDecoder.decodeModels(entries, type: VehicleStatus.self)
-        }
-        catch {
-            print("Unable to decode vehicle from data: \(error)")
-        }
+        vehicles = decodeModels(type: VehicleStatus.self)
     }
 }

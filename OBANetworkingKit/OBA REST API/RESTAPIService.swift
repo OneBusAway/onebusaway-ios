@@ -136,6 +136,9 @@ public class RESTAPIService: APIService {
     /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
     /// `minutesBefore` to `minutesAfter`.
     ///
+    /// - API Endpoint: `/api/where/arrivals-and-departures-for-stop/{id}.json`
+    /// - [View REST API Documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrivals-and-departures-for-stop.html)
+    ///
     /// - Parameters:
     ///   - id: The stop ID
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for

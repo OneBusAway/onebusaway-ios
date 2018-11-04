@@ -1,0 +1,534 @@
+{
+  "code": 200,
+  "currentTime": 1541141817860,
+  "data": {
+    "entry": {
+      "arrivalsAndDepartures": [
+        {
+          "arrivalEnabled": true,
+          "blockTripSequence": 9,
+          "departureEnabled": true,
+          "distanceFromStop": 1232.648659247323,
+          "frequency": null,
+          "lastUpdateTime": 1541141749000,
+          "numberOfStopsAway": 4,
+          "predicted": true,
+          "predictedArrivalInterval": null,
+          "predictedArrivalTime": 1541142156000,
+          "predictedDepartureInterval": null,
+          "predictedDepartureTime": 1541142156000,
+          "routeId": "1_100447",
+          "routeLongName": "",
+          "routeShortName": "49",
+          "scheduledArrivalInterval": null,
+          "scheduledArrivalTime": 1541142000000,
+          "scheduledDepartureInterval": null,
+          "scheduledDepartureTime": 1541142000000,
+          "serviceDate": 1541055600000,
+          "situationIds": [
+
+          ],
+          "status": "default",
+          "stopId": "1_10914",
+          "stopSequence": 3,
+          "totalStopsInTrip": 22,
+          "tripHeadsign": "Downtown Seattle Broadway",
+          "tripId": "1_40984902",
+          "tripStatus": {
+            "activeTripId": "1_40984840",
+            "blockTripSequence": 8,
+            "closestStop": "1_9650",
+            "closestStopTimeOffset": -1,
+            "distanceAlongTrip": 10052.41120684016,
+            "frequency": null,
+            "lastKnownDistanceAlongTrip": 0,
+            "lastKnownLocation": {
+              "lat": 47.66180419921875,
+              "lon": -122.31656646728516
+            },
+            "lastKnownOrientation": 0,
+            "lastLocationUpdateTime": 1541141749000,
+            "lastUpdateTime": 1541141749000,
+            "nextStop": "1_10910",
+            "nextStopTimeOffset": 167,
+            "orientation": 90,
+            "phase": "in_progress",
+            "position": {
+              "lat": 47.66179839856307,
+              "lon": -122.316566
+            },
+            "predicted": true,
+            "scheduleDeviation": 1176,
+            "scheduledDistanceAlongTrip": 10052.41120684016,
+            "serviceDate": 1541055600000,
+            "situationIds": [
+
+            ],
+            "status": "SCHEDULED",
+            "totalDistanceAlongTrip": 10375.845555925045,
+            "vehicleId": "1_4559"
+          },
+          "vehicleId": "1_4559"
+        }
+      ],
+      "nearbyStopIds": [
+        "1_29440",
+        "1_9575",
+        "1_9144",
+        "1_9142"
+      ],
+      "situationIds": [
+
+      ],
+      "stopId": "1_10914"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "40",
+          "lang": "EN",
+          "name": "Sound Transit",
+          "phone": "1-888-889-6368",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.soundtransit.org"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ Dist-Montlake-Capitol Hill-Downtown Seattle",
+          "id": "1_100223",
+          "longName": "",
+          "shortName": "43",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/043/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Ballard - Montlake",
+          "id": "1_100224",
+          "longName": "",
+          "shortName": "44",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/044/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Mt Baker - University District",
+          "id": "1_100228",
+          "longName": "",
+          "shortName": "48",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/048/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Broadway - Downtown Seattle",
+          "id": "1_100447",
+          "longName": "",
+          "shortName": "49",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/049/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "University District - Eastlake - Downtown Seattle",
+          "id": "1_100264",
+          "longName": "",
+          "shortName": "70",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/070/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "South Renton P&R - University District",
+          "id": "1_100059",
+          "longName": "",
+          "shortName": "167",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/167/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Twin Lakes P&R - University District",
+          "id": "1_100088",
+          "longName": "",
+          "shortName": "197",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/197/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Issaquah - University District",
+          "id": "1_100162",
+          "longName": "",
+          "shortName": "271",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/271/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Overlake P&R - University District",
+          "id": "40_102640",
+          "longName": "",
+          "shortName": "541",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/541"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Redmond - University District",
+          "id": "40_100511",
+          "longName": "Redmond - University District",
+          "shortName": "542",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/542"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Issaquah - University District - Northgate",
+          "id": "40_100451",
+          "longName": "Issaquah - Northgate",
+          "shortName": "556",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/556"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "",
+          "id": "40_586",
+          "longName": "Tacoma - U. District",
+          "shortName": "586",
+          "textColor": "",
+          "type": 3,
+          "url": ""
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Roosevelt - University District",
+          "id": "1_100259",
+          "longName": "",
+          "shortName": "67",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/067/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Sand Point - Downtown Seattle",
+          "id": "1_100268",
+          "longName": "",
+          "shortName": "74",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/074/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Juanita - University District",
+          "id": "1_100168",
+          "longName": "",
+          "shortName": "277",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/277/n0.html"
+        },
+        {
+          "agencyId": "40",
+          "color": "",
+          "description": "Kirkland - University District",
+          "id": "40_100235",
+          "longName": "Kirkland - University District",
+          "shortName": "540",
+          "textColor": "",
+          "type": 3,
+          "url": "http://www.soundtransit.org/Schedules/ST-Express-Bus/540"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Univ District - Fremont - Central Magnolia",
+          "id": "1_100184",
+          "longName": "",
+          "shortName": "31",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/031/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Lake City  - University District",
+          "id": "1_100254",
+          "longName": "",
+          "shortName": "65",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/065/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Northgate - Lake City - Sand Point - Univ District",
+          "id": "1_100269",
+          "longName": "",
+          "shortName": "75",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/075/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "UW/Cascadia College - University District",
+          "id": "1_100214",
+          "longName": "",
+          "shortName": "372",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/372/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Loyal Heights - University District",
+          "id": "1_100225",
+          "longName": "",
+          "shortName": "45",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/045/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Wedgwood - University District - Downtown Seattle",
+          "id": "1_100265",
+          "longName": "",
+          "shortName": "71",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/071/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Jackson Park - Univ District - Downtown Seattle",
+          "id": "1_100267",
+          "longName": "",
+          "shortName": "73",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/073/n0.html"
+        },
+        {
+          "agencyId": "1",
+          "color": "",
+          "description": "Aurora Village TC - University District",
+          "id": "1_100215",
+          "longName": "",
+          "shortName": "373",
+          "textColor": "",
+          "type": 3,
+          "url": "http://metro.kingcounty.gov/schedules/373/n0.html"
+        }
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+        {
+          "code": "10914",
+          "direction": "S",
+          "id": "1_10914",
+          "lat": 47.656422,
+          "locationType": 0,
+          "lon": -122.312164,
+          "name": "15th Ave NE & NE Campus Pkwy",
+          "routeIds": [
+            "1_100223",
+            "1_100224",
+            "1_100228",
+            "1_100447",
+            "1_100264",
+            "1_100059",
+            "1_100088",
+            "1_100162",
+            "40_102640",
+            "40_100511",
+            "40_100451",
+            "40_586"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "9650",
+          "direction": "N",
+          "id": "1_9650",
+          "lat": 47.661781,
+          "locationType": 0,
+          "lon": -122.316467,
+          "name": "11th Ave NE & NE 45th St",
+          "routeIds": [
+            "1_100447",
+            "1_100259",
+            "1_100264",
+            "1_100268"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "10910",
+          "direction": "S",
+          "id": "1_10910",
+          "lat": 47.662281,
+          "locationType": 0,
+          "lon": -122.315475,
+          "name": "12th Ave NE & NE 47th St",
+          "routeIds": [
+            "1_100447",
+            "1_100264"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "29440",
+          "direction": "N",
+          "id": "1_29440",
+          "lat": 47.655708,
+          "locationType": 0,
+          "lon": -122.311974,
+          "name": "15th Ave NE & NE Campus Pkwy",
+          "routeIds": [
+            "1_100223",
+            "1_100224",
+            "1_100228",
+            "1_100059",
+            "1_100162",
+            "1_100168",
+            "40_100235",
+            "40_102640",
+            "40_100511",
+            "40_100451"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "9575",
+          "direction": "E",
+          "id": "1_9575",
+          "lat": 47.655918,
+          "locationType": 0,
+          "lon": -122.313354,
+          "name": "NE Campus Pkwy & University Way NE - Bay 2",
+          "routeIds": [
+            "1_100184",
+            "1_100254",
+            "1_100269",
+            "1_100214"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "9144",
+          "direction": "W",
+          "id": "1_9144",
+          "lat": 47.656281,
+          "locationType": 0,
+          "lon": -122.313187,
+          "name": "NE Campus Pkwy & University Way NE",
+          "routeIds": [
+            "1_100214"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        },
+        {
+          "code": "9142",
+          "direction": "S",
+          "id": "1_9142",
+          "lat": 47.656948,
+          "locationType": 0,
+          "lon": -122.313339,
+          "name": "University Way NE & NE 41st St",
+          "routeIds": [
+            "1_100225",
+            "1_100265",
+            "1_100267",
+            "1_100215"
+          ],
+          "wheelchairBoarding": "UNKNOWN"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "1_5126019",
+          "directionId": "1",
+          "id": "1_40984902",
+          "routeId": "1_100447",
+          "routeShortName": "",
+          "serviceId": "1_137160",
+          "shapeId": "1_20049030",
+          "timeZone": "",
+          "tripHeadsign": "Downtown Seattle Broadway",
+          "tripShortName": "LOCAL"
+        },
+        {
+          "blockId": "1_5126019",
+          "directionId": "0",
+          "id": "1_40984840",
+          "routeId": "1_100447",
+          "routeShortName": "",
+          "serviceId": "1_137160",
+          "shapeId": "1_11049048",
+          "timeZone": "",
+          "tripHeadsign": "University District Broadway",
+          "tripShortName": "LOCAL"
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

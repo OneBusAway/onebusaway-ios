@@ -27,4 +27,23 @@ public class RESTModelOperation: Operation {
             }
         }
     }
+
+    // MARK: - Decoder Helpers
+
+    func decodeModels<T>(type: T.Type) -> [T] where T: Decodable {
+        guard let entries = apiOperation?.entries else {
+            return []
+        }
+
+        var models = [T]()
+
+        do {
+            models = try DictionaryDecoder.decodeModels(entries, type: type)
+        }
+        catch {
+            print("Unable to decode models from data: \(error)")
+        }
+
+        return models
+    }
 }
