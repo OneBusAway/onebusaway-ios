@@ -39,25 +39,6 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: VehicleStatusModelOperation.self, serviceOperation: service)
     }
 
-    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
-    ///
-    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
-    ///
-    /// - Important: Vehicle IDs are seldom not identical to the IDs that
-    /// are physically printed on buses. For example, in Puget Sound, a
-    /// KC Metro bus that has the number `1234` printed on its side will
-    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
-    /// is unique across the Puget Sound region with all of its agencies.
-    ///
-    /// - Parameters:
-    ///   - vehicleID: The ID of the vehicle
-    /// - Returns: The enqueued model operation.
-    public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
-        let service = apiService.getVehicleTrip(vehicleID: vehicleID)
-        return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
-    }
-
     // MARK: - Miscellaneous
 
     /// Retrieves the server's current date and time.
@@ -155,6 +136,42 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: TripArrivalsModelOperation.self, serviceOperation: service)
     }
 
+    // MARK: - Trips
+
+    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
+    ///
+    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
+    ///
+    /// - Important: Vehicle IDs are seldom not identical to the IDs that
+    /// are physically printed on buses. For example, in Puget Sound, a
+    /// KC Metro bus that has the number `1234` printed on its side will
+    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - Parameters:
+    ///   - vehicleID: The ID of the vehicle
+    /// - Returns: The enqueued model operation.
+    public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
+        let service = apiService.getVehicleTrip(vehicleID: vehicleID)
+        return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
+    }
+
+    /// Get extended details for a specific trip.
+    ///
+    /// - API Endpoint: `/api/where/trip-details/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-details.html)
+    ///
+    /// - Parameters:
+    ///   - tripID: The ID of the trip.
+    ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
+    ///   - serviceDate: The service date for this trip.
+    /// - Returns: The enqueued model operation.
+    func getTripDetails(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsModelOperation {
+        let service = apiService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
+        return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
+    }
+
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
@@ -176,10 +193,8 @@ public class RESTAPIModelService: NSObject {
     }
 
     /*
-In Progress:
-
  TODO:
-func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock?) -> fsOperation
+
 func getStopsForRoute(id: String, completion: RESTAPICompletionBlock?) -> StopsForRouteOperation
 func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation
 func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
