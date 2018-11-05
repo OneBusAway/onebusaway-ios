@@ -172,7 +172,7 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
     }
 
-    // MARK: - Route
+    // MARK: - Search
 
     /// Retrieve the set of stops serving a particular route, including groups by direction of travel.
     ///
@@ -191,6 +191,20 @@ public class RESTAPIModelService: NSObject {
     public func getStopsForRoute(routeID: String) -> StopsForRouteModelOperation {
         let service = apiService.getStopsForRoute(id: routeID)
         return generateModels(type: StopsForRouteModelOperation.self, serviceOperation: service)
+    }
+
+    /// Search for routes within a region, by name
+    ///
+    /// - API Endpoint: `/api/where/routes-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/routes-for-location.html)
+    ///
+    /// - Parameters:
+    ///   - query: Search query
+    ///   - region: The circular region from which to return results.
+    /// - Returns: The enqueued model operation.
+    public func getRoute(query: String, region: CLCircularRegion) -> RouteSearchModelOperation {
+        let service = apiService.getRoute(query: query, region: region)
+        return generateModels(type: RouteSearchModelOperation.self, serviceOperation: service)
     }
 
     // MARK: - Private Internal Helpers
@@ -216,8 +230,6 @@ public class RESTAPIModelService: NSObject {
     /*
  TODO:
 
-
-func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock?) -> RouteSearchOperation
 func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
 func getShape(id: String, completion: RESTAPICompletionBlock?) -> ShapeOperation
 func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation

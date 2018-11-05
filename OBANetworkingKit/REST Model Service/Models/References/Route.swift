@@ -47,12 +47,12 @@ public class Route: NSObject, Decodable, HasReferences {
     let agencyID: String
     public var agency: Agency!
 
-    public let color: String
+    public let color: String?
     public let routeDescription: String?
     public let id: String
-    public let longName: String
+    public let longName: String?
     public let shortName: String
-    public let textColor: String
+    public let textColor: String?
     public let routeType: RouteType
     public let routeURL: URL?
 
@@ -72,12 +72,12 @@ public class Route: NSObject, Decodable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         agencyID = try container.decode(String.self, forKey: .agencyID)
-        color = try container.decode(String.self, forKey: .color)
+        color = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .color))
         routeDescription = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .routeDescription))
         id = try container.decode(String.self, forKey: .id)
-        longName = try container.decode(String.self, forKey: .longName)
+        longName = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .longName))
         shortName = try container.decode(String.self, forKey: .shortName)
-        textColor = try container.decode(String.self, forKey: .textColor)
+        textColor = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .textColor))
         routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try? container.decode(URL.self, forKey: .routeURL)
     }

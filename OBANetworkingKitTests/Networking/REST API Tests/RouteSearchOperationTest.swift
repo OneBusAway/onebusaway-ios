@@ -40,5 +40,4 @@ class RouteSearchOperationTest: OBATestCase {
             }
         }
     }
-
 }
