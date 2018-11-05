@@ -207,6 +207,11 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: RouteSearchModelOperation.self, serviceOperation: service)
     }
 
+    func getShape(id: String) -> ShapeModelOperation {
+        let service = apiService.getShape(id: id)
+        return generateModels(type: ShapeModelOperation.self, serviceOperation: service)
+    }
+
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
@@ -229,12 +234,10 @@ public class RESTAPIModelService: NSObject {
 
     /*
  TODO:
-
-func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
-func getShape(id: String, completion: RESTAPICompletionBlock?) -> ShapeOperation
-func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation
-func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
-func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
-func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
+     func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation
+     func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
+     func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
+     func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
+     func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
  */
 }
