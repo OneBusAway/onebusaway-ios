@@ -20,6 +20,13 @@ public class RESTAPIModelService: NSObject {
         self.dataQueue = dataQueue
     }
 
+    // MARK: - Agencies
+    public func getAgenciesWithCoverage() -> AgenciesWithCoverageModelOperation {
+        let service = apiService.getAgenciesWithCoverage()
+        return generateModels(type: AgenciesWithCoverageModelOperation.self, serviceOperation: service)
+    }
+
+
     // MARK: - Vehicles
 
     /// Provides information on the vehicle with the specified ID.
@@ -234,7 +241,6 @@ public class RESTAPIModelService: NSObject {
 
     /*
  TODO:
-     func getAgenciesWithCoverage(completion: RESTAPICompletionBlock?) -> AgenciesWithCoverageOperation
      func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
      func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
      func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation

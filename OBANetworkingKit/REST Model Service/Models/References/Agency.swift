@@ -9,7 +9,7 @@
 import Foundation
 
 public class Agency: NSObject, Decodable {
-    let disclaimer: String
+    let disclaimer: String?
     let email: String?
     let fareURL: URL?
     let id: String
@@ -36,8 +36,8 @@ public class Agency: NSObject, Decodable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        disclaimer = try container.decode(String.self, forKey: .disclaimer)
-        email = try? container.decode(String.self, forKey: .email)
+        disclaimer = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .disclaimer))
+        email = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .email))
         fareURL = try? container.decode(URL.self, forKey: .fareURL)
 
         id = try container.decode(String.self, forKey: .id)

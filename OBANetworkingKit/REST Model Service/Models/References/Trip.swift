@@ -78,11 +78,11 @@ public class Trip: NSObject, Decodable, HasReferences {
         headsign = try container.decode(String.self, forKey: .headsign)
         id = try container.decode(String.self, forKey: .id)
         routeID = try container.decode(String.self, forKey: .routeID)
-        routeShortName = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .routeShortName)))
+        routeShortName = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .routeShortName))
         serviceID = try container.decode(String.self, forKey: .serviceID)
         shapeID = try container.decode(String.self, forKey: .shapeID)
-        shortName = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .shortName)))
-        timeZone = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .timeZone)))
+        shortName = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .shortName))
+        timeZone = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .timeZone))
     }
 
     // MARK: - HasReferences

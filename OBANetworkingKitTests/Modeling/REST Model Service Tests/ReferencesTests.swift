@@ -31,7 +31,7 @@ extension ReferencesTests {
         expect(agencies.count) == 1
 
         let agency = agencies.first!
-        expect(agency.disclaimer) == ""
+        expect(agency.disclaimer).to(beNil())
         expect(agency.id) == "Hillsborough Area Regional Transit"
         expect(agency.language) == "en"
         expect(agency.name) == "Hillsborough Area Regional Transit"

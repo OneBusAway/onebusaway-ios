@@ -18,7 +18,11 @@ class ModelHelpers: NSObject {
     ///
     /// - Parameter str: The string to inspect.
     /// - Returns: Nil if the string's character count is zero, and the string otherwise.
-    static func nilifyBlankValue(_ str: String) -> String? {
+    static func nilifyBlankValue(_ str: String?) -> String? {
+        guard let str = str else {
+            return nil
+        }
+    
         return str.count > 0 ? str : nil
     }
 

@@ -23,6 +23,9 @@
 		9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E1682190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift */; };
 		9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16A2190D92F00FD5FDB /* ShapeModelOperation.swift */; };
 		9303E16D2190D98400FD5FDB /* ShapeModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16C2190D98400FD5FDB /* ShapeModelOperationTests.swift */; };
+		9303E16F2190F6CA00FD5FDB /* AgencyWithCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */; };
+		9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E1702190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift */; };
+		9303E1732190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E1722190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift */; };
 		93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C90216C5644008A31A4 /* RouteSearchOperation.swift */; };
 		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
 		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
@@ -196,6 +199,9 @@
 		9303E1682190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchModelOperationTests.swift; sourceTree = "<group>"; };
 		9303E16A2190D92F00FD5FDB /* ShapeModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeModelOperation.swift; sourceTree = "<group>"; };
 		9303E16C2190D98400FD5FDB /* ShapeModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShapeModelOperationTests.swift; sourceTree = "<group>"; };
+		9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyWithCoverage.swift; sourceTree = "<group>"; };
+		9303E1702190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenciesWithCoverageModelOperation.swift; sourceTree = "<group>"; };
+		9303E1722190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenciesWithCoverageModelOperationTests.swift; sourceTree = "<group>"; };
 		93058C90216C5644008A31A4 /* RouteSearchOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperation.swift; sourceTree = "<group>"; };
 		93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperationTest.swift; sourceTree = "<group>"; };
 		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
@@ -373,6 +379,7 @@
 				9303E1622190ACA300FD5FDB /* StopsForRouteModelOperation.swift */,
 				9303E1662190C73E00FD5FDB /* RouteSearchModelOperation.swift */,
 				9303E16A2190D92F00FD5FDB /* ShapeModelOperation.swift */,
+				9303E1702190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -388,6 +395,7 @@
 				9303E152218CD78A00FD5FDB /* StopArrivals.swift */,
 				9303E157218ECCBC00FD5FDB /* ArrivalDeparture.swift */,
 				9303E16021901F4D00FD5FDB /* StopsForRoute.swift */,
+				9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -673,6 +681,7 @@
 				9303E1642190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift */,
 				9303E1682190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift */,
 				9303E16C2190D98400FD5FDB /* ShapeModelOperationTests.swift */,
+				9303E1722190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -924,6 +933,7 @@
 				9303E153218CD78A00FD5FDB /* StopArrivals.swift in Sources */,
 				9303E16121901F4D00FD5FDB /* StopsForRoute.swift in Sources */,
 				93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */,
+				9303E16F2190F6CA00FD5FDB /* AgencyWithCoverage.swift in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
 				933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */,
@@ -937,6 +947,7 @@
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
+				9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
@@ -982,6 +993,7 @@
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */,
 				9303E142218B617700FD5FDB /* StopsModelOperationTests.swift in Sources */,
+				9303E1732190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift in Sources */,
 				9303E1652190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift in Sources */,
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
