@@ -26,6 +26,14 @@ public class References: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         do {
+            situations = try container.decode([Situation].self, forKey: .situations)
+        } catch {
+            situations = []
+            print("error decoding situations: \(error)")
+            throw error
+        }
+
+        do {
             agencies = try container.decode([Agency].self, forKey: .agencies)
         } catch {
             agencies = []
@@ -38,14 +46,6 @@ public class References: NSObject, Decodable {
         } catch {
             routes = []
             print("error decoding routes: \(error)")
-            throw error
-        }
-
-        do {
-            situations = try container.decode([Situation].self, forKey: .situations)
-        } catch {
-            situations = []
-            print("error decoding situations: \(error)")
             throw error
         }
 
@@ -64,14 +64,35 @@ public class References: NSObject, Decodable {
             print("error decoding trips: \(error)")
             throw error
         }
+
+        super.init()
+
+        // depends: Agency
+        routes.loadReferences(self)
+
+        // depends: Route
+        stops.loadReferences(self)
+        trips.loadReferences(self)
     }
 
     public static func decodeReferences(_ data: [String: Any]) throws -> References {
         let decoder = DictionaryDecoder.restApiServiceDecoder()
-
         let references = try decoder.decode(References.self, from: data)
-
         return references
+    }
+}
+
+// MARK: - HasReferences
+
+protocol HasReferences {
+    func loadReferences(_ references: References)
+}
+
+extension Array where Element: HasReferences {
+    func loadReferences(_ references: References) {
+        for elt in self {
+            elt.loadReferences(references)
+        }
     }
 }
 
@@ -94,6 +115,10 @@ extension References {
             return nil
         }
         return routes.first { $0.id == id }
+    }
+
+    public func routesWithIDs(_ ids: [String]) -> [Route] {
+        return routes.filter { ids.contains($0.id) }
     }
 
     // MARK: - Situations
@@ -130,5 +155,4 @@ extension References {
         }
         return trips.first { $0.id == id }
     }
-
 }

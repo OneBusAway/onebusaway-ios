@@ -8,8 +8,7 @@
 
 import Foundation
 
-public class Trip: NSObject, Decodable {
-
+public class Trip: NSObject, Decodable, HasReferences {
     /// The block_id field identifies the block to which the trip belongs.
     ///
     /// A block consists of a single trip or many sequential trips made using
@@ -29,6 +28,9 @@ public class Trip: NSObject, Decodable {
 
     /// The route_id field contains an ID that uniquely identifies a route.
     let routeID: String
+
+    /// The Route served by this trip.
+    public var route: Route!
 
     let routeShortName: String?
 
@@ -81,5 +83,11 @@ public class Trip: NSObject, Decodable {
         shapeID = try container.decode(String.self, forKey: .shapeID)
         shortName = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .shortName)))
         timeZone = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .timeZone)))
+    }
+
+    // MARK: - HasReferences
+
+    func loadReferences(_ references: References) {
+        route = references.routeWithID(routeID)
     }
 }

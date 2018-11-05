@@ -50,8 +50,9 @@ extension ReferencesTests {
 
         let route = routes.first!
         expect(route.agencyID) == "Hillsborough Area Regional Transit"
+        expect(route.agency.name) == "Hillsborough Area Regional Transit"
         expect(route.color) == "09346D"
-        expect(route.routeDescription) == ""
+        expect(route.routeDescription).to(beNil())
         expect(route.id) == "Hillsborough Area Regional Transit_1"
         expect(route.longName) == "Florida Avenue"
         expect(route.shortName) == "1"
@@ -120,6 +121,7 @@ extension ReferencesTests {
         expect(stop.name) == "University Area Transit Center"
         expect(stop.routeIDs.count) == 10
         expect(stop.routeIDs.first!) == "Hillsborough Area Regional Transit_1"
+        expect(stop.routes.first!.shortName) == "1"
         expect(stop.wheelchairBoarding) == .unknown
     }
 }
@@ -137,6 +139,7 @@ extension ReferencesTests {
         expect(trip.direction).to(beNil())
         expect(trip.id) == "Hillsborough Area Regional Transit_99283"
         expect(trip.routeID) == "Hillsborough Area Regional Transit_9"
+        expect(trip.route.shortName) == "9"
         expect(trip.routeShortName).to(beNil())
         expect(trip.shortName).to(beNil())
         expect(trip.serviceID) == "Hillsborough Area Regional Transit_We"

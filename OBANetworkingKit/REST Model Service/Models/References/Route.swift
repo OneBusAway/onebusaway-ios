@@ -43,16 +43,18 @@ public enum RouteType: Int, Decodable {
     }
 }
 
-public class Route: NSObject, Decodable {
+public class Route: NSObject, Decodable, HasReferences {
     let agencyID: String
-    let color: String
-    let routeDescription: String
-    let id: String
-    let longName: String
-    let shortName: String
-    let textColor: String
-    let routeType: RouteType
-    let routeURL: URL?
+    public var agency: Agency!
+
+    public let color: String
+    public let routeDescription: String?
+    public let id: String
+    public let longName: String
+    public let shortName: String
+    public let textColor: String
+    public let routeType: RouteType
+    public let routeURL: URL?
 
     private enum CodingKeys: String, CodingKey {
         case agencyID = "agencyId"
@@ -71,12 +73,18 @@ public class Route: NSObject, Decodable {
 
         agencyID = try container.decode(String.self, forKey: .agencyID)
         color = try container.decode(String.self, forKey: .color)
-        routeDescription = try container.decode(String.self, forKey: .routeDescription)
+        routeDescription = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .routeDescription))
         id = try container.decode(String.self, forKey: .id)
         longName = try container.decode(String.self, forKey: .longName)
         shortName = try container.decode(String.self, forKey: .shortName)
         textColor = try container.decode(String.self, forKey: .textColor)
         routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try? container.decode(URL.self, forKey: .routeURL)
+    }
+
+    // MARK: - HasReferences
+
+    func loadReferences(_ references: References) {
+        agency = references.agencyWithID(agencyID)
     }
 }

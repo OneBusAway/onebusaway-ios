@@ -68,7 +68,7 @@ public class TimeWindow: NSObject, Decodable {
     }
 }
 
-public class AffectedEntity: Codable {
+public class AffectedEntity: NSObject, Codable {
     let agencyID: String
     let applicationID: String
     let directionID: String

@@ -39,7 +39,7 @@ public enum StopLocationType: Int, Decodable {
     }
 }
 
-public class Stop: NSObject, Decodable {
+public class Stop: NSObject, Decodable, HasReferences {
 
     /// The stop_code field contains a short piece of text or a number that uniquely identifies the stop for passengers.
     ///
@@ -71,7 +71,10 @@ public class Stop: NSObject, Decodable {
     /// A list of route IDs served by this stop.
     ///
     /// Route IDs correspond to values in References.
-    public let routeIDs: [String]
+    let routeIDs: [String]
+
+    /// A list of `Route`s served by this stop.
+    public var routes: [Route]!
 
     /// Denotes the availability of wheelchair boarding at this stop.
     public let wheelchairBoarding: WheelchairBoarding
@@ -103,5 +106,11 @@ public class Stop: NSObject, Decodable {
         locationType = try container.decode(StopLocationType.self, forKey: .locationType)
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
         wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
+    }
+
+    // MARK: - HasReferences
+
+    func loadReferences(_ references: References) {
+        routes = references.routesWithIDs(routeIDs)
     }
 }
