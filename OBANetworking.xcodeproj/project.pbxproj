@@ -16,6 +16,9 @@
 		9303E15B218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E15A218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift */; };
 		9303E15D218F888B00FD5FDB /* TripArrivalsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E15C218F888B00FD5FDB /* TripArrivalsModelOperation.swift */; };
 		9303E15F218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E15E218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift */; };
+		9303E16121901F4D00FD5FDB /* StopsForRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16021901F4D00FD5FDB /* StopsForRoute.swift */; };
+		9303E1632190ACA300FD5FDB /* StopsForRouteModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E1622190ACA300FD5FDB /* StopsForRouteModelOperation.swift */; };
+		9303E1652190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E1642190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift */; };
 		93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C90216C5644008A31A4 /* RouteSearchOperation.swift */; };
 		93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */; };
 		93058C95216CDCCE008A31A4 /* routes-for-location-10.json in Resources */ = {isa = PBXBuildFile; fileRef = 93058C94216CDCCE008A31A4 /* routes-for-location-10.json */; };
@@ -182,6 +185,9 @@
 		9303E15A218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopArrivalsModelOperationTests.swift; sourceTree = "<group>"; };
 		9303E15C218F888B00FD5FDB /* TripArrivalsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripArrivalsModelOperation.swift; sourceTree = "<group>"; };
 		9303E15E218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripArrivalsModelOperationTests.swift; sourceTree = "<group>"; };
+		9303E16021901F4D00FD5FDB /* StopsForRoute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRoute.swift; sourceTree = "<group>"; };
+		9303E1622190ACA300FD5FDB /* StopsForRouteModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteModelOperation.swift; sourceTree = "<group>"; };
+		9303E1642190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteModelOperationTests.swift; sourceTree = "<group>"; };
 		93058C90216C5644008A31A4 /* RouteSearchOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperation.swift; sourceTree = "<group>"; };
 		93058C92216C5A0C008A31A4 /* RouteSearchOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouteSearchOperationTest.swift; sourceTree = "<group>"; };
 		93058C94216CDCCE008A31A4 /* routes-for-location-10.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "routes-for-location-10.json"; sourceTree = "<group>"; };
@@ -356,6 +362,7 @@
 				9303E13F218B5DE900FD5FDB /* StopsModelOperation.swift */,
 				9303E150218CACF700FD5FDB /* StopArrivalsModelOperation.swift */,
 				9303E15C218F888B00FD5FDB /* TripArrivalsModelOperation.swift */,
+				9303E1622190ACA300FD5FDB /* StopsForRouteModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -370,6 +377,7 @@
 				93158B86217B991700E16DBA /* VehicleStatus.swift */,
 				9303E152218CD78A00FD5FDB /* StopArrivals.swift */,
 				9303E157218ECCBC00FD5FDB /* ArrivalDeparture.swift */,
+				9303E16021901F4D00FD5FDB /* StopsForRoute.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -652,6 +660,7 @@
 				9303E141218B617700FD5FDB /* StopsModelOperationTests.swift */,
 				9303E15A218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift */,
 				9303E15E218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift */,
+				9303E1642190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -899,7 +908,9 @@
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				932A6F2A218022AF0008654F /* Situation.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
+				9303E1632190ACA300FD5FDB /* StopsForRouteModelOperation.swift in Sources */,
 				9303E153218CD78A00FD5FDB /* StopArrivals.swift in Sources */,
+				9303E16121901F4D00FD5FDB /* StopsForRoute.swift in Sources */,
 				93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
@@ -955,6 +966,7 @@
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */,
 				9303E142218B617700FD5FDB /* StopsModelOperationTests.swift in Sources */,
+				9303E1652190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift in Sources */,
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				933FFF46217A7FC0006682C3 /* DictionaryEncodingTests.swift in Sources */,

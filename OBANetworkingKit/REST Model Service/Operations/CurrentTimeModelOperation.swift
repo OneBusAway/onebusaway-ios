@@ -17,13 +17,11 @@ public class CurrentTimeModelOperation: RESTModelOperation {
 
         guard
             let apiOperation = apiOperation as? CurrentTimeOperation,
-            let currentTime = apiOperation.currentTime
+            let time = apiOperation.currentTime
         else {
             return
         }
 
-        self.currentTime = currentTime
-
-        print("Here it is: \(currentTime)")
+        currentTime = time
     }
 }
