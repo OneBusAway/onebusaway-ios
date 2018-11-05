@@ -81,5 +81,7 @@ fastlane/test_output
 
 iOSInjectionProject/
 
+# Don't bother saving docs.
+docs
 
 # End of https://www.gitignore.io/api/swift
