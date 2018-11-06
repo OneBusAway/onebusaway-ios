@@ -249,6 +249,15 @@ public class RESTAPIService: APIService {
 
     // MARK: - Shapes
 
+    /// Retrieve a shape (the path traveled by a transit vehicle) by id
+    ///
+    /// - API Endpoint: `/api/where/shape/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/shape.html)
+    ///
+    /// - Parameters:
+    ///   - id: The ID of the shape to retrieve.
+    ///   - completion: An optional completion block.
+    /// - Returns: The enqueued network operation.
     @discardableResult @objc
     public func getShape(id: String, completion: RESTAPICompletionBlock? = nil) -> ShapeOperation {
         let url = ShapeOperation.buildURL(shapeID: id, baseURL: baseURL, queryItems: defaultQueryItems)

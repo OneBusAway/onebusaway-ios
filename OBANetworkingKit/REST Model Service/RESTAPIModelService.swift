@@ -214,7 +214,15 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: RouteSearchModelOperation.self, serviceOperation: service)
     }
 
-    func getShape(id: String) -> ShapeModelOperation {
+    /// Retrieve a shape (the path traveled by a transit vehicle) by id
+    ///
+    /// - API Endpoint: `/api/where/shape/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/shape.html)
+    ///
+    /// - Parameters:
+    ///   - id: The ID of the shape to retrieve.
+    /// - Returns: The enqueued model operation.
+    public func getShape(id: String) -> ShapeModelOperation {
         let service = apiService.getShape(id: id)
         return generateModels(type: ShapeModelOperation.self, serviceOperation: service)
     }
