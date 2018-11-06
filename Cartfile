@@ -3,3 +3,6 @@ github "Quick/Nimble" ~>7.3.1
 
 # https://github.com/AliSoftware/OHHTTPStubs/releases
 github "AliSoftware/OHHTTPStubs" ~>6.1.0
+
+# https://github.com/apple/swift-protobuf/releases
+github "apple/swift-protobuf" ~>1.2.0

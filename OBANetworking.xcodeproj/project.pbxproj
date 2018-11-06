@@ -104,6 +104,9 @@
 		932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */; };
 		93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */; };
 		93399E0E21916B3300F71058 /* TripProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0D21916B3300F71058 /* TripProblemModelOperationTests.swift */; };
+		93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
+		93399E1621916FD600F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
+		93399E182191705500F71058 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -291,6 +294,9 @@
 		932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agencies_with_coverage.json; sourceTree = "<group>"; };
 		93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperation.swift; sourceTree = "<group>"; };
 		93399E0D21916B3300F71058 /* TripProblemModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E1121916F2100F71058 /* gtfs-realtime.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = "gtfs-realtime.proto"; sourceTree = "<group>"; };
+		93399E1421916FB900F71058 /* SwiftProtobuf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftProtobuf.framework; path = Carthage/Build/iOS/SwiftProtobuf.framework; sourceTree = "<group>"; };
+		93399E172191705500F71058 /* gtfs-realtime.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "gtfs-realtime.pb.swift"; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -341,6 +347,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
+				93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,6 +355,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93399E1621916FD600F71058 /* SwiftProtobuf.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,6 +478,7 @@
 				931CE278216F93EE00161A6C /* Obaco API */,
 				931CE27B216F943E00161A6C /* Regions API */,
 				931B941B21641A700034D8FA /* Core */,
+				93399E1021916EE800F71058 /* Protobuf */,
 				931B93FF216419C20034D8FA /* OBANetworkingKit.h */,
 				931B9400216419C20034D8FA /* Info.plist */,
 			);
@@ -530,6 +539,7 @@
 		931B943C21643D420034D8FA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				93399E1421916FB900F71058 /* SwiftProtobuf.framework */,
 				931B943D21643D430034D8FA /* Nimble.framework */,
 				931B943F21643D430034D8FA /* OHHTTPStubs.framework */,
 			);
@@ -628,6 +638,15 @@
 				937BB72F2173AFCC00BE5635 /* OBATestCase.swift */,
 			);
 			path = Helpers;
+			sourceTree = "<group>";
+		};
+		93399E1021916EE800F71058 /* Protobuf */ = {
+			isa = PBXGroup;
+			children = (
+				93399E172191705500F71058 /* gtfs-realtime.pb.swift */,
+				93399E1121916F2100F71058 /* gtfs-realtime.proto */,
+			);
+			path = Protobuf;
 			sourceTree = "<group>";
 		};
 		933FFF3A2179A8BE006682C3 /* REST Model Service */ = {
@@ -743,6 +762,7 @@
 				931B93CE2163F5520034D8FA /* Frameworks */,
 				931B93CF2163F5520034D8FA /* Resources */,
 				931B9417216419C20034D8FA /* Embed Frameworks */,
+				93399E1321916F5F00F71058 /* Carthage Integration */,
 			);
 			buildRules = (
 			);
@@ -908,6 +928,25 @@
 			shellPath = /bin/sh;
 			shellScript = "/usr/local/bin/carthage copy-frameworks\n";
 		};
+		93399E1321916F5F00F71058 /* Carthage Integration */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/SwiftProtobuf.framework",
+			);
+			name = "Carthage Integration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -964,6 +1003,7 @@
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
+				93399E182191705500F71058 /* gtfs-realtime.pb.swift in Sources */,
 				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
 				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
@@ -1194,6 +1234,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworking/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1213,6 +1257,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworking/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1237,6 +1285,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworkingKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
@@ -1268,6 +1320,10 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBANetworkingKit/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
