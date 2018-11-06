@@ -36,7 +36,8 @@ class TripDetailsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate) { op in
+            let op = self.restService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
+            op.completionBlock = {
                 expect(op.entries?.count) == 1
 
                 let entry = op.entries!.first! as [AnyHashable: Any]

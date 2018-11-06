@@ -12,13 +12,11 @@ import Foundation
 public class RegionsService: APIService {
 
     @discardableResult @objc
-    public func getRegions(completion: RESTAPICompletionBlock?) -> RegionsOperation {
+    public func getRegions() -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = RegionsOperation(url: url)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }

@@ -24,15 +24,14 @@ class RouteSearchOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getRoute(query: query, region: region) { op in
-                let routeSearchOp = op as! RouteSearchOperation
+            let op = self.restService.getRoute(query: query, region: region)
+            op.completionBlock = {
+                expect(op.outOfRange) == false
 
-                expect(routeSearchOp.outOfRange) == false
-
-                let entries = routeSearchOp.entries
+                let entries = op.entries
                 expect(entries?.count) == 1
 
-                let references = routeSearchOp.references!
+                let references = op.references!
                 let agencies = references["agencies"] as! [Any]
                 expect(agencies.count) == 1
 

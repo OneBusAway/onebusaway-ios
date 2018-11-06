@@ -8,11 +8,6 @@
 
 import Foundation
 
-public typealias WeatherCompletionBlock = (_ operation: WeatherOperation) -> Void
-public typealias CreateAlarmCompletionBlock = (_ operation: CreateAlarmOperation) -> Void
-public typealias DeleteAlarmCompletionBlock = (_ operation: NetworkOperation) -> Void
-public typealias VehiclesCompletionBlock = (_ operation: MatchingVehiclesOperation) -> Void
-
 @objc(OBAObacoService)
 public class ObacoService: APIService {
 
@@ -26,12 +21,10 @@ public class ObacoService: APIService {
     // MARK: - Weather
 
     @discardableResult @objc
-    public func getWeather(regionID: String, completion: WeatherCompletionBlock?) -> WeatherOperation {
+    public func getWeather(regionID: String) -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = WeatherOperation(url: url)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }
@@ -39,38 +32,32 @@ public class ObacoService: APIService {
     // MARK: - Alarms
 
     @discardableResult @objc
-    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String, completion: CreateAlarmCompletionBlock?) -> CreateAlarmOperation {
+    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation {
         let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = CreateAlarmOperation(urlRequest: request)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }
 
     @discardableResult @objc
-    public func deleteAlarm(url: URL, completion: DeleteAlarmCompletionBlock?) -> NetworkOperation {
+    public func deleteAlarm(url: URL) -> NetworkOperation {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
 
         let op = NetworkOperation(urlRequest: request as URLRequest)
-        let completionOp = operationify(completionBlock: completion, dependentOn: op)
-
-        networkQueue.addOperations([op, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(op)
 
         return op
     }
 
     @discardableResult @objc
-    public func getVehicles(matching query: String, completion: VehiclesCompletionBlock?) -> MatchingVehiclesOperation {
+    public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = MatchingVehiclesOperation(url: url)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }

@@ -18,8 +18,8 @@ class AgenciesWithCoverageOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getAgenciesWithCoverage { op in
-
+            let op = self.restService.getAgenciesWithCoverage()
+            op.completionBlock = {
                 let entries = op.entries!
                 expect(entries).toNot(beNil())
                 expect(entries.count) == 11

@@ -26,7 +26,8 @@ class ShapeOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getShape(id: self.shapeID) { op in
+            let op = self.restService.getShape(id: self.shapeID)
+            op.completionBlock = {
                 expect(op.entries).toNot(beNil())
                 expect(op.references).toNot(beNil())
 

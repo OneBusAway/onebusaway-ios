@@ -56,7 +56,8 @@ class TripProblemOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getTripProblem(tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopID: self.stopID, code: self.code, comment: self.comment, userOnVehicle: self.userOnVehicle, location: self.location) { (op) in
+            let op = self.restService.getTripProblem(tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopID: self.stopID, code: self.code, comment: self.comment, userOnVehicle: self.userOnVehicle, location: self.location)
+            op.completionBlock = {
                 expect(op.response!.statusCode) == 200
                 done()
             }

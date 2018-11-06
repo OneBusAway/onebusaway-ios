@@ -18,7 +18,8 @@ class RegionsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.regionsService.getRegions { op in
+            let op = self.regionsService.getRegions()
+            op.completionBlock = {
                 let entries = op.entries!
                 expect(entries).toNot(beNil())
                 expect(entries.count) == 12

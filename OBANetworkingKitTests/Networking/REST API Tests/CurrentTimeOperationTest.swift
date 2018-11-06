@@ -18,8 +18,8 @@ class CurrentTimeTests: OBATestCase {
         }
 
         waitUntil { (done) in
-            self.restService.getCurrentTime { op in
-                let op = op as! CurrentTimeOperation
+            let op = self.restService.getCurrentTime()
+            op.completionBlock = {
                 expect(op.currentTime!).to(beCloseTo(Date.fromComponents(year: 2012, month: 07, day: 29, hour: 18, minute: 37, second: 48), within: 1.0))
                 done()
             }

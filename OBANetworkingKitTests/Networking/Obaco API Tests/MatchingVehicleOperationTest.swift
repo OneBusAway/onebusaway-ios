@@ -21,7 +21,8 @@ class MatchingVehicleOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.obacoService.getVehicles(matching: "1_1") { op in
+            let op = self.obacoService.getVehicles(matching: "1_1")
+            op.completionBlock = {
                 let list = try! JSONSerialization.jsonObject(with: op.data!, options: []) as! [[String: Any]]
                 expect(list.count) == 29
                 expect((list.first!["name"] as! String)) == "Metro Transit"

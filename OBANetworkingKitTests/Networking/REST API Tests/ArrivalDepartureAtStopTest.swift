@@ -34,8 +34,8 @@ class ArrivalDepartureAtStopTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, completion: { (op) in
-
+            let op = self.restService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence)
+            op.completionBlock = {
                 expect(op.entries).toNot(beNil())
                 let entry = op.entries!.first!
                 expect(entry["arrivalEnabled"] as? Bool) == true
@@ -46,7 +46,7 @@ class ArrivalDepartureAtStopTest: OBATestCase {
                 expect(agencies.count) == 1
 
                 done()
-            })
+            }
         }
     }
 

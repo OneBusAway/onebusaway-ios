@@ -45,8 +45,8 @@ class AlarmOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.obacoService.postAlarm(secondsBefore: self.secondsBefore, stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, userPushID: self.userPushID) { op in
-
+            let op = self.obacoService.postAlarm(secondsBefore: self.secondsBefore, stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence, userPushID: self.userPushID)
+            op.completionBlock = {
                 let stringBody = String(data: op.data!, encoding: .utf8)!
                 expect(stringBody) == "{\"url\": \"http://alerts.example.com/regions/1/alarms/1234567890\"}"
 
@@ -67,10 +67,11 @@ class AlarmOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.obacoService.deleteAlarm(url: url, completion: { op in
+            let op = self.obacoService.deleteAlarm(url: url)
+            op.completionBlock = {
                 expect(op.response!.statusCode) == 200
                 done()
-            })
+            }
         }
     }
 }

@@ -28,7 +28,8 @@ class StopsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getStops(coordinate: self.defaultCoordinate) { op in
+            let op = self.restService.getStops(coordinate: self.defaultCoordinate)
+            op.completionBlock = {
                 expect(op.entries?.first).toNot(beNil())
                 done()
             }
@@ -66,7 +67,8 @@ class StopsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getStops(circularRegion: region, query: "query!") { op in
+            let op = self.restService.getStops(circularRegion: region, query: "query!")
+            op.completionBlock = {
                 let entries = op.entries!
                 expect(entries.count) == 1
                 done()
@@ -93,7 +95,8 @@ class StopsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getStops(region: region) { op in
+            let op = self.restService.getStops(region: region)
+            op.completionBlock = {
                 expect(op.entries?.count).to(equal(1))
                 done()
             }

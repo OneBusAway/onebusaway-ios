@@ -10,10 +10,6 @@ import Foundation
 import CoreLocation
 import MapKit
 
-public typealias RESTAPICompletionBlock = (_ operation: RESTAPIOperation) -> Void
-public typealias PlacemarkSearchCompletionBlock = (_ operation: PlacemarkSearchOperation) -> Void
-public typealias RegionalAlertsCompletionBlock = (_ operation: RegionalAlertsOperation) -> Void
-
 @objc(OBARESTAPIService)
 public class RESTAPIService: APIService {
 
@@ -33,10 +29,10 @@ public class RESTAPIService: APIService {
     ///   - vehicleID: Vehicle ID string
     ///   - completion: An optional completion block
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getVehicle(_ vehicleID: String, completion: RESTAPICompletionBlock? = nil) -> RequestVehicleOperation {
+    @objc
+    public func getVehicle(_ vehicleID: String) -> RequestVehicleOperation {
         let url = RequestVehicleOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: RequestVehicleOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: RequestVehicleOperation.self, url: url)
     }
 
     /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle currently operating in the field, return extended trip details about the current trip for the vehicle.
@@ -54,10 +50,10 @@ public class RESTAPIService: APIService {
     ///   - vehicleID: The ID of the vehicle
     ///   - completion: An optional completion block
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getVehicleTrip(vehicleID: String, completion: RESTAPICompletionBlock? = nil) -> VehicleTripOperation {
+    @objc
+    public func getVehicleTrip(vehicleID: String) -> VehicleTripOperation {
         let url = VehicleTripOperation.buildURL(vehicleID: vehicleID, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: VehicleTripOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: VehicleTripOperation.self, url: url)
     }
 
     // MARK: - Current Time
@@ -69,10 +65,10 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameter completion: An optional completion block
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getCurrentTime(completion: RESTAPICompletionBlock? = nil) -> CurrentTimeOperation {
+    @objc
+    public func getCurrentTime() -> CurrentTimeOperation {
         let url = CurrentTimeOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: CurrentTimeOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: CurrentTimeOperation.self, url: url)
     }
 
     // MARK: - Stops
@@ -86,10 +82,10 @@ public class RESTAPIService: APIService {
     ///   - coordinate: The coordinate around which to search for stops.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getStops(coordinate: CLLocationCoordinate2D, completion: RESTAPICompletionBlock? = nil) -> StopsOperation {
+    @objc
+    public func getStops(coordinate: CLLocationCoordinate2D) -> StopsOperation {
         let url = StopsOperation.buildURL(coordinate: coordinate, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url)
     }
 
     /// Retrieves stops within `region`.
@@ -105,10 +101,10 @@ public class RESTAPIService: APIService {
     ///   - region: A coordinate region from which to search for stops.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getStops(region: MKCoordinateRegion, completion: RESTAPICompletionBlock? = nil) -> StopsOperation {
+    @objc
+    public func getStops(region: MKCoordinateRegion) -> StopsOperation {
         let url = StopsOperation.buildURL(region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url)
     }
 
     /// Retrieves stops within `circularRegion`.
@@ -125,10 +121,10 @@ public class RESTAPIService: APIService {
     ///   - query: A search query for a specific stop code.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getStops(circularRegion: CLCircularRegion, query: String, completion: RESTAPICompletionBlock? = nil) -> StopsOperation {
+    @objc
+    public func getStops(circularRegion: CLCircularRegion, query: String) -> StopsOperation {
         let url = StopsOperation.buildURL(circularRegion: circularRegion, query: query, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopsOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopsOperation.self, url: url)
     }
 
     // MARK: - Arrivals and Departures for Stop
@@ -145,10 +141,10 @@ public class RESTAPIService: APIService {
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt, completion: RESTAPICompletionBlock? = nil) -> StopArrivalsAndDeparturesOperation {
+    @objc
+    public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsAndDeparturesOperation {
         let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopArrivalsAndDeparturesOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopArrivalsAndDeparturesOperation.self, url: url)
     }
 
     // MARK: - Arrival and Departure for Stop
@@ -166,10 +162,10 @@ public class RESTAPIService: APIService {
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, completion: RESTAPICompletionBlock? = nil) -> TripArrivalDepartureOperation {
+    @objc
+    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
         let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: TripArrivalDepartureOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: TripArrivalDepartureOperation.self, url: url)
     }
 
     // MARK: - Trip Details
@@ -186,9 +182,9 @@ public class RESTAPIService: APIService {
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc @discardableResult
-    public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64, completion: RESTAPICompletionBlock? = nil) -> TripDetailsOperation {
+    public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsOperation {
         let url = TripDetailsOperation.buildURL(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: TripDetailsOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: TripDetailsOperation.self, url: url)
     }
 
     // MARK: - Search
@@ -208,10 +204,10 @@ public class RESTAPIService: APIService {
     ///   - id: The route ID.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getStopsForRoute(id: String, completion: RESTAPICompletionBlock? = nil) -> StopsForRouteOperation {
+    @objc
+    public func getStopsForRoute(id: String) -> StopsForRouteOperation {
         let url = StopsForRouteOperation.buildURL(routeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopsForRouteOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopsForRouteOperation.self, url: url)
     }
 
     /// Search for routes within a region, by name
@@ -224,10 +220,10 @@ public class RESTAPIService: APIService {
     ///   - region: The circular region from which to return results.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getRoute(query: String, region: CLCircularRegion, completion: RESTAPICompletionBlock? = nil) -> RouteSearchOperation {
+    @objc
+    public func getRoute(query: String, region: CLCircularRegion) -> RouteSearchOperation {
         let url = RouteSearchOperation.buildURL(searchQuery: query, region: region, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: RouteSearchOperation.self, url: url)
     }
 
     /// Performs a local search and returns matching results
@@ -237,12 +233,10 @@ public class RESTAPIService: APIService {
     ///   - region: The coordinate region in which to search.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock? = nil) -> PlacemarkSearchOperation {
+    @objc
+    public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
         let operation = PlacemarkSearchOperation(query: query, region: region)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }
@@ -258,54 +252,50 @@ public class RESTAPIService: APIService {
     ///   - id: The ID of the shape to retrieve.
     ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
-    @discardableResult @objc
-    public func getShape(id: String, completion: RESTAPICompletionBlock? = nil) -> ShapeOperation {
+    @objc
+    public func getShape(id: String) -> ShapeOperation {
         let url = ShapeOperation.buildURL(shapeID: id, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: ShapeOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: ShapeOperation.self, url: url)
     }
 
     // MARK: - Agencies
 
-    @discardableResult @objc
-    public func getAgenciesWithCoverage(completion: RESTAPICompletionBlock? = nil) -> AgenciesWithCoverageOperation {
+    @objc
+    public func getAgenciesWithCoverage() -> AgenciesWithCoverageOperation {
         let url = AgenciesWithCoverageOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: AgenciesWithCoverageOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: AgenciesWithCoverageOperation.self, url: url)
     }
 
     // MARK: - Regional Alerts
 
-    @discardableResult @objc
-    public func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock? = nil) -> RegionalAlertsOperation {
+    @objc
+    public func getRegionalAlerts(agencyID: String) -> RegionalAlertsOperation {
         let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = RegionalAlertsOperation(url: url)
-        let completionOp = operationify(completionBlock: completion, dependentOn: operation)
-        networkQueue.addOperations([operation, completionOp], waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }
 
     // MARK: - Problem Reporting
 
-    @discardableResult @objc
-    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: RESTAPICompletionBlock? = nil) -> StopProblemOperation {
+    @objc
+    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemOperation {
         let url = StopProblemOperation.buildURL(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url)
     }
 
-    @discardableResult @objc
-    public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock? = nil) -> TripProblemOperation {
+    @objc
+    public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemOperation {
         let url = TripProblemOperation.buildURL(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
-        return buildAndEnqueueOperation(type: TripProblemOperation.self, url: url, completionBlock: completion)
+        return buildAndEnqueueOperation(type: TripProblemOperation.self, url: url)
     }
 
     // MARK: - Private Internal Helpers
 
-    private func buildAndEnqueueOperation<T>(type: T.Type, url: URL, completionBlock: RESTAPICompletionBlock?) -> T where T: RESTAPIOperation {
+    private func buildAndEnqueueOperation<T>(type: T.Type, url: URL) -> T where T: RESTAPIOperation {
         let operation = type.init(url: url)
-        var operations: [Operation] = [operation]
-
-        operations.append(operationify(completionBlock: completionBlock, dependentOn: operation))
-        networkQueue.addOperations(operations, waitUntilFinished: false)
+        networkQueue.addOperation(operation)
 
         return operation
     }

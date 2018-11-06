@@ -29,7 +29,8 @@ class RegionalAlertsOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getRegionalAlerts(agencyID: agencyID) { op in
+            let op = self.restService.getRegionalAlerts(agencyID: agencyID)
+            op.completionBlock = {
                 expect(op.data).toNot(beNil())
                 done()
             }

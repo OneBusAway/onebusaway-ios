@@ -43,7 +43,8 @@ class StopProblemOperationTest: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getStopProblem(stopID: self.stopID, code: .locationWrong, comment: self.comment, location: self.location) { (op) in
+            let op = self.restService.getStopProblem(stopID: self.stopID, code: .locationWrong, comment: self.comment, location: self.location)
+            op.completionBlock = {
                 expect(op.response!.statusCode) == 200
                 done()
             }

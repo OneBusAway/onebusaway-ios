@@ -22,9 +22,10 @@ let modelService = RESTAPIModelService(apiService: apiService, dataQueue: queue)
 
 //: ## Agencies
 
-apiService.getAgenciesWithCoverage { (op) in
+let agenciesOperation = apiService.getAgenciesWithCoverage()
+agenciesOperation.completionBlock = {
     print("Agencies")
-    for a in (op.entries ?? []) {
+    for a in (agenciesOperation.entries ?? []) {
         print("• Agency: \(a)")
     }
 }

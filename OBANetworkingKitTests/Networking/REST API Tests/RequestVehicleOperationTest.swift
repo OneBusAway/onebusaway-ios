@@ -21,7 +21,8 @@ class RequestVehicleOperationSpec: OBATestCase {
         }
 
         waitUntil { done in
-            self.restService.getVehicle(vehicleID) { op in
+            let op = self.restService.getVehicle(vehicleID)
+            op.completionBlock = {
                 expect(op.entries).toNot(beNil())
                 expect(op.references).toNot(beNil())
 
