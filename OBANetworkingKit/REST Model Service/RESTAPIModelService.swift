@@ -227,6 +227,30 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: ShapeModelOperation.self, serviceOperation: service)
     }
 
+    // MARK: - Problem Reporting
+
+    /// Submit a user-generated problem report for a particular stop.
+    ///
+    /// - API Endpoint: `/api/where/report-problem-with-stop/{stopID}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/1.1.19/api/where/methods/report-problem-with-stop.html)
+    ///
+    /// The reporting mechanism provides lots of fields that can be specified to give more context about the details of the problem (which trip, stop, vehicle, etc was involved), making it easier for a developer or transit agency staff to diagnose the problem. These reports feed into the problem reporting admin interface.
+    ///
+    /// - Parameters:
+    ///   - stopID: The stop ID where the problem was encountered.
+    ///   - code: A code to indicate the type of problem encountered.
+    ///   - comment: An optional free text field that allows the user to provide more context.
+    ///   - location: An optional location value to provide more context.
+    /// - Returns: The enqueued model operation.
+    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemModelOperation {
+        let service = apiService.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
+        return generateModels(type: StopProblemModelOperation.self, serviceOperation: service)
+    }
+
+//
+//    func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
+
+
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
@@ -250,8 +274,6 @@ public class RESTAPIModelService: NSObject {
     /*
  TODO:
      func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
-     func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?, completion: fpletionBlock?) -> StopProblemOperation
-     func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, completion: RESTAPICompletionBlock?) -> TripProblemOperation
      func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
  */
 }

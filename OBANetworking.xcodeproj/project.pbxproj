@@ -133,6 +133,8 @@
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
+		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
+		93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */; };
 		93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAA992177056A0086D9DE /* RegionsOperation.swift */; };
 		93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FAAA9C2177E1130086D9DE /* RegionsOperationTest.swift */; };
 		93FAAA9F2177E27C0086D9DE /* regions-v3.json in Resources */ = {isa = PBXBuildFile; fileRef = 93FAAA9E2177E27C0086D9DE /* regions-v3.json */; };
@@ -316,6 +318,8 @@
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
+		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
+		93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperationTests.swift; sourceTree = "<group>"; };
 		93FAAA992177056A0086D9DE /* RegionsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsOperation.swift; sourceTree = "<group>"; };
 		93FAAA9C2177E1130086D9DE /* RegionsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsOperationTest.swift; sourceTree = "<group>"; };
 		93FAAA9E2177E27C0086D9DE /* regions-v3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "regions-v3.json"; sourceTree = "<group>"; };
@@ -380,6 +384,7 @@
 				9303E1662190C73E00FD5FDB /* RouteSearchModelOperation.swift */,
 				9303E16A2190D92F00FD5FDB /* ShapeModelOperation.swift */,
 				9303E1702190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift */,
+				93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -682,6 +687,7 @@
 				9303E1682190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift */,
 				9303E16C2190D98400FD5FDB /* ShapeModelOperationTests.swift */,
 				9303E1722190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift */,
+				93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -916,6 +922,7 @@
 				9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */,
 				931CE27D216F944E00161A6C /* RegionsService.swift in Sources */,
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
+				93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */,
 				931A7CD52189332D00FA3025 /* InternalTypes.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
@@ -988,6 +995,7 @@
 				93058C93216C5A0C008A31A4 /* RouteSearchOperationTest.swift in Sources */,
 				931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */,
 				937BB7302173AFCC00BE5635 /* OBATestCase.swift in Sources */,
+				93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */,
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
 				9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
