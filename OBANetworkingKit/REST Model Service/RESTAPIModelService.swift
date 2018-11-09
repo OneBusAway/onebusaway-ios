@@ -311,6 +311,13 @@ public class RESTAPIModelService: NSObject {
         return dataOperation
     }
 
+    // MARK: - Placemarks
+
+    public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
+        return apiService.getPlacemarks(query: query, region: region)
+    }
+
+
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
@@ -330,9 +337,4 @@ public class RESTAPIModelService: NSObject {
 
         dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
     }
-
-    /*
- TODO:
-     func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
- */
 }
