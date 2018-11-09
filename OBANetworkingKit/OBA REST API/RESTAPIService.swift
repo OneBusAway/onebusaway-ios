@@ -27,7 +27,6 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - vehicleID: Vehicle ID string
-    ///   - completion: An optional completion block
     /// - Returns: The enqueued network operation.
     @objc
     public func getVehicle(_ vehicleID: String) -> RequestVehicleOperation {
@@ -48,7 +47,6 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - vehicleID: The ID of the vehicle
-    ///   - completion: An optional completion block
     /// - Returns: The enqueued network operation.
     @objc
     public func getVehicleTrip(vehicleID: String) -> VehicleTripOperation {
@@ -63,7 +61,6 @@ public class RESTAPIService: APIService {
     /// - API Endpoint: `/api/where/current-time.json`
     /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/current-time.html)
     ///
-    /// - Parameter completion: An optional completion block
     /// - Returns: The enqueued network operation.
     @objc
     public func getCurrentTime() -> CurrentTimeOperation {
@@ -80,7 +77,6 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - coordinate: The coordinate around which to search for stops.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getStops(coordinate: CLLocationCoordinate2D) -> StopsOperation {
@@ -99,7 +95,7 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - region: A coordinate region from which to search for stops.
-    ///   - completion: An optional completion block.
+
     /// - Returns: The enqueued network operation.
     @objc
     public func getStops(region: MKCoordinateRegion) -> StopsOperation {
@@ -119,7 +115,6 @@ public class RESTAPIService: APIService {
     /// - Parameters:
     ///   - circularRegion: A circular region from which to search for stops.
     ///   - query: A search query for a specific stop code.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getStops(circularRegion: CLCircularRegion, query: String) -> StopsOperation {
@@ -139,7 +134,6 @@ public class RESTAPIService: APIService {
     ///   - id: The stop ID
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsAndDeparturesOperation {
@@ -160,7 +154,6 @@ public class RESTAPIService: APIService {
     ///   - serviceDate: The service date of the arriving transit vehicle.
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
@@ -179,7 +172,6 @@ public class RESTAPIService: APIService {
     ///   - tripID: The ID of the trip.
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc @discardableResult
     public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsOperation {
@@ -202,7 +194,6 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - id: The route ID.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getStopsForRoute(id: String) -> StopsForRouteOperation {
@@ -218,7 +209,6 @@ public class RESTAPIService: APIService {
     /// - Parameters:
     ///   - query: Search query
     ///   - region: The circular region from which to return results.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getRoute(query: String, region: CLCircularRegion) -> RouteSearchOperation {
@@ -231,7 +221,6 @@ public class RESTAPIService: APIService {
     /// - Parameters:
     ///   - query: The term for which to search.
     ///   - region: The coordinate region in which to search.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
@@ -250,7 +239,6 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - id: The ID of the shape to retrieve.
-    ///   - completion: An optional completion block.
     /// - Returns: The enqueued network operation.
     @objc
     public func getShape(id: String) -> ShapeOperation {
