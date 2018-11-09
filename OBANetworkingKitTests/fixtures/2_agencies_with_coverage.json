@@ -1,0 +1,65 @@
+{
+  "code": 200,
+  "currentTime": 1538843577849,
+  "data": {
+    "limitExceeded": false,
+    "list": [
+      {
+        "agencyId": "98",
+        "lat": 47.6470785,
+        "latSpan": 0.06330499999999972,
+        "lon": -122.296449,
+        "lonSpan": 0.07930600000000254
+      },
+      {
+        "agencyId": "1",
+        "lat": 47.560728,
+        "latSpan": 0.743228000000002,
+        "lon": -122.09015249999999,
+        "lonSpan": 0.8329389999999961
+      }
+    ],
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "98",
+          "lang": "en",
+          "name": "Seattle Children's Hospital",
+          "phone": "",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "https://www.luum.com/commute/content/shuttles"
+        },
+        {
+          "disclaimer": "",
+          "email": "",
+          "fareUrl": "",
+          "id": "1",
+          "lang": "EN",
+          "name": "Metro Transit",
+          "phone": "206-553-3000",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://metro.kingcounty.gov"
+        }
+      ],
+      "routes": [
+
+      ],
+      "situations": [
+
+      ],
+      "stops": [
+
+      ],
+      "trips": [
+
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

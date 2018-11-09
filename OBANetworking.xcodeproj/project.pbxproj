@@ -107,6 +107,10 @@
 		93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
 		93399E1621916FD600F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
 		93399E182191705500F71058 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
+		93399E1A2191EE3900F71058 /* RegionalAlertsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E192191EE3900F71058 /* RegionalAlertsModelOperation.swift */; };
+		93399E1C2191F12800F71058 /* AgencyAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1B2191F12800F71058 /* AgencyAlert.swift */; };
+		93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1D2193489500F71058 /* RegionalAlertsModelOperationTests.swift */; };
+		93399E2021934A2E00F71058 /* 2_agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -297,6 +301,10 @@
 		93399E1121916F2100F71058 /* gtfs-realtime.proto */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.protobuf; path = "gtfs-realtime.proto"; sourceTree = "<group>"; };
 		93399E1421916FB900F71058 /* SwiftProtobuf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftProtobuf.framework; path = Carthage/Build/iOS/SwiftProtobuf.framework; sourceTree = "<group>"; };
 		93399E172191705500F71058 /* gtfs-realtime.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "gtfs-realtime.pb.swift"; sourceTree = "<group>"; };
+		93399E192191EE3900F71058 /* RegionalAlertsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsModelOperation.swift; sourceTree = "<group>"; };
+		93399E1B2191F12800F71058 /* AgencyAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyAlert.swift; sourceTree = "<group>"; };
+		93399E1D2193489500F71058 /* RegionalAlertsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = 2_agencies_with_coverage.json; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -398,6 +406,7 @@
 				9303E1702190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift */,
 				93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */,
 				93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */,
+				93399E192191EE3900F71058 /* RegionalAlertsModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -414,6 +423,7 @@
 				9303E157218ECCBC00FD5FDB /* ArrivalDeparture.swift */,
 				9303E16021901F4D00FD5FDB /* StopsForRoute.swift */,
 				9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */,
+				93399E1B2191F12800F71058 /* AgencyAlert.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -582,6 +592,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */,
 				9303E14C218C2CE500FD5FDB /* arrivals-and-departures-for-stop-1_10914.json */,
 				931A7CDB2189382900FA3025 /* current_time.json */,
 				932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */,
@@ -713,6 +724,7 @@
 				9303E1722190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift */,
 				93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */,
 				93399E0D21916B3300F71058 /* TripProblemModelOperationTests.swift */,
+				93399E1D2193489500F71058 /* RegionalAlertsModelOperationTests.swift */,
 			);
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
@@ -882,6 +894,7 @@
 				931A7CDC2189382900FA3025 /* current_time.json in Resources */,
 				931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */,
 				93158BA0217CE2AD00E16DBA /* references.json in Resources */,
+				93399E2021934A2E00F71058 /* 2_agencies_with_coverage.json in Resources */,
 				9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */,
 				933FFF3921795403006682C3 /* trip-for-vehicle-1_2799.json in Resources */,
 				932AAFA6216984E90070BF56 /* shape_1_20010002.json in Resources */,
@@ -1013,6 +1026,7 @@
 				933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */,
 				93158B8F217C05FB00E16DBA /* References.swift in Sources */,
 				9303E151218CACF700FD5FDB /* StopArrivalsModelOperation.swift in Sources */,
+				93399E1A2191EE3900F71058 /* RegionalAlertsModelOperation.swift in Sources */,
 				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,
 				93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
@@ -1022,6 +1036,7 @@
 				9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
+				93399E1C2191F12800F71058 /* AgencyAlert.swift in Sources */,
 				93158B95217C1C2400E16DBA /* Frequency.swift in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
@@ -1034,6 +1049,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				932AAF9E216962D20070BF56 /* ArrivalDepartureAtStopTest.swift in Sources */,
+				93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */,
 				9303E16D2190D98400FD5FDB /* ShapeModelOperationTests.swift in Sources */,
 				931CE26F216F819F00161A6C /* PlacemarkSearchOperationTest.swift in Sources */,
 				933FFF3721794D8D006682C3 /* VehicleTripOperationTest.swift in Sources */,

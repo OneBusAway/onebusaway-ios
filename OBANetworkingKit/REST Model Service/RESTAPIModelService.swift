@@ -252,6 +252,64 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: TripProblemModelOperation.self, serviceOperation: service)
     }
 
+    // MARK: - Alerts
+
+    public func getRegionalAlerts() -> RegionalAlertsModelOperation {
+        // Get a list of agencies
+        let agenciesOperation = getAgenciesWithCoverage()
+
+        // Set up the final operation that will collect all of our agency alerts.
+        let regionalAlertsOperation = RegionalAlertsModelOperation()
+
+        // Create a transfer operation that will create `n` alert
+        // fetch operations for our `n` agencies. Also make the
+        // final operation dependent on each of those sub-ops.
+        let agenciesTransfer = BlockOperation { [unowned agenciesOperation, unowned regionalAlertsOperation] in
+            let agencies = agenciesOperation.agenciesWithCoverage
+
+            for agency in agencies {
+                // Create a 'fetch alerts' operation for each agency
+                let fetchAlertsOp = self.getRegionalAlerts(agency: agency)
+
+                // add each 'fetch alerts' op as a dependency of the final operation.
+                regionalAlertsOperation.addDependency(fetchAlertsOp)
+            }
+        }
+
+        agenciesTransfer.addDependency(agenciesOperation)
+        regionalAlertsOperation.addDependency(agenciesTransfer)
+
+        dataQueue.addOperations([agenciesTransfer,regionalAlertsOperation], waitUntilFinished: false)
+
+        return regionalAlertsOperation
+    }
+
+    func getRegionalAlerts(agency: AgencyWithCoverage) -> AgencyAlertsModelOperation {
+        // Create the parent operations: we depend on GTFS alert data
+        // and the list of agencies in the region.
+        let serviceOperation = apiService.getRegionalAlerts(agencyID: agency.agencyID)
+
+        // Create the operation that will process the agencies and the GTFS data.
+        let dataOperation = AgencyAlertsModelOperation(agency: agency)
+
+        // The transfer operation will prime the data operation with the raw data it needs.
+        let transferOperation = BlockOperation { [unowned serviceOperation, unowned dataOperation] in
+            dataOperation.apiOperation = serviceOperation
+        }
+
+        // Make the transfer operation dependent on the GTFS alert operation.
+        transferOperation.addDependency(serviceOperation)
+
+        // Make the data operation dependent on the transfer operation so that we can guarantee
+        // that we will have all of our necessary data before beginning the data processing.
+        dataOperation.addDependency(transferOperation)
+
+        // Enqueue everything.
+        dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
+
+        // Return the data operation so the caller can become dependent on it and grab its data.
+        return dataOperation
+    }
 
     // MARK: - Private Internal Helpers
 
@@ -275,7 +333,6 @@ public class RESTAPIModelService: NSObject {
 
     /*
  TODO:
-     func getRegionalAlerts(agencyID: String, completion: RegionalAlertsCompletionBlock?) -> RegionalAlertsOperation
      func getPlacemarks(query: String, region: MKCoordinateRegion, completion: PlacemarkSearchCompletionBlock?) -> fearchOperation
  */
 }
