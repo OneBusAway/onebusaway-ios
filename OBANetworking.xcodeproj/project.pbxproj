@@ -116,6 +116,9 @@
 		93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2B21964F0800F71058 /* WeatherModelOperation.swift */; };
 		93399E2E21964F9800F71058 /* WeatherForecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2D21964F9800F71058 /* WeatherForecast.swift */; };
 		93399E3021965D7E00F71058 /* WeatherModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */; };
+		93399E3221975B2100F71058 /* AlarmModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */; };
+		93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3321975BBA00F71058 /* AlarmModelOperation.swift */; };
+		93399E3621975BC200F71058 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3521975BC200F71058 /* Alarm.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -315,6 +318,9 @@
 		93399E2B21964F0800F71058 /* WeatherModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModelOperation.swift; sourceTree = "<group>"; };
 		93399E2D21964F9800F71058 /* WeatherForecast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherForecast.swift; sourceTree = "<group>"; };
 		93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E3321975BBA00F71058 /* AlarmModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmModelOperation.swift; sourceTree = "<group>"; };
+		93399E3521975BC200F71058 /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -686,6 +692,7 @@
 			isa = PBXGroup;
 			children = (
 				93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */,
+				93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */,
 			);
 			path = "Obaco Model Service Tests";
 			sourceTree = "<group>";
@@ -694,6 +701,7 @@
 			isa = PBXGroup;
 			children = (
 				93399E2D21964F9800F71058 /* WeatherForecast.swift */,
+				93399E3521975BC200F71058 /* Alarm.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -702,6 +710,7 @@
 			isa = PBXGroup;
 			children = (
 				93399E2B21964F0800F71058 /* WeatherModelOperation.swift */,
+				93399E3321975BBA00F71058 /* AlarmModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -1065,11 +1074,13 @@
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
 				93399E182191705500F71058 /* gtfs-realtime.pb.swift in Sources */,
+				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
 				93158B91217C0B0A00E16DBA /* Agency.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
 				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
+				93399E3621975BC200F71058 /* Alarm.swift in Sources */,
 				9309DCA4217D0B3200E750D0 /* Route.swift in Sources */,
 				933FFF4C217A7FD9006682C3 /* DictionaryCodingKey.swift in Sources */,
 				93158B8F217C05FB00E16DBA /* References.swift in Sources */,
@@ -1099,6 +1110,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93399E3221975B2100F71058 /* AlarmModelOperationTests.swift in Sources */,
 				932AAF9E216962D20070BF56 /* ArrivalDepartureAtStopTest.swift in Sources */,
 				93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */,
 				9303E16D2190D98400FD5FDB /* ShapeModelOperationTests.swift in Sources */,

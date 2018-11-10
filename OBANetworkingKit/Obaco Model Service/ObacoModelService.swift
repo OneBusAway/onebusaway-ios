@@ -31,7 +31,16 @@ public class ObacoModelService: ModelService {
 
     // MARK: - Alarms
 
-//    @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation
+    @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> AlarmModelOperation {
+        let service = apiService.postAlarm(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID)
+        let data = AlarmModelOperation()
+
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
+
+        return data
+    }
 
 //    @objc public func deleteAlarm(url: URL) -> NetworkOperation
 
