@@ -42,7 +42,9 @@ public class ObacoModelService: ModelService {
         return data
     }
 
-//    @objc public func deleteAlarm(url: URL) -> NetworkOperation
+    @objc public func deleteAlarm(alarm: Alarm) -> NetworkOperation {
+        return apiService.deleteAlarm(url: alarm.url)
+    }
 
     // MARK: - Vehicles
 

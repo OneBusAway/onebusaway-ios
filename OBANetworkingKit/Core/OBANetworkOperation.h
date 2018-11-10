@@ -16,6 +16,7 @@ NS_SWIFT_NAME(NetworkOperation)
 @property(nonatomic,strong,nullable,readonly) NSData *data;
 @property(nonatomic,copy,nullable,readonly) NSError *error;
 @property(nonatomic,strong,nullable,readonly) NSHTTPURLResponse *response;
+@property(nonatomic,assign,readonly) BOOL success;
 
 - (instancetype)initWithURLRequest:(NSURLRequest*)request NS_DESIGNATED_INITIALIZER;
 - (instancetype)initWithURL:(NSURL*)URL;

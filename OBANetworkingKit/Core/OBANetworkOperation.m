@@ -61,6 +61,12 @@
     self.error = error;
 }
 
+#pragma mark - State
+
+- (BOOL)success {
+    return self.response.statusCode == 200;
+}
+
 #pragma mark - Cancel
 
 - (void)cancel {
