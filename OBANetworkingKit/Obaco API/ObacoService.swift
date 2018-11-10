@@ -20,8 +20,7 @@ public class ObacoService: APIService {
 
     // MARK: - Weather
 
-    @discardableResult @objc
-    public func getWeather(regionID: String) -> WeatherOperation {
+    @objc public func getWeather(regionID: String) -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let operation = WeatherOperation(url: url)
         networkQueue.addOperation(operation)
@@ -31,8 +30,7 @@ public class ObacoService: APIService {
 
     // MARK: - Alarms
 
-    @discardableResult @objc
-    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation {
+    @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation {
         let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = CreateAlarmOperation(urlRequest: request)
@@ -41,8 +39,7 @@ public class ObacoService: APIService {
         return operation
     }
 
-    @discardableResult @objc
-    public func deleteAlarm(url: URL) -> NetworkOperation {
+    @objc public func deleteAlarm(url: URL) -> NetworkOperation {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
 
@@ -52,8 +49,7 @@ public class ObacoService: APIService {
         return op
     }
 
-    @discardableResult @objc
-    public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
+    @objc public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = MatchingVehiclesOperation(url: url)

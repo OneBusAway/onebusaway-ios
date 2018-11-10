@@ -111,6 +111,11 @@
 		93399E1C2191F12800F71058 /* AgencyAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1B2191F12800F71058 /* AgencyAlert.swift */; };
 		93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1D2193489500F71058 /* RegionalAlertsModelOperationTests.swift */; };
 		93399E2021934A2E00F71058 /* 2_agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */; };
+		93399E2521964CA700F71058 /* ObacoModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2421964CA700F71058 /* ObacoModelService.swift */; };
+		93399E2A21964DC300F71058 /* ModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2921964DC300F71058 /* ModelService.swift */; };
+		93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2B21964F0800F71058 /* WeatherModelOperation.swift */; };
+		93399E2E21964F9800F71058 /* WeatherForecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2D21964F9800F71058 /* WeatherForecast.swift */; };
+		93399E3021965D7E00F71058 /* WeatherModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -305,6 +310,11 @@
 		93399E1B2191F12800F71058 /* AgencyAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyAlert.swift; sourceTree = "<group>"; };
 		93399E1D2193489500F71058 /* RegionalAlertsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsModelOperationTests.swift; sourceTree = "<group>"; };
 		93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = 2_agencies_with_coverage.json; sourceTree = "<group>"; };
+		93399E2421964CA700F71058 /* ObacoModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObacoModelService.swift; sourceTree = "<group>"; };
+		93399E2921964DC300F71058 /* ModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelService.swift; sourceTree = "<group>"; };
+		93399E2B21964F0800F71058 /* WeatherModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModelOperation.swift; sourceTree = "<group>"; };
+		93399E2D21964F9800F71058 /* WeatherForecast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherForecast.swift; sourceTree = "<group>"; };
+		93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeatherModelOperationTests.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -481,6 +491,7 @@
 		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
 			isa = PBXGroup;
 			children = (
+				93399E2321964C8D00F71058 /* Obaco Model Service */,
 				933FFF3A2179A8BE006682C3 /* REST Model Service */,
 				93058C96216CE260008A31A4 /* PrivateModule */,
 				931B944B21645FBD0034D8FA /* Helpers */,
@@ -513,6 +524,7 @@
 			isa = PBXGroup;
 			children = (
 				937BB73C2175566600BE5635 /* APIService.swift */,
+				93399E2921964DC300F71058 /* ModelService.swift */,
 				931B941C21641A7F0034D8FA /* OBAOperation.h */,
 				931B941D21641A7F0034D8FA /* OBAOperation.m */,
 				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
@@ -660,6 +672,40 @@
 			path = Protobuf;
 			sourceTree = "<group>";
 		};
+		93399E2321964C8D00F71058 /* Obaco Model Service */ = {
+			isa = PBXGroup;
+			children = (
+				93399E2421964CA700F71058 /* ObacoModelService.swift */,
+				93399E2721964D8900F71058 /* Models */,
+				93399E2821964D8E00F71058 /* Operations */,
+			);
+			path = "Obaco Model Service";
+			sourceTree = "<group>";
+		};
+		93399E2621964CEA00F71058 /* Obaco Model Service Tests */ = {
+			isa = PBXGroup;
+			children = (
+				93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */,
+			);
+			path = "Obaco Model Service Tests";
+			sourceTree = "<group>";
+		};
+		93399E2721964D8900F71058 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				93399E2D21964F9800F71058 /* WeatherForecast.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		93399E2821964D8E00F71058 /* Operations */ = {
+			isa = PBXGroup;
+			children = (
+				93399E2B21964F0800F71058 /* WeatherModelOperation.swift */,
+			);
+			path = Operations;
+			sourceTree = "<group>";
+		};
 		933FFF3A2179A8BE006682C3 /* REST Model Service */ = {
 			isa = PBXGroup;
 			children = (
@@ -703,6 +749,7 @@
 		933FFF50217A8D2A006682C3 /* Modeling */ = {
 			isa = PBXGroup;
 			children = (
+				93399E2621964CEA00F71058 /* Obaco Model Service Tests */,
 				933FFF51217A8D36006682C3 /* REST Model Service Tests */,
 			);
 			path = Modeling;
@@ -1012,6 +1059,7 @@
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
+				93399E2E21964F9800F71058 /* WeatherForecast.swift in Sources */,
 				9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
@@ -1033,10 +1081,13 @@
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
+				93399E2521964CA700F71058 /* ObacoModelService.swift in Sources */,
 				9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */,
+				93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				93399E1C2191F12800F71058 /* AgencyAlert.swift in Sources */,
+				93399E2A21964DC300F71058 /* ModelService.swift in Sources */,
 				93158B95217C1C2400E16DBA /* Frequency.swift in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
@@ -1072,6 +1123,7 @@
 				93158B9E217CE18E00E16DBA /* ReferencesTests.swift in Sources */,
 				9303E15F218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift in Sources */,
 				936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */,
+				93399E3021965D7E00F71058 /* WeatherModelOperationTests.swift in Sources */,
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,

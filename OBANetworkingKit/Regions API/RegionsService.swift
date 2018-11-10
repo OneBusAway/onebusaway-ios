@@ -11,8 +11,7 @@ import Foundation
 @objc(OBARegionsService)
 public class RegionsService: APIService {
 
-    @discardableResult @objc
-    public func getRegions() -> RegionsOperation {
+    @objc public func getRegions() -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
 
         let operation = RegionsOperation(url: url)

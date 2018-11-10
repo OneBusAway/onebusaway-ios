@@ -37,6 +37,12 @@ public extension XCTestCase {
 public protocol OperationTest { }
 public extension OperationTest where Self: XCTestCase {
 
+    // MARK: - Obaco Model Service
+
+    public var obacoModelService: ObacoModelService {
+        return ObacoModelService(apiService: obacoService, dataQueue: OperationQueue())
+    }
+
     // MARK: - REST Model Service
 
     public var restModelService: RESTAPIModelService {
