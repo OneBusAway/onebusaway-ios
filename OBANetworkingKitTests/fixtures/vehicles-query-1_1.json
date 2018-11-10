@@ -1,1 +1,147 @@
-[{"id":"1","name":"Metro Transit","vehicle_id":"1_1156"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1113"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1120"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1142"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1138"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1135"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1105"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1192"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1143"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1133"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1187"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1104"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1129"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1139"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1103"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1108"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1127"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1116"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1117"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1125"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1122"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1160"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1168"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1174"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1118"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1100"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1154"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1114"},{"id":"1","name":"Metro Transit","vehicle_id":"1_1169"}]
+[
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1156"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1113"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1120"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1142"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1138"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1135"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1105"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1192"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1143"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1133"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1187"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1104"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1129"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1139"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1103"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1108"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1127"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1116"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1117"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1125"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1122"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1160"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1168"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1174"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1118"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1100"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1154"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1114"
+  },
+  {
+    "id": "1",
+    "name": "Metro Transit",
+    "vehicle_id": "1_1169"
+  }
+]

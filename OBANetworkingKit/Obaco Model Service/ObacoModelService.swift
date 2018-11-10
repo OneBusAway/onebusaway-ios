@@ -48,16 +48,14 @@ public class ObacoModelService: ModelService {
 
     // MARK: - Vehicles
 
-//    @objc public func getVehicles(matching query: String) -> MatchingVehiclesOperation
+    @objc public func getVehicles(matching query: String) -> AgencyVehicleModelOperation {
+        let service = apiService.getVehicles(matching: query)
+        let data = AgencyVehicleModelOperation()
 
-    // MARK: - Private Internal Helpers
+        transferData(from: service, to: data) { [unowned service, unowned data] in
+            data.apiOperation = service
+        }
 
-//    private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
-//        let data = type.init()
-//        transferData(from: serviceOperation, to: data) { [unowned serviceOperation, unowned data] in
-//            data.apiOperation = serviceOperation
-//        }
-//
-//        return data
-//    }
+        return data
+    }
 }

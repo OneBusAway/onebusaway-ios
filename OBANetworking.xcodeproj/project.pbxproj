@@ -119,6 +119,9 @@
 		93399E3221975B2100F71058 /* AlarmModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */; };
 		93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3321975BBA00F71058 /* AlarmModelOperation.swift */; };
 		93399E3621975BC200F71058 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3521975BC200F71058 /* Alarm.swift */; };
+		93399E3821976B6900F71058 /* AgencyVehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3721976B6900F71058 /* AgencyVehicle.swift */; };
+		93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3921976BE700F71058 /* AgencyVehicleModelOperation.swift */; };
+		93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3B21976D8700F71058 /* AgencyVehicleModelOperationTests.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -321,6 +324,9 @@
 		93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmModelOperationTests.swift; sourceTree = "<group>"; };
 		93399E3321975BBA00F71058 /* AlarmModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmModelOperation.swift; sourceTree = "<group>"; };
 		93399E3521975BC200F71058 /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
+		93399E3721976B6900F71058 /* AgencyVehicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicle.swift; sourceTree = "<group>"; };
+		93399E3921976BE700F71058 /* AgencyVehicleModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicleModelOperation.swift; sourceTree = "<group>"; };
+		93399E3B21976D8700F71058 /* AgencyVehicleModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicleModelOperationTests.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -693,6 +699,7 @@
 			children = (
 				93399E2F21965D7E00F71058 /* WeatherModelOperationTests.swift */,
 				93399E3121975B2100F71058 /* AlarmModelOperationTests.swift */,
+				93399E3B21976D8700F71058 /* AgencyVehicleModelOperationTests.swift */,
 			);
 			path = "Obaco Model Service Tests";
 			sourceTree = "<group>";
@@ -702,6 +709,7 @@
 			children = (
 				93399E2D21964F9800F71058 /* WeatherForecast.swift */,
 				93399E3521975BC200F71058 /* Alarm.swift */,
+				93399E3721976B6900F71058 /* AgencyVehicle.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -711,6 +719,7 @@
 			children = (
 				93399E2B21964F0800F71058 /* WeatherModelOperation.swift */,
 				93399E3321975BBA00F71058 /* AlarmModelOperation.swift */,
+				93399E3921976BE700F71058 /* AgencyVehicleModelOperation.swift */,
 			);
 			path = Operations;
 			sourceTree = "<group>";
@@ -1072,6 +1081,7 @@
 				9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
+				93399E3821976B6900F71058 /* AgencyVehicle.swift in Sources */,
 				93158B89217B9B2900E16DBA /* TripStatus.swift in Sources */,
 				93399E182191705500F71058 /* gtfs-realtime.pb.swift in Sources */,
 				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
@@ -1095,6 +1105,7 @@
 				93399E2521964CA700F71058 /* ObacoModelService.swift in Sources */,
 				9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */,
 				93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */,
+				93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				93399E1C2191F12800F71058 /* AgencyAlert.swift in Sources */,
@@ -1123,6 +1134,7 @@
 				937BB7302173AFCC00BE5635 /* OBATestCase.swift in Sources */,
 				93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */,
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
+				93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */,
 				9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */,
 				931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */,
 				931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */,
