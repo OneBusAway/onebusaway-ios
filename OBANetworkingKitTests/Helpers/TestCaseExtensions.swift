@@ -34,19 +34,12 @@ public extension XCTestCase {
     }
 }
 
-public protocol OperationTest { }
-public extension OperationTest where Self: XCTestCase {
+public extension OBATestCase {
 
     // MARK: - Obaco Model Service
 
     public var obacoModelService: ObacoModelService {
         return ObacoModelService(apiService: obacoService, dataQueue: OperationQueue())
-    }
-
-    // MARK: - REST Model Service
-
-    public var restModelService: RESTAPIModelService {
-        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
     }
 
     // MARK: - Obaco API Service
@@ -70,23 +63,14 @@ public extension OperationTest where Self: XCTestCase {
     public var obacoService: ObacoService {
         return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue())
     }
+}
 
-    // MARK: - Regions API Service
+public extension OBATestCase {
 
-    public var regionsHost: String {
-        return "regions.example.com"
-    }
+    // MARK: - REST Model Service
 
-    public var regionsURLString: String {
-        return "https://\(regionsHost)"
-    }
-
-    public var regionsURL: URL {
-        return URL(string: regionsURLString)!
-    }
-
-    public var regionsService: RegionsService {
-        return RegionsService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    public var restModelService: RESTAPIModelService {
+        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
     }
 
     // MARK: - REST API Service
@@ -107,7 +91,34 @@ public extension OperationTest where Self: XCTestCase {
         let url = URL(string: baseURLString)!
         return RESTAPIService(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
     }
+}
 
+public extension OBATestCase {
+
+    public var regionsModelService: RegionsModelService {
+        return RegionsModelService(apiService: regionsService, dataQueue: OperationQueue())
+    }
+
+    // MARK: - Regions API Service
+
+    public var regionsHost: String {
+        return "regions.example.com"
+    }
+
+    public var regionsURLString: String {
+        return "https://\(regionsHost)"
+    }
+
+    public var regionsURL: URL {
+        return URL(string: regionsURLString)!
+    }
+
+    public var regionsService: RegionsService {
+        return RegionsService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+}
+
+public extension OBATestCase {
     // MARK: - Data Loading
 
     public func dataFile(named name: String) -> OHHTTPStubsResponse {

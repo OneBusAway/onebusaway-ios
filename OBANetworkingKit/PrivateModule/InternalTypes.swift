@@ -42,9 +42,12 @@ extension DictionaryDecoder {
         return decoder
     }
 
-    public class func decodeModels<T>(_ entries: [[String: Any]], references: References, type: T.Type) throws -> [T] where T: Decodable {
+    public class func decodeModels<T>(_ entries: [[String: Any]], references: References?, type: T.Type) throws -> [T] where T: Decodable {
         let decoder = DictionaryDecoder.restApiServiceDecoder()
-        decoder.userInfo = [CodingUserInfoKey.references: references]
+
+        if let references = references {
+            decoder.userInfo = [CodingUserInfoKey.references: references]
+        }
 
         let models = try entries.compactMap { dict -> T? in
             return try decoder.decode(type, from: dict)

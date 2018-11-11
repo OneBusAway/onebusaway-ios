@@ -10,7 +10,7 @@ import XCTest
 import OHHTTPStubs
 import OBANetworkingKit
 
-public class OBATestCase : XCTestCase, OperationTest {
+public class OBATestCase : XCTestCase {
     public override func setUp() {
         super.setUp()
         NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone

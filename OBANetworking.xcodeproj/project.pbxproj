@@ -122,6 +122,10 @@
 		93399E3821976B6900F71058 /* AgencyVehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3721976B6900F71058 /* AgencyVehicle.swift */; };
 		93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3921976BE700F71058 /* AgencyVehicleModelOperation.swift */; };
 		93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3B21976D8700F71058 /* AgencyVehicleModelOperationTests.swift */; };
+		93399E3F2197856A00F71058 /* RegionsModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3E2197856A00F71058 /* RegionsModelService.swift */; };
+		93399E412197858000F71058 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E402197858000F71058 /* Region.swift */; };
+		93399E432197858E00F71058 /* RegionsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E422197858E00F71058 /* RegionsModelOperation.swift */; };
+		93399E4621978EE200F71058 /* RegionsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E4521978EE200F71058 /* RegionsModelOperationTests.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -327,6 +331,10 @@
 		93399E3721976B6900F71058 /* AgencyVehicle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicle.swift; sourceTree = "<group>"; };
 		93399E3921976BE700F71058 /* AgencyVehicleModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicleModelOperation.swift; sourceTree = "<group>"; };
 		93399E3B21976D8700F71058 /* AgencyVehicleModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgencyVehicleModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E3E2197856A00F71058 /* RegionsModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsModelService.swift; sourceTree = "<group>"; };
+		93399E402197858000F71058 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
+		93399E422197858E00F71058 /* RegionsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsModelOperation.swift; sourceTree = "<group>"; };
+		93399E4521978EE200F71058 /* RegionsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsModelOperationTests.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -503,6 +511,7 @@
 		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
 			isa = PBXGroup;
 			children = (
+				93399E3D2197854D00F71058 /* Regions Model Service */,
 				93399E2321964C8D00F71058 /* Obaco Model Service */,
 				933FFF3A2179A8BE006682C3 /* REST Model Service */,
 				93058C96216CE260008A31A4 /* PrivateModule */,
@@ -724,6 +733,24 @@
 			path = Operations;
 			sourceTree = "<group>";
 		};
+		93399E3D2197854D00F71058 /* Regions Model Service */ = {
+			isa = PBXGroup;
+			children = (
+				93399E3E2197856A00F71058 /* RegionsModelService.swift */,
+				93399E402197858000F71058 /* Region.swift */,
+				93399E422197858E00F71058 /* RegionsModelOperation.swift */,
+			);
+			path = "Regions Model Service";
+			sourceTree = "<group>";
+		};
+		93399E4421978ED000F71058 /* Regions Model Service Tests */ = {
+			isa = PBXGroup;
+			children = (
+				93399E4521978EE200F71058 /* RegionsModelOperationTests.swift */,
+			);
+			path = "Regions Model Service Tests";
+			sourceTree = "<group>";
+		};
 		933FFF3A2179A8BE006682C3 /* REST Model Service */ = {
 			isa = PBXGroup;
 			children = (
@@ -767,6 +794,7 @@
 		933FFF50217A8D2A006682C3 /* Modeling */ = {
 			isa = PBXGroup;
 			children = (
+				93399E4421978ED000F71058 /* Regions Model Service Tests */,
 				93399E2621964CEA00F71058 /* Obaco Model Service Tests */,
 				933FFF51217A8D36006682C3 /* REST Model Service Tests */,
 			);
@@ -1045,6 +1073,7 @@
 				9309DCAA217D8ED300E750D0 /* Trip.swift in Sources */,
 				931CE27D216F944E00161A6C /* RegionsService.swift in Sources */,
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
+				93399E412197858000F71058 /* Region.swift in Sources */,
 				93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */,
 				931A7CD52189332D00FA3025 /* InternalTypes.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
@@ -1072,6 +1101,7 @@
 				9303E15D218F888B00FD5FDB /* TripArrivalsModelOperation.swift in Sources */,
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
+				93399E3F2197856A00F71058 /* RegionsModelService.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				93EC531C2185874C00C974AB /* TripDetails.swift in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
@@ -1105,6 +1135,7 @@
 				93399E2521964CA700F71058 /* ObacoModelService.swift in Sources */,
 				9309DCA6217D0E9500E750D0 /* Stop.swift in Sources */,
 				93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */,
+				93399E432197858E00F71058 /* RegionsModelOperation.swift in Sources */,
 				93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
@@ -1133,6 +1164,7 @@
 				931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */,
 				937BB7302173AFCC00BE5635 /* OBATestCase.swift in Sources */,
 				93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */,
+				93399E4621978EE200F71058 /* RegionsModelOperationTests.swift in Sources */,
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
 				93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */,
 				9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */,

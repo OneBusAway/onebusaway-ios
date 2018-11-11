@@ -38,7 +38,7 @@ public class RESTModelOperation: Operation {
         var models = [T]()
 
         do {
-            models = try DictionaryDecoder.decodeModels(entries, references: references!, type: type)
+            models = try DictionaryDecoder.decodeModels(entries, references: references, type: type)
         }
         catch {
             print("Unable to decode models from data: \(error)")
