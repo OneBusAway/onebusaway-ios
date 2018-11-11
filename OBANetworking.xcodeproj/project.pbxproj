@@ -126,6 +126,16 @@
 		93399E412197858000F71058 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E402197858000F71058 /* Region.swift */; };
 		93399E432197858E00F71058 /* RegionsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E422197858E00F71058 /* RegionsModelOperation.swift */; };
 		93399E4621978EE200F71058 /* RegionsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E4521978EE200F71058 /* RegionsModelOperationTests.swift */; };
+		93399E552198150100F71058 /* OBALocationKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E4C2198150100F71058 /* OBALocationKit.framework */; };
+		93399E5E2198150100F71058 /* OBALocationKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 93399E4E2198150100F71058 /* OBALocationKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E4C2198150100F71058 /* OBALocationKit.framework */; };
+		93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E4C2198150100F71058 /* OBALocationKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93399E6B2198157A00F71058 /* RegionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6A2198157A00F71058 /* RegionsManager.swift */; };
+		93399E6E2198162C00F71058 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6D2198162C00F71058 /* LocationService.swift */; };
+		93399E7021989A5900F71058 /* LocationManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */; };
+		93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E712198AD1400F71058 /* LocationServiceTests.swift */; };
+		93399E732198ADEB00F71058 /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
+		93399E742198ADEF00F71058 /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -192,6 +202,27 @@
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
 			remoteInfo = OBANetworkingKit;
 		};
+		93399E562198150100F71058 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93399E4B2198150100F71058;
+			remoteInfo = OBALocationKit;
+		};
+		93399E582198150100F71058 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93D02163F5520034D8FA;
+			remoteInfo = OBANetworking;
+		};
+		93399E5F2198150100F71058 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93399E4B2198150100F71058;
+			remoteInfo = OBALocationKit;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -202,6 +233,7 @@
 			dstSubfolderSpec = 10;
 			files = (
 				931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */,
+				93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -335,6 +367,15 @@
 		93399E402197858000F71058 /* Region.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Region.swift; sourceTree = "<group>"; };
 		93399E422197858E00F71058 /* RegionsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsModelOperation.swift; sourceTree = "<group>"; };
 		93399E4521978EE200F71058 /* RegionsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsModelOperationTests.swift; sourceTree = "<group>"; };
+		93399E4C2198150100F71058 /* OBALocationKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBALocationKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		93399E4E2198150100F71058 /* OBALocationKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBALocationKit.h; sourceTree = "<group>"; };
+		93399E4F2198150100F71058 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		93399E542198150100F71058 /* OBALocationKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBALocationKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		93399E5D2198150100F71058 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		93399E6A2198157A00F71058 /* RegionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsManager.swift; sourceTree = "<group>"; };
+		93399E6D2198162C00F71058 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManagerProtocol.swift; sourceTree = "<group>"; };
+		93399E712198AD1400F71058 /* LocationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServiceTests.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -385,6 +426,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
+				93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -404,6 +446,23 @@
 				931B94442164409B0034D8FA /* Nimble.framework in Frameworks */,
 				931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */,
 				931B9406216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93399E492198150100F71058 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93399E512198150100F71058 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93399E552198150100F71058 /* OBALocationKit.framework in Frameworks */,
+				93399E742198ADEF00F71058 /* OHHTTPStubs.framework in Frameworks */,
+				93399E732198ADEB00F71058 /* Nimble.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -477,6 +536,8 @@
 				931B93D32163F5520034D8FA /* OBANetworking */,
 				931B93FE216419C20034D8FA /* OBANetworkingKit */,
 				931B940B216419C20034D8FA /* OBANetworkingKitTests */,
+				93399E4D2198150100F71058 /* OBALocationKit */,
+				93399E5A2198150100F71058 /* OBALocationKitTests */,
 				931B93D22163F5520034D8FA /* Products */,
 				931B943C21643D420034D8FA /* Frameworks */,
 			);
@@ -488,6 +549,8 @@
 				931B93D12163F5520034D8FA /* OBANetworking.app */,
 				931B93FD216419C20034D8FA /* OBANetworkingKit.framework */,
 				931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */,
+				93399E4C2198150100F71058 /* OBALocationKit.framework */,
+				93399E542198150100F71058 /* OBALocationKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -751,6 +814,43 @@
 			path = "Regions Model Service Tests";
 			sourceTree = "<group>";
 		};
+		93399E4D2198150100F71058 /* OBALocationKit */ = {
+			isa = PBXGroup;
+			children = (
+				93399E6C2198161700F71058 /* Location */,
+				93399E692198154000F71058 /* Regions */,
+				93399E4E2198150100F71058 /* OBALocationKit.h */,
+				93399E4F2198150100F71058 /* Info.plist */,
+			);
+			path = OBALocationKit;
+			sourceTree = "<group>";
+		};
+		93399E5A2198150100F71058 /* OBALocationKitTests */ = {
+			isa = PBXGroup;
+			children = (
+				93399E712198AD1400F71058 /* LocationServiceTests.swift */,
+				93399E5D2198150100F71058 /* Info.plist */,
+			);
+			path = OBALocationKitTests;
+			sourceTree = "<group>";
+		};
+		93399E692198154000F71058 /* Regions */ = {
+			isa = PBXGroup;
+			children = (
+				93399E6A2198157A00F71058 /* RegionsManager.swift */,
+			);
+			path = Regions;
+			sourceTree = "<group>";
+		};
+		93399E6C2198161700F71058 /* Location */ = {
+			isa = PBXGroup;
+			children = (
+				93399E6D2198162C00F71058 /* LocationService.swift */,
+				93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */,
+			);
+			path = Location;
+			sourceTree = "<group>";
+		};
 		933FFF3A2179A8BE006682C3 /* REST Model Service */ = {
 			isa = PBXGroup;
 			children = (
@@ -856,6 +956,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		93399E472198150100F71058 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93399E5E2198150100F71058 /* OBALocationKit.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -873,6 +981,7 @@
 			);
 			dependencies = (
 				931B9411216419C20034D8FA /* PBXTargetDependency */,
+				93399E602198150100F71058 /* PBXTargetDependency */,
 			);
 			name = OBANetworking;
 			productName = OBANetworking;
@@ -917,12 +1026,51 @@
 			productReference = 931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		93399E4B2198150100F71058 /* OBALocationKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93399E632198150100F71058 /* Build configuration list for PBXNativeTarget "OBALocationKit" */;
+			buildPhases = (
+				93399E472198150100F71058 /* Headers */,
+				93399E482198150100F71058 /* Sources */,
+				93399E492198150100F71058 /* Frameworks */,
+				93399E4A2198150100F71058 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OBALocationKit;
+			productName = OBALocationKit;
+			productReference = 93399E4C2198150100F71058 /* OBALocationKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		93399E532198150100F71058 /* OBALocationKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 93399E662198150100F71058 /* Build configuration list for PBXNativeTarget "OBALocationKitTests" */;
+			buildPhases = (
+				93399E502198150100F71058 /* Sources */,
+				93399E512198150100F71058 /* Frameworks */,
+				93399E522198150100F71058 /* Resources */,
+				93399E752198AF6700F71058 /* Carthage */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93399E572198150100F71058 /* PBXTargetDependency */,
+				93399E592198150100F71058 /* PBXTargetDependency */,
+			);
+			name = OBALocationKitTests;
+			productName = OBALocationKitTests;
+			productReference = 93399E542198150100F71058 /* OBALocationKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		931B93C92163F5520034D8FA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastSwiftUpdateCheck = 1010;
 				LastUpgradeCheck = 1010;
 				ORGANIZATIONNAME = OneBusAway;
 				TargetAttributes = {
@@ -936,6 +1084,14 @@
 					931B9404216419C20034D8FA = {
 						CreatedOnToolsVersion = 10.0;
 						LastSwiftMigration = 1000;
+						TestTargetID = 931B93D02163F5520034D8FA;
+					};
+					93399E4B2198150100F71058 = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
+					};
+					93399E532198150100F71058 = {
+						CreatedOnToolsVersion = 10.1;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
 				};
@@ -956,6 +1112,8 @@
 				931B93D02163F5520034D8FA /* OBANetworking */,
 				931B93FC216419C20034D8FA /* OBANetworkingKit */,
 				931B9404216419C20034D8FA /* OBANetworkingKitTests */,
+				93399E4B2198150100F71058 /* OBALocationKit */,
+				93399E532198150100F71058 /* OBALocationKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1011,6 +1169,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		93399E4A2198150100F71058 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93399E522198150100F71058 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -1045,6 +1217,26 @@
 				"$(SRCROOT)/Carthage/Build/iOS/SwiftProtobuf.framework",
 			);
 			name = "Carthage Integration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/usr/local/bin/carthage copy-frameworks\n";
+		};
+		93399E752198AF6700F71058 /* Carthage */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Carthage/Build/iOS/Nimble.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/OHHTTPStubs.framework",
+			);
+			name = Carthage;
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -1196,6 +1388,24 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		93399E482198150100F71058 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93399E6E2198162C00F71058 /* LocationService.swift in Sources */,
+				93399E6B2198157A00F71058 /* RegionsManager.swift in Sources */,
+				93399E7021989A5900F71058 /* LocationManagerProtocol.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93399E502198150100F71058 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1213,6 +1423,21 @@
 			isa = PBXTargetDependency;
 			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
 			targetProxy = 931B9410216419C20034D8FA /* PBXContainerItemProxy */;
+		};
+		93399E572198150100F71058 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93399E4B2198150100F71058 /* OBALocationKit */;
+			targetProxy = 93399E562198150100F71058 /* PBXContainerItemProxy */;
+		};
+		93399E592198150100F71058 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93D02163F5520034D8FA /* OBANetworking */;
+			targetProxy = 93399E582198150100F71058 /* PBXContainerItemProxy */;
+		};
+		93399E602198150100F71058 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93399E4B2198150100F71058 /* OBALocationKit */;
+			targetProxy = 93399E5F2198150100F71058 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1519,6 +1744,122 @@
 			};
 			name = Release;
 		};
+		93399E642198150100F71058 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = OBALocationKit/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBALocationKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		93399E652198150100F71058 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = OBALocationKit/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBALocationKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		93399E672198150100F71058 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
+				INFOPLIST_FILE = OBALocationKitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBALocationKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+			};
+			name = Debug;
+		};
+		93399E682198150100F71058 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
+				INFOPLIST_FILE = OBALocationKitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBALocationKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1554,6 +1895,24 @@
 			buildConfigurations = (
 				931B9419216419C20034D8FA /* Debug */,
 				931B941A216419C20034D8FA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93399E632198150100F71058 /* Build configuration list for PBXNativeTarget "OBALocationKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93399E642198150100F71058 /* Debug */,
+				93399E652198150100F71058 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		93399E662198150100F71058 /* Build configuration list for PBXNativeTarget "OBALocationKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				93399E672198150100F71058 /* Debug */,
+				93399E682198150100F71058 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
