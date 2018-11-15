@@ -10,9 +10,11 @@ import Foundation
 import OBANetworkingKit
 
 public class RegionsManager: NSObject {
-    private let regionsService: RegionsService
+    private let apiService: RegionsAPIService
+    private let locationService: LocationService
 
-    public init(regionsService: RegionsService) {
-        self.regionsService = regionsService
+    public init(apiService: RegionsAPIService, locationService: LocationService) {
+        self.apiService = apiService
+        self.locationService = locationService
     }
 }

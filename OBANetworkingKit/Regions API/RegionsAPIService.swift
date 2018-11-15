@@ -1,5 +1,5 @@
 //
-//  RegionsService.swift
+//  RegionsAPIService.swift
 //  OBANetworkingKit
 //
 //  Created by Aaron Brethorst on 10/11/18.
@@ -8,8 +8,8 @@
 
 import Foundation
 
-@objc(OBARegionsService)
-public class RegionsService: APIService {
+@objc(OBARegionsAPIService)
+public class RegionsAPIService: APIService {
 
     @objc public func getRegions() -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)

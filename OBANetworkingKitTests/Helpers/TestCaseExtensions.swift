@@ -96,7 +96,7 @@ public extension OBATestCase {
 public extension OBATestCase {
 
     public var regionsModelService: RegionsModelService {
-        return RegionsModelService(apiService: regionsService, dataQueue: OperationQueue())
+        return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
     }
 
     // MARK: - Regions API Service
@@ -113,8 +113,8 @@ public extension OBATestCase {
         return URL(string: regionsURLString)!
     }
 
-    public var regionsService: RegionsService {
-        return RegionsService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    public var regionsAPIService: RegionsAPIService {
+        return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
     }
 }
 

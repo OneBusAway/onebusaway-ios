@@ -10,9 +10,9 @@ import Foundation
 
 @objc(OBARegionsModelService)
 public class RegionsModelService: ModelService {
-    private let apiService: RegionsService
+    private let apiService: RegionsAPIService
 
-    public init(apiService: RegionsService, dataQueue: OperationQueue) {
+    public init(apiService: RegionsAPIService, dataQueue: OperationQueue) {
         self.apiService = apiService
         super.init(dataQueue: dataQueue)
     }
