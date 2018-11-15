@@ -136,6 +136,7 @@
 		93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E712198AD1400F71058 /* LocationServiceTests.swift */; };
 		93399E732198ADEB00F71058 /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
 		93399E742198ADEF00F71058 /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
+		93399E782198B70100F71058 /* LocationServiceMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E772198B70100F71058 /* LocationServiceMocks.swift */; };
 		933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */; };
 		933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */; };
 		933FFF33217946CA006682C3 /* vehicles-query-1_1.json in Resources */ = {isa = PBXBuildFile; fileRef = 933FFF32217946CA006682C3 /* vehicles-query-1_1.json */; };
@@ -376,6 +377,7 @@
 		93399E6D2198162C00F71058 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManagerProtocol.swift; sourceTree = "<group>"; };
 		93399E712198AD1400F71058 /* LocationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServiceTests.swift; sourceTree = "<group>"; };
+		93399E772198B70100F71058 /* LocationServiceMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServiceMocks.swift; sourceTree = "<group>"; };
 		933FFF2D217943D4006682C3 /* MatchingVehiclesOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehiclesOperation.swift; sourceTree = "<group>"; };
 		933FFF302179460D006682C3 /* MatchingVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingVehicleOperationTest.swift; sourceTree = "<group>"; };
 		933FFF32217946CA006682C3 /* vehicles-query-1_1.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "vehicles-query-1_1.json"; sourceTree = "<group>"; };
@@ -828,6 +830,7 @@
 		93399E5A2198150100F71058 /* OBALocationKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				93399E762198B6F200F71058 /* Helpers */,
 				93399E712198AD1400F71058 /* LocationServiceTests.swift */,
 				93399E5D2198150100F71058 /* Info.plist */,
 			);
@@ -849,6 +852,14 @@
 				93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */,
 			);
 			path = Location;
+			sourceTree = "<group>";
+		};
+		93399E762198B6F200F71058 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				93399E772198B70100F71058 /* LocationServiceMocks.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		933FFF3A2179A8BE006682C3 /* REST Model Service */ = {
@@ -1402,6 +1413,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93399E782198B70100F71058 /* LocationServiceMocks.swift in Sources */,
 				93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
