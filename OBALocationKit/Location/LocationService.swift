@@ -11,12 +11,13 @@ import CoreLocation
 
 @objc(OBALocationServiceDelegate)
 public protocol LocationServiceDelegate: NSObjectProtocol {
-    @objc optional func authorizationStatusChanged(_ status: CLAuthorizationStatus)
-    @objc optional func locationChanged(_ location: CLLocation)
-    @objc optional func headingChanged(_ heading: CLHeading)
-    @objc optional func errorReceived(_ error: Error)
+    @objc optional func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus)
+    @objc optional func locationService(_ service: LocationService, locationChanged location: CLLocation)
+    @objc optional func locationService(_ service: LocationService, headingChanged heading: CLHeading)
+    @objc optional func locationService(_ service: LocationService, errorReceived error: Error)
 }
 
+@objc(OBALocationService)
 public class LocationService: NSObject, CLLocationManagerDelegate {
     private var locationManager: LocationManager
 
@@ -35,11 +36,11 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    public convenience override init() {
+    @objc public convenience override init() {
         self.init(locationManager: CLLocationManager())
     }
 
-    public init(locationManager: LocationManager) {
+    @objc public init(locationManager: LocationManager) {
         self.locationManager = locationManager
 
         super.init()
@@ -51,53 +52,66 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     private let delegates = NSHashTable<LocationServiceDelegate>.weakObjects()
 
+    @objc
     public func addDelegate(_ delegate: LocationServiceDelegate) {
         delegates.add(delegate)
     }
 
+    @objc
     public func removeDelegate(_ delegate: LocationServiceDelegate) {
         delegates.remove(delegate)
     }
 
     private func notifyDelegatesAuthorizationChanged(_ status: CLAuthorizationStatus) {
         for delegate in delegates.allObjects {
-            delegate.authorizationStatusChanged?(status)
+            delegate.locationService?(self, authorizationStatusChanged: status)
         }
     }
 
     private func notifyDelegatesLocationChanged(_ location: CLLocation) {
         for delegate in delegates.allObjects {
-            delegate.locationChanged?(location)
+            delegate.locationService?(self, locationChanged: location)
         }
     }
 
     private func notifyDelegatesHeadingChanged(_ heading: CLHeading) {
         for delegate in delegates.allObjects {
-            delegate.headingChanged?(heading)
+            delegate.locationService?(self, headingChanged: heading)
         }
     }
 
     private func notifyDelegatesErrorReceived(_ error: Error) {
         for delegate in delegates.allObjects {
-            delegate.errorReceived?(error)
+            delegate.locationService?(self, errorReceived: error)
         }
     }
 
     // MARK: - Authorization
 
+    /// This is true when the app is in a state such that the user can/should be
+    /// prompted for location services authorization. In other words: the app has
+    /// not been denied or approved, and the user also has not generally restricted
+    /// access to location services.
+    @objc
+    public var canRequestAuthorization: Bool {
+        return authorizationStatus == .notDetermined
+    }
+
+    /// Prompts the user for permission to access location services. (e.g. GPS.)
+    @objc
     public func requestInUseAuthorization() {
         locationManager.requestWhenInUseAuthorization()
     }
 
-    public var hasRequestedLocationAuthorization: Bool {
-        return authorizationStatus != .notDetermined
-    }
-
+    /// The current authorization state of the app.
+    @objc
     public var authorizationStatus: CLAuthorizationStatus {
         return type(of: locationManager).authorizationStatus()
     }
 
-    public var isLocationServicesEnabled: Bool {
+    /// Answers the question of whether the device GPS can be consulted for location data.
+    @objc
+    public var isLocationUseAuthorized: Bool {
         return type(of: locationManager).locationServicesEnabled() && authorizationStatus == .authorizedWhenInUse
     }
 
@@ -116,7 +130,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     // MARK: - Location
 
     public func startUpdatingLocation() {
-        guard isLocationServicesEnabled else {
+        guard isLocationUseAuthorized else {
             return
         }
 
@@ -124,7 +138,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     }
 
     public func stopUpdatingLocation() {
-        guard isLocationServicesEnabled else {
+        guard isLocationUseAuthorized else {
             return
         }
 
@@ -154,7 +168,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         notifyDelegatesAuthorizationChanged(status)
 
-        if isLocationServicesEnabled {
+        if isLocationUseAuthorized {
             startUpdates()
         }
     }

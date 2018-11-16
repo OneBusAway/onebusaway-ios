@@ -16,16 +16,19 @@ class LocDelegate: NSObject, LocationServiceDelegate {
     var status: CLAuthorizationStatus?
     var error: Error?
 
-    func locationChanged(_ location: CLLocation) {
+    func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         self.location = location
     }
-    func headingChanged(_ heading: CLHeading) {
+
+    func locationService(_ service: LocationService, headingChanged heading: CLHeading) {
         self.heading = heading
     }
-    func authorizationStatusChanged(_ status: CLAuthorizationStatus) {
+
+    func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         self.status = status
     }
-    func errorReceived(_ error: Error) {
+
+    func locationService(_ service: LocationService, errorReceived error: Error) {
         self.error = error
     }
 }

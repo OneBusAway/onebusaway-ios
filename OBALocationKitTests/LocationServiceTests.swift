@@ -35,7 +35,7 @@ class LocationServiceTests: XCTestCase {
 
         expect(service.authorizationStatus) == .notDetermined
         expect(service.currentLocation).to(beNil())
-        expect(service.hasRequestedLocationAuthorization).to(beFalse())
+        expect(service.canRequestAuthorization).to(beTrue())
     }
 
     func test_authorization_granted() {
@@ -112,13 +112,13 @@ class LocationServiceTests: XCTestCase {
         let locationManagerMock = LocationManagerMock()
         let service = LocationService(locationManager: locationManagerMock)
 
-        expect(service.isLocationServicesEnabled).to(beFalse())
+        expect(service.isLocationUseAuthorized).to(beFalse())
         expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
         expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
 
         service.startUpdates()
 
-        expect(service.isLocationServicesEnabled).to(beFalse())
+        expect(service.isLocationUseAuthorized).to(beFalse())
         expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
         expect(locationManagerMock.headingUpdatesStarted).to(beFalse())
     }
