@@ -129,7 +129,7 @@
 		93399E5E2198150100F71058 /* OBALocationKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 93399E4E2198150100F71058 /* OBALocationKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E4C2198150100F71058 /* OBALocationKit.framework */; };
 		93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E4C2198150100F71058 /* OBALocationKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		93399E6B2198157A00F71058 /* RegionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6A2198157A00F71058 /* RegionsManager.swift */; };
+		93399E6B2198157A00F71058 /* RegionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6A2198157A00F71058 /* RegionsService.swift */; };
 		93399E6E2198162C00F71058 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6D2198162C00F71058 /* LocationService.swift */; };
 		93399E7021989A5900F71058 /* LocationManagerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */; };
 		93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E712198AD1400F71058 /* LocationServiceTests.swift */; };
@@ -372,7 +372,7 @@
 		93399E4F2198150100F71058 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		93399E542198150100F71058 /* OBALocationKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBALocationKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		93399E5D2198150100F71058 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		93399E6A2198157A00F71058 /* RegionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsManager.swift; sourceTree = "<group>"; };
+		93399E6A2198157A00F71058 /* RegionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsService.swift; sourceTree = "<group>"; };
 		93399E6D2198162C00F71058 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		93399E6F21989A5900F71058 /* LocationManagerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManagerProtocol.swift; sourceTree = "<group>"; };
 		93399E712198AD1400F71058 /* LocationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServiceTests.swift; sourceTree = "<group>"; };
@@ -840,7 +840,7 @@
 		93399E692198154000F71058 /* Regions */ = {
 			isa = PBXGroup;
 			children = (
-				93399E6A2198157A00F71058 /* RegionsManager.swift */,
+				93399E6A2198157A00F71058 /* RegionsService.swift */,
 			);
 			path = Regions;
 			sourceTree = "<group>";
@@ -1404,7 +1404,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				93399E6E2198162C00F71058 /* LocationService.swift in Sources */,
-				93399E6B2198157A00F71058 /* RegionsManager.swift in Sources */,
+				93399E6B2198157A00F71058 /* RegionsService.swift in Sources */,
 				93399E7021989A5900F71058 /* LocationManagerProtocol.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
