@@ -23,13 +23,18 @@
     self = [super init];
 
     if (self) {
-        _app = [[OBAApplication alloc] init];
+        NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
+        NSString *apiKey = @"test";
+        NSString *uuid = NSUUID.UUID.UUIDString;
+        NSString *appVersion = @"1.0.test";
+
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:apiKey uuid:uuid appVersion:appVersion];
+        _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
     }
 
     return self;
 }
-
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];

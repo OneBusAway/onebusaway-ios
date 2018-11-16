@@ -89,6 +89,7 @@
 		931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */; };
 		931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */ = {isa = PBXBuildFile; fileRef = 931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */; };
 		931CE27A216F941D00161A6C /* ObacoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE279216F941D00161A6C /* ObacoService.swift */; };
+		93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE4219F24A5008C3BB0 /* AppConfig.swift */; };
 		932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */ = {isa = PBXBuildFile; fileRef = 932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */; };
 		932A6F2A218022AF0008654F /* Situation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932A6F29218022AF0008654F /* Situation.swift */; };
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
@@ -1041,6 +1042,7 @@
 			isa = PBXGroup;
 			children = (
 				936EAF3D219E42EB00AE27D5 /* Application.swift */,
+				93235DE4219F24A5008C3BB0 /* AppConfig.swift */,
 			);
 			path = Orchestration;
 			sourceTree = "<group>";
@@ -1614,6 +1616,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
+				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,12 +10,13 @@ import Foundation
 import OBANetworkingKit
 import CoreLocation
 
+@objc(OBARegionsService)
 public class RegionsService: NSObject {
-    private let apiService: RegionsAPIService
+    private let modelService: RegionsModelService
     private let locationService: LocationService
 
-    public init(apiService: RegionsAPIService, locationService: LocationService) {
-        self.apiService = apiService
+    public init(modelService: RegionsModelService, locationService: LocationService) {
+        self.modelService = modelService
         self.locationService = locationService
 
         regions = RegionsService.loadStoredRegions()

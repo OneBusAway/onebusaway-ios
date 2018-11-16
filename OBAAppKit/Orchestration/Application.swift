@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBANetworkingKit
 import OBALocationKit
 import CoreLocation
 
@@ -21,21 +22,25 @@ public protocol ApplicationDelegate {
 @objc(OBAApplication)
 public class Application: NSObject {
 
+    /// Provides access to the user's location and heading.
     @objc public let locationService: LocationService
+
+    /// Responsible for managing `Region`s and determining the correct `Region` for the user.
+    @objc public let regionsService: RegionsService
 
     @objc public weak var delegate: ApplicationDelegate?
 
-    @objc public convenience override init() {
-        self.init(locationService: LocationService())
-    }
-
-    @objc public init(locationService: LocationService) {
-        self.locationService = locationService
-        
+    @objc public init(config: AppConfig) {
+        self.locationService = config.locationService
+        self.regionsService = config.regionsService
 
         super.init()
 
         self.locationService.addDelegate(self)
+
+        if self.locationService.isLocationUseAuthorized {
+            self.locationService.startUpdates()
+        }
     }
 
     // MARK: - App Launch State Management
