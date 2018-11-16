@@ -51,7 +51,6 @@
 		931A7CDC2189382900FA3025 /* current_time.json in Resources */ = {isa = PBXBuildFile; fileRef = 931A7CDB2189382900FA3025 /* current_time.json */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
 		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
-		931B93DC2163F5520034D8FA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DA2163F5520034D8FA /* Main.storyboard */; };
 		931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DD2163F5530034D8FA /* Assets.xcassets */; };
 		931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */; };
 		931B93E42163F5530034D8FA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93E32163F5530034D8FA /* main.m */; };
@@ -160,12 +159,21 @@
 		936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978952170DD0A0053DF37 /* StopProblemOperation.swift */; };
 		93697898217122460053DF37 /* StopProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93697897217122460053DF37 /* StopProblemOperationTest.swift */; };
 		936EAF19219DF56500AE27D5 /* RegionsAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936EAF18219DF56500AE27D5 /* RegionsAPIService.swift */; };
+		936EAF28219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */; };
+		936EAF2F219E42CC00AE27D5 /* OBAAppKitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 936EAF2E219E42CC00AE27D5 /* OBAAppKitTests.m */; };
+		936EAF31219E42CC00AE27D5 /* OBAAppKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 936EAF21219E42CC00AE27D5 /* OBAAppKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		936EAF34219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */; };
+		936EAF35219E42CC00AE27D5 /* OBAAppKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936EAF3D219E42EB00AE27D5 /* Application.swift */; };
+		936EAF42219E4F1100AE27D5 /* PermissionPromptViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 936EAF40219E4F1100AE27D5 /* PermissionPromptViewController.m */; };
+		936EAF43219E4F1100AE27D5 /* PermissionPromptViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 936EAF41219E4F1100AE27D5 /* PermissionPromptViewController.xib */; };
 		937BB7302173AFCC00BE5635 /* OBATestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB72F2173AFCC00BE5635 /* OBATestCase.swift */; };
 		937BB7332173DC4D00BE5635 /* report_stop_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB7322173DC4D00BE5635 /* report_stop_problem.json */; };
 		937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */; };
 		937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7362174384100BE5635 /* TripProblemOperationTest.swift */; };
 		937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB73821743A2800BE5635 /* report_trip_problem.json */; };
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
+		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -224,6 +232,48 @@
 			remoteGlobalIDString = 93399E4B2198150100F71058;
 			remoteInfo = OBALocationKit;
 		};
+		936EAF29219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 936EAF1E219E42CC00AE27D5;
+			remoteInfo = OBAAppKit;
+		};
+		936EAF2B219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93D02163F5520034D8FA;
+			remoteInfo = OBANetworking;
+		};
+		936EAF32219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 936EAF1E219E42CC00AE27D5;
+			remoteInfo = OBAAppKit;
+		};
+		93ACD05E219E544100F493CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93FC216419C20034D8FA;
+			remoteInfo = OBANetworkingKit;
+		};
+		93ACD060219E545400F493CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93FC216419C20034D8FA;
+			remoteInfo = OBANetworkingKit;
+		};
+		93ACD062219E545400F493CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 93399E4B2198150100F71058;
+			remoteInfo = OBALocationKit;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -233,6 +283,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				936EAF35219E42CC00AE27D5 /* OBAAppKit.framework in Embed Frameworks */,
 				931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */,
 				93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */,
 			);
@@ -290,7 +341,6 @@
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		931B93D72163F5520034D8FA /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		931B93D82163F5520034D8FA /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
-		931B93DB2163F5520034D8FA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		931B93DD2163F5530034D8FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		931B93E02163F5530034D8FA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		931B93E22163F5530034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -401,12 +451,23 @@
 		936978952170DD0A0053DF37 /* StopProblemOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemOperation.swift; sourceTree = "<group>"; };
 		93697897217122460053DF37 /* StopProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemOperationTest.swift; sourceTree = "<group>"; };
 		936EAF18219DF56500AE27D5 /* RegionsAPIService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RegionsAPIService.swift; sourceTree = "<group>"; };
+		936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBAAppKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		936EAF21219E42CC00AE27D5 /* OBAAppKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAAppKit.h; sourceTree = "<group>"; };
+		936EAF22219E42CC00AE27D5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		936EAF27219E42CC00AE27D5 /* OBAAppKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAAppKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		936EAF2E219E42CC00AE27D5 /* OBAAppKitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAAppKitTests.m; sourceTree = "<group>"; };
+		936EAF30219E42CC00AE27D5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		936EAF3D219E42EB00AE27D5 /* Application.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Application.swift; sourceTree = "<group>"; };
+		936EAF3F219E4F1100AE27D5 /* PermissionPromptViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PermissionPromptViewController.h; sourceTree = "<group>"; };
+		936EAF40219E4F1100AE27D5 /* PermissionPromptViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PermissionPromptViewController.m; sourceTree = "<group>"; };
+		936EAF41219E4F1100AE27D5 /* PermissionPromptViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PermissionPromptViewController.xib; sourceTree = "<group>"; };
 		937BB72F2173AFCC00BE5635 /* OBATestCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBATestCase.swift; sourceTree = "<group>"; };
 		937BB7322173DC4D00BE5635 /* report_stop_problem.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = report_stop_problem.json; sourceTree = "<group>"; };
 		937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperation.swift; sourceTree = "<group>"; };
 		937BB7362174384100BE5635 /* TripProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperationTest.swift; sourceTree = "<group>"; };
 		937BB73821743A2800BE5635 /* report_trip_problem.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = report_trip_problem.json; sourceTree = "<group>"; };
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -429,6 +490,8 @@
 			files = (
 				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
 				93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */,
+				93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */,
+				936EAF34219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
 				93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -465,6 +528,21 @@
 				93399E552198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93399E742198ADEF00F71058 /* OHHTTPStubs.framework in Frameworks */,
 				93399E732198ADEB00F71058 /* Nimble.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		936EAF1C219E42CC00AE27D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		936EAF24219E42CC00AE27D5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				936EAF28219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -540,6 +618,8 @@
 				931B940B216419C20034D8FA /* OBANetworkingKitTests */,
 				93399E4D2198150100F71058 /* OBALocationKit */,
 				93399E5A2198150100F71058 /* OBALocationKitTests */,
+				936EAF20219E42CC00AE27D5 /* OBAAppKit */,
+				936EAF2D219E42CC00AE27D5 /* OBAAppKitTests */,
 				931B93D22163F5520034D8FA /* Products */,
 				931B943C21643D420034D8FA /* Frameworks */,
 			);
@@ -553,6 +633,8 @@
 				931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */,
 				93399E4C2198150100F71058 /* OBALocationKit.framework */,
 				93399E542198150100F71058 /* OBALocationKitTests.xctest */,
+				936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */,
+				936EAF27219E42CC00AE27D5 /* OBAAppKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -564,11 +646,13 @@
 				931B93D52163F5520034D8FA /* AppDelegate.m */,
 				931B93D72163F5520034D8FA /* ViewController.h */,
 				931B93D82163F5520034D8FA /* ViewController.m */,
-				931B93DA2163F5520034D8FA /* Main.storyboard */,
 				931B93DD2163F5530034D8FA /* Assets.xcassets */,
 				931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */,
 				931B93E22163F5530034D8FA /* Info.plist */,
 				931B93E32163F5530034D8FA /* main.m */,
+				936EAF3F219E4F1100AE27D5 /* PermissionPromptViewController.h */,
+				936EAF40219E4F1100AE27D5 /* PermissionPromptViewController.m */,
+				936EAF41219E4F1100AE27D5 /* PermissionPromptViewController.xib */,
 			);
 			path = OBANetworking;
 			sourceTree = "<group>";
@@ -647,6 +731,7 @@
 		931B943C21643D420034D8FA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				93ACD064219E56FE00F493CB /* MapKit.framework */,
 				93399E1421916FB900F71058 /* SwiftProtobuf.framework */,
 				931B943D21643D430034D8FA /* Nimble.framework */,
 				931B943F21643D430034D8FA /* OHHTTPStubs.framework */,
@@ -933,6 +1018,33 @@
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
 		};
+		936EAF20219E42CC00AE27D5 /* OBAAppKit */ = {
+			isa = PBXGroup;
+			children = (
+				936EAF3C219E42D900AE27D5 /* Orchestration */,
+				936EAF21219E42CC00AE27D5 /* OBAAppKit.h */,
+				936EAF22219E42CC00AE27D5 /* Info.plist */,
+			);
+			path = OBAAppKit;
+			sourceTree = "<group>";
+		};
+		936EAF2D219E42CC00AE27D5 /* OBAAppKitTests */ = {
+			isa = PBXGroup;
+			children = (
+				936EAF2E219E42CC00AE27D5 /* OBAAppKitTests.m */,
+				936EAF30219E42CC00AE27D5 /* Info.plist */,
+			);
+			path = OBAAppKitTests;
+			sourceTree = "<group>";
+		};
+		936EAF3C219E42D900AE27D5 /* Orchestration */ = {
+			isa = PBXGroup;
+			children = (
+				936EAF3D219E42EB00AE27D5 /* Application.swift */,
+			);
+			path = Orchestration;
+			sourceTree = "<group>";
+		};
 		93FAAA9B2177E0F30086D9DE /* Region API Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -975,6 +1087,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		936EAF1A219E42CC00AE27D5 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				936EAF31219E42CC00AE27D5 /* OBAAppKit.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -993,6 +1113,7 @@
 			dependencies = (
 				931B9411216419C20034D8FA /* PBXTargetDependency */,
 				93399E602198150100F71058 /* PBXTargetDependency */,
+				936EAF33219E42CC00AE27D5 /* PBXTargetDependency */,
 			);
 			name = OBANetworking;
 			productName = OBANetworking;
@@ -1049,6 +1170,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				93ACD05F219E544100F493CB /* PBXTargetDependency */,
 			);
 			name = OBALocationKit;
 			productName = OBALocationKit;
@@ -1075,6 +1197,45 @@
 			productReference = 93399E542198150100F71058 /* OBALocationKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		936EAF1E219E42CC00AE27D5 /* OBAAppKit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 936EAF36219E42CC00AE27D5 /* Build configuration list for PBXNativeTarget "OBAAppKit" */;
+			buildPhases = (
+				936EAF1A219E42CC00AE27D5 /* Headers */,
+				936EAF1B219E42CC00AE27D5 /* Sources */,
+				936EAF1C219E42CC00AE27D5 /* Frameworks */,
+				936EAF1D219E42CC00AE27D5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				93ACD061219E545400F493CB /* PBXTargetDependency */,
+				93ACD063219E545400F493CB /* PBXTargetDependency */,
+			);
+			name = OBAAppKit;
+			productName = OBAAppKit;
+			productReference = 936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		936EAF26219E42CC00AE27D5 /* OBAAppKitTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 936EAF39219E42CC00AE27D5 /* Build configuration list for PBXNativeTarget "OBAAppKitTests" */;
+			buildPhases = (
+				936EAF23219E42CC00AE27D5 /* Sources */,
+				936EAF24219E42CC00AE27D5 /* Frameworks */,
+				936EAF25219E42CC00AE27D5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				936EAF2A219E42CC00AE27D5 /* PBXTargetDependency */,
+				936EAF2C219E42CC00AE27D5 /* PBXTargetDependency */,
+			);
+			name = OBAAppKitTests;
+			productName = OBAAppKitTests;
+			productReference = 936EAF27219E42CC00AE27D5 /* OBAAppKitTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1087,6 +1248,11 @@
 				TargetAttributes = {
 					931B93D02163F5520034D8FA = {
 						CreatedOnToolsVersion = 10.0;
+						SystemCapabilities = {
+							com.apple.Maps.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 					931B93FC216419C20034D8FA = {
 						CreatedOnToolsVersion = 10.0;
@@ -1102,6 +1268,14 @@
 						LastSwiftMigration = 1010;
 					};
 					93399E532198150100F71058 = {
+						CreatedOnToolsVersion = 10.1;
+						TestTargetID = 931B93D02163F5520034D8FA;
+					};
+					936EAF1E219E42CC00AE27D5 = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
+					};
+					936EAF26219E42CC00AE27D5 = {
 						CreatedOnToolsVersion = 10.1;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
@@ -1125,6 +1299,8 @@
 				931B9404216419C20034D8FA /* OBANetworkingKitTests */,
 				93399E4B2198150100F71058 /* OBALocationKit */,
 				93399E532198150100F71058 /* OBALocationKitTests */,
+				936EAF1E219E42CC00AE27D5 /* OBAAppKit */,
+				936EAF26219E42CC00AE27D5 /* OBAAppKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1135,8 +1311,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */,
+				936EAF43219E4F1100AE27D5 /* PermissionPromptViewController.xib in Resources */,
 				931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */,
-				931B93DC2163F5520034D8FA /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1188,6 +1364,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		93399E522198150100F71058 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		936EAF1D219E42CC00AE27D5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		936EAF25219E42CC00AE27D5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1265,6 +1455,7 @@
 			files = (
 				931B93D92163F5520034D8FA /* ViewController.m in Sources */,
 				931B93E42163F5530034D8FA /* main.m in Sources */,
+				936EAF42219E4F1100AE27D5 /* PermissionPromptViewController.m in Sources */,
 				931B93D62163F5520034D8FA /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1418,6 +1609,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		936EAF1B219E42CC00AE27D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		936EAF23219E42CC00AE27D5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				936EAF2F219E42CC00AE27D5 /* OBAAppKitTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1451,17 +1658,39 @@
 			target = 93399E4B2198150100F71058 /* OBALocationKit */;
 			targetProxy = 93399E5F2198150100F71058 /* PBXContainerItemProxy */;
 		};
+		936EAF2A219E42CC00AE27D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 936EAF1E219E42CC00AE27D5 /* OBAAppKit */;
+			targetProxy = 936EAF29219E42CC00AE27D5 /* PBXContainerItemProxy */;
+		};
+		936EAF2C219E42CC00AE27D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93D02163F5520034D8FA /* OBANetworking */;
+			targetProxy = 936EAF2B219E42CC00AE27D5 /* PBXContainerItemProxy */;
+		};
+		936EAF33219E42CC00AE27D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 936EAF1E219E42CC00AE27D5 /* OBAAppKit */;
+			targetProxy = 936EAF32219E42CC00AE27D5 /* PBXContainerItemProxy */;
+		};
+		93ACD05F219E544100F493CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			targetProxy = 93ACD05E219E544100F493CB /* PBXContainerItemProxy */;
+		};
+		93ACD061219E545400F493CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			targetProxy = 93ACD060219E545400F493CB /* PBXContainerItemProxy */;
+		};
+		93ACD063219E545400F493CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 93399E4B2198150100F71058 /* OBALocationKit */;
+			targetProxy = 93ACD062219E545400F493CB /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		931B93DA2163F5520034D8FA /* Main.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				931B93DB2163F5520034D8FA /* Base */,
-			);
-			name = Main.storyboard;
-			sourceTree = "<group>";
-		};
 		931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -1872,6 +2101,107 @@
 			};
 			name = Release;
 		};
+		936EAF37219E42CC00AE27D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = OBAAppKit/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		936EAF38219E42CC00AE27D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = OBAAppKit/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKit;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		936EAF3A219E42CC00AE27D5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				INFOPLIST_FILE = OBAAppKitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+			};
+			name = Debug;
+		};
+		936EAF3B219E42CC00AE27D5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = THEWY9596Q;
+				INFOPLIST_FILE = OBAAppKitTests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1925,6 +2255,24 @@
 			buildConfigurations = (
 				93399E672198150100F71058 /* Debug */,
 				93399E682198150100F71058 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		936EAF36219E42CC00AE27D5 /* Build configuration list for PBXNativeTarget "OBAAppKit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				936EAF37219E42CC00AE27D5 /* Debug */,
+				936EAF38219E42CC00AE27D5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		936EAF39219E42CC00AE27D5 /* Build configuration list for PBXNativeTarget "OBAAppKitTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				936EAF3A219E42CC00AE27D5 /* Debug */,
+				936EAF3B219E42CC00AE27D5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

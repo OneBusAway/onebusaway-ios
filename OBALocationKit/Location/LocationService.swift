@@ -165,7 +165,17 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Delegate
 
+    private var firstAuthorization = true
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        // HACK HACK HACK - TODO IMPROVE ME
+        // CLLocationManager spits out a new status once, just for fun,
+        // at app launch. We're just going to ignore it here because we handle it elsewhere.
+        // This is really hacky, please improve.
+        if firstAuthorization {
+            firstAuthorization = false
+            return
+        }
+
         notifyDelegatesAuthorizationChanged(status)
 
         if isLocationUseAuthorized {

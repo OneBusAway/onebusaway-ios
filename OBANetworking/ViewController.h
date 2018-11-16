@@ -7,9 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+@import OBAAppKit;
 
 @interface ViewController : UIViewController
 
+- (instancetype)initWithApplication:(OBAApplication*)application;
 
 @end
 
