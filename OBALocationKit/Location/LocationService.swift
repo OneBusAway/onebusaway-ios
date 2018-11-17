@@ -42,6 +42,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     @objc public init(locationManager: LocationManager) {
         self.locationManager = locationManager
+        self.authorizationStatus = type(of: locationManager).authorizationStatus()
 
         super.init()
 
@@ -88,6 +89,22 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Authorization
 
+    /// The current authorization state of the app.
+    @objc
+    public private(set) var authorizationStatus: CLAuthorizationStatus {
+        didSet {
+            guard authorizationStatus != oldValue else {
+                return
+            }
+
+            notifyDelegatesAuthorizationChanged(authorizationStatus)
+
+            if isLocationUseAuthorized {
+                startUpdates()
+            }
+        }
+    }
+
     /// This is true when the app is in a state such that the user can/should be
     /// prompted for location services authorization. In other words: the app has
     /// not been denied or approved, and the user also has not generally restricted
@@ -101,12 +118,6 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     @objc
     public func requestInUseAuthorization() {
         locationManager.requestWhenInUseAuthorization()
-    }
-
-    /// The current authorization state of the app.
-    @objc
-    public var authorizationStatus: CLAuthorizationStatus {
-        return type(of: locationManager).authorizationStatus()
     }
 
     /// Answers the question of whether the device GPS can be consulted for location data.
@@ -165,22 +176,8 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     // MARK: - Delegate
 
-    private var firstAuthorization = true
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        // HACK HACK HACK - TODO IMPROVE ME
-        // CLLocationManager spits out a new status once, just for fun,
-        // at app launch. We're just going to ignore it here because we handle it elsewhere.
-        // This is really hacky, please improve.
-        if firstAuthorization {
-            firstAuthorization = false
-            return
-        }
-
-        notifyDelegatesAuthorizationChanged(status)
-
-        if isLocationUseAuthorized {
-            startUpdates()
-        }
+        authorizationStatus = status
     }
 
     private let kSuccessiveLocationComparisonWindow = 3.0

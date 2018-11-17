@@ -45,8 +45,9 @@ class LocationServiceTests: XCTestCase {
 
         service.addDelegate(delegate)
 
+        service.requestInUseAuthorization()
+
         waitUntil { (done) in
-            service.requestInUseAuthorization()
             expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
             expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
             expect(delegate.location) == self.mockSeattleLocation
@@ -58,6 +59,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_updateLocation_successiveUpdates_succeed() {
         let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        locationManagerMock.requestWhenInUseAuthorization()
         let service = LocationService(locationManager: locationManagerMock)
 
         expect(service.currentLocation).to(beNil())
