@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
-public class Region: NSObject, Decodable {
+public class Region: NSObject, Codable {
     public let regionName: String
     public let regionIdentifier: Int
 
@@ -117,6 +117,36 @@ public class Region: NSObject, Decodable {
         paymentiOSAppURLScheme = try? container.decode(String.self, forKey: .paymentiOSAppURLScheme)
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(regionName, forKey: .regionName)
+        try container.encode(regionIdentifier, forKey: .regionIdentifier)
+        try container.encode(isActive, forKey: .isActive)
+        try container.encode(isExperimental, forKey: .isExperimental)
+        try container.encode(OBABaseURL, forKey: .OBABaseURL)
+        try? container.encode(siriBaseURL, forKey: .siriBaseURL)
+        try? container.encode(openTripPlannerURL, forKey: .openTripPlannerURL)
+        try? container.encode(stopInfoURL, forKey: .stopInfoURL)
+        try container.encode(regionBounds, forKey: .regionBounds)
+        try container.encode(open311Servers, forKey: .open311Servers)
+        try container.encode(supportsEmbeddedSocial, forKey: .supportsEmbeddedSocial)
+        try container.encode(supportsOBARealtimeAPIs, forKey: .supportsOBARealtimeAPIs)
+        try container.encode(supportsOBADiscoveryAPIs, forKey: .supportsOBADiscoveryAPIs)
+        try container.encode(supportsOTPBikeshare, forKey: .supportsOTPBikeshare)
+        try container.encode(supportsSiriRealtimeAPIs, forKey: .supportsSiriRealtimeAPIs)
+        try container.encode(contactEmail, forKey: .contactEmail)
+        try? container.encode(twitterURL, forKey: .twitterURL)
+        try? container.encode(facebookURL, forKey: .facebookURL)
+        try? container.encode(openTripPlannerContactEmail, forKey: .openTripPlannerContactEmail)
+        try container.encode(language, forKey: .language)
+        try container.encode(versionInfo, forKey: .versionInfo)
+        try? container.encode(paymentWarningBody, forKey: .paymentWarningBody)
+        try? container.encode(paymentWarningTitle, forKey: .paymentWarningTitle)
+        try? container.encode(paymentAndroidAppID, forKey: .paymentAndroidAppID)
+        try? container.encode(paymentiOSAppStoreIdentifier, forKey: .paymentiOSAppStoreIdentifier)
+        try? container.encode(paymentiOSAppURLScheme, forKey: .paymentiOSAppURLScheme)
+    }
+
     // MARK: - Regional Boundaries
 
     public lazy var serviceRect: MKMapRect = {
@@ -144,10 +174,20 @@ public class Region: NSObject, Decodable {
 
         return centerPoint.coordinate
     }()
+
+    public func distanceFrom(location: CLLocation) -> CLLocationDistance {
+        let centerLocation = CLLocation(latitude: centerCoordinate.latitude, longitude: centerCoordinate.longitude)
+        return location.distance(from: centerLocation)
+    }
+
+    public func contains(location: CLLocation) -> Bool {
+        let point = MKMapPoint(location.coordinate)
+        return serviceRect.contains(point)
+    }
 }
 
 // MARK: - Open311Server
-public class Open311Server: NSObject, Decodable {
+public class Open311Server: NSObject, Codable {
     public let jurisdictionID: String?
     public let apiKey: String
     public let baseURL: URL
@@ -164,10 +204,17 @@ public class Open311Server: NSObject, Decodable {
         apiKey = try container.decode(String.self, forKey: .apiKey)
         baseURL = try container.decode(URL.self, forKey: .baseURL)
     }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try? container.encode(jurisdictionID, forKey: .jurisdictionID)
+        try container.encode(apiKey, forKey: .apiKey)
+        try container.encode(baseURL, forKey: .baseURL)
+    }
 }
 
 // MARK: - RegionBound
-public class RegionBound: NSObject, Decodable {
+public class RegionBound: NSObject, Codable {
     let lat: Double
     let lon: Double
     let latSpan: Double
@@ -183,5 +230,13 @@ public class RegionBound: NSObject, Decodable {
         lon = try container.decode(Double.self, forKey: .lon)
         latSpan = try container.decode(Double.self, forKey: .latSpan)
         lonSpan = try container.decode(Double.self, forKey: .lonSpan)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(lat, forKey: .lat)
+        try container.encode(lon, forKey: .lon)
+        try container.encode(latSpan, forKey: .latSpan)
+        try container.encode(lonSpan, forKey: .lonSpan)
     }
 }

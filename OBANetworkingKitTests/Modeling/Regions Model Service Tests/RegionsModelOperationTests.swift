@@ -25,6 +25,8 @@ class RegionsModelOperationTests: OBATestCase {
                 let regions = op.regions
                 expect(regions.count) == 12
 
+                expect(op.responseData).toNot(beNil())
+
                 let tampa = regions.first!
 
                 expect(tampa.regionIdentifier) == 0
