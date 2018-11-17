@@ -10,6 +10,7 @@ import XCTest
 import Nimble
 import OHHTTPStubs
 import CoreLocation
+import MapKit
 @testable import OBANetworkingKit
 
 class RegionsModelOperationTests: OBATestCase {
@@ -69,6 +70,19 @@ class RegionsModelOperationTests: OBATestCase {
                 expect(bounds[1].lon).to(beCloseTo(-82.652145))
                 expect(bounds[1].latSpan).to(beCloseTo(0.47208000000000183))
                 expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
+
+                let pugetSound = regions[1]
+
+                expect(pugetSound.regionName) == "Puget Sound"
+
+                let mapRect = MKMapRect(x: 42206703.270115554, y: 92590980.991902918, width: 1338771.0533083975, height: 1897888.1099742353)
+                expect(pugetSound.serviceRect.minX) == mapRect.minX
+                expect(pugetSound.serviceRect.minY) == mapRect.minY
+                expect(pugetSound.serviceRect.maxX) == mapRect.maxX
+                expect(pugetSound.serviceRect.maxY) == mapRect.maxY
+
+                expect(pugetSound.centerCoordinate.latitude) == 47.795091214055
+                expect(pugetSound.centerCoordinate.longitude) == -122.49868405298474
 
                 done()
             }

@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import CoreLocation
+import MapKit
 
 public class Region: NSObject, Decodable {
     public let regionName: String
@@ -114,8 +116,37 @@ public class Region: NSObject, Decodable {
         paymentiOSAppStoreIdentifier = try? container.decode(String.self, forKey: .paymentiOSAppStoreIdentifier)
         paymentiOSAppURLScheme = try? container.decode(String.self, forKey: .paymentiOSAppURLScheme)
     }
+
+    // MARK: - Regional Boundaries
+
+    public lazy var serviceRect: MKMapRect = {
+        var minX: Double = .greatestFiniteMagnitude
+        var minY: Double = .greatestFiniteMagnitude
+        var maxX: Double = .leastNormalMagnitude
+        var maxY: Double = .leastNormalMagnitude
+
+        for bounds in regionBounds {
+            let a = MKMapPoint(CLLocationCoordinate2D(latitude: bounds.lat + bounds.latSpan / 2.0, longitude: bounds.lon - bounds.lonSpan / 2.0))
+            let b = MKMapPoint(CLLocationCoordinate2D(latitude: bounds.lat - bounds.latSpan / 2.0, longitude: bounds.lon + bounds.lonSpan / 2.0))
+
+            minX = min(minX, min(a.x, b.x))
+            minY = min(minY, min(a.y, b.y))
+            maxX = max(maxX, max(a.x, b.x))
+            maxY = max(maxY, max(a.y, b.y))
+        }
+
+        return MKMapRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+    }()
+
+    public lazy var centerCoordinate: CLLocationCoordinate2D = {
+        let rect = serviceRect
+        let centerPoint = MKMapPoint(x: rect.midX, y: rect.midY)
+
+        return centerPoint.coordinate
+    }()
 }
 
+// MARK: - Open311Server
 public class Open311Server: NSObject, Decodable {
     public let jurisdictionID: String?
     public let apiKey: String
@@ -135,6 +166,7 @@ public class Open311Server: NSObject, Decodable {
     }
 }
 
+// MARK: - RegionBound
 public class RegionBound: NSObject, Decodable {
     let lat: Double
     let lon: Double
