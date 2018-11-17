@@ -50,7 +50,6 @@
 		931A7CDA2189362200FA3025 /* CurrentTimeModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD92189362200FA3025 /* CurrentTimeModelOperationTests.swift */; };
 		931A7CDC2189382900FA3025 /* current_time.json in Resources */ = {isa = PBXBuildFile; fileRef = 931A7CDB2189382900FA3025 /* current_time.json */; };
 		931B93D62163F5520034D8FA /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D52163F5520034D8FA /* AppDelegate.m */; };
-		931B93D92163F5520034D8FA /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93D82163F5520034D8FA /* ViewController.m */; };
 		931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DD2163F5530034D8FA /* Assets.xcassets */; };
 		931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */; };
 		931B93E42163F5530034D8FA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93E32163F5530034D8FA /* main.m */; };
@@ -175,6 +174,7 @@
 		937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB73821743A2800BE5635 /* report_trip_problem.json */; };
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
+		93ACD06B219EA34100F493CB /* MapViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* MapViewController.m */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -340,8 +340,6 @@
 		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		931B93D72163F5520034D8FA /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		931B93D82163F5520034D8FA /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		931B93DD2163F5530034D8FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		931B93E02163F5530034D8FA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		931B93E22163F5530034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -383,6 +381,18 @@
 		931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopArrivalsAndDeparturesOperationTest.swift; sourceTree = "<group>"; };
 		931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrivals-and-departures-for-stop-1_75414.json"; sourceTree = "<group>"; };
 		931CE279216F941D00161A6C /* ObacoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObacoService.swift; sourceTree = "<group>"; };
+		93235DD9219F21FC008C3BB0 /* tampa.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = tampa.gpx; sourceTree = "<group>"; };
+		93235DDA219F21FC008C3BB0 /* sandiego.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sandiego.gpx; sourceTree = "<group>"; };
+		93235DDB219F21FC008C3BB0 /* capitolhill.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = capitolhill.gpx; sourceTree = "<group>"; };
+		93235DDC219F21FC008C3BB0 /* atlanta.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = atlanta.gpx; sourceTree = "<group>"; };
+		93235DDD219F21FC008C3BB0 /* boston.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = boston.gpx; sourceTree = "<group>"; };
+		93235DDE219F21FC008C3BB0 /* invalid.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = invalid.gpx; sourceTree = "<group>"; };
+		93235DDF219F21FC008C3BB0 /* rvtd.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = rvtd.gpx; sourceTree = "<group>"; };
+		93235DE0219F21FC008C3BB0 /* README.markdown */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.markdown; sourceTree = "<group>"; };
+		93235DE1219F21FC008C3BB0 /* san_joaquin.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = san_joaquin.gpx; sourceTree = "<group>"; };
+		93235DE2219F21FC008C3BB0 /* washingtondc.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = washingtondc.gpx; sourceTree = "<group>"; };
+		93235DE3219F21FC008C3BB0 /* yorkca.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = yorkca.gpx; sourceTree = "<group>"; };
+		93235DE4219F24A5008C3BB0 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-MTS_11589.json"; sourceTree = "<group>"; };
 		932A6F29218022AF0008654F /* Situation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Situation.swift; sourceTree = "<group>"; };
 		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
@@ -469,6 +479,8 @@
 		937BB73821743A2800BE5635 /* report_trip_problem.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = report_trip_problem.json; sourceTree = "<group>"; };
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
+		93ACD068219EA34100F493CB /* MapViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MapViewController.h; sourceTree = "<group>"; };
+		93ACD069219EA34100F493CB /* MapViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MapViewController.m; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -643,10 +655,9 @@
 		931B93D32163F5520034D8FA /* OBANetworking */ = {
 			isa = PBXGroup;
 			children = (
+				93235DD8219F21FC008C3BB0 /* gpx_files */,
 				931B93D42163F5520034D8FA /* AppDelegate.h */,
 				931B93D52163F5520034D8FA /* AppDelegate.m */,
-				931B93D72163F5520034D8FA /* ViewController.h */,
-				931B93D82163F5520034D8FA /* ViewController.m */,
 				931B93DD2163F5530034D8FA /* Assets.xcassets */,
 				931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */,
 				931B93E22163F5530034D8FA /* Info.plist */,
@@ -654,6 +665,8 @@
 				936EAF3F219E4F1100AE27D5 /* PermissionPromptViewController.h */,
 				936EAF40219E4F1100AE27D5 /* PermissionPromptViewController.m */,
 				936EAF41219E4F1100AE27D5 /* PermissionPromptViewController.xib */,
+				93ACD068219EA34100F493CB /* MapViewController.h */,
+				93ACD069219EA34100F493CB /* MapViewController.m */,
 			);
 			path = OBANetworking;
 			sourceTree = "<group>";
@@ -824,6 +837,24 @@
 				93FAAA992177056A0086D9DE /* RegionsOperation.swift */,
 			);
 			path = "Regions API";
+			sourceTree = "<group>";
+		};
+		93235DD8219F21FC008C3BB0 /* gpx_files */ = {
+			isa = PBXGroup;
+			children = (
+				93235DD9219F21FC008C3BB0 /* tampa.gpx */,
+				93235DDA219F21FC008C3BB0 /* sandiego.gpx */,
+				93235DDB219F21FC008C3BB0 /* capitolhill.gpx */,
+				93235DDC219F21FC008C3BB0 /* atlanta.gpx */,
+				93235DDD219F21FC008C3BB0 /* boston.gpx */,
+				93235DDE219F21FC008C3BB0 /* invalid.gpx */,
+				93235DDF219F21FC008C3BB0 /* rvtd.gpx */,
+				93235DE0219F21FC008C3BB0 /* README.markdown */,
+				93235DE1219F21FC008C3BB0 /* san_joaquin.gpx */,
+				93235DE2219F21FC008C3BB0 /* washingtondc.gpx */,
+				93235DE3219F21FC008C3BB0 /* yorkca.gpx */,
+			);
+			path = gpx_files;
 			sourceTree = "<group>";
 		};
 		932AAF9A21695E590070BF56 /* Helpers */ = {
@@ -1455,10 +1486,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				931B93D92163F5520034D8FA /* ViewController.m in Sources */,
 				931B93E42163F5530034D8FA /* main.m in Sources */,
 				936EAF42219E4F1100AE27D5 /* PermissionPromptViewController.m in Sources */,
 				931B93D62163F5520034D8FA /* AppDelegate.m in Sources */,
+				93ACD06B219EA34100F493CB /* MapViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
