@@ -69,7 +69,6 @@ public class AgencyAlertsModelOperation: Operation {
                 let alert = try AgencyAlert(feedEntity: e, agency: agency)
                 return alert
             } catch {
-                print("Unable to create alert: \(error)")
                 return nil
             }
         }

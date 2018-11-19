@@ -92,8 +92,6 @@
 		93235DEA21A08E23008C3BB0 /* RegionsEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */; };
 		93235DEC21A29ACC008C3BB0 /* RegionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */; };
 		93235DF621A2A44C008C3BB0 /* OBATestHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 93235DF421A2A44C008C3BB0 /* OBATestHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		93235DF921A2A44C008C3BB0 /* OBATestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */; };
-		93235DFA21A2A44C008C3BB0 /* OBATestHelpers.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93235DFE21A2A468008C3BB0 /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C72168388E0034D8FA /* TestCaseExtensions.swift */; };
 		93235DFF21A2A468008C3BB0 /* OBATestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB72F2173AFCC00BE5635 /* OBATestCase.swift */; };
 		93235E0121A2A481008C3BB0 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93235E0021A2A481008C3BB0 /* XCTest.framework */; };
@@ -163,6 +161,15 @@
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
+		93547E4721A32EF200F757A3 /* OBATestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */; };
+		93547E7A21A32F4000F757A3 /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
+		93547E7B21A32F4300F757A3 /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
+		93547E7D21A3308F00F757A3 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E7E21A330AB00F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E8021A330E900F757A3 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E8121A330E900F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E8321A3312400F757A3 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E8421A3312400F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */; };
 		936978922170DAF40053DF37 /* puget_sound_alerts.pb in Resources */ = {isa = PBXBuildFile; fileRef = 936978912170DAF40053DF37 /* puget_sound_alerts.pb */; };
 		936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */; };
@@ -210,13 +217,6 @@
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
 			remoteInfo = OBANetworkingKit;
 		};
-		931B9409216419C20034D8FA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931B93D02163F5520034D8FA;
-			remoteInfo = OBANetworking;
-		};
 		931B9410216419C20034D8FA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
@@ -252,13 +252,6 @@
 			remoteGlobalIDString = 93399E4B2198150100F71058;
 			remoteInfo = OBALocationKit;
 		};
-		93399E582198150100F71058 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931B93D02163F5520034D8FA;
-			remoteInfo = OBANetworking;
-		};
 		93399E5F2198150100F71058 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
@@ -266,19 +259,33 @@
 			remoteGlobalIDString = 93399E4B2198150100F71058;
 			remoteInfo = OBALocationKit;
 		};
+		93547E7421A32F1F00F757A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93D02163F5520034D8FA;
+			remoteInfo = DemoApp;
+		};
+		93547E7621A32F2600F757A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93D02163F5520034D8FA;
+			remoteInfo = DemoApp;
+		};
+		93547E7821A32F2C00F757A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 931B93D02163F5520034D8FA;
+			remoteInfo = DemoApp;
+		};
 		936EAF29219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 936EAF1E219E42CC00AE27D5;
 			remoteInfo = OBAAppKit;
-		};
-		936EAF2B219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931B93D02163F5520034D8FA;
-			remoteInfo = OBANetworking;
 		};
 		936EAF32219E42CC00AE27D5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -318,11 +325,46 @@
 			dstSubfolderSpec = 10;
 			files = (
 				936EAF35219E42CC00AE27D5 /* OBAAppKit.framework in Embed Frameworks */,
-				93235DFA21A2A44C008C3BB0 /* OBATestHelpers.framework in Embed Frameworks */,
 				931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */,
 				93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93547E7C21A3308800F757A3 /* Copy Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				93547E7D21A3308F00F757A3 /* Nimble.framework in Copy Frameworks */,
+				93547E7E21A330AB00F757A3 /* OHHTTPStubs.framework in Copy Frameworks */,
+			);
+			name = "Copy Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93547E7F21A330DF00F757A3 /* Copy Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				93547E8021A330E900F757A3 /* Nimble.framework in Copy Frameworks */,
+				93547E8121A330E900F757A3 /* OHHTTPStubs.framework in Copy Frameworks */,
+			);
+			name = "Copy Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		93547E8221A3311E00F757A3 /* Copy Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				93547E8321A3312400F757A3 /* Nimble.framework in Copy Frameworks */,
+				93547E8421A3312400F757A3 /* OHHTTPStubs.framework in Copy Frameworks */,
+			);
+			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		93BD80A821A3172F0009797C /* CopyFiles */ = {
@@ -382,7 +424,7 @@
 		931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeModelOperation.swift; sourceTree = "<group>"; };
 		931A7CD92189362200FA3025 /* CurrentTimeModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeModelOperationTests.swift; sourceTree = "<group>"; };
 		931A7CDB2189382900FA3025 /* current_time.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = current_time.json; sourceTree = "<group>"; };
-		931B93D12163F5520034D8FA /* OBANetworking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBANetworking.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		931B93D12163F5520034D8FA /* DemoApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93D42163F5520034D8FA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		931B93D52163F5520034D8FA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		931B93DD2163F5530034D8FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -555,7 +597,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
-				93235DF921A2A44C008C3BB0 /* OBATestHelpers.framework in Frameworks */,
 				93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */,
 				936EAF34219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
@@ -619,7 +660,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93547E4721A32EF200F757A3 /* OBATestHelpers.framework in Frameworks */,
+				93547E7B21A32F4300F757A3 /* Nimble.framework in Frameworks */,
 				936EAF28219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
+				93547E7A21A32F4000F757A3 /* OHHTTPStubs.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -690,7 +734,7 @@
 		931B93C82163F5520034D8FA = {
 			isa = PBXGroup;
 			children = (
-				931B93D32163F5520034D8FA /* OBANetworking */,
+				931B93D32163F5520034D8FA /* DemoApp */,
 				931B93FE216419C20034D8FA /* OBANetworkingKit */,
 				93399E4D2198150100F71058 /* OBALocationKit */,
 				936EAF20219E42CC00AE27D5 /* OBAAppKit */,
@@ -706,7 +750,7 @@
 		931B93D22163F5520034D8FA /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				931B93D12163F5520034D8FA /* OBANetworking.app */,
+				931B93D12163F5520034D8FA /* DemoApp.app */,
 				931B93FD216419C20034D8FA /* OBANetworkingKit.framework */,
 				931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */,
 				93399E4C2198150100F71058 /* OBALocationKit.framework */,
@@ -718,7 +762,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		931B93D32163F5520034D8FA /* OBANetworking */ = {
+		931B93D32163F5520034D8FA /* DemoApp */ = {
 			isa = PBXGroup;
 			children = (
 				93235DD8219F21FC008C3BB0 /* gpx_files */,
@@ -734,7 +778,7 @@
 				93ACD068219EA34100F493CB /* MapViewController.h */,
 				93ACD069219EA34100F493CB /* MapViewController.m */,
 			);
-			path = OBANetworking;
+			path = DemoApp;
 			sourceTree = "<group>";
 		};
 		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
@@ -1219,9 +1263,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		931B93D02163F5520034D8FA /* OBANetworking */ = {
+		931B93D02163F5520034D8FA /* DemoApp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 931B93F22163F5540034D8FA /* Build configuration list for PBXNativeTarget "OBANetworking" */;
+			buildConfigurationList = 931B93F22163F5540034D8FA /* Build configuration list for PBXNativeTarget "DemoApp" */;
 			buildPhases = (
 				931B93CD2163F5520034D8FA /* Sources */,
 				931B93CE2163F5520034D8FA /* Frameworks */,
@@ -1236,9 +1280,9 @@
 				93399E602198150100F71058 /* PBXTargetDependency */,
 				936EAF33219E42CC00AE27D5 /* PBXTargetDependency */,
 			);
-			name = OBANetworking;
+			name = DemoApp;
 			productName = OBANetworking;
-			productReference = 931B93D12163F5520034D8FA /* OBANetworking.app */;
+			productReference = 931B93D12163F5520034D8FA /* DemoApp.app */;
 			productType = "com.apple.product-type.application";
 		};
 		931B93FC216419C20034D8FA /* OBANetworkingKit */ = {
@@ -1266,12 +1310,13 @@
 				931B9401216419C20034D8FA /* Sources */,
 				931B9402216419C20034D8FA /* Frameworks */,
 				931B9403216419C20034D8FA /* Resources */,
+				93547E7C21A3308800F757A3 /* Copy Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				93547E7521A32F1F00F757A3 /* PBXTargetDependency */,
 				931B9408216419C20034D8FA /* PBXTargetDependency */,
-				931B940A216419C20034D8FA /* PBXTargetDependency */,
 				93235E0921A2A4D0008C3BB0 /* PBXTargetDependency */,
 			);
 			name = OBANetworkingKitTests;
@@ -1324,12 +1369,13 @@
 				93399E502198150100F71058 /* Sources */,
 				93399E512198150100F71058 /* Frameworks */,
 				93399E522198150100F71058 /* Resources */,
+				93547E7F21A330DF00F757A3 /* Copy Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				93547E7721A32F2600F757A3 /* PBXTargetDependency */,
 				93399E572198150100F71058 /* PBXTargetDependency */,
-				93399E592198150100F71058 /* PBXTargetDependency */,
 				93235E0721A2A4C7008C3BB0 /* PBXTargetDependency */,
 			);
 			name = OBALocationKitTests;
@@ -1364,12 +1410,13 @@
 				936EAF23219E42CC00AE27D5 /* Sources */,
 				936EAF24219E42CC00AE27D5 /* Frameworks */,
 				936EAF25219E42CC00AE27D5 /* Resources */,
+				93547E8221A3311E00F757A3 /* Copy Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				93547E7921A32F2C00F757A3 /* PBXTargetDependency */,
 				936EAF2A219E42CC00AE27D5 /* PBXTargetDependency */,
-				936EAF2C219E42CC00AE27D5 /* PBXTargetDependency */,
 				93235E0521A2A4C1008C3BB0 /* PBXTargetDependency */,
 			);
 			name = OBAAppKitTests;
@@ -1438,7 +1485,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				931B93D02163F5520034D8FA /* OBANetworking */,
+				931B93D02163F5520034D8FA /* DemoApp */,
 				931B93FC216419C20034D8FA /* OBANetworkingKit */,
 				931B9404216419C20034D8FA /* OBANetworkingKitTests */,
 				93399E4B2198150100F71058 /* OBALocationKit */,
@@ -1757,11 +1804,6 @@
 			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
 			targetProxy = 931B9407216419C20034D8FA /* PBXContainerItemProxy */;
 		};
-		931B940A216419C20034D8FA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931B93D02163F5520034D8FA /* OBANetworking */;
-			targetProxy = 931B9409216419C20034D8FA /* PBXContainerItemProxy */;
-		};
 		931B9411216419C20034D8FA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
@@ -1787,25 +1829,30 @@
 			target = 93399E4B2198150100F71058 /* OBALocationKit */;
 			targetProxy = 93399E562198150100F71058 /* PBXContainerItemProxy */;
 		};
-		93399E592198150100F71058 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931B93D02163F5520034D8FA /* OBANetworking */;
-			targetProxy = 93399E582198150100F71058 /* PBXContainerItemProxy */;
-		};
 		93399E602198150100F71058 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 93399E4B2198150100F71058 /* OBALocationKit */;
 			targetProxy = 93399E5F2198150100F71058 /* PBXContainerItemProxy */;
 		};
+		93547E7521A32F1F00F757A3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93D02163F5520034D8FA /* DemoApp */;
+			targetProxy = 93547E7421A32F1F00F757A3 /* PBXContainerItemProxy */;
+		};
+		93547E7721A32F2600F757A3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93D02163F5520034D8FA /* DemoApp */;
+			targetProxy = 93547E7621A32F2600F757A3 /* PBXContainerItemProxy */;
+		};
+		93547E7921A32F2C00F757A3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 931B93D02163F5520034D8FA /* DemoApp */;
+			targetProxy = 93547E7821A32F2C00F757A3 /* PBXContainerItemProxy */;
+		};
 		936EAF2A219E42CC00AE27D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 936EAF1E219E42CC00AE27D5 /* OBAAppKit */;
 			targetProxy = 936EAF29219E42CC00AE27D5 /* PBXContainerItemProxy */;
-		};
-		936EAF2C219E42CC00AE27D5 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931B93D02163F5520034D8FA /* OBANetworking */;
-			targetProxy = 936EAF2B219E42CC00AE27D5 /* PBXContainerItemProxy */;
 		};
 		936EAF33219E42CC00AE27D5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1967,7 +2014,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworking/Info.plist;
+				INFOPLIST_FILE = DemoApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1990,7 +2037,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworking/Info.plist;
+				INFOPLIST_FILE = DemoApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2075,6 +2122,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
@@ -2095,7 +2143,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Debug;
 		};
@@ -2103,6 +2151,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
@@ -2122,7 +2171,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "OBANetworkingKitTests/OBANetworkingKitTests-Bridging-Header.h";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Release;
 		};
@@ -2264,6 +2313,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2283,7 +2333,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Debug;
 		};
@@ -2291,6 +2341,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2309,7 +2360,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Release;
 		};
@@ -2378,8 +2429,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBAAppKitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2390,7 +2446,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Debug;
 		};
@@ -2398,8 +2454,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Carthage/Build/iOS",
+				);
 				INFOPLIST_FILE = OBAAppKitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2410,7 +2471,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OBANetworking.app/OBANetworking";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
 			name = Release;
 		};
@@ -2426,7 +2487,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		931B93F22163F5540034D8FA /* Build configuration list for PBXNativeTarget "OBANetworking" */ = {
+		931B93F22163F5540034D8FA /* Build configuration list for PBXNativeTarget "DemoApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				931B93F32163F5540034D8FA /* Debug */,
