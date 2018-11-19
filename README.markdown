@@ -1,16 +1,43 @@
-# OBANetworking
+# OBAKit
 
-This library is a ground-up rewrite of the networking and modeling modules from OneBusAway for iOS. It is designed to be stable, relatively bug-free, clear, and well-tested. It is designed to serve as the foundation of OneBusAway in its second decade of life.
+This library is a ground-up rewrite of the core modules of OneBusAway for iOS. It is designed to be stable, relatively bug-free, clear, and well-tested. It is designed to serve as the foundation of OneBusAway in its second decade of life.
 
 ## Code and Structure
 
-OBANetworking is written almost entirely in Swift 4, with the exception of a few core parts of the library that are not very enjoyable to express in Swift. It is designed to be usable within both Swift and Objective-C projects. The project is divided between a Network Service layer and a Model Service layer, each of which have three service classes designed to work with the three data sources that OneBusAway for iOS depends on:
+OBAKit is written almost entirely in Swift 4, with the exception of a few core parts of the project that are not very enjoyable to express in Swift. It is designed to be usable within both Swift and Objective-C projects.
+
+## Frameworks
+
+### OBANetworkingKit
+
+Dependencies:
+
+* SwiftProtobuf
+
+This framework consists of a Network Service layer and a Model Service layer, each of which have three service classes designed to work with the three data sources that OneBusAway for iOS depends on:
 
 * Regions API
 * REST API
 * Obaco API (alerts.onebusaway.org or onebusaway.co)
 
-### Network Services
+This library would be suitable for using on its own in a custom application that would only need to communicate with a single, previously-defined OneBusAway server.
+
+### OBALocationKit
+
+Dependencies:
+
+* OBANetworkingKit
+
+tk.
+
+### OBAAppKit
+
+Dependencies:
+
+* OBANetworkingKit
+* OBALocationKit
+
+tk.
 
 # Third Party Libraries
 
