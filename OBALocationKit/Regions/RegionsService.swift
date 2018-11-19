@@ -10,76 +10,140 @@ import Foundation
 import OBANetworkingKit
 import CoreLocation
 
+@objc(OBARegionsServiceDelegate)
+public protocol RegionsServiceDelegate {
+    func regionsServiceUnableToSelectRegion(_ service: RegionsService)
+    func regionsService(_ service: RegionsService, updatedRegion region: Region)
+}
+
 @objc(OBARegionsService)
 public class RegionsService: NSObject {
     private let modelService: RegionsModelService
     private let locationService: LocationService
+    private let userDefaults: UserDefaults
 
-    public init(modelService: RegionsModelService, locationService: LocationService) {
+    public weak var delegate: RegionsServiceDelegate?
+
+    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults) {
         self.modelService = modelService
         self.locationService = locationService
-
-        regions = RegionsService.loadStoredRegions()
+        self.userDefaults = userDefaults
+        self.regions = RegionsService.loadStoredRegions(from: userDefaults)
+        self.currentRegion = RegionsService.loadCurrentRegion(from: userDefaults)
 
         super.init()
+
+        updateRegionsList()
 
         self.locationService.addDelegate(self)
     }
 
     // MARK: - Regions Data
 
-    public private(set) var regions: [Region]
+    public private(set) var regions: [Region] {
+        didSet {
+            storeRegions()
+        }
+    }
 
     public private(set) var currentRegion: Region? {
         didSet {
-            //
+            if let currentRegion = currentRegion {
+                delegate?.regionsService(self, updatedRegion: currentRegion)
+            }
+
+            storeCurrentRegion()
         }
     }
 }
 
-// MARK: - Regions Data Storage
+// MARK: - Region Data Storage
 extension RegionsService {
-    private class func loadStoredRegions() -> [Region] {
-        return []
+    private static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
+    private static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
+    private static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
+
+    // MARK: - Save Regions
+
+    private func storeRegions() {
+        userDefaults.set(regions, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+    }
+
+    private func storeCurrentRegion() {
+        userDefaults.set(currentRegion, forKey: RegionsService.currentRegionUserDefaultsKey)
+    }
+
+    // MARK: - Load Stored Regions
+
+    private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region] {
+        guard let regions = userDefaults.object(forKey: storedRegionsUserDefaultsKey) as? [Region] else {
+            return bundledRegions
+        }
+
+        return regions
+    }
+
+    private class func loadCurrentRegion(from userDefaults: UserDefaults) -> Region? {
+        return userDefaults.object(forKey: currentRegionUserDefaultsKey) as? Region
+    }
+
+    // MARK: - Bundled Regions
+
+    private class var bundledRegions: [Region] {
+        let bundle = Bundle(for: self)
+        let bundledRegionsFilePath = bundle.path(forResource: "regions-v3", ofType: "json")!
+        return regionsFromDataAtPath(bundledRegionsFilePath)!
+    }
+
+    private class func regionsFromDataAtPath(_ path: String) -> [Region]? {
+        do {
+            let data = try NSData(contentsOfFile: path) as Data
+            return try JSONDecoder().decode([Region].self, from: data)
+        }
+        catch {
+            return nil
+        }
+    }
+}
+
+extension RegionsService {
+    public func updateRegionsList(forceUpdate: Bool = false) {
+        // only update once per week, unless forceUpdate is true.
+        if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
+           abs(lastUpdatedAt.timeIntervalSinceNow) < 604800,
+           !forceUpdate {
+            return
+        }
+
+        let op = modelService.getRegions()
+        op.completionBlock = { [weak self] in
+            guard let self = self else {
+                return
+            }
+
+            self.regions = op.regions
+            self.updateCurrentRegion()
+        }
     }
 }
 
 // MARK: - Region Updates
 extension RegionsService: LocationServiceDelegate {
     public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
-        updateCurrentRegion(location: location)
+        updateCurrentRegion()
     }
 
-    private func updateCurrentRegion(location: CLLocation) {
+    private func updateCurrentRegion() {
+        guard let location = locationService.currentLocation else {
+            return
+        }
 
+        guard let newRegion = (regions.filter { $0.contains(location: location) }).first else {
+            delegate?.regionsServiceUnableToSelectRegion(self)
+            return
+        }
+
+        currentRegion = newRegion
     }
-
-//    - (NSArray<OBARegionV2*>*)regionsWithin100Miles {
-//    if (self.regions.count == 0) {
-//    return @[];
-//    }
-//
-//    CLLocation *currentLocation = self.locationManager.currentLocation;
-//
-//    if (!currentLocation) {
-//    return @[];
-//    }
-//
-//    return [[self.regions sortedArrayUsingComparator:^NSComparisonResult(OBARegionV2 *r1, OBARegionV2 *r2) {
-//    CLLocationDistance distance1 = [r1 distanceFromLocation:currentLocation];
-//    CLLocationDistance distance2 = [r2 distanceFromLocation:currentLocation];
-//
-//    if (distance1 > distance2) {
-//    return NSOrderedDescending;
-//    }
-//    else if (distance1 < distance2) {
-//    return NSOrderedAscending;
-//    }
-//    else {
-//    return NSOrderedSame;
-//    }
-//    }] filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(OBARegionV2 *r, NSDictionary<NSString *,id> *bindings) {
-//    return ([r distanceFromLocation:currentLocation] < 160934); // == 100 miles
-//    }]];
-//    }
 }

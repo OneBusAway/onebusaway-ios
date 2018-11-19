@@ -19,16 +19,18 @@ public class AppConfig: NSObject {
     let uuid: String
     let appVersion: String
     let queue: OperationQueue
+    let userDefaults: UserDefaults
 
-    @objc public convenience init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String) {
-        self.init(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, queue: OperationQueue())
+    @objc public convenience init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults) {
+        self.init(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: OperationQueue())
     }
 
-    @objc public init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, queue: OperationQueue) {
+    @objc public init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults, queue: OperationQueue) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
         self.uuid = uuid
         self.appVersion = appVersion
+        self.userDefaults = userDefaults
         self.queue = queue
     }
 
@@ -40,5 +42,5 @@ public class AppConfig: NSObject {
 
     public lazy var locationService = LocationService(locationManager: CLLocationManager())
 
-    public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService)
+    public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
 }

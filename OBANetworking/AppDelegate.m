@@ -28,7 +28,7 @@
         NSString *uuid = NSUUID.UUID.UUIDString;
         NSString *appVersion = @"1.0.test";
 
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:apiKey uuid:uuid appVersion:appVersion];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:apiKey uuid:uuid appVersion:appVersion userDefaults:NSUserDefaults.standardUserDefaults];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
     }

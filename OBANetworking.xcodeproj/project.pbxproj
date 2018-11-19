@@ -89,7 +89,9 @@
 		931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */ = {isa = PBXBuildFile; fileRef = 931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */; };
 		931CE27A216F941D00161A6C /* ObacoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE279216F941D00161A6C /* ObacoService.swift */; };
 		93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE4219F24A5008C3BB0 /* AppConfig.swift */; };
+		93235DE8219FECD8008C3BB0 /* regions-v3.json in Resources */ = {isa = PBXBuildFile; fileRef = 93235DE7219FECD8008C3BB0 /* regions-v3.json */; };
 		93235DEA21A08E23008C3BB0 /* RegionsEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */; };
+		93235DEC21A29ACC008C3BB0 /* RegionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */; };
 		932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */ = {isa = PBXBuildFile; fileRef = 932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */; };
 		932A6F2A218022AF0008654F /* Situation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932A6F29218022AF0008654F /* Situation.swift */; };
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
@@ -394,7 +396,9 @@
 		93235DE2219F21FC008C3BB0 /* washingtondc.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = washingtondc.gpx; sourceTree = "<group>"; };
 		93235DE3219F21FC008C3BB0 /* yorkca.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = yorkca.gpx; sourceTree = "<group>"; };
 		93235DE4219F24A5008C3BB0 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		93235DE7219FECD8008C3BB0 /* regions-v3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "regions-v3.json"; sourceTree = "<group>"; };
 		93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsEncodingTests.swift; sourceTree = "<group>"; };
+		93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsServiceTests.swift; sourceTree = "<group>"; };
 		932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-MTS_11589.json"; sourceTree = "<group>"; };
 		932A6F29218022AF0008654F /* Situation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Situation.swift; sourceTree = "<group>"; };
 		932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrivalDepartureForStopOperation.swift; sourceTree = "<group>"; };
@@ -952,6 +956,7 @@
 			children = (
 				93399E762198B6F200F71058 /* Helpers */,
 				93399E712198AD1400F71058 /* LocationServiceTests.swift */,
+				93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */,
 				93399E5D2198150100F71058 /* Info.plist */,
 			);
 			path = OBALocationKitTests;
@@ -960,6 +965,7 @@
 		93399E692198154000F71058 /* Regions */ = {
 			isa = PBXGroup;
 			children = (
+				93235DE7219FECD8008C3BB0 /* regions-v3.json */,
 				93399E6A2198157A00F71058 /* RegionsService.swift */,
 			);
 			path = Regions;
@@ -1396,6 +1402,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93235DE8219FECD8008C3BB0 /* regions-v3.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1641,6 +1648,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93235DEC21A29ACC008C3BB0 /* RegionsServiceTests.swift in Sources */,
 				93399E782198B70100F71058 /* LocationServiceMocks.swift in Sources */,
 				93399E722198AD1400F71058 /* LocationServiceTests.swift in Sources */,
 			);
