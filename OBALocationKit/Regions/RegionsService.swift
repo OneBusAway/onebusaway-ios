@@ -66,8 +66,14 @@ extension RegionsService {
     // MARK: - Save Regions
 
     private func storeRegions() {
-        userDefaults.set(regions, forKey: RegionsService.storedRegionsUserDefaultsKey)
-        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        do {
+            let regionsData = try PropertyListEncoder().encode(regions)
+            userDefaults.set(regionsData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+            userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        }
+        catch {
+            print("Unable to write regions to user defaults: \(error)")
+        }
     }
 
     private func storeCurrentRegion() {
@@ -77,7 +83,9 @@ extension RegionsService {
     // MARK: - Load Stored Regions
 
     private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region] {
-        guard let regions = userDefaults.object(forKey: storedRegionsUserDefaultsKey) as? [Region] else {
+        guard
+            let regionsData = userDefaults.object(forKey: storedRegionsUserDefaultsKey) as? Data,
+            let regions = try? PropertyListDecoder().decode([Region].self, from: regionsData) else {
             return bundledRegions
         }
 
@@ -93,17 +101,8 @@ extension RegionsService {
     private class var bundledRegions: [Region] {
         let bundle = Bundle(for: self)
         let bundledRegionsFilePath = bundle.path(forResource: "regions-v3", ofType: "json")!
-        return regionsFromDataAtPath(bundledRegionsFilePath)!
-    }
-
-    private class func regionsFromDataAtPath(_ path: String) -> [Region]? {
-        do {
-            let data = try NSData(contentsOfFile: path) as Data
-            return try JSONDecoder().decode([Region].self, from: data)
-        }
-        catch {
-            return nil
-        }
+        let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data
+        return DictionaryDecoder.decodeRegionsFileData(data)
     }
 }
 

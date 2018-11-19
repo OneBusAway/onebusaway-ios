@@ -55,6 +55,13 @@ extension DictionaryDecoder {
 
         return models
     }
+
+    public class func decodeRegionsFileData(_ data: Data) -> [Region] {
+        let regionsJSON = try! JSONSerialization.jsonObject(with: data, options: []) as! [AnyHashable: Any]
+        let dataNode = regionsJSON["data"] as! [AnyHashable: Any]
+        let listNode = dataNode["list"] as! [[String: Any]]
+        return try! DictionaryDecoder.decodeModels(listNode, references: nil, type: Region.self)
+    }
 }
 
 extension JSONDecoder {

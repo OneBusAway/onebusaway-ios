@@ -18,10 +18,7 @@ class RegionsEncodingTests: OBATestCase {
 
     func testRoundtrippingRegion() {
         let regionsData = loadData(file: "regions-v3.json")
-        let regionsJSON = try! JSONSerialization.jsonObject(with: regionsData, options: []) as! [AnyHashable: Any]
-        let dataNode = regionsJSON["data"] as! [AnyHashable: Any]
-        let listNode = dataNode["list"] as! [[String: Any]]
-        let regionsObjects = try! DictionaryDecoder.decodeModels(listNode, references: nil, type: Region.self)
+        let regionsObjects = DictionaryDecoder.decodeRegionsFileData(regionsData)
 
         expect(regionsObjects.count) == 12
 
