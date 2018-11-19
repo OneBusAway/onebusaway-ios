@@ -5,6 +5,6 @@
       location = "group:MapPlayground.playground">
    </FileRef>
    <FileRef
-      location = "container:OBANetworking.xcodeproj">
+      location = "container:/Users/aaron/repos/OBANetworking/OBAKit.xcodeproj">
    </FileRef>
 </Workspace>

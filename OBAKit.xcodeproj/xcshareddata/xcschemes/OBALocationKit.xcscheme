@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "936EAF1E219E42CC00AE27D5"
-               BuildableName = "OBAAppKit.framework"
-               BlueprintName = "OBAAppKit"
-               ReferencedContainer = "container:OBANetworking.xcodeproj">
+               BlueprintIdentifier = "93399E4B2198150100F71058"
+               BuildableName = "OBALocationKit.framework"
+               BlueprintName = "OBALocationKit"
+               ReferencedContainer = "container:OBAKit.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -45,10 +45,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "936EAF1E219E42CC00AE27D5"
-            BuildableName = "OBAAppKit.framework"
-            BlueprintName = "OBAAppKit"
-            ReferencedContainer = "container:OBANetworking.xcodeproj">
+            BlueprintIdentifier = "93399E4B2198150100F71058"
+            BuildableName = "OBALocationKit.framework"
+            BlueprintName = "OBALocationKit"
+            ReferencedContainer = "container:OBAKit.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -63,10 +63,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "936EAF1E219E42CC00AE27D5"
-            BuildableName = "OBAAppKit.framework"
-            BlueprintName = "OBAAppKit"
-            ReferencedContainer = "container:OBANetworking.xcodeproj">
+            BlueprintIdentifier = "93399E4B2198150100F71058"
+            BuildableName = "OBALocationKit.framework"
+            BlueprintName = "OBALocationKit"
+            ReferencedContainer = "container:OBAKit.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>

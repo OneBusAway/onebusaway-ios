@@ -1472,7 +1472,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 931B93CC2163F5520034D8FA /* Build configuration list for PBXProject "OBANetworking" */;
+			buildConfigurationList = 931B93CC2163F5520034D8FA /* Build configuration list for PBXProject "OBAKit" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -2478,7 +2478,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		931B93CC2163F5520034D8FA /* Build configuration list for PBXProject "OBANetworking" */ = {
+		931B93CC2163F5520034D8FA /* Build configuration list for PBXProject "OBAKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				931B93F02163F5540034D8FA /* Debug */,
