@@ -9,9 +9,22 @@
 import Foundation
 import XCTest
 import OBATestHelpers
+import OBANetworkingKit
 @testable import OBALocationKit
 import CoreLocation
 import Nimble
+
+public extension OBATestCase {
+
+    public var regionsModelService: RegionsModelService {
+        return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
+    }
+
+    public var regionsAPIService: RegionsAPIService {
+        return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+}
+
 
 class RegionsServiceTests: OBATestCase {
     let userDefaults = UserDefaults.standard
@@ -25,6 +38,13 @@ class RegionsServiceTests: OBATestCase {
     // MARK: - Upon creating the Regions Service
 
     // It loads bundled regions from its framework when no other data exists
+    func test_init_loadsBundledRegions() {
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+
+        expect(regionsService.regions.count) == 12
+    }
 
     // It loads regions saved to the user defaults when they exist
 

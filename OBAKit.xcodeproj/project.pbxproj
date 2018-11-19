@@ -170,6 +170,8 @@
 		93547E8121A330E900F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93547E8321A3312400F757A3 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93547E8421A3312400F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		93547E8521A3395300F757A3 /* OBATestHelpers.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */; };
+		93547E8621A3395F00F757A3 /* OBATestHelpers.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */; };
 		936978922170DAF40053DF37 /* puget_sound_alerts.pb in Resources */ = {isa = PBXBuildFile; fileRef = 936978912170DAF40053DF37 /* puget_sound_alerts.pb */; };
 		936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */; };
@@ -349,6 +351,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				93547E8621A3395F00F757A3 /* OBATestHelpers.framework in Copy Frameworks */,
 				93547E8021A330E900F757A3 /* Nimble.framework in Copy Frameworks */,
 				93547E8121A330E900F757A3 /* OHHTTPStubs.framework in Copy Frameworks */,
 			);
@@ -643,6 +646,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93547E8521A3395300F757A3 /* OBATestHelpers.framework in Frameworks */,
 				93399E552198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93399E742198ADEF00F71058 /* OHHTTPStubs.framework in Frameworks */,
 				93399E732198ADEB00F71058 /* Nimble.framework in Frameworks */,

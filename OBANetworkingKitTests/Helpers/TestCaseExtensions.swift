@@ -71,23 +71,8 @@ public extension OBATestCase {
 }
 
 public extension OBATestCase {
-
     public var regionsModelService: RegionsModelService {
         return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
-    }
-
-    // MARK: - Regions API Service
-
-    public var regionsHost: String {
-        return "regions.example.com"
-    }
-
-    public var regionsURLString: String {
-        return "https://\(regionsHost)"
-    }
-
-    public var regionsURL: URL {
-        return URL(string: regionsURLString)!
     }
 
     public var regionsAPIService: RegionsAPIService {

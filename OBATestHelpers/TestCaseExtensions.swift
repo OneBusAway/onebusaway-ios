@@ -52,6 +52,21 @@ public extension OBATestCase {
     }
 }
 
+// MARK: - Regions API Service
+public extension OBATestCase {
+    public var regionsHost: String {
+        return "regions.example.com"
+    }
+
+    public var regionsURLString: String {
+        return "https://\(regionsHost)"
+    }
+
+    public var regionsURL: URL {
+        return URL(string: regionsURLString)!
+    }
+}
+
 public extension URLComponents {
     public func queryItemValueMatching(name: String) -> String? {
         guard let queryItems = queryItems else {
