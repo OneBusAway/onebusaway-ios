@@ -39,7 +39,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_authorization_granted() {
-        let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
         let delegate = LocDelegate()
 
@@ -58,7 +58,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_updateLocation_successiveUpdates_succeed() {
-        let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
         locationManagerMock.requestWhenInUseAuthorization()
         let service = LocationService(locationManager: locationManagerMock)
 
@@ -74,7 +74,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_updateLocation_withNoLocation_doesNotTriggerUpdates() {
-        let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         let del = LocDelegate()
@@ -87,7 +87,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
-        let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         expect(service.currentLocation).to(beNil())
@@ -102,7 +102,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_stopUpdates_disablesUpdates() {
-        let locationManagerMock = AuthorizedLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         service.stopUpdates()

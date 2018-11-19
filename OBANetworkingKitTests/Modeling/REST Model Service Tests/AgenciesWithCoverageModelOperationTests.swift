@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 import MapKit
+import OBATestHelpers
 @testable import OBANetworkingKit
 
 class AgenciesWithCoverageModelOperationTests: OBATestCase {

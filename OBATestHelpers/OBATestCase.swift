@@ -8,14 +8,14 @@
 
 import XCTest
 import OHHTTPStubs
-import OBANetworkingKit
 
-public class OBATestCase : XCTestCase {
-    public override func setUp() {
+open class OBATestCase : XCTestCase {
+    open override func setUp() {
         super.setUp()
         NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
     }
-    public override func tearDown() {
+
+    open override func tearDown() {
         super.tearDown()
         OHHTTPStubs.removeAllStubs()
         NSTimeZone.resetSystemTimeZone()

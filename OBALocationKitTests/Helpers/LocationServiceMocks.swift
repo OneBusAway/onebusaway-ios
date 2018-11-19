@@ -124,13 +124,13 @@ class LocationManagerMock: LocationManager {
     }
 }
 
-// MARK: - AuthorizedLocationServiceMock
+// MARK: - AuthorizableLocationManagerMock
 
-class AuthorizedLocationManagerMock: LocationManagerMock {
+class AuthorizableLocationManagerMock: LocationManagerMock {
 
     var updateLocation: CLLocation?
     var updateHeading: OBAMockHeading
-    static var _authorizationStatus: CLAuthorizationStatus = .notDetermined
+    public static var _authorizationStatus: CLAuthorizationStatus = .notDetermined
 
     public init(updateLocation: CLLocation, updateHeading: OBAMockHeading) {
         self.updateLocation = updateLocation
@@ -138,7 +138,7 @@ class AuthorizedLocationManagerMock: LocationManagerMock {
     }
 
     override func requestWhenInUseAuthorization() {
-        AuthorizedLocationManagerMock._authorizationStatus = .authorizedWhenInUse
+        AuthorizableLocationManagerMock._authorizationStatus = .authorizedWhenInUse
         delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: .authorizedWhenInUse)
     }
 
@@ -159,4 +159,10 @@ class AuthorizedLocationManagerMock: LocationManagerMock {
             heading = updateHeading
         }
     }
+}
+
+// MARK: - AuthorizedWhenInUseLocationManagerMock
+
+class AuthorizedWhenInUseLocationManagerMock: LocationManagerMock {
+    public static var _authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
 }

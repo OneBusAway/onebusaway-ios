@@ -8,11 +8,19 @@
 
 import Foundation
 import XCTest
+import OBATestHelpers
 @testable import OBALocationKit
 import CoreLocation
 import Nimble
 
-class RegionsServiceTests: XCTestCase {
+class RegionsServiceTests: OBATestCase {
+    let userDefaults = UserDefaults.standard
+
+    public override func tearDown() {
+        super.tearDown()
+
+        UserDefaults.resetStandardUserDefaults()
+    }
 
     // MARK: - Upon creating the Regions Service
 

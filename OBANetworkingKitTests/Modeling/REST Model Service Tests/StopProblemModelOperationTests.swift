@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import OBATestHelpers
 import Nimble
 import OHHTTPStubs
 import CoreLocation

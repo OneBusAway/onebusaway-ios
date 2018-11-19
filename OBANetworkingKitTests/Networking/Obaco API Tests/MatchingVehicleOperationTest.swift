@@ -9,6 +9,7 @@
 import XCTest
 import Nimble
 import OHHTTPStubs
+import OBATestHelpers
 @testable import OBANetworkingKit
 
 class MatchingVehicleOperationTest: OBATestCase {

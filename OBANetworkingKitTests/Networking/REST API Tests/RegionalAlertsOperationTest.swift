@@ -6,11 +6,10 @@
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
-import UIKit
-
 import XCTest
 import Nimble
 import OHHTTPStubs
+import OBATestHelpers
 @testable import OBANetworkingKit
 
 class RegionalAlertsOperationTest: OBATestCase {
