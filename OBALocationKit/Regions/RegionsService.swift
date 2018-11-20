@@ -77,7 +77,17 @@ extension RegionsService {
     }
 
     private func storeCurrentRegion() {
-        userDefaults.set(currentRegion, forKey: RegionsService.currentRegionUserDefaultsKey)
+        guard let currentRegion = currentRegion else {
+            return
+        }
+
+        do {
+            let encoded = try PropertyListEncoder().encode(currentRegion)
+            userDefaults.set(encoded, forKey: RegionsService.currentRegionUserDefaultsKey)
+        }
+        catch {
+            print("Unable to write currentRegion to user defaults: \(error)")
+        }
     }
 
     // MARK: - Load Stored Regions
@@ -93,7 +103,11 @@ extension RegionsService {
     }
 
     private class func loadCurrentRegion(from userDefaults: UserDefaults) -> Region? {
-        return userDefaults.object(forKey: currentRegionUserDefaultsKey) as? Region
+        guard let encodedData = userDefaults.object(forKey: currentRegionUserDefaultsKey) as? Data else {
+            return nil
+        }
+
+        return try? PropertyListDecoder().decode(Region.self, from: encodedData)
     }
 
     // MARK: - Bundled Regions
