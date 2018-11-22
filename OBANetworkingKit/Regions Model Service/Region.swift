@@ -10,6 +10,7 @@ import Foundation
 import CoreLocation
 import MapKit
 
+@objc(OBARegion)
 public class Region: NSObject, Codable {
     public let regionName: String
     public let regionIdentifier: Int
@@ -147,9 +148,15 @@ public class Region: NSObject, Codable {
         try? container.encode(paymentiOSAppURLScheme, forKey: .paymentiOSAppURLScheme)
     }
 
+    // MARK: - NSObject Overrides
+
+    public override var debugDescription: String {
+        return "\(super.debugDescription) - \(regionName)"
+    }
+
     // MARK: - Regional Boundaries
 
-    public lazy var serviceRect: MKMapRect = {
+    @objc public lazy var serviceRect: MKMapRect = {
         var minX: Double = .greatestFiniteMagnitude
         var minY: Double = .greatestFiniteMagnitude
         var maxX: Double = .leastNormalMagnitude
@@ -180,7 +187,11 @@ public class Region: NSObject, Codable {
         return location.distance(from: centerLocation)
     }
 
-    public func contains(location: CLLocation) -> Bool {
+    @objc public func contains(location: CLLocation?) -> Bool {
+        guard let location = location else {
+            return false
+        }
+
         let point = MKMapPoint(location.coordinate)
         return serviceRect.contains(point)
     }

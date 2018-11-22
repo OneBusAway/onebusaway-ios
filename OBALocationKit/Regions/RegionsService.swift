@@ -22,8 +22,6 @@ public class RegionsService: NSObject {
     private let locationService: LocationService
     private let userDefaults: UserDefaults
 
-    public weak var delegate: RegionsServiceDelegate?
-
     public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults) {
         self.modelService = modelService
         self.locationService = locationService
@@ -38,18 +36,46 @@ public class RegionsService: NSObject {
         self.locationService.addDelegate(self)
     }
 
+    // MARK: - Delegates
+
+    private let delegates = NSHashTable<RegionsServiceDelegate>.weakObjects()
+
+    @objc
+    public func addDelegate(_ delegate: RegionsServiceDelegate) {
+        delegates.add(delegate)
+    }
+
+    @objc
+    public func removeDelegate(_ delegate: RegionsServiceDelegate) {
+        delegates.remove(delegate)
+    }
+
+    private func notifyDelegatesRegionChanged(_ region: Region) {
+        for delegate in delegates.allObjects {
+            delegate.regionsService(self, updatedRegion: region)
+        }
+    }
+
+    private func notifyDelegatesUnableToSelectRegion() {
+        for delegate in delegates.allObjects {
+            delegate.regionsServiceUnableToSelectRegion(self)
+        }
+    }
+
     // MARK: - Regions Data
 
+    @objc
     public private(set) var regions: [Region] {
         didSet {
             storeRegions()
         }
     }
 
+    @objc
     public private(set) var currentRegion: Region? {
         didSet {
             if let currentRegion = currentRegion {
-                delegate?.regionsService(self, updatedRegion: currentRegion)
+                notifyDelegatesRegionChanged(currentRegion)
             }
 
             storeCurrentRegion()
@@ -153,7 +179,7 @@ extension RegionsService: LocationServiceDelegate {
         }
 
         guard let newRegion = (regions.filter { $0.contains(location: location) }).first else {
-            delegate?.regionsServiceUnableToSelectRegion(self)
+            notifyDelegatesUnableToSelectRegion()
             return
         }
 

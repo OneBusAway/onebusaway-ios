@@ -34,13 +34,15 @@ public class AppConfig: NSObject {
         self.queue = queue
     }
 
-    // MARK: - Derived Properties
+    // MARK: - Location
+
+    lazy var locationService = LocationService(locationManager: CLLocationManager())
+
+    // MARK: - Regions
 
     private lazy var regionsAPIService = RegionsAPIService(baseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: queue)
 
     private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: queue)
 
-    public lazy var locationService = LocationService(locationManager: CLLocationManager())
-
-    public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+    lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
 }

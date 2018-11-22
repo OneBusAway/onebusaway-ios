@@ -21,11 +21,11 @@ public class RESTAPIModelService: NSObject {
     }
 
     // MARK: - Agencies
-    public func getAgenciesWithCoverage() -> AgenciesWithCoverageModelOperation {
+
+    @objc public func getAgenciesWithCoverage() -> AgenciesWithCoverageModelOperation {
         let service = apiService.getAgenciesWithCoverage()
         return generateModels(type: AgenciesWithCoverageModelOperation.self, serviceOperation: service)
     }
-
 
     // MARK: - Vehicles
 
@@ -41,7 +41,7 @@ public class RESTAPIModelService: NSObject {
     ///
     /// - Parameter vehicleID: Vehicle ID string
     /// - Returns: The enqueued model operation.
-    public func getVehicleStatus(_ vehicleID: String) -> VehicleStatusModelOperation {
+    @objc public func getVehicleStatus(_ vehicleID: String) -> VehicleStatusModelOperation {
         let service = apiService.getVehicle(vehicleID)
         return generateModels(type: VehicleStatusModelOperation.self, serviceOperation: service)
     }
@@ -53,7 +53,7 @@ public class RESTAPIModelService: NSObject {
     /// Useful for easily verifying that a given OBA server URL is working correctly.
     ///
     /// - Returns: The enqueued model operation.
-    public func getCurrentTime() -> CurrentTimeModelOperation {
+    @objc public func getCurrentTime() -> CurrentTimeModelOperation {
         let service = apiService.getCurrentTime()
         return generateModels(type: CurrentTimeModelOperation.self, serviceOperation: service)
     }
@@ -68,7 +68,7 @@ public class RESTAPIModelService: NSObject {
     /// - Parameters:
     ///   - coordinate: The coordinate around which to search for stops.
     /// - Returns: The enqueued model operation.
-    public func getStops(coordinate: CLLocationCoordinate2D) -> StopsModelOperation {
+    @objc public func getStops(coordinate: CLLocationCoordinate2D) -> StopsModelOperation {
         let service = apiService.getStops(coordinate: coordinate)
         return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
@@ -85,7 +85,7 @@ public class RESTAPIModelService: NSObject {
     /// - Parameters:
     ///   - region: A coordinate region from which to search for stops.
     /// - Returns: The enqueued model operation.
-    public func getStops(region: MKCoordinateRegion) -> StopsModelOperation {
+    @objc public func getStops(region: MKCoordinateRegion) -> StopsModelOperation {
         let service = apiService.getStops(region: region)
         return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
@@ -103,7 +103,7 @@ public class RESTAPIModelService: NSObject {
     ///   - circularRegion: A circular region from which to search for stops.
     ///   - query: A search query for a specific stop code.
     /// - Returns: The enqueued model operation.
-    public func getStops(circularRegion: CLCircularRegion, query: String) -> StopsModelOperation {
+    @objc public func getStops(circularRegion: CLCircularRegion, query: String) -> StopsModelOperation {
         let service = apiService.getStops(circularRegion: circularRegion, query: query)
         return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
@@ -121,7 +121,7 @@ public class RESTAPIModelService: NSObject {
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - Returns: The enqueued model operation.
-    public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsModelOperation {
+    @objc public func getArrivalsAndDeparturesForStop(id: String, minutesBefore: UInt, minutesAfter: UInt) -> StopArrivalsModelOperation {
         let service = apiService.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         return generateModels(type: StopArrivalsModelOperation.self, serviceOperation: service)
     }
@@ -138,7 +138,7 @@ public class RESTAPIModelService: NSObject {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued model operation.
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
+    @objc public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
         let service = apiService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         return generateModels(type: TripArrivalsModelOperation.self, serviceOperation: service)
     }
@@ -159,7 +159,7 @@ public class RESTAPIModelService: NSObject {
     /// - Parameters:
     ///   - vehicleID: The ID of the vehicle
     /// - Returns: The enqueued model operation.
-    public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
+    @objc public func getTripDetails(vehicleID: String) -> TripDetailsModelOperation {
         let service = apiService.getVehicleTrip(vehicleID: vehicleID)
         return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
     }
@@ -174,7 +174,7 @@ public class RESTAPIModelService: NSObject {
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
     /// - Returns: The enqueued model operation.
-    func getTripDetails(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsModelOperation {
+    @objc func getTripDetails(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsModelOperation {
         let service = apiService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
         return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
     }
@@ -193,9 +193,9 @@ public class RESTAPIModelService: NSObject {
     /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-route.html)
     ///
     /// - Parameters:
-    ///   - id: The route ID
+    ///   - routeID: The route ID
     /// - Returns: The enqueued model operation.
-    public func getStopsForRoute(routeID: String) -> StopsForRouteModelOperation {
+    @objc public func getStopsForRoute(routeID: String) -> StopsForRouteModelOperation {
         let service = apiService.getStopsForRoute(id: routeID)
         return generateModels(type: StopsForRouteModelOperation.self, serviceOperation: service)
     }
@@ -209,7 +209,7 @@ public class RESTAPIModelService: NSObject {
     ///   - query: Search query
     ///   - region: The circular region from which to return results.
     /// - Returns: The enqueued model operation.
-    public func getRoute(query: String, region: CLCircularRegion) -> RouteSearchModelOperation {
+    @objc public func getRoute(query: String, region: CLCircularRegion) -> RouteSearchModelOperation {
         let service = apiService.getRoute(query: query, region: region)
         return generateModels(type: RouteSearchModelOperation.self, serviceOperation: service)
     }
@@ -222,7 +222,7 @@ public class RESTAPIModelService: NSObject {
     /// - Parameters:
     ///   - id: The ID of the shape to retrieve.
     /// - Returns: The enqueued model operation.
-    public func getShape(id: String) -> ShapeModelOperation {
+    @objc public func getShape(id: String) -> ShapeModelOperation {
         let service = apiService.getShape(id: id)
         return generateModels(type: ShapeModelOperation.self, serviceOperation: service)
     }
@@ -242,19 +242,19 @@ public class RESTAPIModelService: NSObject {
     ///   - comment: An optional free text field that allows the user to provide more context.
     ///   - location: An optional location value to provide more context.
     /// - Returns: The enqueued model operation.
-    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemModelOperation {
+    @objc public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemModelOperation {
         let service = apiService.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
         return generateModels(type: StopProblemModelOperation.self, serviceOperation: service)
     }
 
-    public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
+    @objc public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
         let service = apiService.getTripProblem(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
         return generateModels(type: TripProblemModelOperation.self, serviceOperation: service)
     }
 
     // MARK: - Alerts
 
-    public func getRegionalAlerts() -> RegionalAlertsModelOperation {
+    @objc public func getRegionalAlerts() -> RegionalAlertsModelOperation {
         // Get a list of agencies
         let agenciesOperation = getAgenciesWithCoverage()
 
@@ -284,7 +284,7 @@ public class RESTAPIModelService: NSObject {
         return regionalAlertsOperation
     }
 
-    func getRegionalAlerts(agency: AgencyWithCoverage) -> AgencyAlertsModelOperation {
+    @objc func getRegionalAlerts(agency: AgencyWithCoverage) -> AgencyAlertsModelOperation {
         // Create the parent operations: we depend on GTFS alert data
         // and the list of agencies in the region.
         let serviceOperation = apiService.getRegionalAlerts(agencyID: agency.agencyID)
@@ -313,7 +313,7 @@ public class RESTAPIModelService: NSObject {
 
     // MARK: - Placemarks
 
-    public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
+    @objc public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
         return apiService.getPlacemarks(query: query, region: region)
     }
 

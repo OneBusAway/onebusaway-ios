@@ -21,6 +21,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 public class LocationService: NSObject, CLLocationManagerDelegate {
     private var locationManager: LocationManager
 
+    @objc
     public private(set) var currentLocation: CLLocation? {
         didSet {
             if let currentLocation = currentLocation {
@@ -28,6 +29,8 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
             }
         }
     }
+    
+    @objc
     public private(set) var currentHeading: CLHeading? {
         didSet {
             if let currentHeading = currentHeading {
