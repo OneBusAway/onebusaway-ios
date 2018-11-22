@@ -197,6 +197,7 @@
 		93BD80A921A317400009797C /* Nimble.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93BD80AA21A317400009797C /* OHHTTPStubs.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FB321A5C53600207D5F /* MapRegionManager.swift */; };
+		93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBB21A62D7B00207D5F /* Operations.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -581,6 +582,7 @@
 		93ACD069219EA34100F493CB /* MapViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MapViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
+		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -1175,6 +1177,7 @@
 		936EAF20219E42CC00AE27D5 /* OBAAppKit */ = {
 			isa = PBXGroup;
 			children = (
+				93E97FBA21A62D6E00207D5F /* Extensions */,
 				93E97FB221A5C52200207D5F /* Mapping */,
 				936EAF3C219E42D900AE27D5 /* Orchestration */,
 				936EAF21219E42CC00AE27D5 /* OBAAppKit.h */,
@@ -1215,6 +1218,14 @@
 				93E97FB321A5C53600207D5F /* MapRegionManager.swift */,
 			);
 			path = Mapping;
+			sourceTree = "<group>";
+		};
+		93E97FBA21A62D6E00207D5F /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				93E97FBB21A62D7B00207D5F /* Operations.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 		93FAAA9B2177E0F30086D9DE /* Region API Tests */ = {
@@ -1801,6 +1812,7 @@
 				93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */,
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
 				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
+				93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -53,20 +53,24 @@ public class MapRegionManager: NSObject {
         }
 
         let requestStopsOperation = modelService.getStops(region: mapView.region)
-
-        let completion = BlockOperation { [weak self] in
-            guard let mapView = self?.mapView else {
+        requestStopsOperation.then { [weak self] in
+            guard let self = self else {
                 return
             }
 
-            let annotations = MapRegionManager.mapAnnotationsFromStops(requestStopsOperation.stops)
-            mapView.removeAnnotations(mapView.annotations)
-            mapView.addAnnotations(annotations)
+            let mapView = self.mapView
 
+            let mapAnnotations = self.findInstalledMapAnnotations(type: MKPointAnnotation.self)
+            var oldAnnotations: Set<MKPointAnnotation> = Set(mapAnnotations)
+            var newAnnotations: Set<MKPointAnnotation> = NSSet(array: MapRegionManager.annotationsFromStops(requestStopsOperation.stops)) as! Set<MKPointAnnotation>
+
+            let overlap = newAnnotations.intersection(oldAnnotations)
+            oldAnnotations.subtract(overlap)
+            newAnnotations.subtract(overlap)
+
+            mapView.removeAnnotations(oldAnnotations.map {$0})
+            mapView.addAnnotations(newAnnotations.map {$0})
         }
-        completion.addDependency(requestStopsOperation)
-
-        OperationQueue.main.addOperation(completion)
 
         self.requestStopsOperation = requestStopsOperation
     }
@@ -78,6 +82,10 @@ extension MapRegionManager: MKMapViewDelegate {
 
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
+
+    func findInstalledMapAnnotations<T>(type: T.Type) -> [T] where T: MKAnnotation {
+        return mapView.annotations.compactMap {$0 as? T}
+    }
 }
 
 extension MapRegionManager: LocationServiceDelegate {
@@ -87,7 +95,7 @@ extension MapRegionManager: LocationServiceDelegate {
 }
 
 extension MapRegionManager {
-    private class func mapAnnotationsFromStops(_ stops: [Stop]) -> [MKPointAnnotation] {
+    private class func annotationsFromStops(_ stops: [Stop]) -> [MKPointAnnotation] {
         return stops.map { (stop) -> MKPointAnnotation in
             let annotation = MKPointAnnotation()
             annotation.coordinate = stop.location.coordinate
