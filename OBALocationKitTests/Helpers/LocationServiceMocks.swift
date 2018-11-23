@@ -45,11 +45,11 @@ class LocationManagerMock: LocationManager {
 
     func requestWhenInUseAuthorization() { }
 
-    public class func authorizationStatus() -> CLAuthorizationStatus {
+    public var authorizationStatus: CLAuthorizationStatus {
         return .notDetermined
     }
 
-    static func locationServicesEnabled() -> Bool {
+    public var isLocationServicesEnabled: Bool {
         return true
     }
 
@@ -76,8 +76,8 @@ class LocationManagerMock: LocationManager {
         }
     }
 
-    static func headingAvailable() -> Bool {
-        return authorizationStatus() == .authorizedWhenInUse
+    public var isHeadingAvailable: Bool {
+        return authorizationStatus == .authorizedWhenInUse
     }
 
     func startUpdatingHeading() {
@@ -95,7 +95,11 @@ class AuthorizableLocationManagerMock: LocationManagerMock {
 
     var updateLocation: CLLocation?
     var updateHeading: OBAMockHeading
-    public static var _authorizationStatus: CLAuthorizationStatus = .notDetermined
+    public var _authorizationStatus: CLAuthorizationStatus = .notDetermined {
+        didSet {
+            delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: _authorizationStatus)
+        }
+    }
 
     public init(updateLocation: CLLocation, updateHeading: OBAMockHeading) {
         self.updateLocation = updateLocation
@@ -103,24 +107,23 @@ class AuthorizableLocationManagerMock: LocationManagerMock {
     }
 
     override func requestWhenInUseAuthorization() {
-        AuthorizableLocationManagerMock._authorizationStatus = .authorizedWhenInUse
-        delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: .authorizedWhenInUse)
+        _authorizationStatus = .authorizedWhenInUse
     }
 
-    class override func authorizationStatus() -> CLAuthorizationStatus {
+    override var authorizationStatus: CLAuthorizationStatus {
         return _authorizationStatus
     }
 
     override func startUpdatingLocation() {
         super.startUpdatingLocation()
-        if type(of: self).authorizationStatus() == .authorizedWhenInUse {
+        if authorizationStatus == .authorizedWhenInUse {
             location = updateLocation
         }
     }
 
     override func startUpdatingHeading() {
         super.startUpdatingHeading()
-        if type(of: self).authorizationStatus() == .authorizedWhenInUse {
+        if authorizationStatus == .authorizedWhenInUse {
             heading = updateHeading
         }
     }

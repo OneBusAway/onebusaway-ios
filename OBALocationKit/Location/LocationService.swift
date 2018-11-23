@@ -45,7 +45,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     @objc public init(locationManager: LocationManager) {
         self.locationManager = locationManager
-        self.authorizationStatus = type(of: locationManager).authorizationStatus()
+        self.authorizationStatus = locationManager.authorizationStatus
 
         super.init()
 
@@ -126,7 +126,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     /// Answers the question of whether the device GPS can be consulted for location data.
     @objc
     public var isLocationUseAuthorized: Bool {
-        return type(of: locationManager).locationServicesEnabled() && authorizationStatus == .authorizedWhenInUse
+        return locationManager.isLocationServicesEnabled && authorizationStatus == .authorizedWhenInUse
     }
 
     // MARK: - State Management
@@ -162,7 +162,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     // MARK: - Heading
 
     public func startUpdatingHeading() {
-        guard type(of: locationManager).headingAvailable() else {
+        guard locationManager.isHeadingAvailable else {
             return
         }
 
@@ -170,7 +170,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     }
 
     public func stopUpdatingHeading() {
-        guard type(of: locationManager).headingAvailable() else {
+        guard locationManager.isHeadingAvailable else {
             return
         }
 

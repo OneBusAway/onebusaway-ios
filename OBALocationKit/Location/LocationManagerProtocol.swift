@@ -17,8 +17,15 @@ public protocol LocationManager {
 
     func requestWhenInUseAuthorization()
 
-    static func authorizationStatus() -> CLAuthorizationStatus
-    static func locationServicesEnabled() -> Bool
+    /// Replaces the CLLocationManager class func of the same name. This is used
+    /// to facilitate easier testing on a per-instance basis instead of having
+    /// to try to mock class functions.
+    var authorizationStatus: CLAuthorizationStatus { get }
+
+    /// Replaces the CLLocationManager class func of the same name. This is used
+    /// to facilitate easier testing on a per-instance basis instead of having
+    /// to try to mock class functions.
+    var isLocationServicesEnabled: Bool { get }
 
     // MARK: - Location
 
@@ -27,11 +34,23 @@ public protocol LocationManager {
     var location: CLLocation? { get }
 
     // MARK: - Heading
-    static func headingAvailable() -> Bool
+    var isHeadingAvailable: Bool { get }
     func startUpdatingHeading()
     func stopUpdatingHeading()
 }
 
 extension CLLocationManager: LocationManager {
     // nop. CLLocationManager already implements all of the protocol methods.
+
+    public var authorizationStatus: CLAuthorizationStatus {
+        return CLLocationManager.authorizationStatus()
+    }
+
+    public var isLocationServicesEnabled: Bool {
+        return CLLocationManager.locationServicesEnabled()
+    }
+
+    public var isHeadingAvailable: Bool {
+        return CLLocationManager.headingAvailable()
+    }
 }
