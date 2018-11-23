@@ -60,21 +60,26 @@ public class MapRegionManager: NSObject {
 
             let mapView = self.mapView
 
-            let mapAnnotations = self.findInstalledMapAnnotations(type: MKPointAnnotation.self)
-            var oldAnnotations: Set<MKPointAnnotation> = Set(mapAnnotations)
-            var newAnnotations: Set<MKPointAnnotation> = NSSet(array: MapRegionManager.annotationsFromStops(requestStopsOperation.stops)) as! Set<MKPointAnnotation>
+            var oldAnnotations = Set(mapView.annotations.compactMap {$0 as? Stop})
+            var newAnnotations = Set(requestStopsOperation.stops)
 
+            // Which elements are in both sets?
             let overlap = newAnnotations.intersection(oldAnnotations)
-            oldAnnotations.subtract(overlap)
+
+            // Remove the elements that no longer appear in the new set,
+            // but leaving the ones that still appear.
+            oldAnnotations.subtract(oldAnnotations.subtracting(overlap))
             newAnnotations.subtract(overlap)
 
-            mapView.removeAnnotations(oldAnnotations.map {$0})
-            mapView.addAnnotations(newAnnotations.map {$0})
+            mapView.removeAnnotations(oldAnnotations.allObjects)
+            mapView.addAnnotations(newAnnotations.allObjects)
         }
 
         self.requestStopsOperation = requestStopsOperation
     }
 }
+
+// MARK: - Map View Delegate
 
 extension MapRegionManager: MKMapViewDelegate {
     public func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
@@ -83,25 +88,15 @@ extension MapRegionManager: MKMapViewDelegate {
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
 
-    func findInstalledMapAnnotations<T>(type: T.Type) -> [T] where T: MKAnnotation {
-        return mapView.annotations.compactMap {$0 as? T}
+    func findInstalledMapAnnotations<T>(type: T.Type) -> Set<T> where T: MKAnnotation {
+        return Set(mapView.annotations.compactMap {$0 as? T})
     }
 }
+
+// MARK: - Location Service Delegate
 
 extension MapRegionManager: LocationServiceDelegate {
     private func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         mapView.showsUserLocation = service.isLocationUseAuthorized
-    }
-}
-
-extension MapRegionManager {
-    private class func annotationsFromStops(_ stops: [Stop]) -> [MKPointAnnotation] {
-        return stops.map { (stop) -> MKPointAnnotation in
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = stop.location.coordinate
-            annotation.title = stop.name
-            annotation.subtitle = stop.direction
-            return annotation
-        }
     }
 }
