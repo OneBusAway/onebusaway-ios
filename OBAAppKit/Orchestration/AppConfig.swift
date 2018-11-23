@@ -20,23 +20,21 @@ public class AppConfig: NSObject {
     let appVersion: String
     let queue: OperationQueue
     let userDefaults: UserDefaults
+    let locationService: LocationService
 
     @objc public convenience init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults) {
-        self.init(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: OperationQueue())
+        self.init(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: OperationQueue(), locationService: LocationService(locationManager: CLLocationManager()))
     }
 
-    @objc public init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults, queue: OperationQueue) {
+    @objc public init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults, queue: OperationQueue, locationService: LocationService) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
         self.uuid = uuid
         self.appVersion = appVersion
         self.userDefaults = userDefaults
         self.queue = queue
+        self.locationService = locationService
     }
-
-    // MARK: - Location
-
-    lazy var locationService = LocationService(locationManager: CLLocationManager())
 
     // MARK: - Regions
 

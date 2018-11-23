@@ -8,26 +8,12 @@
 
 import Foundation
 import XCTest
+import OBATestHelpers
 @testable import OBALocationKit
 import CoreLocation
 import Nimble
 
 class LocationServiceTests: XCTestCase {
-    let seattleCoordinate = CLLocationCoordinate2D(latitude: 47.623651, longitude: -122.312572)
-    let tampaCoordinate = CLLocationCoordinate2D(latitude: 27.976911, longitude: -82.445851)
-
-    lazy var mockSeattleLocation: CLLocation = {
-        let loc = CLLocation(coordinate: seattleCoordinate, altitude: 100.0, horizontalAccuracy: 10.0, verticalAccuracy: 10.0, timestamp: Date())
-        return loc
-    }()
-
-    lazy var mockTampaLocation: CLLocation = {
-        let loc = CLLocation(coordinate: tampaCoordinate, altitude: 100.0, horizontalAccuracy: 10.0, verticalAccuracy: 10.0, timestamp: Date())
-        return loc
-    }()
-
-    let mockHeading = OBAMockHeading(heading: 45.0)
-
     // MARK: - Authorization
 
     func test_authorization_defaultValueIsNotDetermined() {
@@ -39,7 +25,7 @@ class LocationServiceTests: XCTestCase {
     }
 
     func test_authorization_granted() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
         let delegate = LocDelegate()
 
@@ -50,15 +36,15 @@ class LocationServiceTests: XCTestCase {
         waitUntil { (done) in
             expect(locationManagerMock.locationUpdatesStarted).to(beTrue())
             expect(locationManagerMock.headingUpdatesStarted).to(beTrue())
-            expect(delegate.location) == self.mockSeattleLocation
-            expect(delegate.heading) == self.mockHeading
+            expect(delegate.location) == TestData.mockSeattleLocation
+            expect(delegate.heading) == TestData.mockHeading
             expect(delegate.error).to(beNil())
             done()
         }
     }
 
     func test_updateLocation_successiveUpdates_succeed() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         locationManagerMock.requestWhenInUseAuthorization()
         let service = LocationService(locationManager: locationManagerMock)
 
@@ -66,43 +52,43 @@ class LocationServiceTests: XCTestCase {
 
         service.startUpdatingLocation()
 
-        expect(service.currentLocation) == mockSeattleLocation
+        expect(service.currentLocation) == TestData.mockSeattleLocation
 
-        service.locationManager(CLLocationManager(), didUpdateLocations: [mockTampaLocation])
+        service.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockTampaLocation])
 
-        expect(service.currentLocation) == mockTampaLocation
+        expect(service.currentLocation) == TestData.mockTampaLocation
     }
 
     func test_updateLocation_withNoLocation_doesNotTriggerUpdates() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         let del = LocDelegate()
-        del.location = self.mockSeattleLocation
+        del.location = TestData.mockSeattleLocation
 
         service.addDelegate(del)
 
         service.locationManager(CLLocationManager(), didUpdateLocations: [])
-        expect(del.location) == self.mockSeattleLocation
+        expect(del.location) == TestData.mockSeattleLocation
     }
 
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         expect(service.currentLocation).to(beNil())
 
-        service.locationManager(CLLocationManager(), didUpdateLocations: [mockSeattleLocation])
-        expect(service.currentLocation) == mockSeattleLocation
+        service.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockSeattleLocation])
+        expect(service.currentLocation) == TestData.mockSeattleLocation
 
-        let badLocation = CLLocation(coordinate: tampaCoordinate, altitude: 10.0, horizontalAccuracy: 1000, verticalAccuracy: 1000, timestamp: Date())
+        let badLocation = CLLocation(coordinate: TestData.tampaCoordinate, altitude: 10.0, horizontalAccuracy: 1000, verticalAccuracy: 1000, timestamp: Date())
         service.locationManager(CLLocationManager(), didUpdateLocations: [badLocation])
 
-        expect(service.currentLocation) == mockSeattleLocation
+        expect(service.currentLocation) == TestData.mockSeattleLocation
     }
 
     func test_stopUpdates_disablesUpdates() {
-        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: mockSeattleLocation, updateHeading: mockHeading)
+        let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
 
         service.stopUpdates()

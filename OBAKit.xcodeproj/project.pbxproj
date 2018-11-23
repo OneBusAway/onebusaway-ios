@@ -198,6 +198,13 @@
 		93BD80AA21A317400009797C /* OHHTTPStubs.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FB321A5C53600207D5F /* MapRegionManager.swift */; };
 		93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBB21A62D7B00207D5F /* Operations.swift */; };
+		93E97FBF21A70E8400207D5F /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBE21A70E8400207D5F /* Models.swift */; };
+		93E97FC121A70FE800207D5F /* Collections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC021A70FE800207D5F /* Collections.swift */; };
+		93E97FC421A8711600207D5F /* ApplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC321A8711600207D5F /* ApplicationTests.swift */; };
+		93E97FC621A872D800207D5F /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC521A872D800207D5F /* AppConfigTests.swift */; };
+		93E97FC821A896D400207D5F /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC721A896D400207D5F /* TestHelpers.swift */; };
+		93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC921A8994E00207D5F /* OBAMockHeading.swift */; };
+		93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCB21A89A0F00207D5F /* TestData.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -583,6 +590,14 @@
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
 		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
+		93E97FBE21A70E8400207D5F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		93E97FC021A70FE800207D5F /* Collections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collections.swift; sourceTree = "<group>"; };
+		93E97FC221A8711500207D5F /* OBAAppKitTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAAppKitTests-Bridging-Header.h"; sourceTree = "<group>"; };
+		93E97FC321A8711600207D5F /* ApplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTests.swift; sourceTree = "<group>"; };
+		93E97FC521A872D800207D5F /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
+		93E97FC721A896D400207D5F /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
+		93E97FC921A8994E00207D5F /* OBAMockHeading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBAMockHeading.swift; sourceTree = "<group>"; };
+		93E97FCB21A89A0F00207D5F /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -983,6 +998,8 @@
 				937BB72F2173AFCC00BE5635 /* OBATestCase.swift */,
 				93235DF421A2A44C008C3BB0 /* OBATestHelpers.h */,
 				93235DF521A2A44C008C3BB0 /* Info.plist */,
+				93E97FC921A8994E00207D5F /* OBAMockHeading.swift */,
+				93E97FCB21A89A0F00207D5F /* TestData.swift */,
 			);
 			path = OBATestHelpers;
 			sourceTree = "<group>";
@@ -1191,6 +1208,10 @@
 			children = (
 				936EAF2E219E42CC00AE27D5 /* OBAAppKitTests.m */,
 				936EAF30219E42CC00AE27D5 /* Info.plist */,
+				93E97FC321A8711600207D5F /* ApplicationTests.swift */,
+				93E97FC221A8711500207D5F /* OBAAppKitTests-Bridging-Header.h */,
+				93E97FC521A872D800207D5F /* AppConfigTests.swift */,
+				93E97FC721A896D400207D5F /* TestHelpers.swift */,
 			);
 			path = OBAAppKitTests;
 			sourceTree = "<group>";
@@ -1224,6 +1245,8 @@
 			isa = PBXGroup;
 			children = (
 				93E97FBB21A62D7B00207D5F /* Operations.swift */,
+				93E97FBE21A70E8400207D5F /* Models.swift */,
+				93E97FC021A70FE800207D5F /* Collections.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1494,6 +1517,7 @@
 					};
 					936EAF26219E42CC00AE27D5 = {
 						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1010;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
 				};
@@ -1780,8 +1804,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */,
 				93235DFF21A2A468008C3BB0 /* OBATestCase.swift in Sources */,
 				93235DFE21A2A468008C3BB0 /* TestCaseExtensions.swift in Sources */,
+				93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1812,7 +1838,9 @@
 				93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */,
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
 				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
+				93E97FC121A70FE800207D5F /* Collections.swift in Sources */,
 				93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */,
+				93E97FBF21A70E8400207D5F /* Models.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1820,6 +1848,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93E97FC621A872D800207D5F /* AppConfigTests.swift in Sources */,
+				93E97FC821A896D400207D5F /* TestHelpers.swift in Sources */,
+				93E97FC421A8711600207D5F /* ApplicationTests.swift in Sources */,
 				936EAF2F219E42CC00AE27D5 /* OBAAppKitTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2458,6 +2489,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2473,6 +2505,9 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "OBAAppKitTests/OBAAppKitTests-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
@@ -2483,6 +2518,7 @@
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = THEWY9596Q;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -2498,6 +2534,8 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAAppKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "OBAAppKitTests/OBAAppKitTests-Bridging-Header.h";
+				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
