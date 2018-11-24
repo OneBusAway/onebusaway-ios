@@ -15,6 +15,24 @@ import OBALocationKit
 import CoreLocation
 import Nimble
 
+class TestAppDelegate: ApplicationDelegate {
+    var called_applicationReloadRootInterface = false
+
+    func applicationReloadRootInterface(_ app: Application) {
+        called_applicationReloadRootInterface = true
+    }
+}
+
+class TestRegionsServiceDelegate: RegionsServiceDelegate {
+    func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
+        //
+    }
+
+    func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        //
+    }
+}
+
 class ApplicationTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
     let apiKey = "apikey"
@@ -26,14 +44,14 @@ class ApplicationTests: OBATestCase {
     override func setUp() {
         super.setUp()
 
-        userDefaults = UserDefaults(suiteName: "apptests")
+        userDefaults = UserDefaults.standard
+        userDefaults.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
     }
 
     override func tearDown() {
         super.tearDown()
 
         queue.cancelAllOperations()
-        userDefaults.removeSuite(named: "apptests")
     }
 
     // MARK: - When location has already been authorized
@@ -60,9 +78,13 @@ class ApplicationTests: OBATestCase {
     }
 
     func test_appCreation_locationAlreadyAuthorized_regionAvailable_createsRESTAPIModelService() {
-        let (_, _, config) = configureAuthorizedObjects()
+        let (_, locService, config) = configureAuthorizedObjects()
+        locService.startUpdates()
 
-        expect(config.regionsService.currentRegion).toNot(beNil())
+        let regionsService = config.regionsService
+
+        let currentRegion = regionsService.currentRegion
+        expect(currentRegion).toNot(beNil())
 
         let app = Application(config: config)
 
@@ -71,31 +93,43 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - When location not been authorized
 
-//    func test_appCreation_locationNotDetermined_updatesLocation() {
-//        let locManager =
-//        let locManager = AuthorizedMockLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-//        let locationService = LocationService(locationManager: locManager)
-//        let  config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: queue, locationService: locationService)
-//
-//        expect(locManager.updatingLocation).to(beFalse())
-//        expect(locManager.updatingHeading).to(beFalse())
-//
-//        _ = Application(config: config)
-//
-//        // Creating the Application object causes location updates to begin if the app is authorized.
-//        expect(locManager.updatingLocation).to(beTrue())
-//        expect(locManager.updatingHeading).to(beTrue())
-//    }
+    func test_app_locationNotDetermined_init() {
+        let locManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: queue, locationService: locationService)
+
+        expect(locationService.isLocationUseAuthorized).to(beFalse())
+
+        let app = Application(config: config)
+
+        expect(locManager.locationUpdatesStarted).to(beFalse())
+        expect(locManager.headingUpdatesStarted).to(beFalse())
+
+        expect(app.restAPIModelService).to(beNil())
+    }
+
+    func test_app_locationNewlyAuthorized() {
+        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let locationService = LocationService(locationManager: locManager)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: queue, locationService: locationService)
+        let appDelegate = TestAppDelegate()
+
+        expect(locationService.isLocationUseAuthorized).to(beFalse())
+
+        let app = Application(config: config)
+        app.delegate = appDelegate
+
+        expect(locManager.locationUpdatesStarted).to(beFalse())
+        expect(locManager.headingUpdatesStarted).to(beFalse())
+
+        expect(app.restAPIModelService).to(beNil())
+
+        locationService.requestInUseAuthorization()
+
+        expect(appDelegate.called_applicationReloadRootInterface).to(beTrue())
+
+        expect(locManager.locationUpdatesStarted).to(beTrue())
+        expect(locManager.headingUpdatesStarted).to(beTrue())
+        expect(app.restAPIModelService).toNot(beNil())
+    }
 }
-
-
-//public extension OBATestCase {
-//
-//    public var regionsModelService: RegionsModelService {
-//        return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
-//    }
-//
-//    public var regionsAPIService: RegionsAPIService {
-//        return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
-//    }
-//}

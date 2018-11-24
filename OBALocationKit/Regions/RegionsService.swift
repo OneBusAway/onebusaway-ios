@@ -26,8 +26,16 @@ public class RegionsService: NSObject {
         self.modelService = modelService
         self.locationService = locationService
         self.userDefaults = userDefaults
-        self.regions = RegionsService.loadStoredRegions(from: userDefaults)
-        self.currentRegion = RegionsService.loadCurrentRegion(from: userDefaults)
+
+        let regions = RegionsService.loadStoredRegions(from: userDefaults)
+        self.regions = regions
+
+        if let currentRegion = RegionsService.loadCurrentRegion(from: userDefaults) {
+            self.currentRegion = currentRegion
+        }
+        else if let location = locationService.currentLocation {
+            self.currentRegion = RegionsService.firstRegion(in: regions, containing: location)
+        }
 
         super.init()
 
@@ -68,6 +76,7 @@ public class RegionsService: NSObject {
     public private(set) var regions: [Region] {
         didSet {
             storeRegions()
+            updateCurrentRegion()
         }
     }
 
@@ -173,12 +182,16 @@ extension RegionsService: LocationServiceDelegate {
         updateCurrentRegion()
     }
 
+    private class func firstRegion(in regions: [Region], containing location: CLLocation) -> Region? {
+        return (regions.filter { $0.contains(location: location) }).first
+    }
+
     private func updateCurrentRegion() {
         guard let location = locationService.currentLocation else {
             return
         }
 
-        guard let newRegion = (regions.filter { $0.contains(location: location) }).first else {
+        guard let newRegion = RegionsService.firstRegion(in: regions, containing: location) else {
             notifyDelegatesUnableToSelectRegion()
             return
         }
