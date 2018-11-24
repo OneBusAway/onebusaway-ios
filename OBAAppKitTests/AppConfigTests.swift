@@ -50,8 +50,6 @@ class AppConfigTests: OBATestCase {
         expect(appConfig.queue) == queue
         expect(appConfig.userDefaults) == userDefaults
 
-//        lazy var locationService = LocationService(locationManager: CLLocationManager())
-
         expect(appConfig.regionsService).toNot(beNil())
     }
 }

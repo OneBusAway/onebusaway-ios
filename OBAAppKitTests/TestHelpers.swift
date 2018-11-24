@@ -16,6 +16,9 @@ class AuthorizedMockLocationManager: NSObject, LocationManager {
     private let updateLocation: CLLocation
     private let updateHeading: CLHeading
 
+    var updatingLocation = false
+    var updatingHeading = false
+
     init(updateLocation: CLLocation, updateHeading: CLHeading) {
         self.updateLocation = updateLocation
         self.updateHeading = updateHeading
@@ -45,20 +48,22 @@ class AuthorizedMockLocationManager: NSObject, LocationManager {
     var isLocationServicesEnabled: Bool = true
 
     func startUpdatingLocation() {
+        updatingLocation = true
         self.location = updateLocation
     }
 
     func stopUpdatingLocation() {
-        //
+        updatingLocation = false
     }
 
     var isHeadingAvailable: Bool = true
 
     func startUpdatingHeading() {
+        updatingHeading = true
         heading = updateHeading
     }
 
     func stopUpdatingHeading() {
-        //
+        updatingHeading = false
     }
 }

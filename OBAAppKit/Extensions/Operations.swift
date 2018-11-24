@@ -9,7 +9,6 @@
 import Foundation
 
 public extension Operation {
-
     /// A simple way to chain operations together.
     ///
     /// - Parameters:

@@ -205,6 +205,8 @@
 		93E97FC821A896D400207D5F /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC721A896D400207D5F /* TestHelpers.swift */; };
 		93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC921A8994E00207D5F /* OBAMockHeading.swift */; };
 		93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCB21A89A0F00207D5F /* TestData.swift */; };
+		93E97FCE21A8D48600207D5F /* CollectionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCD21A8D48600207D5F /* CollectionsTests.swift */; };
+		93E97FD021A8E0C400207D5F /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCF21A8E0C400207D5F /* LocationManager.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -598,6 +600,8 @@
 		93E97FC721A896D400207D5F /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 		93E97FC921A8994E00207D5F /* OBAMockHeading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBAMockHeading.swift; sourceTree = "<group>"; };
 		93E97FCB21A89A0F00207D5F /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
+		93E97FCD21A8D48600207D5F /* CollectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsTests.swift; sourceTree = "<group>"; };
+		93E97FCF21A8E0C400207D5F /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -1000,6 +1004,7 @@
 				93235DF521A2A44C008C3BB0 /* Info.plist */,
 				93E97FC921A8994E00207D5F /* OBAMockHeading.swift */,
 				93E97FCB21A89A0F00207D5F /* TestData.swift */,
+				93E97FCF21A8E0C400207D5F /* LocationManager.swift */,
 			);
 			path = OBATestHelpers;
 			sourceTree = "<group>";
@@ -1212,6 +1217,7 @@
 				93E97FC221A8711500207D5F /* OBAAppKitTests-Bridging-Header.h */,
 				93E97FC521A872D800207D5F /* AppConfigTests.swift */,
 				93E97FC721A896D400207D5F /* TestHelpers.swift */,
+				93E97FCD21A8D48600207D5F /* CollectionsTests.swift */,
 			);
 			path = OBAAppKitTests;
 			sourceTree = "<group>";
@@ -1806,6 +1812,7 @@
 			files = (
 				93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */,
 				93235DFF21A2A468008C3BB0 /* OBATestCase.swift in Sources */,
+				93E97FD021A8E0C400207D5F /* LocationManager.swift in Sources */,
 				93235DFE21A2A468008C3BB0 /* TestCaseExtensions.swift in Sources */,
 				93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */,
 			);
@@ -1850,6 +1857,7 @@
 			files = (
 				93E97FC621A872D800207D5F /* AppConfigTests.swift in Sources */,
 				93E97FC821A896D400207D5F /* TestHelpers.swift in Sources */,
+				93E97FCE21A8D48600207D5F /* CollectionsTests.swift in Sources */,
 				93E97FC421A8711600207D5F /* ApplicationTests.swift in Sources */,
 				936EAF2F219E42CC00AE27D5 /* OBAAppKitTests.m in Sources */,
 			);
