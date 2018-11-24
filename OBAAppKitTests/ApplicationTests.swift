@@ -125,11 +125,14 @@ class ApplicationTests: OBATestCase {
         expect(app.restAPIModelService).to(beNil())
 
         locationService.requestInUseAuthorization()
+        waitUntil { (done) in
+            expect(appDelegate.called_applicationReloadRootInterface).to(beTrue())
 
-        expect(appDelegate.called_applicationReloadRootInterface).to(beTrue())
+            expect(locManager.locationUpdatesStarted).to(beTrue())
+            expect(locManager.headingUpdatesStarted).to(beTrue())
+            expect(app.restAPIModelService).toNot(beNil())
 
-        expect(locManager.locationUpdatesStarted).to(beTrue())
-        expect(locManager.headingUpdatesStarted).to(beTrue())
-        expect(app.restAPIModelService).toNot(beNil())
+            done()
+        }
     }
 }

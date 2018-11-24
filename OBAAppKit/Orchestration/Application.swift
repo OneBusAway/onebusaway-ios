@@ -44,6 +44,7 @@ public class Application: NSObject {
         super.init()
 
         self.locationService.addDelegate(self)
+        self.regionsService.addDelegate(self)
 
         if self.locationService.isLocationUseAuthorized {
             self.locationService.startUpdates()

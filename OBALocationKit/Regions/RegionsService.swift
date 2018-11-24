@@ -130,7 +130,9 @@ extension RegionsService {
     private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region] {
         guard
             let regionsData = userDefaults.object(forKey: storedRegionsUserDefaultsKey) as? Data,
-            let regions = try? PropertyListDecoder().decode([Region].self, from: regionsData) else {
+            let regions = try? PropertyListDecoder().decode([Region].self, from: regionsData),
+            regions.count > 0
+        else {
             return bundledRegions
         }
 
