@@ -207,6 +207,10 @@
 		93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCB21A89A0F00207D5F /* TestData.swift */; };
 		93E97FCE21A8D48600207D5F /* CollectionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCD21A8D48600207D5F /* CollectionsTests.swift */; };
 		93E97FD021A8E0C400207D5F /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCF21A8E0C400207D5F /* LocationManager.swift */; };
+		93E9802721AA8EA300207D5F /* PermissionPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */; };
+		93E9802A21AB09CF00207D5F /* OneBusAway.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93E9802921AB09CF00207D5F /* OneBusAway.xcassets */; };
+		93E9802D21AB17EE00207D5F /* UIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802C21AB17EE00207D5F /* UIKit.swift */; };
+		93E9803D21AB748800207D5F /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9803C21AB748800207D5F /* Theme.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93EC531C2185874C00C974AB /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -602,6 +606,10 @@
 		93E97FCB21A89A0F00207D5F /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		93E97FCD21A8D48600207D5F /* CollectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsTests.swift; sourceTree = "<group>"; };
 		93E97FCF21A8E0C400207D5F /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
+		93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionPromptViewController.swift; sourceTree = "<group>"; };
+		93E9802921AB09CF00207D5F /* OneBusAway.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = OneBusAway.xcassets; sourceTree = "<group>"; };
+		93E9802C21AB17EE00207D5F /* UIKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKit.swift; sourceTree = "<group>"; };
+		93E9803C21AB748800207D5F /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
 		93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -1199,6 +1207,8 @@
 		936EAF20219E42CC00AE27D5 /* OBAAppKit */ = {
 			isa = PBXGroup;
 			children = (
+				93E9802821AB09A800207D5F /* Theme */,
+				93E9802521AA8E8F00207D5F /* Permissions */,
 				93E97FBA21A62D6E00207D5F /* Extensions */,
 				93E97FB221A5C52200207D5F /* Mapping */,
 				936EAF3C219E42D900AE27D5 /* Orchestration */,
@@ -1253,8 +1263,26 @@
 				93E97FBB21A62D7B00207D5F /* Operations.swift */,
 				93E97FBE21A70E8400207D5F /* Models.swift */,
 				93E97FC021A70FE800207D5F /* Collections.swift */,
+				93E9802C21AB17EE00207D5F /* UIKit.swift */,
 			);
 			path = Extensions;
+			sourceTree = "<group>";
+		};
+		93E9802521AA8E8F00207D5F /* Permissions */ = {
+			isa = PBXGroup;
+			children = (
+				93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */,
+			);
+			path = Permissions;
+			sourceTree = "<group>";
+		};
+		93E9802821AB09A800207D5F /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				93E9802921AB09CF00207D5F /* OneBusAway.xcassets */,
+				93E9803C21AB748800207D5F /* Theme.swift */,
+			);
+			path = Theme;
 			sourceTree = "<group>";
 		};
 		93FAAA9B2177E0F30086D9DE /* Region API Tests */ = {
@@ -1630,6 +1658,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				93E9802A21AB09CF00207D5F /* OneBusAway.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1843,9 +1872,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */,
+				93E9802721AA8EA300207D5F /* PermissionPromptViewController.swift in Sources */,
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
+				93E9802D21AB17EE00207D5F /* UIKit.swift in Sources */,
 				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
 				93E97FC121A70FE800207D5F /* Collections.swift in Sources */,
+				93E9803D21AB748800207D5F /* Theme.swift in Sources */,
 				93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */,
 				93E97FBF21A70E8400207D5F /* Models.swift in Sources */,
 			);

@@ -43,4 +43,10 @@ public class AppConfig: NSObject {
     private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: queue)
 
     lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+
+    // MARK: - Theme
+
+    public var themeBundle: Bundle {
+        return Bundle(for: AppConfig.self)
+    }
 }

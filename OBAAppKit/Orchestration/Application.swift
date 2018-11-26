@@ -34,12 +34,16 @@ public class Application: NSObject {
 
     @objc public private(set) var restAPIModelService: RESTAPIModelService?
 
+    @objc public private(set) var theme: Theme
+
     @objc public weak var delegate: ApplicationDelegate?
 
     @objc public init(config: AppConfig) {
         self.config = config
         self.locationService = config.locationService
         self.regionsService = config.regionsService
+
+        self.theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 
         super.init()
 
