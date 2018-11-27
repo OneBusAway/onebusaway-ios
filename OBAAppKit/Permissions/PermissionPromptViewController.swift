@@ -12,6 +12,8 @@ import OBALocationKit
 @objc(OBAPermissionPromptViewController)
 public class PermissionPromptViewController: UIViewController {
 
+    private let kUseDebugColors = false
+
     private let application: Application
 
     private var locationService: LocationService {
@@ -23,9 +25,8 @@ public class PermissionPromptViewController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
         imageView.image = UIImage(named: "header", in: Bundle(for: PermissionPromptViewController.self), compatibleWith: nil)
-        imageView.heightAnchor.constraint(equalToConstant: 100.0).isActive = true
-
         imageView.backgroundColor = application.theme.colors.primary
+        imageView.heightAnchor.constraint(equalToConstant: 100.0).isActive = true
 
         return imageView
     }()
@@ -42,6 +43,19 @@ public class PermissionPromptViewController: UIViewController {
         return textView
     }()
 
+    public lazy var grantPermissionsButton: UIButton = {
+        let button = BorderedButton.autolayoutNew()
+        button.addTarget(self, action: #selector(requestLocationPermission), for: .touchUpInside)
+
+        let title = NSLocalizedString("permission_prompt_controller.grant_permissions_button_title", value: "Allow Location Access", comment: "Button title for authorizing location use.")
+        button.setTitle(title, for: .normal)
+        button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0).isActive = true
+
+        return button
+    }()
+
+    // MARK: - Initialization
+
     @objc public init(application: Application) {
         self.application = application
 
@@ -52,19 +66,47 @@ public class PermissionPromptViewController: UIViewController {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: - UIViewController
+
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = .white
 
         let imageViewWrapper = topImageView.embedInWrapperView(setConstraints: false)
-        topImageView.leadingAnchor.pin(to: imageViewWrapper.leadingAnchor)
-        topImageView.trailingAnchor.pin(to: imageViewWrapper.trailingAnchor)
-        topImageView.centerYAnchor.pin(to: imageViewWrapper.centerYAnchor)
+        imageViewWrapper.backgroundColor = topImageView.backgroundColor
 
-        let stack = UIStackView.oba_verticalStack(arangedSubviews: [topImageView, textView])
+        NSLayoutConstraint.activate([
+            topImageView.topAnchor.constraint(equalTo: imageViewWrapper.topAnchor, constant: application.theme.metrics.padding),
+            topImageView.bottomAnchor.constraint(equalTo: imageViewWrapper.bottomAnchor, constant: -application.theme.metrics.padding),
+            topImageView.leadingAnchor.constraint(equalTo: imageViewWrapper.leadingAnchor, constant: 0),
+            topImageView.trailingAnchor.constraint(equalTo: imageViewWrapper.trailingAnchor, constant: 0)
+        ])
+
+        let buttonWrapper = grantPermissionsButton.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            grantPermissionsButton.topAnchor.constraint(equalTo: buttonWrapper.topAnchor, constant: application.theme.metrics.padding),
+            grantPermissionsButton.bottomAnchor.constraint(equalTo: buttonWrapper.bottomAnchor, constant: -application.theme.metrics.padding),
+            grantPermissionsButton.centerXAnchor.constraint(equalTo: buttonWrapper.centerXAnchor),
+            buttonWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 60.0)
+        ])
+
+        let stack = UIStackView.oba_verticalStack(arangedSubviews: [imageViewWrapper, textView, buttonWrapper])
         view.addSubview(stack)
 
         stack.pinEdgesToSuperview()
+
+        if (kUseDebugColors) {
+            imageViewWrapper.backgroundColor = .brown
+            grantPermissionsButton.backgroundColor = .green
+            textView.backgroundColor = .red
+            topImageView.backgroundColor = .magenta
+        }
+    }
+
+    // MARK: - Actions
+
+    @objc func requestLocationPermission() {
+        application.locationService.requestInUseAuthorization()
     }
 }

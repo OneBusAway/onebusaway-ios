@@ -80,8 +80,7 @@ public class RegionsService: NSObject {
         }
     }
 
-    @objc
-    public private(set) var currentRegion: Region? {
+    @objc public var currentRegion: Region? {
         didSet {
             if let currentRegion = currentRegion {
                 notifyDelegatesRegionChanged(currentRegion)

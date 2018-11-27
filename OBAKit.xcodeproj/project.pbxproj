@@ -158,6 +158,8 @@
 		933FFF4D217A7FD9006682C3 /* DictionaryEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */; };
 		933FFF4E217A7FD9006682C3 /* DictionaryDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */; };
 		933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */; };
+		9342916021AC9E150071AD11 /* BorderedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342915F21AC9E150071AD11 /* BorderedButton.swift */; };
+		9342916821ACC4740071AD11 /* RegionPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916721ACC4740071AD11 /* RegionPickerViewController.swift */; };
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
@@ -565,6 +567,8 @@
 		933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryEncoder.swift; sourceTree = "<group>"; };
 		933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DictionaryDecoder.swift; sourceTree = "<group>"; };
 		933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModelOperationTests.swift; sourceTree = "<group>"; };
+		9342915F21AC9E150071AD11 /* BorderedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorderedButton.swift; sourceTree = "<group>"; };
+		9342916721ACC4740071AD11 /* RegionPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerViewController.swift; sourceTree = "<group>"; };
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
 		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
@@ -1204,9 +1208,27 @@
 			path = "REST Model Service Tests";
 			sourceTree = "<group>";
 		};
+		9342915E21AC9E030071AD11 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				9342915F21AC9E150071AD11 /* BorderedButton.swift */,
+			);
+			path = Controls;
+			sourceTree = "<group>";
+		};
+		9342916621ACC45F0071AD11 /* Regions */ = {
+			isa = PBXGroup;
+			children = (
+				9342916721ACC4740071AD11 /* RegionPickerViewController.swift */,
+			);
+			path = Regions;
+			sourceTree = "<group>";
+		};
 		936EAF20219E42CC00AE27D5 /* OBAAppKit */ = {
 			isa = PBXGroup;
 			children = (
+				9342916621ACC45F0071AD11 /* Regions */,
+				9342915E21AC9E030071AD11 /* Controls */,
 				93E9802821AB09A800207D5F /* Theme */,
 				93E9802521AA8E8F00207D5F /* Permissions */,
 				93E97FBA21A62D6E00207D5F /* Extensions */,
@@ -1871,6 +1893,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9342916021AC9E150071AD11 /* BorderedButton.swift in Sources */,
 				93E97FB421A5C53600207D5F /* MapRegionManager.swift in Sources */,
 				93E9802721AA8EA300207D5F /* PermissionPromptViewController.swift in Sources */,
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
@@ -1878,6 +1901,7 @@
 				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
 				93E97FC121A70FE800207D5F /* Collections.swift in Sources */,
 				93E9803D21AB748800207D5F /* Theme.swift in Sources */,
+				9342916821ACC4740071AD11 /* RegionPickerViewController.swift in Sources */,
 				93E97FBC21A62D7B00207D5F /* Operations.swift in Sources */,
 				93E97FBF21A70E8400207D5F /* Models.swift in Sources */,
 			);

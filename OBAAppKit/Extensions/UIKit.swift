@@ -41,7 +41,21 @@ extension UIStackView {
 
 // MARK: - UIView
 
+protocol Autolayoutable {
+    static func autolayoutNew() -> Self
+}
+
+extension UIView: Autolayoutable {
+    static func autolayoutNew() -> Self {
+        let view = self.init(frame: .zero)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }
+}
+
 extension UIView {
+
+
     func embedInWrapperView(setConstraints: Bool = true) -> UIView {
         let wrapper = UIView(frame: .zero)
         wrapper.translatesAutoresizingMaskIntoConstraints = false
@@ -59,9 +73,17 @@ extension UIView {
             return
         }
 
-        leadingAnchor.pin(to: superview.leadingAnchor)
-        trailingAnchor.pin(to: superview.trailingAnchor)
-        topAnchor.pin(to: superview.safeAreaLayoutGuide.topAnchor)
-        bottomAnchor.pin(to: superview.safeAreaLayoutGuide.bottomAnchor)
+        pinHorizontally(to: superview)
+        pinVertically(to: superview)
+    }
+
+    func pinHorizontally(to view: UIView) {
+        leadingAnchor.pin(to: view.safeAreaLayoutGuide.leadingAnchor)
+        trailingAnchor.pin(to: view.safeAreaLayoutGuide.trailingAnchor)
+    }
+
+    func pinVertically(to view: UIView) {
+        topAnchor.pin(to: view.safeAreaLayoutGuide.topAnchor)
+        bottomAnchor.pin(to: view.safeAreaLayoutGuide.bottomAnchor)
     }
 }

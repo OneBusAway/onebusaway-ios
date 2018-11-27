@@ -15,8 +15,10 @@ import CoreLocation
 public protocol ApplicationDelegate {
 
     /// This method is called when the delegate should reload the `rootViewController`
-    /// of the app's
+    /// of the app's window. This is typically done in response to permissions changes.
     @objc func applicationReloadRootInterface(_ app: Application)
+
+    @objc func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController)
 }
 
 @objc(OBAApplication)
@@ -74,11 +76,45 @@ public class Application: NSObject {
     @objc public var showPermissionPromptUI: Bool {
         return locationService.canRequestAuthorization
     }
+
+    // MARK: - Appearance and Themes
+
+    /// Sets default styles for several UIAppearance proxies in order to customize the app's look and feel
+    ///
+    /// To override the values that are set in here, either customize the theme that this object is
+    /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
+    /// proxies instead.
+    @objc public func configureAppearanceProxies() {
+        let tintColor = theme.colors.primary
+        let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
+
+        for t in tintColorTypes {
+            t.appearance().tintColor = tintColor
+        }
+
+        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
+        UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
+        BorderedButton.appearance().tintColor = theme.colors.dark
+        BorderedButton.appearance().setTitleColor(theme.colors.lightText, for: .normal)
+
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+
+        UISegmentedControl.appearance(whenContainedInInstancesOf: [UINavigationBar.self]).setTitleTextAttributes([.foregroundColor: UIColor.darkText], for: .normal)
+//
+//        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
+//        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
+//
+//        // Per:
+//        // https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
+//        [[UICollectionView appearance] setPrefetchingEnabled:NO];
+    }
 }
 
 extension Application: RegionsServiceDelegate {
     public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
-        // abxoxo - todo!
+        let regionPickerController = RegionPickerViewController(application: self)
+        delegate?.
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
