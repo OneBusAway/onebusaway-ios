@@ -160,6 +160,7 @@
 		933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */; };
 		9342916021AC9E150071AD11 /* BorderedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342915F21AC9E150071AD11 /* BorderedButton.swift */; };
 		9342916821ACC4740071AD11 /* RegionPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916721ACC4740071AD11 /* RegionPickerViewController.swift */; };
+		9342916A21ADC3BB0071AD11 /* MapKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916921ADC3BB0071AD11 /* MapKit.swift */; };
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
@@ -569,6 +570,7 @@
 		933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModelOperationTests.swift; sourceTree = "<group>"; };
 		9342915F21AC9E150071AD11 /* BorderedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorderedButton.swift; sourceTree = "<group>"; };
 		9342916721ACC4740071AD11 /* RegionPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerViewController.swift; sourceTree = "<group>"; };
+		9342916921ADC3BB0071AD11 /* MapKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKit.swift; sourceTree = "<group>"; };
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
 		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
@@ -1286,6 +1288,7 @@
 				93E97FBE21A70E8400207D5F /* Models.swift */,
 				93E97FC021A70FE800207D5F /* Collections.swift */,
 				93E9802C21AB17EE00207D5F /* UIKit.swift */,
+				9342916921ADC3BB0071AD11 /* MapKit.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1898,6 +1901,7 @@
 				93E9802721AA8EA300207D5F /* PermissionPromptViewController.swift in Sources */,
 				936EAF3E219E42EB00AE27D5 /* Application.swift in Sources */,
 				93E9802D21AB17EE00207D5F /* UIKit.swift in Sources */,
+				9342916A21ADC3BB0071AD11 /* MapKit.swift in Sources */,
 				93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */,
 				93E97FC121A70FE800207D5F /* Collections.swift in Sources */,
 				93E9803D21AB748800207D5F /* Theme.swift in Sources */,

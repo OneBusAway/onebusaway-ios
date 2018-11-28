@@ -58,21 +58,7 @@ public class MapRegionManager: NSObject {
                 return
             }
 
-            let mapView = self.mapView
-
-            var oldAnnotations = Set(mapView.annotations.compactMap {$0 as? Stop})
-            var newAnnotations = Set(requestStopsOperation.stops)
-
-            // Which elements are in both sets?
-            let overlap = newAnnotations.intersection(oldAnnotations)
-
-            // Remove the elements that no longer appear in the new set,
-            // but leaving the ones that still appear.
-            oldAnnotations.subtract(oldAnnotations.subtracting(overlap))
-            newAnnotations.subtract(overlap)
-
-            mapView.removeAnnotations(oldAnnotations.allObjects)
-            mapView.addAnnotations(newAnnotations.allObjects)
+            self.mapView.updateAnnotations(with: requestStopsOperation.stops)
         }
 
         self.requestStopsOperation = requestStopsOperation
