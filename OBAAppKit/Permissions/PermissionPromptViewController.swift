@@ -94,8 +94,8 @@ public class PermissionPromptViewController: UIViewController {
         let stack = UIStackView.oba_verticalStack(arangedSubviews: [imageViewWrapper, textView, buttonWrapper])
         view.addSubview(stack)
 
-        stack.pinEdgesToSuperview()
-
+        stack.pinEdgesToSuperviewSafeArea()
+    
         if (kUseDebugColors) {
             imageViewWrapper.backgroundColor = .brown
             grantPermissionsButton.backgroundColor = .green

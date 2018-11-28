@@ -9,6 +9,8 @@
 import Foundation
 
 extension Set {
+
+    /// Returns all objects contained within the receiver.
     public var allObjects: [Element] {
         return map {$0}
     }
