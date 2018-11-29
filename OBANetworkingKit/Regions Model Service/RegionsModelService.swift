@@ -8,15 +8,24 @@
 
 import Foundation
 
+/// Downloads and transforms data into `Region` model objects.
 @objc(OBARegionsModelService)
 public class RegionsModelService: ModelService {
     private let apiService: RegionsAPIService
 
+    /// Creates a `RegionsModelService` object.
+    ///
+    /// - Parameters:
+    ///   - apiService: The API service that will provide data to the model service.
+    ///   - dataQueue: An operation queue that will service requests for this object.
     public init(apiService: RegionsAPIService, dataQueue: OperationQueue) {
         self.apiService = apiService
         super.init(dataQueue: dataQueue)
     }
 
+    /// Creates the API request and model transformation operations necessary to retrieve `Region`s.
+    ///
+    /// - Returns: An operation from which regions can be retrieved after the operation completes.
     @objc public func getRegions() -> RegionsModelOperation {
         let service = apiService.getRegions()
         let data = RegionsModelOperation()

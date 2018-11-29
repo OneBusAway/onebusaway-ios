@@ -10,43 +10,139 @@ import Foundation
 import CoreLocation
 import MapKit
 
+/// Represents a OneBusAway server deployment.
+/// For example, OBA regions include Tampa, Puget Sound, and Washington, D.C.
 @objc(OBARegion)
 public class Region: NSObject, Codable {
+
+    /// The human-readable name of the region. Example: Puget Sound.
     public let regionName: String
+
+    /// The unique ID for the region.
     public let regionIdentifier: Int
 
+    /// Is this region functional?
+    ///
+    /// TRUE if this OBA instance is active (i.e., it will respond to requests), and FALSE if this OBA instance is inactive (i.e., it will not respond to requests)
     public let isActive: Bool
+
+    /// Is this region publicly supported?
+    ///
+    /// TRUE if the server is experimental and has not yet been approved by the community as a "production" OBA server.
+    /// Mobile app users have to explicitly opt-in to see experimental servers in the app.
+    /// FALSE if the OBA community has approved this server as a "production" server that appears by default in the mobile apps.
+    /// See https://groups.google.com/forum/#!topic/onebusaway-developers/xxkBT8GN_PY for details.
     public let isExperimental: Bool
 
+    /// The base URL for making OBA REST API requests.
     public let OBABaseURL: URL
+
+    /// The base URL for making Service Interface for Real Time Information (SIRI) requests.
+    ///
+    /// true if this OBA instance supports using the SIRI Real-time APIs to find out real-time
+    /// information about the transit system (e.g., how long until my bus arrives?),
+    /// false if it does not. If the value is true, the field `SIRIBaseURL` must be populated.
+    /// If the value is false, the field `SIRIBaseURL` should not be populated.
+    /// See https://en.wikipedia.org/wiki/Service_Interface_for_Real_Time_Information for more information.
     public let siriBaseURL: URL?
+
+    /// The base URL for making OpenTripPlanner (OTP) requests.
     public let openTripPlannerURL: URL?
+
+    /// The base URL of a stop info server (used for crowd-sourcing bus stop info for blind or low-vision riders) for the given region
+    /// If no stop info server is available, this field will be blank.
+    /// See https://groups.google.com/forum/#!topic/onebusaway-developers/zE-8IqmY1a4 for details.
     public let stopInfoURL: URL?
 
-    public let regionBounds: [RegionBound]
-
+    /// A list of Open 311 servers for this region.
     public let open311Servers: [Open311Server]
 
+    /// Does this region support Microsoft Research's Embedded Social SDK?
+    ///
+    /// TRUE if the Microsoft Embedded Social features should be shown for this region, and FALSE if the Embedded Social features should not be shown.  Valid values are only TRUE or FALSE.
     public let supportsEmbeddedSocial: Bool
+
+    /// Does this region support OBA Realtime APIs?
+    ///
+    /// true if this OBA instance supports using the OBA Real-time APIs to find out real-time information
+    /// about the transit system (e.g., how long until my bus arrives?), false if it does not.
+    /// Valid values are only true or false. If the value is true, the field `OBABaseURL` must be populated.
     public let supportsOBARealtimeAPIs: Bool
+
+    /// Does this region support using the OBA Discovery APIs to find out static information about the transit system?
+    ///
+    /// For example: what route IDs are available for an agency?
+    /// If the value is true, then the field `OBABaseURL` must be populated.
     public let supportsOBADiscoveryAPIs: Bool
+
     public let supportsOTPBikeshare: Bool
+
+    /// Does this OBA instance supports using the SIRI Real-time APIs to find out real-time information about the transit system?
+    ///
+    /// (e.g., how long until my bus arrives?), FALSE if it does not.  Valid values are only TRUE or FALSE.   If the value is TRUE, the field "SIRI Base URL" must be populated.  If the value is False, the field "SIRI Base URL" should NOT be populated.
     public let supportsSiriRealtimeAPIs: Bool
 
+    /// The region's contact person's email.
+    ///
+    /// Mobile app users can send an email inside the OBA app to the maintainer of the OBA server
+    /// they are using in order to report an issue or send feedback.
     public let contactEmail: String
+
+    /// The URL of the Twitter feed for the region (e.g., http://mobile.twitter.com/onebusaway)
+    ///
+    /// This URL will be accessible to users in the "Contact Us" portion of the apps, where
+    /// they will be directed to this Twitter page in a web browser or mobile Twitter app.
     public let twitterURL: URL?
+
+    /// The 'long format' URL of the Facebook page for the region
+    ///
+    /// e.g., https://www.facebook.com/pages/ObaAtlanta/136662306506627
+    /// This URL will be accessible to users in the "Contact Us" portion of the apps,
+    /// where they will be directed to this Facebook page in a web browser or mobile Facebook app.
     public let facebookURL: URL?
+
+    /// The contact email address for customer support for the OpenTripPlanner server for this region
+    ///
+    /// The OBA apps will direct user feedback to this email address if there are problems with a
+    /// planned trip (e.g., cannot plan a trip between a specific origin and destination).
+    /// If OTP_Base_URL contains a value, OTP_Contact_Email should also contain a value.
     public let openTripPlannerContactEmail: String?
 
+    /// The locale of the OBA server.
+    ///
+    /// It consists of a two-letter lowercase ISO language codes (such as "en")
+    /// as defined by ISO 639-1, then an underscore, and then a two-letter uppercase
+    /// ISO country codes (such as "US") as defined by ISO 3166-1.
     public let language: String?
 
+    /// This is the current version of your OBA server.
+    ///
+    /// This should be defined in the format <version|major|minor|incremental|qualifier|commit>, where the version|major|minor|incremental|qualifier are the version numbers of the OBA server (from your onebusaway-application-modules pom.xml), and commit is the Git SHA-1 hash from the most recent commit for the OBA onebusaway-application-modules code deployed to the server.
+    ///
+    /// For example, 1.1.8-SNAPSHOT|1|1|8|SNAPSHOT|877d870ac5c5f64607113d08d6d362925839719e
     public let versionInfo: String
 
+    /// The body text of a warning dialog that should be shown to the user the first time
+    /// they select the fare payment option, or empty if no warning should be shown to the user.
+    /// If this field is populated, then Payment_Warning_Title must also be populated.
+    /// If this field is empty, then Payment_Warning_Title must also be empty.
     public let paymentWarningBody: String?
+
+    /// The title of a warning dialog that should be shown to the user the first time
+    /// they select the fare payment option, or empty if no warning should be shown to the user.
+    /// If this field is populated, then Payment_Warning_Body must also be populated.
+    /// If this field is empty, then Payment_Warning_Body must also be empty.
     public let paymentWarningTitle: String?
 
+    /// The application ID (i.e., the Google Play listing ID) for the Android app used for mobile fare payment for the region
     public let paymentAndroidAppID: String?
+
+    /// The application ID (i.e., the Apple App Store listing ID) for the iOS app used for mobile fare payment for the region.
     public let paymentiOSAppStoreIdentifier: String?
+
+    /// The URL scheme that can be used on iOS to launch the mobile fare payment app for the region.
+    ///
+    /// More information on this iOS feature can be found here: https://developer.apple.com/documentation/uikit/core_app/allowing_apps_and_websites_to_link_to_your_content/communicating_with_other_apps_using_custom_urls?language=objc
     public let paymentiOSAppURLScheme: String?
 
     private enum CodingKeys: String, CodingKey {
@@ -156,6 +252,18 @@ public class Region: NSObject, Codable {
 
     // MARK: - Regional Boundaries
 
+    /// Internal type for constructing regional boundaries from the server's JSON output.
+    struct RegionBound: Codable {
+        let lat: Double
+        let lon: Double
+        let latSpan: Double
+        let lonSpan: Double
+    }
+
+    /// An internal array of region boundaries. Use `serviceRect` instead.
+    let regionBounds: [RegionBound]
+
+    /// Returns a map rect that describes this region's boundaries.
     @objc public lazy var serviceRect: MKMapRect = {
         var minX: Double = .greatestFiniteMagnitude
         var minY: Double = .greatestFiniteMagnitude
@@ -175,18 +283,24 @@ public class Region: NSObject, Codable {
         return MKMapRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
     }()
 
+    /// Returns the center coordinate of `serviceRect`.
     public lazy var centerCoordinate: CLLocationCoordinate2D = {
-        let rect = serviceRect
-        let centerPoint = MKMapPoint(x: rect.midX, y: rect.midY)
-
-        return centerPoint.coordinate
+        return MKMapPoint(x: serviceRect.midX, y: serviceRect.midY).coordinate
     }()
 
+    /// Calculates the distance from the center of this region to the specified location.
+    ///
+    /// - Parameter location: The location to which we will calculate a distance.
+    /// - Returns: The distance in meters.
     public func distanceFrom(location: CLLocation) -> CLLocationDistance {
         let centerLocation = CLLocation(latitude: centerCoordinate.latitude, longitude: centerCoordinate.longitude)
         return location.distance(from: centerLocation)
     }
 
+    /// Determines whether the specified location is within this region's `serviceRect`.
+    ///
+    /// - Parameter location: The location to calculate inclusion in this region. Optional. If `nil` is provided, then this method will always return `false`.
+    /// - Returns: True if the location is within `serviceRect` and false otherwise.
     @objc public func contains(location: CLLocation?) -> Bool {
         guard let location = location else {
             return false
@@ -198,6 +312,8 @@ public class Region: NSObject, Codable {
 }
 
 // MARK: - Open311Server
+
+/// Defines an Open311 server, which is supported in some OBA regions.
 public class Open311Server: NSObject, Codable {
     public let jurisdictionID: String?
     public let apiKey: String
@@ -221,33 +337,5 @@ public class Open311Server: NSObject, Codable {
         try? container.encode(jurisdictionID, forKey: .jurisdictionID)
         try container.encode(apiKey, forKey: .apiKey)
         try container.encode(baseURL, forKey: .baseURL)
-    }
-}
-
-// MARK: - RegionBound
-public class RegionBound: NSObject, Codable {
-    let lat: Double
-    let lon: Double
-    let latSpan: Double
-    let lonSpan: Double
-
-    private enum CodingKeys: String, CodingKey {
-        case lat, lon, latSpan, lonSpan
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        lat = try container.decode(Double.self, forKey: .lat)
-        lon = try container.decode(Double.self, forKey: .lon)
-        latSpan = try container.decode(Double.self, forKey: .latSpan)
-        lonSpan = try container.decode(Double.self, forKey: .lonSpan)
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(lat, forKey: .lat)
-        try container.encode(lon, forKey: .lon)
-        try container.encode(latSpan, forKey: .latSpan)
-        try container.encode(lonSpan, forKey: .lonSpan)
     }
 }
