@@ -11,15 +11,20 @@ import OBANetworkingKit
 import OBALocationKit
 
 @objc(OBARegionPickerViewController)
-class RegionPickerViewController: UIViewController {
+public class RegionPickerViewController: UIViewController {
     let application: Application
     var regions = [Region]()
+
+    var selectedRegion: Region? {
+        didSet {
+            navigationItem.rightBarButtonItem?.isEnabled = selectedRegion != nil
+        }
+    }
 
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero)
         table.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        table.dataSource = self
-        table.delegate = self
+
 
         return table
     }()
@@ -31,39 +36,60 @@ class RegionPickerViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
 
         title = NSLocalizedString("region_picker_controller.title", value: "Select a Region", comment: "Region Picker view controller title")
+
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(updateRegionSelection))
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
 
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: RegionPickerViewController.cellIdentifier)
+        tableView.dataSource = self
+        tableView.delegate = self
 
         tableView.frame = view.bounds
         view.addSubview(tableView)
+    }
+
+    @objc func updateRegionSelection() {
+        guard let selectedRegion = selectedRegion else {
+            return
+        }
+
+        application.regionsService.currentRegion = selectedRegion
+        application.reloadRootUserInterface()
     }
 }
 
 extension RegionPickerViewController: UITableViewDataSource, UITableViewDelegate {
     private static let cellIdentifier = "CellIdentifier"
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return application.regionsService.regions.count
     }
 
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: RegionPickerViewController.cellIdentifier, for: indexPath)
         let region = regions[indexPath.row]
 
         cell.textLabel?.text = region.regionName
 
+        if region == selectedRegion {
+            cell.accessoryType = .checkmark
+        }
+        else {
+            cell.accessoryType = .none
+        }
+
         return cell
     }
 
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let region = regions[indexPath.row]
+        selectedRegion = region
 
-        application.regionsService.currentRegion = region
+        tableView.reloadData()
     }
 }

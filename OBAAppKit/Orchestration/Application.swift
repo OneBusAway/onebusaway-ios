@@ -68,13 +68,20 @@ public class Application: NSObject {
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
 
-    // MARK: - App Launch State Management
+    // MARK: - App State Management
 
     /// True when the app should show an interstitial location service permission
     /// request user interface. Meant to be called on app launch to determine
     /// which piece of UI should be shown initially.
     @objc public var showPermissionPromptUI: Bool {
         return locationService.canRequestAuthorization
+    }
+
+    /// Requests that the delegate reloads the application user interface in
+    /// response to major state changes, like permission changes or the selected
+    /// region transitioning from nil -> not-nil.
+    public func reloadRootUserInterface() {
+        delegate?.applicationReloadRootInterface(self)
     }
 
     // MARK: - Appearance and Themes
@@ -112,9 +119,13 @@ public class Application: NSObject {
 }
 
 extension Application: RegionsServiceDelegate {
-    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
+    @objc public func manuallySelectRegion() {
         let regionPickerController = RegionPickerViewController(application: self)
-        delegate?.
+        delegate?.application(self, displayRegionPicker: regionPickerController)
+    }
+
+    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
+        manuallySelectRegion()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
@@ -124,6 +135,6 @@ extension Application: RegionsServiceDelegate {
 
 extension Application: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        delegate?.applicationReloadRootInterface(self)
+        reloadRootUserInterface()
     }
 }
