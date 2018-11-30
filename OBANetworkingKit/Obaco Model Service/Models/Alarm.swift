@@ -6,7 +6,7 @@
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
-import UIKit
+import Foundation
 
 public class Alarm: NSObject, Decodable {
     public let url: URL

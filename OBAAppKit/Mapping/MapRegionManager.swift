@@ -24,7 +24,7 @@ public class MapRegionManager: NSObject {
 
     private var regionChangeRequestTimer: Timer?
 
-    @objc public let mapView = MKMapView(frame: .zero)
+    @objc public let mapView = MKMapView.autolayoutNew()
 
     //public weak var delegate: MKMapViewDelegate?
 

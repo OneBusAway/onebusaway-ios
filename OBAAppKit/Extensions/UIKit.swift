@@ -15,7 +15,7 @@ extension UIStackView {
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The horizontal stack view.
-    class func oba_horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
+    public class func oba_horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
         return oba_stack(axis: .horizontal, arrangedSubviews: views)
     }
 
@@ -23,7 +23,7 @@ extension UIStackView {
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The vertical stack view.
-    class func oba_verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
+    public class func oba_verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
         return oba_stack(axis: .vertical, arrangedSubviews: views)
     }
 
@@ -38,7 +38,7 @@ extension UIStackView {
 // MARK: - UIView
 
 /// Protocol support for improving Auto Layout-compatible view creation.
-protocol Autolayoutable {
+public protocol Autolayoutable {
     static func autolayoutNew() -> Self
 }
 
@@ -47,7 +47,7 @@ extension UIView: Autolayoutable {
     /// Creates a new instance of the receiver class, configured for use with Auto Layout.
     ///
     /// - Returns: An instance of the receiver class.
-    static func autolayoutNew() -> Self {
+    public static func autolayoutNew() -> Self {
         let view = self.init(frame: .zero)
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
@@ -60,7 +60,7 @@ extension UIView {
     ///
     /// - Parameter setConstraints: By default, the receiver is pinned to the edges of the container view. Set this to `false` to set up constraints yourself.
     /// - Returns: The wrapper view into which the receiver has been embedded.
-    func embedInWrapperView(setConstraints: Bool = true) -> UIView {
+    public func embedInWrapperView(setConstraints: Bool = true) -> UIView {
         let wrapper = UIView(frame: .zero)
         wrapper.translatesAutoresizingMaskIntoConstraints = false
         wrapper.addSubview(self)
@@ -73,7 +73,7 @@ extension UIView {
     }
 
     /// Pins the receiver to the safe area layout anchors of its superview. Does nothing if the receiver is not a subview.
-    func pinEdgesToSuperviewSafeArea() {
+    public func pinEdgesToSuperviewSafeArea() {
         guard let superview = superview else {
             return
         }
@@ -87,7 +87,7 @@ extension UIView {
     }
 
     /// Pins the receiver to the layout anchors of its superview. Does nothing if the receiver is not a subview.
-    func pinEdgesToSuperview() {
+    public func pinEdgesToSuperview() {
         guard let superview = superview else {
             return
         }

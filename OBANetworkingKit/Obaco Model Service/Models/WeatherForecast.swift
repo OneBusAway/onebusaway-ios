@@ -9,6 +9,7 @@
 import CoreLocation
 import Foundation
 
+@objc(OBAWeatherForecast)
 public class WeatherForecast: NSObject, Decodable {
     public let location: CLLocation
 

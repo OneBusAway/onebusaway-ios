@@ -15,3 +15,14 @@ extension Set {
         return map {$0}
     }
 }
+
+extension Sequence {
+
+    /// Filters by type
+    ///
+    /// - Parameter type: The type to filter the receiver by.
+    /// - Returns: An array of objects that conform to the passed-in type.
+    public func filter<T>(type: T.Type) -> [T] {
+        return compactMap {$0 as? T}
+    }
+}
