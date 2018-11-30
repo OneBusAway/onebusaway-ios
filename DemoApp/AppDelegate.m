@@ -9,12 +9,12 @@
 #import "AppDelegate.h"
 @import OBAAppKit;
 
-#import "MapViewController.h"
+#import "DemoViewController.h"
 #import "PermissionPromptViewController.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
-@property(nonatomic,strong) MapViewController *mapController;
+@property(nonatomic,strong) DemoViewController *mapController;
 @end
 
 @implementation AppDelegate
@@ -57,7 +57,7 @@
         self.window.rootViewController = nav;
     }
     else {
-        self.mapController = [[MapViewController alloc] initWithApplication:application];
+        self.mapController = [[DemoViewController alloc] initWithApplication:application];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:self.mapController];
         self.window.rootViewController = nav;
     }

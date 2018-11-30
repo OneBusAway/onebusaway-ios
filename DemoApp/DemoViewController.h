@@ -1,5 +1,5 @@
 //
-//  MapViewController.h
+//  DemoViewController.h
 //  OBANetworking
 //
 //  Created by Aaron Brethorst on 11/15/18.
@@ -11,7 +11,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface MapViewController : UIViewController
+@interface DemoViewController : UIViewController
 
 - (instancetype)initWithApplication:(OBAApplication*)application;
 

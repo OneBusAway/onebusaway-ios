@@ -1,17 +1,17 @@
 //
-//  MapViewController.m
+//  DemoViewController.m
 //  OBANetworking
 //
 //  Created by Aaron Brethorst on 11/15/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
-#import "MapViewController.h"
+#import "DemoViewController.h"
 @import MapKit;
 @import OBANetworkingKit;
 @import OBALocationKit;
 
-@interface MapViewController ()<MKMapViewDelegate, OBALocationServiceDelegate>
+@interface DemoViewController ()<MKMapViewDelegate, OBALocationServiceDelegate>
 @property(nonatomic,strong,readonly) OBALocationService *locationService;
 @property(nonatomic,strong,readonly) OBARegionsService *regionsService;
 @property(nonatomic,strong) OBAApplication *application;
@@ -21,7 +21,7 @@
 @property(nonatomic,assign) BOOL initialMapChangeMade;
 @end
 
-@implementation MapViewController
+@implementation DemoViewController
 
 - (instancetype)initWithApplication:(OBAApplication*)application {
     self = [super initWithNibName:nil bundle:nil];
