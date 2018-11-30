@@ -12,6 +12,11 @@ import MapKit
 import OBANetworkingKit
 import OBALocationKit
 
+@objc(OBAMapRegionDelegate)
+public protocol MapRegionDelegate {
+    func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
+}
+
 @objc(OBAMapRegionManager)
 public class MapRegionManager: NSObject {
 
@@ -24,6 +29,13 @@ public class MapRegionManager: NSObject {
     //public weak var delegate: MKMapViewDelegate?
 
     private var requestStopsOperation: StopsModelOperation?
+
+    public private(set) var stops = [Stop]() {
+        didSet {
+            mapView.updateAnnotations(with: stops)
+            notifyDelegatesStopsChanged()
+        }
+    }
 
     @objc public init(application: Application) {
         self.application = application
@@ -38,6 +50,7 @@ public class MapRegionManager: NSObject {
     }
 
     deinit {
+        delegates.removeAllObjects()
         application.locationService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
         requestStopsOperation?.cancel()
@@ -48,9 +61,8 @@ public class MapRegionManager: NSObject {
             return
         }
 
-        if let op = self.requestStopsOperation {
-            op.cancel()
-        }
+        self.requestStopsOperation?.cancel()
+        self.requestStopsOperation = nil
 
         let requestStopsOperation = modelService.getStops(region: mapView.region)
         requestStopsOperation.then { [weak self] in
@@ -58,10 +70,30 @@ public class MapRegionManager: NSObject {
                 return
             }
 
-            self.mapView.updateAnnotations(with: requestStopsOperation.stops)
+            self.stops = requestStopsOperation.stops
         }
 
         self.requestStopsOperation = requestStopsOperation
+    }
+
+    // MARK: - Delegates
+
+    private let delegates = NSHashTable<MapRegionDelegate>.weakObjects()
+
+    @objc
+    public func addDelegate(_ delegate: MapRegionDelegate) {
+        delegates.add(delegate)
+    }
+
+    @objc
+    public func removeDelegate(_ delegate: MapRegionDelegate) {
+        delegates.remove(delegate)
+    }
+
+    private func notifyDelegatesStopsChanged() {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager(self, stopsUpdated: stops)
+        }
     }
 }
 
