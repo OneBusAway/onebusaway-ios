@@ -10,6 +10,7 @@ import UIKit
 import OBANetworkingKit
 import OBALocationKit
 import CoreLocation
+import OBAModelKit
 
 @objc(OBAApplicationDelegate)
 public protocol ApplicationDelegate {

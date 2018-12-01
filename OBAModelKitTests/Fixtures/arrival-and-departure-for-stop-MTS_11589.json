@@ -1,0 +1,228 @@
+{
+  "code": 200,
+  "currentTime": 1540350872899,
+  "data": {
+    "entry": {
+      "arrivalEnabled": true,
+      "blockTripSequence": 6,
+      "departureEnabled": true,
+      "distanceFromStop": -2089.5460676807998,
+      "frequency": null,
+      "lastUpdateTime": 1540350822000,
+      "numberOfStopsAway": -4,
+      "predicted": true,
+      "predictedArrivalInterval": null,
+      "predictedArrivalTime": 1540350600000,
+      "predictedDepartureInterval": null,
+      "predictedDepartureTime": 1540350600000,
+      "routeId": "MTS_10",
+      "routeLongName": "Old Town - University/College",
+      "routeShortName": "10",
+      "scheduledArrivalInterval": null,
+      "scheduledArrivalTime": 1540350540000,
+      "scheduledDepartureInterval": null,
+      "scheduledDepartureTime": 1540350540000,
+      "serviceDate": 1540278000000,
+      "situationIds": [
+        "MTS_RTA:11638227"
+      ],
+      "status": "default",
+      "stopId": "MTS_11589",
+      "stopSequence": 1,
+      "tripHeadsign": "University & College",
+      "tripId": "MTS_13405160",
+      "tripStatus": {
+        "activeTripId": "MTS_13405160",
+        "blockTripSequence": 6,
+        "closestStop": "MTS_13353",
+        "closestStopTimeOffset": -32,
+        "distanceAlongTrip": 3039.902405909146,
+        "frequency": null,
+        "lastKnownDistanceAlongTrip": 0,
+        "lastKnownLocation": {
+          "lat": 32.740211,
+          "lon": -117.184502
+        },
+        "lastKnownOrientation": 0,
+        "lastLocationUpdateTime": 1540350822000,
+        "lastUpdateTime": 1540350822000,
+        "nextStop": "MTS_10452",
+        "nextStopTimeOffset": 268,
+        "orientation": 54.690189682245965,
+        "phase": "",
+        "position": {
+          "lat": 32.74422696885996,
+          "lon": -117.1805692625683
+        },
+        "predicted": true,
+        "scheduleDeviation": 60,
+        "scheduledDistanceAlongTrip": 3039.902405909146,
+        "serviceDate": 1540278000000,
+        "situationIds": [
+          "MTS_RTA:11638227"
+        ],
+        "status": "default",
+        "totalDistanceAlongTrip": 14427.921048829021,
+        "vehicleId": "MTS_806"
+      },
+      "vehicleId": "MTS_806"
+    },
+    "references": {
+      "agencies": [
+        {
+          "disclaimer": "",
+          "email": "customerfeedback@sdmts.com",
+          "fareUrl": "",
+          "id": "MTS",
+          "lang": "EN",
+          "name": "MTS",
+          "phone": "619-233-3004",
+          "privateService": false,
+          "timezone": "America/Los_Angeles",
+          "url": "http://www.sdmts.com"
+        }
+      ],
+      "routes": [
+        {
+          "agencyId": "MTS",
+          "color": "000099",
+          "description": "",
+          "id": "MTS_10",
+          "longName": "Old Town - University/College",
+          "shortName": "10",
+          "textColor": "FFFFFF",
+          "type": 3,
+          "url": "https://www.sdmts.com/schedules-real-time?fragment=10"
+        },
+        {
+          "agencyId": "MTS",
+          "color": "000099",
+          "description": "",
+          "id": "MTS_30",
+          "longName": "Downtown San Diego - UTC via Pacific Beach",
+          "shortName": "30",
+          "textColor": "FFFFFF",
+          "type": 3,
+          "url": "https://www.sdmts.com/schedules-real-time?fragment=30"
+        },
+        {
+          "agencyId": "MTS",
+          "color": "CC0000",
+          "description": "",
+          "id": "MTS_150",
+          "longName": "Downtown San Diego - UTC via Old Town",
+          "shortName": "150",
+          "textColor": "FFFFFF",
+          "type": 3,
+          "url": "https://www.sdmts.com/schedules-real-time?fragment=150"
+        }
+      ],
+      "situations": [
+        {
+          "activeWindows": [
+            {
+              "from": 1539781200,
+              "to": 1539826200
+            }
+          ],
+          "allAffects": [
+            {
+              "agencyId": "",
+              "applicationId": "",
+              "directionId": "",
+              "routeId": "MTS_10",
+              "stopId": "",
+              "tripId": ""
+            }
+          ],
+          "consequences": [
+            {
+              "condition": "detour",
+              "conditionDetails": {
+                "diversionPath": {
+                  "points": "ue}aHt~hiVYxHt@lIxAjD|`@pb@tDbHh@|EHvEU~l@fAfN`C~E|DvDbIvB|NdClMxCbEbA`CxDfB`FLrKsNl]gA{@gPGKjF"
+                },
+                "diversionStopIds": ["1_9972", "1_9974"]
+              }
+            }
+          ],
+          "creationTime": 1539397593000,
+          "description": {
+            "lang": "en",
+            "value": "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops."
+          },
+          "id": "MTS_RTA:11638227",
+          "publicationWindows": [
+
+          ],
+          "reason": "CONSTRUCTION",
+          "severity": "",
+          "summary": {
+            "lang": "en",
+            "value": "Washington St. ramp from Pac Hwy Closed"
+          },
+          "url": null
+        }
+      ],
+      "stops": [
+        {
+          "code": "11589",
+          "direction": "SE",
+          "id": "MTS_11589",
+          "lat": 32.747351542734,
+          "locationType": 0,
+          "lon": -117.198121355035,
+          "name": "Pacific Hwy & Sports Arena Bl",
+          "routeIds": [
+            "MTS_10",
+            "MTS_30",
+            "MTS_150"
+          ],
+          "wheelchairBoarding": "ACCESSIBLE"
+        },
+        {
+          "code": "13353",
+          "direction": "NE",
+          "id": "MTS_13353",
+          "lat": 32.743032656837,
+          "locationType": 0,
+          "lon": -117.181286786619,
+          "name": "Washington St & India St",
+          "routeIds": [
+            "MTS_10"
+          ],
+          "wheelchairBoarding": "ACCESSIBLE"
+        },
+        {
+          "code": "10452",
+          "direction": "E",
+          "id": "MTS_10452",
+          "lat": 32.749745407812,
+          "locationType": 0,
+          "lon": -117.170182182745,
+          "name": "Washington St & Falcon St",
+          "routeIds": [
+            "MTS_10"
+          ],
+          "wheelchairBoarding": "ACCESSIBLE"
+        }
+      ],
+      "trips": [
+        {
+          "blockId": "MTS_101011",
+          "directionId": "0",
+          "id": "MTS_13405160",
+          "routeId": "MTS_10",
+          "routeShortName": "",
+          "serviceId": "MTS_67669-1111100-0",
+          "shapeId": "MTS_10_2_56",
+          "timeZone": "",
+          "tripHeadsign": "University & College",
+          "tripShortName": ""
+        }
+      ]
+    }
+  },
+  "text": "OK",
+  "version": 2
+}

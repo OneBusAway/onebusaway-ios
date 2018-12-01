@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 public class StopsModelOperation: RESTModelOperation {
     public private(set) var stops: [Stop] = []

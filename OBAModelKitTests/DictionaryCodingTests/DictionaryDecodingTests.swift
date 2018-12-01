@@ -1,5 +1,5 @@
 import XCTest
-@testable import OBANetworkingKit
+@testable import OBAModelKit
 
 class DictionaryDecodingTests: XCTestCase {
     

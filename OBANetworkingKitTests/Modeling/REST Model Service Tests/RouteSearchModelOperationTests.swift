@@ -38,7 +38,7 @@ class RouteSearchModelOperationTests: OBATestCase {
 
                 let route = routes.first!
 
-                expect(route.agencyID) == "1"
+                expect(route.agency.id) == "1"
                 expect(route.agency.name) == "Metro Transit"
                 expect(route.color).to(beNil())
                 expect(route.routeDescription) == "Capitol Hill - Downtown Seattle"

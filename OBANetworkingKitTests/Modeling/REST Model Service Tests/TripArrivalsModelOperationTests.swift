@@ -12,6 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 import MapKit
 import OBATestHelpers
+import OBAModelKit
 @testable import OBANetworkingKit
 
 class TripArrivalsModelOperationTests: OBATestCase {
@@ -45,7 +46,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.predictedArrival) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
                 expect(arrDep.predictedDeparture) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
 
-                expect(arrDep.routeID) == "MTS_10"
+                expect(arrDep.route.id) == "MTS_10"
                 expect(arrDep.route.shortName) == "10"
 
                 expect(arrDep.routeLongName) == "Old Town - University/College"
@@ -56,7 +57,6 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
                 expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 23, hour: 07, minute: 00, second: 00)
 
-                expect(arrDep.situationIDs.count) == 1
                 expect(arrDep.situations.count) == 1
                 let situation = arrDep.situations.first!
                 expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
@@ -65,7 +65,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
                 expect(arrDep.status) == "default"
 
-                expect(arrDep.stopID) == "MTS_11589"
+                expect(arrDep.stop.id) == "MTS_11589"
                 expect(arrDep.stop.name) == "Pacific Hwy & Sports Arena Bl"
 
                 expect(arrDep.stopSequence) == 1
@@ -74,12 +74,12 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
                 expect(arrDep.tripHeadsign) == "University & College"
 
-                expect(arrDep.tripID) == "MTS_13405160"
+                expect(arrDep.trip.id) == "MTS_13405160"
                 expect(arrDep.trip.shortName).to(beNil())
 
                 expect(arrDep.tripStatus).toNot(beNil())
                 let tripStatus = arrDep.tripStatus!
-                expect(tripStatus.activeTripID) == "MTS_13405160"
+                expect(tripStatus.activeTrip.id) == "MTS_13405160"
 
                 expect(arrDep.vehicleID) == "MTS_806"
 

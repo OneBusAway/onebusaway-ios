@@ -12,16 +12,16 @@ import CoreLocation
 public class VehicleStatus: NSObject, Decodable {
 
     /// The id of the vehicle
-    let vehicleID: String
+    public let vehicleID: String
 
     /// The last known real-time update from the transit vehicle
-    let lastUpdateTime: Date?
+    public let lastUpdateTime: Date?
 
     /// The last known real-time update from the transit vehicle containing a location update
-    let lastLocationUpdateTime: Date?
+    public let lastLocationUpdateTime: Date?
 
     /// The last known location of the vehicle
-    let location: CLLocation?
+    public let location: CLLocation?
 
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
     let tripID: String
@@ -30,13 +30,13 @@ public class VehicleStatus: NSObject, Decodable {
     public let trip: Trip
 
     /// the current journey phase of the vehicle
-    let phase: String
+    public let phase: String
 
     /// status modifiers for the vehicle
-    let status: String
+    public let status: String
 
     /// Provides additional status information for the vehicle's trip.
-    let tripStatus: TripStatus
+    public let tripStatus: TripStatus
 
     private enum CodingKeys: String, CodingKey {
         case vehicleID = "vehicleId"

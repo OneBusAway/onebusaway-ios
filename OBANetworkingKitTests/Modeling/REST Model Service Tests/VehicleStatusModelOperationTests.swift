@@ -86,7 +86,7 @@ extension VehicleStatusModelOperationTests {
                 expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6082))
                 expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3362))
 
-                expect(vehicle.tripID) == "40_40804394"
+                expect(vehicle.trip.id) == "40_40804394"
                 expect(vehicle.trip.routeShortName).to(beNil())
                 expect(vehicle.trip.shortName) == "LOCAL"
 
@@ -98,12 +98,12 @@ extension VehicleStatusModelOperationTests {
                 // Trip Status
                 expect(tripStatus).toNot(beNil())
 
-                expect(tripStatus.activeTripID) == "40_40804394"
+                expect(tripStatus.activeTrip.id) == "40_40804394"
                 expect(tripStatus.activeTrip.headsign) == "University Of Washington Station"
 
                 expect(tripStatus.blockTripSequence) == 3
 
-                expect(tripStatus.closestStopID) == "1_532"
+                expect(tripStatus.closestStop.id) == "1_532"
                 expect(tripStatus.closestStop.name) == "Pioneer Sq Station - Bay A"
 
                 expect(tripStatus.closestStopTimeOffset) == -7
@@ -114,7 +114,7 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.lastLocationUpdateTime) == 0
                 expect(tripStatus.lastUpdateTime) == 1538584269000
 
-                expect(tripStatus.nextStopID) == "1_565"
+                expect(tripStatus.nextStop!.id) == "1_565"
                 expect(tripStatus.nextStop!.name) == "University St Station - Bay A"
 
                 expect(tripStatus.nextStopTimeOffset) == 144
@@ -126,7 +126,7 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.scheduleDeviation) == 219
                 expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
                 expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 07, minute: 00, second: 00)
-                expect(tripStatus.situationIDs) == []
+                expect(tripStatus.situations) == []
                 expect(tripStatus.status) == "SCHEDULED"
                 expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(32491.73, within: 0.01))
                 expect(tripStatus.vehicleID) == "40_11"

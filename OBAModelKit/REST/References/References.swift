@@ -10,11 +10,11 @@ import Foundation
 
 @objc(OBAReferences)
 public class References: NSObject, Decodable {
-    let agencies: [Agency]
-    let routes: [Route]
-    let situations: [Situation]
-    let stops: [Stop]
-    let trips: [Trip]
+    public let agencies: [Agency]
+    public let routes: [Route]
+    public let situations: [Situation]
+    public let stops: [Stop]
+    public let trips: [Trip]
 
     // MARK: - Initialization
 
@@ -84,12 +84,12 @@ public class References: NSObject, Decodable {
 
 // MARK: - HasReferences
 
-protocol HasReferences {
+public protocol HasReferences {
     func loadReferences(_ references: References)
 }
 
 extension Array where Element: HasReferences {
-    func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References) {
         for elt in self {
             elt.loadReferences(references)
         }

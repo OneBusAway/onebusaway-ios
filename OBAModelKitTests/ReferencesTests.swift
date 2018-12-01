@@ -11,7 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 import OBATestHelpers
-@testable import OBANetworkingKit
+@testable import OBAModelKit
 
 class ReferencesTests: OBATestCase {
     var references: References!

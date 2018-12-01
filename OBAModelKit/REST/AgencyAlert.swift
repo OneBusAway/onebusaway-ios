@@ -48,7 +48,7 @@ import Foundation
 
     // MARK: - Initialization
 
-    init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage) throws {
+    public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage) throws {
         guard
             feedEntity.hasAlert,
             AgencyAlert.isAgencyWideAlert(alert: feedEntity.alert),
@@ -156,7 +156,7 @@ extension AgencyAlert {
 
 // MARK: - Static Helpers
 extension AgencyAlert {
-    static func isAgencyWideAlert(alert: TransitRealtime_Alert) -> Bool {
+    public static func isAgencyWideAlert(alert: TransitRealtime_Alert) -> Bool {
         for sel in alert.informedEntity where sel.hasAgencyID {
             return true
         }

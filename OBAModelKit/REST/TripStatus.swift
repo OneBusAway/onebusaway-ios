@@ -21,7 +21,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// the index of the active trip into the sequence of trips for the active block. Compare to `blockTripSequence`
     /// in `ArrivalAndDeparture` to determine where the active block location is relative to an arrival-and-departure.
-    let blockTripSequence: Int
+    public let blockTripSequence: Int
 
     /// the id of the closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
@@ -29,39 +29,39 @@ public class TripStatus: NSObject, Decodable {
 
     /// The closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
-    let closestStop: Stop
+    public let closestStop: Stop
 
     /// the time offset, in seconds, from the closest stop to the current position of the transit vehicle
     /// among the stop times of the current trip. If the number is positive, the stop is coming up.
     /// If negative, the stop has already been passed.
-    let closestStopTimeOffset: Int
+    public let closestStopTimeOffset: Int
 
     /// the distance, in meters, the transit vehicle has progressed along the active trip.
     /// This is an optional value that will only be present if the underlying AVL system
     /// supplies it and is potential extrapolated from the last known reading to the current time.
-    let distanceAlongTrip: Double
+    public let distanceAlongTrip: Double
 
     /// information about frequency based scheduling, if applicable to the trip
-    let frequency: Frequency?
+    public let frequency: Frequency?
 
     /// The last known distance along trip value received in real-time from the transit vehicle.
-    let lastKnownDistanceAlongTrip: Int
+    public let lastKnownDistanceAlongTrip: Int
 
     /// Last known location of the transit vehicle. This differs from the existing position field,
     /// in that the position field is potential extrapolated forward from the last known position and other data.
-    let lastKnownLocation: CLLocation?
+    public let lastKnownLocation: CLLocation?
 
     /// The last known orientation value received in real-time from the transit vehicle.
-    let lastKnownOrientation: Double
+    public let lastKnownOrientation: Double
 
     /// The last known real-time location update from the transit vehicle. This is different
     /// from lastUpdateTime in that it reflects the last know location update. An update from
     /// a vehicle might not contain location info, which means this field will not be updated.
     /// Will be zero if we haven't had a location update from the vehicle.
-    let lastLocationUpdateTime: Int
+    public let lastLocationUpdateTime: Int
 
     /// The last known real-time update from the transit vehicle. Will be zero if we haven't heard anything from the vehicle.
-    let lastUpdateTime: Int
+    public let lastUpdateTime: Int
 
     /// Similar to `closestStopID`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -73,33 +73,33 @@ public class TripStatus: NSObject, Decodable {
 
     /// Similar to `closestStopTimeOffset`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
-    let nextStopTimeOffset: Int
+    public let nextStopTimeOffset: Int
 
     /// The orientation of the transit vehicle, as an angle in degrees.
     /// Here, 0º is east, 90º is north, 180º is west, and 270º is south.
     /// This is an optional value that may be extrapolated from other data.
-    let orientation: Double
+    public let orientation: Double
 
     /// The current journey phase of the trip
-    let phase: String
+    public let phase: String
 
     /// Current position of the transit vehicle. This element is optional, and will only be
     /// present if the trip is actively running. If real-time arrival data is available,
     /// the position will take that into account, otherwise the position reflects the
     /// scheduled position of the vehicle.
-    let position: CLLocation?
+    public let position: CLLocation?
 
     /// True if we have real-time arrival info available for this trip
-    let predicted: Bool
+    public let predicted: Bool
 
     /// If real-time arrival info is available, this lists the deviation from the schedule in seconds, where positive number indicates the trip is running late and negative indicates the trips is running early. If not real-time arrival info is available, this will be zero.
-    let scheduleDeviation: Int
+    public let scheduleDeviation: Int
 
     /// The distance, in meters, the transit vehicle is scheduled to have progress along the active trip. This is an optional value, and will only be present if the trip is in progress.
-    let scheduledDistanceAlongTrip: Double
+    public let scheduledDistanceAlongTrip: Double
 
     /// Time of midnight for start of the service date for the trip.s
-    let serviceDate: Date
+    public let serviceDate: Date
 
     /// References to `Situation`s for active service alerts applicable to this trip.
     let situationIDs: [String]
@@ -108,13 +108,13 @@ public class TripStatus: NSObject, Decodable {
     public let situations: [Situation]
 
     /// status modifiers for the trip
-    let status: String
+    public let status: String
 
     /// The total length of the trip, in meters
-    let totalDistanceAlongTrip: Double
+    public let totalDistanceAlongTrip: Double
 
     /// If real-time arrival info is available, this lists the id of the transit vehicle currently running the trip.
-    let vehicleID: String?
+    public let vehicleID: String?
 
     private enum CodingKeys: String, CodingKey {
         case activeTripID = "activeTripId"

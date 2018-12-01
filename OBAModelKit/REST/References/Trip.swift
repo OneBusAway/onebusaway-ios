@@ -14,17 +14,17 @@ public class Trip: NSObject, Decodable, HasReferences {
     /// A block consists of a single trip or many sequential trips made using
     /// the same vehicle, defined by shared service day and block_id. A block_id
     /// an have trips with different service days, making distinct blocks.
-    let blockID: String
+    public let blockID: String
 
     /// The direction field contains a binary value that indicates the direction
     // of travel for a trip. Use this field to distinguish between bi-directional
     // trips with the same route_id. This field is not used in routing; it provides
     // a way to separate trips by direction when publishing time tables. You can
     // specify names for each direction with the trip_headsign field.
-    let direction: String?
+    public let direction: String?
 
     /// The id field contains an ID that identifies a trip. The trip id is dataset unique.
-    let id: String
+    public let id: String
 
     /// The route_id field contains an ID that uniquely identifies a route.
     let routeID: String
@@ -32,18 +32,18 @@ public class Trip: NSObject, Decodable, HasReferences {
     /// The Route served by this trip.
     public var route: Route!
 
-    let routeShortName: String?
+    public let routeShortName: String?
 
     /// The service_id contains an ID that uniquely identifies a set of dates when
     /// service is available for one or more routes. This value is referenced from
     /// the calendar.txt or calendar_dates.txt file.
-    let serviceID: String
+    public let serviceID: String
 
     /// The shape_id field contains an ID that defines a shape for the trip.
     /// This value is referenced from the shapes API.
-    let shapeID: String
+    public let shapeID: String
 
-    let timeZone: String?
+    public let timeZone: String?
 
     /// Contains the text that appears in schedules and sign boards to identify the trip to passengers.
     ///
@@ -51,12 +51,12 @@ public class Trip: NSObject, Decodable, HasReferences {
     /// rely on trip names, this field may be blank. A short name, if provided, should uniquely
     /// identify a trip within a service day; it should not be used for destination names or
     /// limited/express designations.
-    let shortName: String?
+    public let shortName: String?
 
     /// Contains the text that appears on a sign that identifies the trip's destination to passengers.
     ///
     /// Use this field to distinguish between different patterns of service in the same route.
-    let headsign: String
+    public let headsign: String
 
     private enum CodingKeys: String, CodingKey {
         case blockID = "blockId"
@@ -87,7 +87,7 @@ public class Trip: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References) {
         route = references.routeWithID(routeID)
     }
 }

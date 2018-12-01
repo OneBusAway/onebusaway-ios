@@ -9,8 +9,9 @@
 import UIKit
 import CoreLocation
 import MapKit
-import OBANetworkingKit
 import OBALocationKit
+import OBAModelKit
+import OBANetworkingKit
 
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {

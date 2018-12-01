@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 /// Retrieves data and converts it into models from the Obaco/alerts API server
 ///

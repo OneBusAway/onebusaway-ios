@@ -36,13 +36,7 @@ class StopsForRouteModelOperationTests: OBATestCase {
                 expect(stopsForRoute.polylines.count) == 14
                 expect(stopsForRoute.polylines.first) == "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
 
-                for i in 0..<stopsForRoute.stopIDs.count {
-                    let stopID = stopsForRoute.stopIDs[i]
-                    let stop = stopsForRoute.stops[i]
-
-                    expect(stopID) == stop.id
-                }
-
+                expect(stopsForRoute.stops.count) == 35
                 expect(stopsForRoute.stopGroupings.count) == 1
                 let stopGrouping = stopsForRoute.stopGroupings.first!
 

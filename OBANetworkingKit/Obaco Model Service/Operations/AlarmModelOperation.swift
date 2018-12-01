@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 public class AlarmModelOperation: Operation {
     var apiOperation: CreateAlarmOperation?

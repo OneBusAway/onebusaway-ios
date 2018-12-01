@@ -9,17 +9,17 @@
 import Foundation
 
 public class Situation: NSObject, Decodable {
-    let activeWindows: [TimeWindow]
-    let affectedEntities: [AffectedEntity]
-    let consequences: [Consequence]
-    let createdAt: Date
-    let situationDescription: TranslatedString
-    let id: String
-    let publicationWindows: [TimeWindow]
-    let reason: String
-    let severity: String
-    let summary: TranslatedString
-    let url: URL?
+    public let activeWindows: [TimeWindow]
+    public let affectedEntities: [AffectedEntity]
+    public let consequences: [Consequence]
+    public let createdAt: Date
+    public let situationDescription: TranslatedString
+    public let id: String
+    public let publicationWindows: [TimeWindow]
+    public let reason: String
+    public let severity: String
+    public let summary: TranslatedString
+    public let url: URL?
 
     enum CodingKeys: String, CodingKey {
         case activeWindows
@@ -97,8 +97,8 @@ public class AffectedEntity: NSObject, Codable {
 }
 
 public class Consequence: Decodable {
-    let condition: String
-    let conditionDetails: ConditionDetails?
+    public let condition: String
+    public let conditionDetails: ConditionDetails?
 
     enum CodingKeys: String, CodingKey {
         case condition = "condition"
@@ -113,8 +113,8 @@ public class Consequence: Decodable {
 }
 
 public class ConditionDetails: NSObject, Decodable {
-    let diversionPath: String
-    let stopIDs: [String]
+    public let diversionPath: String
+    public let stopIDs: [String]
 
     enum CodingKeys: String, CodingKey {
         case diversionPath
@@ -132,8 +132,8 @@ public class ConditionDetails: NSObject, Decodable {
 }
 
 public class TranslatedString: NSObject, Decodable {
-    let lang: String
-    let value: String
+    public let lang: String
+    public let value: String
 
     enum CodingKeys: String, CodingKey {
         case lang

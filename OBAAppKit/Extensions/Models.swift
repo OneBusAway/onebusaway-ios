@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import OBANetworkingKit
+import OBAModelKit
 import MapKit
 
 extension Stop: MKAnnotation {

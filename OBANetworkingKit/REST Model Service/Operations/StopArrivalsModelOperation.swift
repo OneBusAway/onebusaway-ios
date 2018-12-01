@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 public class StopArrivalsModelOperation: RESTModelOperation {
     public private(set) var stopArrivals: StopArrivals?

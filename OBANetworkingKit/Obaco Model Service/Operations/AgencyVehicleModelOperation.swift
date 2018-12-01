@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 public class AgencyVehicleModelOperation: Operation {
     var apiOperation: MatchingVehiclesOperation?

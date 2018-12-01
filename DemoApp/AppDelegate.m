@@ -63,4 +63,9 @@
     }
 }
 
+- (void)application:(OBAApplication * _Nonnull)app displayRegionPicker:(OBARegionPickerViewController * _Nonnull)picker {
+    self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:picker];
+}
+
+
 @end

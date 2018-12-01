@@ -11,10 +11,9 @@ import CoreLocation
 import MapKit
 
 public class AgencyWithCoverage: NSObject, Decodable {
-    let agencyID: String
+    public let agencyID: String
     public let agency: Agency
-
-    let region: MKCoordinateRegion
+    public let region: MKCoordinateRegion
 
     private enum CodingKeys: String, CodingKey {
         case agencyID = "agencyId"

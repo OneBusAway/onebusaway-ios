@@ -11,13 +11,19 @@ import XCTest
 import OBATestHelpers
 import OBANetworkingKit
 import OBALocationKit
+import OBAModelKit
 @testable import OBAAppKit
 import CoreLocation
 import Nimble
 
 class TestAppDelegate: ApplicationDelegate {
-    var called_applicationReloadRootInterface = false
 
+    var called_applicationDisplayRegionPicker = false
+    func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController) {
+        called_applicationDisplayRegionPicker = true
+    }
+
+    var called_applicationReloadRootInterface = false
     func applicationReloadRootInterface(_ app: Application) {
         called_applicationReloadRootInterface = true
     }

@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import OBANetworkingKit
+import OBAModelKit
 import OBALocationKit
 
 @objc(OBARegionPickerViewController)

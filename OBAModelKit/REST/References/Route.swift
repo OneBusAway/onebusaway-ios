@@ -84,7 +84,7 @@ public class Route: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References) {
         agency = references.agencyWithID(agencyID)
     }
 }

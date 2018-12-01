@@ -9,6 +9,7 @@
 import CoreLocation
 import Foundation
 import MapKit
+import OBAModelKit
 
 @objc(OBARESTAPIModelService)
 public class RESTAPIModelService: NSObject {

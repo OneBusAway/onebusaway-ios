@@ -51,9 +51,9 @@ public class StopsForRoute: NSObject, Decodable {
 }
 
 public class StopGrouping: NSObject, Decodable {
-    let ordered: Bool
-    let groupingType: String
-    let stopGroups: [StopGroup]
+    public let ordered: Bool
+    public let groupingType: String
+    public let stopGroups: [StopGroup]
 
     private enum CodingKeys: String, CodingKey {
         case ordered
@@ -104,8 +104,8 @@ public class StopGroup: NSObject, Decodable {
     }
 }
 
-class PolylineEntity: NSObject, Decodable {
-    let points: String
+public class PolylineEntity: NSObject, Decodable {
+    public let points: String
 
     private enum CodingKeys: String, CodingKey {
         case points

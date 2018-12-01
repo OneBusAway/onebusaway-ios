@@ -35,8 +35,11 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.location.coordinate.longitude).to(beCloseTo(-122.312164))
         expect(stop.locationType) == .stop
         expect(stop.name) == "15th Ave NE & NE Campus Pkwy"
-        expect(stop.routeIDs.count) == 12
-        expect(stop.routeIDs.first!) == "1_100223"
+
+        stop.loadReferences(op.references!)
+        expect(stop.routes.count) == 12
+        expect(stop.routes.first!.id) == "1_100223"
+
         expect(stop.wheelchairBoarding) == .unknown
     }
 

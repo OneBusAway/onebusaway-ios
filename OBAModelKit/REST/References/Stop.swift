@@ -110,7 +110,7 @@ public class Stop: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References) {
         routes = references.routesWithIDs(routeIDs)
     }
 }

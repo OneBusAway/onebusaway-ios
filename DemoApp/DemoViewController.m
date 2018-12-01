@@ -10,6 +10,7 @@
 @import MapKit;
 @import OBANetworkingKit;
 @import OBALocationKit;
+@import OBAModelKit;
 
 @interface DemoViewController ()<MKMapViewDelegate, OBALocationServiceDelegate>
 @property(nonatomic,strong,readonly) OBALocationService *locationService;
@@ -79,7 +80,7 @@
 
 - (void)mapView:(MKMapView *)mapView regionDidChangeAnimated:(BOOL)animated {
     
-    StopsModelOperation *op = [self.modelService getStopsWithRegion:mapView.region];
+//    StopsModelOperation *op = [self.modelService getStopsWithRegion:mapView.region];
 
 }
 

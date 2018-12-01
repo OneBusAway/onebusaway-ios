@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 import OBATestHelpers
+import OBAModelKit
 @testable import OBANetworkingKit
 
 class TripDetailsModelOperationTests: OBATestCase {
@@ -40,13 +41,13 @@ class TripDetailsModelOperationTests: OBATestCase {
         expect(stopTime.departure) == 58862
         expect(stopTime.stopID) == "1_9610"
 
-        expect(tripDetails.previousTripID) == "1_18196851"
+        expect(tripDetails.previousTrip!.id) == "1_18196851"
         expect(tripDetails.previousTrip!.headsign) == "UNIVERSITY DISTRICT ROOSEVELT"
 
-        expect(tripDetails.nextTripID) == "1_18196555"
+        expect(tripDetails.nextTrip!.id) == "1_18196555"
         expect(tripDetails.nextTrip!.headsign) == "UNIVERSITY DISTRICT WEDGWOOD"
 
-        expect(tripDetails.situationIDs.count) == 0
+        expect(tripDetails.situations.count) == 0
     }
 
     func testLoading_vehicleDetails_success() {

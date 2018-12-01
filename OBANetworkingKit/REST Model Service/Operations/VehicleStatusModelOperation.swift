@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import OBAModelKit
 
 @objc(OBAVehicleStatusModelOperation)
 public class VehicleStatusModelOperation: RESTModelOperation {

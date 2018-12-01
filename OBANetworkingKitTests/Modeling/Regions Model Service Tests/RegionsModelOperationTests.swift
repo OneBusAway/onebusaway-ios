@@ -63,16 +63,11 @@ class RegionsModelOperationTests: OBATestCase {
                 expect(open311.apiKey) == "937033cad3054ec58a1a8156dcdd6ad8a416af2f"
                 expect(open311.baseURL) == URL(string: "https://seeclickfix.com/open311/v2/")!
 
-                let bounds = tampa.regionBounds
-                expect(bounds[0].lat).to(beCloseTo(27.976910500000002))
-                expect(bounds[0].lon).to(beCloseTo(-82.445851))
-                expect(bounds[0].latSpan).to(beCloseTo(0.5424609999999994))
-                expect(bounds[0].lonSpan).to(beCloseTo(0.576357999999999))
-
-                expect(bounds[1].lat).to(beCloseTo(27.919249999999998))
-                expect(bounds[1].lon).to(beCloseTo(-82.652145))
-                expect(bounds[1].latSpan).to(beCloseTo(0.47208000000000183))
-                expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
+                let serviceRect = tampa.serviceRect
+                expect(serviceRect.minX).to(beCloseTo(72439895.2211))
+                expect(serviceRect.minY).to(beCloseTo(112245249.3519))
+                expect(serviceRect.maxX).to(beCloseTo(72956527.5911))
+                expect(serviceRect.maxY).to(beCloseTo(112722187.8406))
 
                 let pugetSound = regions[1]
 

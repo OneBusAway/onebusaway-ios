@@ -9,16 +9,16 @@
 import Foundation
 
 public class Agency: NSObject, Decodable {
-    let disclaimer: String?
-    let email: String?
-    let fareURL: URL?
-    let id: String
-    let language: String
-    let name: String
-    let phone: String
-    let isPrivateService: Bool
-    let timeZone: String
-    let agencyURL: URL
+    public let disclaimer: String?
+    public let email: String?
+    public let fareURL: URL?
+    public let id: String
+    public let language: String
+    public let name: String
+    public let phone: String
+    public let isPrivateService: Bool
+    public let timeZone: String
+    public let agencyURL: URL
 
     private enum CodingKeys: String, CodingKey {
         case disclaimer

@@ -90,15 +90,14 @@ public class TripDetails: NSObject, Decodable {
 }
 
 public class TripStopTime: NSObject, Decodable {
-
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop.
-    let arrival: TimeInterval
+    public let arrival: TimeInterval
 
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop
-    let departure: TimeInterval
+    public let departure: TimeInterval
 
     /// The stop id of the stop visited during the trip
-    let stopID: String
+    public let stopID: String
 
     private enum CodingKeys: String, CodingKey {
         case arrival = "arrivalTime"

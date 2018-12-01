@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 import OBATestHelpers
+import OBAModelKit
 @testable import OBANetworkingKit
 
 class AlarmModelOperationTests: OBATestCase {

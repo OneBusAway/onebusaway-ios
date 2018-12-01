@@ -32,14 +32,13 @@ class StopArrivalsModelOperationTests: OBATestCase {
             op.completionBlock = {
                 let arrivals = op.stopArrivals!
 
-                expect(arrivals.nearbyStopIDs.count) == 4
+                expect(arrivals.nearbyStops.count) == 4
                 expect(arrivals.nearbyStops.count) == 4
                 expect(arrivals.nearbyStops.first!.name) == "15th Ave NE & NE Campus Pkwy"
 
-                expect(arrivals.situationIDs.count) == 0
                 expect(arrivals.situations.count) == 0
 
-                expect(arrivals.stopID) == "1_10914"
+                expect(arrivals.stop.id) == "1_10914"
                 expect(arrivals.stop.name) == "15th Ave NE & NE Campus Pkwy"
 
                 expect(arrivals.arrivalsAndDepartures.count) == 1
@@ -59,7 +58,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.predictedArrival) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
                 expect(arrDep.predictedDeparture) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
 
-                expect(arrDep.routeID) == "1_100447"
+                expect(arrDep.route.id) == "1_100447"
                 expect(arrDep.route.shortName) == "49"
 
                 expect(arrDep.routeLongName).to(beNil())
@@ -70,12 +69,11 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
                 expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 11, day: 01, hour: 07, minute: 00, second: 00)
 
-                expect(arrDep.situationIDs.count) == 0
                 expect(arrDep.situations.count) == 0
 
                 expect(arrDep.status) == "default"
 
-                expect(arrDep.stopID) == "1_10914"
+                expect(arrDep.stop.id) == "1_10914"
                 expect(arrDep.stop.name) == "15th Ave NE & NE Campus Pkwy"
 
                 expect(arrDep.stopSequence) == 3
@@ -84,12 +82,12 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
                 expect(arrDep.tripHeadsign) == "Downtown Seattle Broadway"
 
-                expect(arrDep.tripID) == "1_40984902"
+                expect(arrDep.trip.id) == "1_40984902"
                 expect(arrDep.trip.shortName) == "LOCAL"
 
                 expect(arrDep.tripStatus).toNot(beNil())
                 let tripStatus = arrDep.tripStatus!
-                expect(tripStatus.activeTripID) == "1_40984840"
+                expect(tripStatus.activeTrip.id) == "1_40984840"
 
                 expect(arrDep.vehicleID) == "1_4559"
 
