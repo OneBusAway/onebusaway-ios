@@ -14,7 +14,8 @@ import OBALocationKit
 
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {
-    func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
+    @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
 }
 
 @objc(OBAMapRegionManager)
@@ -25,8 +26,6 @@ public class MapRegionManager: NSObject {
     private var regionChangeRequestTimer: Timer?
 
     @objc public let mapView = MKMapView.autolayoutNew()
-
-    //public weak var delegate: MKMapViewDelegate?
 
     private var requestStopsOperation: StopsModelOperation?
 
@@ -92,7 +91,7 @@ public class MapRegionManager: NSObject {
 
     private func notifyDelegatesStopsChanged() {
         for delegate in delegates.allObjects {
-            delegate.mapRegionManager(self, stopsUpdated: stops)
+            delegate.mapRegionManager?(self, stopsUpdated: stops)
         }
     }
 }
@@ -108,6 +107,12 @@ extension MapRegionManager: MKMapViewDelegate {
 
     func findInstalledMapAnnotations<T>(type: T.Type) -> Set<T> where T: MKAnnotation {
         return Set(mapView.annotations.compactMap {$0 as? T})
+    }
+
+    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        for delegate in delegates.allObjects {
+            delegate.mapView?(mapView, didSelect: view)
+        }
     }
 }
 
