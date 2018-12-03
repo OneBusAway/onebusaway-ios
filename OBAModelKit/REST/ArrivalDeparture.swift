@@ -8,6 +8,10 @@
 
 import Foundation
 
+public enum ArrivalDepartureStatus: Int {
+    case arriving, departing
+}
+
 public class ArrivalDeparture: NSObject, Decodable {
 
     /// true if this transit vehicle is one that riders could arrive on
@@ -36,10 +40,10 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let predicted: Bool
 
     /// Predicted arrival time. `nil` if no real-time information is available.
-    public let predictedArrival: Date?
+    let predictedArrival: Date?
 
     /// Predicted departure time. `nil` if no real-time information is available.
-    public let predictedDeparture: Date?
+    let predictedDeparture: Date?
 
     /// the route id for the arriving vehicle
     let routeID: String
@@ -48,16 +52,16 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let route: Route
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
-    public let routeLongName: String?
+    let _routeLongName: String?
 
     /// the route short name that potentially overrides the route short name in the referenced `Route` element
-    public let routeShortName: String?
+    let _routeShortName: String?
 
     /// The arrival date according to the schedule
-    public let scheduledArrival: Date
+    let scheduledArrival: Date
 
     /// The departure date according to the schedule
-    public let scheduledDeparture: Date
+    let scheduledDeparture: Date
 
     /// Time of midnight for start of the service date for the trip
     public let serviceDate: Date
@@ -83,7 +87,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let totalStopsInTrip: Int?
 
     /// The trip headsign that potentially overrides the trip headsign in the referenced `Trip` element
-    public let tripHeadsign: String?
+    let _tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
     let tripID: String
@@ -145,8 +149,8 @@ public class ArrivalDeparture: NSObject, Decodable {
         routeID = try container.decode(String.self, forKey: .routeID)
         route = references.routeWithID(routeID)!
 
-        routeLongName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeLongName))
-        routeShortName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeShortName))
+        _routeLongName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeLongName))
+        _routeShortName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeShortName))
         scheduledArrival = try container.decode(Date.self, forKey: .scheduledArrival)
         scheduledDeparture = try container.decode(Date.self, forKey: .scheduledDeparture)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
@@ -161,12 +165,65 @@ public class ArrivalDeparture: NSObject, Decodable {
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
         totalStopsInTrip = try? container.decode(Int.self, forKey: .totalStopsInTrip)
-        tripHeadsign = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .tripHeadsign))
+        _tripHeadsign = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .tripHeadsign))
 
         tripID = try container.decode(String.self, forKey: .tripID)
         trip = references.tripWithID(tripID)!
 
         tripStatus = try? container.decode(TripStatus.self, forKey: .tripStatus)
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
+    }
+}
+
+// MARK: - Helpers
+
+extension ArrivalDeparture {
+
+    // MARK: - Names
+
+    /// Provides the best available trip headsign.
+    public var tripHeadsign: String {
+        return _tripHeadsign ?? trip.headsign
+    }
+
+    /// Provides the best available long name for this route.
+    public var routeLongName: String? {
+        return _routeLongName ?? route.longName
+    }
+
+    /// Provides the best available short name for this route.
+    public var routeShortName: String {
+        return _routeShortName ?? route.shortName
+    }
+
+    /// Provides the best available name for this route, which will either be the value of
+    /// `routeLongName` or `routeShortName`, depending on whether or not `routeLongName` is nil.
+    public var routeName: String {
+        return routeLongName ?? routeShortName
+    }
+
+    /// A composite of the route name and headsign.
+    public var routeAndHeadsign: String {
+        return "\(routeName) - \(tripHeadsign)"
+    }
+
+    // MARK: - Transit Statuses and Times
+
+    /// Whether this trip represents an arrival at or departure from this stop.
+    ///
+    /// This becomes relevant at the beginning of a trip, where a vehicle may have a significant delay
+    /// between its arrival and departure due to a scheduled layover.
+    public var arrivalDepartureStatus: ArrivalDepartureStatus {
+        return stopSequence == 0 ? .departing : .arriving
+    }
+
+    /// A singluar value that can be displayed in the UI to represent the best date for this trip.
+    public var arrivalDepartureDate: Date {
+        switch arrivalDepartureStatus {
+        case .arriving:
+            return predictedArrival ?? scheduledArrival
+        case .departing:
+            return predictedDeparture ?? scheduledDeparture
+        }
     }
 }

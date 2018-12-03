@@ -15,20 +15,48 @@ import OBATestHelpers
 @testable import OBANetworkingKit
 
 class StopArrivalsModelOperationTests: OBATestCase {
-    let stopID = "1_10914"
-    lazy var apiPath: String = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: stopID)
+    let campusParkwayStopID = "1_10914"
+    lazy var campusParkwayAPIPath: String = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: campusParkwayStopID)
 
-    func stubAPICall() {
-        stub(condition: isHost(self.host) && isPath(self.apiPath)) { _ in
+    let galerStopID = "1_11370"
+    lazy var galerAPIPath: String = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: galerStopID)
+
+    override func setUp() {
+        super.setUp()
+        stub(condition: isHost(self.host) && isPath(self.campusParkwayAPIPath)) { _ in
             return self.JSONFile(named: "arrivals-and-departures-for-stop-1_10914.json")
+        }
+        stub(condition: isHost(self.host) && isPath(self.galerAPIPath)) { _ in
+            return self.JSONFile(named: "arrivals_and_departures_for_stop_15th-galer.json")
+        }
+    }
+
+    func test_arrivalAndDepartureStatus() {
+        waitUntil { (done) in
+            let op = self.restModelService.getArrivalsAndDeparturesForStop(id: self.galerStopID, minutesBefore: 5, minutesAfter: 30)
+            op.completionBlock = {
+                let arrivals = op.stopArrivals!
+
+                expect(arrivals.arrivalsAndDepartures.count) == 5
+
+                expect(arrivals.arrivalsAndDepartures[0].arrivalDepartureStatus) == .arriving
+                expect(arrivals.arrivalsAndDepartures[1].arrivalDepartureStatus) == .departing
+
+                expect(arrivals.arrivalsAndDepartures[0].vehicleID) == "1_4361"
+                expect(arrivals.arrivalsAndDepartures[1].vehicleID) == "1_4361"
+
+                expect(arrivals.arrivalsAndDepartures[2].arrivalDepartureStatus) == .arriving
+                expect(arrivals.arrivalsAndDepartures[3].arrivalDepartureStatus) == .departing
+                expect(arrivals.arrivalsAndDepartures[4].arrivalDepartureStatus) == .arriving
+
+                done()
+            }
         }
     }
 
     func testLoading_success() {
-        stubAPICall()
-
         waitUntil { (done) in
-            let op = self.restModelService.getArrivalsAndDeparturesForStop(id: self.stopID, minutesBefore: 5, minutesAfter: 30)
+            let op = self.restModelService.getArrivalsAndDeparturesForStop(id: self.campusParkwayStopID, minutesBefore: 5, minutesAfter: 30)
             op.completionBlock = {
                 let arrivals = op.stopArrivals!
 
@@ -55,8 +83,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.numberOfStopsAway) == 4
                 expect(arrDep.predicted).to(beTrue())
 
-                expect(arrDep.predictedArrival) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
-                expect(arrDep.predictedDeparture) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
+                expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
 
                 expect(arrDep.route.id) == "1_100447"
                 expect(arrDep.route.shortName) == "49"
@@ -64,8 +91,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.routeLongName).to(beNil())
                 expect(arrDep.routeShortName) == "49"
 
-                expect(arrDep.scheduledArrival) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 00, second: 00)
-                expect(arrDep.scheduledDeparture) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 00, second: 00)
+                expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 11, day: 02, hour: 07, minute: 02, second: 36)
 
                 expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 11, day: 01, hour: 07, minute: 00, second: 00)
 

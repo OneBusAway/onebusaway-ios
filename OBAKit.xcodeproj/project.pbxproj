@@ -30,6 +30,7 @@
 		93158B9A217CDB9A00E16DBA /* frequency-vehicle.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B99217CDB9A00E16DBA /* frequency-vehicle.json */; };
 		93158B9C217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */; };
 		93158BA0217CE2AD00E16DBA /* references.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9F217CE2AD00E16DBA /* references.json */; };
+		93178A2421B847E4002328F1 /* arrivals_and_departures_for_stop_15th-galer.json in Resources */ = {isa = PBXBuildFile; fileRef = 93178A2321B847E3002328F1 /* arrivals_and_departures_for_stop_15th-galer.json */; };
 		931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */; };
 		931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */; };
 		931A7CDA2189362200FA3025 /* CurrentTimeModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD92189362200FA3025 /* CurrentTimeModelOperationTests.swift */; };
@@ -497,6 +498,7 @@
 		93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = arrivals_and_departures_for_stop_hart_6497.json; sourceTree = "<group>"; };
 		93158B9D217CE18E00E16DBA /* ReferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencesTests.swift; sourceTree = "<group>"; };
 		93158B9F217CE2AD00E16DBA /* references.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = references.json; sourceTree = "<group>"; };
+		93178A2321B847E3002328F1 /* arrivals_and_departures_for_stop_15th-galer.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrivals_and_departures_for_stop_15th-galer.json"; sourceTree = "<group>"; };
 		931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperationTests.swift; sourceTree = "<group>"; };
 		931A7CD42189332D00FA3025 /* InternalTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
 		931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeModelOperation.swift; sourceTree = "<group>"; };
@@ -1006,6 +1008,7 @@
 		931B94562165250A0034D8FA /* fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				93178A2321B847E3002328F1 /* arrivals_and_departures_for_stop_15th-galer.json */,
 				93399E1F21934A2E00F71058 /* 2_agencies_with_coverage.json */,
 				9303E14C218C2CE500FD5FDB /* arrivals-and-departures-for-stop-1_10914.json */,
 				931A7CDB2189382900FA3025 /* current_time.json */,
@@ -1835,6 +1838,7 @@
 				932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */,
 				93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
+				93178A2421B847E4002328F1 /* arrivals_and_departures_for_stop_15th-galer.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
