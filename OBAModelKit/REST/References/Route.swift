@@ -43,6 +43,7 @@ public enum RouteType: Int, Decodable {
     }
 }
 
+@objc(OBARoute)
 public class Route: NSObject, Decodable, HasReferences {
     let agencyID: String
     public var agency: Agency!

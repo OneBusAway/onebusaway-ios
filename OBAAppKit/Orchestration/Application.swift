@@ -113,9 +113,6 @@ public class Application: NSObject {
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
 //
-//        // Per:
-//        // https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
-//        [[UICollectionView appearance] setPrefetchingEnabled:NO];
     }
 }
 
