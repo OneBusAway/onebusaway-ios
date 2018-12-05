@@ -43,8 +43,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.numberOfStopsAway) == -4
                 expect(arrDep.predicted).to(beTrue())
 
-                expect(arrDep.predictedArrival) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
-                expect(arrDep.predictedDeparture) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
+                expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
 
                 expect(arrDep.route.id) == "MTS_10"
                 expect(arrDep.route.shortName) == "10"
@@ -52,8 +51,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
                 expect(arrDep.routeLongName) == "Old Town - University/College"
                 expect(arrDep.routeShortName) == "10"
 
-                expect(arrDep.scheduledArrival) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 09, second: 00)
-                expect(arrDep.scheduledDeparture) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 09, second: 00)
+                expect(arrDep.arrivalDepartureDate) == Date.fromComponents(year: 2018, month: 10, day: 24, hour: 03, minute: 10, second: 00)
 
                 expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 23, hour: 07, minute: 00, second: 00)
 

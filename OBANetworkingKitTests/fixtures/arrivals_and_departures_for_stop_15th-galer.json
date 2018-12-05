@@ -1,0 +1,653 @@
+{
+    "code": 200,
+    "currentTime": 1544032310600,
+    "data": {
+        "entry": {
+            "arrivalsAndDepartures": [
+                {
+                    "arrivalEnabled": true,
+                    "blockTripSequence": 7,
+                    "departureEnabled": false,
+                    "distanceFromStop": 645.5528873242511,
+                    "frequency": null,
+                    "lastUpdateTime": 1544032265000,
+                    "numberOfStopsAway": 3,
+                    "predicted": true,
+                    "predictedArrivalInterval": null,
+                    "predictedArrivalTime": 1544032513000,
+                    "predictedDepartureInterval": null,
+                    "predictedDepartureTime": 1544032513000,
+                    "routeId": "1_100002",
+                    "routeLongName": "",
+                    "routeShortName": "10",
+                    "scheduledArrivalInterval": null,
+                    "scheduledArrivalTime": 1544032260000,
+                    "scheduledDepartureInterval": null,
+                    "scheduledDepartureTime": 1544032260000,
+                    "serviceDate": 1543996800000,
+                    "situationIds": [
+
+                    ],
+                    "status": "default",
+                    "stopId": "1_11370",
+                    "stopSequence": 18,
+                    "totalStopsInTrip": 19,
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripId": "1_40983532",
+                    "tripStatus": {
+                        "activeTripId": "1_40983532",
+                        "blockTripSequence": 7,
+                        "closestStop": "1_11620",
+                        "closestStopTimeOffset": 0,
+                        "distanceAlongTrip": 4582.182884810922,
+                        "frequency": null,
+                        "lastKnownDistanceAlongTrip": 0,
+                        "lastKnownLocation": {
+                            "lat": 47.63084411621094,
+                            "lon": -122.31253051757812
+                        },
+                        "lastKnownOrientation": 0,
+                        "lastLocationUpdateTime": 1544032265000,
+                        "lastUpdateTime": 1544032265000,
+                        "nextStop": "1_11620",
+                        "nextStopTimeOffset": 0,
+                        "orientation": 88.24230886707429,
+                        "phase": "in_progress",
+                        "position": {
+                            "lat": 47.63083459705889,
+                            "lon": -122.31253795099086
+                        },
+                        "predicted": true,
+                        "scheduleDeviation": 253,
+                        "scheduledDistanceAlongTrip": 4582.182884810922,
+                        "serviceDate": 1543996800000,
+                        "situationIds": [
+
+                        ],
+                        "status": "SCHEDULED",
+                        "totalDistanceAlongTrip": 5228.622883765362,
+                        "vehicleId": "1_4361"
+                    },
+                    "vehicleId": "1_4361"
+                },
+                {
+                    "arrivalEnabled": false,
+                    "blockTripSequence": 8,
+                    "departureEnabled": true,
+                    "distanceFromStop": 646.43999895444,
+                    "frequency": null,
+                    "lastUpdateTime": 1544032265000,
+                    "numberOfStopsAway": 4,
+                    "predicted": true,
+                    "predictedArrivalInterval": null,
+                    "predictedArrivalTime": 1544032680000,
+                    "predictedDepartureInterval": null,
+                    "predictedDepartureTime": 1544032680000,
+                    "routeId": "1_100002",
+                    "routeLongName": "",
+                    "routeShortName": "10",
+                    "scheduledArrivalInterval": null,
+                    "scheduledArrivalTime": 1544032680000,
+                    "scheduledDepartureInterval": null,
+                    "scheduledDepartureTime": 1544032680000,
+                    "serviceDate": 1543996800000,
+                    "situationIds": [
+
+                    ],
+                    "status": "default",
+                    "stopId": "1_11370",
+                    "stopSequence": 0,
+                    "totalStopsInTrip": 13,
+                    "tripHeadsign": "Downtown Seattle",
+                    "tripId": "1_40983533",
+                    "tripStatus": {
+                        "activeTripId": "1_40983532",
+                        "blockTripSequence": 7,
+                        "closestStop": "1_11620",
+                        "closestStopTimeOffset": 0,
+                        "distanceAlongTrip": 4582.182884810922,
+                        "frequency": null,
+                        "lastKnownDistanceAlongTrip": 0,
+                        "lastKnownLocation": {
+                            "lat": 47.63084411621094,
+                            "lon": -122.31253051757812
+                        },
+                        "lastKnownOrientation": 0,
+                        "lastLocationUpdateTime": 1544032265000,
+                        "lastUpdateTime": 1544032265000,
+                        "nextStop": "1_11620",
+                        "nextStopTimeOffset": 0,
+                        "orientation": 88.24230886707429,
+                        "phase": "in_progress",
+                        "position": {
+                            "lat": 47.63083459705889,
+                            "lon": -122.31253795099086
+                        },
+                        "predicted": true,
+                        "scheduleDeviation": 253,
+                        "scheduledDistanceAlongTrip": 4582.182884810922,
+                        "serviceDate": 1543996800000,
+                        "situationIds": [
+
+                        ],
+                        "status": "SCHEDULED",
+                        "totalDistanceAlongTrip": 5228.622883765362,
+                        "vehicleId": "1_4361"
+                    },
+                    "vehicleId": "1_4361"
+                },
+                {
+                    "arrivalEnabled": true,
+                    "blockTripSequence": 11,
+                    "departureEnabled": false,
+                    "distanceFromStop": 2425.1250301902983,
+                    "frequency": null,
+                    "lastUpdateTime": 1544032274000,
+                    "numberOfStopsAway": 9,
+                    "predicted": true,
+                    "predictedArrivalInterval": null,
+                    "predictedArrivalTime": 1544033052000,
+                    "predictedDepartureInterval": null,
+                    "predictedDepartureTime": 1544033052000,
+                    "routeId": "1_100002",
+                    "routeLongName": "",
+                    "routeShortName": "10",
+                    "scheduledArrivalInterval": null,
+                    "scheduledArrivalTime": 1544032920000,
+                    "scheduledDepartureInterval": null,
+                    "scheduledDepartureTime": 1544032920000,
+                    "serviceDate": 1543996800000,
+                    "situationIds": [
+
+                    ],
+                    "status": "default",
+                    "stopId": "1_11370",
+                    "stopSequence": 18,
+                    "totalStopsInTrip": 19,
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripId": "1_40983449",
+                    "tripStatus": {
+                        "activeTripId": "1_40983449",
+                        "blockTripSequence": 11,
+                        "closestStop": "1_29270",
+                        "closestStopTimeOffset": -2,
+                        "distanceAlongTrip": 2802.6107419448745,
+                        "frequency": null,
+                        "lastKnownDistanceAlongTrip": 0,
+                        "lastKnownLocation": {
+                            "lat": 47.619911193847656,
+                            "lon": -122.32047271728516
+                        },
+                        "lastKnownOrientation": 0,
+                        "lastLocationUpdateTime": 1544032274000,
+                        "lastUpdateTime": 1544032274000,
+                        "nextStop": "1_29277",
+                        "nextStopTimeOffset": 61,
+                        "orientation": 0.4923254081969913,
+                        "phase": "in_progress",
+                        "position": {
+                            "lat": 47.61991211236529,
+                            "lon": -122.32034354848919
+                        },
+                        "predicted": true,
+                        "scheduleDeviation": 132,
+                        "scheduledDistanceAlongTrip": 2802.6107419448745,
+                        "serviceDate": 1543996800000,
+                        "situationIds": [
+
+                        ],
+                        "status": "SCHEDULED",
+                        "totalDistanceAlongTrip": 5228.622883765362,
+                        "vehicleId": "1_4385"
+                    },
+                    "vehicleId": "1_4385"
+                },
+                {
+                    "arrivalEnabled": false,
+                    "blockTripSequence": 12,
+                    "departureEnabled": true,
+                    "distanceFromStop": 2426.012141820487,
+                    "frequency": null,
+                    "lastUpdateTime": 1544032274000,
+                    "numberOfStopsAway": 10,
+                    "predicted": true,
+                    "predictedArrivalInterval": null,
+                    "predictedArrivalTime": 1544033580000,
+                    "predictedDepartureInterval": null,
+                    "predictedDepartureTime": 1544033580000,
+                    "routeId": "1_100002",
+                    "routeLongName": "",
+                    "routeShortName": "10",
+                    "scheduledArrivalInterval": null,
+                    "scheduledArrivalTime": 1544033580000,
+                    "scheduledDepartureInterval": null,
+                    "scheduledDepartureTime": 1544033580000,
+                    "serviceDate": 1543996800000,
+                    "situationIds": [
+
+                    ],
+                    "status": "default",
+                    "stopId": "1_11370",
+                    "stopSequence": 0,
+                    "totalStopsInTrip": 13,
+                    "tripHeadsign": "Downtown Seattle",
+                    "tripId": "1_40983450",
+                    "tripStatus": {
+                        "activeTripId": "1_40983449",
+                        "blockTripSequence": 11,
+                        "closestStop": "1_29270",
+                        "closestStopTimeOffset": -2,
+                        "distanceAlongTrip": 2802.6107419448745,
+                        "frequency": null,
+                        "lastKnownDistanceAlongTrip": 0,
+                        "lastKnownLocation": {
+                            "lat": 47.619911193847656,
+                            "lon": -122.32047271728516
+                        },
+                        "lastKnownOrientation": 0,
+                        "lastLocationUpdateTime": 1544032274000,
+                        "lastUpdateTime": 1544032274000,
+                        "nextStop": "1_29277",
+                        "nextStopTimeOffset": 61,
+                        "orientation": 0.4923254081969913,
+                        "phase": "in_progress",
+                        "position": {
+                            "lat": 47.61991211236529,
+                            "lon": -122.32034354848919
+                        },
+                        "predicted": true,
+                        "scheduleDeviation": 132,
+                        "scheduledDistanceAlongTrip": 2802.6107419448745,
+                        "serviceDate": 1543996800000,
+                        "situationIds": [
+
+                        ],
+                        "status": "SCHEDULED",
+                        "totalDistanceAlongTrip": 5228.622883765362,
+                        "vehicleId": "1_4385"
+                    },
+                    "vehicleId": "1_4385"
+                },
+                {
+                    "arrivalEnabled": true,
+                    "blockTripSequence": 7,
+                    "departureEnabled": false,
+                    "distanceFromStop": 5676.574594370904,
+                    "frequency": null,
+                    "lastUpdateTime": 1544032285000,
+                    "numberOfStopsAway": 19,
+                    "predicted": true,
+                    "predictedArrivalInterval": null,
+                    "predictedArrivalTime": 1544034273000,
+                    "predictedDepartureInterval": null,
+                    "predictedDepartureTime": 1544034273000,
+                    "routeId": "1_100002",
+                    "routeLongName": "",
+                    "routeShortName": "10",
+                    "scheduledArrivalInterval": null,
+                    "scheduledArrivalTime": 1544033880000,
+                    "scheduledDepartureInterval": null,
+                    "scheduledDepartureTime": 1544033880000,
+                    "serviceDate": 1543996800000,
+                    "situationIds": [
+
+                    ],
+                    "status": "default",
+                    "stopId": "1_11370",
+                    "stopSequence": 18,
+                    "totalStopsInTrip": 19,
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripId": "1_40983556",
+                    "tripStatus": {
+                        "activeTripId": "1_40983555",
+                        "blockTripSequence": 6,
+                        "closestStop": "1_11100",
+                        "closestStopTimeOffset": -2,
+                        "distanceAlongTrip": 2853.6314703073513,
+                        "frequency": null,
+                        "lastKnownDistanceAlongTrip": 0,
+                        "lastKnownLocation": {
+                            "lat": 47.61522674560547,
+                            "lon": -122.32730865478516
+                        },
+                        "lastKnownOrientation": 0,
+                        "lastLocationUpdateTime": 1544032285000,
+                        "lastUpdateTime": 1544032285000,
+                        "nextStop": "1_1085",
+                        "nextStopTimeOffset": 128,
+                        "orientation": 179.63794618099388,
+                        "phase": "in_progress",
+                        "position": {
+                            "lat": 47.61523459689272,
+                            "lon": -122.32736545827328
+                        },
+                        "predicted": true,
+                        "scheduleDeviation": 393,
+                        "scheduledDistanceAlongTrip": 2853.6314703073513,
+                        "serviceDate": 1543996800000,
+                        "situationIds": [
+
+                        ],
+                        "status": "SCHEDULED",
+                        "totalDistanceAlongTrip": 3302.470292543084,
+                        "vehicleId": "1_4397"
+                    },
+                    "vehicleId": "1_4397"
+                }
+            ],
+            "nearbyStopIds": [
+                "1_11630"
+            ],
+            "situationIds": [
+
+            ],
+            "stopId": "1_11370"
+        },
+        "references": {
+            "agencies": [
+                {
+                    "disclaimer": "",
+                    "email": "",
+                    "fareUrl": "",
+                    "id": "1",
+                    "lang": "EN",
+                    "name": "Metro Transit",
+                    "phone": "206-553-3000",
+                    "privateService": false,
+                    "timezone": "America/Los_Angeles",
+                    "url": "http://metro.kingcounty.gov"
+                }
+            ],
+            "routes": [
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Capitol Hill - Downtown Seattle",
+                    "id": "1_100002",
+                    "longName": "",
+                    "shortName": "10",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/010/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Seattle Center - Capitol Hill - Rainier Beach",
+                    "id": "1_100275",
+                    "longName": "",
+                    "shortName": "8",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/008/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Univ Dist-Montlake-Capitol Hill-Downtown Seattle",
+                    "id": "1_100223",
+                    "longName": "",
+                    "shortName": "43",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/043/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Capitol Hill - Mt. Si",
+                    "id": "1_102650",
+                    "longName": "",
+                    "shortName": "Trailhead Direct Mt. Si",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/636/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Madison Park - Capitol Hill - Downtown Seattle",
+                    "id": "1_100009",
+                    "longName": "",
+                    "shortName": "11",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/011/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Summit - Downtown Seattle",
+                    "id": "1_100227",
+                    "longName": "",
+                    "shortName": "47",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/047/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Univ District - Broadway - Downtown Seattle",
+                    "id": "1_100447",
+                    "longName": "",
+                    "shortName": "49",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/049/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Prentice St - Rainier Beach - Downtown Seattle",
+                    "id": "1_100263",
+                    "longName": "",
+                    "shortName": "7",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/007/n0.html"
+                },
+                {
+                    "agencyId": "1",
+                    "color": "",
+                    "description": "Kent Station - Southcenter - Downtown Seattle",
+                    "id": "1_100045",
+                    "longName": "",
+                    "shortName": "150",
+                    "textColor": "",
+                    "type": 3,
+                    "url": "http://metro.kingcounty.gov/schedules/150/n0.html"
+                }
+            ],
+            "situations": [
+
+            ],
+            "stops": [
+                {
+                    "code": "11370",
+                    "direction": "S",
+                    "id": "1_11370",
+                    "lat": 47.6325,
+                    "locationType": 0,
+                    "lon": -122.312607,
+                    "name": "15th Ave E & E Galer St",
+                    "routeIds": [
+                        "1_100002"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "11620",
+                    "direction": "N",
+                    "id": "1_11620",
+                    "lat": 47.630833,
+                    "locationType": 0,
+                    "lon": -122.312424,
+                    "name": "15th Ave E & E Highland Dr",
+                    "routeIds": [
+                        "1_100002"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "29270",
+                    "direction": "E",
+                    "id": "1_29270",
+                    "lat": 47.619846,
+                    "locationType": 0,
+                    "lon": -122.320473,
+                    "name": "E John St & Broadway  E",
+                    "routeIds": [
+                        "1_100275",
+                        "1_100002",
+                        "1_100223",
+                        "1_102650"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "29277",
+                    "direction": "E",
+                    "id": "1_29277",
+                    "lat": 47.619873,
+                    "locationType": 0,
+                    "lon": -122.316429,
+                    "name": "E John St & 12th Ave E",
+                    "routeIds": [
+                        "1_100275",
+                        "1_100002",
+                        "1_100223"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "11100",
+                    "direction": "W",
+                    "id": "1_11100",
+                    "lat": 47.615299,
+                    "locationType": 0,
+                    "lon": -122.327271,
+                    "name": "E Pine St & Bellevue Ave",
+                    "routeIds": [
+                        "1_100002",
+                        "1_100009",
+                        "1_100223",
+                        "1_100227",
+                        "1_100447",
+                        "1_102650"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "1085",
+                    "direction": "SW",
+                    "id": "1_1085",
+                    "lat": 47.613377,
+                    "locationType": 0,
+                    "lon": -122.332603,
+                    "name": "Pine St & 9th Ave",
+                    "routeIds": [
+                        "1_100263",
+                        "1_100002",
+                        "1_100009",
+                        "1_100223",
+                        "1_100227",
+                        "1_100447",
+                        "1_100045",
+                        "1_102650"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                },
+                {
+                    "code": "11630",
+                    "direction": "N",
+                    "id": "1_11630",
+                    "lat": 47.632523,
+                    "locationType": 0,
+                    "lon": -122.311821,
+                    "name": "Grandview Pl E & E Galer St",
+                    "routeIds": [
+                        "1_100002"
+                    ],
+                    "wheelchairBoarding": "UNKNOWN"
+                }
+            ],
+            "trips": [
+                {
+                    "blockId": "1_5183052",
+                    "directionId": "0",
+                    "id": "1_40983532",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_11010006",
+                    "timeZone": "",
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripShortName": "LOCAL"
+                },
+                {
+                    "blockId": "1_5183052",
+                    "directionId": "1",
+                    "id": "1_40983533",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_20010002",
+                    "timeZone": "",
+                    "tripHeadsign": "Downtown Seattle",
+                    "tripShortName": "LOCAL"
+                },
+                {
+                    "blockId": "1_5183048",
+                    "directionId": "0",
+                    "id": "1_40983449",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_11010006",
+                    "timeZone": "",
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripShortName": "LOCAL"
+                },
+                {
+                    "blockId": "1_5183048",
+                    "directionId": "1",
+                    "id": "1_40983450",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_20010002",
+                    "timeZone": "",
+                    "tripHeadsign": "Downtown Seattle",
+                    "tripShortName": "LOCAL"
+                },
+                {
+                    "blockId": "1_5183053",
+                    "directionId": "0",
+                    "id": "1_40983556",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_11010006",
+                    "timeZone": "",
+                    "tripHeadsign": "Capitol Hill Via 15th Ave E",
+                    "tripShortName": "LOCAL"
+                },
+                {
+                    "blockId": "1_5183053",
+                    "directionId": "1",
+                    "id": "1_40983555",
+                    "routeId": "1_100002",
+                    "routeShortName": "",
+                    "serviceId": "1_85696",
+                    "shapeId": "1_20010002",
+                    "timeZone": "",
+                    "tripHeadsign": "Downtown Seattle",
+                    "tripShortName": "LOCAL"
+                }
+            ]
+        }
+    },
+    "text": "OK",
+    "version": 2
+}
