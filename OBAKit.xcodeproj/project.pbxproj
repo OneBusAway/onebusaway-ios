@@ -307,7 +307,7 @@
 		931B93FD216419C20034D8FA /* OBAKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBAKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B93FF216419C20034D8FA /* OBAKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAKit.h; sourceTree = "<group>"; };
 		931B9400216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		931B9405216419C20034D8FA /* OBAitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		931B9405216419C20034D8FA /* OBAKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B940E216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B941C21641A7F0034D8FA /* OBAOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAOperation.h; sourceTree = "<group>"; };
 		931B941D21641A7F0034D8FA /* OBAOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAOperation.m; sourceTree = "<group>"; };
@@ -560,7 +560,7 @@
 			children = (
 				931B93D12163F5520034D8FA /* DemoApp.app */,
 				931B93FD216419C20034D8FA /* OBAKit.framework */,
-				931B9405216419C20034D8FA /* OBAitTests.xctest */,
+				931B9405216419C20034D8FA /* OBAKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1173,9 +1173,9 @@
 			productReference = 931B93FD216419C20034D8FA /* OBAKit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		931B9404216419C20034D8FA /* OBAitTests */ = {
+		931B9404216419C20034D8FA /* OBAKitTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAitTests" */;
+			buildConfigurationList = 931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAKitTests" */;
 			buildPhases = (
 				931B9401216419C20034D8FA /* Sources */,
 				931B9402216419C20034D8FA /* Frameworks */,
@@ -1188,9 +1188,9 @@
 				93547E7521A32F1F00F757A3 /* PBXTargetDependency */,
 				931B9408216419C20034D8FA /* PBXTargetDependency */,
 			);
-			name = OBAitTests;
+			name = OBAKitTests;
 			productName = OBAKitTests;
-			productReference = 931B9405216419C20034D8FA /* OBAitTests.xctest */;
+			productReference = 931B9405216419C20034D8FA /* OBAKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -1237,7 +1237,7 @@
 			targets = (
 				931B93D02163F5520034D8FA /* DemoApp */,
 				931B93FC216419C20034D8FA /* OBAKit */,
-				931B9404216419C20034D8FA /* OBAitTests */,
+				931B9404216419C20034D8FA /* OBAKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1835,7 +1835,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAitTests" */ = {
+		931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAKitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				931B9419216419C20034D8FA /* Debug */,
