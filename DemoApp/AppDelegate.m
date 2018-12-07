@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-@import OBAAppKit;
+@import OBAKit;
 
 #import "DemoViewController.h"
 #import "PermissionPromptViewController.h"

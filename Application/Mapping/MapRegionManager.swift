@@ -1,6 +1,6 @@
 //
 //  MapRegionManager.swift
-//  OBAAppKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 11/21/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
@@ -9,7 +9,6 @@
 import UIKit
 import CoreLocation
 import MapKit
-import OBAKit
 
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {

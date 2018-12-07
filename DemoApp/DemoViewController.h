@@ -7,7 +7,7 @@
 //
 
 @import UIKit;
-@import OBAAppKit;
+@import OBAKit;
 
 NS_ASSUME_NONNULL_BEGIN
 

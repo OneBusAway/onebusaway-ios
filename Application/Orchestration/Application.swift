@@ -1,13 +1,12 @@
 //
 //  Application.swift
-//  OBAAppKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 11/15/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
 import UIKit
-import OBAKit
 import CoreLocation
 
 @objc(OBAApplicationDelegate)

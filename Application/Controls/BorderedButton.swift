@@ -1,6 +1,6 @@
 //
 //  BorderedButton.swift
-//  OBAAppKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 11/26/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.

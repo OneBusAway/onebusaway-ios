@@ -1,16 +1,16 @@
 //
 //  ApplicationTests.swift
-//  OBAAppKitTests
+//  OBAKitTests
 //
 //  Created by Aaron Brethorst on 11/23/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
 import Foundation
+import UIKit
 import XCTest
 import OBATestHelpers
-import OBAKit
-@testable import OBAAppKit
+@testable import OBAKit
 import CoreLocation
 import Nimble
 

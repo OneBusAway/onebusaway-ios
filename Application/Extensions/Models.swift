@@ -1,13 +1,12 @@
 //
 //  Models.swift
-//  OBAAppKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 11/22/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
 //
 
 import Foundation
-import OBAKit
 import MapKit
 
 extension Stop: MKAnnotation {

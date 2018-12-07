@@ -1,6 +1,6 @@
 //
 //  CollectionsTests.swift
-//  OBAAppKitTests
+//  OBAKitTests
 //
 //  Created by Aaron Brethorst on 11/23/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
@@ -9,7 +9,7 @@
 import Foundation
 import Nimble
 import XCTest
-@testable import OBAAppKit
+@testable import OBAKit
 
 class CollectionsTests: XCTestCase {
 
