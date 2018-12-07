@@ -9,7 +9,6 @@
 #import "DemoViewController.h"
 @import MapKit;
 @import OBAKit;
-@import OBALocationKit;
 
 @interface DemoViewController ()<MKMapViewDelegate, OBALocationServiceDelegate>
 @property(nonatomic,strong,readonly) OBALocationService *locationService;

@@ -8,7 +8,6 @@
 
 import UIKit
 import OBAKit
-import OBALocationKit
 import CoreLocation
 
 @objc(OBAApplicationDelegate)

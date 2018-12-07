@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreLocation
-import OBALocationKit
+import OBAKit
 
 class AuthorizedMockLocationManager: NSObject, LocationManager {
     var delegate: CLLocationManagerDelegate?

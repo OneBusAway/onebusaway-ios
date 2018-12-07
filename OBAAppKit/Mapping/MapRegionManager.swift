@@ -9,7 +9,6 @@
 import UIKit
 import CoreLocation
 import MapKit
-import OBALocationKit
 import OBAKit
 
 @objc(OBAMapRegionDelegate)

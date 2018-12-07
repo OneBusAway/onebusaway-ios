@@ -8,7 +8,6 @@
 
 import UIKit
 import OBAKit
-import OBALocationKit
 
 @objc(OBARegionPickerViewController)
 public class RegionPickerViewController: UIViewController {

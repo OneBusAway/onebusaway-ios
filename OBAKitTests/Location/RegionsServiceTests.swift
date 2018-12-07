@@ -1,6 +1,6 @@
 //
 //  RegionsServiceTests.swift
-//  OBALocationKitTests
+//  OBAKitTests
 //
 //  Created by Aaron Brethorst on 11/18/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
@@ -9,8 +9,7 @@
 import Foundation
 import XCTest
 import OBATestHelpers
-import OBAKit
-@testable import OBALocationKit
+@testable import OBAKit
 import CoreLocation
 import Nimble
 

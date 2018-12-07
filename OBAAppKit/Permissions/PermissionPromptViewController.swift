@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import OBALocationKit
+import OBAKit
 
 @objc(OBAPermissionPromptViewController)
 public class PermissionPromptViewController: UIViewController {

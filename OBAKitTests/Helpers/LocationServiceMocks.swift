@@ -1,6 +1,6 @@
 //
 //  LocationServiceMocks.swift
-//  OBALocationKitTests
+//  OBAKitTests
 //
 //  Created by Aaron Brethorst on 11/11/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.
@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreLocation
-import OBALocationKit
+import OBAKit
 import OBATestHelpers
 
 class LocDelegate: NSObject, LocationServiceDelegate {

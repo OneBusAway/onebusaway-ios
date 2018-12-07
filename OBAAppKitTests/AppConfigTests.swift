@@ -12,7 +12,6 @@ import Foundation
 import XCTest
 import OBATestHelpers
 import OBAKit
-import OBALocationKit
 @testable import OBAAppKit
 import CoreLocation
 import Nimble

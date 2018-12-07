@@ -7,7 +7,7 @@
 //
 
 @import UIKit;
-@import OBALocationKit;
+@import OBAKit;
 
 NS_ASSUME_NONNULL_BEGIN
 

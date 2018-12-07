@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import OBALocationKit
+import OBAKit
 import CoreLocation
 
 public class LocationManagerMock: NSObject, LocationManager {
