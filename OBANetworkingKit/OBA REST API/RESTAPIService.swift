@@ -122,6 +122,19 @@ public class RESTAPIService: APIService {
         return buildAndEnqueueOperation(type: StopsOperation.self, url: url)
     }
 
+    /// Retrieves the stop with the specified ID.
+    ///
+    /// - API Endpoint: `/api/where/stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stop.html)
+    ///
+    /// - Parameters:
+    ///   - id: The full, agency-prefixed ID of the stop.
+    /// - Returns: The enqueued network operation.
+    @objc public func getStop(id: String) -> StopOperation {
+        let url = StopOperation.buildURL(stopID: id, baseURL: baseURL, queryItems: defaultQueryItems)
+        return buildAndEnqueueOperation(type: StopOperation.self, url: url)
+    }
+
     // MARK: - Arrivals and Departures for Stop
 
     /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
