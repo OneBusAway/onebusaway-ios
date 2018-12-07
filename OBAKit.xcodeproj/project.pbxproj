@@ -31,6 +31,7 @@
 		93158B9C217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9B217CE08D00E16DBA /* arrivals_and_departures_for_stop_hart_6497.json */; };
 		93158BA0217CE2AD00E16DBA /* references.json in Resources */ = {isa = PBXBuildFile; fileRef = 93158B9F217CE2AD00E16DBA /* references.json */; };
 		93178A2421B847E4002328F1 /* arrivals_and_departures_for_stop_15th-galer.json in Resources */ = {isa = PBXBuildFile; fileRef = 93178A2321B847E3002328F1 /* arrivals_and_departures_for_stop_15th-galer.json */; };
+		93178A2821B8839C002328F1 /* StopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93178A2721B8839C002328F1 /* StopOperation.swift */; };
 		931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */; };
 		931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */; };
 		931A7CDA2189362200FA3025 /* CurrentTimeModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD92189362200FA3025 /* CurrentTimeModelOperationTests.swift */; };
@@ -499,6 +500,7 @@
 		93158B9D217CE18E00E16DBA /* ReferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReferencesTests.swift; sourceTree = "<group>"; };
 		93158B9F217CE2AD00E16DBA /* references.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = references.json; sourceTree = "<group>"; };
 		93178A2321B847E3002328F1 /* arrivals_and_departures_for_stop_15th-galer.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrivals_and_departures_for_stop_15th-galer.json"; sourceTree = "<group>"; };
+		93178A2721B8839C002328F1 /* StopOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopOperation.swift; sourceTree = "<group>"; };
 		931A7CCE2188DB1200FA3025 /* TripDetailsModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperationTests.swift; sourceTree = "<group>"; };
 		931A7CD42189332D00FA3025 /* InternalTypes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InternalTypes.swift; sourceTree = "<group>"; };
 		931A7CD6218933BF00FA3025 /* CurrentTimeModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeModelOperation.swift; sourceTree = "<group>"; };
@@ -958,6 +960,7 @@
 				936978952170DD0A0053DF37 /* StopProblemOperation.swift */,
 				937BB7342173EC0E00BE5635 /* TripProblemOperation.swift */,
 				933FFF3421794AF6006682C3 /* VehicleTripOperation.swift */,
+				93178A2721B8839C002328F1 /* StopOperation.swift */,
 			);
 			path = "OBA REST API";
 			sourceTree = "<group>";
@@ -1979,6 +1982,7 @@
 				93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */,
 				93399E432197858E00F71058 /* RegionsModelOperation.swift in Sources */,
 				93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */,
+				93178A2821B8839C002328F1 /* StopOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
 				93399E2A21964DC300F71058 /* ModelService.swift in Sources */,

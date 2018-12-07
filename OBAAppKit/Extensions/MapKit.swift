@@ -9,6 +9,25 @@
 import Foundation
 import MapKit
 
+// MARK: - Directions
+
+extension MKDirections {
+
+    /// Creates a directions object that will calculate walking directions from the user's current location to the specified destination.
+    ///
+    /// - Parameter coordinate: The destination coordinate
+    /// - Returns: A directions object
+    public class func walkingDirections(to coordinate: CLLocationCoordinate2D) -> MKDirections {
+        let walkingRequest = MKDirections.Request()
+        walkingRequest.source = MKMapItem.forCurrentLocation()
+        walkingRequest.destination = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+        walkingRequest.transportType = .walking
+        return MKDirections(request: walkingRequest)
+    }
+}
+
+// MARK: - Map View
+
 extension MKMapView {
 
     /// Replaces already-installed annotations of the specified type with the new annotations provided.

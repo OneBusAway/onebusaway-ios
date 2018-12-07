@@ -109,6 +109,19 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: StopsModelOperation.self, serviceOperation: service)
     }
 
+    /// Retrieves the stop with the specified ID.
+    ///
+    /// - API Endpoint: `/api/where/stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stop.html)
+    ///
+    /// - Parameters:
+    ///   - id: The full, agency-prefixed ID of the stop.
+    /// - Returns: The enqueued model operation.
+    @objc public func getStop(id: String) -> StopsModelOperation {
+        let service = apiService.getStop(id: id)
+        return generateModels(type: StopsModelOperation.self, serviceOperation: service)
+    }
+
     // MARK: - Arrivals and Departures
 
     /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
