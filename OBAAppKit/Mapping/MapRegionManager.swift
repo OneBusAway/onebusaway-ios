@@ -28,15 +28,6 @@ public class MapRegionManager: NSObject {
 
     @objc public let mapView = MKMapView.autolayoutNew()
 
-    private var requestStopsOperation: StopsModelOperation?
-
-    public private(set) var stops = [Stop]() {
-        didSet {
-            mapView.updateAnnotations(with: stops)
-            notifyDelegatesStopsChanged()
-        }
-    }
-
     @objc public init(application: Application) {
         self.application = application
 
@@ -95,6 +86,49 @@ public class MapRegionManager: NSObject {
             delegate.mapRegionManager?(self, stopsUpdated: stops)
         }
     }
+
+    // MARK: - Stops
+
+    private var requestStopsOperation: StopsModelOperation?
+
+    public private(set) var stops = [Stop]() {
+        didSet {
+            mapView.updateAnnotations(with: stops)
+            notifyDelegatesStopsChanged()
+        }
+    }
+
+    public func stopWithID(_ id: String, completion: @escaping (Stop?) -> Void) {
+        if let stop = (stops.filter {$0.id == id}).first {
+            completion(stop)
+            return
+        }
+
+        guard let modelService = application.restAPIModelService else {
+            return
+        }
+
+        let op = modelService.getStop(id: id)
+        op.then {
+            completion(op.stops.first)
+        }
+    }
+
+    // MARK: - Overlays
+
+    private var walkingDirectionsOverlay: MKOverlay?
+    private var walkingDirectionsStop: Stop?
+
+    public func addOverlay(_ overlay: MKOverlay, for stop: Stop) {
+        if let walkingDirectionsOverlay = walkingDirectionsOverlay {
+            mapView.removeOverlay(walkingDirectionsOverlay)
+        }
+
+        walkingDirectionsOverlay = overlay
+        walkingDirectionsStop = stop
+
+        mapView.addOverlay(walkingDirectionsOverlay!, level: MKOverlayLevel.aboveRoads)
+    }
 }
 
 // MARK: - Map View Delegate
@@ -114,6 +148,15 @@ extension MapRegionManager: MKMapViewDelegate {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, didSelect: view)
         }
+    }
+
+    public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline)
+        renderer.strokeColor = application.theme.colors.primary.withAlphaComponent(0.75)
+        renderer.lineWidth = 6.0
+        renderer.lineCap = .round
+
+        return renderer
     }
 }
 
