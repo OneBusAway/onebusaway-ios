@@ -1,5 +1,5 @@
 import XCTest
-@testable import OBAModelKit
+@testable import OBAKit
 
 struct Pet : Codable {
     let name : String

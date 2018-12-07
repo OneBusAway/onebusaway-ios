@@ -9,7 +9,6 @@
 import Foundation
 import OBAKit
 import CoreLocation
-import OBAModelKit
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate {

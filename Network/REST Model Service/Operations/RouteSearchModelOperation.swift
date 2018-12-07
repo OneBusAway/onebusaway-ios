@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class RouteSearchModelOperation: RESTModelOperation {
     public private(set) var routes = [Route]()

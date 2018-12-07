@@ -11,7 +11,6 @@ import XCTest
 import OBATestHelpers
 import OBAKit
 import OBALocationKit
-import OBAModelKit
 @testable import OBAAppKit
 import CoreLocation
 import Nimble

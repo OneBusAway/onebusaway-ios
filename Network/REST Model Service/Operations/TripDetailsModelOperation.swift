@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 @objc(OBATripDetailsModelOperation)
 public class TripDetailsModelOperation: RESTModelOperation {

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class TripArrivalsModelOperation: RESTModelOperation {
     public private(set) var arrivalDeparture: ArrivalDeparture?

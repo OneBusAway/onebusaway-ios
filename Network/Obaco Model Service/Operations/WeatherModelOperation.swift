@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class WeatherModelOperation: Operation {
     var apiOperation: WeatherOperation?

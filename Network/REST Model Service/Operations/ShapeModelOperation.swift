@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class ShapeModelOperation: RESTModelOperation {
     public private(set) var shape: String?

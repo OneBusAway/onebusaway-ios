@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class StopsForRouteModelOperation: RESTModelOperation {
     public private(set) var stopsForRoute: StopsForRoute?

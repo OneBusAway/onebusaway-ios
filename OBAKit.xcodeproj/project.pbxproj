@@ -74,46 +74,6 @@
 		931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */; };
 		931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */ = {isa = PBXBuildFile; fileRef = 931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */; };
 		931CE27A216F941D00161A6C /* ObacoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE279216F941D00161A6C /* ObacoService.swift */; };
-		931D058421B2F83100E2A516 /* OBAModelKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931D057B21B2F83100E2A516 /* OBAModelKit.framework */; };
-		931D058D21B2F83100E2A516 /* OBAModelKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 931D057D21B2F83100E2A516 /* OBAModelKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931D059021B2F83100E2A516 /* OBAModelKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931D057B21B2F83100E2A516 /* OBAModelKit.framework */; };
-		931D059121B2F83100E2A516 /* OBAModelKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 931D057B21B2F83100E2A516 /* OBAModelKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		931D059821B2F85D00E2A516 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E402197858000F71058 /* Region.swift */; };
-		931D059C21B2FD4500E2A516 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
-		931D059D21B2FD4F00E2A516 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
-		931D059E21B2FD5600E2A516 /* DictionaryCodingKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */; };
-		931D059F21B2FD5600E2A516 /* DictionaryDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */; };
-		931D05A021B2FD5600E2A516 /* DictionaryEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */; };
-		931D05A121B2FD5600E2A516 /* DictionaryErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */; };
-		931D05A221B2FD5C00E2A516 /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8E217C05FB00E16DBA /* References.swift */; };
-		931D05A321B2FD5C00E2A516 /* Agency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B90217C0B0A00E16DBA /* Agency.swift */; };
-		931D05A421B2FD5C00E2A516 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA3217D0B3200E750D0 /* Route.swift */; };
-		931D05A521B2FD5C00E2A516 /* Situation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932A6F29218022AF0008654F /* Situation.swift */; };
-		931D05A621B2FD5C00E2A516 /* Stop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA5217D0E9500E750D0 /* Stop.swift */; };
-		931D05A721B2FD5C00E2A516 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA9217D8ED200E750D0 /* Trip.swift */; };
-		931D05A821B2FD6200E2A516 /* Frequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B94217C1C2400E16DBA /* Frequency.swift */; };
-		931D05A921B2FD6200E2A516 /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
-		931D05AA21B2FD6200E2A516 /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
-		931D05AB21B2FD6200E2A516 /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
-		931D05AC21B2FD6200E2A516 /* StopArrivals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E152218CD78A00FD5FDB /* StopArrivals.swift */; };
-		931D05AD21B2FD6200E2A516 /* ArrivalDeparture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E157218ECCBC00FD5FDB /* ArrivalDeparture.swift */; };
-		931D05AE21B2FD6200E2A516 /* StopsForRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16021901F4D00FD5FDB /* StopsForRoute.swift */; };
-		931D05AF21B2FD6200E2A516 /* AgencyWithCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */; };
-		931D05B021B2FD6200E2A516 /* AgencyAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1B2191F12800F71058 /* AgencyAlert.swift */; };
-		931D05B121B2FD6900E2A516 /* WeatherForecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2D21964F9800F71058 /* WeatherForecast.swift */; };
-		931D05B221B2FD6900E2A516 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3521975BC200F71058 /* Alarm.swift */; };
-		931D05B321B2FD6900E2A516 /* AgencyVehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3721976B6900F71058 /* AgencyVehicle.swift */; };
-		931D05B421B2FDB200E2A516 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
-		931D05B721B2FE5B00E2A516 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
-		931D05BA21B377DC00E2A516 /* RegionsEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */; };
-		931D05BB21B377F800E2A516 /* ReferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B9D217CE18E00E16DBA /* ReferencesTests.swift */; };
-		931D05BC21B3781100E2A516 /* DictionaryDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */; };
-		931D05BD21B3781600E2A516 /* DictionaryEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */; };
-		931D05C021B3785A00E2A516 /* regions-v3.json in Resources */ = {isa = PBXBuildFile; fileRef = 931D05BF21B3785A00E2A516 /* regions-v3.json */; };
-		931D05C221B3789400E2A516 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		931D05C521B3CC2300E2A516 /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
-		931D05C721B4614C00E2A516 /* references.json in Resources */ = {isa = PBXBuildFile; fileRef = 931D05C621B4614C00E2A516 /* references.json */; };
-		931D05C921B4619600E2A516 /* arrival-and-departure-for-stop-MTS_11589.json in Resources */ = {isa = PBXBuildFile; fileRef = 931D05C821B4619600E2A516 /* arrival-and-departure-for-stop-MTS_11589.json */; };
 		93235DE5219F24A5008C3BB0 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE4219F24A5008C3BB0 /* AppConfig.swift */; };
 		93235DE8219FECD8008C3BB0 /* regions-v3.json in Resources */ = {isa = PBXBuildFile; fileRef = 93235DE7219FECD8008C3BB0 /* regions-v3.json */; };
 		93235DEC21A29ACC008C3BB0 /* RegionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */; };
@@ -133,6 +93,36 @@
 		932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFA821698B110070BF56 /* AgenciesWithCoverageOperation.swift */; };
 		932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */; };
 		932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */; };
+		932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
+		932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
+		932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
+		932E8CCA21BB02A400C43EB5 /* DictionaryCodingKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF48217A7FD9006682C3 /* DictionaryCodingKey.swift */; };
+		932E8CCB21BB02A400C43EB5 /* DictionaryDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF4A217A7FD9006682C3 /* DictionaryDecoder.swift */; };
+		932E8CCC21BB02A400C43EB5 /* DictionaryEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF49217A7FD9006682C3 /* DictionaryEncoder.swift */; };
+		932E8CCD21BB02A400C43EB5 /* DictionaryErrors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF47217A7FD9006682C3 /* DictionaryErrors.swift */; };
+		932E8CCE21BB02A800C43EB5 /* Frequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B94217C1C2400E16DBA /* Frequency.swift */; };
+		932E8CCF21BB02A800C43EB5 /* TripDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC531B2185874C00C974AB /* TripDetails.swift */; };
+		932E8CD021BB02A800C43EB5 /* TripStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B88217B9B2900E16DBA /* TripStatus.swift */; };
+		932E8CD121BB02A800C43EB5 /* VehicleStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B86217B991700E16DBA /* VehicleStatus.swift */; };
+		932E8CD221BB02A800C43EB5 /* StopArrivals.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E152218CD78A00FD5FDB /* StopArrivals.swift */; };
+		932E8CD321BB02A800C43EB5 /* ArrivalDeparture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E157218ECCBC00FD5FDB /* ArrivalDeparture.swift */; };
+		932E8CD421BB02A800C43EB5 /* StopsForRoute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16021901F4D00FD5FDB /* StopsForRoute.swift */; };
+		932E8CD521BB02A800C43EB5 /* AgencyWithCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303E16E2190F6CA00FD5FDB /* AgencyWithCoverage.swift */; };
+		932E8CD621BB02A800C43EB5 /* AgencyAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E1B2191F12800F71058 /* AgencyAlert.swift */; };
+		932E8CD721BB02AD00C43EB5 /* References.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B8E217C05FB00E16DBA /* References.swift */; };
+		932E8CD821BB02AD00C43EB5 /* Agency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B90217C0B0A00E16DBA /* Agency.swift */; };
+		932E8CD921BB02AD00C43EB5 /* Route.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA3217D0B3200E750D0 /* Route.swift */; };
+		932E8CDA21BB02AD00C43EB5 /* Situation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932A6F29218022AF0008654F /* Situation.swift */; };
+		932E8CDB21BB02AD00C43EB5 /* Stop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA5217D0E9500E750D0 /* Stop.swift */; };
+		932E8CDC21BB02AD00C43EB5 /* Trip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA9217D8ED200E750D0 /* Trip.swift */; };
+		932E8CDD21BB02B200C43EB5 /* Region.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E402197858000F71058 /* Region.swift */; };
+		932E8CDE21BB02B500C43EB5 /* WeatherForecast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E2D21964F9800F71058 /* WeatherForecast.swift */; };
+		932E8CDF21BB02B500C43EB5 /* Alarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3521975BC200F71058 /* Alarm.swift */; };
+		932E8CE021BB02B500C43EB5 /* AgencyVehicle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E3721976B6900F71058 /* AgencyVehicle.swift */; };
+		932E8CE121BB02C600C43EB5 /* ReferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93158B9D217CE18E00E16DBA /* ReferencesTests.swift */; };
+		932E8CE221BB02C600C43EB5 /* RegionsEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */; };
+		932E8CE321BB02CF00C43EB5 /* DictionaryDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF43217A7FC0006682C3 /* DictionaryDecodingTests.swift */; };
+		932E8CE421BB02CF00C43EB5 /* DictionaryEncodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF44217A7FC0006682C3 /* DictionaryEncodingTests.swift */; };
 		93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */; };
 		93399E0E21916B3300F71058 /* TripProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0D21916B3300F71058 /* TripProblemModelOperationTests.swift */; };
 		93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
@@ -256,41 +246,6 @@
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
 			remoteInfo = OBAKit;
 		};
-		931D058521B2F83100E2A516 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931D057A21B2F83100E2A516;
-			remoteInfo = OBAModelKit;
-		};
-		931D058721B2F83100E2A516 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931B93D02163F5520034D8FA;
-			remoteInfo = DemoApp;
-		};
-		931D058E21B2F83100E2A516 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931D057A21B2F83100E2A516;
-			remoteInfo = OBAModelKit;
-		};
-		931D05B821B2FF0200E2A516 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 931D057A21B2F83100E2A516;
-			remoteInfo = OBAModelKit;
-		};
-		931D05C321B378A000E2A516 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 93235DF121A2A44C008C3BB0;
-			remoteInfo = OBATestHelpers;
-		};
 		93235E0421A2A4C1008C3BB0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
@@ -391,23 +346,11 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				931D059121B2F83100E2A516 /* OBAModelKit.framework in Embed Frameworks */,
 				936EAF35219E42CC00AE27D5 /* OBAAppKit.framework in Embed Frameworks */,
 				931B9413216419C20034D8FA /* OBAKit.framework in Embed Frameworks */,
 				93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D05C121B3788000E2A516 /* Copy Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				931D05C221B3789400E2A516 /* Nimble.framework in Copy Frameworks */,
-			);
-			name = "Copy Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		93547E7C21A3308800F757A3 /* Copy Frameworks */ = {
@@ -550,14 +493,6 @@
 		931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopArrivalsAndDeparturesOperationTest.swift; sourceTree = "<group>"; };
 		931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrivals-and-departures-for-stop-1_75414.json"; sourceTree = "<group>"; };
 		931CE279216F941D00161A6C /* ObacoService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObacoService.swift; sourceTree = "<group>"; };
-		931D057B21B2F83100E2A516 /* OBAModelKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBAModelKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		931D057D21B2F83100E2A516 /* OBAModelKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAModelKit.h; sourceTree = "<group>"; };
-		931D057E21B2F83100E2A516 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		931D058321B2F83100E2A516 /* OBAModelKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAModelKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		931D058C21B2F83100E2A516 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		931D05BF21B3785A00E2A516 /* regions-v3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "regions-v3.json"; sourceTree = "<group>"; };
-		931D05C621B4614C00E2A516 /* references.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = references.json; sourceTree = "<group>"; };
-		931D05C821B4619600E2A516 /* arrival-and-departure-for-stop-MTS_11589.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-MTS_11589.json"; sourceTree = "<group>"; };
 		93235DD9219F21FC008C3BB0 /* tampa.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = tampa.gpx; sourceTree = "<group>"; };
 		93235DDA219F21FC008C3BB0 /* sandiego.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sandiego.gpx; sourceTree = "<group>"; };
 		93235DDB219F21FC008C3BB0 /* capitolhill.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = capitolhill.gpx; sourceTree = "<group>"; };
@@ -709,7 +644,6 @@
 				93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */,
 				936EAF34219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
-				931D059021B2F83100E2A516 /* OBAModelKit.framework in Frameworks */,
 				93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -729,23 +663,6 @@
 				931B94442164409B0034D8FA /* Nimble.framework in Frameworks */,
 				931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */,
 				931B9406216419C20034D8FA /* OBAKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D057821B2F83100E2A516 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D05B421B2FDB200E2A516 /* SwiftProtobuf.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D058021B2F83100E2A516 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D058421B2F83100E2A516 /* OBAModelKit.framework in Frameworks */,
-				931D05C521B3CC2300E2A516 /* Nimble.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -845,7 +762,7 @@
 			isa = PBXGroup;
 			children = (
 				931B93D32163F5520034D8FA /* DemoApp */,
-				931D057C21B2F83100E2A516 /* OBAModelKit */,
+				931D057C21B2F83100E2A516 /* Models */,
 				931B93FE216419C20034D8FA /* Network */,
 				93399E4D2198150100F71058 /* OBALocationKit */,
 				936EAF20219E42CC00AE27D5 /* OBAAppKit */,
@@ -853,7 +770,6 @@
 				93399E5A2198150100F71058 /* OBALocationKitTests */,
 				936EAF2D219E42CC00AE27D5 /* OBAAppKitTests */,
 				93235DF321A2A44C008C3BB0 /* OBATestHelpers */,
-				931D058921B2F83100E2A516 /* OBAModelKitTests */,
 				931B93D22163F5520034D8FA /* Products */,
 				931B943C21643D420034D8FA /* Frameworks */,
 			);
@@ -870,8 +786,6 @@
 				936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */,
 				936EAF27219E42CC00AE27D5 /* OBAAppKitTests.xctest */,
 				93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */,
-				931D057B21B2F83100E2A516 /* OBAModelKit.framework */,
-				931D058321B2F83100E2A516 /* OBAModelKitTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1062,7 +976,7 @@
 			path = "Regions API";
 			sourceTree = "<group>";
 		};
-		931D057C21B2F83100E2A516 /* OBAModelKit */ = {
+		931D057C21B2F83100E2A516 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				93399E1021916EE800F71058 /* Protobuf */,
@@ -1070,22 +984,8 @@
 				931D059A21B2F87100E2A516 /* REST */,
 				931D059921B2F86400E2A516 /* Obaco */,
 				93399E402197858000F71058 /* Region.swift */,
-				931D057D21B2F83100E2A516 /* OBAModelKit.h */,
-				931D057E21B2F83100E2A516 /* Info.plist */,
 			);
-			path = OBAModelKit;
-			sourceTree = "<group>";
-		};
-		931D058921B2F83100E2A516 /* OBAModelKitTests */ = {
-			isa = PBXGroup;
-			children = (
-				931D05BE21B3785A00E2A516 /* Fixtures */,
-				933FFF42217A7FC0006682C3 /* DictionaryCodingTests */,
-				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
-				93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */,
-				931D058C21B2F83100E2A516 /* Info.plist */,
-			);
-			path = OBAModelKitTests;
+			path = Models;
 			sourceTree = "<group>";
 		};
 		931D059921B2F86400E2A516 /* Obaco */ = {
@@ -1125,16 +1025,6 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
-		931D05BE21B3785A00E2A516 /* Fixtures */ = {
-			isa = PBXGroup;
-			children = (
-				931D05C821B4619600E2A516 /* arrival-and-departure-for-stop-MTS_11589.json */,
-				931D05C621B4614C00E2A516 /* references.json */,
-				931D05BF21B3785A00E2A516 /* regions-v3.json */,
-			);
-			path = Fixtures;
-			sourceTree = "<group>";
-		};
 		93235DD8219F21FC008C3BB0 /* gpx_files */ = {
 			isa = PBXGroup;
 			children = (
@@ -1165,6 +1055,15 @@
 				93E97FCF21A8E0C400207D5F /* LocationManager.swift */,
 			);
 			path = OBATestHelpers;
+			sourceTree = "<group>";
+		};
+		932E8CE521BB02FD00C43EB5 /* Model Unit Tests */ = {
+			isa = PBXGroup;
+			children = (
+				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
+				93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */,
+			);
+			path = "Model Unit Tests";
 			sourceTree = "<group>";
 		};
 		93399E1021916EE800F71058 /* Protobuf */ = {
@@ -1312,6 +1211,8 @@
 		933FFF50217A8D2A006682C3 /* Modeling */ = {
 			isa = PBXGroup;
 			children = (
+				932E8CE521BB02FD00C43EB5 /* Model Unit Tests */,
+				933FFF42217A7FC0006682C3 /* DictionaryCodingTests */,
 				93399E4421978ED000F71058 /* Regions Model Service Tests */,
 				93399E2621964CEA00F71058 /* Obaco Model Service Tests */,
 				933FFF51217A8D36006682C3 /* REST Model Service Tests */,
@@ -1473,14 +1374,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		931D057621B2F83100E2A516 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D058D21B2F83100E2A516 /* OBAModelKit.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		93235DED21A2A44C008C3BB0 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -1524,7 +1417,6 @@
 				931B9411216419C20034D8FA /* PBXTargetDependency */,
 				93399E602198150100F71058 /* PBXTargetDependency */,
 				936EAF33219E42CC00AE27D5 /* PBXTargetDependency */,
-				931D058F21B2F83100E2A516 /* PBXTargetDependency */,
 			);
 			name = DemoApp;
 			productName = OBANetworking;
@@ -1543,7 +1435,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				931D05B921B2FF0200E2A516 /* PBXTargetDependency */,
 			);
 			name = OBAKit;
 			productName = OBAKit;
@@ -1569,45 +1460,6 @@
 			name = OBAitTests;
 			productName = OBAKitTests;
 			productReference = 931B9405216419C20034D8FA /* OBAitTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		931D057A21B2F83100E2A516 /* OBAModelKit */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 931D059621B2F83100E2A516 /* Build configuration list for PBXNativeTarget "OBAModelKit" */;
-			buildPhases = (
-				931D057621B2F83100E2A516 /* Headers */,
-				931D057721B2F83100E2A516 /* Sources */,
-				931D057821B2F83100E2A516 /* Frameworks */,
-				931D057921B2F83100E2A516 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = OBAModelKit;
-			productName = OBAModelKit;
-			productReference = 931D057B21B2F83100E2A516 /* OBAModelKit.framework */;
-			productType = "com.apple.product-type.framework";
-		};
-		931D058221B2F83100E2A516 /* OBAModelKitTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 931D059721B2F83100E2A516 /* Build configuration list for PBXNativeTarget "OBAModelKitTests" */;
-			buildPhases = (
-				931D057F21B2F83100E2A516 /* Sources */,
-				931D058021B2F83100E2A516 /* Frameworks */,
-				931D058121B2F83100E2A516 /* Resources */,
-				931D05C121B3788000E2A516 /* Copy Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				931D05C421B378A000E2A516 /* PBXTargetDependency */,
-				931D058621B2F83100E2A516 /* PBXTargetDependency */,
-				931D058821B2F83100E2A516 /* PBXTargetDependency */,
-			);
-			name = OBAModelKitTests;
-			productName = OBAModelKitTests;
-			productReference = 931D058321B2F83100E2A516 /* OBAModelKitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		93235DF121A2A44C008C3BB0 /* OBATestHelpers */ = {
@@ -1737,13 +1589,6 @@
 						LastSwiftMigration = 1000;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
-					931D057A21B2F83100E2A516 = {
-						CreatedOnToolsVersion = 10.1;
-					};
-					931D058221B2F83100E2A516 = {
-						CreatedOnToolsVersion = 10.1;
-						TestTargetID = 931B93D02163F5520034D8FA;
-					};
 					93235DF121A2A44C008C3BB0 = {
 						CreatedOnToolsVersion = 10.1;
 					};
@@ -1787,8 +1632,6 @@
 				936EAF1E219E42CC00AE27D5 /* OBAAppKit */,
 				936EAF26219E42CC00AE27D5 /* OBAAppKitTests */,
 				93235DF121A2A44C008C3BB0 /* OBATestHelpers */,
-				931D057A21B2F83100E2A516 /* OBAModelKit */,
-				931D058221B2F83100E2A516 /* OBAModelKitTests */,
 			);
 		};
 /* End PBXProject section */
@@ -1842,23 +1685,6 @@
 				93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
 				93178A2421B847E4002328F1 /* arrivals_and_departures_for_stop_15th-galer.json in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D057921B2F83100E2A516 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D058121B2F83100E2A516 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D05C921B4619600E2A516 /* arrival-and-departure-for-stop-MTS_11589.json in Resources */,
-				931D05C021B3785A00E2A516 /* regions-v3.json in Resources */,
-				931D05C721B4614C00E2A516 /* references.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1940,6 +1766,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
+				932E8CE021BB02B500C43EB5 /* AgencyVehicle.swift in Sources */,
 				93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
@@ -1948,45 +1775,70 @@
 				932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */,
 				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
+				932E8CD921BB02AD00C43EB5 /* Route.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
 				9303E1632190ACA300FD5FDB /* StopsForRouteModelOperation.swift in Sources */,
+				932E8CDC21BB02AD00C43EB5 /* Trip.swift in Sources */,
 				93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */,
 				931CE267216E215B00161A6C /* TripDetailsOperation.swift in Sources */,
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
+				932E8CD521BB02A800C43EB5 /* AgencyWithCoverage.swift in Sources */,
 				9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */,
+				932E8CD221BB02A800C43EB5 /* StopArrivals.swift in Sources */,
 				9303E15D218F888B00FD5FDB /* TripArrivalsModelOperation.swift in Sources */,
+				932E8CDD21BB02B200C43EB5 /* Region.swift in Sources */,
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
 				93399E3F2197856A00F71058 /* RegionsModelService.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
+				932E8CD021BB02A800C43EB5 /* TripStatus.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
 				9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */,
+				932E8CD321BB02A800C43EB5 /* ArrivalDeparture.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
 				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
+				932E8CD821BB02AD00C43EB5 /* Agency.swift in Sources */,
 				937BB7352173EC0E00BE5635 /* TripProblemOperation.swift in Sources */,
+				932E8CCD21BB02A400C43EB5 /* DictionaryErrors.swift in Sources */,
 				9303E151218CACF700FD5FDB /* StopArrivalsModelOperation.swift in Sources */,
 				93399E1A2191EE3900F71058 /* RegionalAlertsModelOperation.swift in Sources */,
 				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,
 				93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */,
+				932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
+				932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
+				932E8CDB21BB02AD00C43EB5 /* Stop.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,
+				932E8CCC21BB02A400C43EB5 /* DictionaryEncoder.swift in Sources */,
+				932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */,
+				932E8CD121BB02A800C43EB5 /* VehicleStatus.swift in Sources */,
 				931CE27A216F941D00161A6C /* ObacoService.swift in Sources */,
 				93399E2521964CA700F71058 /* ObacoModelService.swift in Sources */,
+				932E8CDA21BB02AD00C43EB5 /* Situation.swift in Sources */,
 				93399E2C21964F0800F71058 /* WeatherModelOperation.swift in Sources */,
 				93399E432197858E00F71058 /* RegionsModelOperation.swift in Sources */,
+				932E8CD721BB02AD00C43EB5 /* References.swift in Sources */,
+				932E8CDE21BB02B500C43EB5 /* WeatherForecast.swift in Sources */,
 				93399E3A21976BE700F71058 /* AgencyVehicleModelOperation.swift in Sources */,
+				932E8CCE21BB02A800C43EB5 /* Frequency.swift in Sources */,
+				932E8CDF21BB02B500C43EB5 /* Alarm.swift in Sources */,
+				932E8CCF21BB02A800C43EB5 /* TripDetails.swift in Sources */,
 				93178A2821B8839C002328F1 /* StopOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
+				932E8CD621BB02A800C43EB5 /* AgencyAlert.swift in Sources */,
 				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
+				932E8CCB21BB02A400C43EB5 /* DictionaryDecoder.swift in Sources */,
+				932E8CCA21BB02A400C43EB5 /* DictionaryCodingKey.swift in Sources */,
 				93399E2A21964DC300F71058 /* ModelService.swift in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
+				932E8CD421BB02A800C43EB5 /* StopsForRoute.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,
 			);
@@ -1999,6 +1851,7 @@
 				93399E3221975B2100F71058 /* AlarmModelOperationTests.swift in Sources */,
 				932AAF9E216962D20070BF56 /* ArrivalDepartureAtStopTest.swift in Sources */,
 				93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */,
+				932E8CE221BB02C600C43EB5 /* RegionsEncodingTests.swift in Sources */,
 				9303E16D2190D98400FD5FDB /* ShapeModelOperationTests.swift in Sources */,
 				931CE26F216F819F00161A6C /* PlacemarkSearchOperationTest.swift in Sources */,
 				933FFF3721794D8D006682C3 /* VehicleTripOperationTest.swift in Sources */,
@@ -2015,8 +1868,10 @@
 				931A7CCF2188DB1200FA3025 /* TripDetailsModelOperationTests.swift in Sources */,
 				9303E142218B617700FD5FDB /* StopsModelOperationTests.swift in Sources */,
 				9303E1732190F94200FD5FDB /* AgenciesWithCoverageModelOperationTests.swift in Sources */,
+				932E8CE421BB02CF00C43EB5 /* DictionaryEncodingTests.swift in Sources */,
 				9303E1652190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift in Sources */,
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
+				932E8CE321BB02CF00C43EB5 /* DictionaryDecodingTests.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */,
 				9303E15F218F88F500FD5FDB /* TripArrivalsModelOperationTests.swift in Sources */,
@@ -2025,6 +1880,7 @@
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
+				932E8CE121BB02C600C43EB5 /* ReferencesTests.swift in Sources */,
 				933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */,
 				93399E0E21916B3300F71058 /* TripProblemModelOperationTests.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,
@@ -2033,50 +1889,6 @@
 				932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */,
 				9303E15B218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift in Sources */,
 				93697898217122460053DF37 /* StopProblemOperationTest.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D057721B2F83100E2A516 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D05AF21B2FD6200E2A516 /* AgencyWithCoverage.swift in Sources */,
-				931D05AD21B2FD6200E2A516 /* ArrivalDeparture.swift in Sources */,
-				931D05A021B2FD5600E2A516 /* DictionaryEncoder.swift in Sources */,
-				931D05A321B2FD5C00E2A516 /* Agency.swift in Sources */,
-				931D059821B2F85D00E2A516 /* Region.swift in Sources */,
-				931D05A421B2FD5C00E2A516 /* Route.swift in Sources */,
-				931D05B121B2FD6900E2A516 /* WeatherForecast.swift in Sources */,
-				931D05AE21B2FD6200E2A516 /* StopsForRoute.swift in Sources */,
-				931D059D21B2FD4F00E2A516 /* ModelHelpers.swift in Sources */,
-				931D059C21B2FD4500E2A516 /* gtfs-realtime.pb.swift in Sources */,
-				931D05B721B2FE5B00E2A516 /* InternalTypes.swift in Sources */,
-				931D05A921B2FD6200E2A516 /* TripDetails.swift in Sources */,
-				931D05B221B2FD6900E2A516 /* Alarm.swift in Sources */,
-				931D05A821B2FD6200E2A516 /* Frequency.swift in Sources */,
-				931D05AB21B2FD6200E2A516 /* VehicleStatus.swift in Sources */,
-				931D05A521B2FD5C00E2A516 /* Situation.swift in Sources */,
-				931D05B021B2FD6200E2A516 /* AgencyAlert.swift in Sources */,
-				931D05A721B2FD5C00E2A516 /* Trip.swift in Sources */,
-				931D059E21B2FD5600E2A516 /* DictionaryCodingKey.swift in Sources */,
-				931D05A221B2FD5C00E2A516 /* References.swift in Sources */,
-				931D05B321B2FD6900E2A516 /* AgencyVehicle.swift in Sources */,
-				931D059F21B2FD5600E2A516 /* DictionaryDecoder.swift in Sources */,
-				931D05A121B2FD5600E2A516 /* DictionaryErrors.swift in Sources */,
-				931D05AA21B2FD6200E2A516 /* TripStatus.swift in Sources */,
-				931D05A621B2FD5C00E2A516 /* Stop.swift in Sources */,
-				931D05AC21B2FD6200E2A516 /* StopArrivals.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		931D057F21B2F83100E2A516 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				931D05BA21B377DC00E2A516 /* RegionsEncodingTests.swift in Sources */,
-				931D05BD21B3781600E2A516 /* DictionaryEncodingTests.swift in Sources */,
-				931D05BC21B3781100E2A516 /* DictionaryDecodingTests.swift in Sources */,
-				931D05BB21B377F800E2A516 /* ReferencesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2155,31 +1967,6 @@
 			isa = PBXTargetDependency;
 			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 931B9410216419C20034D8FA /* PBXContainerItemProxy */;
-		};
-		931D058621B2F83100E2A516 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931D057A21B2F83100E2A516 /* OBAModelKit */;
-			targetProxy = 931D058521B2F83100E2A516 /* PBXContainerItemProxy */;
-		};
-		931D058821B2F83100E2A516 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931B93D02163F5520034D8FA /* DemoApp */;
-			targetProxy = 931D058721B2F83100E2A516 /* PBXContainerItemProxy */;
-		};
-		931D058F21B2F83100E2A516 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931D057A21B2F83100E2A516 /* OBAModelKit */;
-			targetProxy = 931D058E21B2F83100E2A516 /* PBXContainerItemProxy */;
-		};
-		931D05B921B2FF0200E2A516 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 931D057A21B2F83100E2A516 /* OBAModelKit */;
-			targetProxy = 931D05B821B2FF0200E2A516 /* PBXContainerItemProxy */;
-		};
-		931D05C421B378A000E2A516 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 93235DF121A2A44C008C3BB0 /* OBATestHelpers */;
-			targetProxy = 931D05C321B378A000E2A516 /* PBXContainerItemProxy */;
 		};
 		93235E0521A2A4C1008C3BB0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2549,124 +2336,6 @@
 			};
 			name = Release;
 		};
-		931D059221B2F83100E2A516 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
-				INFOPLIST_FILE = OBAModelKit/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAModelKit;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
-		};
-		931D059321B2F83100E2A516 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
-				INFOPLIST_FILE = OBAModelKit/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAModelKit;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Release;
-		};
-		931D059421B2F83100E2A516 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
-				INFOPLIST_FILE = OBAModelKitTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAModelKitTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
-			};
-			name = Debug;
-		};
-		931D059521B2F83100E2A516 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-				);
-				INFOPLIST_FILE = OBAModelKitTests/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAModelKitTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
-			};
-			name = Release;
-		};
 		93235DFC21A2A44C008C3BB0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3009,24 +2678,6 @@
 			buildConfigurations = (
 				931B9419216419C20034D8FA /* Debug */,
 				931B941A216419C20034D8FA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		931D059621B2F83100E2A516 /* Build configuration list for PBXNativeTarget "OBAModelKit" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				931D059221B2F83100E2A516 /* Debug */,
-				931D059321B2F83100E2A516 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		931D059721B2F83100E2A516 /* Build configuration list for PBXNativeTarget "OBAModelKitTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				931D059421B2F83100E2A516 /* Debug */,
-				931D059521B2F83100E2A516 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

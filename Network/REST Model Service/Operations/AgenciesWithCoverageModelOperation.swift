@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class AgenciesWithCoverageModelOperation: RESTModelOperation {
     public private(set) var agenciesWithCoverage = [AgencyWithCoverage]()

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 @objc(OBARESTModelOperation)
 public class RESTModelOperation: Operation {

@@ -12,7 +12,6 @@ import OHHTTPStubs
 import CoreLocation
 import MapKit
 import OBATestHelpers
-import OBAModelKit
 @testable import OBAKit
 
 class TripArrivalsModelOperationTests: OBATestCase {

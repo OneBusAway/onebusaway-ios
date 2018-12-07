@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 public class RegionalAlertsModelOperation: Operation {
     public var agencyAlertsOperations = [AgencyAlertsModelOperation]()

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import OBAModelKit
 
 @objc(OBARegionsModelOperation)
 public class RegionsModelOperation: RESTModelOperation {

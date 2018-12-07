@@ -10,7 +10,7 @@ import XCTest
 import Nimble
 import CoreLocation
 import MapKit
-@testable import OBAModelKit
+@testable import OBAKit
 import OBATestHelpers
 
 class RegionsEncodingTests: OBATestCase {
