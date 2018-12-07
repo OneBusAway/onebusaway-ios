@@ -9,7 +9,98 @@
 import Foundation
 import CoreLocation
 import OBAKit
-import OBATestHelpers
+
+public class LocationManagerMock: NSObject, LocationManager {
+
+    public var delegate: CLLocationManagerDelegate?
+
+    public var locationUpdatesStarted = false
+    public var headingUpdatesStarted = false
+
+    public func requestWhenInUseAuthorization() { }
+
+    public var authorizationStatus: CLAuthorizationStatus {
+        return .notDetermined
+    }
+
+    public var isLocationServicesEnabled: Bool {
+        return true
+    }
+
+    public func startUpdatingLocation() {
+        locationUpdatesStarted = true
+    }
+
+    public func stopUpdatingLocation() {
+        locationUpdatesStarted = false
+    }
+
+    public var location: CLLocation? {
+        didSet {
+            let locations = [location].compactMap {$0}
+            delegate?.locationManager?(CLLocationManager(), didUpdateLocations: locations)
+        }
+    }
+
+    public var heading: CLHeading? {
+        didSet {
+            if let heading = heading {
+                delegate?.locationManager?(CLLocationManager(), didUpdateHeading: heading)
+            }
+        }
+    }
+
+    public var isHeadingAvailable: Bool {
+        return authorizationStatus == .authorizedWhenInUse
+    }
+
+    public func startUpdatingHeading() {
+        headingUpdatesStarted = true
+    }
+
+    public func stopUpdatingHeading() {
+        headingUpdatesStarted = false
+    }
+}
+
+public class AuthorizableLocationManagerMock: LocationManagerMock {
+
+    var updateLocation: CLLocation?
+    var updateHeading: OBAMockHeading
+    public var _authorizationStatus: CLAuthorizationStatus = .notDetermined {
+        didSet {
+            delegate?.locationManager?(CLLocationManager(), didChangeAuthorization: _authorizationStatus)
+        }
+    }
+
+    public init(updateLocation: CLLocation, updateHeading: OBAMockHeading) {
+        self.updateLocation = updateLocation
+        self.updateHeading = updateHeading
+    }
+
+    public override func requestWhenInUseAuthorization() {
+        _authorizationStatus = .authorizedWhenInUse
+    }
+
+    public override var authorizationStatus: CLAuthorizationStatus {
+        return _authorizationStatus
+    }
+
+    public override func startUpdatingLocation() {
+        super.startUpdatingLocation()
+        if authorizationStatus == .authorizedWhenInUse {
+            location = updateLocation
+        }
+    }
+
+    public override func startUpdatingHeading() {
+        super.startUpdatingHeading()
+        if authorizationStatus == .authorizedWhenInUse {
+            heading = updateHeading
+        }
+    }
+}
+
 
 class LocDelegate: NSObject, LocationServiceDelegate {
     var location: CLLocation?

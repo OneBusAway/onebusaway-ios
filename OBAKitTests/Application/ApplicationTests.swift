@@ -9,7 +9,6 @@
 import Foundation
 import UIKit
 import XCTest
-import OBATestHelpers
 @testable import OBAKit
 import CoreLocation
 import Nimble

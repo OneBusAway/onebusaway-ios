@@ -11,7 +11,6 @@ import Nimble
 import CoreLocation
 import MapKit
 @testable import OBAKit
-import OBATestHelpers
 
 class RegionsEncodingTests: OBATestCase {
 

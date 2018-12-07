@@ -11,7 +11,6 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 import MapKit
-import OBATestHelpers
 @testable import OBAKit
 
 class ShapeModelOperationTests: OBATestCase {

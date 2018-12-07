@@ -74,12 +74,6 @@
 		931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE274216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift */; };
 		931CE277216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json in Resources */ = {isa = PBXBuildFile; fileRef = 931CE276216F8F4500161A6C /* arrivals-and-departures-for-stop-1_75414.json */; };
 		931CE27A216F941D00161A6C /* ObacoService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931CE279216F941D00161A6C /* ObacoService.swift */; };
-		93235DF621A2A44C008C3BB0 /* OBATestHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 93235DF421A2A44C008C3BB0 /* OBATestHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		93235DFE21A2A468008C3BB0 /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94C72168388E0034D8FA /* TestCaseExtensions.swift */; };
-		93235DFF21A2A468008C3BB0 /* OBATestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB72F2173AFCC00BE5635 /* OBATestCase.swift */; };
-		93235E0121A2A481008C3BB0 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93235E0021A2A481008C3BB0 /* XCTest.framework */; };
-		93235E0221A2A494008C3BB0 /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
-		93235E0321A2A494008C3BB0 /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
 		932A6F2821801BB00008654F /* arrival-and-departure-for-stop-MTS_11589.json in Resources */ = {isa = PBXBuildFile; fileRef = 932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */; };
 		932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9B216960A70070BF56 /* ArrivalDepartureForStopOperation.swift */; };
 		932AAF9E216962D20070BF56 /* ArrivalDepartureAtStopTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAF9D216962D20070BF56 /* ArrivalDepartureAtStopTest.swift */; };
@@ -142,6 +136,9 @@
 		932E8CFC21BB23E500C43EB5 /* CollectionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCD21A8D48600207D5F /* CollectionsTests.swift */; };
 		932E8CFD21BB23E900C43EB5 /* ApplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC321A8711600207D5F /* ApplicationTests.swift */; };
 		932E8CFE21BB23E900C43EB5 /* AppConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC521A872D800207D5F /* AppConfigTests.swift */; };
+		932E8D0021BB254100C43EB5 /* OBATestCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB72F2173AFCC00BE5635 /* OBATestCase.swift */; };
+		932E8D0121BB254A00C43EB5 /* OBAMockHeading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC921A8994E00207D5F /* OBAMockHeading.swift */; };
+		932E8D0221BB255100C43EB5 /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCB21A89A0F00207D5F /* TestData.swift */; };
 		93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */; };
 		93399E0E21916B3300F71058 /* TripProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E0D21916B3300F71058 /* TripProblemModelOperationTests.swift */; };
 		93399E1521916FB900F71058 /* SwiftProtobuf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93399E1421916FB900F71058 /* SwiftProtobuf.framework */; };
@@ -190,11 +187,6 @@
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
-		93BD80A921A317400009797C /* Nimble.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		93BD80AA21A317400009797C /* OHHTTPStubs.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC921A8994E00207D5F /* OBAMockHeading.swift */; };
-		93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCB21A89A0F00207D5F /* TestData.swift */; };
-		93E97FD021A8E0C400207D5F /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FCF21A8E0C400207D5F /* LocationManager.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
 		93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */; };
@@ -223,13 +215,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
 			remoteInfo = OBAKit;
-		};
-		93235E0821A2A4D0008C3BB0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 93235DF121A2A44C008C3BB0;
-			remoteInfo = OBATestHelpers;
 		};
 		93547E7421A32F1F00F757A3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -262,17 +247,6 @@
 				93547E7E21A330AB00F757A3 /* OHHTTPStubs.framework in Copy Frameworks */,
 			);
 			name = "Copy Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		93BD80A821A3172F0009797C /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				93BD80A921A317400009797C /* Nimble.framework in CopyFiles */,
-				93BD80AA21A317400009797C /* OHHTTPStubs.framework in CopyFiles */,
-			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -357,7 +331,6 @@
 		931B94BF21668FA90034D8FA /* StopsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperationTest.swift; sourceTree = "<group>"; };
 		931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle.json; sourceTree = "<group>"; };
 		931B94C52166DF5F0034D8FA /* stops_for_location_seattle_span.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle_span.json; sourceTree = "<group>"; };
-		931B94C72168388E0034D8FA /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		931CE266216E215B00161A6C /* TripDetailsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsOperation.swift; sourceTree = "<group>"; };
 		931CE268216E35D400161A6C /* TripDetailsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsOperationTest.swift; sourceTree = "<group>"; };
 		931CE26A216E361300161A6C /* trip_details_1_18196913.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = trip_details_1_18196913.json; sourceTree = "<group>"; };
@@ -382,9 +355,6 @@
 		93235DE7219FECD8008C3BB0 /* regions-v3.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "regions-v3.json"; sourceTree = "<group>"; };
 		93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsEncodingTests.swift; sourceTree = "<group>"; };
 		93235DEB21A29ACC008C3BB0 /* RegionsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionsServiceTests.swift; sourceTree = "<group>"; };
-		93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBATestHelpers.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		93235DF421A2A44C008C3BB0 /* OBATestHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBATestHelpers.h; sourceTree = "<group>"; };
-		93235DF521A2A44C008C3BB0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		93235E0021A2A481008C3BB0 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Platforms/iPhoneOS.platform/Developer/Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		932A6F2721801BAF0008654F /* arrival-and-departure-for-stop-MTS_11589.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "arrival-and-departure-for-stop-MTS_11589.json"; sourceTree = "<group>"; };
 		932A6F29218022AF0008654F /* Situation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Situation.swift; sourceTree = "<group>"; };
@@ -477,7 +447,6 @@
 		93E97FC921A8994E00207D5F /* OBAMockHeading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBAMockHeading.swift; sourceTree = "<group>"; };
 		93E97FCB21A89A0F00207D5F /* TestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestData.swift; sourceTree = "<group>"; };
 		93E97FCD21A8D48600207D5F /* CollectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsTests.swift; sourceTree = "<group>"; };
-		93E97FCF21A8E0C400207D5F /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 		93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionPromptViewController.swift; sourceTree = "<group>"; };
 		93E9802921AB09CF00207D5F /* OneBusAway.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = OneBusAway.xcassets; sourceTree = "<group>"; };
 		93E9802C21AB17EE00207D5F /* UIKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKit.swift; sourceTree = "<group>"; };
@@ -523,16 +492,6 @@
 				931B94442164409B0034D8FA /* Nimble.framework in Frameworks */,
 				931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */,
 				931B9406216419C20034D8FA /* OBAKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		93235DEF21A2A44C008C3BB0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				93235E0121A2A481008C3BB0 /* XCTest.framework in Frameworks */,
-				93235E0221A2A494008C3BB0 /* Nimble.framework in Frameworks */,
-				93235E0321A2A494008C3BB0 /* OHHTTPStubs.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,7 +550,6 @@
 				93399E4D2198150100F71058 /* Location */,
 				936EAF20219E42CC00AE27D5 /* Application */,
 				931B940B216419C20034D8FA /* OBAKitTests */,
-				93235DF321A2A44C008C3BB0 /* OBATestHelpers */,
 				931B93D22163F5520034D8FA /* Products */,
 				931B943C21643D420034D8FA /* Frameworks */,
 			);
@@ -603,7 +561,6 @@
 				931B93D12163F5520034D8FA /* DemoApp.app */,
 				931B93FD216419C20034D8FA /* OBAKit.framework */,
 				931B9405216419C20034D8FA /* OBAitTests.xctest */,
-				93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -648,9 +605,9 @@
 		931B940B216419C20034D8FA /* OBAKitTests */ = {
 			isa = PBXGroup;
 			children = (
+				93BD80A321A2AAD00009797C /* Helpers */,
 				932E8CEE21BB227C00C43EB5 /* Extensions */,
 				932E8CED21BB227100C43EB5 /* Application */,
-				93BD80A321A2AAD00009797C /* Helpers */,
 				932E8CEA21BB208C00C43EB5 /* Location */,
 				933FFF50217A8D2A006682C3 /* Modeling */,
 				933FFF4F217A8C88006682C3 /* Networking */,
@@ -862,20 +819,6 @@
 				93235DE3219F21FC008C3BB0 /* yorkca.gpx */,
 			);
 			path = gpx_files;
-			sourceTree = "<group>";
-		};
-		93235DF321A2A44C008C3BB0 /* OBATestHelpers */ = {
-			isa = PBXGroup;
-			children = (
-				931B94C72168388E0034D8FA /* TestCaseExtensions.swift */,
-				937BB72F2173AFCC00BE5635 /* OBATestCase.swift */,
-				93235DF421A2A44C008C3BB0 /* OBATestHelpers.h */,
-				93235DF521A2A44C008C3BB0 /* Info.plist */,
-				93E97FC921A8994E00207D5F /* OBAMockHeading.swift */,
-				93E97FCB21A89A0F00207D5F /* TestData.swift */,
-				93E97FCF21A8E0C400207D5F /* LocationManager.swift */,
-			);
-			path = OBATestHelpers;
 			sourceTree = "<group>";
 		};
 		932E8CE521BB02FD00C43EB5 /* Model Unit Tests */ = {
@@ -1108,6 +1051,9 @@
 		93BD80A321A2AAD00009797C /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				93E97FCB21A89A0F00207D5F /* TestData.swift */,
+				93E97FC921A8994E00207D5F /* OBAMockHeading.swift */,
+				937BB72F2173AFCC00BE5635 /* OBATestCase.swift */,
 				93E97FC721A896D400207D5F /* TestHelpers.swift */,
 				93399E772198B70100F71058 /* LocationServiceMocks.swift */,
 				93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */,
@@ -1186,14 +1132,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		93235DED21A2A44C008C3BB0 /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				93235DF621A2A44C008C3BB0 /* OBATestHelpers.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -1249,31 +1187,11 @@
 			dependencies = (
 				93547E7521A32F1F00F757A3 /* PBXTargetDependency */,
 				931B9408216419C20034D8FA /* PBXTargetDependency */,
-				93235E0921A2A4D0008C3BB0 /* PBXTargetDependency */,
 			);
 			name = OBAitTests;
 			productName = OBAKitTests;
 			productReference = 931B9405216419C20034D8FA /* OBAitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		93235DF121A2A44C008C3BB0 /* OBATestHelpers */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 93235DFB21A2A44C008C3BB0 /* Build configuration list for PBXNativeTarget "OBATestHelpers" */;
-			buildPhases = (
-				93235DED21A2A44C008C3BB0 /* Headers */,
-				93235DEE21A2A44C008C3BB0 /* Sources */,
-				93235DEF21A2A44C008C3BB0 /* Frameworks */,
-				93235DF021A2A44C008C3BB0 /* Resources */,
-				93BD80A821A3172F0009797C /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = OBATestHelpers;
-			productName = OBATestHelpers;
-			productReference = 93235DF221A2A44C008C3BB0 /* OBATestHelpers.framework */;
-			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
 
@@ -1302,9 +1220,6 @@
 						LastSwiftMigration = 1000;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
-					93235DF121A2A44C008C3BB0 = {
-						CreatedOnToolsVersion = 10.1;
-					};
 				};
 			};
 			buildConfigurationList = 931B93CC2163F5520034D8FA /* Build configuration list for PBXProject "OBAKit" */;
@@ -1323,7 +1238,6 @@
 				931B93D02163F5520034D8FA /* DemoApp */,
 				931B93FC216419C20034D8FA /* OBAKit */,
 				931B9404216419C20034D8FA /* OBAitTests */,
-				93235DF121A2A44C008C3BB0 /* OBATestHelpers */,
 			);
 		};
 /* End PBXProject section */
@@ -1379,13 +1293,6 @@
 				93FAAAA62177EC2D0086D9DE /* pugetsound-weather.json in Resources */,
 				931B94C62166DF5F0034D8FA /* stops_for_location_seattle_span.json in Resources */,
 				93178A2421B847E4002328F1 /* arrivals_and_departures_for_stop_15th-galer.json in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		93235DF021A2A44C008C3BB0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1542,6 +1449,7 @@
 				931CE275216F8E7800161A6C /* StopArrivalsAndDeparturesOperationTest.swift in Sources */,
 				93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */,
 				93399E4621978EE200F71058 /* RegionsModelOperationTests.swift in Sources */,
+				932E8D0121BB254A00C43EB5 /* OBAMockHeading.swift in Sources */,
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
 				93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */,
 				9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */,
@@ -1553,6 +1461,7 @@
 				932E8CE421BB02CF00C43EB5 /* DictionaryEncodingTests.swift in Sources */,
 				9303E1652190AF9500FD5FDB /* StopsForRouteModelOperationTests.swift in Sources */,
 				93FAAAA42177EB6B0086D9DE /* WeatherOperationTest.swift in Sources */,
+				932E8D0021BB254100C43EB5 /* OBATestCase.swift in Sources */,
 				932E8CE321BB02CF00C43EB5 /* DictionaryDecodingTests.swift in Sources */,
 				932AAFA42169840B0070BF56 /* ShapeOperationTest.swift in Sources */,
 				93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */,
@@ -1568,23 +1477,12 @@
 				93399E0E21916B3300F71058 /* TripProblemModelOperationTests.swift in Sources */,
 				931CE269216E35D400161A6C /* TripDetailsOperationTest.swift in Sources */,
 				9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */,
+				932E8D0221BB255100C43EB5 /* TestData.swift in Sources */,
 				933FFF312179460D006682C3 /* MatchingVehicleOperationTest.swift in Sources */,
 				932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */,
 				9303E15B218F4F8100FD5FDB /* StopArrivalsModelOperationTests.swift in Sources */,
 				93697898217122460053DF37 /* StopProblemOperationTest.swift in Sources */,
 				932E8CFE21BB23E900C43EB5 /* AppConfigTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		93235DEE21A2A44C008C3BB0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				93E97FCA21A8994E00207D5F /* OBAMockHeading.swift in Sources */,
-				93235DFF21A2A468008C3BB0 /* OBATestCase.swift in Sources */,
-				93E97FD021A8E0C400207D5F /* LocationManager.swift in Sources */,
-				93235DFE21A2A468008C3BB0 /* TestCaseExtensions.swift in Sources */,
-				93E97FCC21A89A0F00207D5F /* TestData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1600,11 +1498,6 @@
 			isa = PBXTargetDependency;
 			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 931B9410216419C20034D8FA /* PBXContainerItemProxy */;
-		};
-		93235E0921A2A4D0008C3BB0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 93235DF121A2A44C008C3BB0 /* OBATestHelpers */;
-			targetProxy = 93235E0821A2A4D0008C3BB0 /* PBXContainerItemProxy */;
 		};
 		93547E7521A32F1F00F757A3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1860,7 +1753,6 @@
 		931B9419216419C20034D8FA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -1889,7 +1781,6 @@
 		931B941A216419C20034D8FA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
@@ -1911,77 +1802,6 @@
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
-			};
-			name = Release;
-		};
-		93235DFC21A2A44C008C3BB0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				INFOPLIST_FILE = OBATestHelpers/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBATestHelpers;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
-			};
-			name = Debug;
-		};
-		93235DFD21A2A44C008C3BB0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = THEWY9596Q;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				DYLIB_INSTALL_NAME_BASE = "@rpath";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)/Carthage/Build/iOS",
-					"$(PLATFORM_DIR)/Developer/Library/Frameworks",
-				);
-				INFOPLIST_FILE = OBATestHelpers/Info.plist;
-				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@loader_path/Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBATestHelpers;
-				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
-				SKIP_INSTALL = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 4.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				VERSIONING_SYSTEM = "apple-generic";
-				VERSION_INFO_PREFIX = "";
 			};
 			name = Release;
 		};
@@ -2020,15 +1840,6 @@
 			buildConfigurations = (
 				931B9419216419C20034D8FA /* Debug */,
 				931B941A216419C20034D8FA /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		93235DFB21A2A44C008C3BB0 /* Build configuration list for PBXNativeTarget "OBATestHelpers" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				93235DFC21A2A44C008C3BB0 /* Debug */,
-				93235DFD21A2A44C008C3BB0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

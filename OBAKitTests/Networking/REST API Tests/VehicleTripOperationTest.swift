@@ -9,7 +9,6 @@
 import XCTest
 import Nimble
 import OHHTTPStubs
-import OBATestHelpers
 @testable import OBAKit
 
 class VehicleTripOperationTest: OBATestCase {

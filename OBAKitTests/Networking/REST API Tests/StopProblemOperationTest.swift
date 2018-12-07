@@ -10,7 +10,6 @@ import XCTest
 import Nimble
 import OHHTTPStubs
 import CoreLocation
-import OBATestHelpers
 @testable import OBAKit
 
 class StopProblemOperationTest: OBATestCase {
