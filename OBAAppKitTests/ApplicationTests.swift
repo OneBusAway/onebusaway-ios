@@ -9,7 +9,7 @@
 import Foundation
 import XCTest
 import OBATestHelpers
-import OBANetworkingKit
+import OBAKit
 import OBALocationKit
 import OBAModelKit
 @testable import OBAAppKit

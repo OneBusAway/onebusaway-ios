@@ -50,17 +50,17 @@
 #pragma mark - OBAApplicationDelegate
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    if (application.showPermissionPromptUI) {
-        PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
-
-        self.window.rootViewController = nav;
-    }
-    else {
+//    if (application.showPermissionPromptUI) {
+//        PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
+//        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
+//
+//        self.window.rootViewController = nav;
+//    }
+//    else {
         self.mapController = [[DemoViewController alloc] initWithApplication:application];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:self.mapController];
         self.window.rootViewController = nav;
-    }
+//    }
 }
 
 - (void)application:(OBAApplication * _Nonnull)app displayRegionPicker:(OBARegionPickerViewController * _Nonnull)picker {

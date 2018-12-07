@@ -8,7 +8,7 @@
 
 import Foundation
 import CoreLocation
-import OBANetworkingKit
+import OBAKit
 import OBALocationKit
 
 @objc(OBAAppConfig)

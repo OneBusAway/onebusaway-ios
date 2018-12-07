@@ -1,6 +1,6 @@
 //
 //  TestCaseExtensions.swift
-//  OBANetworkingKitTests
+//  OBAKitTests
 //
 //  Created by Aaron Brethorst on 10/5/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.

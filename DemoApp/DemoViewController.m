@@ -8,7 +8,7 @@
 
 #import "DemoViewController.h"
 @import MapKit;
-@import OBANetworkingKit;
+@import OBAKit;
 @import OBALocationKit;
 @import OBAModelKit;
 

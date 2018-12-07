@@ -7,7 +7,7 @@
 //
 
 import UIKit
-import OBANetworkingKit
+import OBAKit
 import OBALocationKit
 import CoreLocation
 import OBAModelKit

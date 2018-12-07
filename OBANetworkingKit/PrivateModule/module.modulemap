@@ -1,4 +1,0 @@
-module OBANetworkingKitPrivate {
-    header "OBAOperation+Internal.h"
-    export *
-}

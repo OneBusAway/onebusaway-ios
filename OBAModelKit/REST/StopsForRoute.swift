@@ -1,6 +1,6 @@
 //
 //  StopsForRoute.swift
-//  OBANetworkingKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 11/4/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.

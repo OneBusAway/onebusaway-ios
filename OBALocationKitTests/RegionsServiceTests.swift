@@ -9,7 +9,7 @@
 import Foundation
 import XCTest
 import OBATestHelpers
-import OBANetworkingKit
+import OBAKit
 @testable import OBALocationKit
 import CoreLocation
 import Nimble

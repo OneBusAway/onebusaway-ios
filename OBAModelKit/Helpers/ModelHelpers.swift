@@ -1,6 +1,6 @@
 //
 //  ModelHelpers.swift
-//  OBANetworkingKit
+//  OBAKit
 //
 //  Created by Aaron Brethorst on 10/21/18.
 //  Copyright © 2018 OneBusAway. All rights reserved.

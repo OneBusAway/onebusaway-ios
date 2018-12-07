@@ -11,7 +11,7 @@ import CoreLocation
 import MapKit
 import OBALocationKit
 import OBAModelKit
-import OBANetworkingKit
+import OBAKit
 
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {

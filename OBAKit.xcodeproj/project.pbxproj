@@ -40,10 +40,10 @@
 		931B93DE2163F5530034D8FA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DD2163F5530034D8FA /* Assets.xcassets */; };
 		931B93E12163F5530034D8FA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 931B93DF2163F5530034D8FA /* LaunchScreen.storyboard */; };
 		931B93E42163F5530034D8FA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B93E32163F5530034D8FA /* main.m */; };
-		931B9406216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */; };
-		931B940F216419C20034D8FA /* OBANetworkingKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B93FF216419C20034D8FA /* OBANetworkingKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */; };
-		931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		931B9406216419C20034D8FA /* OBAKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBAKit.framework */; };
+		931B940F216419C20034D8FA /* OBAKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B93FF216419C20034D8FA /* OBAKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		931B9412216419C20034D8FA /* OBAKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBAKit.framework */; };
+		931B9413216419C20034D8FA /* OBAKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBAKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B941C21641A7F0034D8FA /* OBAOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B941D21641A7F0034D8FA /* OBAOperation.m */; };
 		931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B942421641FB50034D8FA /* OBANetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -247,14 +247,14 @@
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
-			remoteInfo = OBANetworkingKit;
+			remoteInfo = OBAKit;
 		};
 		931B9410216419C20034D8FA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
-			remoteInfo = OBANetworkingKit;
+			remoteInfo = OBAKit;
 		};
 		931D058521B2F83100E2A516 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -366,14 +366,14 @@
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
-			remoteInfo = OBANetworkingKit;
+			remoteInfo = OBAKit;
 		};
 		93ACD060219E545400F493CB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 931B93C92163F5520034D8FA /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 931B93FC216419C20034D8FA;
-			remoteInfo = OBANetworkingKit;
+			remoteInfo = OBAKit;
 		};
 		93ACD062219E545400F493CB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -393,7 +393,7 @@
 			files = (
 				931D059121B2F83100E2A516 /* OBAModelKit.framework in Embed Frameworks */,
 				936EAF35219E42CC00AE27D5 /* OBAAppKit.framework in Embed Frameworks */,
-				931B9413216419C20034D8FA /* OBANetworkingKit.framework in Embed Frameworks */,
+				931B9413216419C20034D8FA /* OBAKit.framework in Embed Frameworks */,
 				93399E622198150100F71058 /* OBALocationKit.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
@@ -513,10 +513,10 @@
 		931B93E02163F5530034D8FA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		931B93E22163F5530034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B93E32163F5530034D8FA /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		931B93FD216419C20034D8FA /* OBANetworkingKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBANetworkingKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		931B93FF216419C20034D8FA /* OBANetworkingKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkingKit.h; sourceTree = "<group>"; };
+		931B93FD216419C20034D8FA /* OBAKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = OBAKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		931B93FF216419C20034D8FA /* OBAKit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAKit.h; sourceTree = "<group>"; };
 		931B9400216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBANetworkingKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		931B9405216419C20034D8FA /* OBAitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B940E216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B941C21641A7F0034D8FA /* OBAOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAOperation.h; sourceTree = "<group>"; };
 		931B941D21641A7F0034D8FA /* OBAOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAOperation.m; sourceTree = "<group>"; };
@@ -527,7 +527,7 @@
 		931B943A216430E70034D8FA /* RESTAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIService.swift; sourceTree = "<group>"; };
 		931B943D21643D430034D8FA /* Nimble.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Nimble.framework; path = Carthage/Build/iOS/Nimble.framework; sourceTree = "<group>"; };
 		931B943F21643D430034D8FA /* OHHTTPStubs.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OHHTTPStubs.framework; path = Carthage/Build/iOS/OHHTTPStubs.framework; sourceTree = "<group>"; };
-		931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBANetworkingKitTests-Bridging-Header.h"; sourceTree = "<group>"; };
+		931B94482164433C0034D8FA /* OBAKitTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAKitTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeOperationTest.swift; sourceTree = "<group>"; };
 		931B944C216460090034D8FA /* OBANetworkHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkHelpers.h; sourceTree = "<group>"; };
 		931B944D216460090034D8FA /* OBANetworkHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkHelpers.m; sourceTree = "<group>"; };
@@ -705,7 +705,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				931B9412216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
+				931B9412216419C20034D8FA /* OBAKit.framework in Frameworks */,
 				93399E612198150100F71058 /* OBALocationKit.framework in Frameworks */,
 				93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */,
 				936EAF34219E42CC00AE27D5 /* OBAAppKit.framework in Frameworks */,
@@ -728,7 +728,7 @@
 			files = (
 				931B94442164409B0034D8FA /* Nimble.framework in Frameworks */,
 				931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */,
-				931B9406216419C20034D8FA /* OBANetworkingKit.framework in Frameworks */,
+				931B9406216419C20034D8FA /* OBAKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -846,10 +846,10 @@
 			children = (
 				931B93D32163F5520034D8FA /* DemoApp */,
 				931D057C21B2F83100E2A516 /* OBAModelKit */,
-				931B93FE216419C20034D8FA /* OBANetworkingKit */,
+				931B93FE216419C20034D8FA /* Network */,
 				93399E4D2198150100F71058 /* OBALocationKit */,
 				936EAF20219E42CC00AE27D5 /* OBAAppKit */,
-				931B940B216419C20034D8FA /* OBANetworkingKitTests */,
+				931B940B216419C20034D8FA /* OBAKitTests */,
 				93399E5A2198150100F71058 /* OBALocationKitTests */,
 				936EAF2D219E42CC00AE27D5 /* OBAAppKitTests */,
 				93235DF321A2A44C008C3BB0 /* OBATestHelpers */,
@@ -863,8 +863,8 @@
 			isa = PBXGroup;
 			children = (
 				931B93D12163F5520034D8FA /* DemoApp.app */,
-				931B93FD216419C20034D8FA /* OBANetworkingKit.framework */,
-				931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */,
+				931B93FD216419C20034D8FA /* OBAKit.framework */,
+				931B9405216419C20034D8FA /* OBAitTests.xctest */,
 				93399E4C2198150100F71058 /* OBALocationKit.framework */,
 				93399E542198150100F71058 /* OBALocationKitTests.xctest */,
 				936EAF1F219E42CC00AE27D5 /* OBAAppKit.framework */,
@@ -895,7 +895,7 @@
 			path = DemoApp;
 			sourceTree = "<group>";
 		};
-		931B93FE216419C20034D8FA /* OBANetworkingKit */ = {
+		931B93FE216419C20034D8FA /* Network */ = {
 			isa = PBXGroup;
 			children = (
 				93399E3D2197854D00F71058 /* Regions Model Service */,
@@ -907,13 +907,13 @@
 				931CE278216F93EE00161A6C /* Obaco API */,
 				931CE27B216F943E00161A6C /* Regions API */,
 				931B941B21641A700034D8FA /* Core */,
-				931B93FF216419C20034D8FA /* OBANetworkingKit.h */,
+				931B93FF216419C20034D8FA /* OBAKit.h */,
 				931B9400216419C20034D8FA /* Info.plist */,
 			);
-			path = OBANetworkingKit;
+			path = Network;
 			sourceTree = "<group>";
 		};
-		931B940B216419C20034D8FA /* OBANetworkingKitTests */ = {
+		931B940B216419C20034D8FA /* OBAKitTests */ = {
 			isa = PBXGroup;
 			children = (
 				93BD80A321A2AAD00009797C /* Helpers */,
@@ -921,9 +921,9 @@
 				933FFF4F217A8C88006682C3 /* Networking */,
 				931B94562165250A0034D8FA /* fixtures */,
 				931B940E216419C20034D8FA /* Info.plist */,
-				931B94482164433C0034D8FA /* OBANetworkingKitTests-Bridging-Header.h */,
+				931B94482164433C0034D8FA /* OBAKitTests-Bridging-Header.h */,
 			);
-			path = OBANetworkingKitTests;
+			path = OBAKitTests;
 			sourceTree = "<group>";
 		};
 		931B941B21641A700034D8FA /* Core */ = {
@@ -1466,7 +1466,7 @@
 			files = (
 				931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */,
 				931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */,
-				931B940F216419C20034D8FA /* OBANetworkingKit.h in Headers */,
+				931B940F216419C20034D8FA /* OBAKit.h in Headers */,
 				931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */,
 				931B944E216460090034D8FA /* OBANetworkHelpers.h in Headers */,
 				931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */,
@@ -1531,9 +1531,9 @@
 			productReference = 931B93D12163F5520034D8FA /* DemoApp.app */;
 			productType = "com.apple.product-type.application";
 		};
-		931B93FC216419C20034D8FA /* OBANetworkingKit */ = {
+		931B93FC216419C20034D8FA /* OBAKit */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 931B9414216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingKit" */;
+			buildConfigurationList = 931B9414216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAKit" */;
 			buildPhases = (
 				931B93F8216419C20034D8FA /* Headers */,
 				931B93F9216419C20034D8FA /* Sources */,
@@ -1545,14 +1545,14 @@
 			dependencies = (
 				931D05B921B2FF0200E2A516 /* PBXTargetDependency */,
 			);
-			name = OBANetworkingKit;
-			productName = OBANetworkingKit;
-			productReference = 931B93FD216419C20034D8FA /* OBANetworkingKit.framework */;
+			name = OBAKit;
+			productName = OBAKit;
+			productReference = 931B93FD216419C20034D8FA /* OBAKit.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		931B9404216419C20034D8FA /* OBANetworkingKitTests */ = {
+		931B9404216419C20034D8FA /* OBAitTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingKitTests" */;
+			buildConfigurationList = 931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAitTests" */;
 			buildPhases = (
 				931B9401216419C20034D8FA /* Sources */,
 				931B9402216419C20034D8FA /* Frameworks */,
@@ -1566,9 +1566,9 @@
 				931B9408216419C20034D8FA /* PBXTargetDependency */,
 				93235E0921A2A4D0008C3BB0 /* PBXTargetDependency */,
 			);
-			name = OBANetworkingKitTests;
-			productName = OBANetworkingKitTests;
-			productReference = 931B9405216419C20034D8FA /* OBANetworkingKitTests.xctest */;
+			name = OBAitTests;
+			productName = OBAKitTests;
+			productReference = 931B9405216419C20034D8FA /* OBAitTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		931D057A21B2F83100E2A516 /* OBAModelKit */ = {
@@ -1780,8 +1780,8 @@
 			projectRoot = "";
 			targets = (
 				931B93D02163F5520034D8FA /* DemoApp */,
-				931B93FC216419C20034D8FA /* OBANetworkingKit */,
-				931B9404216419C20034D8FA /* OBANetworkingKitTests */,
+				931B93FC216419C20034D8FA /* OBAKit */,
+				931B9404216419C20034D8FA /* OBAitTests */,
 				93399E4B2198150100F71058 /* OBALocationKit */,
 				93399E532198150100F71058 /* OBALocationKitTests */,
 				936EAF1E219E42CC00AE27D5 /* OBAAppKit */,
@@ -2148,12 +2148,12 @@
 /* Begin PBXTargetDependency section */
 		931B9408216419C20034D8FA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 931B9407216419C20034D8FA /* PBXContainerItemProxy */;
 		};
 		931B9411216419C20034D8FA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 931B9410216419C20034D8FA /* PBXContainerItemProxy */;
 		};
 		931D058621B2F83100E2A516 /* PBXTargetDependency */ = {
@@ -2233,12 +2233,12 @@
 		};
 		93ACD05F219E544100F493CB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 93ACD05E219E544100F493CB /* PBXContainerItemProxy */;
 		};
 		93ACD061219E545400F493CB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 931B93FC216419C20034D8FA /* OBANetworkingKit */;
+			target = 931B93FC216419C20034D8FA /* OBAKit */;
 			targetProxy = 93ACD060219E545400F493CB /* PBXContainerItemProxy */;
 		};
 		93ACD063219E545400F493CB /* PBXTargetDependency */ = {
@@ -2316,7 +2316,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
-				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBANetworkingKit/PrivateModule";
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBAKit/PrivateModule";
 			};
 			name = Debug;
 		};
@@ -2370,7 +2370,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBANetworkingKit/PrivateModule";
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/OBAKit/PrivateModule";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -2437,7 +2437,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworkingKit/Info.plist;
+				INFOPLIST_FILE = Network/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2445,9 +2445,10 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -2472,7 +2473,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworkingKit/Info.plist;
+				INFOPLIST_FILE = Network/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -2480,9 +2481,10 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -2502,16 +2504,16 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworkingKitTests/Info.plist;
+				INFOPLIST_FILE = OBAKitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingKitTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "OBANetworkingKitTests/OBANetworkingKitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "OBAKitTests/OBAKitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -2531,16 +2533,16 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Carthage/Build/iOS",
 				);
-				INFOPLIST_FILE = OBANetworkingKitTests/Info.plist;
+				INFOPLIST_FILE = OBAKitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworkingKitTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "OBANetworkingKitTests/OBANetworkingKitTests-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "OBAKitTests/OBAKitTests-Bridging-Header.h";
 				SWIFT_VERSION = 4.2;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
@@ -2993,7 +2995,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		931B9414216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingKit" */ = {
+		931B9414216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAKit" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				931B9415216419C20034D8FA /* Debug */,
@@ -3002,7 +3004,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBANetworkingKitTests" */ = {
+		931B9418216419C20034D8FA /* Build configuration list for PBXNativeTarget "OBAitTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				931B9419216419C20034D8FA /* Debug */,

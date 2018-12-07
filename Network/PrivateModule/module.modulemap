@@ -1,0 +1,4 @@
+module OBAKitPrivate {
+    header "OBAOperation+Internal.h"
+    export *
+}

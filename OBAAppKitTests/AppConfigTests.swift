@@ -11,7 +11,7 @@ import UIKit
 import Foundation
 import XCTest
 import OBATestHelpers
-import OBANetworkingKit
+import OBAKit
 import OBALocationKit
 @testable import OBAAppKit
 import CoreLocation
