@@ -135,8 +135,6 @@ public class MapRegionManager: NSObject {
         mapView.addSubview(statusOverlay)
 
         NSLayoutConstraint.activate([
-            statusOverlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 100.0),
-            statusOverlay.heightAnchor.constraint(greaterThanOrEqualToConstant: 30.0),
             statusOverlay.centerXAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.centerXAnchor),
             statusOverlay.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: application.theme.metrics.padding)
         ])
