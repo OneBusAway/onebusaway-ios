@@ -46,4 +46,11 @@ public class RESTModelOperation: Operation {
 
         return models
     }
+
+    // MARK: - Debugging
+
+    public override var debugDescription: String {
+        let urlString = apiOperation?.request.url?.absoluteString ?? ""
+        return "\(super.debugDescription) - URL: \(urlString)"
+    }
 }

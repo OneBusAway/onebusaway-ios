@@ -14,5 +14,6 @@ public class StopsModelOperation: RESTModelOperation {
     override public func main() {
         super.main()
         stops = decodeModels(type: Stop.self)
+        stops.loadReferences(references!)
     }
 }

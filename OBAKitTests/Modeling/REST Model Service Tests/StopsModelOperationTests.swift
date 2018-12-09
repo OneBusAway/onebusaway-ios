@@ -35,7 +35,6 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.locationType) == .stop
         expect(stop.name) == "15th Ave NE & NE Campus Pkwy"
 
-        stop.loadReferences(op.references!)
         expect(stop.routes.count) == 12
         expect(stop.routes.first!.id) == "1_100223"
 
