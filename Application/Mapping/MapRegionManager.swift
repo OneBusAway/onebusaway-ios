@@ -23,7 +23,7 @@ public class MapRegionManager: NSObject {
 
     private var regionChangeRequestTimer: Timer?
 
-    @objc public let mapView = MKMapView.autolayoutNew()
+    @objc public let mapView = MKMapView()
 
     @objc public init(application: Application) {
         self.application = application
@@ -35,6 +35,8 @@ public class MapRegionManager: NSObject {
         application.locationService.addDelegate(self)
 
         mapView.delegate = self
+
+        addStatusOverlayToMap()
     }
 
     deinit {
@@ -126,12 +128,45 @@ public class MapRegionManager: NSObject {
 
         mapView.addOverlay(walkingDirectionsOverlay!, level: MKOverlayLevel.aboveRoads)
     }
+
+    // MARK: - Map Status Overlay
+
+    private func addStatusOverlayToMap() {
+        mapView.addSubview(statusOverlay)
+
+        NSLayoutConstraint.activate([
+            statusOverlay.widthAnchor.constraint(greaterThanOrEqualToConstant: 100.0),
+            statusOverlay.heightAnchor.constraint(greaterThanOrEqualToConstant: 30.0),
+            statusOverlay.centerXAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.centerXAnchor),
+            statusOverlay.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: application.theme.metrics.padding)
+        ])
+    }
+
+    private lazy var statusOverlay = StatusOverlayView.autolayoutNew()
+
+    private static let requiredHeightToShowStops = 75000.0
+
+    private func updateZoomWarningOverlay(mapHeight: Double) {
+        if mapHeight > MapRegionManager.requiredHeightToShowStops {
+            let message = NSLocalizedString("map_region_manager.status_overlay.zoom_to_see_stops", value: "Zoom in to look for stops", comment: "Map region manager message to the user when they need to zoom in more to view stops")
+            statusOverlay.showOverlay(message: message)
+        }
+        else {
+            statusOverlay.hideOverlay()
+        }
+    }
 }
 
 // MARK: - Map View Delegate
 
 extension MapRegionManager: MKMapViewDelegate {
     public func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
+
+        guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
+            return
+        }
+
         regionChangeRequestTimer?.invalidate()
 
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)

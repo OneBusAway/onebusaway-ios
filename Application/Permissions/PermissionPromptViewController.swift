@@ -93,7 +93,7 @@ public class PermissionPromptViewController: UIViewController {
         let stack = UIStackView.oba_verticalStack(arangedSubviews: [imageViewWrapper, textView, buttonWrapper])
         view.addSubview(stack)
 
-        stack.pinEdgesToSuperviewSafeArea()
+        stack.pinToSuperview(.safeArea)
     
         if (kUseDebugColors) {
             imageViewWrapper.backgroundColor = .brown

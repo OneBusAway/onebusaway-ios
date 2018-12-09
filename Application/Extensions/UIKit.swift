@@ -54,6 +54,10 @@ extension UIView: Autolayoutable {
     }
 }
 
+public enum AutoLayoutPinTarget: Int {
+    case safeArea, layoutMargins, edges
+}
+
 extension UIView {
     /// Embeds the receiver in a `UIView` suitable for placing inside of a
     /// stack view or another container view.
@@ -66,37 +70,53 @@ extension UIView {
         wrapper.addSubview(self)
 
         if setConstraints {
-            pinEdgesToSuperview()
+            pinToSuperview(.edges)
         }
 
         return wrapper
     }
 
-    /// Pins the receiver to the safe area layout anchors of its superview. Does nothing if the receiver is not a subview.
-    public func pinEdgesToSuperviewSafeArea() {
+    /// Pins the receiver to the specified part of its superview, and sets `self.translatesAutoresizingMaskIntoConstraints` to `false` as a convenience.
+    ///
+    /// Does nothing if the receiver does not have a superview.
+    public func pinToSuperview(_ pinTarget: AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
         guard let superview = superview else {
             return
         }
 
-        NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.leadingAnchor),
-            trailingAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.trailingAnchor),
-            topAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.topAnchor),
-            bottomAnchor.constraint(equalTo: superview.safeAreaLayoutGuide.bottomAnchor),
-        ])
-    }
+        translatesAutoresizingMaskIntoConstraints = false
 
-    /// Pins the receiver to the layout anchors of its superview. Does nothing if the receiver is not a subview.
-    public func pinEdgesToSuperview() {
-        guard let superview = superview else {
-            return
+        let anchorable: Anchorable
+        switch pinTarget {
+        case .edges:
+            anchorable = superview
+        case .layoutMargins:
+            anchorable = superview.layoutMarginsGuide
+        case .safeArea:
+            anchorable = superview.safeAreaLayoutGuide
         }
 
         NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: superview.leadingAnchor),
-            trailingAnchor.constraint(equalTo: superview.trailingAnchor),
-            topAnchor.constraint(equalTo: superview.topAnchor),
-            bottomAnchor.constraint(equalTo: superview.bottomAnchor),
+            leadingAnchor.constraint(equalTo: anchorable.leadingAnchor, constant: insets.leading),
+            trailingAnchor.constraint(equalTo: anchorable.trailingAnchor, constant: insets.trailing),
+            topAnchor.constraint(equalTo: anchorable.topAnchor, constant: insets.top),
+            bottomAnchor.constraint(equalTo: anchorable.bottomAnchor, constant: insets.bottom),
         ])
     }
 }
+
+protocol Anchorable {
+    var leadingAnchor: NSLayoutXAxisAnchor { get }
+    var trailingAnchor: NSLayoutXAxisAnchor { get }
+    var leftAnchor: NSLayoutXAxisAnchor { get }
+    var rightAnchor: NSLayoutXAxisAnchor { get }
+    var topAnchor: NSLayoutYAxisAnchor { get }
+    var bottomAnchor: NSLayoutYAxisAnchor { get }
+    var widthAnchor: NSLayoutDimension { get }
+    var heightAnchor: NSLayoutDimension { get }
+    var centerXAnchor: NSLayoutXAxisAnchor { get }
+    var centerYAnchor: NSLayoutYAxisAnchor { get }
+}
+
+extension UIView: Anchorable {}
+extension UILayoutGuide: Anchorable {}

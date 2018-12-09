@@ -31,6 +31,7 @@
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:apiKey uuid:uuid appVersion:appVersion userDefaults:NSUserDefaults.standardUserDefaults];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
+        [_app configureAppearanceProxies];
     }
 
     return self;

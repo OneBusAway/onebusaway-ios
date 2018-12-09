@@ -24,7 +24,7 @@ public class Theme: NSObject {
 @objc(OBAThemeMetrics)
 public class ThemeMetrics: NSObject {
 
-    public let padding: CGFloat = 10.0
+    public let padding: CGFloat = 8.0
 
     public let controllerMargin: CGFloat = 20.0
 }
@@ -66,8 +66,25 @@ public class ThemeFonts: NSObject {
         return _body!
     }()
 
-    class func font(textStyle: UIFont.TextStyle) -> UIFont {
+    private var _boldBody: UIFont?
+    public lazy var boldBody: UIFont = {
+        if let boldBody = _boldBody {
+            return boldBody
+        }
+
+        _boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
+        return _boldBody!
+    }()
+
+    private class func font(textStyle: UIFont.TextStyle) -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle)
-        return UIFont.init(descriptor: descriptor, size: min(descriptor.pointSize, maxFontSize))
+        return UIFont(descriptor: descriptor, size: min(descriptor.pointSize, maxFontSize))
+    }
+
+    private class func boldFont(textStyle: UIFont.TextStyle) -> UIFont {
+        let plainDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle)
+        let augmentedDescriptor = plainDescriptor.withSymbolicTraits(.traitBold)
+        let descriptor = augmentedDescriptor ?? plainDescriptor
+        return UIFont(descriptor: descriptor, size: min(descriptor.pointSize, maxFontSize))
     }
 }

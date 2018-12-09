@@ -106,6 +106,9 @@ public class Application: NSObject {
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
 
         UISegmentedControl.appearance(whenContainedInInstancesOf: [UINavigationBar.self]).setTitleTextAttributes([.foregroundColor: UIColor.darkText], for: .normal)
+
+        StatusOverlayView.appearance().innerPadding = theme.metrics.padding
+        StatusOverlayView.appearance().textColor = theme.colors.lightText
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
