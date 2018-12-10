@@ -51,12 +51,12 @@ extension ReferencesTests {
         let route = routes.first!
         expect(route.agencyID) == "Hillsborough Area Regional Transit"
         expect(route.agency.name) == "Hillsborough Area Regional Transit"
-        expect(route.color) == "09346D"
+        expect(route.color).to(beCloseTo(UIColor(red: (9.0 / 255.0), green: (52.0 / 255.0), blue: (109.0 / 255.0), alpha: 1.0)))
         expect(route.routeDescription).to(beNil())
         expect(route.id) == "Hillsborough Area Regional Transit_1"
         expect(route.longName) == "Florida Avenue"
         expect(route.shortName) == "1"
-        expect(route.textColor) == "FFFFFF"
+        expect(route.textColor).to(beCloseTo(UIColor.white))
         expect(route.routeType) == .bus
         expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
     }
