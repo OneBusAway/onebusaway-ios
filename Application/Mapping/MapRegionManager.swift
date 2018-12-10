@@ -119,7 +119,12 @@ public class MapRegionManager: NSObject {
     private var walkingDirectionsOverlay: MKOverlay?
     private var walkingDirectionsStop: Stop?
 
-    public func addOverlay(_ overlay: MKOverlay, for stop: Stop) {
+    /// Adds a map overlay specifically to show walking directions from the user's current location to the stop
+    ///
+    /// - Parameters:
+    ///   - overlay: The walking directions overlay.
+    ///   - stop: The stop to which the walking directions point.
+    public func addWalkingDirectionsOverlay(_ overlay: MKOverlay, for stop: Stop) {
         if let walkingDirectionsOverlay = walkingDirectionsOverlay {
             mapView.removeOverlay(walkingDirectionsOverlay)
         }
@@ -128,6 +133,22 @@ public class MapRegionManager: NSObject {
         walkingDirectionsStop = stop
 
         mapView.addOverlay(walkingDirectionsOverlay!, level: MKOverlayLevel.aboveRoads)
+    }
+
+    /// Removes the walking directions overlay that matches `stop`.
+    ///
+    /// - Parameter stop: The stop to which walking directions should be removed.
+    public func removeWalkingDirectionsOverlay(for stop: Stop) {
+        guard
+            walkingDirectionsStop == stop,
+            let walkingDirectionsOverlay = walkingDirectionsOverlay
+        else {
+            return
+        }
+
+        self.walkingDirectionsStop = nil
+        self.walkingDirectionsOverlay = nil
+        mapView.removeOverlay(walkingDirectionsOverlay)
     }
 
     // MARK: - Map Status Overlay
