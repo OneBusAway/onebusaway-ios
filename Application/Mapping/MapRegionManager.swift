@@ -14,6 +14,7 @@ import MapKit
 public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
     @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
+    @objc optional func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
 }
 
 @objc(OBAMapRegionManager)
@@ -170,13 +171,15 @@ extension MapRegionManager: MKMapViewDelegate {
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
 
-    func findInstalledMapAnnotations<T>(type: T.Type) -> Set<T> where T: MKAnnotation {
-        return Set(mapView.annotations.compactMap {$0 as? T})
-    }
-
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, didSelect: view)
+        }
+    }
+
+    public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        for delegate in delegates.allObjects {
+            delegate.mapView?(mapView, didDeselect: view)
         }
     }
 
