@@ -8,6 +8,26 @@
 
 import UIKit
 
+// MARK: - UIBarButtonItem
+extension UIBarButtonItem {
+
+    /// Convenience property for creating a `flexibleSpace`-type bar button item.
+    public class var flexibleSpace: UIBarButtonItem {
+        return UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+    }
+}
+
+// MARK: - UIViewController
+
+extension UIViewController {
+
+    /// True if this controller's `toolbarItems` property has one or more bar button items, and false if it does not.
+    public var hasToolbarItems: Bool {
+        let count = toolbarItems?.count ?? 0
+        return count > 0
+    }
+}
+
 // MARK: - UIStackView
 
 extension UIStackView {
