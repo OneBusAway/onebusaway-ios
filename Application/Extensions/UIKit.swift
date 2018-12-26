@@ -35,19 +35,19 @@ extension UIStackView {
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The horizontal stack view.
-    public class func oba_horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
-        return oba_stack(axis: .horizontal, arrangedSubviews: views)
+    public class func horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
+        return stack(axis: .horizontal, arrangedSubviews: views)
     }
 
     /// Creates a vertical axis stack view
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The vertical stack view.
-    public class func oba_verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
-        return oba_stack(axis: .vertical, arrangedSubviews: views)
+    public class func verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
+        return stack(axis: .vertical, arrangedSubviews: views)
     }
 
-    private class func oba_stack(axis: NSLayoutConstraint.Axis, arrangedSubviews views: [UIView]) -> UIStackView {
+    private class func stack(axis: NSLayoutConstraint.Axis, arrangedSubviews views: [UIView]) -> UIStackView {
         let stack = UIStackView.init(arrangedSubviews: views)
         stack.axis = axis
         stack.translatesAutoresizingMaskIntoConstraints = false

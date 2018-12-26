@@ -90,7 +90,7 @@ public class PermissionPromptViewController: UIViewController {
             buttonWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 60.0)
         ])
 
-        let stack = UIStackView.oba_verticalStack(arangedSubviews: [imageViewWrapper, textView, buttonWrapper])
+        let stack = UIStackView.verticalStack(arangedSubviews: [imageViewWrapper, textView, buttonWrapper])
         view.addSubview(stack)
 
         stack.pinToSuperview(.safeArea)
