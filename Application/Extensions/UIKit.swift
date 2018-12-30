@@ -48,7 +48,7 @@ extension UIStackView {
     }
 
     private class func stack(axis: NSLayoutConstraint.Axis, arrangedSubviews views: [UIView]) -> UIStackView {
-        let stack = UIStackView.init(arrangedSubviews: views)
+        let stack = UIStackView(arrangedSubviews: views)
         stack.axis = axis
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
@@ -99,6 +99,10 @@ extension UIView {
     /// Pins the receiver to the specified part of its superview, and sets `self.translatesAutoresizingMaskIntoConstraints` to `false` as a convenience.
     ///
     /// Does nothing if the receiver does not have a superview.
+    ///
+    /// - Parameters:
+    ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
+    ///   - insets: Optional inset from the pinTarget. Defaults to zero.
     public func pinToSuperview(_ pinTarget: AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
         guard let superview = superview else {
             return

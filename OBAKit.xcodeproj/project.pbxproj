@@ -187,6 +187,7 @@
 		937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7362174384100BE5635 /* TripProblemOperationTest.swift */; };
 		937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB73821743A2800BE5635 /* report_trip_problem.json */; };
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
+		93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
@@ -440,6 +441,7 @@
 		937BB7362174384100BE5635 /* TripProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperationTest.swift; sourceTree = "<group>"; };
 		937BB73821743A2800BE5635 /* report_trip_problem.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = report_trip_problem.json; sourceTree = "<group>"; };
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
@@ -1043,6 +1045,7 @@
 		936EAF20219E42CC00AE27D5 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				93A632F721D933EB00A1AC9B /* Controllers */,
 				934894BE21BFA770001ADDB6 /* Utilities */,
 				9342916621ACC45F0071AD11 /* Regions */,
 				9342915E21AC9E030071AD11 /* Controls */,
@@ -1062,6 +1065,14 @@
 				93235DE4219F24A5008C3BB0 /* AppConfig.swift */,
 			);
 			path = Orchestration;
+			sourceTree = "<group>";
+		};
+		93A632F721D933EB00A1AC9B /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */,
+			);
+			path = Controllers;
 			sourceTree = "<group>";
 		};
 		93BD80A321A2AAD00009797C /* Helpers */ = {
@@ -1216,6 +1227,7 @@
 		931B93C92163F5520034D8FA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				CLASSPREFIX = OBA;
 				LastSwiftUpdateCheck = 1010;
 				LastUpgradeCheck = 1010;
 				ORGANIZATIONNAME = OneBusAway;
@@ -1417,6 +1429,7 @@
 				932E8CDB21BB02AD00C43EB5 /* Stop.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,
 				932E8CF021BB22B800C43EB5 /* AppConfig.swift in Sources */,
+				93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */,
 				932E8D0B21BCA74700C43EB5 /* StatusOverlayView.swift in Sources */,
 				932E8CE921BB208000C43EB5 /* RegionsService.swift in Sources */,
 				932E8CCC21BB02A400C43EB5 /* DictionaryEncoder.swift in Sources */,
@@ -1670,7 +1683,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworking;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.obakit.demoapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1693,7 +1706,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBANetworking;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.obakit.demoapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -1702,6 +1715,7 @@
 		931B9415216419C20034D8FA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
@@ -1723,7 +1737,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.obakit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
@@ -1738,6 +1752,7 @@
 		931B9416216419C20034D8FA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_IDENTITY = "";
 				CODE_SIGN_STYLE = Automatic;
@@ -1759,7 +1774,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKit;
+				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.obakit;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
