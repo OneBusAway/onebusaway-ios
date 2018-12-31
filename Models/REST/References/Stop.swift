@@ -132,4 +132,27 @@ public class Stop: NSObject, Codable, HasReferences {
     public override var debugDescription: String {
         return String(format: "%@({id: %@, name: %@})", super.debugDescription, id, name)
     }
+
+    // MARK: - Equatable and Hashable
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Stop else {
+            return false
+        }
+
+        return
+            code == rhs.code &&
+            direction == rhs.direction &&
+            id == rhs.id &&
+            location.coordinate.latitude == rhs.coordinate.latitude &&
+            location.coordinate.longitude == rhs.coordinate.longitude &&
+            locationType == rhs.locationType &&
+            name == rhs.name &&
+            routeIDs == rhs.routeIDs &&
+            wheelchairBoarding == rhs.wheelchairBoarding
+    }
+
+    public override var hash: Int {
+        return id.hash
+    }
 }
