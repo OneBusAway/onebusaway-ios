@@ -79,6 +79,19 @@ public enum AutoLayoutPinTarget: Int {
 }
 
 extension UIView {
+
+    /// Returns a view suitable for use as a spacer.
+    ///
+    /// - Parameter height: The height of the spacer.
+    /// - Returns: The spacer view.
+    public class func spacerView(height: CGFloat) -> UIView {
+        let spacer = UIView.autolayoutNew()
+        NSLayoutConstraint.activate([
+            spacer.heightAnchor.constraint(equalToConstant: height)
+        ])
+        return spacer
+    }
+
     /// Embeds the receiver in a `UIView` suitable for placing inside of a
     /// stack view or another container view.
     ///

@@ -56,6 +56,8 @@ public class ThemeColors: NSObject {
 public class ThemeFonts: NSObject {
     private static let maxFontSize: CGFloat = 32.0
 
+    // MARK: - Body
+
     private var _body: UIFont?
     public lazy var body: UIFont = {
         if let body = _body {
@@ -74,6 +76,18 @@ public class ThemeFonts: NSObject {
 
         _boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
         return _boldBody!
+    }()
+
+    // MARK: - Footnote
+
+    private var _footnote: UIFont?
+    public lazy var footnote: UIFont = {
+        if let footnote = _footnote {
+            return footnote
+        }
+
+        _footnote = ThemeFonts.font(textStyle: UIFont.TextStyle.footnote)
+        return _footnote!
     }()
 
     private class func font(textStyle: UIFont.TextStyle) -> UIFont {
