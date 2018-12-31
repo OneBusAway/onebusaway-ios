@@ -39,7 +39,7 @@ public enum StopLocationType: Int, Decodable {
     }
 }
 
-public class Stop: NSObject, Decodable, HasReferences {
+public class Stop: NSObject, Codable, HasReferences {
 
     /// The stop_code field contains a short piece of text or a number that uniquely identifies the stop for passengers.
     ///
@@ -108,9 +108,28 @@ public class Stop: NSObject, Decodable, HasReferences {
         wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(code, forKey: .code)
+        try container.encode(direction, forKey: .direction)
+        try container.encode(id, forKey: .id)
+        try container.encode(location.coordinate.latitude, forKey: .lat)
+        try container.encode(location.coordinate.longitude, forKey: .lon)
+        try container.encode(locationType.rawValue, forKey: .locationType)
+        try container.encode(name, forKey: .name)
+        try container.encode(routeIDs, forKey: .routeIDs)
+        try container.encode(wheelchairBoarding.rawValue, forKey: .wheelchairBoarding)
+    }
+
     // MARK: - HasReferences
 
     public func loadReferences(_ references: References) {
         routes = references.routesWithIDs(routeIDs)
+    }
+
+    // MARK: - CustomDebugStringConvertible
+
+    public override var debugDescription: String {
+        return String(format: "%@({id: %@, name: %@})", super.debugDescription, id, name)
     }
 }
