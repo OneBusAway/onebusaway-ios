@@ -57,6 +57,18 @@ extension UIStackView {
 
 // MARK: - UIView
 
+extension UIView {
+    /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
+    public var layoutDirectionIsRTL: Bool {
+        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
+    }
+
+    /// Returns true if the app's is running in a left-to-right language, like English.
+    public var layoutDirectionIsLTR: Bool {
+        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .leftToRight
+    }
+}
+
 /// Protocol support for improving Auto Layout-compatible view creation.
 public protocol Autolayoutable {
     static func autolayoutNew() -> Self

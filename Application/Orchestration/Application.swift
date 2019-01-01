@@ -109,6 +109,8 @@ public class Application: NSObject {
 
         StatusOverlayView.appearance().innerPadding = theme.metrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText
+
+        IndeterminateProgressView.appearance().progressColor = theme.colors.primary
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];

@@ -13,6 +13,10 @@ import MapKit
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
+
+    @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
+    @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
+
     @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     @objc optional func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
 }
@@ -55,6 +59,8 @@ public class MapRegionManager: NSObject {
         self.requestStopsOperation?.cancel()
         self.requestStopsOperation = nil
 
+        notifyDelegatesDataLoadingStarted()
+
         let requestStopsOperation = modelService.getStops(region: mapView.region)
         requestStopsOperation.then { [weak self] in
             guard let self = self else {
@@ -62,6 +68,8 @@ public class MapRegionManager: NSObject {
             }
 
             self.stops = requestStopsOperation.stops
+
+            self.notifyDelegatesDataLoadingFinished()
         }
 
         self.requestStopsOperation = requestStopsOperation
@@ -84,6 +92,18 @@ public class MapRegionManager: NSObject {
     private func notifyDelegatesStopsChanged() {
         for delegate in delegates.allObjects {
             delegate.mapRegionManager?(self, stopsUpdated: stops)
+        }
+    }
+
+    private func notifyDelegatesDataLoadingStarted() {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManagerDataLoadingStarted?(self)
+        }
+    }
+
+    private func notifyDelegatesDataLoadingFinished() {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManagerDataLoadingFinished?(self)
         }
     }
 

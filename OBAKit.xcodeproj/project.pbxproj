@@ -189,6 +189,7 @@
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
 		93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */; };
 		93A632FC21D9651000A1AC9B /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632FB21D9651000A1AC9B /* Strings.swift */; };
+		93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
@@ -444,6 +445,7 @@
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
 		93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		93A632FB21D9651000A1AC9B /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
+		93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateProgressView.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
@@ -1024,6 +1026,7 @@
 			children = (
 				9342915F21AC9E150071AD11 /* BorderedButton.swift */,
 				932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */,
+				93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1471,6 +1474,7 @@
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 				932E8CF121BB22BD00C43EB5 /* MapRegionManager.swift in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,
+				93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
