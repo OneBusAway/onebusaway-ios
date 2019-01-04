@@ -39,6 +39,7 @@ public class MapRegionManager: NSObject {
 
         application.locationService.addDelegate(self)
 
+        mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.delegate = self
 
         addStatusOverlayToMap()
@@ -221,6 +222,20 @@ extension MapRegionManager: MKMapViewDelegate {
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, didDeselect: view)
+        }
+    }
+
+    public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+        guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
+            return nil
+        }
+        return mapView.dequeueReusableAnnotationView(withIdentifier: reuseIdentifier, for: annotation)
+    }
+
+    private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
+        switch annotation {
+        case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
+        default: return nil
         }
     }
 

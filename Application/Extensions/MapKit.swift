@@ -30,6 +30,21 @@ extension MKDirections {
 
 extension MKMapView {
 
+    /// Syntactic sugar for registering annotation views
+    ///
+    /// - Parameter type: The type that is being registered.
+    func registerAnnotationView<T>(_ type: T.Type) where T: MKAnnotationView {
+        register(type, forAnnotationViewWithReuseIdentifier: MKMapView.reuseIdentifier(for: type))
+    }
+
+    /// Standardized method for generating map view reuse identifiers.
+    ///
+    /// - Parameter type: The type for which a reuse identifier is desired.
+    /// - Returns: The reuse identifier.
+    class func reuseIdentifier<T>(for type: T.Type) -> String where T: MKAnnotationView {
+        return String(describing: type)
+    }
+
     /// Replaces already-installed annotations of the specified type with the new annotations provided.
     ///
     /// - Parameters:

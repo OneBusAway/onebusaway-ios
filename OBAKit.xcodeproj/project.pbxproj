@@ -190,6 +190,7 @@
 		93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */; };
 		93A632FC21D9651000A1AC9B /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632FB21D9651000A1AC9B /* Strings.swift */; };
 		93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */; };
+		93A6330921DC4FAE00A1AC9B /* StopAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */; };
 		93A6330F21DD3CD200A1AC9B /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330E21DD3CD200A1AC9B /* Icons.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
@@ -447,6 +448,7 @@
 		93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		93A632FB21D9651000A1AC9B /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateProgressView.swift; sourceTree = "<group>"; };
+		93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAnnotationView.swift; sourceTree = "<group>"; };
 		93A6330E21DD3CD200A1AC9B /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
@@ -1109,6 +1111,7 @@
 			isa = PBXGroup;
 			children = (
 				93E97FB321A5C53600207D5F /* MapRegionManager.swift */,
+				93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */,
 			);
 			path = Mapping;
 			sourceTree = "<group>";
@@ -1421,6 +1424,7 @@
 				932E8CD021BB02A800C43EB5 /* TripStatus.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
 				9303E1712190F90400FD5FDB /* AgenciesWithCoverageModelOperation.swift in Sources */,
+				93A6330921DC4FAE00A1AC9B /* StopAnnotationView.swift in Sources */,
 				932E8CD321BB02A800C43EB5 /* ArrivalDeparture.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
