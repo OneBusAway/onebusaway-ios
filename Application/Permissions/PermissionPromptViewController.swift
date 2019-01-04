@@ -23,7 +23,7 @@ public class PermissionPromptViewController: UIViewController {
         let imageView = UIImageView(frame: .zero)
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
-        imageView.image = UIImage(named: "header", in: Bundle(for: PermissionPromptViewController.self), compatibleWith: nil)
+        imageView.image = Icons.header
         imageView.backgroundColor = application.theme.colors.primary
         imageView.heightAnchor.constraint(equalToConstant: 100.0).isActive = true
 

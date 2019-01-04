@@ -190,6 +190,7 @@
 		93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */; };
 		93A632FC21D9651000A1AC9B /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632FB21D9651000A1AC9B /* Strings.swift */; };
 		93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */; };
+		93A6330F21DD3CD200A1AC9B /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330E21DD3CD200A1AC9B /* Icons.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
@@ -446,6 +447,7 @@
 		93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		93A632FB21D9651000A1AC9B /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateProgressView.swift; sourceTree = "<group>"; };
+		93A6330E21DD3CD200A1AC9B /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
@@ -1136,6 +1138,7 @@
 			children = (
 				93E9802921AB09CF00207D5F /* OneBusAway.xcassets */,
 				93E9803C21AB748800207D5F /* Theme.swift */,
+				93A6330E21DD3CD200A1AC9B /* Icons.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -1462,6 +1465,7 @@
 				932E8CCE21BB02A800C43EB5 /* Frequency.swift in Sources */,
 				932E8CDF21BB02B500C43EB5 /* Alarm.swift in Sources */,
 				932E8CCF21BB02A800C43EB5 /* TripDetails.swift in Sources */,
+				93A6330F21DD3CD200A1AC9B /* Icons.swift in Sources */,
 				93178A2821B8839C002328F1 /* StopOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				932E8CD621BB02A800C43EB5 /* AgencyAlert.swift in Sources */,
