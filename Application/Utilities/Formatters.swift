@@ -11,6 +11,27 @@ import Foundation
 @objc(OBAFormatters)
 public class Formatters: NSObject {
 
+    private let locale: Locale
+
+    @objc public init(locale: Locale) {
+        self.locale = locale
+        super.init()
+    }
+
+    // MARK: - Formatted Times
+
+    /// Converts a date into a human-readable time string that conforms to the user's locale.
+    public lazy var timeFormatter: DateFormatter = {
+        let timeFormatter = DateFormatter()
+        timeFormatter.dateStyle = .none
+        timeFormatter.timeStyle = .short
+        timeFormatter.locale = locale
+
+        return timeFormatter
+    }()
+
+    // MARK: - Routes
+
     /// Generates a formatted, human readable list of routes.
     ///
     /// For example: "Routes: 10, 12, 49".

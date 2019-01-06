@@ -26,6 +26,9 @@ public class Application: NSObject {
     /// configuration values.
     private let config: AppConfig
 
+    /// Commonly used formatters configured with the user's current, auto-updating locale.
+    @objc public let formatters = Formatters(locale: Locale.autoupdatingCurrent)
+
     /// Provides access to the user's location and heading.
     @objc public let locationService: LocationService
 
