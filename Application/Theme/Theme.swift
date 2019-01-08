@@ -56,6 +56,18 @@ public class ThemeColors: NSObject {
 public class ThemeFonts: NSObject {
     private static let maxFontSize: CGFloat = 32.0
 
+    // MARK: - Title
+
+    private var _title: UIFont?
+    public lazy var title: UIFont = {
+        if let title = _title {
+            return title
+        }
+
+        _title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title1)
+        return _title!
+    }()
+
     // MARK: - Body
 
     private var _body: UIFont?

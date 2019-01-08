@@ -121,6 +121,34 @@ extension UIView {
         return wrapper
     }
 
+    public func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero) {
+        guard let superview = superview else {
+            return
+        }
+
+        translatesAutoresizingMaskIntoConstraints = false
+
+        let leadingAnchorable = anchorable(for: superview, pinTarget: pinTargets.leading)
+        let trailingAnchorable = anchorable(for: superview, pinTarget: pinTargets.trailing)
+        let topAnchorable = anchorable(for: superview, pinTarget: pinTargets.top)
+        let bottomAnchorable = anchorable(for: superview, pinTarget: pinTargets.bottom)
+
+        NSLayoutConstraint.activate([
+            leadingAnchor.constraint(equalTo: leadingAnchorable.leadingAnchor, constant: insets.leading),
+            trailingAnchor.constraint(equalTo: trailingAnchorable.trailingAnchor, constant: insets.trailing),
+            topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top),
+            bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom),
+        ])
+    }
+
+    private func anchorable(for view: UIView, pinTarget: AutoLayoutPinTarget) -> Anchorable {
+        switch pinTarget {
+        case .edges: return view
+        case .layoutMargins: return view.layoutMarginsGuide
+        case .safeArea: return view.safeAreaLayoutGuide
+        }
+    }
+
     /// Pins the receiver to the specified part of its superview, and sets `self.translatesAutoresizingMaskIntoConstraints` to `false` as a convenience.
     ///
     /// Does nothing if the receiver does not have a superview.
@@ -129,32 +157,32 @@ extension UIView {
     ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
     ///   - insets: Optional inset from the pinTarget. Defaults to zero.
     public func pinToSuperview(_ pinTarget: AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
-        guard let superview = superview else {
-            return
-        }
-
-        translatesAutoresizingMaskIntoConstraints = false
-
-        let anchorable: Anchorable
-        switch pinTarget {
-        case .edges:
-            anchorable = superview
-        case .layoutMargins:
-            anchorable = superview.layoutMarginsGuide
-        case .safeArea:
-            anchorable = superview.safeAreaLayoutGuide
-        }
-
-        NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: anchorable.leadingAnchor, constant: insets.leading),
-            trailingAnchor.constraint(equalTo: anchorable.trailingAnchor, constant: insets.trailing),
-            topAnchor.constraint(equalTo: anchorable.topAnchor, constant: insets.top),
-            bottomAnchor.constraint(equalTo: anchorable.bottomAnchor, constant: insets.bottom),
-        ])
+        pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets)
     }
 }
 
-protocol Anchorable {
+public struct DirectionalPinTargets {
+    public let leading: AutoLayoutPinTarget
+    public let trailing: AutoLayoutPinTarget
+    public let top: AutoLayoutPinTarget
+    public let bottom: AutoLayoutPinTarget
+
+    public init(pinTarget: AutoLayoutPinTarget) {
+        leading = pinTarget
+        trailing = pinTarget
+        top = pinTarget
+        bottom = pinTarget
+    }
+
+    public init(leading: AutoLayoutPinTarget, trailing: AutoLayoutPinTarget, top: AutoLayoutPinTarget, bottom: AutoLayoutPinTarget) {
+        self.leading = leading
+        self.trailing = trailing
+        self.top = top
+        self.bottom = bottom
+    }
+}
+
+public protocol Anchorable {
     var leadingAnchor: NSLayoutXAxisAnchor { get }
     var trailingAnchor: NSLayoutXAxisAnchor { get }
     var leftAnchor: NSLayoutXAxisAnchor { get }
