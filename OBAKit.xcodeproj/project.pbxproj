@@ -168,6 +168,9 @@
 		933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3B2179A8DE006682C3 /* RESTAPIModelService.swift */; };
 		933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF3D2179AF7E006682C3 /* VehicleStatusModelOperation.swift */; };
 		933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */; };
+		9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9345BB3321E2932F00980708 /* StopArrivalView.swift */; };
+		9345BB3921E2B12100980708 /* VehicleStopModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9345BB3821E2B12100980708 /* VehicleStopModelTests.swift */; };
+		9345BB4021E3D42400980708 /* FloatingPanelTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9345BB3F21E3D42400980708 /* FloatingPanelTitleView.swift */; };
 		934894C021BFA788001ADDB6 /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934894BF21BFA788001ADDB6 /* Formatters.swift */; };
 		9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */; };
 		9351CFFC216A850E002D5391 /* StopsForRouteOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */; };
@@ -192,6 +195,7 @@
 		93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */; };
 		93A6330921DC4FAE00A1AC9B /* StopAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */; };
 		93A6330F21DD3CD200A1AC9B /* Icons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330E21DD3CD200A1AC9B /* Icons.swift */; };
+		93A6331621DFF26700A1AC9B /* VehicleStopModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6331521DFF26700A1AC9B /* VehicleStopModel.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
@@ -425,6 +429,9 @@
 		9342916721ACC4740071AD11 /* RegionPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerViewController.swift; sourceTree = "<group>"; };
 		9342916921ADC3BB0071AD11 /* MapKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKit.swift; sourceTree = "<group>"; };
 		9342916F21B05D610071AD11 /* DemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DemoViewController.h; sourceTree = "<group>"; };
+		9345BB3321E2932F00980708 /* StopArrivalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopArrivalView.swift; sourceTree = "<group>"; };
+		9345BB3821E2B12100980708 /* VehicleStopModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStopModelTests.swift; sourceTree = "<group>"; };
+		9345BB3F21E3D42400980708 /* FloatingPanelTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPanelTitleView.swift; sourceTree = "<group>"; };
 		934894BF21BFA788001ADDB6 /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatters.swift; sourceTree = "<group>"; };
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
@@ -450,6 +457,7 @@
 		93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateProgressView.swift; sourceTree = "<group>"; };
 		93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopAnnotationView.swift; sourceTree = "<group>"; };
 		93A6330E21DD3CD200A1AC9B /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
+		93A6331521DFF26700A1AC9B /* VehicleStopModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStopModel.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
@@ -773,6 +781,7 @@
 		931D057C21B2F83100E2A516 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				93A6331421DFF24F00A1AC9B /* ViewModels */,
 				93399E1021916EE800F71058 /* Protobuf */,
 				931D059B21B2F8A500E2A516 /* Helpers */,
 				931D059A21B2F87100E2A516 /* REST */,
@@ -842,6 +851,7 @@
 			children = (
 				93158B9D217CE18E00E16DBA /* ReferencesTests.swift */,
 				93235DE921A08E23008C3BB0 /* RegionsEncodingTests.swift */,
+				9345BB3821E2B12100980708 /* VehicleStopModelTests.swift */,
 			);
 			path = "Model Unit Tests";
 			sourceTree = "<group>";
@@ -1031,6 +1041,8 @@
 				9342915F21AC9E150071AD11 /* BorderedButton.swift */,
 				932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */,
 				93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */,
+				9345BB3321E2932F00980708 /* StopArrivalView.swift */,
+				9345BB3F21E3D42400980708 /* FloatingPanelTitleView.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1091,6 +1103,14 @@
 				93A632FB21D9651000A1AC9B /* Strings.swift */,
 			);
 			path = Text;
+			sourceTree = "<group>";
+		};
+		93A6331421DFF24F00A1AC9B /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				93A6331521DFF26700A1AC9B /* VehicleStopModel.swift */,
+			);
+			path = ViewModels;
 			sourceTree = "<group>";
 		};
 		93BD80A321A2AAD00009797C /* Helpers */ = {
@@ -1394,6 +1414,7 @@
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
 				936EAF19219DF56500AE27D5 /* RegionsAPIService.swift in Sources */,
 				931B944F216460090034D8FA /* OBANetworkHelpers.m in Sources */,
+				93A6331621DFF26700A1AC9B /* VehicleStopModel.swift in Sources */,
 				932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */,
 				932E8CE821BB207C00C43EB5 /* LocationManagerProtocol.swift in Sources */,
 				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
@@ -1438,10 +1459,12 @@
 				932E8CF221BB22C200C43EB5 /* Operations.swift in Sources */,
 				932E8CCD21BB02A400C43EB5 /* DictionaryErrors.swift in Sources */,
 				9303E151218CACF700FD5FDB /* StopArrivalsModelOperation.swift in Sources */,
+				9345BB4021E3D42400980708 /* FloatingPanelTitleView.swift in Sources */,
 				93399E1A2191EE3900F71058 /* RegionalAlertsModelOperation.swift in Sources */,
 				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,
 				93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */,
 				932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */,
+				9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */,
 				932E8CF821BB22CB00C43EB5 /* Theme.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
 				932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */,
@@ -1528,6 +1551,7 @@
 				931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */,
 				93FAAAAD21785DB40086D9DE /* AlarmOperationTest.swift in Sources */,
 				937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */,
+				9345BB3921E2B12100980708 /* VehicleStopModelTests.swift in Sources */,
 				932E8CE121BB02C600C43EB5 /* ReferencesTests.swift in Sources */,
 				933FFF53217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift in Sources */,
 				932E8CEC21BB223B00C43EB5 /* TestHelpers.swift in Sources */,

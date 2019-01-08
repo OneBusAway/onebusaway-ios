@@ -6,8 +6,30 @@
 //  Copyright © 2019 OneBusAway. All rights reserved.
 //
 
-import UIKit
+import XCTest
+import Nimble
+@testable import OBAKit
 
-class VehicleStopModelTests: NSObject {
+// abxoxo - TODO!
 
+class VehicleStopModelTests: OBATestCase {
+
+    func testDateReflectsLastArrivalDepartureDate() {
+        // todo
+    }
+
+    // tests 'happy path' at end/beginning of route.
+    func testCreatingVSMModels_routeEnd() {
+        // todo
+    }
+
+    // tests 'happy path' in the middle of a route.
+    func testCreatingVSMModels_routeMiddle() {
+        // todo
+    }
+
+    // ensures that cases where a vehicle starts and then comes back show up as two different entries
+    func testVSMModelsAreDiscontiguousForDifferentTrips() {
+        // todo
+    }
 }

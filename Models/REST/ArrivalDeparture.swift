@@ -8,10 +8,6 @@
 
 import Foundation
 
-public enum ArrivalDepartureStatus: Int {
-    case arriving, departing
-}
-
 public class ArrivalDeparture: NSObject, Decodable {
 
     /// true if this transit vehicle is one that riders could arrive on
@@ -99,7 +95,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let tripStatus: TripStatus?
 
     /// The ID of the arriving transit vehicle
-    public let vehicleID: String
+    public let vehicleID: String?
 
     private enum CodingKeys: String, CodingKey {
         case arrivalEnabled
@@ -171,7 +167,7 @@ public class ArrivalDeparture: NSObject, Decodable {
         trip = references.tripWithID(tripID)!
 
         tripStatus = try? container.decode(TripStatus.self, forKey: .tripStatus)
-        vehicleID = try container.decode(String.self, forKey: .vehicleID)
+        vehicleID = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
     }
 }
 
@@ -226,4 +222,60 @@ extension ArrivalDeparture {
             return predictedDeparture ?? scheduledDeparture
         }
     }
+
+    /// Number of minutes until/after `arrivalDepartureDate`.
+    public var arrivalDepartureMinutes: Int {
+        return Int(arrivalDepartureDate.timeIntervalSinceNow / 60.0)
+    }
+
+    /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the future.
+    public var temporalStateOfArrivalDepartureDate: TemporalState {
+        let minutes = arrivalDepartureMinutes
+        if minutes < 0 {
+            // Arrived/Departed abs(minutes) min ago
+            return .past
+        }
+        else if minutes == 0 {
+            // Arriving/Departing now
+            return .present
+        }
+        else {
+            // Arrives/Departs in (minutes) min
+            return .future
+        }
+    }
+
+    /// Is this trip early, on time, delayed, or of an unknown status?
+    @objc public var scheduleStatus: ScheduleStatus {
+        guard predicted, let predictedDeparture = predictedDeparture else {
+            return .unknown
+        }
+
+        let minutesDiff = (predictedDeparture.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / (1000.0 * 60.0)
+        if minutesDiff < -1.5 {
+            return .early
+        }
+        else if minutesDiff < 1.5 {
+            return .onTime
+        }
+        else {
+            return .delayed
+        }
+    }
 }
+
+@objc(OBAArrivalDepartureStatus)
+public enum ArrivalDepartureStatus: Int {
+    case arriving, departing
+}
+
+@objc(OBAScheduleStatus)
+public enum ScheduleStatus: Int {
+    case unknown, early, onTime, delayed
+}
+
+@objc(OBATemporalState)
+public enum TemporalState: Int {
+    case past, present, future
+}
+

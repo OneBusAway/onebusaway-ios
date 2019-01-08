@@ -114,8 +114,12 @@ public class Application: NSObject {
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
         IndeterminateProgressView.appearance().progressColor = theme.colors.primary
+
+        StopArrivalView.appearance().formatters = formatters
+
         FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
         FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
+
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
