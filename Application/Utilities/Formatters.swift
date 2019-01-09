@@ -30,6 +30,35 @@ public class Formatters: NSObject {
         return timeFormatter
     }()
 
+    // MARK: - ArrivalDeparture
+
+    /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
+    ///
+    /// For example, it might generate a string that says "Arrived 3 min ago", "Departing now", or "Departs in 8 min".
+    ///
+    /// - Parameter arrivalDeparture: The ArrivalDeparture object representing the string
+    /// - Returns: A localized string explaining the arrival/departure status.
+    public func explanation(from arrivalDeparture: ArrivalDeparture) -> String {
+        let temporalState = arrivalDeparture.temporalStateOfArrivalDepartureDate
+        let arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
+        let apply: (String) -> String = { String(format: $0, abs(arrivalDeparture.arrivalDepartureMinutes)) }
+
+        switch (temporalState, arrivalDepartureStatus) {
+        case (.past, .arriving):
+            return apply(NSLocalizedString("formatters.arrived_x_min_ago_fmt", value: "Arrived %d min ago", comment: "Use for vehicles that arrived X minutes ago."))
+        case (.past, .departing):
+            return apply(NSLocalizedString("formatters.departed_x_min_ago_fmt", value: "Departed %d min ago", comment: "Use for vehicles that departed X minutes ago."))
+        case (.present, .arriving):
+            return NSLocalizedString("formatters.arriving_now", value: "Arriving now", comment: "Use for vehicles arriving now.")
+        case (.present, .departing):
+            return NSLocalizedString("formatters.departing_now", value: "Departing now", comment: "Use for vehicles departing now.")
+        case (.future, .arriving):
+            return apply(NSLocalizedString("formatters.arrives_in_x_min_fmt", value: "Arrives in %d min", comment: "Use for vehicles arriving in X minutes."))
+        case (.future, .departing):
+            return apply(NSLocalizedString("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
+        }
+    }
+
     // MARK: - Routes
 
     /// Generates a formatted, human readable list of routes.

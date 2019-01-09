@@ -23,21 +23,12 @@ public class StopArrivalView: UIView {
         didSet {
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
-            let temporalState = arrivalDeparture.temporalStateOfArrivalDepartureDate
-            let minutes = arrivalDeparture.arrivalDepartureMinutes
-
             // 'Gray out' the view if it occurred in the past.
-            if temporalState == .past {
-                alpha = 0.50
-            }
-            else {
-                alpha = 1.0
-            }
+            alpha = arrivalDeparture.temporalStateOfArrivalDepartureDate == .past ? 0.50 : 1.0
 
             let timeText = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
-
-            let arrDepWord = arrivalDeparture.arrivalDepartureStatus == .arriving ? "Arrives" : "Departs"
-            timeLabel.text = "\(timeText) - \(arrDepWord) in \(minutes) minutes"
+            let explanationText = formatters.explanation(from: arrivalDeparture)
+            timeLabel.text = "\(timeText) - \(explanationText)"
         }
     }
 

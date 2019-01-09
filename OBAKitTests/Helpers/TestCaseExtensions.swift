@@ -102,6 +102,40 @@ public extension XCTestCase {
 
         return (json as! [String: Any])
     }
+
+    /// Decodes models of type T from the supplied JSON. The JSON should be the full contents of a server response, including References.
+    ///
+    /// - Parameters:
+    ///   - type: The model type
+    ///   - json: The JSON data to decode from.
+    /// - Returns: A decoded array of models.
+    /// - Throws: Errors in case of a decoding failure.
+    func decodeModels<T>(type: T.Type, json: [String: Any]) throws -> [T] where T: Decodable {
+        guard let data = json["data"] as? [String: Any] else {
+            throw ModelDecodingError.invalidData
+        }
+
+        guard let references = data["references"] as? [String: Any] else {
+            throw ModelDecodingError.invalidReferences
+        }
+
+        let decodedReferences = try References.decodeReferences(references)
+
+        let modelDicts: [[String: Any]]
+        if let list = data["list"] as? [[String: Any]] {
+            modelDicts = list
+        }
+        else if let entry = data["entry"] as? [String: Any] {
+            modelDicts = [entry]
+        }
+        else {
+            throw ModelDecodingError.invalidModelList
+        }
+
+        let models = try DictionaryDecoder.decodeModels(modelDicts, references: decodedReferences, type: type)
+
+        return models
+    }
 }
 
 // MARK: - Data Loading
