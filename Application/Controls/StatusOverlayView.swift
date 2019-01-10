@@ -86,12 +86,22 @@ public class StatusOverlayView: UIView {
 
     private let lock = NSLock()
 
-    /// Animates in the display of the overlay
+    /// Displays the overlay, by default animating in the display of it.
     ///
     /// - Note: This method and `hideOverlay()` share a lock that prevents simultaneous access while an animation is occurring.
-    /// - Parameter message: The text to display on the overlay
-    public func showOverlay(message: String) {
+    ///
+    /// - Parameters:
+    ///   - message: The text to display on the overlay
+    ///   - animated: Whether or not the display of the overlay should be animated.
+    public func showOverlay(message: String, animated: Bool = true) {
         text = message
+
+        // short-circuit the evaluation of this method and show the overlay if `animated` is false.
+        guard animated else {
+            statusOverlay.isHidden = false
+            statusOverlay.alpha = 1.0
+            return
+        }
 
         guard lock.try() else {
             return
@@ -107,10 +117,19 @@ public class StatusOverlayView: UIView {
         })
     }
 
-    /// Animates out the display of the overlay
+    /// Hides the overlay, by default animating it out.
     ///
     /// - Note: This method and `showOverlay(message:)` share a lock that prevents simultaneous access while an animation is occurring.
-    public func hideOverlay() {
+    ///
+    /// - Parameter animated: Whether or not the display of the overlay should be animated.
+    public func hideOverlay(animated: Bool = true) {
+        // short-circuit the evaluation of this method and hide the overlay if `animated` is false.
+        guard animated else {
+            statusOverlay.isHidden = true
+            statusOverlay.alpha = 0.0
+            return
+        }
+
         guard lock.try() else {
             return
         }

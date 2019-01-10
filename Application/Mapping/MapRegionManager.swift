@@ -41,8 +41,6 @@ public class MapRegionManager: NSObject {
 
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.delegate = self
-
-        addStatusOverlayToMap()
     }
 
     deinit {
@@ -51,6 +49,8 @@ public class MapRegionManager: NSObject {
         regionChangeRequestTimer?.invalidate()
         requestStopsOperation?.cancel()
     }
+
+    // MARK: - Data Loading
 
     @objc func requestDataForMapRegion(_ timer: Timer) {
         guard let modelService = application.restAPIModelService else {
@@ -174,7 +174,18 @@ public class MapRegionManager: NSObject {
 
     // MARK: - Map Status Overlay
 
-    private func addStatusOverlayToMap() {
+    private lazy var statusOverlay = StatusOverlayView.autolayoutNew()
+
+    /// This method will add `statusOverlay` as a subview of `mapView`, and set up necessary constraints.
+    /// Call it in `viewDidAppear` of the view controller that hosts `mapView`.
+    ///
+    /// - Note: This method can be called repeatedly, and will not have any effect after the first invocation.
+    ///
+    @objc public func addStatusOverlayToMap() {
+        guard statusOverlay.superview == nil else {
+            return
+        }
+
         mapView.addSubview(statusOverlay)
 
         NSLayoutConstraint.activate([
@@ -183,17 +194,17 @@ public class MapRegionManager: NSObject {
         ])
     }
 
-    private lazy var statusOverlay = StatusOverlayView.autolayoutNew()
-
     private static let requiredHeightToShowStops = 75000.0
 
     private func updateZoomWarningOverlay(mapHeight: Double) {
+        let animated = statusOverlay.superview != nil
+
         if mapHeight > MapRegionManager.requiredHeightToShowStops {
             let message = NSLocalizedString("map_region_manager.status_overlay.zoom_to_see_stops", value: "Zoom in to look for stops", comment: "Map region manager message to the user when they need to zoom in more to view stops")
-            statusOverlay.showOverlay(message: message)
+            statusOverlay.showOverlay(message: message, animated: animated)
         }
         else {
-            statusOverlay.hideOverlay()
+            statusOverlay.hideOverlay(animated: animated)
         }
     }
 }
