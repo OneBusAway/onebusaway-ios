@@ -28,7 +28,12 @@ public class MapRegionManager: NSObject {
 
     private var regionChangeRequestTimer: Timer?
 
-    @objc public let mapView = MKMapView()
+    @objc public let mapView: MKMapView = {
+        let mapView = MKMapView()
+        mapView.mapType = .mutedStandard
+
+        return mapView
+    }()
 
     @objc public init(application: Application) {
         self.application = application

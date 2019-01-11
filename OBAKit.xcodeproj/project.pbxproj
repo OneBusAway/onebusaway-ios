@@ -125,7 +125,6 @@
 		932E8CF021BB22B800C43EB5 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93235DE4219F24A5008C3BB0 /* AppConfig.swift */; };
 		932E8CF121BB22BD00C43EB5 /* MapRegionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FB321A5C53600207D5F /* MapRegionManager.swift */; };
 		932E8CF221BB22C200C43EB5 /* Operations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBB21A62D7B00207D5F /* Operations.swift */; };
-		932E8CF321BB22C200C43EB5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBE21A70E8400207D5F /* Models.swift */; };
 		932E8CF421BB22C200C43EB5 /* Collections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC021A70FE800207D5F /* Collections.swift */; };
 		932E8CF521BB22C200C43EB5 /* UIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802C21AB17EE00207D5F /* UIKit.swift */; };
 		932E8CF621BB22C200C43EB5 /* MapKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916921ADC3BB0071AD11 /* MapKit.swift */; };
@@ -465,7 +464,6 @@
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
 		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
-		93E97FBE21A70E8400207D5F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		93E97FC021A70FE800207D5F /* Collections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collections.swift; sourceTree = "<group>"; };
 		93E97FC321A8711600207D5F /* ApplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationTests.swift; sourceTree = "<group>"; };
 		93E97FC521A872D800207D5F /* AppConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigTests.swift; sourceTree = "<group>"; };
@@ -1143,7 +1141,6 @@
 			isa = PBXGroup;
 			children = (
 				93E97FBB21A62D7B00207D5F /* Operations.swift */,
-				93E97FBE21A70E8400207D5F /* Models.swift */,
 				93E97FC021A70FE800207D5F /* Collections.swift */,
 				93E9802C21AB17EE00207D5F /* UIKit.swift */,
 				9342916921ADC3BB0071AD11 /* MapKit.swift */,
@@ -1440,7 +1437,6 @@
 				932AAFA921698B110070BF56 /* AgenciesWithCoverageOperation.swift in Sources */,
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
 				93399E3F2197856A00F71058 /* RegionsModelService.swift in Sources */,
-				932E8CF321BB22C200C43EB5 /* Models.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
