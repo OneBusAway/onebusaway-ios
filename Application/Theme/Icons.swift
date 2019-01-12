@@ -11,6 +11,20 @@ import UIKit
 @objc(OBAIcons)
 public class Icons: NSObject {
 
+    // MARK: - Heading
+
+    /// A gradient arc image that can be used to show the user's heading.
+    public class var userHeading: UIImage {
+        return imageNamed("user_heading")
+    }
+
+    /// A gradient arc image that can be used to show a vehicle's heading.
+    public class var vehicleHeading: UIImage {
+        return imageNamed("vehicle_heading")
+    }
+
+    // MARK: - Branding
+
     /// A large 'header'-style version of the OBA icon/logo.
     public class var header: UIImage {
         return imageNamed("header")

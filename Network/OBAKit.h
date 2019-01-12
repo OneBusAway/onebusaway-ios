@@ -20,3 +20,5 @@ FOUNDATION_EXPORT const unsigned char OBAKitVersionString[];
 #import <OBAKit/OBANetworkHelpers.h>
 #import <OBAKit/OBANetworkOperation.h>
 #import <OBAKit/OBARESTAPIOperation.h>
+
+#import <OBAKit/SVPulsingAnnotationView.h>

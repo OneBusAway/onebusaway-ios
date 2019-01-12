@@ -85,6 +85,9 @@
 		932AAFAB21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */; };
 		932AAFAD21698DA30070BF56 /* agencies_with_coverage.json in Resources */ = {isa = PBXBuildFile; fileRef = 932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */; };
 		932DFF9721E67D6000E5FF0E /* FormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFF9621E67D6000E5FF0E /* FormattersTests.swift */; };
+		932DFFA421E905E000E5FF0E /* SVPulsingAnnotationView.h in Headers */ = {isa = PBXBuildFile; fileRef = 932DFFA221E905E000E5FF0E /* SVPulsingAnnotationView.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */; };
+		932DFFAA21EA810300E5FF0E /* CoreLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA921EA810200E5FF0E /* CoreLocation.swift */; };
 		932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
 		932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
 		932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
@@ -380,6 +383,9 @@
 		932AAFAA21698CA80070BF56 /* AgenciesWithCoverageOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgenciesWithCoverageOperationTest.swift; sourceTree = "<group>"; };
 		932AAFAC21698DA30070BF56 /* agencies_with_coverage.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = agencies_with_coverage.json; sourceTree = "<group>"; };
 		932DFF9621E67D6000E5FF0E /* FormattersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattersTests.swift; sourceTree = "<group>"; };
+		932DFFA221E905E000E5FF0E /* SVPulsingAnnotationView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVPulsingAnnotationView.h; sourceTree = "<group>"; };
+		932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVPulsingAnnotationView.m; sourceTree = "<group>"; };
+		932DFFA921EA810200E5FF0E /* CoreLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocation.swift; sourceTree = "<group>"; };
 		932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusOverlayView.swift; sourceTree = "<group>"; };
 		932E8D0E21BE35AE00C43EB5 /* Matchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matchers.swift; sourceTree = "<group>"; };
 		93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -846,6 +852,15 @@
 			path = gpx_files;
 			sourceTree = "<group>";
 		};
+		932DFFA121E905E000E5FF0E /* SVPulsingAnnotationView */ = {
+			isa = PBXGroup;
+			children = (
+				932DFFA221E905E000E5FF0E /* SVPulsingAnnotationView.h */,
+				932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */,
+			);
+			path = SVPulsingAnnotationView;
+			sourceTree = "<group>";
+		};
 		932E8CE521BB02FD00C43EB5 /* Model Unit Tests */ = {
 			isa = PBXGroup;
 			children = (
@@ -1131,6 +1146,7 @@
 		93E97FB221A5C52200207D5F /* Mapping */ = {
 			isa = PBXGroup;
 			children = (
+				932DFFA121E905E000E5FF0E /* SVPulsingAnnotationView */,
 				93E97FB321A5C53600207D5F /* MapRegionManager.swift */,
 				93A6330821DC4FAE00A1AC9B /* StopAnnotationView.swift */,
 			);
@@ -1144,6 +1160,7 @@
 				93E97FC021A70FE800207D5F /* Collections.swift */,
 				93E9802C21AB17EE00207D5F /* UIKit.swift */,
 				9342916921ADC3BB0071AD11 /* MapKit.swift */,
+				932DFFA921EA810200E5FF0E /* CoreLocation.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1191,6 +1208,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				932DFFA421E905E000E5FF0E /* SVPulsingAnnotationView.h in Headers */,
 				931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */,
 				931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */,
 				931B940F216419C20034D8FA /* OBAKit.h in Headers */,
@@ -1438,6 +1456,7 @@
 				931CE273216F8CC500161A6C /* StopArrivalsAndDeparturesOperation.swift in Sources */,
 				93399E3F2197856A00F71058 /* RegionsModelService.swift in Sources */,
 				931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */,
+				932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
 				932E8CE721BB207C00C43EB5 /* LocationService.swift in Sources */,
@@ -1451,6 +1470,7 @@
 				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
 				932E8CF621BB22C200C43EB5 /* MapKit.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
+				932DFFAA21EA810300E5FF0E /* CoreLocation.swift in Sources */,
 				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
 				932E8CD821BB02AD00C43EB5 /* Agency.swift in Sources */,

@@ -28,6 +28,12 @@ public class MapRegionManager: NSObject {
 
     private var regionChangeRequestTimer: Timer?
 
+    private var userLocationAnnotationView: PulsingAnnotationView? {
+        didSet {
+            updateUserHeadingDisplay()
+        }
+    }
+
     @objc public let mapView: MKMapView = {
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
@@ -45,6 +51,7 @@ public class MapRegionManager: NSObject {
         application.locationService.addDelegate(self)
 
         mapView.registerAnnotationView(StopAnnotationView.self)
+        mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.delegate = self
     }
 
@@ -245,11 +252,19 @@ extension MapRegionManager: MKMapViewDelegate {
         guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
             return nil
         }
-        return mapView.dequeueReusableAnnotationView(withIdentifier: reuseIdentifier, for: annotation)
+
+        let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseIdentifier, for: annotation)
+
+        if self.userLocationAnnotationView == nil, let userLocation = annotationView as? PulsingAnnotationView {
+            self.userLocationAnnotationView = userLocation
+        }
+
+        return annotationView
     }
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
+        case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         default: return nil
         }
@@ -268,7 +283,27 @@ extension MapRegionManager: MKMapViewDelegate {
 // MARK: - Location Service Delegate
 
 extension MapRegionManager: LocationServiceDelegate {
-    private func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         mapView.showsUserLocation = service.isLocationUseAuthorized
+    }
+
+    public func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {
+        updateUserHeadingDisplay()
+    }
+
+    private func updateUserHeadingDisplay() {
+        guard
+            let heading = application.locationService.currentHeading,
+            let annotationView = userLocationAnnotationView
+        else {
+            return
+        }
+
+        if annotationView.headingImage == nil {
+            annotationView.headingImage = Icons.userHeading
+        }
+
+        // The PulsingAnnotationView treats east as 0º.
+        annotationView.headingImageView.transform = heading.trueHeading.affineTransform(rotatedBy: -0.5 * .pi)
     }
 }

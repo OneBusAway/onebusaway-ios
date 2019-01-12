@@ -13,7 +13,7 @@ import CoreLocation
 public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus)
     @objc optional func locationService(_ service: LocationService, locationChanged location: CLLocation)
-    @objc optional func locationService(_ service: LocationService, headingChanged heading: CLHeading)
+    @objc optional func locationService(_ service: LocationService, headingChanged heading: CLHeading?)
     @objc optional func locationService(_ service: LocationService, errorReceived error: Error)
 }
 
@@ -33,9 +33,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     @objc
     public private(set) var currentHeading: CLHeading? {
         didSet {
-            if let currentHeading = currentHeading {
-                notifyDelegatesHeadingChanged(currentHeading)
-            }
+            notifyDelegatesHeadingChanged(currentHeading)
         }
     }
 
@@ -78,7 +76,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    private func notifyDelegatesHeadingChanged(_ heading: CLHeading) {
+    private func notifyDelegatesHeadingChanged(_ heading: CLHeading?) {
         for delegate in delegates.allObjects {
             delegate.locationService?(self, headingChanged: heading)
         }
@@ -209,7 +207,6 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        // abxoxo - check accuracy?
         currentHeading = newHeading
     }
 
