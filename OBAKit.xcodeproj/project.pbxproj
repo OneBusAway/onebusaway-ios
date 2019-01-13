@@ -202,6 +202,7 @@
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
+		93CAADC421EBAF9F00B4D403 /* Dispatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* Dispatch.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
 		93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */; };
@@ -468,6 +469,7 @@
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
+		93CAADC321EBAF9F00B4D403 /* Dispatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dispatch.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
 		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
 		93E97FC021A70FE800207D5F /* Collections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collections.swift; sourceTree = "<group>"; };
@@ -1161,6 +1163,7 @@
 				93E9802C21AB17EE00207D5F /* UIKit.swift */,
 				9342916921ADC3BB0071AD11 /* MapKit.swift */,
 				932DFFA921EA810200E5FF0E /* CoreLocation.swift */,
+				93CAADC321EBAF9F00B4D403 /* Dispatch.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1459,6 +1462,7 @@
 				932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
+				93CAADC421EBAF9F00B4D403 /* Dispatch.swift in Sources */,
 				932E8CE721BB207C00C43EB5 /* LocationService.swift in Sources */,
 				932E8CD021BB02A800C43EB5 /* TripStatus.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
