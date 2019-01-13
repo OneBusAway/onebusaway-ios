@@ -78,19 +78,18 @@ public class Formatters: NSObject {
     /// - Parameter direction: The cardinal direction
     /// - Returns: An adjective form of that direction
     public class func adjectiveFormOfCardinalDirection(_ direction: String?) -> String? {
-        guard
-            let dir = direction?.lowercased(),
-            ["n", "e", "s", "w"].contains(dir)
-        else {
-            return direction
+        guard let direction = direction else {
+            return nil
         }
 
-        switch dir {
+        switch direction.lowercased() {
         case "n": return NSLocalizedString("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
         case "e": return NSLocalizedString("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
         case "s": return NSLocalizedString("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
         case "w": return NSLocalizedString("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
-        default:  return direction
+        default:
+            let fmt = NSLocalizedString("formatters.cardinal_adjective.fallback_fmt", value: "%@ bound", comment: "Format string for a generic directional indicator. e.g. NW bound.")
+            return String(format: fmt, direction)
         }
     }
 }
