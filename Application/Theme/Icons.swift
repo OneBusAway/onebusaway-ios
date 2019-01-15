@@ -11,11 +11,35 @@ import UIKit
 @objc(OBAIcons)
 public class Icons: NSObject {
 
-    // MARK: - App Navigation
+    // MARK: - Table Accessories
+
+    /// Provides `UIImage`s, where possible, for `UITableViewCell` accessories.
+    ///
+    /// - Parameter accessoryType: The type of table view cell accessory.
+    /// - Returns: The image that maps to the `accessoryType`, where available.
+    public class func from(accessoryType: UITableViewCell.AccessoryType) -> UIImage? {
+        switch accessoryType {
+        case .none: return nil
+        case .disclosureIndicator: return chevron
+        case .detailDisclosureButton: return chevron
+        case .checkmark: return checkmark
+        case .detailButton: return info
+        }
+    }
 
     /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
         return imageNamed("chevron")
+    }
+
+    /// A checkmark icon.
+    public class var checkmark: UIImage {
+        return imageNamed("checkmark")
+    }
+
+    /// An 'info' (i) button
+    public class var info: UIImage {
+        return imageNamed("info")
     }
 
     // MARK: - Heading

@@ -44,11 +44,15 @@ public class ThemeColors: NSObject {
     /// Light text color, used on dark backgrounds.
     public let lightText: UIColor
 
+    /// A gray text color, used on light backgrounds for de-emphasized text.
+    public let subduedText: UIColor
+
     init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         dark = UIColor(named: "dark", in: bundle, compatibleWith: traitCollection)!
         light = UIColor(named: "light", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
+        subduedText = UIColor(named: "subduedText", in: bundle, compatibleWith: traitCollection)!
     }
 }
 
