@@ -11,6 +11,13 @@ import UIKit
 @objc(OBAIcons)
 public class Icons: NSObject {
 
+    // MARK: - App Navigation
+
+    /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
+    public class var chevron: UIImage {
+        return imageNamed("chevron")
+    }
+
     // MARK: - Heading
 
     /// A gradient arc image that can be used to show the user's heading.
