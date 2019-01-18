@@ -112,7 +112,7 @@ class LocDelegate: NSObject, LocationServiceDelegate {
         self.location = location
     }
 
-    func locationService(_ service: LocationService, headingChanged heading: CLHeading) {
+    func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {
         self.heading = heading
     }
 

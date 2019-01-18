@@ -87,7 +87,8 @@
 		932DFF9721E67D6000E5FF0E /* FormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFF9621E67D6000E5FF0E /* FormattersTests.swift */; };
 		932DFFA421E905E000E5FF0E /* SVPulsingAnnotationView.h in Headers */ = {isa = PBXBuildFile; fileRef = 932DFFA221E905E000E5FF0E /* SVPulsingAnnotationView.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */; };
-		932DFFAA21EA810300E5FF0E /* CoreLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA921EA810200E5FF0E /* CoreLocation.swift */; };
+		932DFFAA21EA810300E5FF0E /* CoreLocationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */; };
+		932DFFC721F0EF5C00E5FF0E /* CoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */; };
 		932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
 		932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
 		932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
@@ -129,8 +130,8 @@
 		932E8CF121BB22BD00C43EB5 /* MapRegionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FB321A5C53600207D5F /* MapRegionManager.swift */; };
 		932E8CF221BB22C200C43EB5 /* Operations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FBB21A62D7B00207D5F /* Operations.swift */; };
 		932E8CF421BB22C200C43EB5 /* Collections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E97FC021A70FE800207D5F /* Collections.swift */; };
-		932E8CF521BB22C200C43EB5 /* UIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802C21AB17EE00207D5F /* UIKit.swift */; };
-		932E8CF621BB22C200C43EB5 /* MapKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916921ADC3BB0071AD11 /* MapKit.swift */; };
+		932E8CF521BB22C200C43EB5 /* UIKitExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802C21AB17EE00207D5F /* UIKitExtensions.swift */; };
+		932E8CF621BB22C200C43EB5 /* MapKitExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9342916921ADC3BB0071AD11 /* MapKitExtensions.swift */; };
 		932E8CF721BB22C700C43EB5 /* PermissionPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */; };
 		932E8CF821BB22CB00C43EB5 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93E9803C21AB748800207D5F /* Theme.swift */; };
 		932E8CF921BB22D000C43EB5 /* OneBusAway.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 93E9802921AB09CF00207D5F /* OneBusAway.xcassets */; };
@@ -202,7 +203,7 @@
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
-		93CAADC421EBAF9F00B4D403 /* Dispatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* Dispatch.swift */; };
+		93CAADC421EBAF9F00B4D403 /* DispatchExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
 		93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9204021913A8B007E3861 /* StopProblemModelOperationTests.swift */; };
@@ -386,7 +387,8 @@
 		932DFF9621E67D6000E5FF0E /* FormattersTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattersTests.swift; sourceTree = "<group>"; };
 		932DFFA221E905E000E5FF0E /* SVPulsingAnnotationView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVPulsingAnnotationView.h; sourceTree = "<group>"; };
 		932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVPulsingAnnotationView.m; sourceTree = "<group>"; };
-		932DFFA921EA810200E5FF0E /* CoreLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocation.swift; sourceTree = "<group>"; };
+		932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationExtensions.swift; sourceTree = "<group>"; };
+		932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationTests.swift; sourceTree = "<group>"; };
 		932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusOverlayView.swift; sourceTree = "<group>"; };
 		932E8D0E21BE35AE00C43EB5 /* Matchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matchers.swift; sourceTree = "<group>"; };
 		93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -435,7 +437,7 @@
 		933FFF52217A8D4A006682C3 /* VehicleStatusModelOperationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStatusModelOperationTests.swift; sourceTree = "<group>"; };
 		9342915F21AC9E150071AD11 /* BorderedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BorderedButton.swift; sourceTree = "<group>"; };
 		9342916721ACC4740071AD11 /* RegionPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionPickerViewController.swift; sourceTree = "<group>"; };
-		9342916921ADC3BB0071AD11 /* MapKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKit.swift; sourceTree = "<group>"; };
+		9342916921ADC3BB0071AD11 /* MapKitExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitExtensions.swift; sourceTree = "<group>"; };
 		9342916F21B05D610071AD11 /* DemoViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DemoViewController.h; sourceTree = "<group>"; };
 		9345BB3321E2932F00980708 /* StopArrivalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopArrivalView.swift; sourceTree = "<group>"; };
 		9345BB3821E2B12100980708 /* VehicleStopModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStopModelTests.swift; sourceTree = "<group>"; };
@@ -469,7 +471,7 @@
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
-		93CAADC321EBAF9F00B4D403 /* Dispatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dispatch.swift; sourceTree = "<group>"; };
+		93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExtensions.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
 		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
 		93E97FC021A70FE800207D5F /* Collections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Collections.swift; sourceTree = "<group>"; };
@@ -481,7 +483,7 @@
 		93E97FCD21A8D48600207D5F /* CollectionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollectionsTests.swift; sourceTree = "<group>"; };
 		93E9802621AA8EA300207D5F /* PermissionPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionPromptViewController.swift; sourceTree = "<group>"; };
 		93E9802921AB09CF00207D5F /* OneBusAway.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = OneBusAway.xcassets; sourceTree = "<group>"; };
-		93E9802C21AB17EE00207D5F /* UIKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKit.swift; sourceTree = "<group>"; };
+		93E9802C21AB17EE00207D5F /* UIKitExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitExtensions.swift; sourceTree = "<group>"; };
 		93E9803C21AB748800207D5F /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		93EC53192185714400C974AB /* TripDetailsModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailsModelOperation.swift; sourceTree = "<group>"; };
 		93EC531B2185874C00C974AB /* TripDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetails.swift; sourceTree = "<group>"; };
@@ -896,6 +898,7 @@
 			isa = PBXGroup;
 			children = (
 				93E97FCD21A8D48600207D5F /* CollectionsTests.swift */,
+				932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1160,10 +1163,10 @@
 			children = (
 				93E97FBB21A62D7B00207D5F /* Operations.swift */,
 				93E97FC021A70FE800207D5F /* Collections.swift */,
-				93E9802C21AB17EE00207D5F /* UIKit.swift */,
-				9342916921ADC3BB0071AD11 /* MapKit.swift */,
-				932DFFA921EA810200E5FF0E /* CoreLocation.swift */,
-				93CAADC321EBAF9F00B4D403 /* Dispatch.swift */,
+				93E9802C21AB17EE00207D5F /* UIKitExtensions.swift */,
+				9342916921ADC3BB0071AD11 /* MapKitExtensions.swift */,
+				932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */,
+				93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1449,7 +1452,7 @@
 				93FAAAAB217858C20086D9DE /* CreateAlarmOperation.swift in Sources */,
 				932E8CD521BB02A800C43EB5 /* AgencyWithCoverage.swift in Sources */,
 				932E8CFA21BB22D500C43EB5 /* BorderedButton.swift in Sources */,
-				932E8CF521BB22C200C43EB5 /* UIKit.swift in Sources */,
+				932E8CF521BB22C200C43EB5 /* UIKitExtensions.swift in Sources */,
 				9351CFFA216A84AA002D5391 /* StopsForRouteOperation.swift in Sources */,
 				932E8CD221BB02A800C43EB5 /* StopArrivals.swift in Sources */,
 				9303E15D218F888B00FD5FDB /* TripArrivalsModelOperation.swift in Sources */,
@@ -1462,7 +1465,7 @@
 				932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */,
 				9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */,
 				9303E16B2190D92F00FD5FDB /* ShapeModelOperation.swift in Sources */,
-				93CAADC421EBAF9F00B4D403 /* Dispatch.swift in Sources */,
+				93CAADC421EBAF9F00B4D403 /* DispatchExtensions.swift in Sources */,
 				932E8CE721BB207C00C43EB5 /* LocationService.swift in Sources */,
 				932E8CD021BB02A800C43EB5 /* TripStatus.swift in Sources */,
 				931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */,
@@ -1472,9 +1475,9 @@
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
-				932E8CF621BB22C200C43EB5 /* MapKit.swift in Sources */,
+				932E8CF621BB22C200C43EB5 /* MapKitExtensions.swift in Sources */,
 				931A7CD7218933BF00FA3025 /* CurrentTimeModelOperation.swift in Sources */,
-				932DFFAA21EA810300E5FF0E /* CoreLocation.swift in Sources */,
+				932DFFAA21EA810300E5FF0E /* CoreLocationExtensions.swift in Sources */,
 				9303E140218B5DE900FD5FDB /* StopsModelOperation.swift in Sources */,
 				933FFF3E2179AF7E006682C3 /* VehicleStatusModelOperation.swift in Sources */,
 				932E8CD821BB02AD00C43EB5 /* Agency.swift in Sources */,
@@ -1552,6 +1555,7 @@
 				93F9204121913A8B007E3861 /* StopProblemModelOperationTests.swift in Sources */,
 				93399E4621978EE200F71058 /* RegionsModelOperationTests.swift in Sources */,
 				932E8D0121BB254A00C43EB5 /* OBAMockHeading.swift in Sources */,
+				932DFFC721F0EF5C00E5FF0E /* CoreLocationTests.swift in Sources */,
 				93FAAA9D2177E1130086D9DE /* RegionsOperationTest.swift in Sources */,
 				93399E3C21976D8700F71058 /* AgencyVehicleModelOperationTests.swift in Sources */,
 				9303E1692190D4BC00FD5FDB /* RouteSearchModelOperationTests.swift in Sources */,

@@ -66,3 +66,27 @@ extension MKMapView {
         addAnnotations(added.allObjects)
     }
 }
+
+public extension MKMapRect {
+    public init(_ coordinateRegion: MKCoordinateRegion) {
+        let topLeft = CLLocationCoordinate2D(
+            latitude: coordinateRegion.center.latitude + (coordinateRegion.span.latitudeDelta/2.0),
+            longitude: coordinateRegion.center.longitude - (coordinateRegion.span.longitudeDelta/2.0)
+        )
+
+        let bottomRight = CLLocationCoordinate2D(
+            latitude: coordinateRegion.center.latitude - (coordinateRegion.span.latitudeDelta/2.0),
+            longitude: coordinateRegion.center.longitude + (coordinateRegion.span.longitudeDelta/2.0)
+        )
+
+        let topLeftMapPoint = MKMapPoint(topLeft)
+        let bottomRightMapPoint = MKMapPoint(bottomRight)
+
+        let origin = MKMapPoint(x: topLeftMapPoint.x,
+                                y: topLeftMapPoint.y)
+        let size = MKMapSize(width: fabs(bottomRightMapPoint.x - topLeftMapPoint.x),
+                             height: fabs(bottomRightMapPoint.y - topLeftMapPoint.y))
+
+        self.init(origin: origin, size: size)
+    }
+}
