@@ -13,7 +13,6 @@ public class ShapeModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
-        let polylineEntity = decodeModels(type: PolylineEntity.self).first
-        shape = polylineEntity?.points
+        shape = decodeModels(type: PolylineEntity.self).first?.points
     }
 }

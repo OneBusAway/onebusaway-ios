@@ -330,7 +330,6 @@ public class RESTAPIModelService: NSObject {
         return apiService.getPlacemarks(query: query, region: region)
     }
 
-
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {

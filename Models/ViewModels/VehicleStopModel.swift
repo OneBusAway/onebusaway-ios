@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Provides an abstraction to represent a vehicle arriving and departing from a stop, as seen at the end/beginning of a route.
 @objc(OBAVehicleStopModel)
 public class VehicleStopModel: NSObject {
     public let vehicleID: String?

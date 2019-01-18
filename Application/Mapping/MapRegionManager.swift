@@ -108,21 +108,27 @@ public class MapRegionManager: NSObject {
         }
     }
 
+    /// Notifies delegates that data loading has started.
+    /// In UI terms, this should mean that a loading indicator is shown in the app.
     private func notifyDelegatesDataLoadingStarted() {
         for delegate in delegates.allObjects {
             delegate.mapRegionManagerDataLoadingStarted?(self)
         }
     }
 
+    /// Notifies delegates that data loading has finished.
+    /// In UI terms, this should mean that a loading indicator is hidden in the app.
     private func notifyDelegatesDataLoadingFinished() {
         for delegate in delegates.allObjects {
             delegate.mapRegionManagerDataLoadingFinished?(self)
         }
     }
 
-    // MARK: - Stops
+    // MARK: - Operations
 
     private var requestStopsOperation: StopsModelOperation?
+
+    // MARK: - Stops
 
     public private(set) var stops = [Stop]() {
         didSet {
