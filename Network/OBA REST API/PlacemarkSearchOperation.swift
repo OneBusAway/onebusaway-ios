@@ -15,10 +15,8 @@ public class PlacemarkSearchOperation: OBAOperation {
     public let request: MKLocalSearch.Request
     private var localSearch: MKLocalSearch?
     public private(set) var response: MKLocalSearch.Response?
-    public private(set) var error: Error?
 
-    @objc
-    public init(query: String, region: MKCoordinateRegion) {
+    @objc public init(query: String, region: MKCoordinateRegion) {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = query
         request.region = region

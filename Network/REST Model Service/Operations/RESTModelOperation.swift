@@ -28,6 +28,10 @@ public class RESTModelOperation: Operation {
         }
     }
 
+    public var error: Error? {
+        return apiOperation?.error
+    }
+
     // MARK: - Decoder Helpers
 
     func decodeModels<T>(type: T.Type) -> [T] where T: Decodable {

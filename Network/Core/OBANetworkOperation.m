@@ -12,7 +12,6 @@
 @interface OBANetworkOperation ()
 @property(nonatomic,copy,readwrite) NSURLRequest *request;
 @property(nonatomic,strong,nullable,readwrite) NSData *data;
-@property(nonatomic,copy,nullable,readwrite) NSError *error;
 @property(nonatomic,strong,nullable,readwrite) NSHTTPURLResponse *response;
 @property(nonatomic,strong,nullable) NSURLSessionDataTask *dataTask;
 @end

@@ -18,7 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface OBANetworkOperation (Internal)
 - (void)setData:(NSData*)data response:(NSHTTPURLResponse*)response error:(NSError*)error;
-@property(nonatomic,copy,nullable,readwrite) NSError *error;
 @property(nonatomic,strong,nullable,readwrite) NSHTTPURLResponse *response;
 
 + (NSURL*)_buildURLFromBaseURL:(NSURL*)URL path:(NSString*)path queryItems:(NSArray<NSURLQueryItem*>*)queryItems;
