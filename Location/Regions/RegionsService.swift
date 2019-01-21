@@ -165,7 +165,7 @@ extension RegionsService {
         }
 
         let op = modelService.getRegions()
-        op.completionBlock = { [weak self] in
+        op.then { [weak self] in
             guard let self = self else {
                 return
             }
