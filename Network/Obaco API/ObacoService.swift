@@ -22,7 +22,8 @@ public class ObacoService: APIService {
 
     @objc public func getWeather(regionID: String) -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = WeatherOperation(url: url)
+        let request = WeatherOperation.buildRequest(for: url)
+        let operation = WeatherOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation
@@ -33,7 +34,7 @@ public class ObacoService: APIService {
     @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation {
         let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
 
-        let operation = CreateAlarmOperation(urlRequest: request)
+        let operation = CreateAlarmOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation
@@ -43,7 +44,7 @@ public class ObacoService: APIService {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
 
-        let op = NetworkOperation(urlRequest: request as URLRequest)
+        let op = NetworkOperation(request: request as URLRequest)
         networkQueue.addOperation(op)
 
         return op
@@ -51,8 +52,8 @@ public class ObacoService: APIService {
 
     @objc public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
-
-        let operation = MatchingVehiclesOperation(url: url)
+        let request = MatchingVehiclesOperation.buildRequest(for: url)
+        let operation = MatchingVehiclesOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation

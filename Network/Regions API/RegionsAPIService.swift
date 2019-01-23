@@ -13,8 +13,8 @@ public class RegionsAPIService: APIService {
 
     @objc public func getRegions() -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
-
-        let operation = RegionsOperation(url: url)
+        let request = RegionsOperation.buildRequest(for: url)
+        let operation = RegionsOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation

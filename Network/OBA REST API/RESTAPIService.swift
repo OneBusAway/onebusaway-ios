@@ -272,7 +272,8 @@ public class RESTAPIService: APIService {
     @objc
     public func getRegionalAlerts(agencyID: String) -> RegionalAlertsOperation {
         let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
-        let operation = RegionalAlertsOperation(url: url)
+        let request = RegionalAlertsOperation.buildRequest(for: url)
+        let operation = RegionalAlertsOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation
@@ -309,7 +310,8 @@ public class RESTAPIService: APIService {
     // MARK: - Private Internal Helpers
 
     private func buildAndEnqueueOperation<T>(type: T.Type, url: URL) -> T where T: RESTAPIOperation {
-        let operation = type.init(url: url)
+        let request = type.buildRequest(for: url)
+        let operation = type.init(request: request)
         networkQueue.addOperation(operation)
 
         return operation

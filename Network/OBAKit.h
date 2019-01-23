@@ -16,9 +16,5 @@ FOUNDATION_EXPORT const unsigned char OBAKitVersionString[];
 
 // In this header, you should import all the public headers of your framework using statements like #import <OBAKit/PublicHeader.h>
 
-#import <OBAKit/OBAOperation.h>
 #import <OBAKit/OBANetworkHelpers.h>
-#import <OBAKit/OBANetworkOperation.h>
-#import <OBAKit/OBARESTAPIOperation.h>
-
 #import <OBAKit/SVPulsingAnnotationView.h>

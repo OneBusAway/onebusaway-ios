@@ -10,7 +10,7 @@ import Foundation
 import MapKit
 
 @objc(OBAPlacemarkSearchOperation)
-public class PlacemarkSearchOperation: OBAOperation {
+public class PlacemarkSearchOperation: AsyncOperation {
 
     public let request: MKLocalSearch.Request
     private var localSearch: MKLocalSearch?

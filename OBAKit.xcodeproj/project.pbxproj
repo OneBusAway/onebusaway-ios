@@ -44,11 +44,6 @@
 		931B940F216419C20034D8FA /* OBAKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B93FF216419C20034D8FA /* OBAKit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		931B9412216419C20034D8FA /* OBAKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBAKit.framework */; };
 		931B9413216419C20034D8FA /* OBAKit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 931B93FD216419C20034D8FA /* OBAKit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B941C21641A7F0034D8FA /* OBAOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B941D21641A7F0034D8FA /* OBAOperation.m */; };
-		931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B942421641FB50034D8FA /* OBANetworkOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B942521641FB50034D8FA /* OBANetworkOperation.m */; };
-		931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B9428216422120034D8FA /* OBAOperation+Internal.h */; };
 		931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943821642EE40034D8FA /* CurrentTimeOperation.swift */; };
 		931B943B216430E70034D8FA /* RESTAPIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B943A216430E70034D8FA /* RESTAPIService.swift */; };
 		931B94442164409B0034D8FA /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
@@ -59,8 +54,6 @@
 		931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */; };
 		931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */; };
 		931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */; };
-		931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B94B9216569720034D8FA /* OBARESTAPIOperation.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BA216569720034D8FA /* OBARESTAPIOperation.m */; };
 		931B94BE216682E10034D8FA /* StopsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BD216682E10034D8FA /* StopsOperation.swift */; };
 		931B94C021668FA90034D8FA /* StopsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94BF21668FA90034D8FA /* StopsOperationTest.swift */; };
 		931B94C42166D7C70034D8FA /* stops_for_location_seattle.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */; };
@@ -203,6 +196,9 @@
 		93A6331621DFF26700A1AC9B /* VehicleStopModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6331521DFF26700A1AC9B /* VehicleStopModel.swift */; };
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
+		93B1C10F21F84DAF005016E5 /* AsyncOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C10E21F84DAF005016E5 /* AsyncOperation.swift */; };
+		93B1C11121F852A0005016E5 /* NetworkOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C11021F852A0005016E5 /* NetworkOperation.swift */; };
+		93B1C11321F8561B005016E5 /* RESTAPIOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C11221F8561B005016E5 /* RESTAPIOperation.swift */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
 		93BDD6E521F79E2600B3A64C /* FoundationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */; };
 		93CAADC421EBAF9F00B4D403 /* DispatchExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */; };
@@ -328,11 +324,6 @@
 		931B9400216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		931B9405216419C20034D8FA /* OBAKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OBAKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		931B940E216419C20034D8FA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		931B941C21641A7F0034D8FA /* OBAOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBAOperation.h; sourceTree = "<group>"; };
-		931B941D21641A7F0034D8FA /* OBAOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBAOperation.m; sourceTree = "<group>"; };
-		931B942421641FB50034D8FA /* OBANetworkOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkOperation.h; sourceTree = "<group>"; };
-		931B942521641FB50034D8FA /* OBANetworkOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkOperation.m; sourceTree = "<group>"; };
-		931B9428216422120034D8FA /* OBAOperation+Internal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAOperation+Internal.h"; sourceTree = "<group>"; };
 		931B943821642EE40034D8FA /* CurrentTimeOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeOperation.swift; sourceTree = "<group>"; };
 		931B943A216430E70034D8FA /* RESTAPIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIService.swift; sourceTree = "<group>"; };
 		931B943D21643D430034D8FA /* Nimble.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Nimble.framework; path = Carthage/Build/iOS/Nimble.framework; sourceTree = "<group>"; };
@@ -344,8 +335,6 @@
 		931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperation.swift; sourceTree = "<group>"; };
 		931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperationTest.swift; sourceTree = "<group>"; };
 		931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vehicle_for_id_4011.json; sourceTree = "<group>"; };
-		931B94B9216569720034D8FA /* OBARESTAPIOperation.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBARESTAPIOperation.h; sourceTree = "<group>"; };
-		931B94BA216569720034D8FA /* OBARESTAPIOperation.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBARESTAPIOperation.m; sourceTree = "<group>"; };
 		931B94BD216682E10034D8FA /* StopsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperation.swift; sourceTree = "<group>"; };
 		931B94BF21668FA90034D8FA /* StopsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsOperationTest.swift; sourceTree = "<group>"; };
 		931B94C32166D7C60034D8FA /* stops_for_location_seattle.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = stops_for_location_seattle.json; sourceTree = "<group>"; };
@@ -473,6 +462,9 @@
 		93A6331521DFF26700A1AC9B /* VehicleStopModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleStopModel.swift; sourceTree = "<group>"; };
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
+		93B1C10E21F84DAF005016E5 /* AsyncOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncOperation.swift; sourceTree = "<group>"; };
+		93B1C11021F852A0005016E5 /* NetworkOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkOperation.swift; sourceTree = "<group>"; };
+		93B1C11221F8561B005016E5 /* RESTAPIOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIOperation.swift; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationExtensions.swift; sourceTree = "<group>"; };
 		93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExtensions.swift; sourceTree = "<group>"; };
@@ -539,7 +531,6 @@
 		93058C96216CE260008A31A4 /* PrivateModule */ = {
 			isa = PBXGroup;
 			children = (
-				931B9428216422120034D8FA /* OBAOperation+Internal.h */,
 				93058C97216CE29F008A31A4 /* module.modulemap */,
 			);
 			path = PrivateModule;
@@ -661,10 +652,8 @@
 			children = (
 				937BB73C2175566600BE5635 /* APIService.swift */,
 				93399E2921964DC300F71058 /* ModelService.swift */,
-				931B941C21641A7F0034D8FA /* OBAOperation.h */,
-				931B941D21641A7F0034D8FA /* OBAOperation.m */,
-				931B942421641FB50034D8FA /* OBANetworkOperation.h */,
-				931B942521641FB50034D8FA /* OBANetworkOperation.m */,
+				93B1C10E21F84DAF005016E5 /* AsyncOperation.swift */,
+				93B1C11021F852A0005016E5 /* NetworkOperation.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -673,8 +662,7 @@
 			isa = PBXGroup;
 			children = (
 				931B943A216430E70034D8FA /* RESTAPIService.swift */,
-				931B94B9216569720034D8FA /* OBARESTAPIOperation.h */,
-				931B94BA216569720034D8FA /* OBARESTAPIOperation.m */,
+				93B1C11221F8561B005016E5 /* RESTAPIOperation.swift */,
 				931B943821642EE40034D8FA /* CurrentTimeOperation.swift */,
 				931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */,
 				931B94BD216682E10034D8FA /* StopsOperation.swift */,
@@ -1221,12 +1209,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				932DFFA421E905E000E5FF0E /* SVPulsingAnnotationView.h in Headers */,
-				931B942621641FB50034D8FA /* OBANetworkOperation.h in Headers */,
-				931B94BB216569720034D8FA /* OBARESTAPIOperation.h in Headers */,
 				931B940F216419C20034D8FA /* OBAKit.h in Headers */,
-				931B941E21641A7F0034D8FA /* OBAOperation.h in Headers */,
 				931B944E216460090034D8FA /* OBANetworkHelpers.h in Headers */,
-				931B942A216422120034D8FA /* OBAOperation+Internal.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1438,6 +1422,7 @@
 				934894C021BFA788001ADDB6 /* Formatters.swift in Sources */,
 				932E8CEF21BB22B800C43EB5 /* Application.swift in Sources */,
 				931CE26D216E42AD00161A6C /* PlacemarkSearchOperation.swift in Sources */,
+				93B1C11121F852A0005016E5 /* NetworkOperation.swift in Sources */,
 				932E8CE021BB02B500C43EB5 /* AgencyVehicle.swift in Sources */,
 				93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */,
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
@@ -1447,7 +1432,6 @@
 				93A6331621DFF26700A1AC9B /* VehicleStopModel.swift in Sources */,
 				932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */,
 				932E8CE821BB207C00C43EB5 /* LocationManagerProtocol.swift in Sources */,
-				931B941F21641A7F0034D8FA /* OBAOperation.m in Sources */,
 				931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */,
 				932E8CD921BB02AD00C43EB5 /* Route.swift in Sources */,
 				933FFF2E217943D4006682C3 /* MatchingVehiclesOperation.swift in Sources */,
@@ -1498,6 +1482,7 @@
 				932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */,
 				9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */,
 				932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */,
+				93B1C10F21F84DAF005016E5 /* AsyncOperation.swift in Sources */,
 				932E8CF821BB22CB00C43EB5 /* Theme.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
 				932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */,
@@ -1529,13 +1514,12 @@
 				93178A2821B8839C002328F1 /* StopOperation.swift in Sources */,
 				93058C91216C5644008A31A4 /* RouteSearchOperation.swift in Sources */,
 				932E8CD621BB02A800C43EB5 /* AgencyAlert.swift in Sources */,
-				931B94BC216569720034D8FA /* OBARESTAPIOperation.m in Sources */,
+				93B1C11321F8561B005016E5 /* RESTAPIOperation.swift in Sources */,
 				932E8CCB21BB02A400C43EB5 /* DictionaryDecoder.swift in Sources */,
 				932E8CCA21BB02A400C43EB5 /* DictionaryCodingKey.swift in Sources */,
 				93399E2A21964DC300F71058 /* ModelService.swift in Sources */,
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				932E8CD421BB02A800C43EB5 /* StopsForRoute.swift in Sources */,
-				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
 				93BDD6E521F79E2600B3A64C /* FoundationExtensions.swift in Sources */,
 				932E8CF121BB22BD00C43EB5 /* MapRegionManager.swift in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,
