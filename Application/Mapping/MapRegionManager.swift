@@ -13,6 +13,7 @@ import MapKit
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, searchUpdated searchResponse: SearchResponse)
 
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
     @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
@@ -78,7 +79,9 @@ public class MapRegionManager: NSObject {
             }
         }
         set {
-            // abxoxo - todo
+            if let v = newValue {
+                mapView.visibleMapRect = v
+            }
         }
     }
 
@@ -120,6 +123,16 @@ public class MapRegionManager: NSObject {
     @objc
     public func removeDelegate(_ delegate: MapRegionDelegate) {
         delegates.remove(delegate)
+    }
+
+    private func notifyDelegatesSearchResultsChanged() {
+        guard let searchResponse = searchResponse else {
+            return
+        }
+
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, searchUpdated: searchResponse)
+        }
     }
 
     private func notifyDelegatesStopsChanged() {
@@ -250,7 +263,7 @@ public class MapRegionManager: NSObject {
 
     public var searchResponse: SearchResponse? {
         didSet {
-            // abxoxo - todo update the ui!
+            notifyDelegatesSearchResultsChanged()
         }
     }
 }
