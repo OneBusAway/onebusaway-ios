@@ -12,6 +12,15 @@ public enum SearchType: Int {
     case address, route, stopNumber, vehicleID
 }
 
+public func searchTypeToString(_ searchType: SearchType) -> String {
+    switch searchType {
+    case .address: return NSLocalizedString("search_request.search_type.address", value: "Address", comment: "Search Type: Address")
+    case .route: return NSLocalizedString("search_request.search_type.route", value: "Route", comment: "Search Type: Route")
+    case .stopNumber: return NSLocalizedString("search_request.search_type.stop_number", value: "Stop", comment: "Search Type: Stop number")
+    case .vehicleID: return NSLocalizedString("search_request.search_type.vehicle_id", value: "Vehicle ID", comment: "Search Type: Vehicle ID")
+    }
+}
+
 public class SearchRequest: NSObject {
     public let query: String
     public let searchType: SearchType
