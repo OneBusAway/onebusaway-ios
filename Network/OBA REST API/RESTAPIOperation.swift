@@ -69,6 +69,8 @@ public class RESTAPIOperation: NetworkOperation {
             entries = (dataField["list"] as! [[String : Any]])
         }
 
-        references = (dataField["references"] as! [String : Any])
+        if let refs = dataField["references"] {
+            references = (refs as! [String : Any])
+        }
     }
 }
