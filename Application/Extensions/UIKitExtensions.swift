@@ -88,7 +88,7 @@ extension UIStackView {
     }
 }
 
-// MARK: - UIView
+// MARK: - UIView/Autolayout
 
 extension UIView {
     /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
@@ -213,6 +213,13 @@ public struct DirectionalPinTargets {
         self.top = top
         self.bottom = bottom
     }
+
+    public init(leadingTrailing: AutoLayoutPinTarget, topBottom: AutoLayoutPinTarget) {
+        self.leading = leadingTrailing
+        self.trailing = leadingTrailing
+        self.top = topBottom
+        self.bottom = topBottom
+    }
 }
 
 public protocol Anchorable {
@@ -230,3 +237,47 @@ public protocol Anchorable {
 
 extension UIView: Anchorable {}
 extension UILayoutGuide: Anchorable {}
+
+// MARK: - UIViewController/Child Controller Containment
+
+public extension UIViewController {
+
+    /// Remove the child controller from `self`.
+    ///
+    /// - Parameter controller: The child controller to remove.
+    public func removeChildController(_ controller: UIViewController) {
+        controller.willMove(toParent: nil)
+        controller.view.removeFromSuperview()
+        setOverrideTraitCollection(nil, forChild: controller)
+        controller.removeFromParent()
+    }
+
+    /// Prepare a view controller to be added to `self` as a child controller.
+    ///
+    /// - Note: This method requires you to manually set `controller.view`'s frame, add it to a parent view, and call `didMove()`.
+    ///
+    /// - Parameters:
+    ///   - controller: The child controller
+    ///   - config: A block that allows you to prepare your controller's view: insert it into a parent view, set its frame.
+    public func prepareChildController(_ controller: UIViewController, block: () -> Void) {
+        controller.willMove(toParent: self)
+        setOverrideTraitCollection(traitCollection, forChild: controller)
+        addChild(controller)
+        block()
+        controller.didMove(toParent: self)
+    }
+
+    /// Adds the view controller to `self` as a child controller.
+    ///
+    /// - Parameters:
+    ///   - controller: The child controller.
+    ///   - view: Optional. The parent view for `controller.view`. Defaults to `self.view` if left unspecified.
+    public func addChildController(_ controller: UIViewController, to view: UIView? = nil) {
+        let parentView: UIView = view ?? self.view
+
+        prepareChildController(controller) {
+            controller.view.frame = parentView.bounds
+            parentView.addSubview(controller.view)
+        }
+    }
+}
