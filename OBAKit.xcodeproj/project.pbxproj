@@ -49,8 +49,6 @@
 		931B94442164409B0034D8FA /* Nimble.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; };
 		931B94452164409B0034D8FA /* OHHTTPStubs.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; };
 		931B944A2164433D0034D8FA /* CurrentTimeOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */; };
-		931B944E216460090034D8FA /* OBANetworkHelpers.h in Headers */ = {isa = PBXBuildFile; fileRef = 931B944C216460090034D8FA /* OBANetworkHelpers.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		931B944F216460090034D8FA /* OBANetworkHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = 931B944D216460090034D8FA /* OBANetworkHelpers.m */; };
 		931B945121648D7F0034D8FA /* RequestVehicleOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */; };
 		931B9453216516A10034D8FA /* RequestVehicleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */; };
 		931B94B8216526AA0034D8FA /* vehicle_for_id_4011.json in Resources */ = {isa = PBXBuildFile; fileRef = 931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */; };
@@ -188,6 +186,8 @@
 		937BB7372174384100BE5635 /* TripProblemOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB7362174384100BE5635 /* TripProblemOperationTest.swift */; };
 		937BB73921743A2800BE5635 /* report_trip_problem.json in Resources */ = {isa = PBXBuildFile; fileRef = 937BB73821743A2800BE5635 /* report_trip_problem.json */; };
 		937BB73D2175566600BE5635 /* APIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937BB73C2175566600BE5635 /* APIService.swift */; };
+		93A6052B220CDDE000F0A0F0 /* NetworkHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6052A220CDDE000F0A0F0 /* NetworkHelperTests.swift */; };
+		93A6052D220D02DB00F0A0F0 /* NetworkHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6052C220D02DB00F0A0F0 /* NetworkHelpers.swift */; };
 		93A632F921D9349200A1AC9B /* VisualEffectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */; };
 		93A632FC21D9651000A1AC9B /* Strings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A632FB21D9651000A1AC9B /* Strings.swift */; };
 		93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */; };
@@ -330,8 +330,6 @@
 		931B943F21643D430034D8FA /* OHHTTPStubs.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OHHTTPStubs.framework; path = Carthage/Build/iOS/OHHTTPStubs.framework; sourceTree = "<group>"; };
 		931B94482164433C0034D8FA /* OBAKitTests-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "OBAKitTests-Bridging-Header.h"; sourceTree = "<group>"; };
 		931B94492164433D0034D8FA /* CurrentTimeOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentTimeOperationTest.swift; sourceTree = "<group>"; };
-		931B944C216460090034D8FA /* OBANetworkHelpers.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = OBANetworkHelpers.h; sourceTree = "<group>"; };
-		931B944D216460090034D8FA /* OBANetworkHelpers.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OBANetworkHelpers.m; sourceTree = "<group>"; };
 		931B945021648D7F0034D8FA /* RequestVehicleOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperation.swift; sourceTree = "<group>"; };
 		931B9452216516A10034D8FA /* RequestVehicleOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestVehicleOperationTest.swift; sourceTree = "<group>"; };
 		931B94B7216526AA0034D8FA /* vehicle_for_id_4011.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = vehicle_for_id_4011.json; sourceTree = "<group>"; };
@@ -454,6 +452,8 @@
 		937BB7362174384100BE5635 /* TripProblemOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemOperationTest.swift; sourceTree = "<group>"; };
 		937BB73821743A2800BE5635 /* report_trip_problem.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = report_trip_problem.json; sourceTree = "<group>"; };
 		937BB73C2175566600BE5635 /* APIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIService.swift; sourceTree = "<group>"; };
+		93A6052A220CDDE000F0A0F0 /* NetworkHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelperTests.swift; sourceTree = "<group>"; };
+		93A6052C220D02DB00F0A0F0 /* NetworkHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkHelpers.swift; sourceTree = "<group>"; };
 		93A632F821D9349200A1AC9B /* VisualEffectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualEffectViewController.swift; sourceTree = "<group>"; };
 		93A632FB21D9651000A1AC9B /* Strings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Strings.swift; sourceTree = "<group>"; };
 		93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndeterminateProgressView.swift; sourceTree = "<group>"; };
@@ -720,8 +720,7 @@
 		931B944B21645FBD0034D8FA /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
-				931B944C216460090034D8FA /* OBANetworkHelpers.h */,
-				931B944D216460090034D8FA /* OBANetworkHelpers.m */,
+				93A6052C220D02DB00F0A0F0 /* NetworkHelpers.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -1009,6 +1008,7 @@
 		933FFF4F217A8C88006682C3 /* Networking */ = {
 			isa = PBXGroup;
 			children = (
+				93A60529220CDDD100F0A0F0 /* Helper Tests */,
 				93FAAAA22177EB510086D9DE /* Obaco API Tests */,
 				931B9447216443180034D8FA /* REST API Tests */,
 				93FAAA9B2177E0F30086D9DE /* Region API Tests */,
@@ -1101,6 +1101,14 @@
 				93235DE4219F24A5008C3BB0 /* AppConfig.swift */,
 			);
 			path = Orchestration;
+			sourceTree = "<group>";
+		};
+		93A60529220CDDD100F0A0F0 /* Helper Tests */ = {
+			isa = PBXGroup;
+			children = (
+				93A6052A220CDDE000F0A0F0 /* NetworkHelperTests.swift */,
+			);
+			path = "Helper Tests";
 			sourceTree = "<group>";
 		};
 		93A632F721D933EB00A1AC9B /* Controllers */ = {
@@ -1210,7 +1218,6 @@
 			files = (
 				932DFFA421E905E000E5FF0E /* SVPulsingAnnotationView.h in Headers */,
 				931B940F216419C20034D8FA /* OBAKit.h in Headers */,
-				931B944E216460090034D8FA /* OBANetworkHelpers.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1428,7 +1435,6 @@
 				933FFF3C2179A8DE006682C3 /* RESTAPIModelService.swift in Sources */,
 				931B943921642EE40034D8FA /* CurrentTimeOperation.swift in Sources */,
 				936EAF19219DF56500AE27D5 /* RegionsAPIService.swift in Sources */,
-				931B944F216460090034D8FA /* OBANetworkHelpers.m in Sources */,
 				93A6331621DFF26700A1AC9B /* VehicleStopModel.swift in Sources */,
 				932AAF9C216960A70070BF56 /* ArrivalDepartureForStopOperation.swift in Sources */,
 				932E8CE821BB207C00C43EB5 /* LocationManagerProtocol.swift in Sources */,
@@ -1478,6 +1484,7 @@
 				9345BB4021E3D42400980708 /* FloatingPanelTitleView.swift in Sources */,
 				93399E1A2191EE3900F71058 /* RegionalAlertsModelOperation.swift in Sources */,
 				93158B93217C189500E16DBA /* RESTModelOperation.swift in Sources */,
+				93A6052D220D02DB00F0A0F0 /* NetworkHelpers.swift in Sources */,
 				93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */,
 				932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */,
 				9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */,
@@ -1533,6 +1540,7 @@
 			files = (
 				93399E3221975B2100F71058 /* AlarmModelOperationTests.swift in Sources */,
 				932AAF9E216962D20070BF56 /* ArrivalDepartureAtStopTest.swift in Sources */,
+				93A6052B220CDDE000F0A0F0 /* NetworkHelperTests.swift in Sources */,
 				932E8CFD21BB23E900C43EB5 /* ApplicationTests.swift in Sources */,
 				93399E1E2193489500F71058 /* RegionalAlertsModelOperationTests.swift in Sources */,
 				932E8CE221BB02C600C43EB5 /* RegionsEncodingTests.swift in Sources */,
