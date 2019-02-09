@@ -44,7 +44,7 @@ public class StopsOperation: RESTAPIOperation {
         let radius = max(min(15000.0, circularRegion.radius), 1.0)
         let queryItems = NetworkHelpers.dictionary(toQueryItems: [
             "lat": circularRegion.center.latitude, "lon": circularRegion.center.longitude,
-            "query": query, "radius": radius
+            "query": query, "radius": Int(radius)
         ])
         return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }

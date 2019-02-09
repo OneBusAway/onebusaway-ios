@@ -39,7 +39,7 @@ public class StopProblemOperation: RESTAPIOperation {
     public static let apiPath = "/api/where/report-problem-with-stop.json"
 
     public class func buildURL(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        var args: [AnyHashable: Any] = [
+        var args: [String: Any] = [
             "stopId": stopID,
             "code": stopProblemCodeToString(code)
         ]

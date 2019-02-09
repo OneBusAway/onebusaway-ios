@@ -32,6 +32,6 @@ class CoreLocationTests: XCTestCase {
         let pt2 = CLLocationCoordinate2D(latitude: 47.632352, longitude: -122.312526)
 
         let distance = pt1.distance(from: pt2)
-        expect(distance).to(beCloseTo(967.4102))
+        expect(distance).to(beCloseTo(967.4102, within: 0.1))
     }
 }
