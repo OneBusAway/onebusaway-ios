@@ -89,6 +89,7 @@
 		932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */; };
 		932DFFAA21EA810300E5FF0E /* CoreLocationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */; };
 		932DFFC721F0EF5C00E5FF0E /* CoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */; };
+		932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */; };
 		932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
 		932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
 		932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
@@ -203,6 +204,7 @@
 		93ACD065219E56FE00F493CB /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 93ACD064219E56FE00F493CB /* MapKit.framework */; };
 		93ACD06B219EA34100F493CB /* DemoViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 93ACD069219EA34100F493CB /* DemoViewController.m */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
+		93BDD6E521F79E2600B3A64C /* FoundationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */; };
 		93CAADC421EBAF9F00B4D403 /* DispatchExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */; };
 		93EC531A2185714400C974AB /* TripDetailsModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93EC53192185714400C974AB /* TripDetailsModelOperation.swift */; };
 		93F9203F219137BB007E3861 /* StopProblemModelOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93F9203E219137BB007E3861 /* StopProblemModelOperation.swift */; };
@@ -389,6 +391,7 @@
 		932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVPulsingAnnotationView.m; sourceTree = "<group>"; };
 		932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationExtensions.swift; sourceTree = "<group>"; };
 		932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationTests.swift; sourceTree = "<group>"; };
+		932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedShadowView.swift; sourceTree = "<group>"; };
 		932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusOverlayView.swift; sourceTree = "<group>"; };
 		932E8D0E21BE35AE00C43EB5 /* Matchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matchers.swift; sourceTree = "<group>"; };
 		93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -471,6 +474,7 @@
 		93ACD064219E56FE00F493CB /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		93ACD069219EA34100F493CB /* DemoViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DemoViewController.m; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
+		93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationExtensions.swift; sourceTree = "<group>"; };
 		93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExtensions.swift; sourceTree = "<group>"; };
 		93E97FB321A5C53600207D5F /* MapRegionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapRegionManager.swift; sourceTree = "<group>"; };
 		93E97FBB21A62D7B00207D5F /* Operations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Operations.swift; sourceTree = "<group>"; };
@@ -1064,6 +1068,7 @@
 				93A6330621DBF43A00A1AC9B /* IndeterminateProgressView.swift */,
 				9345BB3321E2932F00980708 /* StopArrivalView.swift */,
 				9345BB3F21E3D42400980708 /* FloatingPanelTitleView.swift */,
+				932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1167,6 +1172,7 @@
 				9342916921ADC3BB0071AD11 /* MapKitExtensions.swift */,
 				932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */,
 				93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */,
+				93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1491,6 +1497,7 @@
 				93399E0C21916A9E00F71058 /* TripProblemModelOperation.swift in Sources */,
 				932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */,
 				9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */,
+				932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */,
 				932E8CF821BB22CB00C43EB5 /* Theme.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
 				932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */,
@@ -1529,6 +1536,7 @@
 				933FFF3521794AF6006682C3 /* VehicleTripOperation.swift in Sources */,
 				932E8CD421BB02A800C43EB5 /* StopsForRoute.swift in Sources */,
 				931B942721641FB50034D8FA /* OBANetworkOperation.m in Sources */,
+				93BDD6E521F79E2600B3A64C /* FoundationExtensions.swift in Sources */,
 				932E8CF121BB22BD00C43EB5 /* MapRegionManager.swift in Sources */,
 				93FAAAA12177E85E0086D9DE /* WeatherOperation.swift in Sources */,
 				93A6330721DBF43A00A1AC9B /* IndeterminateProgressView.swift in Sources */,

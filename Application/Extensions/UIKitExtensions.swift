@@ -17,6 +17,39 @@ extension UIBarButtonItem {
     }
 }
 
+// MARK: - UIColor
+
+public extension UIColor {
+
+    /// Brightens or darks the receiver by `amount`.
+    ///
+    /// - Parameter amount: A value between -1 and 1, inclusive.
+    /// - Returns: The adjusted color.
+    public func adjustBrightness(amount: CGFloat) -> UIColor {
+        guard amount != 0 else {
+            return self
+        }
+
+        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
+
+        if !getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
+            let rgba = rgbValues
+            let rgbColor = UIColor(red: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha)
+            rgbColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
+        }
+
+        let newBrightness = min(1.0, max(-1.0, brightness + amount))
+        return UIColor(hue: hue, saturation: saturation, brightness: newBrightness, alpha: alpha)
+    }
+
+    public var rgbValues: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return (red: red, green: green, blue: blue, alpha: alpha)
+    }
+}
+
+
 // MARK: - UIViewController
 
 extension UIViewController {

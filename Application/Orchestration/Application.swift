@@ -43,18 +43,18 @@ public class Application: NSObject {
 
     @objc public init(config: AppConfig) {
         self.config = config
-        self.locationService = config.locationService
-        self.regionsService = config.regionsService
+        locationService = config.locationService
+        regionsService = config.regionsService
 
-        self.theme = Theme(bundle: config.themeBundle, traitCollection: nil)
+        theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 
         super.init()
 
-        self.locationService.addDelegate(self)
-        self.regionsService.addDelegate(self)
+        locationService.addDelegate(self)
+        regionsService.addDelegate(self)
 
-        if self.locationService.isLocationUseAuthorized {
-            self.locationService.startUpdates()
+        if locationService.isLocationUseAuthorized {
+            locationService.startUpdates()
         }
 
         refreshRESTAPIModelService()
@@ -120,6 +120,7 @@ public class Application: NSObject {
         FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
         FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
 
+        StopAnnotationView.appearance().theme = theme
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];

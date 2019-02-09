@@ -27,6 +27,8 @@ public class ThemeMetrics: NSObject {
     public let padding: CGFloat = 8.0
 
     public let controllerMargin: CGFloat = 20.0
+
+    public let defaultMapAnnotationSize: CGFloat = 54.0
 }
 
 @objc(OBAThemeColors)
@@ -47,74 +49,49 @@ public class ThemeColors: NSObject {
     /// A gray text color, used on light backgrounds for de-emphasized text.
     public let subduedText: UIColor
 
+    /// A dark gray text color, used on maps.
+    public let mapText: UIColor
+
+    public let stopAnnotationIcon: UIColor
+
     init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         dark = UIColor(named: "dark", in: bundle, compatibleWith: traitCollection)!
         light = UIColor(named: "light", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
         subduedText = UIColor(named: "subduedText", in: bundle, compatibleWith: traitCollection)!
+        mapText = UIColor(named: "mapTextColor", in: bundle, compatibleWith: traitCollection)!
+        stopAnnotationIcon = UIColor(named: "stopAnnotationIconColor", in: bundle, compatibleWith: traitCollection)!
     }
 }
 
 @objc(OBAThemeFonts)
 public class ThemeFonts: NSObject {
+
+    // MARK: - Fonts
+
+    public lazy var title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title2)
+    public lazy var body = ThemeFonts.font(textStyle: UIFont.TextStyle.body)
+    public lazy var boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
+    public lazy var footnote = ThemeFonts.font(textStyle: UIFont.TextStyle.footnote)
+    public lazy var mapAnnotation: UIFont = {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle.footnote)
+        return UIFont.systemFont(ofSize: descriptor.pointSize - 2.0, weight: .black)
+    }()
+
+    // MARK: - Internal
+
     private static let maxFontSize: CGFloat = 32.0
 
-    // MARK: - Title
-
-    private var _title: UIFont?
-    public lazy var title: UIFont = {
-        if let title = _title {
-            return title
-        }
-
-        _title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title1)
-        return _title!
-    }()
-
-    // MARK: - Body
-
-    private var _body: UIFont?
-    public lazy var body: UIFont = {
-        if let body = _body {
-            return body
-        }
-
-        _body = ThemeFonts.font(textStyle: UIFont.TextStyle.body)
-        return _body!
-    }()
-
-    private var _boldBody: UIFont?
-    public lazy var boldBody: UIFont = {
-        if let boldBody = _boldBody {
-            return boldBody
-        }
-
-        _boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
-        return _boldBody!
-    }()
-
-    // MARK: - Footnote
-
-    private var _footnote: UIFont?
-    public lazy var footnote: UIFont = {
-        if let footnote = _footnote {
-            return footnote
-        }
-
-        _footnote = ThemeFonts.font(textStyle: UIFont.TextStyle.footnote)
-        return _footnote!
-    }()
-
-    private class func font(textStyle: UIFont.TextStyle) -> UIFont {
+    private class func font(textStyle: UIFont.TextStyle, pointSize: CGFloat? = nil) -> UIFont {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle)
-        return UIFont(descriptor: descriptor, size: min(descriptor.pointSize, maxFontSize))
+        let size = pointSize ?? min(descriptor.pointSize, maxFontSize)
+        return UIFont(descriptor: descriptor, size: size)
     }
 
-    private class func boldFont(textStyle: UIFont.TextStyle) -> UIFont {
-        let plainDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle)
-        let augmentedDescriptor = plainDescriptor.withSymbolicTraits(.traitBold)
-        let descriptor = augmentedDescriptor ?? plainDescriptor
-        return UIFont(descriptor: descriptor, size: min(descriptor.pointSize, maxFontSize))
+    private class func boldFont(textStyle: UIFont.TextStyle, pointSize: CGFloat? = nil) -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle).withSymbolicTraits(.traitBold)!
+        let size = pointSize ?? min(descriptor.pointSize, maxFontSize)
+        return UIFont(descriptor: descriptor, size: size)
     }
 }
