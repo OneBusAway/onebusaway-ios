@@ -62,6 +62,26 @@ public class MapRegionManager: NSObject {
         requestStopsOperation?.cancel()
     }
 
+    // MARK: - Map Information
+
+    public var visibleMapRect: MKMapRect? {
+        get {
+            guard let currentRegion = application.regionsService.currentRegion else {
+                return nil
+            }
+
+            if currentRegion.serviceRect.contains(mapView.visibleMapRect) {
+                return mapView.visibleMapRect
+            }
+            else {
+                return currentRegion.serviceRect
+            }
+        }
+        set {
+            // abxoxo - todo
+        }
+    }
+
     // MARK: - Data Loading
 
     @objc func requestDataForMapRegion(_ timer: Timer) {
@@ -223,6 +243,14 @@ public class MapRegionManager: NSObject {
         }
         else {
             statusOverlay.hideOverlay(animated: animated)
+        }
+    }
+
+    // MARK: - Search
+
+    public var searchResponse: SearchResponse? {
+        didSet {
+            // abxoxo - todo update the ui!
         }
     }
 }

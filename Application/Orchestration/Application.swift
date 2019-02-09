@@ -37,6 +37,10 @@ public class Application: NSObject {
 
     @objc public private(set) var restAPIModelService: RESTAPIModelService?
 
+    @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
+
+    @objc public private(set) lazy var searchManager = SearchManager(application: self)
+
     @objc public private(set) var theme: Theme
 
     @objc public weak var delegate: ApplicationDelegate?
