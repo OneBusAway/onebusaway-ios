@@ -42,6 +42,30 @@ public class Icons: NSObject {
         return imageNamed("info")
     }
 
+    // MARK: - Actions
+
+    /// A refresh icon.
+    public class var refresh: UIImage {
+        return imageNamed("refresh")
+    }
+
+    /// A filter icon.
+    public class var filter: UIImage {
+        return imageNamed("filter")
+    }
+
+    // MARK: - Favorites
+
+    /// A filled-in star icon
+    public class var favorited: UIImage {
+        return imageNamed("favorited")
+    }
+
+    /// A not-filled-in star icon
+    public class var unfavorited: UIImage {
+        return imageNamed("unfavorited")
+    }
+
     // MARK: - Heading
 
     /// A gradient arc image that can be used to show the user's heading.

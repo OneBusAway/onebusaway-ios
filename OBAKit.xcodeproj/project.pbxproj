@@ -173,6 +173,8 @@
 		9351CFFE216C0084002D5391 /* stops-for-route-1_100002.json in Resources */ = {isa = PBXBuildFile; fileRef = 9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */; };
 		93547E7D21A3308F00F757A3 /* Nimble.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943D21643D430034D8FA /* Nimble.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		93547E7E21A330AB00F757A3 /* OHHTTPStubs.framework in Copy Frameworks */ = {isa = PBXBuildFile; fileRef = 931B943F21643D430034D8FA /* OHHTTPStubs.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		9362F1B3220F61C300F27CE9 /* HoverBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362F1B2220F61C300F27CE9 /* HoverBar.swift */; };
+		9362F1B622110A4600F27CE9 /* StackedButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9362F1B522110A4600F27CE9 /* StackedButton.swift */; };
 		9369788F2170D5AE0053DF37 /* RegionalAlertsOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */; };
 		936978922170DAF40053DF37 /* puget_sound_alerts.pb in Resources */ = {isa = PBXBuildFile; fileRef = 936978912170DAF40053DF37 /* puget_sound_alerts.pb */; };
 		936978942170DB080053DF37 /* RegionalAlertsOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */; };
@@ -436,6 +438,8 @@
 		9351CFF9216A84AA002D5391 /* StopsForRouteOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperation.swift; sourceTree = "<group>"; };
 		9351CFFB216A850E002D5391 /* StopsForRouteOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsForRouteOperationTest.swift; sourceTree = "<group>"; };
 		9351CFFD216C0084002D5391 /* stops-for-route-1_100002.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "stops-for-route-1_100002.json"; sourceTree = "<group>"; };
+		9362F1B2220F61C300F27CE9 /* HoverBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverBar.swift; sourceTree = "<group>"; };
+		9362F1B522110A4600F27CE9 /* StackedButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StackedButton.swift; sourceTree = "<group>"; };
 		9369788E2170D5AE0053DF37 /* RegionalAlertsOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsOperation.swift; sourceTree = "<group>"; };
 		936978912170DAF40053DF37 /* puget_sound_alerts.pb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = puget_sound_alerts.pb; sourceTree = "<group>"; };
 		936978932170DB080053DF37 /* RegionalAlertsOperationTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionalAlertsOperationTest.swift; sourceTree = "<group>"; };
@@ -1057,6 +1061,8 @@
 				9345BB3321E2932F00980708 /* StopArrivalView.swift */,
 				9345BB3F21E3D42400980708 /* FloatingPanelTitleView.swift */,
 				932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */,
+				9362F1B2220F61C300F27CE9 /* HoverBar.swift */,
+				9362F1B522110A4600F27CE9 /* StackedButton.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1490,11 +1496,13 @@
 				9345BB3421E2932F00980708 /* StopArrivalView.swift in Sources */,
 				932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */,
 				93B1C10F21F84DAF005016E5 /* AsyncOperation.swift in Sources */,
+				9362F1B622110A4600F27CE9 /* StackedButton.swift in Sources */,
 				932E8CF821BB22CB00C43EB5 /* Theme.swift in Sources */,
 				93FAAA9A2177056A0086D9DE /* RegionsOperation.swift in Sources */,
 				932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */,
 				932AAFA2216983810070BF56 /* ShapeOperation.swift in Sources */,
 				932E8CF721BB22C700C43EB5 /* PermissionPromptViewController.swift in Sources */,
+				9362F1B3220F61C300F27CE9 /* HoverBar.swift in Sources */,
 				932E8CDB21BB02AD00C43EB5 /* Stop.swift in Sources */,
 				93A632FC21D9651000A1AC9B /* Strings.swift in Sources */,
 				937BB73D2175566600BE5635 /* APIService.swift in Sources */,

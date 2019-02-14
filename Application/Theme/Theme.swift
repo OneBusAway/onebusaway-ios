@@ -12,23 +12,27 @@ import UIKit
 public class Theme: NSObject {
     public let colors: ThemeColors
     public let fonts: ThemeFonts
-    public let metrics: ThemeMetrics
+    public let metrics: Metrics
 
     public init(bundle: Bundle?, traitCollection: UITraitCollection?) {
         colors = ThemeColors(bundle: bundle ?? Bundle(for: Theme.self), traitCollection: traitCollection)
         fonts = ThemeFonts()
-        metrics = ThemeMetrics()
+        metrics = Metrics()
     }
 }
 
-@objc(OBAThemeMetrics)
-public class ThemeMetrics: NSObject {
+@objc(OBAMetrics)
+public class Metrics: NSObject {
 
     public let padding: CGFloat = 8.0
 
     public let controllerMargin: CGFloat = 20.0
 
     public let defaultMapAnnotationSize: CGFloat = 54.0
+
+    public static let cornerRadius: CGFloat = 8.0
+
+    public static let compactTopBottomEdgeInsets = NSDirectionalEdgeInsets(top: 4.0, leading: 0, bottom: -4.0, trailing: 0)
 }
 
 @objc(OBAThemeColors)

@@ -10,6 +10,11 @@ import Foundation
 
 public class Strings: NSObject {
 
+    public static let bookmark = NSLocalizedString("common.bookmark", value: "Bookmark", comment: "The verb 'to bookmark'.")
+
     public static let close = NSLocalizedString("common.close", value: "Close", comment: "The verb 'to close'.")
 
+    public static let filter = NSLocalizedString("common.filter", value: "Filter", comment: "The verb 'to filter'.")
+
+    public static let refresh = NSLocalizedString("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 }

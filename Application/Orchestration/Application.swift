@@ -100,27 +100,30 @@ public class Application: NSObject {
             t.appearance().tintColor = tintColor
         }
 
-        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
-        UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
-        BorderedButton.appearance().tintColor = theme.colors.dark
         BorderedButton.appearance().setTitleColor(theme.colors.lightText, for: .normal)
+        BorderedButton.appearance().tintColor = theme.colors.dark
 
-        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
-        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
+        FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
 
-        UISegmentedControl.appearance(whenContainedInInstancesOf: [UINavigationBar.self]).setTitleTextAttributes([.foregroundColor: UIColor.darkText], for: .normal)
+        IndeterminateProgressView.appearance().progressColor = theme.colors.primary
+
+        StackedButton.appearance().font = theme.fonts.footnote
 
         StatusOverlayView.appearance().innerPadding = theme.metrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
-        IndeterminateProgressView.appearance().progressColor = theme.colors.primary
-
+        StopAnnotationView.appearance().theme = theme
         StopArrivalView.appearance().formatters = formatters
 
-        FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
-        FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
+        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 
-        StopAnnotationView.appearance().theme = theme
+        UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
+
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
+        UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        UISegmentedControl.appearance(whenContainedInInstancesOf: [UINavigationBar.self]).setTitleTextAttributes([.foregroundColor: UIColor.darkText], for: .normal)
+
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
 //        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
