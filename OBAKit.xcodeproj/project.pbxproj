@@ -202,6 +202,7 @@
 		93B1C10F21F84DAF005016E5 /* AsyncOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C10E21F84DAF005016E5 /* AsyncOperation.swift */; };
 		93B1C11121F852A0005016E5 /* NetworkOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C11021F852A0005016E5 /* NetworkOperation.swift */; };
 		93B1C11321F8561B005016E5 /* RESTAPIOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C11221F8561B005016E5 /* RESTAPIOperation.swift */; };
+		93B1C11B2200377C005016E5 /* TapPresenterSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93B1C11A2200377C005016E5 /* TapPresenterSearchBar.swift */; };
 		93BD80A521A2AADF0009797C /* TestCaseExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */; };
 		93BDD6E521F79E2600B3A64C /* FoundationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */; };
 		93CAADC421EBAF9F00B4D403 /* DispatchExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */; };
@@ -471,6 +472,7 @@
 		93B1C10E21F84DAF005016E5 /* AsyncOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncOperation.swift; sourceTree = "<group>"; };
 		93B1C11021F852A0005016E5 /* NetworkOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkOperation.swift; sourceTree = "<group>"; };
 		93B1C11221F8561B005016E5 /* RESTAPIOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RESTAPIOperation.swift; sourceTree = "<group>"; };
+		93B1C11A2200377C005016E5 /* TapPresenterSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapPresenterSearchBar.swift; sourceTree = "<group>"; };
 		93BD80A421A2AADF0009797C /* TestCaseExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestCaseExtensions.swift; sourceTree = "<group>"; };
 		93BDD6E421F79E2600B3A64C /* FoundationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationExtensions.swift; sourceTree = "<group>"; };
 		93CAADC321EBAF9F00B4D403 /* DispatchExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DispatchExtensions.swift; sourceTree = "<group>"; };
@@ -1065,6 +1067,7 @@
 				932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */,
 				9362F1B2220F61C300F27CE9 /* HoverBar.swift */,
 				9362F1B522110A4600F27CE9 /* StackedButton.swift */,
+				93B1C11A2200377C005016E5 /* TapPresenterSearchBar.swift */,
 			);
 			path = Controls;
 			sourceTree = "<group>";
@@ -1478,6 +1481,7 @@
 				93A6330921DC4FAE00A1AC9B /* StopAnnotationView.swift in Sources */,
 				932E8CD321BB02A800C43EB5 /* ArrivalDeparture.swift in Sources */,
 				936978962170DD0A0053DF37 /* StopProblemOperation.swift in Sources */,
+				93B1C11B2200377C005016E5 /* TapPresenterSearchBar.swift in Sources */,
 				9303E1672190C73E00FD5FDB /* RouteSearchModelOperation.swift in Sources */,
 				93399E3421975BBA00F71058 /* AlarmModelOperation.swift in Sources */,
 				932E8CF621BB22C200C43EB5 /* MapKitExtensions.swift in Sources */,
