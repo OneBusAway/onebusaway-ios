@@ -49,6 +49,17 @@ public extension UIColor {
     }
 }
 
+// MARK: - UIEdgeInsets
+
+public extension UIEdgeInsets {
+
+    /// Provides a way to bridge between libraries that use the deprecated `UIEdgeInsets` struct and `NSDirectionalEdgeInsets`.
+    ///
+    /// - Parameter directionalInsets: Edge insets
+    public init(directionalInsets: NSDirectionalEdgeInsets) {
+        self.init(top: directionalInsets.top, left: directionalInsets.leading, bottom: directionalInsets.bottom, right: directionalInsets.trailing)
+    }
+}
 
 // MARK: - UIViewController
 
