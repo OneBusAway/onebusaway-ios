@@ -170,7 +170,7 @@ public class MapRegionManager: NSObject {
         }
     }
 
-    public func stopWithID(_ id: String, completion: @escaping (Stop?) -> Void) {
+    public func fetchStopWithID(_ id: String, completion: @escaping (Stop?) -> Void) {
         if let stop = (stops.filter {$0.id == id}).first {
             completion(stop)
             return
