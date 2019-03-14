@@ -34,6 +34,12 @@ public class SearchResponse: NSObject {
         self.boundingRegion = boundingRegion
         self.error = error
     }
+
+    /// Returns true if the results count does not equal 1.
+    /// In other words, show the result directly if there is only a single match.
+    public var needsDisambiguation: Bool {
+        return results.count != 1
+    }
 }
 
 @objc(OBASearchManager)
