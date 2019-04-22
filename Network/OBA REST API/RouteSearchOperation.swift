@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreLocation
-import OBAKitPrivate
 
 @objc(OBARouteSearchOperation)
 public class RouteSearchOperation: RESTAPIOperation {
