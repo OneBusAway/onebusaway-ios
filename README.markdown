@@ -2,6 +2,15 @@
 
 This library is a ground-up rewrite of the core modules of OneBusAway for iOS. It is designed to be stable, relatively bug-free, clear, and well-tested. It is designed to serve as the foundation of OneBusAway in its second decade of life.
 
+## Quick Start
+
+OBAKit uses [Xcodegen](https://github.com/yonaskolb/XcodeGen) to generate its `xcodeproj` file. Follow the copy-and-pasteable instructions below to start hacking on this project.
+
+    # Make sure you have Xcode 10.x installed.
+    brew install xcodegen
+    xcodegen
+    open OBAKit.xcodeproj
+
 ## Code and Structure
 
 OBAKit is written almost entirely in Swift 4, with the exception of a few core parts of the project that are not very enjoyable to express in Swift. It is designed to be usable within both Swift and Objective-C projects.
