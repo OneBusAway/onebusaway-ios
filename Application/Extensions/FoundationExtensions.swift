@@ -9,7 +9,7 @@
 import Foundation
 
 public extension Sequence where Element == String {
-    public func localizedCaseInsensitiveSort() -> [Element] {
+    func localizedCaseInsensitiveSort() -> [Element] {
         return sorted { (s1, s2) -> Bool in
             return s1.localizedCaseInsensitiveCompare(s2) == .orderedAscending
         }

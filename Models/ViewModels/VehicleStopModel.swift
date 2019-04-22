@@ -29,7 +29,7 @@ public class VehicleStopModel: NSObject {
 }
 
 public extension Sequence where Element: ArrivalDeparture {
-    public func toVehicleStopModels() -> [VehicleStopModel] {
+    func toVehicleStopModels() -> [VehicleStopModel] {
         var models = [String: VehicleStopModel]()
 
         for arrDep in self {

@@ -16,12 +16,12 @@ public extension CLLocationDirection {
     ///
     /// - Parameter rotation: An additional, optional rotation expressed in radians.
     /// - Returns: The equivalent CGAffineTransform
-    public func affineTransform(rotatedBy rotation: CGFloat) -> CGAffineTransform {
+    func affineTransform(rotatedBy rotation: CGFloat) -> CGAffineTransform {
         return CGAffineTransform(rotationAngle: CGFloat(radians)).rotated(by: rotation)
     }
 
     /// Converts this value to radians.
-    public var radians: Double {
+    var radians: Double {
         return Measurement(value: self, unit: UnitAngle.degrees).converted(to: UnitAngle.radians).value
     }
 }
@@ -32,7 +32,7 @@ public extension CLLocationCoordinate2D {
     ///
     /// - Parameter coordinate: The location to which distance will be calculated.
     /// - Returns: The distance between `self` and `coordinate`.
-    public func distance(from coordinate: CLLocationCoordinate2D) -> CLLocationDistance {
+    func distance(from coordinate: CLLocationCoordinate2D) -> CLLocationDistance {
         let start = CLLocation(latitude: latitude, longitude: longitude)
         let end = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         return start.distance(from: end)
@@ -44,7 +44,7 @@ public extension CLCircularRegion {
     /// Creates a reasonably accurate circular region from the specified map rect.
     ///
     /// - Parameter mapRect: The map rect that will be translated into a circular region.
-    public convenience init(mapRect: MKMapRect) {
+    convenience init(mapRect: MKMapRect) {
         let northeast = MKMapPoint(x: mapRect.maxX, y: mapRect.minY).coordinate
         let southwest = MKMapPoint(x: mapRect.minX, y: mapRect.maxY).coordinate
         let radius = northeast.distance(from: southwest) / 2.0

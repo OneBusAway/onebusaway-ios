@@ -54,7 +54,6 @@ message GeneratedSwiftReservedMessages {
   message capitalizeNext { int32 capitalizeNext = 1; }
   message cardinality { int32 cardinality = 1; }
   message Character { int32 Character = 1; }
-  message characters { int32 characters = 1; }
   message chars { int32 chars = 1; }
   message class { int32 class = 1; }
   message clearExtensionValue { int32 clearExtensionValue = 1; }
@@ -172,7 +171,6 @@ message GeneratedSwiftReservedMessages {
   message extendedGraphemeClusterLiteral { int32 extendedGraphemeClusterLiteral = 1; }
   message ExtendedGraphemeClusterLiteralType { int32 ExtendedGraphemeClusterLiteralType = 1; }
   message ExtensibleMessage { int32 ExtensibleMessage = 1; }
-  message extension { int32 extension = 1; }
   message ExtensionField { int32 ExtensionField = 1; }
   message extensionFieldNumber { int32 extensionFieldNumber = 1; }
   message ExtensionFieldValueSet { int32 ExtensionFieldValueSet = 1; }
@@ -281,7 +279,6 @@ message GeneratedSwiftReservedMessages {
   message isEqual { int32 isEqual = 1; }
   message isEqualTo { int32 isEqualTo = 1; }
   message isInitialized { int32 isInitialized = 1; }
-  message it { int32 it = 1; }
   message itemTagsEncodedSize { int32 itemTagsEncodedSize = 1; }
   message i_2166136261 { int32 i_2166136261 = 1; }
   message JSONDecoder { int32 JSONDecoder = 1; }
@@ -371,7 +368,6 @@ message GeneratedSwiftReservedMessages {
   message other { int32 other = 1; }
   message others { int32 others = 1; }
   message out { int32 out = 1; }
-  message output { int32 output = 1; }
   message p { int32 p = 1; }
   message packed { int32 packed = 1; }
   message PackedEnumExtensionField { int32 PackedEnumExtensionField = 1; }
@@ -388,7 +384,9 @@ message GeneratedSwiftReservedMessages {
   message pointer { int32 pointer = 1; }
   message pos { int32 pos = 1; }
   message prefix { int32 prefix = 1; }
+  message preserveProtoFieldNames { int32 preserveProtoFieldNames = 1; }
   message preTraverse { int32 preTraverse = 1; }
+  message printUnknownFields { int32 printUnknownFields = 1; }
   message proto2 { int32 proto2 = 1; }
   message proto3DefaultValue { int32 proto3DefaultValue = 1; }
   message ProtobufAPIVersionCheck { int32 ProtobufAPIVersionCheck = 1; }
@@ -508,6 +506,7 @@ message GeneratedSwiftReservedMessages {
   message textDecoder { int32 textDecoder = 1; }
   message TextFormatDecoder { int32 TextFormatDecoder = 1; }
   message TextFormatDecodingError { int32 TextFormatDecodingError = 1; }
+  message TextFormatEncodingOptions { int32 TextFormatEncodingOptions = 1; }
   message TextFormatEncodingVisitor { int32 TextFormatEncodingVisitor = 1; }
   message textFormatString { int32 textFormatString = 1; }
   message throws { int32 throws = 1; }
@@ -547,7 +546,6 @@ message GeneratedSwiftReservedMessages {
   message updatedOptions { int32 updatedOptions = 1; }
   message url { int32 url = 1; }
   message utf8 { int32 utf8 = 1; }
-  message utf8Codec { int32 utf8Codec = 1; }
   message utf8ToDouble { int32 utf8ToDouble = 1; }
   message UTF8View { int32 UTF8View = 1; }
   message v { int32 v = 1; }

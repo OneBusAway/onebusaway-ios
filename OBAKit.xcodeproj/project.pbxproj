@@ -80,8 +80,8 @@
 		932DFFA521E905E000E5FF0E /* SVPulsingAnnotationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */; };
 		932DFFAA21EA810300E5FF0E /* CoreLocationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */; };
 		932DFFC721F0EF5C00E5FF0E /* CoreLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */; };
-		932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */; };
 		932DFFC921F1016300E5FF0E /* SearchRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFC821F1016300E5FF0E /* SearchRequest.swift */; };
+		932DFFD621F51B5800E5FF0E /* RoundedShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */; };
 		932E8CC721BB029B00C43EB5 /* gtfs-realtime.pb.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93399E172191705500F71058 /* gtfs-realtime.pb.swift */; };
 		932E8CC821BB02A000C43EB5 /* InternalTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A7CD42189332D00FA3025 /* InternalTypes.swift */; };
 		932E8CC921BB02A000C43EB5 /* ModelHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9309DCA7217D117900E750D0 /* ModelHelpers.swift */; };
@@ -382,8 +382,8 @@
 		932DFFA321E905E000E5FF0E /* SVPulsingAnnotationView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVPulsingAnnotationView.m; sourceTree = "<group>"; };
 		932DFFA921EA810200E5FF0E /* CoreLocationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationExtensions.swift; sourceTree = "<group>"; };
 		932DFFC621F0EF5C00E5FF0E /* CoreLocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreLocationTests.swift; sourceTree = "<group>"; };
-		932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedShadowView.swift; sourceTree = "<group>"; };
 		932DFFC821F1016300E5FF0E /* SearchRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchRequest.swift; sourceTree = "<group>"; };
+		932DFFD521F51B5800E5FF0E /* RoundedShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedShadowView.swift; sourceTree = "<group>"; };
 		932E8D0A21BCA74700C43EB5 /* StatusOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusOverlayView.swift; sourceTree = "<group>"; };
 		932E8D0E21BE35AE00C43EB5 /* Matchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Matchers.swift; sourceTree = "<group>"; };
 		93399E0B21916A9E00F71058 /* TripProblemModelOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripProblemModelOperation.swift; sourceTree = "<group>"; };
@@ -1315,11 +1315,11 @@
 					};
 					931B93FC216419C20034D8FA = {
 						CreatedOnToolsVersion = 10.0;
-						LastSwiftMigration = 1000;
+						LastSwiftMigration = 1020;
 					};
 					931B9404216419C20034D8FA = {
 						CreatedOnToolsVersion = 10.0;
-						LastSwiftMigration = 1000;
+						LastSwiftMigration = 1020;
 						TestTargetID = 931B93D02163F5520034D8FA;
 					};
 				};
@@ -1834,7 +1834,7 @@
 				SKIP_INSTALL = YES;
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -1870,7 +1870,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SKIP_INSTALL = YES;
 				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/Network/PrivateModule";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
 				VERSION_INFO_PREFIX = "";
@@ -1899,7 +1899,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "OBAKitTests/OBAKitTests-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};
@@ -1926,7 +1926,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = org.onebusaway.OBAKitTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "OBAKitTests/OBAKitTests-Bridging-Header.h";
-				SWIFT_VERSION = 4.2;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoApp.app/DemoApp";
 			};

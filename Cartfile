@@ -1,2 +1,2 @@
 # https://github.com/apple/swift-protobuf/releases
-github "apple/swift-protobuf" ~>1.2.0
+github "apple/swift-protobuf" ~>1.5.0

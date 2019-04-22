@@ -68,7 +68,7 @@ extension MKMapView {
 }
 
 public extension MKMapRect {
-    public init(_ coordinateRegion: MKCoordinateRegion) {
+    init(_ coordinateRegion: MKCoordinateRegion) {
         let topLeft = CLLocationCoordinate2D(
             latitude: coordinateRegion.center.latitude + (coordinateRegion.span.latitudeDelta/2.0),
             longitude: coordinateRegion.center.longitude - (coordinateRegion.span.longitudeDelta/2.0)

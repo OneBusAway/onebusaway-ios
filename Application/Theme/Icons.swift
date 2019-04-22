@@ -24,6 +24,8 @@ public class Icons: NSObject {
         case .detailDisclosureButton: return chevron
         case .checkmark: return checkmark
         case .detailButton: return info
+        @unknown default:
+            return nil
         }
     }
 

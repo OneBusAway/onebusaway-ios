@@ -1,6 +1,8 @@
-// Package.swift - description
+// swift-tools-version:4.2
+
+// Package.swift
 //
-// Copyright (c) 2014 - 2016 Apple Inc. and the project authors
+// Copyright (c) 2014 - 2018 Apple Inc. and the project authors
 // Licensed under Apache License v2.0 with Runtime Library Exception
 //
 // See LICENSE.txt for license information:
@@ -11,12 +13,23 @@ import PackageDescription
 
 let package = Package(
   name: "SwiftProtobuf",
+  products: [
+    .executable(name: "protoc-gen-swift", targets: ["protoc-gen-swift"]),
+    .library(name: "SwiftProtobuf", targets: ["SwiftProtobuf"]),
+    .library(name: "SwiftProtobufPluginLibrary", targets: ["SwiftProtobufPluginLibrary"]),
+  ],
   targets: [
-    Target(name: "SwiftProtobufPluginLibrary",
-           dependencies: ["SwiftProtobuf"]),
-    Target(name: "protoc-gen-swift",
-           dependencies: ["SwiftProtobufPluginLibrary", "SwiftProtobuf"]),
-    Target(name: "Conformance",
-           dependencies: ["SwiftProtobuf"]),
-  ]
+    .target(name: "SwiftProtobuf"),
+    .target(name: "SwiftProtobufPluginLibrary",
+            dependencies: ["SwiftProtobuf"]),
+    .target(name: "protoc-gen-swift",
+            dependencies: ["SwiftProtobufPluginLibrary", "SwiftProtobuf"]),
+    .target(name: "Conformance",
+            dependencies: ["SwiftProtobuf"]),
+    .testTarget(name: "SwiftProtobufTests",
+                dependencies: ["SwiftProtobuf"]),
+    .testTarget(name: "SwiftProtobufPluginLibraryTests",
+                dependencies: ["SwiftProtobufPluginLibrary"]),
+  ],
+  swiftLanguageVersions: [.v3, .v4, .v4_2, .version("5")]
 )

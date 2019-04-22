@@ -25,7 +25,7 @@ public extension UIColor {
     ///
     /// - Parameter amount: A value between -1 and 1, inclusive.
     /// - Returns: The adjusted color.
-    public func adjustBrightness(amount: CGFloat) -> UIColor {
+    func adjustBrightness(amount: CGFloat) -> UIColor {
         guard amount != 0 else {
             return self
         }
@@ -42,7 +42,7 @@ public extension UIColor {
         return UIColor(hue: hue, saturation: saturation, brightness: newBrightness, alpha: alpha)
     }
 
-    public var rgbValues: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+    var rgbValues: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
         getRed(&red, green: &green, blue: &blue, alpha: &alpha)
         return (red: red, green: green, blue: blue, alpha: alpha)
@@ -56,7 +56,7 @@ public extension UIEdgeInsets {
     /// Provides a way to bridge between libraries that use the deprecated `UIEdgeInsets` struct and `NSDirectionalEdgeInsets`.
     ///
     /// - Parameter directionalInsets: Edge insets
-    public init(directionalInsets: NSDirectionalEdgeInsets) {
+    init(directionalInsets: NSDirectionalEdgeInsets) {
         self.init(top: directionalInsets.top, left: directionalInsets.leading, bottom: directionalInsets.bottom, right: directionalInsets.trailing)
     }
 }
@@ -256,7 +256,7 @@ public extension UIViewController {
     /// Remove the child controller from `self`.
     ///
     /// - Parameter controller: The child controller to remove.
-    public func removeChildController(_ controller: UIViewController) {
+    func removeChildController(_ controller: UIViewController) {
         controller.willMove(toParent: nil)
         controller.view.removeFromSuperview()
         setOverrideTraitCollection(nil, forChild: controller)
@@ -270,7 +270,7 @@ public extension UIViewController {
     /// - Parameters:
     ///   - controller: The child controller
     ///   - config: A block that allows you to prepare your controller's view: insert it into a parent view, set its frame.
-    public func prepareChildController(_ controller: UIViewController, block: () -> Void) {
+    func prepareChildController(_ controller: UIViewController, block: () -> Void) {
         controller.willMove(toParent: self)
         setOverrideTraitCollection(traitCollection, forChild: controller)
         addChild(controller)
@@ -283,7 +283,7 @@ public extension UIViewController {
     /// - Parameters:
     ///   - controller: The child controller.
     ///   - view: Optional. The parent view for `controller.view`. Defaults to `self.view` if left unspecified.
-    public func addChildController(_ controller: UIViewController, to view: UIView? = nil) {
+    func addChildController(_ controller: UIViewController, to view: UIView? = nil) {
         let parentView: UIView = view ?? self.view
 
         prepareChildController(controller) {

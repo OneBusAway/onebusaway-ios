@@ -15,7 +15,7 @@
 import Foundation
 
 /// JSON encoding and decoding methods for messages.
-public extension Message {
+extension Message {
   /// Returns a string containing the JSON serialization of the message.
   ///
   /// Unlike binary encoding, presence of required fields is not enforced when
@@ -25,7 +25,7 @@ public extension Message {
   /// - Parameters:
   ///   - options: The JSONEncodingOptions to use.
   /// - Throws: `JSONEncodingError` if encoding fails.
-  func jsonString(
+  public func jsonString(
     options: JSONEncodingOptions = JSONEncodingOptions()
   ) throws -> String {
     let data = try jsonUTF8Data(options: options)
@@ -41,7 +41,7 @@ public extension Message {
   /// - Parameters:
   ///   - options: The JSONEncodingOptions to use.
   /// - Throws: `JSONEncodingError` if encoding fails.
-  func jsonUTF8Data(
+  public func jsonUTF8Data(
     options: JSONEncodingOptions = JSONEncodingOptions()
   ) throws -> Data {
     if let m = self as? _CustomJSONCodable {
@@ -89,21 +89,25 @@ public extension Message {
     options: JSONDecodingOptions = JSONDecodingOptions()
   ) throws {
     self.init()
-    try jsonUTF8Data.withUnsafeBytes { (bytes:UnsafePointer<UInt8>) in
-      let buffer = UnsafeBufferPointer(start: bytes, count: jsonUTF8Data.count)
-      var decoder = JSONDecoder(source: buffer, options: options)
-      if !decoder.scanner.skipOptionalNull() {
-        try decoder.decodeFullObject(message: &self)
-      } else if Self.self is _CustomJSONCodable.Type {
-        if let message = try (Self.self as! _CustomJSONCodable.Type)
-          .decodedFromJSONNull() {
-          self = message as! Self
-        } else {
-          throw JSONDecodingError.illegalNull
+    try jsonUTF8Data.withUnsafeBytes { (body: UnsafeRawBufferPointer) in
+      if let baseAddress = body.baseAddress, body.count > 0 {
+        let bytes = baseAddress.assumingMemoryBound(to: UInt8.self)
+
+        let buffer = UnsafeBufferPointer(start: bytes, count: body.count)
+        var decoder = JSONDecoder(source: buffer, options: options)
+        if !decoder.scanner.skipOptionalNull() {
+          try decoder.decodeFullObject(message: &self)
+        } else if Self.self is _CustomJSONCodable.Type {
+          if let message = try (Self.self as! _CustomJSONCodable.Type)
+            .decodedFromJSONNull() {
+            self = message as! Self
+          } else {
+            throw JSONDecodingError.illegalNull
+          }
         }
-      }
-      if !decoder.scanner.complete {
-        throw JSONDecodingError.trailingGarbage
+        if !decoder.scanner.complete {
+          throw JSONDecodingError.trailingGarbage
+        }
       }
     }
   }
