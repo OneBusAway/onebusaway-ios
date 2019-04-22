@@ -13,6 +13,16 @@ targets:
   OBAKit:
     type: framework
     platform: iOS
+    deploymentTarget: "11.0"
     sources: [Application, Location, Models, Network]
     dependencies:
       - carthage: SwiftProtobuf
+  OBAKitTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "11.0"
+    sources: [OBAKitTests]
+    dependencies:
+      - target: DemoApp
+      - carthage: Nimble
+      - carthage: OHHTTPStubs

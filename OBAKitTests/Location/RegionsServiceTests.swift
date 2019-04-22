@@ -12,18 +12,6 @@ import XCTest
 import CoreLocation
 import Nimble
 
-public extension OBATestCase {
-
-    public var regionsModelService: RegionsModelService {
-        return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
-    }
-
-    public var regionsAPIService: RegionsAPIService {
-        return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
-    }
-}
-
-
 class RegionsServiceTests: OBATestCase {
     let userDefaults = UserDefaults.standard
 
