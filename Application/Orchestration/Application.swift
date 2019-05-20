@@ -26,6 +26,8 @@ public class Application: NSObject {
     /// configuration values.
     private let config: AppConfig
 
+    @objc public let userDataStore: UserDataStore
+
     /// Commonly used formatters configured with the user's current, auto-updating locale.
     @objc public let formatters = Formatters(locale: Locale.autoupdatingCurrent)
 
@@ -47,6 +49,7 @@ public class Application: NSObject {
 
     @objc public init(config: AppConfig) {
         self.config = config
+        userDataStore = UserDefaultsStore(userDefaults: config.userDefaults)
         locationService = config.locationService
         regionsService = config.regionsService
 

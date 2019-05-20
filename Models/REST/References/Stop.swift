@@ -113,7 +113,7 @@ public class Stop: NSObject, Codable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         code = try container.decode(String.self, forKey: .code)
-        direction = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .direction))
+        direction = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .direction))
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
 
@@ -129,7 +129,7 @@ public class Stop: NSObject, Codable, HasReferences {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(code, forKey: .code)
-        try container.encode(direction, forKey: .direction)
+        try? container.encode(direction, forKey: .direction)
         try container.encode(id, forKey: .id)
         try container.encode(location.coordinate.latitude, forKey: .lat)
         try container.encode(location.coordinate.longitude, forKey: .lon)
