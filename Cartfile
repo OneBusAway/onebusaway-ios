@@ -1,2 +1,8 @@
 # https://github.com/apple/swift-protobuf/releases
 github "apple/swift-protobuf" ~>1.5.0
+
+# https://github.com/CocoaLumberjack/CocoaLumberjack
+git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.2
+
+# other interesting services:
+# https://github.com/malcommac/SwiftLocation

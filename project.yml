@@ -17,6 +17,8 @@ targets:
     sources: [Application, Location, Models, Network]
     dependencies:
       - carthage: SwiftProtobuf
+      - carthage: CocoaLumberjack
+      - carthage: CocoaLumberjackSwift
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
