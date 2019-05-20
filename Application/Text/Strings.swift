@@ -16,5 +16,7 @@ public class Strings: NSObject {
 
     public static let filter = NSLocalizedString("common.filter", value: "Filter", comment: "The verb 'to filter'.")
 
+    public static let map = NSLocalizedString("common.map", value: "Map", comment: "The noun for a map.")
+
     public static let refresh = NSLocalizedString("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 }
