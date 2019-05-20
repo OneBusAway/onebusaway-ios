@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 @objc(OBAReferences)
 public class References: NSObject, Decodable {
@@ -29,7 +30,7 @@ public class References: NSObject, Decodable {
             situations = try container.decode([Situation].self, forKey: .situations)
         } catch {
             situations = []
-            print("error decoding situations: \(error)")
+            DDLogError("error decoding situations: \(error)")
             throw error
         }
 
@@ -37,7 +38,7 @@ public class References: NSObject, Decodable {
             agencies = try container.decode([Agency].self, forKey: .agencies)
         } catch {
             agencies = []
-            print("error decoding agencies: \(error)")
+            DDLogError("error decoding agencies: \(error)")
             throw error
         }
 
@@ -45,7 +46,7 @@ public class References: NSObject, Decodable {
             routes = try container.decode([Route].self, forKey: .routes)
         } catch {
             routes = []
-            print("error decoding routes: \(error)")
+            DDLogError("error decoding routes: \(error)")
             throw error
         }
 
@@ -53,7 +54,7 @@ public class References: NSObject, Decodable {
             stops = try container.decode([Stop].self, forKey: .stops)
         } catch {
             stops = []
-            print("error decoding stops: \(error)")
+            DDLogError("error decoding stops: \(error)")
             throw error
         }
 
@@ -61,7 +62,7 @@ public class References: NSObject, Decodable {
             trips = try container.decode([Trip].self, forKey: .trips)
         } catch {
             trips = []
-            print("error decoding trips: \(error)")
+            DDLogError("error decoding trips: \(error)")
             throw error
         }
 

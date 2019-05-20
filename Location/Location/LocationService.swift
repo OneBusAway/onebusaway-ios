@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreLocation
+import CocoaLumberjackSwift
 
 @objc(OBALocationServiceDelegate)
 public protocol LocationServiceDelegate: NSObjectProtocol {
@@ -199,7 +200,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
         // reading.
         let interval = newLocation.timestamp.timeIntervalSince(currentLocation.timestamp)
         if interval < kSuccessiveLocationComparisonWindow && currentLocation.horizontalAccuracy < newLocation.horizontalAccuracy {
-            print("Pruning location reading with low accuracy.")
+            DDLogInfo("Pruning location reading with low accuracy.")
             return
         }
 

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 public class AgencyVehicleModelOperation: Operation {
     var apiOperation: MatchingVehiclesOperation?
@@ -25,7 +26,7 @@ public class AgencyVehicleModelOperation: Operation {
             matchingVehicles = try decoder.decode([AgencyVehicle].self, from: data)
         }
         catch {
-            print("unable to decode matching vehicles: \(error)")
+            DDLogError("unable to decode matching vehicles: \(error)")
         }
     }
 }

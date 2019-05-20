@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 @objc(OBARESTModelOperation)
 public class RESTModelOperation: Operation {
@@ -23,7 +24,7 @@ public class RESTModelOperation: Operation {
                 self.references = try References.decodeReferences(references)
             }
             catch {
-                print("Unable to decode references from data: \(error)")
+                DDLogError("Unable to decode references from data: \(error)")
             }
         }
     }
@@ -45,7 +46,7 @@ public class RESTModelOperation: Operation {
             models = try DictionaryDecoder.decodeModels(entries, references: references, type: type)
         }
         catch {
-            print("Unable to decode models from data: \(error)")
+            DDLogError("Unable to decode models from data: \(error)")
         }
 
         return models

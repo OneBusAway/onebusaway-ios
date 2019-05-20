@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreLocation
+import CocoaLumberjackSwift
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate {
@@ -105,7 +106,7 @@ extension RegionsService {
             userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         }
         catch {
-            print("Unable to write regions to user defaults: \(error)")
+            DDLogError("Unable to write regions to user defaults: \(error)")
         }
     }
 
@@ -119,7 +120,7 @@ extension RegionsService {
             userDefaults.set(encoded, forKey: RegionsService.currentRegionUserDefaultsKey)
         }
         catch {
-            print("Unable to write currentRegion to user defaults: \(error)")
+            DDLogError("Unable to write currentRegion to user defaults: \(error)")
         }
     }
 
