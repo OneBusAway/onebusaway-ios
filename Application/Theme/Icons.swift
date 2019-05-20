@@ -11,6 +11,28 @@ import UIKit
 @objc(OBAIcons)
 public class Icons: NSObject {
 
+    // MARK: - Tab Icons
+
+    /// The Map tab icon, for apps using a tab bar UI metaphor.
+    public class var mapTabIcon: UIImage {
+        return imageNamed("map")
+    }
+
+    /// The Recent tab icon, for apps using a tab bar UI metaphor.
+    public class var recentTabIcon: UIImage {
+        return imageNamed("recent")
+    }
+
+    /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
+    public class var bookmarksTabIcon: UIImage {
+        return imageNamed("bookmarks")
+    }
+
+    /// The Settings tab icon, for apps using a tab bar UI metaphor.
+    public class var settingsTabIcon: UIImage {
+        return imageNamed("settings")
+    }
+
     // MARK: - Table Accessories
 
     /// Provides `UIImage`s, where possible, for `UITableViewCell` accessories.
