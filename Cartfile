@@ -4,5 +4,8 @@ github "apple/swift-protobuf" ~>1.5.0
 # https://github.com/CocoaLumberjack/CocoaLumberjack
 git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.2
 
+# https://github.com/Instagram/IGListKit
+github "Instagram/IGListKit" ~>3.4.0
+
 # other interesting services:
 # https://github.com/malcommac/SwiftLocation

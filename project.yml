@@ -16,9 +16,10 @@ targets:
     deploymentTarget: "11.0"
     sources: [Application, Location, Models, Network]
     dependencies:
-      - carthage: SwiftProtobuf
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
+      - carthage: IGListKit
+      - carthage: SwiftProtobuf
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
