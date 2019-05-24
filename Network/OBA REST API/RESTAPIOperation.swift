@@ -14,11 +14,21 @@ import Foundation
 ///
 @objc(OBARESTAPIOperation)
 public class RESTAPIOperation: NetworkOperation {
-    public private(set) var entries: [[String: Any]]?
-    public private(set) var references: [String: Any]?
+    public var entries: [[String: Any]]? {
+        return restDecoder?.entries
+    }
+
+    public var references: [String: Any]? {
+        return restDecoder?.references
+    }
+
+    /// Only available after `-setData:response:error:` is called.
+    internal var restDecoder: RESTDataDecoder?
 
     /// The full JSON body decoded from `data`. Only available after `-setData:response:error:` is called.
-    internal private(set) var _decodedJSONBody: Any?
+    internal var _decodedJSONBody: Any? {
+        return restDecoder?.decodedJSONBody
+    }
 
     /// Override this method in order to perform data-shaping after the raw data has been loaded.
     internal func _dataFieldsDidSet() {
@@ -32,45 +42,21 @@ public class RESTAPIOperation: NetworkOperation {
             return
         }
 
-        var jsonError: Error?
-
         do {
-            _decodedJSONBody = try JSONSerialization.jsonObject(with: data, options: []) as! NSObject
-        } catch {
+            self.restDecoder = try RESTDataDecoder(data: data)
+        } catch let error {
             self.error = error
             return
         }
 
-        defer {
-            _dataFieldsDidSet()
-        }
-
-        guard
-            let dict = _decodedJSONBody as? NSDictionary,
+        if
+            let dict = self.restDecoder?.decodedJSONBody as? NSDictionary,
             let url = response?.url,
             let code = dict["code"] as? NSNumber,
-            let headerFields = response?.allHeaderFields as? [String: String]
-        else {
-            return
+            let headerFields = response?.allHeaderFields as? [String: String] {
+            self.response = HTTPURLResponse(url: url, statusCode: code.intValue, httpVersion: nil, headerFields: headerFields)
         }
 
-        let statusCode = code.intValue
-
-        self.response = HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: headerFields)
-
-        guard let dataField = dict["data"] as? NSDictionary else {
-            return
-        }
-
-        if let entry = dataField["entry"] {
-            entries = [entry] as? [[String : Any]]
-        }
-        else if let list = (dataField["list"] as? [[String : Any]]) {
-            entries = list
-        }
-
-        if let refs = dataField["references"] {
-            references = (refs as! [String : Any])
-        }
+        _dataFieldsDidSet()
     }
 }
