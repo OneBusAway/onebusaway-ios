@@ -26,12 +26,12 @@ public class RESTAPIOperation: NetworkOperation {
     internal var restDecoder: RESTDataDecoder?
 
     /// The full JSON body decoded from `data`. Only available after `-setData:response:error:` is called.
-    internal var _decodedJSONBody: Any? {
+    internal var decodedJSONBody: Any? {
         return restDecoder?.decodedJSONBody
     }
 
     /// Override this method in order to perform data-shaping after the raw data has been loaded.
-    internal func _dataFieldsDidSet() {
+    internal func dataFieldsDidSet() {
         // nop
     }
 
@@ -57,6 +57,6 @@ public class RESTAPIOperation: NetworkOperation {
             self.response = HTTPURLResponse(url: url, statusCode: code.intValue, httpVersion: nil, headerFields: headerFields)
         }
 
-        _dataFieldsDidSet()
+        dataFieldsDidSet()
     }
 }

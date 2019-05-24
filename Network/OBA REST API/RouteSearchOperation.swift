@@ -14,8 +14,8 @@ public class RouteSearchOperation: RESTAPIOperation {
 
     public private(set) var outOfRange = false
 
-    override public func _dataFieldsDidSet() {
-        if  let decodedJSONBody = _decodedJSONBody as? [AnyHashable: Any],
+    override public func dataFieldsDidSet() {
+        if  let decodedJSONBody = decodedJSONBody as? [AnyHashable: Any],
             let outOfRange = decodedJSONBody["outOfRange"] as? Bool
         {
             self.outOfRange = outOfRange

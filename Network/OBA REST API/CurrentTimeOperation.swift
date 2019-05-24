@@ -11,7 +11,7 @@ import Foundation
 public class CurrentTimeOperation: RESTAPIOperation {
     @objc public var currentTime: Date? {
         guard
-            let decodedBody = _decodedJSONBody as? [String: Any],
+            let decodedBody = decodedJSONBody as? [String: Any],
             let currentTime = decodedBody["currentTime"] as? Double else {
             return nil
         }
