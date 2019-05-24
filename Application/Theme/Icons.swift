@@ -68,6 +68,11 @@ public class Icons: NSObject {
 
     // MARK: - Actions
 
+    /// A circular close button
+    public class var closeCircle: UIImage {
+        return imageNamed("close_circle")
+    }
+
     /// A refresh icon.
     public class var refresh: UIImage {
         return imageNamed("refresh")
@@ -150,6 +155,8 @@ public class Icons: NSObject {
     public class var walkTransport: UIImage {
         return imageNamed("walkTransport")
     }
+
+    // MARK: - Private Helpers
 
     private static func imageNamed(_ name: String) -> UIImage {
         return UIImage(named: name, in: Bundle(for: self), compatibleWith: nil)!
