@@ -49,14 +49,29 @@ public class RESTAPIOperation: NetworkOperation {
             return
         }
 
-        if
-            let dict = self.restDecoder?.decodedJSONBody as? NSDictionary,
-            let url = response?.url,
-            let code = dict["code"] as? NSNumber,
-            let headerFields = response?.allHeaderFields as? [String: String] {
-            self.response = HTTPURLResponse(url: url, statusCode: code.intValue, httpVersion: nil, headerFields: headerFields)
-        }
+        self.response = buildMungedHTTPURLResponse(jsonBody: self.restDecoder?.decodedJSONBody, response: response)
 
         dataFieldsDidSet()
+    }
+
+    /// Creates a 'normalized' `HTTPURLResponse` object that contains the response's real status code,
+    /// as contained within the response body's `code` field, as opposed to the 200 that the REST API
+    /// always returns.
+    ///
+    /// - Parameters:
+    ///   - jsonBody: The decoded response body. Although the type here is `Any?`, it is expected to be a dictionary.
+    ///   - response: The full, original response.
+    /// - Returns: An `HTTPURLResponse` with a correct status code, if it is possible to create it.
+    private func buildMungedHTTPURLResponse(jsonBody: Any?, response: HTTPURLResponse?) -> HTTPURLResponse? {
+        guard
+            let dict = jsonBody as? NSDictionary,
+            let code = dict["code"] as? NSNumber,
+            let url = response?.url,
+            let headerFields = response?.allHeaderFields as? [String: String]
+        else {
+            return nil
+        }
+
+        return HTTPURLResponse(url: url, statusCode: code.intValue, httpVersion: nil, headerFields: headerFields)
     }
 }
