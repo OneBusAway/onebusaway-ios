@@ -1,5 +1,7 @@
 github "AliSoftware/OHHTTPStubs" "7.0.0"
-github "CocoaLumberjack/CocoaLumberjack" "3.5.2"
+github "CocoaLumberjack/CocoaLumberjack" "3.5.3"
 github "Instagram/IGListKit" "3.4.0"
 github "Quick/Nimble" "v8.0.1"
+github "SCENEE/FloatingPanel" "v1.5.0"
+github "airbnb/AloeStackView" "7e30b527b0aecd7e5bf522739e0d81834e178c94"
 github "apple/swift-protobuf" "1.5.0"

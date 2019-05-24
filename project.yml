@@ -16,8 +16,10 @@ targets:
     deploymentTarget: "11.0"
     sources: [Application, Location, Models, Network]
     dependencies:
+      - carthage: AloeStackView
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
+      - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: SwiftProtobuf
   OBAKitTests:

@@ -73,6 +73,9 @@ CLANG_WARN_OBJC_LITERAL_CONVERSION = YES
 // Warn about classes that unintentionally do not subclass a root class, such as `NSObject`.
 CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR
 
+// Warns when a quoted include is used instead of a framework style include in a framework header.
+CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES
+
 // Warn about ranged-based for loops.
 CLANG_WARN_RANGE_LOOP_ANALYSIS = YES
 
@@ -111,6 +114,7 @@ DYLIB_INSTALL_NAME_BASE = @rpath
 
 // Activating this setting indicates that the target or project should generate bitcode during compilation for platforms and architectures that support it. For Archive builds, bitcode will be generated in the linked binary for submission to the App Store. For other builds, the compiler and linker will check whether the code complies with the requirements for bitcode generation, but will not generate actual bitcode.
 ENABLE_BITCODE = YES
+ENABLE_BITCODE[sdk=macosx*] = NO
 
 // Controls whether `objc_msgSend` calls must be cast to the appropriate function pointer type before being called.
 ENABLE_STRICT_OBJC_MSGSEND = YES
@@ -218,7 +222,7 @@ SKIP_INSTALL = YES
 SUPPORTED_PLATFORMS = macosx iphoneos iphonesimulator watchsimulator watchos appletvsimulator appletvos
 
 // Swift language version
-SWIFT_VERSION = 4.2
+SWIFT_VERSION = 5.0
 
 // The build system uses the selected device to set the correct value for the `UIDeviceFamily` key it adds to the target's `Info.plist` file. This also drives the --target-device flag to actool, which determines the idioms selected during catalog compilation for iOS platforms.
 TARGETED_DEVICE_FAMILY = 1,2,3,4

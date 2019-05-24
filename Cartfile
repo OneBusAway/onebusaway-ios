@@ -1,11 +1,27 @@
+## Data and Modeling
+
 # https://github.com/apple/swift-protobuf/releases
 github "apple/swift-protobuf" ~>1.5.0
 
-# https://github.com/CocoaLumberjack/CocoaLumberjack
+## Logging
+
+# https://github.com/CocoaLumberjack/CocoaLumberjack/releases
 git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.2
 
-# https://github.com/Instagram/IGListKit
+## UI
+
+# https://github.com/Instagram/IGListKit/releases
 github "Instagram/IGListKit" ~>3.4.0
 
-# other interesting services:
+# https://github.com/airbnb/AloeStackView/releases
+github "airbnb/AloeStackView" "master"
+
+# https://github.com/SCENEE/FloatingPanel/releases
+github "SCENEE/FloatingPanel" ==1.5.0
+
+# -----------------------
+
+# Cool stuff to consider using:
+# https://github.com/alexaubry/BulletinBoard/releases
+# https://github.com/rwbutler/Connectivity
 # https://github.com/malcommac/SwiftLocation
