@@ -14,7 +14,8 @@
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
-@property(nonatomic,strong) DemoViewController *mapController;
+@property(nonatomic,strong) NSUserDefaults *userDefaults;
+@property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
 @end
 
 @implementation AppDelegate
@@ -23,12 +24,13 @@
     self = [super init];
 
     if (self) {
-        NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
-        NSString *apiKey = @"test";
-        NSString *uuid = NSUUID.UUID.UUIDString;
-        NSString *appVersion = @"1.0.test";
+        NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
+        [NSURLCache setSharedURLCache:urlCache];
 
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:apiKey uuid:uuid appVersion:appVersion userDefaults:NSUserDefaults.standardUserDefaults];
+        _userDefaults = [NSUserDefaults standardUserDefaults];
+
+        NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
         [_app configureAppearanceProxies];
@@ -38,9 +40,6 @@
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
-    [NSURLCache setSharedURLCache:urlCache];
-
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     [self applicationReloadRootInterface:self.app];
     [self.window makeKeyAndVisible];
@@ -51,22 +50,30 @@
 #pragma mark - OBAApplicationDelegate
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-//    if (application.showPermissionPromptUI) {
-//        PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
-//        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
-//
-//        self.window.rootViewController = nav;
+//    func applicationReloadRootInterface(_ app: Application) {
+//        if app.showPermissionPromptUI {
+//            let permissionPromptController = PermissionPromptViewController(application: app)
+//            let navigation = UINavigationController(rootViewController: permissionPromptController)
+//            window?.rootViewController = navigation
+//        }
+//        else {
+//            let controller = ClassicApplicationRootController(application: app)
+//            window?.rootViewController = controller
+//        }
 //    }
-//    else {
-        self.mapController = [[DemoViewController alloc] initWithApplication:application];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:self.mapController];
+    if (application.showPermissionPromptUI) {
+        PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
         self.window.rootViewController = nav;
-//    }
+    }
+    else {
+        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        self.window.rootViewController = self.rootController;
+    }
 }
 
-- (void)application:(OBAApplication * _Nonnull)app displayRegionPicker:(OBARegionPickerViewController * _Nonnull)picker {
+- (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {
     self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:picker];
 }
-
 
 @end

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import IGListKit
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
 @objc(OBARecentStopsViewController) public class RecentStopsViewController: UIViewController {
@@ -25,37 +26,58 @@ import UIKit
         fatalError("init(coder:) has not been implemented")
     }
 
-    let tableView = UITableView(frame: .zero)
+    // MARK: - UIViewController
 
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        tableView.frame = view.bounds
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "identifier")
-        tableView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        tableView.dataSource = self
-        tableView.delegate = self
-        view.addSubview(tableView)
+        view.addSubview(collectionController.view)
+        collectionController.view.pinToSuperview(.edges)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        tableView.reloadData()
+        // abxoxo - todo reload data.
     }
+
+    // MARK: - Data and Collection Controller
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self)
 }
 
-extension RecentStopsViewController: UITableViewDelegate, UITableViewDataSource {
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return application.userDataStore.recentStops.count
+extension RecentStopsViewController: ListAdapterDataSource {
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        var sections: [ListDiffable] = []
+
+        let stops = application.userDataStore.recentStops
+
+        if stops.count > 0 {
+            let stopViewModels: [StopViewModel] = Array(stops).map { StopViewModel(stop: $0) }
+            sections.append(contentsOf: stopViewModels)
+        }
+
+        return sections
     }
 
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "identifier", for: indexPath)
-        let stop = application.userDataStore.recentStops[indexPath.row]
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        let sectionController = createSectionController(for: object)
+        sectionController.inset = .zero
+        return sectionController
+    }
 
-        cell.textLabel!.text = stop.name
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
 
-        return cell
+    private func createSectionController(for object: Any) -> ListSectionController {
+        switch object {
+        case is StopViewModel: return StopSectionController()
+        default:
+            fatalError()
+
+            // handy utilities for debugging:
+            //        default:
+            //            return LabelSectionController()
+            //        case is String: return LabelSectionController()
+        }
     }
 }

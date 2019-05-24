@@ -54,12 +54,12 @@ public class FloatingPanelTitleView: UIView {
     public let closeButton: UIButton = {
         let button = UIButton(type: .system)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(UIImage(named: "close_circle"), for: .normal)
+        button.setImage(Icons.closeCircle, for: .normal)
         button.accessibilityLabel = Strings.close
         button.setContentHuggingPriority(.required, for: .horizontal)
         NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(greaterThanOrEqualToConstant: 30.0),
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 30.0)
+            button.heightAnchor.constraint(equalToConstant: 30.0),
+            button.widthAnchor.constraint(equalToConstant: 30.0)
         ])
         return button
     }()

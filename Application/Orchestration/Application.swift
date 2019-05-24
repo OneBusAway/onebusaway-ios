@@ -123,6 +123,9 @@ public class Application: NSObject {
         StopAnnotationView.appearance().theme = theme
         StopArrivalView.appearance().formatters = formatters
 
+        SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
+        SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
+
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 
         UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
@@ -130,6 +133,9 @@ public class Application: NSObject {
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
         UISegmentedControl.appearance(whenContainedInInstancesOf: [UINavigationBar.self]).setTitleTextAttributes([.foregroundColor: UIColor.darkText], for: .normal)
+
+        // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
+        UICollectionView.appearance().isPrefetchingEnabled = false
 
 //
 //        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
