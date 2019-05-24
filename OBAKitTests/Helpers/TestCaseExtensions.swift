@@ -138,6 +138,16 @@ public extension XCTestCase {
     }
 }
 
+// MARK: - Fixture Loading
+public extension OBATestCase {
+    func loadSomeStops() -> [Stop] {
+        let json = loadJSONDictionary(file: "stops_for_location_seattle.json")
+        let stops = try! decodeModels(type: Stop.self, json: json)
+
+        return stops
+    }
+}
+
 // MARK: - Data Loading
 public extension OBATestCase {
     func dataFile(named name: String) -> OHHTTPStubsResponse {

@@ -22,15 +22,8 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
     }
 
-    func loadStops() -> [Stop] {
-        let json = loadJSONDictionary(file: "stops_for_location_seattle.json")
-        let stops = try! decodeModels(type: Stop.self, json: json)
-
-        return stops
-    }
-
     func test_recentStops_addStop() {
-        let stops = loadStops()
+        let stops = loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop)
 
@@ -38,7 +31,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_uniqueStops() {
-        let stops = loadStops()
+        let stops = loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop)
         userDefaultsStore.addRecentStop(stop)
@@ -47,7 +40,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_maxCount() {
-        let stops = loadStops()
+        let stops = loadSomeStops()
         expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
 
         for s in stops {
