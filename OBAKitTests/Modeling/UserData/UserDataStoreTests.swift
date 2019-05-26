@@ -23,7 +23,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_addStop() {
-        let stops = loadSomeStops()
+        let stops = try! loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop)
 
@@ -31,7 +31,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_uniqueStops() {
-        let stops = loadSomeStops()
+        let stops = try! loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop)
         userDefaultsStore.addRecentStop(stop)
@@ -40,12 +40,11 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_maxCount() {
-        let stops = loadSomeStops()
+        let stops = try! loadSomeStops()
         expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
 
         for s in stops {
             userDefaultsStore.addRecentStop(s)
-            print("Count: \(userDefaultsStore.recentStops.count)")
         }
 
         expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount

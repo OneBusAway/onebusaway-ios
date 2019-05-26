@@ -140,11 +140,9 @@ public extension XCTestCase {
 
 // MARK: - Fixture Loading
 public extension OBATestCase {
-    func loadSomeStops() -> [Stop] {
+    func loadSomeStops() throws -> [Stop] {
         let json = loadJSONDictionary(file: "stops_for_location_seattle.json")
-        let stops = try! decodeModels(type: Stop.self, json: json)
-
-        return stops
+        return try decodeModels(type: Stop.self, json: json)
     }
 }
 

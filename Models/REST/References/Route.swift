@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 
 @objc(OBARouteType)
-public enum RouteType: Int, Decodable {
+public enum RouteType: Int, Codable {
     /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
     case lightRail = 0
 
@@ -45,9 +45,9 @@ public enum RouteType: Int, Decodable {
 }
 
 @objc(OBARoute)
-public class Route: NSObject, Decodable, HasReferences {
+public class Route: NSObject, Codable, HasReferences {
+
     let agencyID: String
-    
     @objc public var agency: Agency!
 
     @objc public let color: UIColor?
@@ -60,6 +60,7 @@ public class Route: NSObject, Decodable, HasReferences {
     @objc public let routeURL: URL?
 
     private enum CodingKeys: String, CodingKey {
+        case agency
         case agencyID = "agencyId"
         case color
         case routeDescription = "description"
@@ -75,14 +76,40 @@ public class Route: NSObject, Decodable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         agencyID = try container.decode(String.self, forKey: .agencyID)
-        color = Route.hexToColor(ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .color)))
-        routeDescription = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .routeDescription))
+
+        // If we are decoding a Route that has been serialized internally (e.g. as
+        // part of a Recent Stops list), then it should contain an agency.
+        // However, if we are decoding data from the REST API, then it will not
+        // have routes at this time. Instead, the agency will be loaded via the
+        // `loadReferences()` method call, which is part of the HasReferences protocol.
+        agency = try? container.decode(Agency.self, forKey: .agency)
+
+        color = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
+
+        routeDescription = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeDescription))
         id = try container.decode(String.self, forKey: .id)
-        longName = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .longName))
+        
+        longName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .longName))
         shortName = try container.decode(String.self, forKey: .shortName)
-        textColor = Route.hexToColor(ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .textColor)))
+
+        textColor = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
+
         routeType = try container.decode(RouteType.self, forKey: .routeType)
-        routeURL = try? container.decode(URL.self, forKey: .routeURL)
+        routeURL = try? container.decodeIfPresent(URL.self, forKey: .routeURL)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(agencyID, forKey: .agencyID)
+        try container.encode(agency, forKey: .agency)
+        try container.encodeIfPresent(color?.toHex, forKey: .color)
+        try container.encodeIfPresent(routeDescription, forKey: .routeDescription)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(longName, forKey: .longName)
+        try container.encode(shortName, forKey: .shortName)
+        try container.encodeIfPresent(textColor?.toHex, forKey: .textColor)
+        try container.encode(routeType, forKey: .routeType)
+        try container.encodeIfPresent(routeURL, forKey: .routeURL)
     }
 
     // MARK: - HasReferences
@@ -90,40 +117,33 @@ public class Route: NSObject, Decodable, HasReferences {
     public func loadReferences(_ references: References) {
         agency = references.agencyWithID(agencyID)
     }
-
-    // MARK: - Color Conversion
-
-    // Adapted from https://cocoacasts.com/from-hex-to-uicolor-and-back-in-swift
-    private class func hexToColor(_ hex: String?) -> UIColor? {
-        guard let hex = hex else {
-            return nil
+    
+    // MARK: - CustomDebugStringConvertible
+    
+    public override var debugDescription: String {
+        return String(format: "%@({id: %@, name: %@})", super.debugDescription, id, shortName)
+    }
+    
+    // MARK: - Equatable and Hashable
+    
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Route else {
+            return false
         }
-
-        let hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
-        var rgb: UInt32 = 0
-
-        guard
-            hexSanitized.count == 6 || hexSanitized.count == 8,
-            Scanner(string: hexSanitized).scanHexInt32(&rgb)
-        else {
-            return nil
-        }
-
-        let r, g, b, a: CGFloat
-
-        if hexSanitized.count == 6 {
-            r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-            g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-            b = CGFloat(rgb & 0x0000FF) / 255.0
-            a = 1.0
-        }
-        else {
-            r = CGFloat((rgb & 0xFF000000) >> 24) / 255.0
-            g = CGFloat((rgb & 0x00FF0000) >> 16) / 255.0
-            b = CGFloat((rgb & 0x0000FF00) >> 8) / 255.0
-            a = CGFloat(rgb & 0x000000FF) / 255.0
-        }
-
-        return UIColor(red: r, green: g, blue: b, alpha: a)
+        
+        return
+            agencyID == rhs.agencyID &&
+            color == rhs.color &&
+            routeDescription == rhs.routeDescription &&
+            id == rhs.id &&
+            longName == rhs.longName &&
+            shortName == rhs.shortName &&
+            textColor == rhs.textColor &&
+            routeType == rhs.routeType &&
+            routeURL == rhs.routeURL
+    }
+    
+    public override var hash: Int {
+        return id.hash
     }
 }

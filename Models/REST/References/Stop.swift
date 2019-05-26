@@ -105,6 +105,7 @@ public class Stop: NSObject, Codable, HasReferences {
         case lon
         case locationType
         case name
+        case routes
         case routeIDs = "routeIds"
         case wheelchairBoarding
     }
@@ -122,20 +123,35 @@ public class Stop: NSObject, Codable, HasReferences {
         location = CLLocation(latitude: lat, longitude: lon)
 
         locationType = try container.decode(StopLocationType.self, forKey: .locationType)
+        
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
+        
+        if let references = decoder.userInfo[CodingUserInfoKey.references] as? References {
+            routes = references.routesWithIDs(routeIDs)
+        }
+        else if let encodedRoutes = try? container.decode([Route].self, forKey: .routes) {
+            // If we are decoding a Stop that has been serialized internally (e.g. as
+            // part of a Recent Stops list), then it should contain a list of routes.
+            // However, if we are decoding data from the REST API, then it will not
+            // have routes at this time. Instead, routes will be loaded via the
+            // `loadReferences()` method call, which is part of the HasReferences protocol.
+            routes = encodedRoutes
+        }
+        
         wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(code, forKey: .code)
-        try? container.encode(direction, forKey: .direction)
+        try container.encodeIfPresent(direction, forKey: .direction)
         try container.encode(id, forKey: .id)
         try container.encode(location.coordinate.latitude, forKey: .lat)
         try container.encode(location.coordinate.longitude, forKey: .lon)
         try container.encode(locationType.rawValue, forKey: .locationType)
         try container.encode(name, forKey: .name)
         try container.encode(routeIDs, forKey: .routeIDs)
+        try container.encodeIfPresent(routes, forKey: .routes)
         try container.encode(wheelchairBoarding.rawValue, forKey: .wheelchairBoarding)
     }
 
