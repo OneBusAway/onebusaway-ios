@@ -1,5 +1,5 @@
 //
-//  FloatingPanelCollectionController.swift
+//  CollectionController.swift
 //  OBANext
 //
 //  Created by Aaron Brethorst on 1/13/19.
