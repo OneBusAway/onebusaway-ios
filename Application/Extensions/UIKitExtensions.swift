@@ -354,7 +354,7 @@ public extension UIViewController {
         controller.didMove(toParent: self)
     }
 
-    /// Adds the view controller to `self` as a child controller.
+    /// Preferred to `addChild`. Adds the view controller to `self` as a child controller.
     ///
     /// - Parameters:
     ///   - controller: The child controller.
