@@ -54,17 +54,22 @@ extension RecentStopsViewController: ListAdapterDataSource {
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
-            let stopViewModels: [StopViewModel] = Array(stops).map {
-                StopViewModel(stop: $0) { vm in
-                    guard let viewModel = vm as? StopViewModel else { return }
-                    let stopController = StopViewController(application: self.application, stopID: viewModel.stopID, delegate: nil)
-                    self.application.viewRouter.navigateTo(viewController: stopController, from: self)
-                }
-            }
-            sections.append(contentsOf: stopViewModels)
+            sections.append(tableSection(from: stops))
         }
 
         return sections
+    }
+    
+    private func tableSection(from stops: [Stop]) -> TableSectionData {
+        let rows = stops.map { s -> TableRowData in
+            let routeNames = s.routes.map { $0.shortName }.joined(separator: ", ")
+            return TableRowData(title: s.name, subtitle: routeNames, accessoryType: .disclosureIndicator) { vm in
+                let stopController = StopViewController(application: self.application, stopID: s.id, delegate: nil)
+                self.application.viewRouter.navigateTo(viewController: stopController, from: self)
+            }
+        }
+        
+        return TableSectionData(title: nil, rows: rows)
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
@@ -76,15 +81,6 @@ extension RecentStopsViewController: ListAdapterDataSource {
     public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
 
     private func createSectionController(for object: Any) -> ListSectionController {
-        switch object {
-        case is StopViewModel: return StopSectionController()
-        default:
-            fatalError()
-
-            // handy utilities for debugging:
-            //        default:
-            //            return LabelSectionController()
-            //        case is String: return LabelSectionController()
-        }
+        return defaultSectionController(for: object)
     }
 }

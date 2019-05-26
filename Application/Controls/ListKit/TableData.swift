@@ -89,7 +89,6 @@ public class TableRowData: ListViewModel {
 
 /// Models a section in a table. Contains many `TableRowData` objects.
 class TableSectionData: NSObject, ListDiffable {
-
     let title: String?
     let rows: [TableRowData]
     let backgroundColor: UIColor?
