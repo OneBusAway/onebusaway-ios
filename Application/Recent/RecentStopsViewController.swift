@@ -30,8 +30,9 @@ import IGListKit
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-
-        view.addSubview(collectionController.view)
+        
+        view.backgroundColor = .white
+        addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
     }
 
@@ -53,7 +54,13 @@ extension RecentStopsViewController: ListAdapterDataSource {
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
-            let stopViewModels: [StopViewModel] = Array(stops).map { StopViewModel(stop: $0) }
+            let stopViewModels: [StopViewModel] = Array(stops).map {
+                StopViewModel(stop: $0) { vm in
+                    guard let viewModel = vm as? StopViewModel else { return }
+                    let stopController = StopViewController(application: self.application, stopID: viewModel.stopID, delegate: nil)
+                    self.application.viewRouter.navigateTo(viewController: stopController, from: self)
+                }
+            }
             sections.append(contentsOf: stopViewModels)
         }
 

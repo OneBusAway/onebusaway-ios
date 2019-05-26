@@ -106,7 +106,10 @@ extension NearbyViewController: ListAdapterDataSource {
 
         if stops.count > 0 {
             let stopViewModels: [StopViewModel] = Array(stops.prefix(5)).map {
-                return StopViewModel(stop: $0)
+                return StopViewModel(stop: $0) { _ in
+                    // abxoxo todo!
+                    print("I was tapped!")
+                }
             }
 
             sections.append(contentsOf: stopViewModels)

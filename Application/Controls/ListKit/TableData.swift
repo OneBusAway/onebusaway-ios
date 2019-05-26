@@ -9,10 +9,8 @@
 import Foundation
 import IGListKit
 
-typealias TableRowTapHandler = ((TableRowData) -> Void)
-
 /// Models a single table row
-class TableRowData: NSObject {
+public class TableRowData: ListViewModel {
 
     let title: String?
     let attributedTitle: NSAttributedString?
@@ -20,8 +18,6 @@ class TableRowData: NSObject {
     let subtitle: String?
     let accessoryType: UITableViewCell.AccessoryType
     let style: UITableViewCell.CellStyle
-
-    let tapped: TableRowTapHandler?
 
     /// Default Initializer. Lets you set everything.
     ///
@@ -31,16 +27,15 @@ class TableRowData: NSObject {
     ///   - subtitle: The subtitle of the row. Optional.
     ///   - style: The style (appearance/layout) of the row.
     ///   - accessoryType: The accessory type on the right side, if any.
-    ///   - tapped: Tap handler.
-    public init(title: String?, attributedTitle: NSAttributedString?, subtitle: String?, style: UITableViewCell.CellStyle, accessoryType: UITableViewCell.AccessoryType, tapped: TableRowTapHandler?) {
+    ///   - tapped: Tap event handler.
+    public init(title: String?, attributedTitle: NSAttributedString?, subtitle: String?, style: UITableViewCell.CellStyle, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
         self.title = title
         self.attributedTitle = attributedTitle
         self.subtitle = subtitle
         self.style = style
         self.accessoryType = accessoryType
-        self.tapped = tapped
 
-        super.init()
+        super.init(tapped: tapped)
     }
 
     /// Create a default-style row with an attributed string title.
@@ -48,8 +43,8 @@ class TableRowData: NSObject {
     /// - Parameters:
     ///   - attributedTitle: The attributed string title.
     ///   - accessoryType: The accessory type on the right side, if any.
-    ///   - tapped: Tap handler.
-    convenience init(attributedTitle: NSAttributedString, accessoryType: UITableViewCell.AccessoryType, tapped: TableRowTapHandler?) {
+    ///   - tapped: Tap event handler.
+    convenience init(attributedTitle: NSAttributedString, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
         self.init(title: nil, attributedTitle: attributedTitle, subtitle: nil, style: .default, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -58,8 +53,8 @@ class TableRowData: NSObject {
     /// - Parameters:
     ///   - title: The title for the row.
     ///   - accessoryType: The accessory type of the row.
-    ///   - tapped: Tap handler
-    convenience init(title: String, accessoryType: UITableViewCell.AccessoryType, tapped: TableRowTapHandler?) {
+    ///   - tapped: Tap event handler
+    convenience init(title: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: nil, style: .default, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -69,8 +64,8 @@ class TableRowData: NSObject {
     ///   - title: The title for the row.
     ///   - subtitle: The subtitle for the row.
     ///   - accessoryType: The accessory type.
-    ///   - tapped: Tap handler.
-    convenience init(title: String, subtitle: String, accessoryType: UITableViewCell.AccessoryType, tapped: TableRowTapHandler?) {
+    ///   - tapped: Tap event handler.
+    convenience init(title: String, subtitle: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: subtitle, style: .subtitle, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -80,14 +75,14 @@ class TableRowData: NSObject {
     ///   - title: The title for the row.
     ///   - values: The value for the row.
     ///   - accessoryType: The accessory type.
-    ///   - tapped: Tap handler.
-    convenience init(title: String, value: String, accessoryType: UITableViewCell.AccessoryType, tapped: TableRowTapHandler?) {
+    ///   - tapped: Tap event handler.
+    convenience init(title: String, value: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: value, style: .value1, accessoryType: accessoryType, tapped: tapped)
     }
 
-    override var debugDescription: String {
+    override public var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["title": title as Any, "subtitle": subtitle as Any, "style": style, "accessoryType": accessoryType, "tapped": tapped as Any]
+        let props: [String: Any] = ["title": title as Any, "subtitle": subtitle as Any, "style": style, "accessoryType": accessoryType]
         return "\(desc) \(props)"
     }
 }

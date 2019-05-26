@@ -53,11 +53,14 @@ final public class TableSectionController: ListSectionController, ListSupplement
     }
 
     public override func didSelectItem(at index: Int) {
-        guard let item = data?.rows[index] else {
+        guard
+            let item = data?.rows[index],
+            let tapped = item.tapped
+        else {
             return
         }
 
-        item.tapped?(item)
+        tapped(item)
     }
 
     // MARK: ListSupplementaryViewSource

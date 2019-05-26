@@ -12,7 +12,7 @@ import IGListKit
 
 // MARK: - View Model
 
-public class StopViewModel: NSObject, ListDiffable {
+public class StopViewModel: ListViewModel, ListDiffable {
     let name: String
     let stopID: String
     let direction: String?
@@ -20,18 +20,20 @@ public class StopViewModel: NSObject, ListDiffable {
     let coordinate: CLLocationCoordinate2D
     let image: UIImage?
 
-    convenience init(stop: Stop) {
+    public convenience init(stop: Stop, tapped: ListRowTapHandler?) {
         let routeNames = stop.routes.map { $0.shortName }
-        self.init(name: stop.name, stopID: stop.id, direction: stop.direction, routeNames: routeNames, coordinate: stop.coordinate)
+        self.init(name: stop.name, stopID: stop.id, direction: stop.direction, routeNames: routeNames, coordinate: stop.coordinate, tapped: tapped)
     }
 
-    init(name: String, stopID: String, direction: String?, routeNames: [String], coordinate: CLLocationCoordinate2D, image: UIImage? = nil) {
+    public init(name: String, stopID: String, direction: String?, routeNames: [String], coordinate: CLLocationCoordinate2D, image: UIImage? = nil, tapped: ListRowTapHandler?) {
         self.name = name
         self.stopID = stopID
         self.direction = direction
         self.routeNames = routeNames
         self.coordinate = coordinate
         self.image = image
+        
+        super.init(tapped: tapped)
     }
 
     // MARK: - Helpers
@@ -94,16 +96,16 @@ class StopSectionController: ListSectionController {
         data = object as? StopViewModel
     }
 
-//    override func didSelectItem(at index: Int) {
-//        guard
-//            let data = data,
-//            let viewController = viewController as? NearbyViewController
-//        else {
-//            return
-//        }
-//
-//        viewController.selectedStopViewModel(data)
-//    }
+    override func didSelectItem(at index: Int) {
+        guard
+            let data = data,
+            let tapHandler = data.tapped
+        else {
+            return
+        }
+
+        tapHandler(data)
+    }
 }
 
 
