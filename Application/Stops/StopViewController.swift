@@ -57,7 +57,7 @@ class StopViewController: VisualEffectViewController, FloatingPanelContent {
         }
     }
 
-    init(application: Application, stopID: String, delegate: FloatingPanelContainer) {
+    init(application: Application, stopID: String, delegate: FloatingPanelContainer?) {
         self.application = application
         self.stopID = stopID
         self.delegate = delegate
