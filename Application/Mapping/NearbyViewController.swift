@@ -98,47 +98,36 @@ extension NearbyViewController: SearchDelegate {
 
 // MARK: - ListAdapterDataSource (Data Loading)
 
-extension NearbyViewController: ListAdapterDataSource {
+extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters {
+    
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
-
-        // Nearby Stops
-
+        
         if stops.count > 0 {
-            let stopViewModels: [StopViewModel] = Array(stops.prefix(5)).map {
-                return StopViewModel(stop: $0) { _ in
-                    // abxoxo todo!
-                    print("I was tapped!")
-                }
+            let section = tableSection(from: Array(stops.prefix(5))) { vm in
+                guard let stop = vm.object as? Stop else { return }
+                let stopController = StopViewController(application: self.application, stopID: stop.id, delegate: nil)
+                self.application.viewRouter.navigateTo(viewController: stopController, from: self)
             }
-
-            sections.append(contentsOf: stopViewModels)
+            sections.append(section)
         }
-
+        
         return sections
     }
-
+    
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = createSectionController(for: object)
         sectionController.inset = .zero
         return sectionController
     }
-
+    
     public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
-
+    
     private func createSectionController(for object: Any) -> ListSectionController {
-        switch object {
-        case is StopViewModel: return StopSectionController()
-        default:
-            fatalError()
-
-            // handy utilities for debugging:
-            //        default:
-            //            return LabelSectionController()
-            //        case is String: return LabelSectionController()
-        }
+        return defaultSectionController(for: object)
     }
 }
+
 
 // MARK: - MapRegionDelegate
 
@@ -163,13 +152,5 @@ extension NearbyViewController: MapRegionDelegate, FloatingPanelContent {
 
     public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
         surfaceView()?.hideProgressBar()
-    }
-}
-
-// MARK: - Actions
-
-extension NearbyViewController {
-    public func selectedStopViewModel(_ stopViewModel: StopViewModel) {
-        nearbyDelegate?.nearbyController(self, didSelectStopID: stopViewModel.stopID)
     }
 }
