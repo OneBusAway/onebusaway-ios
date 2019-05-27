@@ -26,7 +26,7 @@ public class ViewRouter: NSObject {
     }
     
     public func navigateTo(stop: Stop, from fromController: UIViewController) {
-        let stopController = FloatingStopViewController(application: application, stopID: stop.id, delegate: nil)
+        let stopController = StopViewController(application: application, stopID: stop.id)
         navigateTo(viewController: stopController, from: fromController)
     }
 }

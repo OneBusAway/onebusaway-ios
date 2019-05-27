@@ -57,8 +57,7 @@ extension RecentStopsViewController: ListAdapterDataSource {
         if stops.count > 0 {
             let section = tableSection(from: stops) { vm in
                 guard let stop = vm.object as? Stop else { return }
-                let stopController = FloatingStopViewController(application: self.application, stopID: stop.id, delegate: nil)
-                self.application.viewRouter.navigateTo(viewController: stopController, from: self)
+                self.application.viewRouter.navigateTo(stop: stop, from: self)
             }
             sections.append(section)
         }
