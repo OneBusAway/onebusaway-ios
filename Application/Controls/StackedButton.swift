@@ -46,13 +46,13 @@ public class StackedButton: UIControl {
 
         isUserInteractionEnabled = true
         backgroundColor = .clear
-        layer.cornerRadius = Metrics.cornerRadius
+        layer.cornerRadius = ThemeMetrics.cornerRadius
 
         let stack = UIStackView.verticalStack(arangedSubviews: [imageView, textLabel])
         stack.isUserInteractionEnabled = false
         addSubview(stack)
 
-        stack.pinToSuperview(.edges, insets: Metrics.compactTopBottomEdgeInsets)
+        stack.pinToSuperview(.edges, insets: ThemeMetrics.compactTopBottomEdgeInsets)
 
         if kDebugColors {
             backgroundColor = .magenta

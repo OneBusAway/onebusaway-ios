@@ -12,17 +12,19 @@ import UIKit
 public class Theme: NSObject {
     public let colors: ThemeColors
     public let fonts: ThemeFonts
-    public let metrics: Metrics
+    public let metrics: ThemeMetrics
+    public let behaviors: ThemeBehaviors
 
     public init(bundle: Bundle?, traitCollection: UITraitCollection?) {
         colors = ThemeColors(bundle: bundle ?? Bundle(for: Theme.self), traitCollection: traitCollection)
         fonts = ThemeFonts()
-        metrics = Metrics()
+        metrics = ThemeMetrics()
+        behaviors = ThemeBehaviors()
     }
 }
 
 @objc(OBAMetrics)
-public class Metrics: NSObject {
+public class ThemeMetrics: NSObject {
 
     public let padding: CGFloat = 8.0
 
@@ -100,4 +102,18 @@ public class ThemeFonts: NSObject {
         let size = pointSize ?? min(descriptor.pointSize, maxFontSize)
         return UIFont(descriptor: descriptor, size: size)
     }
+}
+
+@objc(OBAThemeBehaviors)
+public class ThemeBehaviors: NSObject {
+    
+    /// When true, the app will use floating panels in lieu of a tabbed UI.
+    public let useFloatingPanelNavigation = false
+
+    /// When true, tapping on a map annotation will show a callout.
+    ///
+    /// - Note: This behavior may be overriden by other features, like VoiceOver.
+    ///         Because of how annotation selection works when VoiceOver is on,
+    ///         it doesn't make any sense to display map callouts in that mode.
+    public let mapShowsCallouts = true
 }

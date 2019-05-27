@@ -73,7 +73,7 @@ public class StopAnnotationView: MKAnnotationView {
             }
         }
     }
-
+    
     private let wrapperSize: CGFloat = 30.0
     private let imageSize: CGFloat = 20.0
 
@@ -108,6 +108,8 @@ public class StopAnnotationView: MKAnnotationView {
             titleLabel.backgroundColor = .yellow
             subtitleLabel.backgroundColor = .orange
         }
+        
+        canShowCallout = theme.behaviors.mapShowsCallouts
     }
 
     public override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
