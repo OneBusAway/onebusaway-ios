@@ -10,7 +10,7 @@ import UIKit
 import MapKit
 import FloatingPanel
 
-class MapViewController: UIViewController, FloatingPanelContainer, NearbyDelegate {
+class MapViewController: UIViewController {
 
     // MARK: - Floating Panel and Hoverbar
     var floatingToolbar: HoverBar = {
@@ -20,13 +20,6 @@ class MapViewController: UIViewController, FloatingPanelContainer, NearbyDelegat
         hover.tintColor = .black
         return hover
     }()
-
-    var childFloatingPanel: FloatingPanelController?
-
-    var previousFloatingPanelPosition: FloatingPanelPosition = .half
-
-    /// The 'root' floating panel controller for this view controller.
-    lazy var floatingPanelController = createFloatingPanelController(contentController: nearbyController, scrollView: nearbyController.collectionController.collectionView)
 
     // MARK: - Data
 
@@ -59,8 +52,6 @@ class MapViewController: UIViewController, FloatingPanelContainer, NearbyDelegat
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        navigationController?.isNavigationBarHidden = true
 
         let mapView = mapRegionManager.mapView
         view.addSubview(mapView)
@@ -95,31 +86,8 @@ class MapViewController: UIViewController, FloatingPanelContainer, NearbyDelegat
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        //  Add FloatingPanel to the view with animation.
-        floatingPanelController.addPanel(toParent: self, belowView: floatingToolbar, animated: animated)
-
         // Start showing the status overlay on the map once this controller has appeared.
         mapRegionManager.addStatusOverlayToMap()
-    }
-
-    // MARK: - Nearby Controller and Delegate
-
-    /// The 'nearby' controller shows recent stops, bookmarks, nearby stops, and more.
-    private lazy var nearbyController: NearbyViewController = {
-        let nearby = NearbyViewController(application: application, mapRegionManager: mapRegionManager, delegate: self)
-        return nearby
-    }()
-
-    func nearbyController(_ nearbyController: NearbyViewController, didSelectStopID stopID: String) {
-        showStop(id: stopID)
-    }
-
-    func nearbyControllerRequestFullScreen(_ nearbyController: NearbyViewController) {
-        floatingPanelController.move(to: .full, animated: true)
-    }
-
-    func nearbyControllerRequestDefaultLayout(_ nearbyController: NearbyViewController) {
-        floatingPanelController.move(to: .half, animated: true)
     }
 }
 
@@ -128,14 +96,14 @@ extension MapViewController {
 
     // MARK: - Content Presentation
 
-    /// Displays the stop with the specified ID.
+    /// Displays the specified stop.
     ///
-    /// - Parameter id: The agency-prefixed stop ID.
-    func showStop(id: String) {
-        let stopController = FloatingStopViewController(application: application, stopID: id, delegate: self)
-
-        displayWalkingRoute(stopID: id)
-        presentFloatingPanel(contentController: stopController, scrollView: stopController.stackView, animated: true)
+    /// - Parameter stop: The stop to display.
+    func show(stop: Stop) {
+//        displayWalkingRoute(stopID: id)
+//        let stopController = FloatingStopViewController(application: application, stopID: id, delegate: self)
+//        presentFloatingPanel(contentController: stopController, scrollView: stopController.stackView, animated: true)
+        application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
     func panelForModelDidClose(_ model: AnyObject?) {
@@ -183,30 +151,17 @@ extension MapViewController: MapRegionDelegate {
             return
         }
 
-        showStop(id: stop.id)
-    }
-
-    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-        guard
-            let stop = view.annotation as? Stop,
-            let childFloatingPanel = childFloatingPanel,
-            let stopController = childFloatingPanel.contentViewController as? FloatingStopViewController,
-            stopController.stopID == stop.id
-        else {
-            return
-        }
-
-        closePanel(containing: stopController, model: stop)
+        show(stop: stop)
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, searchUpdated search: SearchResponse) {
-        if search.needsDisambiguation {
-            let searchResults = SearchResultsController(searchResponse: search, application: application, floatingPanelDelegate: self, delegate: self)
-            presentFloatingPanel(contentController: searchResults, scrollView: searchResults.collectionController.collectionView, animated: true)
-        }
-        else {
-            SearchResultsController.presentResult(from: search, delegate: self)
-        }
+//        if search.needsDisambiguation {
+//            let searchResults = SearchResultsController(searchResponse: search, application: application, floatingPanelDelegate: self, delegate: self)
+//            presentFloatingPanel(contentController: searchResults, scrollView: searchResults.collectionController.collectionView, animated: true)
+//        }
+//        else {
+//            SearchResultsController.presentResult(from: search, delegate: self)
+//        }
     }
 }
 
@@ -220,7 +175,7 @@ extension MapViewController: SearchResultsDelegate {
     }
 
     func searchResults(controller: SearchResultsController?, showStop stop: Stop) {
-        showStop(id: stop.id)
+        show(stop: stop)
     }
 
     func searchResults(controller: SearchResultsController?, showVehicleStatus vehicleStatus: VehicleStatus) {

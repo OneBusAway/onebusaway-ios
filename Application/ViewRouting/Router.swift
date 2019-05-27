@@ -21,12 +21,21 @@ public class ViewRouter: NSObject {
         super.init()
     }
     
-    public func navigateTo(viewController: UIViewController, from fromController: UIViewController) {
+    /// Navigates from `fromController` to `viewController`.
+    ///
+    /// - Parameters:
+    ///   - viewController: The 'to' view controller.
+    ///   - fromController: The 'from' view controller.
+    public func navigate(to viewController: UIViewController, from fromController: UIViewController) {
         fromController.navigationController?.pushViewController(viewController, animated: true)
     }
     
+    public func navigateTo(stopID: String, from fromController: UIViewController) {
+        let stopController = StopViewController(application: application, stopID: stopID)
+        navigate(to: stopController, from: fromController)
+    }
+    
     public func navigateTo(stop: Stop, from fromController: UIViewController) {
-        let stopController = StopViewController(application: application, stopID: stop.id)
-        navigateTo(viewController: stopController, from: fromController)
+        navigateTo(stopID: stop.id, from: fromController)
     }
 }
