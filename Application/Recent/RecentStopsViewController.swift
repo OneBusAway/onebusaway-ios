@@ -9,7 +9,7 @@ import UIKit
 import IGListKit
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
-@objc(OBARecentStopsViewController) public class RecentStopsViewController: UIViewController {
+@objc(OBARecentStopsViewController) public class RecentStopsViewController: UIViewController, ModelViewModelConverters {
 
     let application: Application
 
@@ -48,30 +48,24 @@ import IGListKit
 }
 
 extension RecentStopsViewController: ListAdapterDataSource {
+
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
-            sections.append(tableSection(from: stops))
+            let section = tableSection(from: stops) { vm in
+                guard let stop = vm.object as? Stop else { return }
+                let stopController = StopViewController(application: self.application, stopID: stop.id, delegate: nil)
+                self.application.viewRouter.navigateTo(viewController: stopController, from: self)
+            }
+            sections.append(section)
         }
 
         return sections
     }
     
-    private func tableSection(from stops: [Stop]) -> TableSectionData {
-        let rows = stops.map { s -> TableRowData in
-            let routeNames = s.routes.map { $0.shortName }.joined(separator: ", ")
-            return TableRowData(title: s.name, subtitle: routeNames, accessoryType: .disclosureIndicator) { vm in
-                let stopController = StopViewController(application: self.application, stopID: s.id, delegate: nil)
-                self.application.viewRouter.navigateTo(viewController: stopController, from: self)
-            }
-        }
-        
-        return TableSectionData(title: nil, rows: rows)
-    }
-
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = createSectionController(for: object)
         sectionController.inset = .zero

@@ -13,6 +13,7 @@ public typealias ListRowTapHandler = ((ListViewModel) -> Void)
 /// Base class for all OBAKit ListKit view models.
 public class ListViewModel: NSObject {
     public let tapped: ListRowTapHandler?
+    public var object: Any?
     
     public init(tapped: ListRowTapHandler?) {
         self.tapped = tapped
@@ -20,7 +21,7 @@ public class ListViewModel: NSObject {
     
     override public var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["tapped": tapped as Any]
+        let props: [String: Any] = ["tapped": tapped as Any, "object": object as Any]
         return "\(desc) \(props)"
     }
 }

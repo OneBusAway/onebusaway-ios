@@ -88,16 +88,16 @@ public class TableRowData: ListViewModel {
 }
 
 /// Models a section in a table. Contains many `TableRowData` objects.
-class TableSectionData: NSObject, ListDiffable {
+public class TableSectionData: NSObject, ListDiffable {
     let title: String?
     let rows: [TableRowData]
     let backgroundColor: UIColor?
 
-    func diffIdentifier() -> NSObjectProtocol {
+    public func diffIdentifier() -> NSObjectProtocol {
         return self
     }
 
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
+    public func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
         guard let rhs = object as? TableSectionData else {
             return false
         }
