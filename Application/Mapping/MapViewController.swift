@@ -132,7 +132,7 @@ extension MapViewController {
     ///
     /// - Parameter id: The agency-prefixed stop ID.
     func showStop(id: String) {
-        let stopController = StopViewController(application: application, stopID: id, delegate: self)
+        let stopController = FloatingStopViewController(application: application, stopID: id, delegate: self)
 
         displayWalkingRoute(stopID: id)
         presentFloatingPanel(contentController: stopController, scrollView: stopController.stackView, animated: true)
@@ -190,7 +190,7 @@ extension MapViewController: MapRegionDelegate {
         guard
             let stop = view.annotation as? Stop,
             let childFloatingPanel = childFloatingPanel,
-            let stopController = childFloatingPanel.contentViewController as? StopViewController,
+            let stopController = childFloatingPanel.contentViewController as? FloatingStopViewController,
             stopController.stopID == stop.id
         else {
             return

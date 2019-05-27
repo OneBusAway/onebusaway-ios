@@ -1,5 +1,5 @@
 //
-//  StopViewController.swift
+//  FloatingStopViewController.swift
 //  OBANext
 //
 //  Created by Aaron Brethorst on 11/29/18.
@@ -10,7 +10,9 @@ import UIKit
 import AloeStackView
 import FloatingPanel
 
-class StopViewController: VisualEffectViewController, FloatingPanelContent {
+// next up: make this look 'normal' in classic mode.
+
+class FloatingStopViewController: VisualEffectViewController, FloatingPanelContent {
     private let kUseDebugColors = false
 
     public lazy var stackView: AloeStackView = {
@@ -193,7 +195,7 @@ class StopViewController: VisualEffectViewController, FloatingPanelContent {
 }
 
 // MARK: - Actions
-extension StopViewController {
+extension FloatingStopViewController {
     @objc private func closePanel() {
         delegate?.closePanel(containing: self, model: stopArrivals?.stop)
     }
