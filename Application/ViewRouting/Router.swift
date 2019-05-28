@@ -27,6 +27,7 @@ public class ViewRouter: NSObject {
     ///   - viewController: The 'to' view controller.
     ///   - fromController: The 'from' view controller.
     public func navigate(to viewController: UIViewController, from fromController: UIViewController) {
+        assert(fromController.navigationController != nil)
         fromController.navigationController?.pushViewController(viewController, animated: true)
     }
     

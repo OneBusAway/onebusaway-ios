@@ -20,6 +20,8 @@ public protocol MapRegionDelegate {
 
     @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     @objc optional func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
+    
+    @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
 }
 
 @objc(OBAMapRegionManager)
@@ -288,10 +290,16 @@ extension MapRegionManager: MKMapViewDelegate {
             delegate.mapView?(mapView, didSelect: view)
         }
     }
-
+    
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, didDeselect: view)
+        }
+    }
+    
+    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        for delegate in delegates.allObjects {
+            delegate.mapView?(mapView, annotationView: view, calloutAccessoryControlTapped: control)
         }
     }
 

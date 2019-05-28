@@ -118,8 +118,12 @@ public class StopAnnotationView: MKAnnotationView {
         addSubview(transportWrapper)
         addSubview(directionalArrowView)
         addSubview(labelStack)
+        
+        let rightCalloutButton = UIButton(type: .detailDisclosure)
+        rightCalloutButton.setImage(Icons.chevron, for: .normal)
+        rightCalloutAccessoryView = rightCalloutButton
     }
-
+    
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     public override func prepareForReuse() {

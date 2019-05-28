@@ -147,10 +147,20 @@ extension MapViewController {
 
 extension MapViewController: MapRegionDelegate {
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard let stop = view.annotation as? Stop else {
+        guard
+            !application.theme.behaviors.mapShowsCallouts,
+            let stop = view.annotation as? Stop else {
             return
         }
 
+        show(stop: stop)
+    }
+    
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        guard let stop = view.annotation as? Stop else {
+            return
+        }
+        
         show(stop: stop)
     }
 

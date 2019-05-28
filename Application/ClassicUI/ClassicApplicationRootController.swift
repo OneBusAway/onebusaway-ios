@@ -13,14 +13,16 @@ public class ClassicApplicationRootController: UITabBarController {
 
     @objc public init(application: Application) {
         self.application = application
+        
         self.mapController = MapViewController(application: application)
+        let mapNav = UINavigationController(rootViewController: self.mapController)
 
         self.recentStopsController = RecentStopsViewController(application: application)
         let recentStopsNav = UINavigationController(rootViewController: self.recentStopsController)
 
         super.init(nibName: nil, bundle: nil)
 
-        self.viewControllers = [self.mapController, recentStopsNav]
+        self.viewControllers = [mapNav, recentStopsNav]
     }
 
     private let mapController: MapViewController
