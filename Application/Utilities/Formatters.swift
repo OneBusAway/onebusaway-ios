@@ -58,6 +58,21 @@ public class Formatters: NSObject {
             return apply(NSLocalizedString("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
         }
     }
+    
+    // MARK: - Stops
+    
+    /// Generates a formatted title consisting of the stop name and direction.
+    ///
+    /// - Parameter stop: The `Stop` from which to generate a title.
+    /// - Returns: A formatted title, including the stop's name and direction.
+    public class func formattedTitle(stop: Stop) -> String {
+        if let direction = stop.direction {
+            return "\(stop.name) \(direction)"
+        }
+        else {
+            return stop.name
+        }
+    }
 
     // MARK: - Routes
 

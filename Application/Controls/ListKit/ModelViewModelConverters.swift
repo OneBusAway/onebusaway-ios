@@ -34,11 +34,9 @@ public extension ModelViewModelConverters where Self: UIViewController {
 
 public extension TableRowData {
     convenience init(stop: Stop, tapped: ListRowTapHandler?) {
-        let title = [stop.name, stop.direction].compactMap({$0}).joined(separator: " ")
-        let joinedRouteNames = stop.routes.map { $0.shortName }.joined(separator: ", ")
-        let fmt = NSLocalizedString("nearby_stop_cell.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
-        let subtitle = String(format: fmt, joinedRouteNames)
-
+        let title = Formatters.formattedTitle(stop: stop)
+        let subtitle = Formatters.formattedRoutes(stop.routes)
+        
         self.init(title: title, attributedTitle: nil, subtitle: subtitle, style: .subtitle, accessoryType: .disclosureIndicator, tapped: tapped)
                   
         self.object = stop

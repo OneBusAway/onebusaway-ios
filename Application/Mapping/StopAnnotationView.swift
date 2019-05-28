@@ -15,11 +15,18 @@ extension Stop: MKAnnotation {
     }
 
     public var title: String? {
-        //        return name
-        return routes.map { $0.shortName }.localizedCaseInsensitiveSort().prefix(3).joined(separator: ", ")
+        return Formatters.formattedTitle(stop: self)
     }
 
     public var subtitle: String? {
+        return Formatters.formattedRoutes(routes)
+    }
+    
+    public var mapTitle: String? {
+        return routes.map { $0.shortName }.localizedCaseInsensitiveSort().prefix(3).joined(separator: ", ")
+    }
+    
+    public var mapSubtitle: String? {
         return Formatters.adjectiveFormOfCardinalDirection(direction)
     }
 }
@@ -137,8 +144,8 @@ public class StopAnnotationView: MKAnnotationView {
 
         if let stop = annotation as? Stop {
             transportImageView.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
-            titleLabel.attributedText = buildAttributedLabelText(text: stop.title)
-            subtitleLabel.attributedText = buildAttributedLabelText(text: stop.subtitle)
+            titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
+            subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
 
             let fillColor = (annotation as? Stop)?.routes.first?.color ?? theme.colors.primary
             transportWrapper.fillColor = fillColor
