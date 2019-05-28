@@ -161,8 +161,6 @@ public class StopAnnotationView: MKAnnotationView {
                 return
             }
 
-            clusteringIdentifier = annotation.direction
-
             if let direction = annotation.direction {
                 let angle = rotationAngle(from: direction)
                 directionalArrowView.transform = CGAffineTransform(rotationAngle: angle)
