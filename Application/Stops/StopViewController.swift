@@ -15,9 +15,6 @@ class StopViewController: UIViewController {
     public lazy var stackView: AloeStackView = {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.rowInset = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
-        stack.showsVerticalScrollIndicator = false
-        
         return stack
     }()
     
@@ -57,6 +54,8 @@ class StopViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         
         toolbarItems = buildToolbarItems()
+        
+        configureCurrentThemeBehaviors()
     }
     
     private func buildToolbarItems() -> [UIBarButtonItem] {
@@ -70,6 +69,19 @@ class StopViewController: UIViewController {
         filterButton.image = Icons.filter
         
         return [filterButton, bookmarkButton, refreshButton]
+    }
+    
+    private func configureCurrentThemeBehaviors() {
+        if application.theme.behaviors.useFloatingPanelNavigation {
+            stackView.showsVerticalScrollIndicator = false
+            stackView.alwaysBounceVertical = false
+            stackView.rowInset = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
+        }
+        else {
+            stackView.showsVerticalScrollIndicator = true
+            stackView.alwaysBounceVertical = true
+            stackView.rowInset = UIEdgeInsets(top: 5, left: 20, bottom: 5, right: 20)
+        }
     }
     
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
