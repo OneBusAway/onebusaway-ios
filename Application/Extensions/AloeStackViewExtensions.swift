@@ -11,15 +11,20 @@ import AloeStackView
 
 public extension AloeStackView {
 
-    /// Extension: Add a row and specify whether or not to hide the separator in a single call.
+    /// Extension: Add a row, plus specify separator visibility and insets in a single call.
     ///
     /// - Parameters:
     ///   - view: The view to add to the stack view
     ///   - hideSeparator: Hide the row separator or not.
-    func addRow(_ view: UIView, hideSeparator: Bool) {
+    ///   - insets: Optionally set custom edge insets for this row. Leave this as `nil` to accept defaults.
+    func addRow(_ view: UIView, hideSeparator: Bool, insets: UIEdgeInsets? = nil) {
         addRow(view)
         if hideSeparator {
             self.hideSeparator(forRow: view)
+        }
+        
+        if let insets = insets {
+            self.setInset(forRow: view, inset: insets)
         }
     }
 }

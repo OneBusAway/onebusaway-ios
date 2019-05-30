@@ -24,6 +24,9 @@ class StopViewController: UIViewController {
     let minutesBefore: UInt = 5
     var minutesAfter: UInt = 35
     
+    // MARK: - Top Content
+    private let stopHeader = StopHeaderViewController()
+    
     // MARK: - Bottom Content
     
     private lazy var loadMoreButton: UIButton = {
@@ -37,6 +40,16 @@ class StopViewController: UIViewController {
     
     var operation: StopArrivalsModelOperation?
     
+    var stop: Stop? {
+        didSet {
+            guard let stop = stop else { return }
+
+            application.userDataStore.addRecentStop(stop)
+            title = stop.name
+            stopHeader.stop = stop
+        }
+    }
+    
     var stopArrivals: StopArrivals? {
         didSet {
             dataWillReload()
@@ -47,11 +60,18 @@ class StopViewController: UIViewController {
         }
     }
     
-    init(application: Application, stopID: String) {
+    public convenience init(application: Application, stop: Stop) {
+        self.init(application: application, stopID: stop.id)
+        self.stop = stop
+    }
+    
+    public init(application: Application, stopID: String) {
         self.application = application
         self.stopID = stopID
     
         super.init(nibName: nil, bundle: nil)
+        
+        hidesBottomBarWhenPushed = true
         
         toolbarItems = buildToolbarItems()
         
@@ -97,12 +117,16 @@ class StopViewController: UIViewController {
             stackView.backgroundColor = .yellow
         }
         
+        prepareChildController(stopHeader) {
+            stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
+        }
+        
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         updateData()
     }
     
@@ -136,25 +160,10 @@ class StopViewController: UIViewController {
             return
         }
         
-        application.userDataStore.addRecentStop(stopArrivals.stop)
+        stop = stopArrivals.stop
         
-        title = stopArrivals.stop.name
-        
-        func buildStopInfoLabelText(from stopArrivals: StopArrivals) -> String {
-            let fmt = NSLocalizedString("stop_controller.stop_info_label_fmt", value: "Stop #%@", comment: "Stop info - e.g. 'Stop #{12345}")
-            if let adj = Formatters.adjectiveFormOfCardinalDirection(stopArrivals.stop.direction) {
-                return [String(format: fmt, stopArrivals.stop.code), adj].joined(separator: " – ")
-            }
-            else {
-                return String(format: fmt, stopArrivals.stop.code)
-            }
-        }
-        
-        // abxoxo
-        // let stopInfoText = buildStopInfoLabelText(from: stopArrivals)
-        // let routeText = Formatters.formattedRoutes(stopArrivals.stop.routes)
-        // titleBar.subtitleLabel.text = "\(stopInfoText)\r\n\(routeText)"
-        
+        stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
+
         for stopModel in stopArrivals.arrivalsAndDepartures.toVehicleStopModels() {
             var arrivalViews = [StopArrivalView]()
             for arrDep in stopModel.arrivalDepartures {

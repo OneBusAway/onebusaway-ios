@@ -37,6 +37,7 @@ public class ViewRouter: NSObject {
     }
     
     public func navigateTo(stop: Stop, from fromController: UIViewController) {
-        navigateTo(stopID: stop.id, from: fromController)
+        let stopController = StopViewController(application: application, stop: stop)
+        navigate(to: stopController, from: fromController)
     }
 }
