@@ -7,13 +7,6 @@
 
 import UIKit
 
-/*
- background: map of area around stop
- - [Stop name]
- - [ Stop # - cardinal direction]
- - [Routes: list]
- */
-
 /// This view controller is meant to embedded into a classic UI
 /// `StopViewController` and used as the header view for that controller.
 public class StopHeaderViewController: UIViewController {
@@ -21,13 +14,16 @@ public class StopHeaderViewController: UIViewController {
     private let kHeaderHeight: CGFloat = 120.0
     
     private let backgroundImageView = UIImageView.autolayoutNew()
-    private let stopNameLabel = UILabel.autolayoutNew()
-    private let stopNumberLabel = UILabel.autolayoutNew()
-    private let routesLabel = UILabel.autolayoutNew()
+    private lazy var stopNameLabel = buildLabel(bold: true)
+    private lazy var stopNumberLabel = buildLabel()
+    private lazy var routesLabel = buildLabel()
     
     private var snapshotter: MapSnapshotter?
     
-    public init() {
+    private let application: Application
+    
+    public init(application: Application) {
+        self.application = application
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -45,6 +41,8 @@ public class StopHeaderViewController: UIViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
+        
+        view.backgroundColor = MapSnapshotter.defaultOverlayColor
 
         view.addSubview(backgroundImageView)
         NSLayoutConstraint.activate([
@@ -57,17 +55,8 @@ public class StopHeaderViewController: UIViewController {
         
         let stack = UIStackView.verticalStack(arangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
         view.addSubview(stack)
-        stack.pinToSuperview(.layoutMargins)
         
-        func buildStopInfoLabelText(from stopArrivals: StopArrivals) -> String {
-            let fmt = NSLocalizedString("stop_controller.stop_info_label_fmt", value: "Stop #%@", comment: "Stop info - e.g. 'Stop #{12345}")
-            if let adj = Formatters.adjectiveFormOfCardinalDirection(stopArrivals.stop.direction) {
-                return [String(format: fmt, stopArrivals.stop.code), adj].joined(separator: " – ")
-            }
-            else {
-                return String(format: fmt, stopArrivals.stop.code)
-            }
-        }
+        stack.pinToSuperview(.layoutMargins, insets: NSDirectionalEdgeInsets(top: application.theme.metrics.padding, leading: 0, bottom: 0, trailing: 0))
     }
     
     private func updateUI() {
@@ -86,7 +75,16 @@ public class StopHeaderViewController: UIViewController {
         }
         
         stopNameLabel.text = stop.name
-        stopNumberLabel.text = "\(stop.code) - \(stop.direction)"
+        stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: stop)
         routesLabel.text = Formatters.formattedRoutes(stop.routes)
+    }
+    
+    private func buildLabel(bold: Bool = false) -> UILabel {
+        let label = UILabel.autolayoutNew()
+        label.textColor = .white
+        label.shadowColor = .black
+        label.shadowOffset = CGSize(width: 0, height: 1)
+        label.font = bold ? application.theme.fonts.boldBody : application.theme.fonts.body
+        return label
     }
 }

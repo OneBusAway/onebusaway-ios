@@ -14,6 +14,9 @@ public typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
 
 /// Convenience helpers built on top of `MKMapSnapshotter` to simplify the process of creating a map screenshot.
 public class MapSnapshotter: NSObject {
+    
+    public static let defaultOverlayColor: UIColor = UIColor(white: 0.0, alpha: 0.4)
+    
     private let size: CGSize
     private let coordinate: CLLocationCoordinate2D
     private let scale: CGFloat
@@ -24,8 +27,7 @@ public class MapSnapshotter: NSObject {
     private var snapshotter: MKMapSnapshotter?
     
     public convenience init(size: CGSize, coordinate: CLLocationCoordinate2D) {
-        let overlayColor = UIColor(white: 0.0, alpha: 0.4)
-        self.init(size: size, coordinate: coordinate, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, overlayColor: overlayColor)
+        self.init(size: size, coordinate: coordinate, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, overlayColor: MapSnapshotter.defaultOverlayColor)
     }
 
     public init(size: CGSize, coordinate: CLLocationCoordinate2D, screen: UIScreen, mapType: MKMapType, zoomLevel: Int, overlayColor: UIColor) {

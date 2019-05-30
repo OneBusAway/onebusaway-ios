@@ -25,7 +25,8 @@ class StopViewController: UIViewController {
     var minutesAfter: UInt = 35
     
     // MARK: - Top Content
-    private let stopHeader = StopHeaderViewController()
+
+    private lazy var stopHeader = StopHeaderViewController(application: application)
     
     // MARK: - Bottom Content
     

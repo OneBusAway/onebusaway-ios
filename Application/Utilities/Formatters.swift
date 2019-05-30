@@ -73,6 +73,37 @@ public class Formatters: NSObject {
             return stop.name
         }
     }
+    
+    /// Creates a formatted string for a stop's stop ID/code plus direction (if available). e.g. "Stop #1234 — Southbound"
+    ///
+    /// - Parameter stop: The stop from which a formatted string will be created.
+    /// - Returns: The formatted string representing code and direction.
+    public class func formattedCodeAndDirection(stop: Stop) -> String {
+        let formattedCode = formattedStopCode(stop: stop)
+
+        if let adj = Formatters.adjectiveFormOfCardinalDirection(stop.direction) {
+            return "\(formattedCode) — \(adj)"
+        }
+        else {
+            return formattedCode
+        }
+    }
+    
+    /// Creates a formatted string for a stop's ID or code. e.g. "Stop #1234" or "Stop: 'Old Library'"
+    ///
+    /// - Parameter stop: The stop from which to generate a formatted stop code.
+    /// - Returns: The formatted string, suitable for displaying to a user.
+    public class func formattedStopCode(stop: Stop) -> String {
+        let stopNumberFormat: String
+        if stop.code.isNumeric {
+            stopNumberFormat = NSLocalizedString("formatters.stop.stop_code_numeric", value: "Stop #%@", comment: "Format string representing a numeric stop number. e.g. Stop #1234")
+        }
+        else {
+            stopNumberFormat = NSLocalizedString("formatters.stop.stop_code_non_numeric", value: "Stop: '%@'", comment: "Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'")
+        }
+        
+        return String(format: stopNumberFormat, stop.code)
+    }
 
     // MARK: - Routes
 
