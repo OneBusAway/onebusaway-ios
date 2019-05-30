@@ -18,7 +18,11 @@ public class MatchingVehiclesOperation: NetworkOperation {
 
     public class func buildURL(query: String, regionID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
         let queryItem = URLQueryItem(name: "query", value: query)
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: [queryItem] + queryItems)
+        return buildURL(
+            fromBaseURL: baseURL,
+            path: buildAPIPath(regionID: regionID),
+            queryItems: [queryItem] + queryItems
+        )
     }
 
 }

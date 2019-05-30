@@ -14,18 +14,18 @@ public typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
 
 /// Convenience helpers built on top of `MKMapSnapshotter` to simplify the process of creating a map screenshot.
 public class MapSnapshotter: NSObject {
-    
+
     public static let defaultOverlayColor: UIColor = UIColor(white: 0.0, alpha: 0.4)
-    
+
     private let size: CGSize
     private let coordinate: CLLocationCoordinate2D
     private let scale: CGFloat
     private let mapType: MKMapType
     private let zoomLevel: Int
     private let overlayColor: UIColor
-    
+
     private var snapshotter: MKMapSnapshotter?
-    
+
     public convenience init(size: CGSize, coordinate: CLLocationCoordinate2D) {
         self.init(size: size, coordinate: coordinate, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, overlayColor: MapSnapshotter.defaultOverlayColor)
     }
@@ -38,7 +38,7 @@ public class MapSnapshotter: NSObject {
         self.zoomLevel = zoomLevel
         self.overlayColor = overlayColor
     }
-    
+
     public func snapshot(stop: Stop, completion: @escaping MapSnapshotterCompletionHandler) {
         guard snapshotter == nil else {
             return
@@ -49,7 +49,7 @@ public class MapSnapshotter: NSObject {
         options.region = MapHelpers.coordinateRegionWith(center: coordinate, zoomLevel: zoomLevel, size: size)
         options.scale = scale
         options.mapType = mapType
-        
+
         let snapshotter = MKMapSnapshotter(options: options)
         snapshotter.start { (snapshot, error) in
             guard
@@ -62,7 +62,7 @@ public class MapSnapshotter: NSObject {
                 self.snapshotter = nil
                 return
             }
-            
+
             // abxoxo - todo
 //            let iconForStop = StopIconFactory.icon(for: stop, strokeColor: .black)
 //            let annotatedImage = ImageHelpers.draw(iconForStop, onto: image, at: snapshot?.point(for: stop.coordinate))
@@ -71,7 +71,7 @@ public class MapSnapshotter: NSObject {
         }
         self.snapshotter = snapshotter
     }
-    
+
     public func cancel() {
         snapshotter?.cancel()
         snapshotter = nil

@@ -9,13 +9,15 @@ import XCTest
 import Nimble
 @testable import OBAKit
 
+// swiftlint:disable force_try
+
 class StopTests: OBATestCase {
 
     func test_RoundtrippingStops() {
         let stopOne = try! loadSomeStops().first!
         let data = try! PropertyListEncoder().encode(stopOne)
         let stopTwo = try! PropertyListDecoder().decode(Stop.self, from: data)
-        
+
         expect(stopTwo.routes).toNot(beNil())
 
         expect(stopOne.code).toNot(beNil())

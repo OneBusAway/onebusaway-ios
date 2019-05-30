@@ -101,4 +101,3 @@ final public class TableSectionController: ListSectionController, ListSupplement
         return view
     }
 }
-

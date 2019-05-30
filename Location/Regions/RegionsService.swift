@@ -151,6 +151,7 @@ extension RegionsService {
     private class var bundledRegions: [Region] {
         let bundle = Bundle(for: self)
         let bundledRegionsFilePath = bundle.path(forResource: "regions-v3", ofType: "json")!
+        // swiftlint:disable:next force_try
         let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data
         return DictionaryDecoder.decodeRegionsFileData(data)
     }

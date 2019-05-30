@@ -11,7 +11,7 @@ import CoreLocation
 import OBAKit
 
 class AuthorizedMockLocationManager: NSObject, LocationManager {
-    var delegate: CLLocationManagerDelegate?
+    weak var delegate: CLLocationManagerDelegate?
 
     private let updateLocation: CLLocation
     private let updateHeading: CLHeading

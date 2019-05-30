@@ -44,4 +44,3 @@ public class StopArrivalView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 }
-

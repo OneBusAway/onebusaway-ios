@@ -32,7 +32,7 @@ public protocol UserDataStore: NSObjectProtocol {
 public class UserDefaultsStore: NSObject, UserDataStore {
     let userDefaults: UserDefaults
 
-    enum userDefaultsKeys: String {
+    enum UserDefaultsKeys: String {
         case recentStops
     }
 
@@ -44,7 +44,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var recentStops: [Stop] {
         get {
-            guard let stopData = try? userDefaults.object(type: Data.self, forKey: userDefaultsKeys.recentStops.rawValue) else {
+            guard let stopData = try? userDefaults.object(type: Data.self, forKey: UserDefaultsKeys.recentStops.rawValue) else {
                 return []
             }
 
@@ -57,8 +57,8 @@ public class UserDefaultsStore: NSObject, UserDataStore {
             }
         }
         set {
-            let encoded = try! PropertyListEncoder().encode(newValue)
-            userDefaults.set(encoded, forKey: userDefaultsKeys.recentStops.rawValue)
+            let encoded = try! PropertyListEncoder().encode(newValue) // swiftlint:disable:this force_try
+            userDefaults.set(encoded, forKey: UserDefaultsKeys.recentStops.rawValue)
         }
     }
 

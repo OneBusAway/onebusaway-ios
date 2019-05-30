@@ -22,6 +22,9 @@ targets:
       - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: SwiftProtobuf
+    postBuildScripts:
+      - path: scripts/swiftlint.sh
+        name: Swiftlint
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS

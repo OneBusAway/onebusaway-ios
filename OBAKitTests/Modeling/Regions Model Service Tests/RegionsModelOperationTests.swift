@@ -13,6 +13,8 @@ import CoreLocation
 import MapKit
 @testable import OBAKit
 
+// swiftlint:disable function_body_length
+
 class RegionsModelOperationTests: OBATestCase {
     func testSuccessfulRequest() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in

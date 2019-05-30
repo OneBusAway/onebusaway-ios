@@ -127,7 +127,7 @@ public class ArrivalDeparture: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.references
 
         arrivalEnabled = try container.decode(Bool.self, forKey: .arrivalEnabled)
         blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
@@ -278,4 +278,3 @@ public enum ScheduleStatus: Int {
 public enum TemporalState: Int {
     case past, present, future
 }
-

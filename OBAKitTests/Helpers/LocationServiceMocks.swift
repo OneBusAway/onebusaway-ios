@@ -12,7 +12,7 @@ import OBAKit
 
 public class LocationManagerMock: NSObject, LocationManager {
 
-    public var delegate: CLLocationManagerDelegate?
+    public weak var delegate: CLLocationManagerDelegate?
 
     public var locationUpdatesStarted = false
     public var headingUpdatesStarted = false
@@ -100,7 +100,6 @@ public class AuthorizableLocationManagerMock: LocationManagerMock {
         }
     }
 }
-
 
 class LocDelegate: NSObject, LocationServiceDelegate {
     var location: CLLocation?

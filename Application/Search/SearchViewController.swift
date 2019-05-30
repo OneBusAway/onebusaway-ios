@@ -41,7 +41,7 @@ public class SearchViewController: VisualEffectViewController, ListProvider {
             stackView.pinToSuperview(.edges, insets: FloatingPanelSurfaceView.searchBarEdgeInsets)
         }
     }
-    
+
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         searchBar.becomeFirstResponder()
@@ -132,7 +132,7 @@ extension SearchViewController: ListAdapterDataSource {
             fatalError()
         }
     }
-    
+
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
         return nil
     }

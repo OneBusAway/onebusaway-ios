@@ -105,7 +105,7 @@ public class IndeterminateProgressView: UIView {
         frame.size.width -= 20
         frame.size.height = progressBarThickness
         progressBar.frame = frame
-        
+
         indeterminateLayer.removeAllAnimations()
         indeterminateLayer.frame = CGRect(x: 0, y: 0, width: progressBar.frame.width * 0.2, height: frame.size.height)
 

@@ -36,9 +36,9 @@ public extension TableRowData {
     convenience init(stop: Stop, tapped: ListRowTapHandler?) {
         let title = Formatters.formattedTitle(stop: stop)
         let subtitle = Formatters.formattedRoutes(stop.routes)
-        
+
         self.init(title: title, attributedTitle: nil, subtitle: subtitle, style: .subtitle, accessoryType: .disclosureIndicator, tapped: tapped)
-                  
+
         self.object = stop
     }
 }

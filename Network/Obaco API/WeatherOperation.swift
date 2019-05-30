@@ -18,6 +18,6 @@ public class WeatherOperation: NetworkOperation {
     }
 
     public class func buildURL(regionID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: queryItems)
+        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: queryItems)
     }
 }

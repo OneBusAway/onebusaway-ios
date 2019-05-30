@@ -72,12 +72,12 @@ extension MKMapView {
 public extension MKMapView {
     func setCenterCoordinate(centerCoordinate: CLLocationCoordinate2D, zoomLevel: Int, animated: Bool = true) {
         // clamp large numbers to 28
-        let zoomL = min(zoomLevel, 28);
-        
+        let zoomL = min(zoomLevel, 28)
+
         // use the zoom level to compute the region
         let span = MapHelpers.coordinateSpanFrom(size: bounds.size, centerCoordinate: centerCoordinate, zoomLevel: zoomL)
         let region = MKCoordinateRegion(center: centerCoordinate, span: span)
-        
+
         setRegion(region, animated: animated)
     }
 }

@@ -22,7 +22,7 @@ class ModelHelpers: NSObject {
         guard let str = str else {
             return nil
         }
-    
+
         return str.count > 0 ? str : nil
     }
 

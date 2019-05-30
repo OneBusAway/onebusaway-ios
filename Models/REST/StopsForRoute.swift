@@ -35,7 +35,7 @@ public class StopsForRoute: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.references
 
         routeID = try container.decode(String.self, forKey: .routeID)
         route = references.routeWithID(routeID)!
@@ -88,7 +88,7 @@ public class StopGroup: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.references
 
         id = try container.decode(String.self, forKey: .id)
 

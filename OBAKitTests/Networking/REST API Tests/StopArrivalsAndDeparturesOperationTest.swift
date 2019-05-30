@@ -11,6 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast
+
 class StopArrivalsAndDeparturesOperationTest: OBATestCase {
     func testAPIPath() {
         expect(StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: "Hello/World")) == "/api/where/arrivals-and-departures-for-stop/Hello%2FWorld.json"

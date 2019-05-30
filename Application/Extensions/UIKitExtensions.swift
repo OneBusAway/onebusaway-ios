@@ -17,38 +17,6 @@ extension UIBarButtonItem {
     }
 }
 
-// MARK: - UIColor
-
-public extension UIColor {
-
-    /// Brightens or darks the receiver by `amount`.
-    ///
-    /// - Parameter amount: A value between -1 and 1, inclusive.
-    /// - Returns: The adjusted color.
-    func adjustBrightness(amount: CGFloat) -> UIColor {
-        guard amount != 0 else {
-            return self
-        }
-
-        var hue: CGFloat = 0, saturation: CGFloat = 0, brightness: CGFloat = 0, alpha: CGFloat = 0
-
-        if !getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
-            let rgba = rgbValues
-            let rgbColor = UIColor(red: rgba.red, green: rgba.green, blue: rgba.blue, alpha: rgba.alpha)
-            rgbColor.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha)
-        }
-
-        let newBrightness = min(1.0, max(-1.0, brightness + amount))
-        return UIColor(hue: hue, saturation: saturation, brightness: newBrightness, alpha: alpha)
-    }
-
-    var rgbValues: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
-        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return (red: red, green: green, blue: blue, alpha: alpha)
-    }
-}
-
 // Adapted from https://cocoacasts.com/from-hex-to-uicolor-and-back-in-swift
 public extension UIColor {
 
@@ -61,7 +29,7 @@ public extension UIColor {
         guard let hex = hex else {
             return nil
         }
-        
+
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
 
@@ -141,7 +109,7 @@ public extension UIEdgeInsets {
 
 // Adapted from https://gist.github.com/lynfogeek/4b6ce0117fb0acdabe229f6d8759a139
 public extension UIImage {
-    
+
     // colorize image with given tint color
     // this is similar to Photoshop's "Color" layer blend mode
     // this is perfect for non-greyscale source images, and images that have both highlights and shadows that should be preserved
@@ -152,51 +120,51 @@ public extension UIImage {
             context.setBlendMode(.normal)
             UIColor.black.setFill()
             context.fill(rect)
-            
+
             // draw original image
             context.setBlendMode(.normal)
             context.draw(self.cgImage!, in: rect)
-            
+
             // tint image (loosing alpha) - the luminosity of the original image is preserved
             context.setBlendMode(.color)
             tintColor.setFill()
             context.fill(rect)
-            
+
             // mask by alpha values of original image
             context.setBlendMode(.destinationIn)
             context.draw(self.cgImage!, in: rect)
         }
     }
-    
+
     func overlay(color: UIColor) -> UIImage {
         return modifiedImage { (context, rect) in
             context.setBlendMode(.normal)
             UIColor.black.setFill()
             context.fill(rect)
-            
+
             // draw original image
             context.setBlendMode(.normal)
             context.draw(self.cgImage!, in: rect)
-            
+
             UIColor(white: 0.0, alpha: 0.4).setFill()
             context.fill(rect)
         }
     }
 
-    private func modifiedImage(draw: (CGContext, CGRect) -> ()) -> UIImage {
+    private func modifiedImage(draw: (CGContext, CGRect) -> Void) -> UIImage {
         // using scale correctly preserves retina images
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
         let context: CGContext! = UIGraphicsGetCurrentContext()
         assert(context != nil)
-        
+
         // correctly rotate image
         context.translateBy(x: 0, y: size.height)
         context.scaleBy(x: 1.0, y: -1.0)
-        
+
         let rect = CGRect(x: 0.0, y: 0.0, width: size.width, height: size.height)
-        
+
         draw(context, rect)
-        
+
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image!
@@ -240,156 +208,6 @@ extension UIStackView {
         return stack
     }
 }
-
-// MARK: - UIView/Autolayout
-
-extension UIView {
-    /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
-    public var layoutDirectionIsRTL: Bool {
-        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
-    }
-
-    /// Returns true if the app's is running in a left-to-right language, like English.
-    public var layoutDirectionIsLTR: Bool {
-        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .leftToRight
-    }
-}
-
-/// Protocol support for improving Auto Layout-compatible view creation.
-public protocol Autolayoutable {
-    static func autolayoutNew() -> Self
-}
-
-extension UIView: Autolayoutable {
-
-    /// Creates a new instance of the receiver class, configured for use with Auto Layout.
-    ///
-    /// - Returns: An instance of the receiver class.
-    public static func autolayoutNew() -> Self {
-        let view = self.init(frame: .zero)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }
-}
-
-public enum AutoLayoutPinTarget: Int {
-    case safeArea, layoutMargins, edges
-}
-
-extension UIView {
-
-    /// Returns a view suitable for use as a spacer.
-    ///
-    /// - Parameter height: The height of the spacer.
-    /// - Returns: The spacer view.
-    public class func spacerView(height: CGFloat) -> UIView {
-        let spacer = UIView.autolayoutNew()
-        NSLayoutConstraint.activate([
-            spacer.heightAnchor.constraint(equalToConstant: height)
-        ])
-        return spacer
-    }
-
-    /// Embeds the receiver in a `UIView` suitable for placing inside of a
-    /// stack view or another container view.
-    ///
-    /// - Parameter setConstraints: By default, the receiver is pinned to the edges of the container view. Set this to `false` to set up constraints yourself.
-    /// - Returns: The wrapper view into which the receiver has been embedded.
-    public func embedInWrapperView(setConstraints: Bool = true) -> UIView {
-        let wrapper = UIView(frame: .zero)
-        wrapper.translatesAutoresizingMaskIntoConstraints = false
-        wrapper.addSubview(self)
-
-        if setConstraints {
-            pinToSuperview(.edges)
-        }
-
-        return wrapper
-    }
-
-    public func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero) {
-        guard let superview = superview else {
-            return
-        }
-
-        translatesAutoresizingMaskIntoConstraints = false
-
-        let leadingAnchorable = anchorable(for: superview, pinTarget: pinTargets.leading)
-        let trailingAnchorable = anchorable(for: superview, pinTarget: pinTargets.trailing)
-        let topAnchorable = anchorable(for: superview, pinTarget: pinTargets.top)
-        let bottomAnchorable = anchorable(for: superview, pinTarget: pinTargets.bottom)
-
-        NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: leadingAnchorable.leadingAnchor, constant: insets.leading),
-            trailingAnchor.constraint(equalTo: trailingAnchorable.trailingAnchor, constant: insets.trailing),
-            topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top),
-            bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom),
-        ])
-    }
-
-    private func anchorable(for view: UIView, pinTarget: AutoLayoutPinTarget) -> Anchorable {
-        switch pinTarget {
-        case .edges: return view
-        case .layoutMargins: return view.layoutMarginsGuide
-        case .safeArea: return view.safeAreaLayoutGuide
-        }
-    }
-
-    /// Pins the receiver to the specified part of its superview, and sets `self.translatesAutoresizingMaskIntoConstraints` to `false` as a convenience.
-    ///
-    /// Does nothing if the receiver does not have a superview.
-    ///
-    /// - Parameters:
-    ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
-    ///   - insets: Optional inset from the pinTarget. Defaults to zero.
-    public func pinToSuperview(_ pinTarget: AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
-        pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets)
-    }
-}
-
-public struct DirectionalPinTargets {
-    public let leading: AutoLayoutPinTarget
-    public let trailing: AutoLayoutPinTarget
-    public let top: AutoLayoutPinTarget
-    public let bottom: AutoLayoutPinTarget
-
-    public init(pinTarget: AutoLayoutPinTarget) {
-        leading = pinTarget
-        trailing = pinTarget
-        top = pinTarget
-        bottom = pinTarget
-    }
-
-    public init(leading: AutoLayoutPinTarget, trailing: AutoLayoutPinTarget, top: AutoLayoutPinTarget, bottom: AutoLayoutPinTarget) {
-        self.leading = leading
-        self.trailing = trailing
-        self.top = top
-        self.bottom = bottom
-    }
-
-    public init(leadingTrailing: AutoLayoutPinTarget, topBottom: AutoLayoutPinTarget) {
-        self.leading = leadingTrailing
-        self.trailing = leadingTrailing
-        self.top = topBottom
-        self.bottom = topBottom
-    }
-}
-
-public protocol Anchorable {
-    var leadingAnchor: NSLayoutXAxisAnchor { get }
-    var trailingAnchor: NSLayoutXAxisAnchor { get }
-    var leftAnchor: NSLayoutXAxisAnchor { get }
-    var rightAnchor: NSLayoutXAxisAnchor { get }
-    var topAnchor: NSLayoutYAxisAnchor { get }
-    var bottomAnchor: NSLayoutYAxisAnchor { get }
-    var widthAnchor: NSLayoutDimension { get }
-    var heightAnchor: NSLayoutDimension { get }
-    var centerXAnchor: NSLayoutXAxisAnchor { get }
-    var centerYAnchor: NSLayoutYAxisAnchor { get }
-}
-
-extension UIView: Anchorable {}
-extension UILayoutGuide: Anchorable {}
 
 // MARK: - UIViewController/Child Controller Containment
 

@@ -34,7 +34,7 @@ public class PlacemarkSearchOperation: AsyncOperation {
             }
 
             if self.isCancelled {
-                return;
+                return
             }
 
             self.error = error

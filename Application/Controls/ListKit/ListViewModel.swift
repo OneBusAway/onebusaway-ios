@@ -14,11 +14,11 @@ public typealias ListRowTapHandler = ((ListViewModel) -> Void)
 public class ListViewModel: NSObject {
     public let tapped: ListRowTapHandler?
     public var object: Any?
-    
+
     public init(tapped: ListRowTapHandler?) {
         self.tapped = tapped
     }
-    
+
     override public var debugDescription: String {
         let desc = super.debugDescription
         let props: [String: Any] = ["tapped": tapped as Any, "object": object as Any]

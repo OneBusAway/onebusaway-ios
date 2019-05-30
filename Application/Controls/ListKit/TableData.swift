@@ -85,12 +85,12 @@ public class TableRowData: ListViewModel {
         let props: [String: Any] = ["title": title as Any, "subtitle": subtitle as Any, "style": style, "accessoryType": accessoryType]
         return "\(desc) \(props)"
     }
-    
+
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? TableRowData else {
             return false
         }
-        
+
         return
             title == rhs.title &&
             attributedTitle == rhs.attributedTitle &&

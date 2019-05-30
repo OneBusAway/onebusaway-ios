@@ -57,10 +57,12 @@ extension DictionaryDecoder {
     }
 
     public class func decodeRegionsFileData(_ data: Data) -> [Region] {
+        // swiftlint:disable force_cast force_try
         let regionsJSON = try! JSONSerialization.jsonObject(with: data, options: []) as! [AnyHashable: Any]
         let dataNode = regionsJSON["data"] as! [AnyHashable: Any]
         let listNode = dataNode["list"] as! [[String: Any]]
         return try! DictionaryDecoder.decodeModels(listNode, references: nil, type: Region.self)
+        // swiftlint:enable force_cast force_try
     }
 }
 

@@ -9,7 +9,7 @@
 import Foundation
 import CoreLocation
 
-open class OBAMockHeading : CLHeading {
+open class OBAMockHeading: CLHeading {
 
     var _magneticHeading: CLLocationDirection = 0.0
     open override var magneticHeading: CLLocationDirection {

@@ -57,8 +57,7 @@ public class TimeWindow: NSObject, Decodable {
     let to: Int
 
     enum CodingKeys: String, CodingKey {
-        case from = "from"
-        case to = "to"
+        case from, to
     }
 
     public required init(from decoder: Decoder) throws {
@@ -101,8 +100,7 @@ public class Consequence: Decodable {
     public let conditionDetails: ConditionDetails?
 
     enum CodingKeys: String, CodingKey {
-        case condition = "condition"
-        case conditionDetails = "conditionDetails"
+        case condition, conditionDetails
     }
 
     public required init(from decoder: Decoder) throws {

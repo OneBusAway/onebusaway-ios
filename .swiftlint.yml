@@ -1,0 +1,27 @@
+disabled_rules:
+  - function_parameter_count
+  - identifier_name
+  - statement_position
+  - line_length
+  - todo
+  - private_over_fileprivate
+  # - colon
+  # - comma
+  # - control_statement
+opt_in_rules: # some rules are only opt-in
+  # - empty_count
+  # Find all the available rules by running:
+  # swiftlint rules
+included: # paths to include during linting. `--path` is ignored if present.
+  # - Source
+excluded: # paths to ignore during linting. Takes precedence over `included`.
+  - Carthage
+  - Models/Helpers/DictionaryCoding
+  - OBAKitTests/Modeling/DictionaryCodingTests
+  - Models/Protobuf/gtfs-realtime.pb.swift
+force_try:
+  excluded:
+    - OBAKitTests
+function_body_length:
+  excluded:
+    - OBAKitTests

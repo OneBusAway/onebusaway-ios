@@ -70,6 +70,7 @@ extension VehicleStatusModelOperationTests {
 
 // MARK: - Trip Status
 extension VehicleStatusModelOperationTests {
+    // swiftlint:disable:next function_body_length
     func testLoading_tripStatus_success() {
         stubVehicle4011()
 
@@ -172,7 +173,7 @@ extension VehicleStatusModelOperationTests {
 
                 expect(frequency).toNot(beNil())
                 expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)
-                
+
                 expect(frequency.endTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59)
                 expect(frequency.headway) == 600
 

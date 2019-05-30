@@ -12,6 +12,8 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 
+// swiftlint:disable force_cast
+
 class RouteSearchOperationTest: OBATestCase {
     func testSearchForRoute() {
         let query = "Link"

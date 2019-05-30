@@ -21,11 +21,11 @@ extension Stop: MKAnnotation {
     public var subtitle: String? {
         return Formatters.formattedRoutes(routes)
     }
-    
+
     public var mapTitle: String? {
         return routes.map { $0.shortName }.localizedCaseInsensitiveSort().prefix(3).joined(separator: ", ")
     }
-    
+
     public var mapSubtitle: String? {
         return Formatters.adjectiveFormOfCardinalDirection(direction)
     }
@@ -80,7 +80,7 @@ public class StopAnnotationView: MKAnnotationView {
             }
         }
     }
-    
+
     private let wrapperSize: CGFloat = 30.0
     private let imageSize: CGFloat = 20.0
 
@@ -115,7 +115,7 @@ public class StopAnnotationView: MKAnnotationView {
             titleLabel.backgroundColor = .yellow
             subtitleLabel.backgroundColor = .orange
         }
-        
+
         canShowCallout = theme.behaviors.mapShowsCallouts
     }
 
@@ -125,12 +125,12 @@ public class StopAnnotationView: MKAnnotationView {
         addSubview(transportWrapper)
         addSubview(directionalArrowView)
         addSubview(labelStack)
-        
+
         let rightCalloutButton = UIButton(type: .detailDisclosure)
         rightCalloutButton.setImage(Icons.chevron, for: .normal)
         rightCalloutAccessoryView = rightCalloutButton
     }
-    
+
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     public override func prepareForReuse() {
@@ -178,8 +178,8 @@ public class StopAnnotationView: MKAnnotationView {
         }
 
         let strokeTextAttributes: [NSAttributedString.Key: Any] = [
-            .strokeColor : UIColor.white,
-            .foregroundColor : theme.colors.mapText,
+            .strokeColor: UIColor.white,
+            .foregroundColor: theme.colors.mapText,
             .strokeWidth: -2.0,
             .font: theme.fonts.mapAnnotation
         ]
@@ -196,7 +196,7 @@ public class StopAnnotationView: MKAnnotationView {
         case "SW": return .pi * 1.25
         case "W":  return .pi * 1.5
         case "NW": return .pi * 1.75
-        case "N":  fallthrough
+        case "N":  fallthrough // swiftlint:disable:this no_fallthrough_only
         default:   return 0
         }
     }

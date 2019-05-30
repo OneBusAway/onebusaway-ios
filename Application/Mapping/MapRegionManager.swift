@@ -20,7 +20,7 @@ public protocol MapRegionDelegate {
 
     @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
     @objc optional func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
-    
+
     @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
 }
 
@@ -290,13 +290,13 @@ extension MapRegionManager: MKMapViewDelegate {
             delegate.mapView?(mapView, didSelect: view)
         }
     }
-    
+
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, didDeselect: view)
         }
     }
-    
+
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         for delegate in delegates.allObjects {
             delegate.mapView?(mapView, annotationView: view, calloutAccessoryControlTapped: control)
@@ -326,7 +326,7 @@ extension MapRegionManager: MKMapViewDelegate {
     }
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-        let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline)
+        let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
         renderer.strokeColor = application.theme.colors.primary.withAlphaComponent(0.75)
         renderer.lineWidth = 6.0
         renderer.lineCap = .round

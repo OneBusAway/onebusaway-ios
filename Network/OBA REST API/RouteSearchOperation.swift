@@ -9,9 +9,10 @@
 import Foundation
 import CoreLocation
 
+// swiftlint:disable opening_brace
+
 @objc(OBARouteSearchOperation)
 public class RouteSearchOperation: RESTAPIOperation {
-
     public private(set) var outOfRange = false
 
     override public func dataFieldsDidSet() {
@@ -43,6 +44,6 @@ public class RouteSearchOperation: RESTAPIOperation {
             "radius": String(radius)
         ]
 
-        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
+        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
     }
 }

@@ -28,16 +28,16 @@ public extension DispatchQueue {
         if let last = lastDebounceCallTimes[context ?? nilContext], last + interval > .now() {
             return
         }
-        
+
         lastDebounceCallTimes[context ?? nilContext] = .now()
         async(execute: action)
-        
+
         // Cleanup & release context
         throttle(deadline: .now() + interval) {
             lastDebounceCallTimes.removeValue(forKey: context ?? nilContext)
         }
     }
-    
+
     /**
      - parameters:
      - deadline: The timespan to delay a closure execution
@@ -50,9 +50,9 @@ public extension DispatchQueue {
             defer { throttleWorkItems.removeValue(forKey: context ?? nilContext) }
             action()
         }
-        
+
         asyncAfter(deadline: deadline, execute: worker)
-        
+
         throttleWorkItems[context ?? nilContext]?.cancel()
         throttleWorkItems[context ?? nilContext] = worker
     }

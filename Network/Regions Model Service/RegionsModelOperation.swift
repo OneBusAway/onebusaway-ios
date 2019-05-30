@@ -24,4 +24,3 @@ public class RegionsModelOperation: RESTModelOperation {
         regions = decodeModels(type: Region.self)
     }
 }
-

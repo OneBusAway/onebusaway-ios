@@ -20,6 +20,6 @@ public class ShapeOperation: RESTAPIOperation {
     }
 
     public class func buildURL(shapeID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(shapeID: shapeID), queryItems: queryItems)
+        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(shapeID: shapeID), queryItems: queryItems)
     }
 }

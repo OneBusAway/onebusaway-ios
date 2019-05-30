@@ -22,7 +22,7 @@ public extension AloeStackView {
         if hideSeparator {
             self.hideSeparator(forRow: view)
         }
-        
+
         if let insets = insets {
             self.setInset(forRow: view, inset: insets)
         }

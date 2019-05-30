@@ -16,6 +16,6 @@ public class StopOperation: RESTAPIOperation {
     }
 
     public class func buildURL(stopID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: queryItems)
+        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: queryItems)
     }
 }

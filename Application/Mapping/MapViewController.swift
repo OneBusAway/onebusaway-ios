@@ -9,6 +9,7 @@
 import UIKit
 import MapKit
 import FloatingPanel
+import CocoaLumberjackSwift
 
 class MapViewController: UIViewController {
 
@@ -135,6 +136,10 @@ extension MapViewController {
                     let self = self
                 else { return }
 
+                if let error = error {
+                    DDLogError("Error retrieving walking directions: \(error)")
+                }
+
                 for route in unwrappedResponse.routes {
                     self.mapRegionManager.addWalkingDirectionsOverlay(route.polyline, for: stop)
                 }
@@ -155,12 +160,12 @@ extension MapViewController: MapRegionDelegate {
 
         show(stop: stop)
     }
-    
+
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stop = view.annotation as? Stop else {
             return
         }
-        
+
         show(stop: stop)
     }
 

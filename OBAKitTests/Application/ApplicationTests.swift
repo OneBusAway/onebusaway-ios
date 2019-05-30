@@ -13,6 +13,8 @@ import XCTest
 import CoreLocation
 import Nimble
 
+// swiftlint:disable large_tuple
+
 class TestAppDelegate: ApplicationDelegate {
 
     var called_applicationDisplayRegionPicker = false

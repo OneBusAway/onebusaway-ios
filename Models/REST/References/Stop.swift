@@ -123,9 +123,9 @@ public class Stop: NSObject, Codable, HasReferences {
         location = CLLocation(latitude: lat, longitude: lon)
 
         locationType = try container.decode(StopLocationType.self, forKey: .locationType)
-        
+
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
-        
+
         if let references = decoder.userInfo[CodingUserInfoKey.references] as? References {
             routes = references.routesWithIDs(routeIDs)
         }
@@ -137,7 +137,7 @@ public class Stop: NSObject, Codable, HasReferences {
             // `loadReferences()` method call, which is part of the HasReferences protocol.
             routes = encodedRoutes
         }
-        
+
         wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 

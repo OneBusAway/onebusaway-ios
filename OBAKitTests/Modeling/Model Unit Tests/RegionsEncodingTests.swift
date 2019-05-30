@@ -12,6 +12,8 @@ import CoreLocation
 import MapKit
 @testable import OBAKit
 
+// swiftlint:disable function_body_length force_try
+
 class RegionsEncodingTests: OBATestCase {
 
     func testRoundtrippingRegion() {

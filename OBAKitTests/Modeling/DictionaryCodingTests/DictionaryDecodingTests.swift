@@ -80,11 +80,11 @@ class DictionaryDecodingTests: XCTestCase {
         
         let decoder = DictionaryDecoder()
         let decoded = try decoder.decode(Test.self, from: dict)
-        
+
         XCTAssertEqual(decoded.name, "Sam")
         XCTAssertNil(decoded.label)
     }
-    
+
     func testDecodingWithStandardDefaults() throws {
         // the dictionary is missing some keys, but they can be filled in
         // using default values if we set the missingValue strategy to .useDefault

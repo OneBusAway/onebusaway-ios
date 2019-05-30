@@ -15,12 +15,12 @@ import UIKit
 ///
 public class ViewRouter: NSObject {
     private let application: Application
-    
+
     public init(application: Application) {
         self.application = application
         super.init()
     }
-    
+
     /// Navigates from `fromController` to `viewController`.
     ///
     /// - Parameters:
@@ -30,12 +30,12 @@ public class ViewRouter: NSObject {
         assert(fromController.navigationController != nil)
         fromController.navigationController?.pushViewController(viewController, animated: true)
     }
-    
+
     public func navigateTo(stopID: String, from fromController: UIViewController) {
         let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)
     }
-    
+
     public func navigateTo(stop: Stop, from fromController: UIViewController) {
         let stopController = StopViewController(application: application, stop: stop)
         navigate(to: stopController, from: fromController)

@@ -13,6 +13,8 @@ import CoreLocation
 import MapKit
 @testable import OBAKit
 
+// swiftlint:disable function_body_length
+
 class StopArrivalsModelOperationTests: OBATestCase {
     let campusParkwayStopID = "1_10914"
     lazy var campusParkwayAPIPath: String = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: campusParkwayStopID)

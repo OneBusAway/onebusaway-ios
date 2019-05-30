@@ -23,6 +23,6 @@ public class StopArrivalsAndDeparturesOperation: RESTAPIOperation {
             "minutesAfter": minutesAfter
         ]
 
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
+        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
     }
 }

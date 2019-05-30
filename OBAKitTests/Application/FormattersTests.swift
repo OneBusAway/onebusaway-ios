@@ -11,6 +11,8 @@ import XCTest
 @testable import OBAKit
 import Nimble
 
+// swiftlint:disable force_try
+
 enum ModelDecodingError: Error {
     case invalidData
     case invalidReferences

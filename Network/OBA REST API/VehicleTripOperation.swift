@@ -18,6 +18,6 @@ public class VehicleTripOperation: RESTAPIOperation {
 
     public class func buildURL(vehicleID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
         let path = buildAPIPath(vehicleID: vehicleID)
-        return _buildURL(fromBaseURL: baseURL, path: path, queryItems: queryItems)
+        return buildURL(fromBaseURL: baseURL, path: path, queryItems: queryItems)
     }
 }

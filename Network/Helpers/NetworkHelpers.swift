@@ -18,7 +18,7 @@ public class NetworkHelpers: NSObject {
     public class func dictionary(toQueryItems dict: [String: Any]) -> [URLQueryItem] {
         var queryArgs = [URLQueryItem]()
 
-        for (k,v) in dict {
+        for (k, v) in dict {
             let item = URLQueryItem(name: k, value: "\(v)")
             queryArgs.append(item)
         }
@@ -35,7 +35,7 @@ public class NetworkHelpers: NSObject {
     }
 
     public class func dictionary(toHTTPBodyData dict: [String: Any]) -> Data {
-        return dict.map { (k,v) -> String in
+        return dict.map { (k, v) -> String in
             let keyStr = k.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
             let valueStr = "\(v)".addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
             return "\(keyStr)=\(valueStr)"

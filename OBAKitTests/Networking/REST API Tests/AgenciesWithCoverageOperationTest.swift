@@ -11,6 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast
+
 class AgenciesWithCoverageOperationTest: OBATestCase {
     func testSuccessfulAgenciesRequest() {
         stub(condition: isHost(self.host) && isPath(AgenciesWithCoverageOperation.apiPath)) { _ in

@@ -33,7 +33,7 @@ public class Application: NSObject {
 
     /// Provides access to the user's location and heading.
     @objc public let locationService: LocationService
-    
+
     /// Responsible for figuring out how to navigate between view controllers.
     @objc public lazy var viewRouter = ViewRouter(application: self)
 
@@ -55,7 +55,7 @@ public class Application: NSObject {
         userDataStore = UserDefaultsStore(userDefaults: config.userDefaults)
         locationService = config.locationService
         regionsService = config.regionsService
-        
+
         theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 
         super.init()

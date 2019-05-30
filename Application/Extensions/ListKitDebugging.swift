@@ -11,11 +11,11 @@ import IGListKit
 
 final class LabelSectionController: ListSectionController {
     private var object: String?
-    
+
     override func sizeForItem(at index: Int) -> CGSize {
         return CGSize(width: collectionContext!.containerSize.width, height: 55)
     }
-    
+
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard let cell = collectionContext?.dequeueReusableCell(of: LabelCell.self, for: self, at: index) as? LabelCell else {
             fatalError()
@@ -23,7 +23,7 @@ final class LabelSectionController: ListSectionController {
         cell.text = object
         return cell
     }
-    
+
     override func didUpdate(to object: Any) {
         self.object = String(describing: object)
     }
@@ -32,11 +32,11 @@ final class LabelSectionController: ListSectionController {
 final class LabelCell: UICollectionViewCell {
     fileprivate static let insets = UIEdgeInsets(top: 8, left: 15, bottom: 8, right: 15)
     fileprivate static let font = UIFont.systemFont(ofSize: 17)
-    
+
     static var singleLineHeight: CGFloat {
         return font.lineHeight + insets.top + insets.bottom
     }
-    
+
     static func textHeight(_ text: String, width: CGFloat) -> CGFloat {
         let constrainedSize = CGSize(width: width - insets.left - insets.right, height: CGFloat.greatestFiniteMagnitude)
         let attributes = [ NSAttributedString.Key.font: font ]
@@ -44,7 +44,7 @@ final class LabelCell: UICollectionViewCell {
         let bounds = (text as NSString).boundingRect(with: constrainedSize, options: options, attributes: attributes, context: nil)
         return ceil(bounds.height) + insets.top + insets.bottom
     }
-    
+
     fileprivate let label: UILabel = {
         let label = UILabel()
         label.backgroundColor = .clear
@@ -52,13 +52,13 @@ final class LabelCell: UICollectionViewCell {
         label.font = LabelCell.font
         return label
     }()
-    
+
     let separator: CALayer = {
         let layer = CALayer()
         layer.backgroundColor = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1).cgColor
         return layer
     }()
-    
+
     var text: String? {
         get {
             return label.text
@@ -67,18 +67,18 @@ final class LabelCell: UICollectionViewCell {
             label.text = newValue
         }
     }
-    
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.addSubview(label)
         contentView.layer.addSublayer(separator)
         contentView.backgroundColor = .white
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func layoutSubviews() {
         super.layoutSubviews()
         let bounds = contentView.bounds
@@ -87,11 +87,11 @@ final class LabelCell: UICollectionViewCell {
         let left = LabelCell.insets.left
         separator.frame = CGRect(x: left, y: bounds.height - height, width: bounds.width - left, height: height)
     }
-    
+
     override var isHighlighted: Bool {
         didSet {
             contentView.backgroundColor = UIColor(white: isHighlighted ? 0.9 : 1, alpha: 1)
         }
     }
-    
+
 }

@@ -14,7 +14,7 @@ import Nimble
 
 class NetworkHelperTests: OBATestCase {
     func testDictionaryToQueryItems_success() {
-        let dict: [String : Any] = ["one": 2, "three": "four"]
+        let dict: [String: Any] = ["one": 2, "three": "four"]
         let queryItems = NetworkHelpers.dictionary(toQueryItems: dict).sorted(by: { $0.name < $1.name })
 
         let qi1 = queryItems.first!
@@ -35,7 +35,7 @@ class NetworkHelperTests: OBATestCase {
     }
 
     func testDictionaryToHTTPBodyData() {
-        let dict: [String : Any] = ["one": 2, "three": "four"]
+        let dict: [String: Any] = ["one": 2, "three": "four"]
         let data = NetworkHelpers.dictionary(toHTTPBodyData: dict)
 
         let expectedData1 = "one=2&three=four".data(using: .utf8)

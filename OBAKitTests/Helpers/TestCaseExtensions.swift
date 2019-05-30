@@ -11,6 +11,8 @@ import XCTest
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast force_try
+
 public extension OBATestCase {
 
     // MARK: - Obaco Model Service

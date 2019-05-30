@@ -74,6 +74,7 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
     ///   - search: The search response.
     ///   - delegate: The delegate capable of displaying results.
     public class func presentResult(from search: SearchResponse, delegate: SearchResultsDelegate) {
+        // swiftlint:disable force_cast
         switch search.request.searchType {
         case .address:
             delegate.searchResults(controller: nil, showMapItem: search.results.first as! MKMapItem)
@@ -84,6 +85,7 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
         case .vehicleID:
             delegate.searchResults(controller: nil, showVehicleStatus: search.results.first as! VehicleStatus)
         }
+        // swiftlint:enable force_cast
     }
 
     // MARK: - Private
@@ -111,7 +113,7 @@ extension SearchResultsController: ListAdapterDataSource {
 
         switch searchResponse.request.searchType {
         case .address:
-            let data = searchResponse.results as! [MKMapItem]
+            let data = searchResponse.results as? [MKMapItem] ?? []
             rows = data.map { item in
                 return TableRowData(title: item.name ?? "???", accessoryType: .none) { [weak self] _ in
                     guard let self = self else { return }
@@ -119,7 +121,7 @@ extension SearchResultsController: ListAdapterDataSource {
                 }
             }
         case .route:
-            let data = searchResponse.results as! [Route]
+            let data = searchResponse.results as? [Route] ?? []
             rows = data.map { route in
                 return TableRowData(title: route.shortName, subtitle: route.agency.name, accessoryType: .none) { [weak self] _ in
                     guard let self = self else { return }
@@ -127,7 +129,7 @@ extension SearchResultsController: ListAdapterDataSource {
                 }
             }
         case .stopNumber:
-            let data = searchResponse.results as! [Stop]
+            let data = searchResponse.results as? [Stop] ?? []
             rows = data.map { stop in
                 return TableRowData(title: stop.name, accessoryType: .none) { [weak self] _ in
                     guard let self = self else { return }
@@ -135,7 +137,7 @@ extension SearchResultsController: ListAdapterDataSource {
                 }
             }
         case .vehicleID:
-            let data = searchResponse.results as! [VehicleStatus]
+            let data = searchResponse.results as? [VehicleStatus] ?? []
             rows = data.map { status in
                 return TableRowData(title: status.vehicleID, accessoryType: .none) { [weak self] _ in
                     guard let self = self else { return }

@@ -32,7 +32,7 @@ public class RESTDataDecoder: NSObject {
     public init(data: Data) throws {
         self.data = data
 
-        self.decodedJSONBody = try JSONSerialization.jsonObject(with: self.data, options: []) as! NSObject
+        self.decodedJSONBody = try JSONSerialization.jsonObject(with: self.data, options: [])// as! NSObject
 
         if let (entries, references) = RESTDataDecoder.decodeEntriesAndReferences(from: self.decodedJSONBody) {
             self.entries = entries
@@ -40,7 +40,7 @@ public class RESTDataDecoder: NSObject {
         }
     }
 
-    private class func decodeEntriesAndReferences(from decodedJSONBody: Any?) -> (entries: [[String : Any]]?, references: [String : Any]?)?  {
+    private class func decodeEntriesAndReferences(from decodedJSONBody: Any?) -> (entries: [[String: Any]]?, references: [String: Any]?)? {
         guard
             let dict = decodedJSONBody as? NSDictionary,
             let dataField = dict["data"] as? NSDictionary
@@ -53,14 +53,14 @@ public class RESTDataDecoder: NSObject {
         if let entry = dataField["entry"] as? [String: Any] {
             entries = [entry]
         }
-        else if let list = (dataField["list"] as? [[String : Any]]) {
+        else if let list = (dataField["list"] as? [[String: Any]]) {
             entries = list
         }
 
-        var references: [String : Any]?
+        var references: [String: Any]?
 
         if let refs = dataField["references"] {
-            references = (refs as! [String : Any])
+            references = (refs as! [String: Any]) // swiftlint:disable:this force_cast
         }
 
         return (entries, references)

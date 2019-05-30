@@ -41,7 +41,7 @@ public protocol FloatingPanelContainer: NSObjectProtocol, FloatingPanelControlle
     ///   - controller: Optional. The controller that will proffer up toolbar items.
     ///   - animated: Animate the toolbar transition, if relevant.
     func updateToolbar(with controller: UIViewController?, animated: Bool)
-    
+
     /// Displays a view controller as a bottom-attached floating panel.
     ///
     /// - Parameters:
@@ -98,7 +98,6 @@ public extension FloatingPanelContainer where Self: UIViewController {
         setFloatingToolbarHidden(false, animated: animated)
         floatingToolbar.items = items
     }
-
 
     func closePanel(containing contentController: UIViewController, model: AnyObject?) {
         guard
@@ -190,7 +189,6 @@ extension FloatingPanelSurfaceView {
     /// such that the height of the area above the grabber handle is the same as the height below.
     public static let defaultTopEdgeInsets = NSDirectionalEdgeInsets(top: FloatingPanelSurfaceView.topGrabberBarHeight, leading: 0, bottom: 0, trailing: 0)
 
-
     private static let progressBarTag = 1111
     public func showProgressBar() {
         grabberHandle.isHidden = true
@@ -248,4 +246,3 @@ extension FloatingPanelContent where Self: UIViewController {
         return v
     }
 }
-

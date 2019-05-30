@@ -131,7 +131,7 @@ public class TripStatus: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.userInfo[CodingUserInfoKey.references] as! References // swiftlint:disable:this force_cast
 
         activeTripID = try container.decode(String.self, forKey: .activeTripID)
         activeTrip = references.tripWithID(activeTripID)!
@@ -152,7 +152,7 @@ public class TripStatus: NSObject, Decodable {
 
         nextStopID = try? container.decode(String.self, forKey: .nextStopID)
         nextStop = references.stopWithID(nextStopID)
-        
+
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
         orientation = try container.decode(Double.self, forKey: .orientation)
         phase = try container.decode(String.self, forKey: .phase)

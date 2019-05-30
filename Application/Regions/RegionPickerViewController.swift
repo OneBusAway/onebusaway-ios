@@ -22,8 +22,6 @@ public class RegionPickerViewController: UIViewController {
     private lazy var tableView: UITableView = {
         let table = UITableView(frame: .zero)
         table.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-
-
         return table
     }()
 

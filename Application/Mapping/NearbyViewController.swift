@@ -56,7 +56,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
 
     // MARK: - UI/Search
-    
+
     private lazy var searchBar: UISearchBar = {
         let searchBar = TapPresenterSearchBar.autolayoutNew()
         searchBar.searchBarStyle = .minimal
@@ -69,7 +69,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
         }
         return searchBar
     }()
-    
+
     private lazy var searchController: SearchViewController = {
         let ctl = SearchViewController(application: application, floatingPanelDelegate: nearbyDelegate!)
         ctl.searchDelegate = self
@@ -99,10 +99,10 @@ extension NearbyViewController: SearchDelegate {
 // MARK: - ListAdapterDataSource (Data Loading)
 
 extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters {
-    
+
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
-        
+
         if stops.count > 0 {
             let section = tableSection(from: Array(stops.prefix(5))) { vm in
                 guard let stop = vm.object as? Stop else { return }
@@ -110,23 +110,22 @@ extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters 
             }
             sections.append(section)
         }
-        
+
         return sections
     }
-    
+
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = createSectionController(for: object)
         sectionController.inset = .zero
         return sectionController
     }
-    
+
     public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
-    
+
     private func createSectionController(for object: Any) -> ListSectionController {
         return defaultSectionController(for: object)
     }
 }
-
 
 // MARK: - MapRegionDelegate
 

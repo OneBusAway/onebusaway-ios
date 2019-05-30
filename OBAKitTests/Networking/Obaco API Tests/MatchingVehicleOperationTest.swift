@@ -11,6 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast force_try
+
 class MatchingVehicleOperationTest: OBATestCase {
 
     func testSuccesfulVehicleRequest() {

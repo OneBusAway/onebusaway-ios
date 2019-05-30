@@ -48,7 +48,7 @@ public class Agency: NSObject, Codable {
         timeZone = try container.decode(String.self, forKey: .timeZone)
         agencyURL = try container.decode(URL.self, forKey: .agencyURL)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(disclaimer, forKey: .disclaimer)

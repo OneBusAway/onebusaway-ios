@@ -88,12 +88,9 @@ public class Route: NSObject, Codable, HasReferences {
 
         routeDescription = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeDescription))
         id = try container.decode(String.self, forKey: .id)
-        
         longName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .longName))
         shortName = try container.decode(String.self, forKey: .shortName)
-
         textColor = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
-
         routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try? container.decodeIfPresent(URL.self, forKey: .routeURL)
     }
@@ -117,20 +114,20 @@ public class Route: NSObject, Codable, HasReferences {
     public func loadReferences(_ references: References) {
         agency = references.agencyWithID(agencyID)
     }
-    
+
     // MARK: - CustomDebugStringConvertible
-    
+
     public override var debugDescription: String {
         return String(format: "%@({id: %@, name: %@})", super.debugDescription, id, shortName)
     }
-    
+
     // MARK: - Equatable and Hashable
-    
+
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Route else {
             return false
         }
-        
+
         return
             agencyID == rhs.agencyID &&
             color == rhs.color &&
@@ -142,7 +139,7 @@ public class Route: NSObject, Codable, HasReferences {
             routeType == rhs.routeType &&
             routeURL == rhs.routeURL
     }
-    
+
     public override var hash: Int {
         return id.hash
     }

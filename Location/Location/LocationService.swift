@@ -30,7 +30,7 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
             }
         }
     }
-    
+
     @objc
     public private(set) var currentHeading: CLHeading? {
         didSet {

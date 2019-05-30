@@ -76,7 +76,7 @@ class FloatingStopViewController: VisualEffectViewController, FloatingPanelConte
 
         let filterButton = UIBarButtonItem(title: Strings.filter, style: .plain, target: self, action: #selector(filter))
         filterButton.image = Icons.filter
-        
+
         return [filterButton, bookmarkButton, refreshButton]
     }
 

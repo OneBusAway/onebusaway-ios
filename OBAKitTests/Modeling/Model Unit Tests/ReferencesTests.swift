@@ -12,6 +12,8 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 
+// swiftlint:disable force_cast force_try
+
 class ReferencesTests: OBATestCase {
     var references: References!
     override func setUp() {

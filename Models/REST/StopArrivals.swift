@@ -40,7 +40,7 @@ public class StopArrivals: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.references
 
         arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
 

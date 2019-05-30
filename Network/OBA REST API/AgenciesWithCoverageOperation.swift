@@ -16,6 +16,6 @@ public class AgenciesWithCoverageOperation: RESTAPIOperation {
     public static let apiPath = "/api/where/agencies-with-coverage.json"
 
     public class func buildURL(baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        return _buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems)
+        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems)
     }
 }

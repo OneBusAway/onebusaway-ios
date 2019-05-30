@@ -11,6 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast
+
 class VehicleTripOperationTest: OBATestCase {
 
     func testAPIPath() {

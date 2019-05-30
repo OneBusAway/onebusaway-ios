@@ -13,7 +13,7 @@ public class ClassicApplicationRootController: UITabBarController {
 
     @objc public init(application: Application) {
         self.application = application
-        
+
         self.mapController = MapViewController(application: application)
         let mapNav = UINavigationController(rootViewController: self.mapController)
 

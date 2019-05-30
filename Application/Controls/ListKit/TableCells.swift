@@ -27,7 +27,7 @@ class TableRowCell: SelfSizingCollectionCell {
             imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth
         ])
 
-        if (kUseDebugColors) {
+        if kUseDebugColors {
             backgroundColor = .red
             accessoryImageView.backgroundColor = .red
             accessoryImageViewWrapper.backgroundColor = .brown
@@ -237,7 +237,7 @@ class SubtitleTableCell: TableRowCell {
         if kUseDebugColors {
             spacer.backgroundColor = .purple
         }
-        
+
         labelStack.insertArrangedSubview(spacer, at: 2)
 
         titleLabel.setContentHuggingPriority(.required, for: .vertical)

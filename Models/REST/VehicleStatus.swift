@@ -51,7 +51,7 @@ public class VehicleStatus: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References
+        let references = decoder.references
 
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
         lastUpdateTime = try container.decode(Date.self, forKey: .lastUpdateTime)

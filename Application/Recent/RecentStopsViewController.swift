@@ -30,7 +30,7 @@ import IGListKit
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         view.backgroundColor = .white
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
@@ -64,7 +64,7 @@ extension RecentStopsViewController: ListAdapterDataSource {
 
         return sections
     }
-    
+
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = createSectionController(for: object)
         sectionController.inset = .zero

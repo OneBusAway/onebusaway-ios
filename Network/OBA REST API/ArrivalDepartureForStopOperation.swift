@@ -19,8 +19,15 @@ public class TripArrivalDepartureOperation: RESTAPIOperation {
         return String(format: apiPath, NetworkHelpers.escapePathVariable(stopID))
     }
 
-    public class func buildURL(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-
+    public class func buildURL(
+        stopID: String,
+        tripID: String,
+        serviceDate: Int64,
+        vehicleID: String?,
+        stopSequence: Int,
+        baseURL: URL,
+        defaultQueryItems: [URLQueryItem]
+    ) -> URL {
         var args: [String: Any] = [
             "serviceDate": serviceDate,
             "tripId": tripID
@@ -34,6 +41,10 @@ public class TripArrivalDepartureOperation: RESTAPIOperation {
             args["stopSequence"] = stopSequence
         }
 
-        return _buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
+        return buildURL(
+            fromBaseURL: baseURL,
+            path: buildAPIPath(stopID: stopID),
+            queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems
+        )
     }
 }

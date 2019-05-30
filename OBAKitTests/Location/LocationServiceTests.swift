@@ -127,4 +127,3 @@ class LocationServiceTests: XCTestCase {
         expect(delError) == err
     }
 }
-

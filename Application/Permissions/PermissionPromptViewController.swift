@@ -94,8 +94,8 @@ public class PermissionPromptViewController: UIViewController {
         view.addSubview(stack)
 
         stack.pinToSuperview(.safeArea)
-    
-        if (kUseDebugColors) {
+
+        if kUseDebugColors {
             imageViewWrapper.backgroundColor = .brown
             grantPermissionsButton.backgroundColor = .green
             textView.backgroundColor = .red

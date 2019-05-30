@@ -12,6 +12,8 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 
+// swiftlint:disable force_try
+
 class AlarmModelOperationTests: OBATestCase {
     let secondsBefore = 600.0
     let stopID = "XO"

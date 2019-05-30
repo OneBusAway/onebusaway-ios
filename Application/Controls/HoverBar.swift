@@ -41,7 +41,7 @@ public class HoverBar: RoundedShadowView {
     /// The visual effect used for the bar's background. Default is an extra light blur effect.
     public var effect: UIVisualEffect? {
         set {
-            backgroundView.effect = effect
+            backgroundView.effect = newValue
         }
         get {
             return backgroundView.effect

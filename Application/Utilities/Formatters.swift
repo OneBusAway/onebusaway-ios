@@ -58,9 +58,9 @@ public class Formatters: NSObject {
             return apply(NSLocalizedString("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
         }
     }
-    
+
     // MARK: - Stops
-    
+
     /// Generates a formatted title consisting of the stop name and direction.
     ///
     /// - Parameter stop: The `Stop` from which to generate a title.
@@ -73,7 +73,7 @@ public class Formatters: NSObject {
             return stop.name
         }
     }
-    
+
     /// Creates a formatted string for a stop's stop ID/code plus direction (if available). e.g. "Stop #1234 — Southbound"
     ///
     /// - Parameter stop: The stop from which a formatted string will be created.
@@ -88,7 +88,7 @@ public class Formatters: NSObject {
             return formattedCode
         }
     }
-    
+
     /// Creates a formatted string for a stop's ID or code. e.g. "Stop #1234" or "Stop: 'Old Library'"
     ///
     /// - Parameter stop: The stop from which to generate a formatted stop code.
@@ -101,7 +101,7 @@ public class Formatters: NSObject {
         else {
             stopNumberFormat = NSLocalizedString("formatters.stop.stop_code_non_numeric", value: "Stop: '%@'", comment: "Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'")
         }
-        
+
         return String(format: stopNumberFormat, stop.code)
     }
 

@@ -11,6 +11,8 @@ import Nimble
 import OHHTTPStubs
 @testable import OBAKit
 
+// swiftlint:disable force_cast
+
 class ArrivalDepartureAtStopTest: OBATestCase {
     let stopID = "stop_123"
     let tripID = "trip_123"

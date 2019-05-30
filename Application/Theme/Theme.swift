@@ -106,7 +106,6 @@ public class ThemeFonts: NSObject {
 
 @objc(OBAThemeBehaviors)
 public class ThemeBehaviors: NSObject {
-    
     /// When true, the app will use floating panels in lieu of a tabbed UI.
     public let useFloatingPanelNavigation = false
 

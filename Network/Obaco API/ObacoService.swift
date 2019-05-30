@@ -31,8 +31,27 @@ public class ObacoService: APIService {
 
     // MARK: - Alarms
 
-    @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> CreateAlarmOperation {
-        let request = CreateAlarmOperation.buildURLRequest(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
+    @objc public func postAlarm(
+        secondsBefore: TimeInterval,
+        stopID: String,
+        tripID: String,
+        serviceDate: Int64,
+        vehicleID: String,
+        stopSequence: Int,
+        userPushID: String
+    ) -> CreateAlarmOperation {
+        let request = CreateAlarmOperation.buildURLRequest(
+            secondsBefore: secondsBefore,
+            stopID: stopID,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            vehicleID: vehicleID,
+            stopSequence: stopSequence,
+            userPushID: userPushID,
+            regionID: regionID,
+            baseURL: baseURL,
+            queryItems: defaultQueryItems
+        )
 
         let operation = CreateAlarmOperation(request: request)
         networkQueue.addOperation(operation)

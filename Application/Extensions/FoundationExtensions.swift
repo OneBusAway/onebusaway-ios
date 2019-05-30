@@ -45,6 +45,6 @@ public extension UserDefaults {
             return nil
         }
 
-        return (obj as! T)
+        return (obj as! T) // swiftlint:disable:this force_cast
     }
 }

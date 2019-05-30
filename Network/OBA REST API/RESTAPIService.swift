@@ -281,13 +281,15 @@ public class RESTAPIService: APIService {
 
     // MARK: - Problem Reporting
 
-
     /// Submit a user-generated problem report for a particular stop.
     ///
     /// - API Endpoint: `/api/where/report-problem-with-stop/{stopID}.json`
     /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/1.1.19/api/where/methods/report-problem-with-stop.html)
     ///
-    /// The reporting mechanism provides lots of fields that can be specified to give more context about the details of the problem (which trip, stop, vehicle, etc was involved), making it easier for a developer or transit agency staff to diagnose the problem. These reports feed into the problem reporting admin interface.
+    /// The reporting mechanism provides lots of fields that can be specified to give more context
+    /// about the details of the problem (which trip, stop, vehicle, etc was involved), making it
+    /// easier for a developer or transit agency staff to diagnose the problem. These reports feed
+    /// into the problem reporting admin interface.
     ///
     /// - Parameters:
     ///   - stopID: The stop ID where the problem was encountered.
@@ -301,8 +303,17 @@ public class RESTAPIService: APIService {
         return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url)
     }
 
-    @objc
-    public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemOperation {
+    @objc public func getTripProblem(
+        tripID: String,
+        serviceDate: Int64,
+        vehicleID: String?,
+        stopID: String?,
+        code: TripProblemCode,
+        comment: String?,
+        userOnVehicle: Bool,
+        location: CLLocation?
+    ) -> TripProblemOperation {
+        // swiftlint:disable:next line_length
         let url = TripProblemOperation.buildURL(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: TripProblemOperation.self, url: url)
     }

@@ -11,6 +11,8 @@ import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 
+// swiftlint:disable force_try
+
 class UserDefaultsStoreTests: OBATestCase {
 
     var userDefaults: UserDefaults!

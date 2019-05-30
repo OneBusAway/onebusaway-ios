@@ -292,7 +292,7 @@ public class RESTAPIModelService: NSObject {
         agenciesTransfer.addDependency(agenciesOperation)
         regionalAlertsOperation.addDependency(agenciesTransfer)
 
-        dataQueue.addOperations([agenciesTransfer,regionalAlertsOperation], waitUntilFinished: false)
+        dataQueue.addOperations([agenciesTransfer, regionalAlertsOperation], waitUntilFinished: false)
 
         return regionalAlertsOperation
     }

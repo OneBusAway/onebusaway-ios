@@ -16,7 +16,18 @@ public class CreateAlarmOperation: NetworkOperation {
         return String(format: apiPath, regionID)
     }
 
-    public class func buildURLRequest(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String, regionID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URLRequest {
+    public class func buildURLRequest(
+        secondsBefore: TimeInterval,
+        stopID: String,
+        tripID: String,
+        serviceDate: Int64,
+        vehicleID: String,
+        stopSequence: Int,
+        userPushID: String,
+        regionID: String,
+        baseURL: URL,
+        queryItems: [URLQueryItem]
+    ) -> URLRequest {
         let params: [String: Any] = [
             "seconds_before": secondsBefore,
             "stop_id": stopID,
@@ -27,7 +38,7 @@ public class CreateAlarmOperation: NetworkOperation {
             "user_push_id": userPushID
         ]
 
-        let url = _buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: queryItems)
+        let url = buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: queryItems)
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
