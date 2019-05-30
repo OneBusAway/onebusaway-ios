@@ -64,8 +64,7 @@ public class MapSnapshotter: NSObject {
             // abxoxo - todo
 //            let iconForStop = StopIconFactory.icon(for: stop, strokeColor: .black)
 //            let annotatedImage = ImageHelpers.draw(iconForStop, onto: image, at: snapshot?.point(for: stop.coordinate))
-//            completion(image.colorize(self.overlayColor))
-            completion(image)
+            completion(image.overlay(color: self.overlayColor))
             self.snapshotter = nil
         }
         self.snapshotter = snapshotter

@@ -45,9 +45,7 @@ public class StopHeaderViewController: UIViewController {
     
     public override func viewDidLoad() {
         super.viewDidLoad()
-        
-        view.backgroundColor = .magenta
-        
+
         view.addSubview(backgroundImageView)
         NSLayoutConstraint.activate([
             backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -70,11 +68,6 @@ public class StopHeaderViewController: UIViewController {
                 return String(format: fmt, stopArrivals.stop.code)
             }
         }
-        
-        // abxoxo
-        // let stopInfoText = buildStopInfoLabelText(from: stopArrivals)
-        // let routeText = Formatters.formattedRoutes(stopArrivals.stop.routes)
-        // titleBar.subtitleLabel.text = "\(stopInfoText)\r\n\(routeText)"
     }
     
     private func updateUI() {
