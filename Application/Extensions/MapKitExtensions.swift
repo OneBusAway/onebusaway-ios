@@ -67,6 +67,21 @@ extension MKMapView {
     }
 }
 
+//  Based on http://troybrant.net/blog/2010/01/set-the-zoom-level-of-an-mkmapview/
+//  https://gist.github.com/PowerPan/ab6de0fc246d29ec2372ec954c4d966d
+public extension MKMapView {
+    func setCenterCoordinate(centerCoordinate: CLLocationCoordinate2D, zoomLevel: Int, animated: Bool = true) {
+        // clamp large numbers to 28
+        let zoomL = min(zoomLevel, 28);
+        
+        // use the zoom level to compute the region
+        let span = MapHelpers.coordinateSpanFrom(size: bounds.size, centerCoordinate: centerCoordinate, zoomLevel: zoomL)
+        let region = MKCoordinateRegion(center: centerCoordinate, span: span)
+        
+        setRegion(region, animated: animated)
+    }
+}
+
 public extension MKMapRect {
     init(_ coordinateRegion: MKCoordinateRegion) {
         let topLeft = CLLocationCoordinate2D(
