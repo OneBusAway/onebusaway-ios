@@ -49,11 +49,11 @@ public class UserActivityBuilder: NSObject {
     // MARK: - Private Helpers
 
     private var stopActivityType: String {
-        return "\(application.applicationBundle.bundleIdentifier).stop"
+        return "\(application.applicationBundle.bundleIdentifier).user_activity.stop"
     }
 
     private var tripActivityType: String {
-        return "\(application.applicationBundle.bundleIdentifier).trip"
+        return "\(application.applicationBundle.bundleIdentifier).user_activity.trip"
     }
 
     /// Checks to see if the application's Info.plist file contains `NSUserActivityTypes` data

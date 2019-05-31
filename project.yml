@@ -16,8 +16,8 @@ targets:
         DeepLinkServerBaseAddress: "http://alerts.onebusaway.org"
         LSRequiresIPhoneOS: true
         NSUserActivityTypes:
-          - org.onebusaway.iphone.handoff.stop
-          - org.onebusaway.iphone.handoff.trip
+          - org.onebusaway.DemoApp.user_activity.stop
+          - org.onebusaway.DemoApp.user_activity.trip
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocationAlwaysAndWhenInUseUsageDescription: Show you your location on the map

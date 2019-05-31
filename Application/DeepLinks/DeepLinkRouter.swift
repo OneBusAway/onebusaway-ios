@@ -24,9 +24,9 @@ import Foundation
     ///   - stop: The stop for which a link will be created.
     ///   - region: The region in which the link will exist.
     public func url(for stop: Stop, region: Region) -> URL? {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
-        components?.path = String(format: "/regions/%@/stops/%@", region.regionIdentifier, stop.id)
+        guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else { return nil }
+        components.path = String(format: "/regions/%d/stops/%@", region.regionIdentifier, stop.id)
 
-        return components?.url
+        return components.url
     }
 }
