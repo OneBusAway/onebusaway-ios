@@ -9,10 +9,16 @@ import UIKit
 import AloeStackView
 import FloatingPanel
 
-class StopViewController: UIViewController {
+/// This is the core view controller for displaying information about a transit stop.
+///
+/// Specifically, `StopViewController` provides you with information about upcoming
+/// arrivals and departures at this stop, along with the ability to create push
+/// notification 'alarms' and bookmarks, view information about the location of a
+/// particular vehicle, and report problems with a trip.
+public class StopViewController: UIViewController {
     private let kUseDebugColors = false
 
-    public lazy var stackView: AloeStackView = {
+    lazy var stackView: AloeStackView = {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
@@ -26,11 +32,11 @@ class StopViewController: UIViewController {
 
     // MARK: - Top Content
 
-    private lazy var stopHeader = StopHeaderViewController(application: application)
+    lazy var stopHeader = StopHeaderViewController(application: application)
 
     // MARK: - Bottom Content
 
-    private lazy var loadMoreButton: UIButton = {
+    lazy var loadMoreButton: UIButton = {
         let loadMoreButton = UIButton(type: .system)
         loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
         loadMoreButton.addTarget(self, action: #selector(loadMore), for: .touchUpInside)
@@ -39,8 +45,10 @@ class StopViewController: UIViewController {
 
     // MARK: - Data
 
+    /// The data-loading operation for this controller.
     var operation: StopArrivalsModelOperation?
 
+    /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
             guard let stop = stop else { return }
@@ -51,21 +59,42 @@ class StopViewController: UIViewController {
         }
     }
 
+    /// Arrival/Departure data for this stop.
     var stopArrivals: StopArrivals? {
         didSet {
             dataWillReload()
 
             if stopArrivals != nil {
                 dataDidReload()
+                beginUserActivity()
             }
         }
     }
 
+    // MARK: - Init/Deinit
+
+    /// This initializer is the preferred way to create a `StopViewController`.
+    /// Creates the view controller with a `Stop`, which allows the controller
+    /// to immediately populate its header with information for the user.
+    ///
+    /// - Parameters:
+    ///   - application: The application object
+    ///   - stop: The stop the user is viewing
     public convenience init(application: Application, stop: Stop) {
         self.init(application: application, stopID: stop.id)
         self.stop = stop
     }
 
+    /// Creates the view controller with only a `stopID`, which requires
+    /// information to be retrieved before a header can be rendered for the user.
+    ///
+    /// - Note: Although this initializer will display the same information to the
+    ///         user as `init(application:stop:)`, that convenience initializer is
+    ///         preferred as it can display information to the user more quickly.
+    ///
+    /// - Parameters:
+    ///   - application: The application object
+    ///   - stopID: The ID of the stop the user is viewing
     public init(application: Application, stopID: String) {
         self.application = application
         self.stopID = stopID
@@ -78,6 +107,14 @@ class StopViewController: UIViewController {
 
         configureCurrentThemeBehaviors()
     }
+
+    required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    deinit {
+        operation?.cancel()
+    }
+
+    // MARK: - Private Init Helpers
 
     private func buildToolbarItems() -> [UIBarButtonItem] {
         let refreshButton = UIBarButtonItem(title: Strings.refresh, style: .plain, target: self, action: #selector(refresh))
@@ -105,13 +142,9 @@ class StopViewController: UIViewController {
         }
     }
 
-    required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    // MARK: - UIViewController Overrides
 
-    deinit {
-        operation?.cancel()
-    }
-
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
 
         if kUseDebugColors {
@@ -126,10 +159,34 @@ class StopViewController: UIViewController {
         stackView.pinToSuperview(.edges)
     }
 
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        application.isIdleTimerDisabled = true
+
+        if stopArrivals != nil {
+            beginUserActivity()
+        }
+
         updateData()
     }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        application.isIdleTimerDisabled = false
+    }
+
+    // MARK: - NSUserActivity
+
+    private func beginUserActivity() {
+        guard let stop = stop,
+              let region = application.regionsService.currentRegion else { return }
+
+        self.userActivity = application.userActivityBuilder.userActivity(for: stop, region: region)
+    }
+
+    // MARK: - Data Loading
 
     func updateData() {
         operation?.cancel()
@@ -151,12 +208,12 @@ class StopViewController: UIViewController {
     }
 
     /// Call this method when data is about to reloaded in this controller
-    func dataWillReload() {
+    private func dataWillReload() {
         stackView.removeAllRows()
     }
 
     /// Call this method after data has been reloaded in this controller
-    func dataDidReload() {
+    private func dataDidReload() {
         guard let stopArrivals = stopArrivals else {
             return
         }

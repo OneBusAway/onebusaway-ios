@@ -21,4 +21,10 @@ class CollectionsTests: XCTestCase {
         expect(array).to(contain("two"))
         expect(array).to(contain("three"))
     }
+
+    func testFilter() {
+        let list: [Any] = [1, "two", 3, "four", 5]
+        let filtered = list.filter(type: Int.self)
+        expect(filtered) == [1, 3, 5]
+    }
 }

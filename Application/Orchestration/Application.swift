@@ -16,7 +16,18 @@ public protocol ApplicationDelegate {
     /// of the app's window. This is typically done in response to permissions changes.
     @objc func applicationReloadRootInterface(_ app: Application)
 
+    /// This method is called when the application cannot automatically select a `Region`
+    /// for the user. It provides a region picker that must be displayed to the user so
+    /// that the user can pick a `Region`, thereby allowing the app to continue functioning.
+    ///
+    /// - Parameters:
+    ///   - app: The application object.
+    ///   - picker: The region picker view controller to display to the user.
     @objc func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController)
+
+    /// This proxies the `isIdleTimerDisabled` property on UIApplication, which prevents
+    /// the screen from turning off when it is set to `true`.
+    @objc(idleTimerDisabled) var isIdleTimerDisabled: Bool { get set }
 }
 
 @objc(OBAApplication)
@@ -40,6 +51,10 @@ public class Application: NSObject {
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
     @objc public let regionsService: RegionsService
 
+    /// Provides access to the OneBusAway REST API
+    ///
+    /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
+    ///         for more information on the REST API.
     @objc public private(set) var restAPIModelService: RESTAPIModelService?
 
     @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
@@ -47,6 +62,10 @@ public class Application: NSObject {
     @objc public private(set) lazy var searchManager = SearchManager(application: self)
 
     @objc public private(set) var theme: Theme
+
+    @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
+
+    @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress!)
 
     @objc public weak var delegate: ApplicationDelegate?
 
@@ -71,9 +90,7 @@ public class Application: NSObject {
     }
 
     private func refreshRESTAPIModelService() {
-        guard let region = regionsService.currentRegion else {
-            return
-        }
+        guard let region = regionsService.currentRegion else { return }
 
         let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
@@ -93,6 +110,23 @@ public class Application: NSObject {
     /// region transitioning from nil -> not-nil.
     public func reloadRootUserInterface() {
         delegate?.applicationReloadRootInterface(self)
+    }
+
+    // MARK: - UIApplication Hooks
+
+    public var isIdleTimerDisabled: Bool {
+        get {
+            return (delegate?.isIdleTimerDisabled ?? false)
+        }
+        set {
+            delegate?.isIdleTimerDisabled = newValue
+        }
+    }
+
+    /// Provides access to the client app's main `Bundle`, from which you can
+    /// access `Info.plist` data, among other things.
+    public var applicationBundle: Bundle {
+        return Bundle.main
     }
 
     // MARK: - Appearance and Themes

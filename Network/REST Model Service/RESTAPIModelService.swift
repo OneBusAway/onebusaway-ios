@@ -10,6 +10,10 @@ import CoreLocation
 import Foundation
 import MapKit
 
+/// Provides access to the OneBusAway REST API
+///
+/// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
+///         for more information on the REST API.
 @objc(OBARESTAPIModelService)
 public class RESTAPIModelService: NSObject {
     private let dataQueue: OperationQueue

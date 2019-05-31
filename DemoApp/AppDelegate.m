@@ -49,18 +49,15 @@
 
 #pragma mark - OBAApplicationDelegate
 
+- (void)setIdleTimerDisabled:(BOOL)idleTimerDisabled {
+    UIApplication.sharedApplication.idleTimerDisabled = idleTimerDisabled;
+}
+
+- (BOOL)idleTimerDisabled {
+    return UIApplication.sharedApplication.idleTimerDisabled;
+}
+
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-//    func applicationReloadRootInterface(_ app: Application) {
-//        if app.showPermissionPromptUI {
-//            let permissionPromptController = PermissionPromptViewController(application: app)
-//            let navigation = UINavigationController(rootViewController: permissionPromptController)
-//            window?.rootViewController = navigation
-//        }
-//        else {
-//            let controller = ClassicApplicationRootController(application: app)
-//            window?.rootViewController = controller
-//        }
-//    }
     if (application.showPermissionPromptUI) {
         PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];

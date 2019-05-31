@@ -10,6 +10,30 @@ targets:
     dependencies:
       - target: OBAKit
       - carthage: SwiftProtobuf
+    info:
+      path: DemoApp/Info.plist
+      properties:
+        DeepLinkServerBaseAddress: "http://alerts.onebusaway.org"
+        LSRequiresIPhoneOS: true
+        NSUserActivityTypes:
+          - org.onebusaway.iphone.handoff.stop
+          - org.onebusaway.iphone.handoff.trip
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSLocationAlwaysAndWhenInUseUsageDescription: Show you your location on the map
+        NSLocationWhenInUseUsageDescription: Show you your location on the map
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiredDeviceCapabilities:
+          - armv7
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
   OBAKit:
     type: framework
     platform: iOS
@@ -25,6 +49,8 @@ targets:
     postBuildScripts:
       - path: scripts/swiftlint.sh
         name: Swiftlint
+    scheme:
+      gatherCoverageData: true
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS

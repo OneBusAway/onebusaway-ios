@@ -8,6 +8,25 @@
 
 import Foundation
 
+public extension Bundle {
+
+    /// A helper method for easily accessing the bundle's `CFBundleIdentifier`.
+    var bundleIdentifier: String {
+        return object(forInfoDictionaryKey: "CFBundleIdentifier") as! String //swiftlint:disable:this force_cast
+    }
+
+    /// A helper method for easily accessing the bundle's `NSUserActivityTypes`.
+    var userActivityTypes: [String]? {
+        return object(forInfoDictionaryKey: "NSUserActivityTypes") as? [String]
+    }
+
+    /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
+    var deepLinkServerBaseAddress: URL? {
+        guard let address = object(forInfoDictionaryKey: "DeepLinkServerBaseAddress") as? String else { return nil }
+        return URL(string: address)
+    }
+}
+
 public extension Sequence where Element == String {
 
     /// Performs a localized case insensitive sort on the receiver.
