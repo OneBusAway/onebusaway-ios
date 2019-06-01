@@ -90,7 +90,7 @@ extension UIView {
             trailingAnchor.constraint(equalTo: trailingAnchorable.trailingAnchor, constant: insets.trailing),
             topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top),
             bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom)
-            ])
+        ])
     }
 
     private func anchorable(for view: UIView, pinTarget: AutoLayoutPinTarget) -> Anchorable {

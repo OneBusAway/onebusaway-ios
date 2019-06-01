@@ -223,19 +223,19 @@ public class StopViewController: UIViewController {
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
 
         for stopModel in stopArrivals.arrivalsAndDepartures.toVehicleStopModels() {
-            var arrivalViews = [StopArrivalView]()
-            for arrDep in stopModel.arrivalDepartures {
-                let a = StopArrivalView.autolayoutNew()
-                stackView.addRow(a, hideSeparator: true)
-                a.arrivalDeparture = arrDep
-                arrivalViews.append(a)
-            }
-            if let last = arrivalViews.last {
-                stackView.showSeparator(forRow: last)
-            }
+            addStopArrivalView(for: stopModel.arrival, hideSeparator: stopModel.isComplete)
+            addStopArrivalView(for: stopModel.departure, hideSeparator: false)
         }
 
         stackView.addRow(loadMoreButton, hideSeparator: true)
+    }
+
+    private func addStopArrivalView(for arrivalDeparture: ArrivalDeparture?, hideSeparator: Bool) {
+        guard let arrivalDeparture = arrivalDeparture else { return }
+
+        let a = StopArrivalView.autolayoutNew()
+        stackView.addRow(a, hideSeparator: hideSeparator)
+        a.arrivalDeparture = arrivalDeparture
     }
 }
 

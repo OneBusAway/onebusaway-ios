@@ -10,8 +10,19 @@ import UIKit
 
 @objc(OBAStopArrivalView)
 public class StopArrivalView: UIView {
-    let routeHeadsignLabel = UILabel.autolayoutNew()
-    let timeLabel = UILabel.autolayoutNew()
+
+    let kUseDebugColors = false
+
+    let routeHeadsignLabel = buildLabel()
+    let timeLabel = buildLabel()
+
+    let disclosureIndicator: UIImageView = {
+        let view = UIImageView(image: Icons.chevron)
+        view.contentMode = .center
+        view.setContentHuggingPriority(.required, for: .horizontal)
+
+        return view
+    }()
 
     private var _formatters: Formatters!
     @objc dynamic var formatters: Formatters {
@@ -35,12 +46,28 @@ public class StopArrivalView: UIView {
     @objc override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let stack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeLabel])
-        addSubview(stack)
-        stack.pinToSuperview(.edges)
+        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeLabel])
+        let leftStackWrapper = leftStack.embedInWrapperView()
+
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStackWrapper, disclosureIndicator])
+
+        addSubview(outerStack)
+        outerStack.pinToSuperview(.edges)
+
+        if kUseDebugColors {
+            routeHeadsignLabel.backgroundColor = .red
+            timeLabel.backgroundColor = .orange
+            disclosureIndicator.backgroundColor = .blue
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    private class func buildLabel() -> UILabel {
+        let label = UILabel.autolayoutNew()
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        return label
     }
 }

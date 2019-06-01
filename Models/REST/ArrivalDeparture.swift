@@ -213,6 +213,13 @@ extension ArrivalDeparture {
         return stopSequence == 0 ? .departing : .arriving
     }
 
+    /// True if this is the last stop on a given trip, false if it is not, and nil if the result can't be determined.
+    public var isLastStopOnTrip: Bool? {
+        guard let totalStopsInTrip = totalStopsInTrip else { return nil }
+
+        return stopSequence == totalStopsInTrip - 1
+    }
+
     /// A singluar value that can be displayed in the UI to represent the best date for this trip.
     public var arrivalDepartureDate: Date {
         switch arrivalDepartureStatus {

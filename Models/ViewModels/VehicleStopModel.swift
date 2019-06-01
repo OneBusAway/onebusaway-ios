@@ -9,36 +9,62 @@
 import Foundation
 
 /// Provides an abstraction to represent a vehicle arriving and departing from a stop, as seen at the end/beginning of a route.
-@objc(OBAVehicleStopModel)
-public class VehicleStopModel: NSObject {
-    public let vehicleID: String?
-    public fileprivate(set) var arrivalDepartures = [ArrivalDeparture]()
+public struct VehicleStopModel {
+    public let vehicleID: String
+    public var arrival: ArrivalDeparture?
+    public var departure: ArrivalDeparture?
 
-    private var _date: Date?
-    public var date: Date {
-        if _date == nil {
-            _date = arrivalDepartures.sorted(by: { $0.arrivalDepartureDate > $1.arrivalDepartureDate }).last!.arrivalDepartureDate
-        }
-        return _date!
+    public init(vehicleID: String) {
+        self.vehicleID = vehicleID
     }
 
-    public init(vehicleID: String?) {
-        self.vehicleID = vehicleID
-        super.init()
+    public var isComplete: Bool {
+        return arrival != nil && departure != nil
+    }
+
+    public var date: Date {
+        if let departure = departure {
+            return departure.arrivalDepartureDate
+        }
+        else if let arrival = arrival {
+            return arrival.arrivalDepartureDate
+        }
+        else {
+            // we should never hit this.
+            return Date()
+        }
     }
 }
 
 public extension Sequence where Element: ArrivalDeparture {
+
+    /// Converts a Sequence of `ArrivalDeparture`s to `VehicleStopModel`s for display in a `StopViewController`.
+    ///
+    /// - Returns: An array of `VehicleStopModel`s generated from the contents of the receiver.
     func toVehicleStopModels() -> [VehicleStopModel] {
-        var models = [String: VehicleStopModel]()
+        var filledModels = [VehicleStopModel]()
+        var inProgressModels = [String: VehicleStopModel]()
 
         for arrDep in self {
-            let key = arrDep.vehicleID ?? NSUUID().uuidString
-            let dictEntry = models[key, default: VehicleStopModel(vehicleID: arrDep.vehicleID)]
-            dictEntry.arrivalDepartures.append(arrDep)
-            models[key] = dictEntry
+            let vehicleID = arrDep.vehicleID ?? NSUUID().uuidString
+            var entry = inProgressModels[vehicleID, default: VehicleStopModel(vehicleID: vehicleID)]
+
+            if entry.isComplete {
+                inProgressModels[vehicleID] = nil
+                filledModels.append(entry)
+            }
+
+            if arrDep.arrivalDepartureStatus == .arriving {
+                entry.arrival = arrDep
+            }
+            else {
+                entry.departure = arrDep
+            }
+
+            inProgressModels[vehicleID] = entry
         }
 
-        return Array(models.values).sorted(by: { $0.date < $1.date })
+        let allModels = filledModels + inProgressModels.values
+        return allModels.sorted { $0.date < $1.date }
     }
 }
