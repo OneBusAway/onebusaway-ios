@@ -66,4 +66,12 @@ public extension UserDefaults {
 
         return (obj as! T) // swiftlint:disable:this force_cast
     }
+
+    /// A simple way to check if this object contains a value for `key`.
+    ///
+    /// - Parameter key: The key to check if a value exists for.
+    /// - Returns: `true` if the value exists, and `false` if it does not.
+    func contains(key: String) -> Bool {
+        return object(forKey: key) != nil
+    }
 }

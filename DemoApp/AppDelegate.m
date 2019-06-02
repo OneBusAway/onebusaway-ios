@@ -12,7 +12,7 @@
 #import "DemoViewController.h"
 #import "PermissionPromptViewController.h"
 
-@interface AppDelegate ()<OBAApplicationDelegate>
+@interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
@@ -65,12 +65,22 @@
     }
     else {
         self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        self.rootController.selectedIndex = self.app.userDataStore.lastSelectedView;
+        self.rootController.delegate = self;
         self.window.rootViewController = self.rootController;
     }
 }
 
 - (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {
     self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:picker];
+}
+
+#pragma mark - UITabBarControllerDelegate
+
+- (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
+    NSInteger index = tabBarController.selectedIndex;
+
+    self.app.userDataStore.lastSelectedView = (OBASelectedTab)index;
 }
 
 @end

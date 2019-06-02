@@ -26,6 +26,8 @@ class TestAppDelegate: ApplicationDelegate {
     func applicationReloadRootInterface(_ app: Application) {
         called_applicationReloadRootInterface = true
     }
+
+    var isIdleTimerDisabled = false
 }
 
 class TestRegionsServiceDelegate: RegionsServiceDelegate {

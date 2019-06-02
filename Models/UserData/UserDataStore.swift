@@ -8,6 +8,10 @@
 import Foundation
 import CocoaLumberjackSwift
 
+@objc(OBASelectedTab) public enum SelectedTab: Int {
+    case map, recentStops, bookmarks, settings
+}
+
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
 ///
 /// This protocol is designed to support pluggable data storage layers, so that services ranging
@@ -15,6 +19,8 @@ import CocoaLumberjackSwift
 /// could be used to store a user's data.
 @objc(OBAUserDataStore)
 public protocol UserDataStore: NSObjectProtocol {
+
+    // MARK: - Recent Stops
 
     /// A list of recently-viewed stops
     var recentStops: [Stop] { get }
@@ -26,6 +32,13 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// The maximum number of recent stops that will be stored.
     var maximumRecentStopsCount: Int { get }
+
+    // MARK: - View State/Last Selected Tab
+
+    /// Stores the last selected tab that the user viewed.
+    ///
+    /// - Note: Only applies if the user is using a tab-style UI.
+    var lastSelectedView: SelectedTab { get set }
 }
 
 @objc(OBAUserDefaultsStore)
@@ -34,6 +47,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     enum UserDefaultsKeys: String {
         case recentStops
+        case lastSelectedView
     }
 
     public init(userDefaults: UserDefaults) {
@@ -80,5 +94,21 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var maximumRecentStopsCount: Int {
         return 20
+    }
+
+    // MARK: - View State/Last Selected Tab
+
+    @objc
+    public var lastSelectedView: SelectedTab {
+        get {
+            guard userDefaults.contains(key: UserDefaultsKeys.lastSelectedView.rawValue) else {
+                return .map
+            }
+            let raw = userDefaults.integer(forKey: UserDefaultsKeys.lastSelectedView.rawValue)
+            return SelectedTab(rawValue: raw)!
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.lastSelectedView.rawValue)
+        }
     }
 }
