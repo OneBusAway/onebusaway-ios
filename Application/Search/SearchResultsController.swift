@@ -24,7 +24,7 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
     private lazy var stackView: UIStackView = {
         let stack = UIStackView.verticalStack(arangedSubviews: [titleBar, collectionController.view])
         stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = application.theme.metrics.collectionViewLayoutMargins
+        stack.directionalLayoutMargins = ThemeMetrics.collectionViewLayoutMargins
 
         return stack
     }()

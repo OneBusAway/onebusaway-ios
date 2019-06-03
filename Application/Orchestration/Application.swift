@@ -154,7 +154,7 @@ public class Application: NSObject {
 
         StackedButton.appearance().font = theme.fonts.footnote
 
-        StatusOverlayView.appearance().innerPadding = theme.metrics.padding
+        StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
         StopAnnotationView.appearance().theme = theme

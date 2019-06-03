@@ -76,16 +76,16 @@ public class PermissionPromptViewController: UIViewController {
         imageViewWrapper.backgroundColor = topImageView.backgroundColor
 
         NSLayoutConstraint.activate([
-            topImageView.topAnchor.constraint(equalTo: imageViewWrapper.topAnchor, constant: application.theme.metrics.padding),
-            topImageView.bottomAnchor.constraint(equalTo: imageViewWrapper.bottomAnchor, constant: -application.theme.metrics.padding),
+            topImageView.topAnchor.constraint(equalTo: imageViewWrapper.topAnchor, constant: ThemeMetrics.padding),
+            topImageView.bottomAnchor.constraint(equalTo: imageViewWrapper.bottomAnchor, constant: -ThemeMetrics.padding),
             topImageView.leadingAnchor.constraint(equalTo: imageViewWrapper.leadingAnchor, constant: 0),
             topImageView.trailingAnchor.constraint(equalTo: imageViewWrapper.trailingAnchor, constant: 0)
         ])
 
         let buttonWrapper = grantPermissionsButton.embedInWrapperView(setConstraints: false)
         NSLayoutConstraint.activate([
-            grantPermissionsButton.topAnchor.constraint(equalTo: buttonWrapper.topAnchor, constant: application.theme.metrics.padding),
-            grantPermissionsButton.bottomAnchor.constraint(equalTo: buttonWrapper.bottomAnchor, constant: -application.theme.metrics.padding),
+            grantPermissionsButton.topAnchor.constraint(equalTo: buttonWrapper.topAnchor, constant: ThemeMetrics.padding),
+            grantPermissionsButton.bottomAnchor.constraint(equalTo: buttonWrapper.bottomAnchor, constant: -ThemeMetrics.padding),
             grantPermissionsButton.centerXAnchor.constraint(equalTo: buttonWrapper.centerXAnchor),
             buttonWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 60.0)
         ])

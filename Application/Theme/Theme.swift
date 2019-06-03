@@ -26,17 +26,17 @@ public class Theme: NSObject {
 @objc(OBAMetrics)
 public class ThemeMetrics: NSObject {
 
-    public let padding: CGFloat = 8.0
+    public static let padding: CGFloat = 8.0
 
-    public let controllerMargin: CGFloat = 20.0
+    public static let controllerMargin: CGFloat = 20.0
 
-    public let defaultMapAnnotationSize: CGFloat = 54.0
+    public static let defaultMapAnnotationSize: CGFloat = 54.0
 
     public static let cornerRadius: CGFloat = 8.0
 
     public static let compactTopBottomEdgeInsets = NSDirectionalEdgeInsets(top: 4.0, leading: 0, bottom: -4.0, trailing: 0)
 
-    public lazy var collectionViewLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: padding, bottom: 0, trailing: padding)
+    public static let collectionViewLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: padding, bottom: 0, trailing: padding)
 }
 
 @objc(OBAThemeColors)

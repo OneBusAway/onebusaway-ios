@@ -43,7 +43,7 @@ public class CollectionController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.showsVerticalScrollIndicator = false
         collectionView.alwaysBounceVertical = true
-        collectionView.directionalLayoutMargins = application.theme.metrics.collectionViewLayoutMargins
+        collectionView.directionalLayoutMargins = ThemeMetrics.collectionViewLayoutMargins
 
         return collectionView
     }()

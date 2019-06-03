@@ -243,7 +243,7 @@ public class MapRegionManager: NSObject {
 
         NSLayoutConstraint.activate([
             statusOverlay.centerXAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.centerXAnchor),
-            statusOverlay.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: application.theme.metrics.padding)
+            statusOverlay.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding)
         ])
     }
 

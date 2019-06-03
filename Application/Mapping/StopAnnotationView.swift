@@ -85,7 +85,7 @@ public class StopAnnotationView: MKAnnotationView {
     private let imageSize: CGFloat = 20.0
 
     private func configureUI() {
-        bounds = CGRect(x: 0, y: 0, width: theme.metrics.defaultMapAnnotationSize, height: theme.metrics.defaultMapAnnotationSize)
+        bounds = CGRect(x: 0, y: 0, width: ThemeMetrics.defaultMapAnnotationSize, height: ThemeMetrics.defaultMapAnnotationSize)
         frame = frame.integral
 
         directionalArrowView.frame = bounds

@@ -56,7 +56,7 @@ public class StopHeaderViewController: UIViewController {
         let stack = UIStackView.verticalStack(arangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
         view.addSubview(stack)
 
-        stack.pinToSuperview(.layoutMargins, insets: NSDirectionalEdgeInsets(top: application.theme.metrics.padding, leading: 0, bottom: 0, trailing: 0))
+        stack.pinToSuperview(.layoutMargins, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.padding, leading: 0, bottom: 0, trailing: 0))
     }
 
     private func updateUI() {
