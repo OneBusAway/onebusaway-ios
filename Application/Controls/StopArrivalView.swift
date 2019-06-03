@@ -8,13 +8,35 @@
 
 import UIKit
 
+/// This view displays the route, headsign, and predicted arrival/departure time for an `ArrivalDeparture`.
+///
+/// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
+/// else that we show information from an `ArrivalDeparture`.
 @objc(OBAStopArrivalView)
 public class StopArrivalView: UIView {
 
     let kUseDebugColors = false
 
+    /// First line in the view; contains route and headsign information.
+    ///
+    /// For example, this might contain the text `10 - Downtown Seattle`.
     let routeHeadsignLabel = buildLabel()
-    let timeLabel = buildLabel()
+
+    /// Second line in the view; contains the arrival/departure time and status relative to schedule.
+    ///
+    /// For example, this might contain the text `11:20 AM - arriving on time`.
+    let timeExplanationLabel = buildLabel()
+
+    /// Appears on the trailing side of the view; contains the number of minutes until arrival/departure.
+    ///
+    /// For example, this might contain the text `10m`.
+    let minutesLabel: UILabel = {
+        let label = buildLabel()
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .vertical)
+        return label
+    }()
 
     let disclosureIndicator: UIImageView = {
         let view = UIImageView(image: Icons.chevron)
@@ -32,32 +54,45 @@ public class StopArrivalView: UIView {
 
     @objc public var arrivalDeparture: ArrivalDeparture! {
         didSet {
+            // 'Gray out' the view if it occurred in the past.
+            alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
+
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
-            // 'Gray out' the view if it occurred in the past.
-            alpha = arrivalDeparture.temporalStateOfArrivalDepartureDate == .past ? 0.50 : 1.0
+            minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
 
-            let timeText = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
-            let explanationText = formatters.explanation(from: arrivalDeparture)
-            timeLabel.text = "\(timeText) - \(explanationText)"
+            let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+            let explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+            timeExplanationLabel.text = "\(arrDepTime) - \(explanationText)"
         }
     }
 
     @objc override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeLabel])
+        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel])
         let leftStackWrapper = leftStack.embedInWrapperView()
 
-        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStackWrapper, disclosureIndicator])
+        let minutesLabelWrapper = minutesLabel.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            minutesLabel.trailingAnchor.constraint(equalTo: minutesLabelWrapper.trailingAnchor),
+            minutesLabel.centerYAnchor.constraint(equalTo: minutesLabelWrapper.centerYAnchor),
+            minutesLabelWrapper.widthAnchor.constraint(greaterThanOrEqualTo: minutesLabel.widthAnchor),
+            minutesLabelWrapper.heightAnchor.constraint(greaterThanOrEqualTo: minutesLabel.heightAnchor)
+        ])
+
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStackWrapper, minutesLabelWrapper, disclosureIndicator])
+        outerStack.spacing = ThemeMetrics.padding
 
         addSubview(outerStack)
         outerStack.pinToSuperview(.edges)
 
         if kUseDebugColors {
             routeHeadsignLabel.backgroundColor = .red
-            timeLabel.backgroundColor = .orange
+            timeExplanationLabel.backgroundColor = .orange
             disclosureIndicator.backgroundColor = .blue
+            minutesLabel.backgroundColor = .purple
+            minutesLabelWrapper.backgroundColor = .green
         }
     }
 

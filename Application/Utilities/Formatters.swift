@@ -13,9 +13,13 @@ public class Formatters: NSObject {
 
     private let locale: Locale
 
+    /// Creates a new `Formatters` object that will use the provided `Locale` for locale-specific customization.
+    ///
+    /// - Note: You can (and probably should) pass in `Locale.autoupdatingCurrent` to this method.
+    ///
+    /// - Parameter locale: The current locale of the user's device.
     @objc public init(locale: Locale) {
         self.locale = locale
-        super.init()
     }
 
     // MARK: - Formatted Times
@@ -39,7 +43,7 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The ArrivalDeparture object representing the string
     /// - Returns: A localized string explaining the arrival/departure status.
     public func explanation(from arrivalDeparture: ArrivalDeparture) -> String {
-        let temporalState = arrivalDeparture.temporalStateOfArrivalDepartureDate
+        let temporalState = arrivalDeparture.temporalState
         let arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
         let apply: (String) -> String = { String(format: $0, abs(arrivalDeparture.arrivalDepartureMinutes)) }
 
@@ -56,6 +60,102 @@ public class Formatters: NSObject {
             return apply(NSLocalizedString("formatters.arrives_in_x_min_fmt", value: "Arrives in %d min", comment: "Use for vehicles arriving in X minutes."))
         case (.future, .departing):
             return apply(NSLocalizedString("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
+        }
+    }
+
+    // MARK: - ArrivalDeparture Schedule Deviation
+
+    /// Creates a formatted string representing the deviation from schedule described by `arrivalDeparture`
+    ///
+    /// For example, if an `ArrivalDeparture` object representing an arrival is one minute late, it will
+    /// return the string `"arrives 1 min late"`.
+    ///
+    /// - Parameter arrivalDeparture: The object used to determine the schedule deviation.
+    /// - Returns: A formatted string representing the schedule deviation.
+    public func formattedScheduleDeviation(for arrivalDeparture: ArrivalDeparture) -> String {
+        switch (arrivalDeparture.temporalState, arrivalDeparture.arrivalDepartureStatus) {
+        case (.past, .arriving):
+            return explanationOfDeviationForPastArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+        case (.past, .departing):
+            return explanationOfDeviationForPastDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+        case (_, .arriving):
+            return explanationOfDeviationForFutureArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+        case (_, .departing):
+            fallthrough // swiftlint:disable:this no_fallthrough_only
+        default:
+            return explanationOfDeviationForFutureDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+        }
+    }
+
+    private func explanationOfDeviationForPastArrival(minutes: Int) -> String {
+        if minutes > 0 {
+            let str = NSLocalizedString("formatters.deviation.arrival_past_late_fmt", value: "arrived %d min late", comment: "Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else if minutes < 0 {
+            let str = NSLocalizedString("formatters.deviation.arrival_past_early_fmt", value: "arrived %d min early", comment: "Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else {
+            return NSLocalizedString("formatters.deviation.arrival_past_on_time", value: "arrived on time", comment: "Describes an on-time arrival. e.g. arrived on time.")
+        }
+    }
+
+    private func explanationOfDeviationForPastDeparture(minutes: Int) -> String {
+        if minutes > 0 {
+            let str = NSLocalizedString("formatters.deviation.departure_past_late_fmt", value: "departed %d min late", comment: "Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else if minutes < 0 {
+            let str = NSLocalizedString("formatters.deviation.departure_past_early_fmt", value: "departed %d min early", comment: "Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else {
+            return NSLocalizedString("formatters.deviation.departure_past_on_time", value: "departed on time", comment: "Describes an on-time departure. e.g. departed on time.")
+        }
+    }
+
+    private func explanationOfDeviationForFutureArrival(minutes: Int) -> String {
+        if minutes > 0 {
+            let str = NSLocalizedString("formatters.deviation.arrival_future_late_fmt", value: "arrives %d min late", comment: "Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else if minutes < 0 {
+            let str = NSLocalizedString("formatters.deviation.arrival_future_early_fmt", value: "arrives %d min early", comment: "Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else {
+            return NSLocalizedString("formatters.deviation.arrival_future_on_time", value: "arrives on time", comment: "Describes an on-time arrival. e.g. arrives on time.")
+        }
+    }
+
+    private func explanationOfDeviationForFutureDeparture(minutes: Int) -> String {
+        if minutes > 0 {
+            let str = NSLocalizedString("formatters.deviation.departure_future_late_fmt", value: "departs %d min late", comment: "Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else if minutes < 0 {
+            let str = NSLocalizedString("formatters.deviation.departure_future_early_fmt", value: "departs %d min early", comment: "Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            return String(format: str, minutes)
+        }
+        else {
+            return NSLocalizedString("formatters.deviation.departs_future_on_time", value: "departs on time", comment: "Describes an on-time departure. e.g. departs on time.")
+        }
+    }
+
+    /// Creates a formatted string from the `ArrivalDeparture` object that shows the short formatted time until this event occurs.
+    ///
+    /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7m"`.
+    /// 7 minutes in the past: `"-7m"`. If the `ArrivalDeparture` event occurs now, then this will return `"NOW"`.
+    ///
+    /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
+    /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
+    public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
+        switch arrivalDeparture.temporalState {
+        case .present: return NSLocalizedString("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
+        default:
+            let formatString = NSLocalizedString("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
+            return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
         }
     }
 

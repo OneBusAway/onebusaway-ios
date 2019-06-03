@@ -230,13 +230,23 @@ extension ArrivalDeparture {
         }
     }
 
+    /// A singular value that can be displayed in the UI to represent the best scheduled date for this trip.
+    public var scheduledDate: Date {
+        switch arrivalDepartureStatus {
+        case .arriving:
+            return scheduledArrival
+        case .departing:
+            return scheduledDeparture
+        }
+    }
+
     /// Number of minutes until/after `arrivalDepartureDate`.
     public var arrivalDepartureMinutes: Int {
         return Int(arrivalDepartureDate.timeIntervalSinceNow / 60.0)
     }
 
     /// Whether `arrivalDepartureDate` occurred in the past, is occurring now, or is occurring in the future.
-    public var temporalStateOfArrivalDepartureDate: TemporalState {
+    public var temporalState: TemporalState {
         let minutes = arrivalDepartureMinutes
         if minutes < 0 {
             // Arrived/Departed abs(minutes) min ago
@@ -252,13 +262,27 @@ extension ArrivalDeparture {
         }
     }
 
+    /// This is the number of minutes that the predicted arrival/departure time deviates
+    /// from the official, scheduled arrival/departure time for this vehicle on this trip.
+    ///
+    /// - Note: This value is an approximation, and is calculated by rounding and then
+    ///         truncating the raw deviation.
+    @objc public var deviationFromScheduleInMinutes: Int {
+        return Int(round(rawDeviationFromScheduleInMinutes))
+    }
+
+    /// A more precise (but maybe not as useful?) calculation of the deviation of this trip from schedule.
+    private var rawDeviationFromScheduleInMinutes: Double {
+        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / (1000.0 * 60.0)
+    }
+
     /// Is this trip early, on time, delayed, or of an unknown status?
     @objc public var scheduleStatus: ScheduleStatus {
-        guard predicted, let predictedDeparture = predictedDeparture else {
+        guard predicted else {
             return .unknown
         }
 
-        let minutesDiff = (predictedDeparture.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / (1000.0 * 60.0)
+        let minutesDiff = rawDeviationFromScheduleInMinutes
         if minutesDiff < -1.5 {
             return .early
         }
