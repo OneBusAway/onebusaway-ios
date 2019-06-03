@@ -222,9 +222,8 @@ public class StopViewController: UIViewController {
 
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
 
-        for stopModel in stopArrivals.arrivalsAndDepartures.toVehicleStopModels() {
-            addStopArrivalView(for: stopModel.arrival, hideSeparator: stopModel.isComplete)
-            addStopArrivalView(for: stopModel.departure, hideSeparator: false)
+        for arrDep in stopArrivals.arrivalsAndDepartures {
+            addStopArrivalView(for: arrDep, hideSeparator: false)
         }
 
         stackView.addRow(loadMoreButton, hideSeparator: true)
