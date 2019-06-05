@@ -33,7 +33,6 @@
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
-        [_app configureAppearanceProxies];
     }
 
     return self;

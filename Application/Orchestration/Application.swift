@@ -9,6 +9,8 @@
 import UIKit
 import CoreLocation
 
+// MARK: - Protocols
+
 @objc(OBAApplicationDelegate)
 public protocol ApplicationDelegate {
 
@@ -33,9 +35,13 @@ public protocol ApplicationDelegate {
 @objc(OBAApplication)
 public class Application: NSObject {
 
+    // MARK: - Private Properties
+
     /// App configuration parameters: API keys, region server, user UUID, and other
     /// configuration values.
     private let config: AppConfig
+
+    // MARK: - Public Properties
 
     @objc public let userDataStore: UserDataStore
 
@@ -69,6 +75,8 @@ public class Application: NSObject {
 
     @objc public weak var delegate: ApplicationDelegate?
 
+    // MARK: - Init
+
     @objc public init(config: AppConfig) {
         self.config = config
         userDataStore = UserDefaultsStore(userDefaults: config.userDefaults)
@@ -79,6 +87,8 @@ public class Application: NSObject {
 
         super.init()
 
+        configureAppearanceProxies()
+
         locationService.addDelegate(self)
         regionsService.addDelegate(self)
 
@@ -87,13 +97,6 @@ public class Application: NSObject {
         }
 
         refreshRESTAPIModelService()
-    }
-
-    private func refreshRESTAPIModelService() {
-        guard let region = regionsService.currentRegion else { return }
-
-        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
-        restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
 
     // MARK: - App State Management
@@ -136,7 +139,7 @@ public class Application: NSObject {
     /// To override the values that are set in here, either customize the theme that this object is
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
-    @objc public func configureAppearanceProxies() {
+    private func configureAppearanceProxies() {
         let tintColor = theme.colors.primary
         let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
 
@@ -181,6 +184,8 @@ public class Application: NSObject {
     }
 }
 
+// MARK: - Regions Management
+
 extension Application: RegionsServiceDelegate {
     @objc public func manuallySelectRegion() {
         let regionPickerController = RegionPickerViewController(application: self)
@@ -194,7 +199,18 @@ extension Application: RegionsServiceDelegate {
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         refreshRESTAPIModelService()
     }
+
+    /// Recreates the `restAPIModelService` from the current region. This is
+    /// called when the app launches and when the current region changes.
+    private func refreshRESTAPIModelService() {
+        guard let region = regionsService.currentRegion else { return }
+
+        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
+        restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
+    }
 }
+
+// MARK: - LocationServiceDelegate
 
 extension Application: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
