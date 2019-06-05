@@ -79,6 +79,10 @@
 - (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
     NSInteger index = tabBarController.selectedIndex;
 
+    if (index == OBASelectedTabMap) {
+        [self.rootController.mapController centerMapOnUserLocation];
+    }
+
     self.app.userDataStore.lastSelectedView = (OBASelectedTab)index;
 }
 

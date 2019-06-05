@@ -25,8 +25,8 @@ public class ClassicApplicationRootController: UITabBarController {
         self.viewControllers = [mapNav, recentStopsNav]
     }
 
-    private let mapController: MapViewController
-    private let recentStopsController: RecentStopsViewController
+    @objc public let mapController: MapViewController
+    @objc public let recentStopsController: RecentStopsViewController
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")

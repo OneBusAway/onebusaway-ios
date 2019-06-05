@@ -11,7 +11,11 @@ import MapKit
 import FloatingPanel
 import CocoaLumberjackSwift
 
-class MapViewController: UIViewController {
+/// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
+///
+/// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
+@objc(OBAMapViewController)
+public class MapViewController: UIViewController {
 
     // MARK: - Floating Panel and Hoverbar
     var floatingToolbar: HoverBar = {
@@ -51,7 +55,7 @@ class MapViewController: UIViewController {
 
     // MARK: - UIViewController
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
 
         let mapView = mapRegionManager.mapView
@@ -68,7 +72,7 @@ class MapViewController: UIViewController {
         ])
     }
 
-    override func viewWillAppear(_ animated: Bool) {
+    public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
         if let currentRegion = application.regionsService.currentRegion {
@@ -84,16 +88,22 @@ class MapViewController: UIViewController {
         }
     }
 
-    override func viewDidAppear(_ animated: Bool) {
+    public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
         // Start showing the status overlay on the map once this controller has appeared.
         mapRegionManager.addStatusOverlayToMap()
     }
-}
 
-// MARK: - Actions
-extension MapViewController {
+    // MARK: - Public Methods
+
+    @objc
+    public func centerMapOnUserLocation() {
+        guard isViewLoaded, view.window != nil else { return }
+
+        let userLocation = mapRegionManager.mapView.userLocation.coordinate
+        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation, zoomLevel: 17, animated: true)
+    }
 
     // MARK: - Content Presentation
 
@@ -151,7 +161,7 @@ extension MapViewController {
 // MARK: - MapRegionDelegate
 
 extension MapViewController: MapRegionDelegate {
-    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard
             !application.theme.behaviors.mapShowsCallouts,
             let stop = view.annotation as? Stop else {
@@ -161,7 +171,7 @@ extension MapViewController: MapRegionDelegate {
         show(stop: stop)
     }
 
-    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stop = view.annotation as? Stop else {
             return
         }
@@ -180,23 +190,27 @@ extension MapViewController: MapRegionDelegate {
     }
 }
 
+// MARK: - SearchResultsDelegate
+
 extension MapViewController: SearchResultsDelegate {
-    func searchResults(controller: SearchResultsController?, showRoute route: Route) {
+    public func searchResults(controller: SearchResultsController?, showRoute route: Route) {
         // render polyline and what else?
     }
 
-    func searchResults(controller: SearchResultsController?, showMapItem mapItem: MKMapItem) {
+    public func searchResults(controller: SearchResultsController?, showMapItem mapItem: MKMapItem) {
         // scroll/zoom to pin, show card.
     }
 
-    func searchResults(controller: SearchResultsController?, showStop stop: Stop) {
+    public func searchResults(controller: SearchResultsController?, showStop stop: Stop) {
         show(stop: stop)
     }
 
-    func searchResults(controller: SearchResultsController?, showVehicleStatus vehicleStatus: VehicleStatus) {
+    public func searchResults(controller: SearchResultsController?, showVehicleStatus vehicleStatus: VehicleStatus) {
         // ???
     }
 }
+
+// MARK: - LocationServiceDelegate
 
 extension MapViewController: LocationServiceDelegate {
     private static let programmaticRadiusInMeters = 200.0
@@ -211,7 +225,7 @@ extension MapViewController: LocationServiceDelegate {
         mapRegionManager.mapView.setRegion(region, animated: false)
     }
 
-    func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+    public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 }
