@@ -21,14 +21,18 @@ public class StopViewController: UIViewController {
     lazy var stackView: AloeStackView = {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.addSubview(refreshControl)
         return stack
     }()
+
+    private let refreshControl = UIRefreshControl()
 
     let application: Application
     let stopID: String
 
     let minutesBefore: UInt = 5
     var minutesAfter: UInt = 35
+    private var lastUpdated: Date?
 
     // MARK: - Top Content
 
@@ -54,7 +58,6 @@ public class StopViewController: UIViewController {
             guard let stop = stop else { return }
 
             application.userDataStore.addRecentStop(stop)
-            title = stop.name
             stopHeader.stop = stop
         }
     }
@@ -126,7 +129,7 @@ public class StopViewController: UIViewController {
         let filterButton = UIBarButtonItem(title: Strings.filter, style: .plain, target: self, action: #selector(filter))
         filterButton.image = Icons.filter
 
-        return [filterButton, bookmarkButton, refreshButton]
+        return [filterButton, UIBarButtonItem.flexibleSpace, bookmarkButton, UIBarButtonItem.flexibleSpace, refreshButton]
     }
 
     private func configureCurrentThemeBehaviors() {
@@ -155,6 +158,8 @@ public class StopViewController: UIViewController {
             stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
         }
 
+        refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)
     }
@@ -169,12 +174,16 @@ public class StopViewController: UIViewController {
         }
 
         updateData()
+
+        navigationController?.setToolbarHidden(false, animated: true)
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         application.isIdleTimerDisabled = false
+
+        navigationController?.setToolbarHidden(true, animated: true)
     }
 
     // MARK: - NSUserActivity
@@ -188,23 +197,33 @@ public class StopViewController: UIViewController {
 
     // MARK: - Data Loading
 
+    /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {
         operation?.cancel()
 
-        guard let modelService = application.restAPIModelService else {
-            return
-        }
+        guard let modelService = application.restAPIModelService else { return }
+
+        title = Strings.updating
 
         let op = modelService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         op.then { [weak self] in
-            guard let self = self else {
-                return
-            }
+            guard let self = self else { return }
 
+            self.lastUpdated = Date()
             self.stopArrivals = op.stopArrivals
+            self.refreshControl.endRefreshing()
+            self.updateTitle()
         }
 
         self.operation = op
+    }
+
+    /// Refreshes the view controller's title with the last time its data was reloaded.
+    private func updateTitle() {
+        if let lastUpdated = lastUpdated {
+            let time = application.formatters.timeFormatter.string(from: lastUpdated)
+            title = String(format: Strings.updatedAtFormat, time)
+        }
     }
 
     /// Call this method when data is about to reloaded in this controller
