@@ -59,11 +59,12 @@ public class StopArrivalView: UIView {
 
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
-            minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
-
             let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
             let explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
             timeExplanationLabel.text = "\(arrDepTime) - \(explanationText)"
+
+            minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
+            minutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
         }
     }
 

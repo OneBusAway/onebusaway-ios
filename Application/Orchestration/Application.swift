@@ -45,8 +45,8 @@ public class Application: NSObject {
 
     @objc public let userDataStore: UserDataStore
 
-    /// Commonly used formatters configured with the user's current, auto-updating locale.
-    @objc public let formatters = Formatters(locale: Locale.autoupdatingCurrent)
+    /// Commonly used formatters configured with the user's current, auto-updating locale and the app's theme colors.
+    @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, themeColors: theme.colors)
 
     /// Provides access to the user's location and heading.
     @objc public let locationService: LocationService

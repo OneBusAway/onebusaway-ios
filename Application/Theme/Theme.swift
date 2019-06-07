@@ -60,7 +60,20 @@ public class ThemeColors: NSObject {
     /// A dark gray text color, used on maps.
     public let mapText: UIColor
 
+    /// Tint color for map annotation views representing stops.
     public let stopAnnotationIcon: UIColor
+
+    /// The color used to represent early departures.
+    public let departureEarly: UIColor
+
+    /// The color used to represent late departures.
+    public let departureLate: UIColor
+
+    /// The color used to represent on-time departures.
+    public let departureOnTime: UIColor
+
+    /// The color used to represent departures with an unknown status. (i.e. We don't know if they are early/late/on-time.)
+    public let departureUnknown: UIColor
 
     init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
@@ -70,6 +83,10 @@ public class ThemeColors: NSObject {
         subduedText = UIColor(named: "subduedText", in: bundle, compatibleWith: traitCollection)!
         mapText = UIColor(named: "mapTextColor", in: bundle, compatibleWith: traitCollection)!
         stopAnnotationIcon = UIColor(named: "stopAnnotationIconColor", in: bundle, compatibleWith: traitCollection)!
+        departureEarly = UIColor(named: "departureEarly", in: bundle, compatibleWith: traitCollection)!
+        departureLate = UIColor(named: "departureLate", in: bundle, compatibleWith: traitCollection)!
+        departureOnTime = UIColor(named: "departureOnTime", in: bundle, compatibleWith: traitCollection)!
+        departureUnknown = UIColor(named: "departureUnknown", in: bundle, compatibleWith: traitCollection)!
     }
 }
 

@@ -12,14 +12,16 @@ import Foundation
 public class Formatters: NSObject {
 
     private let locale: Locale
+    private let themeColors: ThemeColors
 
     /// Creates a new `Formatters` object that will use the provided `Locale` for locale-specific customization.
     ///
     /// - Note: You can (and probably should) pass in `Locale.autoupdatingCurrent` to this method.
     ///
     /// - Parameter locale: The current locale of the user's device.
-    @objc public init(locale: Locale) {
+    @objc public init(locale: Locale, themeColors: ThemeColors) {
         self.locale = locale
+        self.themeColors = themeColors
     }
 
     // MARK: - Formatted Times
@@ -164,6 +166,18 @@ public class Formatters: NSObject {
         default:
             let formatString = NSLocalizedString("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
             return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
+        }
+    }
+
+    /// Retrieves the appropriate color for the passed-in `ScheduleStatus` value.
+    /// - Parameter status: The schedule status to map to a color.
+    /// - Returns: The color the passed-in status.
+    public func colorForScheduleStatus(_ status: ScheduleStatus) -> UIColor {
+        switch status {
+        case .onTime: return themeColors.departureOnTime
+        case .early: return themeColors.departureEarly
+        case .delayed: return themeColors.departureLate
+        default: return themeColors.departureUnknown
         }
     }
 
