@@ -31,7 +31,9 @@ public class StopViewController: UIViewController {
     let stopID: String
 
     let minutesBefore: UInt = 5
-    var minutesAfter: UInt = 35
+    static let defaultMinutesAfter: UInt = 35
+    var minutesAfter: UInt = StopViewController.defaultMinutesAfter
+
     private var lastUpdated: Date?
 
     // MARK: - Top Content
@@ -45,6 +47,15 @@ public class StopViewController: UIViewController {
         loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
         loadMoreButton.addTarget(self, action: #selector(loadMore), for: .touchUpInside)
         return loadMoreButton
+    }()
+
+    lazy var timeframeLabel: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.textAlignment = .center
+        label.font = application.theme.fonts.footnote
+        label.textColor = application.theme.colors.subduedText
+
+        return label
     }()
 
     // MARK: - Data
@@ -246,6 +257,15 @@ public class StopViewController: UIViewController {
         }
 
         stackView.addRow(loadMoreButton, hideSeparator: true)
+
+        if minutesAfter != StopViewController.defaultMinutesAfter {
+            // We are showing a wider range of time, which means we should show a label
+            // that depicts the timeframe that is being viewed.
+            let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
+            let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
+            timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
+            stackView.addRow(timeframeLabel, hideSeparator: true)
+        }
     }
 
     private func addStopArrivalView(for arrivalDeparture: ArrivalDeparture?, hideSeparator: Bool) {

@@ -34,6 +34,14 @@ public class Formatters: NSObject {
         return timeFormatter
     }()
 
+    public func formattedDateRange(from: Date, to: Date) -> String {
+        let fromString = timeFormatter.string(from: from)
+        let toString = timeFormatter.string(from: to)
+        let format = NSLocalizedString("formatters.date_range_fmt", value: "%@ — %@", comment: "Represents a timeframe. e.g. 9:00 AM — 11:00 AM.")
+
+        return String(format: format, fromString, toString)
+    }
+
     // MARK: - ArrivalDeparture
 
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
