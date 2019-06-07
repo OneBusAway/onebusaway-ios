@@ -36,12 +36,33 @@ public class StopViewController: UIViewController {
 
     private var lastUpdated: Date?
 
+    /// The number of seconds since this view controller was last updated.
+    private var timeIntervalSinceLastUpdate: TimeInterval {
+        if let lastUpdated = lastUpdated {
+            return abs(lastUpdated.timeIntervalSinceNow)
+        }
+        else {
+            return Double.greatestFiniteMagnitude
+        }
+    }
+
+    /// Automatically reloads data every 'n' seconds.
+    ///
+    /// - Note: Calls  `timerFired()`  when its interval has elapsed.
+    private var reloadTimer: Timer!
+
+    /// The amount of time that must elapse before `timerFired()` will update data.
+    private static let defaultTimerReloadInterval: TimeInterval = 30.0
+
     // MARK: - Top Content
 
     lazy var stopHeader = StopHeaderViewController(application: application)
 
     // MARK: - Bottom Content
 
+    /// A button that the user can tap on to load more `ArrivalDeparture` objects.
+    ///
+    /// - Note: See `loadMore()` for more details.
     lazy var loadMoreButton: UIButton = {
         let loadMoreButton = UIButton(type: .system)
         loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
@@ -49,6 +70,7 @@ public class StopViewController: UIViewController {
         return loadMoreButton
     }()
 
+    /// A label that is displayed below the `loadMoreButton` when the time window visualized by this view controller is greater than the default.
     lazy var timeframeLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
@@ -120,16 +142,20 @@ public class StopViewController: UIViewController {
         toolbarItems = buildToolbarItems()
 
         configureCurrentThemeBehaviors()
+
+        Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     deinit {
+        reloadTimer.invalidate()
         operation?.cancel()
     }
 
     // MARK: - Private Init Helpers
 
+    /// Creates an array of toolbar items used to populate the toolbar on this view controller.
     private func buildToolbarItems() -> [UIBarButtonItem] {
         let refreshButton = UIBarButtonItem(title: Strings.refresh, style: .plain, target: self, action: #selector(refresh))
         refreshButton.image = Icons.refresh
@@ -143,6 +169,7 @@ public class StopViewController: UIViewController {
         return [filterButton, UIBarButtonItem.flexibleSpace, bookmarkButton, UIBarButtonItem.flexibleSpace, refreshButton]
     }
 
+    /// Configures the UI of this view controller based on whether we're using floating panel navigation or regular navigation.
     private func configureCurrentThemeBehaviors() {
         if application.theme.behaviors.useFloatingPanelNavigation {
             stackView.showsVerticalScrollIndicator = false
@@ -199,6 +226,7 @@ public class StopViewController: UIViewController {
 
     // MARK: - NSUserActivity
 
+    /// Creates and assigns an `NSUserActivity` object corresponding to this stop.
     private func beginUserActivity() {
         guard let stop = stop,
               let region = application.regionsService.currentRegion else { return }
@@ -227,6 +255,15 @@ public class StopViewController: UIViewController {
         }
 
         self.operation = op
+    }
+
+    /// Callback used to reload the view controller every 'n' seconds.
+    ///
+    /// - Note: Driven by the private `reloadTimer` variable in this class.
+    @objc private func timerFired() {
+        if timeIntervalSinceLastUpdate > StopViewController.defaultTimerReloadInterval {
+            updateData()
+        }
     }
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
@@ -268,6 +305,9 @@ public class StopViewController: UIViewController {
         }
     }
 
+    /// Adds a `StopArrivalView` to the `stackView` that corresponds to `arrivalDeparture`.
+    /// - Parameter arrivalDeparture: The model object that generates a `StopArrivalView` row.
+    /// - Parameter hideSeparator: Whether or not the bottom separator view should be hidden.
     private func addStopArrivalView(for arrivalDeparture: ArrivalDeparture?, hideSeparator: Bool) {
         guard let arrivalDeparture = arrivalDeparture else { return }
 
@@ -279,18 +319,23 @@ public class StopViewController: UIViewController {
 
 // MARK: - Actions
 extension StopViewController {
+
+    /// Reloads data.
     @objc private func refresh() {
         updateData()
     }
 
+    /// Initiates the 'Add Bookmark' workflow.
     @objc private func addBookmark() {
 
     }
 
+    /// Initiates the Route Filter workflow.
     @objc private func filter() {
 
     }
 
+    /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
     @objc private func loadMore() {
         self.minutesAfter += 30
         updateData()
