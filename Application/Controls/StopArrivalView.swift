@@ -30,11 +30,14 @@ public class StopArrivalView: UIView {
     /// Appears on the trailing side of the view; contains the number of minutes until arrival/departure.
     ///
     /// For example, this might contain the text `10m`.
-    let minutesLabel: UILabel = {
-        let label = buildLabel()
+    let minutesLabel: HighlightChangeLabel = {
+        let label = HighlightChangeLabel.autolayoutNew()
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentHuggingPriority(.required, for: .vertical)
+
         return label
     }()
 

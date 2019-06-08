@@ -54,16 +54,20 @@ public class StopViewController: UIViewController {
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
-    // MARK: - Top Content
+    // MARK: - Subviews
 
-    lazy var stopHeader = StopHeaderViewController(application: application)
+    /// The header displayed at the top of the controller
+    ///
+    /// - Note: Not used with floating panel navigation.
+    private lazy var stopHeader = StopHeaderViewController(application: application)
 
-    // MARK: - Bottom Content
+    /// Provides storage for actively-used `StopArrivalView`s.
+    private var stopArrivalViews = [TripIdentifier: StopArrivalView]()
 
     /// A button that the user can tap on to load more `ArrivalDeparture` objects.
     ///
     /// - Note: See `loadMore()` for more details.
-    lazy var loadMoreButton: UIButton = {
+    private lazy var loadMoreButton: UIButton = {
         let loadMoreButton = UIButton(type: .system)
         loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
         loadMoreButton.addTarget(self, action: #selector(loadMore), for: .touchUpInside)
@@ -71,7 +75,7 @@ public class StopViewController: UIViewController {
     }()
 
     /// A label that is displayed below the `loadMoreButton` when the time window visualized by this view controller is greater than the default.
-    lazy var timeframeLabel: UILabel = {
+    private lazy var timeframeLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
         label.font = application.theme.fonts.footnote
@@ -311,9 +315,18 @@ public class StopViewController: UIViewController {
     private func addStopArrivalView(for arrivalDeparture: ArrivalDeparture?, hideSeparator: Bool) {
         guard let arrivalDeparture = arrivalDeparture else { return }
 
-        let a = StopArrivalView.autolayoutNew()
-        stackView.addRow(a, hideSeparator: hideSeparator)
-        a.arrivalDeparture = arrivalDeparture
+        let arrivalView: StopArrivalView!
+
+        if let a = stopArrivalViews[arrivalDeparture.tripID] {
+            arrivalView = a
+        }
+        else {
+            arrivalView = StopArrivalView.autolayoutNew()
+            stopArrivalViews[arrivalDeparture.tripID] = arrivalView
+        }
+
+        stackView.addRow(arrivalView, hideSeparator: hideSeparator)
+        arrivalView.arrivalDeparture = arrivalDeparture
     }
 }
 

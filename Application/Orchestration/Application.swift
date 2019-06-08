@@ -166,6 +166,8 @@ public class Application: NSObject {
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
+        HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
+
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 
         UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)

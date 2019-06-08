@@ -8,6 +8,8 @@
 
 import Foundation
 
+public typealias TripIdentifier = String
+
 public class ArrivalDeparture: NSObject, Decodable {
 
     /// true if this transit vehicle is one that riders could arrive on
@@ -86,7 +88,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     let _tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
-    let tripID: String
+    let tripID: TripIdentifier
 
     /// The Trip for the arriving vehicle
     public let trip: Trip
@@ -163,7 +165,7 @@ public class ArrivalDeparture: NSObject, Decodable {
         totalStopsInTrip = try? container.decode(Int.self, forKey: .totalStopsInTrip)
         _tripHeadsign = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .tripHeadsign))
 
-        tripID = try container.decode(String.self, forKey: .tripID)
+        tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
         trip = references.tripWithID(tripID)!
 
         tripStatus = try? container.decode(TripStatus.self, forKey: .tripStatus)

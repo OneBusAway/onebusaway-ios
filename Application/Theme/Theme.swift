@@ -75,6 +75,9 @@ public class ThemeColors: NSObject {
     /// The color used to represent departures with an unknown status. (i.e. We don't know if they are early/late/on-time.)
     public let departureUnknown: UIColor
 
+    /// The color used to highlight changing properties in the UI.
+    public let propertyChanged: UIColor
+
     init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         dark = UIColor(named: "dark", in: bundle, compatibleWith: traitCollection)!
@@ -87,6 +90,7 @@ public class ThemeColors: NSObject {
         departureLate = UIColor(named: "departureLate", in: bundle, compatibleWith: traitCollection)!
         departureOnTime = UIColor(named: "departureOnTime", in: bundle, compatibleWith: traitCollection)!
         departureUnknown = UIColor(named: "departureUnknown", in: bundle, compatibleWith: traitCollection)!
+        propertyChanged = UIColor(named: "propertyChanged", in: bundle, compatibleWith: traitCollection)!
     }
 }
 
