@@ -160,8 +160,12 @@ public class Application: NSObject {
         StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
-        StopAnnotationView.appearance().theme = theme
-        StopArrivalView.appearance().formatters = formatters
+        StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
+        StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
+        StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
+        StopAnnotationView.appearance().mapTextColor = theme.colors.mapText
+        StopAnnotationView.appearance().mapTextFont = theme.fonts.mapAnnotation
+        StopAnnotationView.appearance().fillColor = theme.colors.primary
 
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText

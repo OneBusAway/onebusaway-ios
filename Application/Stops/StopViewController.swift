@@ -322,6 +322,7 @@ public class StopViewController: UIViewController {
         }
         else {
             arrivalView = StopArrivalView.autolayoutNew()
+            arrivalView.formatters = application.formatters
             stopArrivalViews[arrivalDeparture.tripID] = arrivalView
         }
 

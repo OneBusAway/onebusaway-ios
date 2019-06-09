@@ -9,29 +9,14 @@
 import UIKit
 import MapKit
 
-extension Stop: MKAnnotation {
-    public var coordinate: CLLocationCoordinate2D {
-        return location.coordinate
-    }
-
-    public var title: String? {
-        return Formatters.formattedTitle(stop: self)
-    }
-
-    public var subtitle: String? {
-        return Formatters.formattedRoutes(routes)
-    }
-
-    public var mapTitle: String? {
-        return routes.map { $0.shortName }.localizedCaseInsensitiveSort().prefix(3).joined(separator: ", ")
-    }
-
-    public var mapSubtitle: String? {
-        return Formatters.adjectiveFormOfCardinalDirection(direction)
-    }
-}
-
 public class StopAnnotationView: MKAnnotationView {
+
+    // MARK: - View Config Constants
+
+    private let wrapperSize: CGFloat = 30.0
+    private let imageSize: CGFloat = 20.0
+
+    // MARK: - Subviews
 
     private let titleLabel = StopAnnotationView.buildLabel()
     private let subtitleLabel = StopAnnotationView.buildLabel()
@@ -70,25 +55,14 @@ public class StopAnnotationView: MKAnnotationView {
 
     private lazy var directionalArrowView = TriangleShadowView(frame: .zero)
 
-    private var _theme: Theme!
-    @objc dynamic var theme: Theme {
-        get { return _theme }
-        set {
-            if _theme != newValue {
-                _theme = newValue
-                configureUI()
-            }
-        }
-    }
+    // MARK: - Init
 
-    private let wrapperSize: CGFloat = 30.0
-    private let imageSize: CGFloat = 20.0
+    public override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
 
-    private func configureUI() {
-        bounds = CGRect(x: 0, y: 0, width: ThemeMetrics.defaultMapAnnotationSize, height: ThemeMetrics.defaultMapAnnotationSize)
-        frame = frame.integral
-
-        directionalArrowView.frame = bounds
+        addSubview(transportWrapper)
+        addSubview(directionalArrowView)
+        addSubview(labelStack)
 
         transportWrapper.cornerRadius = 8.0
 
@@ -105,7 +79,7 @@ public class StopAnnotationView: MKAnnotationView {
             labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 2.0),
             labelStack.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor),
             labelStack.centerXAnchor.constraint(equalTo: self.centerXAnchor)
-        ])
+            ])
 
         if kUseDebugColors {
             backgroundColor = .red
@@ -116,16 +90,6 @@ public class StopAnnotationView: MKAnnotationView {
             subtitleLabel.backgroundColor = .orange
         }
 
-        canShowCallout = theme.behaviors.mapShowsCallouts
-    }
-
-    public override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-
-        addSubview(transportWrapper)
-        addSubview(directionalArrowView)
-        addSubview(labelStack)
-
         let rightCalloutButton = UIButton(type: .detailDisclosure)
         rightCalloutButton.setImage(Icons.chevron, for: .normal)
         rightCalloutAccessoryView = rightCalloutButton
@@ -133,8 +97,11 @@ public class StopAnnotationView: MKAnnotationView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    // MARK: - Annotation View Overrides
+
     public override func prepareForReuse() {
         super.prepareForReuse()
+
         titleLabel.text = nil
         subtitleLabel.text = nil
     }
@@ -142,24 +109,21 @@ public class StopAnnotationView: MKAnnotationView {
     public override func prepareForDisplay() {
         super.prepareForDisplay()
 
-        if let stop = annotation as? Stop {
-            transportImageView.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
-            titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
-            subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
+        guard let stop = annotation as? Stop else { return }
 
-            let fillColor = (annotation as? Stop)?.routes.first?.color ?? theme.colors.primary
-            transportWrapper.fillColor = fillColor
-            directionalArrowView.fillColor = fillColor
+        transportImageView.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
+        titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
+        subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
 
-            transportWrapper.tintColor = theme.colors.stopAnnotationIcon
-        }
+        transportWrapper.fillColor = fillColor
+        directionalArrowView.fillColor = fillColor
+
+        transportWrapper.tintColor = tintColor
     }
 
     override public var annotation: MKAnnotation? {
         didSet {
-            guard let annotation = annotation as? Stop else {
-                return
-            }
+            guard let annotation = annotation as? Stop else { return }
 
             if let direction = annotation.direction {
                 let angle = rotationAngle(from: direction)
@@ -172,6 +136,8 @@ public class StopAnnotationView: MKAnnotationView {
         }
     }
 
+    // MARK: - Private Helpers
+
     private func buildAttributedLabelText(text: String?) -> NSAttributedString? {
         guard let text = text else {
             return nil
@@ -179,9 +145,9 @@ public class StopAnnotationView: MKAnnotationView {
 
         let strokeTextAttributes: [NSAttributedString.Key: Any] = [
             .strokeColor: UIColor.white,
-            .foregroundColor: theme.colors.mapText,
+            .foregroundColor: mapTextColor,
             .strokeWidth: -2.0,
-            .font: theme.fonts.mapAnnotation
+            .font: mapTextFont
         ]
 
         return NSAttributedString(string: text, attributes: strokeTextAttributes)
@@ -200,4 +166,43 @@ public class StopAnnotationView: MKAnnotationView {
         default:   return 0
         }
     }
+
+    // MARK: - UIAppearance Proxies
+
+    /// Fill color for this annotation view and its directional arrow.
+    @objc dynamic var fillColor: UIColor {
+        get { return _fillColor }
+        set { _fillColor = newValue }
+    }
+    private var _fillColor: UIColor!
+
+    /// UIAppearance proxy-compatible version of `canShowCallout`.
+    @objc dynamic var showsCallout: Bool {
+        get { return canShowCallout }
+        set { canShowCallout = newValue }
+    }
+
+    /// Sets the size of the receiver, which in turn configures its bounds and the frame of its contents.
+    @objc dynamic var annotationSize: CGFloat {
+        get { return bounds.size.width }
+        set {
+            bounds = CGRect(x: 0, y: 0, width: newValue, height: newValue)
+            frame = frame.integral
+            directionalArrowView.frame = bounds
+        }
+    }
+
+    /// Foreground color for text written directly onto the map as part of this annotation view.
+    @objc dynamic var mapTextColor: UIColor {
+        get { return _mapTextColor }
+        set { _mapTextColor = newValue }
+    }
+    private var _mapTextColor: UIColor!
+
+    /// Font for text written directly onto the map as part of this annotation view.
+    @objc dynamic var mapTextFont: UIFont {
+        get { return _mapTextFont }
+        set { _mapTextFont = newValue }
+    }
+    private var _mapTextFont: UIFont!
 }

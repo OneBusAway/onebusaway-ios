@@ -49,11 +49,7 @@ public class StopArrivalView: UIView {
         return view
     }()
 
-    private var _formatters: Formatters!
-    @objc dynamic var formatters: Formatters {
-        get { return _formatters }
-        set { _formatters = newValue }
-    }
+    public var formatters: Formatters!
 
     @objc public var arrivalDeparture: ArrivalDeparture! {
         didSet {
