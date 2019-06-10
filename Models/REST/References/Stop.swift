@@ -20,6 +20,10 @@ public enum WheelchairBoarding: String, Decodable {
     }
 }
 
+public enum Direction: Int {
+    case n, ne, e, se, s, sw, w, nw, unknown
+}
+
 @objc(OBAStopLocationType)
 public enum StopLocationType: Int, Decodable {
     /// Stop. A location where passengers board or disembark from a transit vehicle.
@@ -50,8 +54,26 @@ public class Stop: NSObject, Codable, HasReferences {
     /// for stops without a code presented to passengers.
     public let code: String
 
+    private let _direction: String?
+
     /// A cardinal direction: N, E, S, W.
-    public let direction: String?
+    public var direction: Direction {
+        guard let _direction = _direction else {
+            return .unknown
+        }
+
+        switch _direction.lowercased() {
+        case "n": return .n
+        case "ne": return .ne
+        case "e": return .e
+        case "se": return .se
+        case "s": return .s
+        case "sw": return .sw
+        case "w": return .w
+        case "nw": return .nw
+        default: return .unknown
+        }
+    }
 
     /// The stop_id field contains an ID that uniquely identifies a stop, station, or station entrance.
     ///
@@ -114,7 +136,7 @@ public class Stop: NSObject, Codable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         code = try container.decode(String.self, forKey: .code)
-        direction = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .direction))
+        _direction = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .direction))
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
 
@@ -144,7 +166,7 @@ public class Stop: NSObject, Codable, HasReferences {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(code, forKey: .code)
-        try container.encodeIfPresent(direction, forKey: .direction)
+        try container.encodeIfPresent(_direction, forKey: .direction)
         try container.encode(id, forKey: .id)
         try container.encode(location.coordinate.latitude, forKey: .lat)
         try container.encode(location.coordinate.longitude, forKey: .lon)

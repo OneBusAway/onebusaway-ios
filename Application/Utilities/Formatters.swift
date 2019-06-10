@@ -188,11 +188,25 @@ public class Formatters: NSObject {
     /// - Parameter stop: The `Stop` from which to generate a title.
     /// - Returns: A formatted title, including the stop's name and direction.
     public class func formattedTitle(stop: Stop) -> String {
-        if let direction = stop.direction {
-            return "\(stop.name) \(direction)"
+        if let abbreviation = directionAbbreviation(stop.direction) {
+            return "\(stop.name) (\(abbreviation))"
         }
         else {
             return stop.name
+        }
+    }
+
+    public class func directionAbbreviation(_ direction: Direction) -> String? {
+        switch direction {
+        case .n: return NSLocalizedString("formatters.cardinal_direction_abbrev.north", value: "N", comment: "Abbreviation for North")
+        case .ne: return NSLocalizedString("formatters.cardinal_direction_abbrev.northeast", value: "NE", comment: "Abbreviation for Northeast")
+        case .e: return NSLocalizedString("formatters.cardinal_direction_abbrev.east", value: "E", comment: "Abbreviation for East")
+        case .se: return NSLocalizedString("formatters.cardinal_direction_abbrev.southeast", value: "SE", comment: "Abbreviation for Southeast")
+        case .s: return NSLocalizedString("formatters.cardinal_direction_abbrev.south", value: "S", comment: "Abbreviation for South")
+        case .sw: return NSLocalizedString("formatters.cardinal_direction_abbrev.southwest", value: "SW", comment: "Abbreviation for Southwest")
+        case .w: return NSLocalizedString("formatters.cardinal_direction_abbrev.west", value: "W", comment: "Abbreviation for West")
+        case .nw: return NSLocalizedString("formatters.cardinal_direction_abbrev.northwest", value: "NW", comment: "Abbreviation for Northwest")
+        case .unknown: return nil
         }
     }
 
@@ -245,19 +259,17 @@ public class Formatters: NSObject {
     ///
     /// - Parameter direction: The cardinal direction
     /// - Returns: An adjective form of that direction
-    public class func adjectiveFormOfCardinalDirection(_ direction: String?) -> String? {
-        guard let direction = direction else {
-            return nil
-        }
-
-        switch direction.lowercased() {
-        case "n": return NSLocalizedString("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
-        case "e": return NSLocalizedString("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
-        case "s": return NSLocalizedString("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
-        case "w": return NSLocalizedString("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
-        default:
-            let fmt = NSLocalizedString("formatters.cardinal_adjective.fallback_fmt", value: "%@ bound", comment: "Format string for a generic directional indicator. e.g. NW bound.")
-            return String(format: fmt, direction)
+    public class func adjectiveFormOfCardinalDirection(_ direction: Direction) -> String? {
+        switch direction {
+        case .n: return NSLocalizedString("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
+        case .ne: return NSLocalizedString("formatters.cardinal_adjective.northeast", value: "Northeast bound", comment: "Headed in a northeastern direction")
+        case .e: return NSLocalizedString("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
+        case .se: return NSLocalizedString("formatters.cardinal_adjective.southeast", value: "Southeast bound", comment: "Headed in an southeastern direction")
+        case .s: return NSLocalizedString("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
+        case .sw: return NSLocalizedString("formatters.cardinal_adjective.southwest", value: "Southwest bound", comment: "Headed in a southwestern direction")
+        case .w: return NSLocalizedString("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
+        case .nw: return NSLocalizedString("formatters.cardinal_adjective.northwest", value: "Northwest bound", comment: "Headed in a northwestern direction")
+        case .unknown: return nil
         }
     }
 }

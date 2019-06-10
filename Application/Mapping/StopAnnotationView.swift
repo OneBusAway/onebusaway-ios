@@ -13,6 +13,7 @@ public class StopAnnotationView: MKAnnotationView {
 
     // MARK: - View Config Constants
 
+    private let kUseDebugColors = false
     private let wrapperSize: CGFloat = 30.0
     private let imageSize: CGFloat = 20.0
 
@@ -33,59 +34,25 @@ public class StopAnnotationView: MKAnnotationView {
     }
 
     private lazy var labelStack: UIStackView = {
-        let stack = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
-        return stack
+        return UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
     }()
-
-    private let kUseDebugColors = false
-
-    private lazy var transportWrapper: RoundedShadowView = {
-        let wrapper = RoundedShadowView.autolayoutNew()
-        wrapper.addSubview(transportImageView)
-        return wrapper
-    }()
-
-    private let transportImageView: UIImageView = {
-        let img = UIImageView.autolayoutNew()
-        img.contentMode = .scaleAspectFit
-        img.clipsToBounds = true
-
-        return img
-    }()
-
-    private lazy var directionalArrowView = TriangleShadowView(frame: .zero)
 
     // MARK: - Init
 
     public override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
 
-        addSubview(transportWrapper)
-        addSubview(directionalArrowView)
         addSubview(labelStack)
 
-        transportWrapper.cornerRadius = 8.0
-
         NSLayoutConstraint.activate([
-            transportWrapper.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            transportWrapper.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            transportWrapper.heightAnchor.constraint(equalToConstant: wrapperSize),
-            transportWrapper.widthAnchor.constraint(equalToConstant: wrapperSize),
-            transportImageView.widthAnchor.constraint(equalToConstant: imageSize),
-            transportImageView.heightAnchor.constraint(equalToConstant: imageSize),
-            transportImageView.centerXAnchor.constraint(equalTo: transportWrapper.centerXAnchor),
-            transportImageView.centerYAnchor.constraint(equalTo: transportWrapper.centerYAnchor),
             labelStack.topAnchor.constraint(equalTo: self.bottomAnchor),
             labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 2.0),
             labelStack.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor),
             labelStack.centerXAnchor.constraint(equalTo: self.centerXAnchor)
-            ])
+        ])
 
         if kUseDebugColors {
             backgroundColor = .red
-            transportWrapper.backgroundColor = .green
-            transportImageView.backgroundColor = .magenta
-            directionalArrowView.backgroundColor = .blue
             titleLabel.backgroundColor = .yellow
             subtitleLabel.backgroundColor = .orange
         }
@@ -111,29 +78,11 @@ public class StopAnnotationView: MKAnnotationView {
 
         guard let stop = annotation as? Stop else { return }
 
-        transportImageView.image = Icons.transportIcon(from: stop.prioritizedRouteTypeForDisplay)
+        let iconFactory = StopIconFactory(iconSize: annotationSize)
+        image = iconFactory.buildIcon(for: stop, strokeColor: .black)
+
         titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
         subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
-
-        transportWrapper.fillColor = fillColor
-        directionalArrowView.fillColor = fillColor
-
-        transportWrapper.tintColor = tintColor
-    }
-
-    override public var annotation: MKAnnotation? {
-        didSet {
-            guard let annotation = annotation as? Stop else { return }
-
-            if let direction = annotation.direction {
-                let angle = rotationAngle(from: direction)
-                directionalArrowView.transform = CGAffineTransform(rotationAngle: angle)
-                directionalArrowView.isHidden = false
-            }
-            else {
-                directionalArrowView.isHidden = true
-            }
-        }
     }
 
     // MARK: - Private Helpers
@@ -151,20 +100,6 @@ public class StopAnnotationView: MKAnnotationView {
         ]
 
         return NSAttributedString(string: text, attributes: strokeTextAttributes)
-    }
-
-    private func rotationAngle(from direction: String) -> CGFloat {
-        switch direction {
-        case "NE": return .pi * 0.25
-        case "E":  return .pi * 0.5
-        case "SE": return .pi * 0.75
-        case "S":  return .pi
-        case "SW": return .pi * 1.25
-        case "W":  return .pi * 1.5
-        case "NW": return .pi * 1.75
-        case "N":  fallthrough // swiftlint:disable:this no_fallthrough_only
-        default:   return 0
-        }
     }
 
     // MARK: - UIAppearance Proxies
@@ -188,7 +123,6 @@ public class StopAnnotationView: MKAnnotationView {
         set {
             bounds = CGRect(x: 0, y: 0, width: newValue, height: newValue)
             frame = frame.integral
-            directionalArrowView.frame = bounds
         }
     }
 
