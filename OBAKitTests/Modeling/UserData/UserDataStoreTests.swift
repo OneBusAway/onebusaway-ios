@@ -54,6 +54,16 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount
     }
 
+    func test_recentStops_removeAll() {
+        let stops = try! loadSomeStops()
+        let stop = stops.first!
+        userDefaultsStore.addRecentStop(stop)
+
+        userDefaultsStore.deleteAllRecentStops()
+
+        expect(self.userDefaultsStore.recentStops.count) == 0
+    }
+
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {

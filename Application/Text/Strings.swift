@@ -12,7 +12,11 @@ public class Strings: NSObject {
 
     public static let bookmark = NSLocalizedString("common.bookmark", value: "Bookmark", comment: "The verb 'to bookmark'.")
 
+    public static let cancel = NSLocalizedString("common.cancel", value: "Cancel", comment: "The verb 'to cancel', i.e. to stop an action.")
+
     public static let close = NSLocalizedString("common.close", value: "Close", comment: "The verb 'to close'.")
+
+    public static let delete = NSLocalizedString("common.delete", value: "Delete", comment: "The verb 'to delete', as in to destroy something.")
 
     public static let filter = NSLocalizedString("common.filter", value: "Filter", comment: "The verb 'to filter'.")
 

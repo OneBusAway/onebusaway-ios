@@ -30,6 +30,9 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter stop: The stop to add to the list
     func addRecentStop(_ stop: Stop)
 
+    /// Deletes all recent stops.
+    func deleteAllRecentStops()
+
     /// The maximum number of recent stops that will be stored.
     var maximumRecentStopsCount: Int { get }
 
@@ -90,6 +93,10 @@ public class UserDefaultsStore: NSObject, UserDataStore {
         else {
             self.recentStops = recentStops
         }
+    }
+
+    public func deleteAllRecentStops() {
+        recentStops.removeAll()
     }
 
     public var maximumRecentStopsCount: Int {
