@@ -87,7 +87,13 @@ extension RecentStopsViewController: ListAdapterDataSource {
         return sectionController
     }
 
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        let emptyView = EmptyDataSetView(frame: view.bounds)
+        emptyView.titleLabel.text = NSLocalizedString("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
+        emptyView.bodyLabel.text = NSLocalizedString("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
+
+        return emptyView
+    }
 
     private func createSectionController(for object: Any) -> ListSectionController {
         return defaultSectionController(for: object)

@@ -131,7 +131,7 @@ public class StopAnnotationView: MKAnnotationView {
         get { return _mapTextColor }
         set { _mapTextColor = newValue }
     }
-    private var _mapTextColor: UIColor!
+    private var _mapTextColor: UIColor = .black
 
     /// Font for text written directly onto the map as part of this annotation view.
     @objc dynamic var mapTextFont: UIFont {

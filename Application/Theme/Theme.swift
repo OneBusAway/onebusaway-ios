@@ -103,6 +103,7 @@ public class ThemeFonts: NSObject {
 
     // MARK: - Fonts
 
+    public lazy var largeTitle = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title1)
     public lazy var title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title2)
     public lazy var body = ThemeFonts.font(textStyle: UIFont.TextStyle.body)
     public lazy var boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)

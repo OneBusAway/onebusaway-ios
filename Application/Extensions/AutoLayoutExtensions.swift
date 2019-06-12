@@ -52,7 +52,7 @@ extension UIView {
         let spacer = UIView.autolayoutNew()
         NSLayoutConstraint.activate([
             spacer.heightAnchor.constraint(equalToConstant: height)
-            ])
+        ])
         return spacer
     }
 

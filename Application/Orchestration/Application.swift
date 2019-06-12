@@ -167,6 +167,10 @@ public class Application: NSObject {
         StopAnnotationView.appearance().mapTextFont = theme.fonts.mapAnnotation
         StopAnnotationView.appearance().fillColor = theme.colors.primary
 
+        EmptyDataSetView.appearance().titleLabelFont = theme.fonts.largeTitle
+        EmptyDataSetView.appearance().bodyLabelFont = theme.fonts.body
+        EmptyDataSetView.appearance().textColor = theme.colors.subduedText
+
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
