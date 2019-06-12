@@ -93,14 +93,17 @@ final public class TableSectionController: ListSectionController, ListSupplement
     // MARK: - SwipeCollectionViewCellDelegate
 
     public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
-        guard orientation == .right else { return nil }
-
-        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
-            // handle action by updating model with deletion
+        guard
+            orientation == .right,
+            let row = data?.rows[indexPath.item],
+            let deleteHandler = row.deleted
+        else {
+            return nil
         }
 
-        // customize the action appearance
-        deleteAction.image = UIImage(named: "delete")
+        let deleteAction = SwipeAction(style: .destructive, title: Strings.delete) { _, _ in
+            deleteHandler(row)
+        }
 
         return [deleteAction]
     }

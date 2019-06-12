@@ -28,7 +28,7 @@ public class TableRowData: ListViewModel {
     ///   - style: The style (appearance/layout) of the row.
     ///   - accessoryType: The accessory type on the right side, if any.
     ///   - tapped: Tap event handler.
-    public init(title: String?, attributedTitle: NSAttributedString?, subtitle: String?, style: UITableViewCell.CellStyle, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
+    public init(title: String?, attributedTitle: NSAttributedString?, subtitle: String?, style: UITableViewCell.CellStyle, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.title = title
         self.attributedTitle = attributedTitle
         self.subtitle = subtitle
@@ -44,7 +44,7 @@ public class TableRowData: ListViewModel {
     ///   - attributedTitle: The attributed string title.
     ///   - accessoryType: The accessory type on the right side, if any.
     ///   - tapped: Tap event handler.
-    convenience init(attributedTitle: NSAttributedString, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
+    convenience init(attributedTitle: NSAttributedString, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.init(title: nil, attributedTitle: attributedTitle, subtitle: nil, style: .default, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -54,7 +54,7 @@ public class TableRowData: ListViewModel {
     ///   - title: The title for the row.
     ///   - accessoryType: The accessory type of the row.
     ///   - tapped: Tap event handler
-    convenience init(title: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
+    convenience init(title: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: nil, style: .default, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -65,7 +65,7 @@ public class TableRowData: ListViewModel {
     ///   - subtitle: The subtitle for the row.
     ///   - accessoryType: The accessory type.
     ///   - tapped: Tap event handler.
-    convenience init(title: String, subtitle: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
+    convenience init(title: String, subtitle: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: subtitle, style: .subtitle, accessoryType: accessoryType, tapped: tapped)
     }
 
@@ -76,7 +76,7 @@ public class TableRowData: ListViewModel {
     ///   - values: The value for the row.
     ///   - accessoryType: The accessory type.
     ///   - tapped: Tap event handler.
-    convenience init(title: String, value: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowTapHandler?) {
+    convenience init(title: String, value: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: value, style: .value1, accessoryType: accessoryType, tapped: tapped)
     }
 

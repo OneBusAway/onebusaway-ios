@@ -8,14 +8,15 @@
 import Foundation
 import IGListKit
 
-public typealias ListRowTapHandler = ((ListViewModel) -> Void)
+public typealias ListRowActionHandler = ((ListViewModel) -> Void)
 
 /// Base class for all OBAKit ListKit view models.
 public class ListViewModel: NSObject {
-    public let tapped: ListRowTapHandler?
+    public let tapped: ListRowActionHandler?
+    public var deleted: ListRowActionHandler?
     public var object: Any?
 
-    public init(tapped: ListRowTapHandler?) {
+    public init(tapped: ListRowActionHandler?) {
         self.tapped = tapped
     }
 

@@ -24,6 +24,11 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
     }
 
+    override func tearDown() {
+        super.tearDown()
+        userDefaults.removeSuite(named: String(describing: self))
+    }
+
     // MARK: - Recent Stops
 
     func test_recentStops_addStop() {
@@ -62,6 +67,19 @@ class UserDefaultsStoreTests: OBATestCase {
         userDefaultsStore.deleteAllRecentStops()
 
         expect(self.userDefaultsStore.recentStops.count) == 0
+    }
+
+    func test_recentStops_removeStop() {
+        let stops = try! loadSomeStops().prefix(20)
+        let stop = stops.first!
+
+        for s in stops {
+            userDefaultsStore.addRecentStop(s)
+        }
+
+        userDefaultsStore.delete(recentStop: stop)
+
+        expect(self.userDefaultsStore.recentStops.count) == (stops.count - 1)
     }
 
     // MARK: - Selected Tab Index

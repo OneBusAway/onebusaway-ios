@@ -71,10 +71,18 @@ extension RecentStopsViewController: ListAdapterDataSource {
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
-            let section = tableSection(from: stops) { vm in
+            let tapHandler = { (vm: ListViewModel) -> Void in
                 guard let stop = vm.object as? Stop else { return }
                 self.application.viewRouter.navigateTo(stop: stop, from: self)
             }
+
+            let deleteHandler = { (vm: ListViewModel) -> Void in
+                guard let stop = vm.object as? Stop else { return }
+                self.application.userDataStore.delete(recentStop: stop)
+                self.collectionController.reload(animated: true)
+            }
+
+            let section = tableSection(from: stops, tapped: tapHandler, deleted: deleteHandler)
             sections.append(section)
         }
 
