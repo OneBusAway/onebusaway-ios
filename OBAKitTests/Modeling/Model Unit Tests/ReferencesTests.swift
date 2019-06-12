@@ -115,7 +115,7 @@ extension ReferencesTests {
 
         let stop = stops.first!
         expect(stop.code) == "6497"
-        expect(stop.direction).to(beNil())
+        expect(stop.direction) == .unknown
         expect(stop.id) == "Hillsborough Area Regional Transit_6497"
         expect(stop.location.coordinate.latitude).to(beCloseTo(28.066419, within: 0.01))
         expect(stop.location.coordinate.longitude).to(beCloseTo(-82.429872, within: 0.01))

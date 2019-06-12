@@ -28,7 +28,7 @@ class StopsModelOperationTests: OBATestCase {
         let stop = op.stops.first!
 
         expect(stop.code) == "10914"
-        expect(stop.direction) == "S"
+        expect(stop.direction) == .s
         expect(stop.id) == "1_10914"
         expect(stop.location.coordinate.latitude).to(beCloseTo(47.656422))
         expect(stop.location.coordinate.longitude).to(beCloseTo(-122.312164))

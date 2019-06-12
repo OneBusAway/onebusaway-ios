@@ -78,7 +78,11 @@ public class ThemeColors: NSObject {
     /// The color used to highlight changing properties in the UI.
     public let propertyChanged: UIColor
 
-    init(bundle: Bundle, traitCollection: UITraitCollection?) {
+    public override convenience init() {
+        self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
+    }
+
+    public init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         dark = UIColor(named: "dark", in: bundle, compatibleWith: traitCollection)!
         light = UIColor(named: "light", in: bundle, compatibleWith: traitCollection)!

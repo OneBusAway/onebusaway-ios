@@ -23,7 +23,7 @@ class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
 
     func testExample() {
-        let formatters = Formatters(locale: usLocale)
+        let formatters = Formatters(locale: usLocale, themeColors: ThemeColors())
         let json = loadJSONDictionary(file: "arrivals-and-departures-for-stop-1_75414.json")
         let stopArrivals = try! decodeModels(type: StopArrivals.self, json: json)
         let arrDep = stopArrivals.first!.arrivalsAndDepartures.first!
