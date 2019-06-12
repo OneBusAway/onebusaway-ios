@@ -52,13 +52,12 @@ import IGListKit
 
     @objc func deleteAll() {
         let title = NSLocalizedString("recent_stops.confirmation_alert.title", value: "Are you sure you want to delete all of your recent stops?", comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops.")
-        let alertController = UIAlertController(title: title, message: nil, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
-        alertController.addAction(UIAlertAction(title: Strings.delete, style: .destructive, handler: { [weak self] _ in
+
+        let alertController = UIAlertController.deletionAlert(title: title) { [weak self] _ in
             guard let self = self else { return }
             self.application.userDataStore.deleteAllRecentStops()
             self.collectionController.reload(animated: false)
-        }))
+        }
 
         present(alertController, animated: true, completion: nil)
     }

@@ -8,6 +8,24 @@
 
 import UIKit
 
+// MARK: - UIAlertController
+extension UIAlertController {
+
+    /// Creates a `UIAlertController` designed to ask the user if they want to delete something or cancel.
+    /// - Parameter title: The title of the controller.
+    /// - Parameter handler: The closure called when the Delete button is pressed.
+    ///
+    /// - Note: No callback is invoked when the Cancel button is pressed.
+    public class func deletionAlert(title: String, handler: @escaping ((UIAlertAction) -> Void)) -> UIAlertController {
+        let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
+
+        controller.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction(title: Strings.delete, style: .destructive, handler: handler))
+
+        return controller
+    }
+}
+
 // MARK: - UIBarButtonItem
 extension UIBarButtonItem {
 
