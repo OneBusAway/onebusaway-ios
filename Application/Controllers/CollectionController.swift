@@ -54,6 +54,14 @@ public class CollectionController: UIViewController {
         view.addSubview(collectionView)
         collectionView.pinToSuperview(.edges)
     }
+
+    // MARK: - Public Methods
+
+    /// Reloads the collection controller's underlying `listAdapter`
+    /// - Parameter animated: Animate the reload or not.
+    public func reload(animated: Bool) {
+        listAdapter.performUpdates(animated: animated)
+    }
 }
 
 @objc public protocol ListProvider: ListAdapterDataSource {

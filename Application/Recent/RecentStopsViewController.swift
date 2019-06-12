@@ -39,7 +39,7 @@ import IGListKit
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        collectionController.listAdapter.performUpdates(animated: false)
+        collectionController.reload(animated: false)
     }
 
     // MARK: - Data and Collection Controller

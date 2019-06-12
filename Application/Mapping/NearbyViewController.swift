@@ -27,7 +27,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
 
     private var stops = [Stop]() {
         didSet {
-            collectionController.listAdapter.performUpdates(animated: false)
+            collectionController.reload(animated: false)
         }
     }
 

@@ -149,7 +149,7 @@ extension SearchViewController: UISearchBarDelegate {
     }
 
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        collectionController.listAdapter.performUpdates(animated: false)
+        collectionController.reload(animated: false)
     }
 
     public func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
