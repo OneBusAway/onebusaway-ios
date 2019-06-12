@@ -101,13 +101,13 @@ public class MapRegionManager: NSObject {
 
         let requestStopsOperation = modelService.getStops(region: mapView.region)
         requestStopsOperation.then { [weak self] in
-            guard let self = self else {
-                return
-            }
+            guard let self = self else { return }
 
             self.stops = requestStopsOperation.stops
 
             self.notifyDelegatesDataLoadingFinished()
+
+            self.requestStopsOperation = nil
         }
 
         self.requestStopsOperation = requestStopsOperation

@@ -336,7 +336,12 @@ extension StopViewController {
 
     /// Reloads data.
     @objc private func refresh() {
-        updateData()
+        // Debounce this action in order to prevent the user
+        // from spamming the server with a ton of requests.
+        DispatchQueue.main.debounce(interval: 1.0) { [weak self] in
+            guard let self = self else { return }
+            self.updateData()
+        }
     }
 
     /// Initiates the 'Add Bookmark' workflow.

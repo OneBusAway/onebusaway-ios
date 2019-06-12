@@ -337,25 +337,15 @@ public class RESTAPIModelService: NSObject {
     // MARK: - Private Internal Helpers
 
     private func generateModels<T>(type: T.Type, serviceOperation: RESTAPIOperation) -> T where T: RESTModelOperation {
-        let data = type.init()
-        transferData(from: serviceOperation, to: data) { [unowned serviceOperation, unowned data] in
-            // TODO FIXME: I'm seeing crashes in this code on device when I don't have this check in place.
-            // However, last time I tried to make these objects *not* unowned, they never got released.
-            // I need to figure out a better solution.
-            if serviceOperation != nil && data != nil {
-                data.apiOperation = serviceOperation
-            }
-        }
+        let dataOperation = type.init()
 
-        return data
-    }
-
-    private func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
-        let transferOperation = BlockOperation(block: transfer)
+        let transferOperation = TransferOperation(serviceOperation: serviceOperation, dataOperation: dataOperation)
 
         transferOperation.addDependency(serviceOperation)
         dataOperation.addDependency(transferOperation)
 
         dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
+
+        return dataOperation
     }
 }
