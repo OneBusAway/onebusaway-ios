@@ -8,8 +8,9 @@
 
 import UIKit
 import IGListKit
+import SwipeCellKit
 
-class TableRowCell: SelfSizingCollectionCell {
+class TableRowCell: SwipeCollectionViewCell {
 
     fileprivate let kUseDebugColors = false
 
@@ -189,6 +190,17 @@ class TableRowCell: SelfSizingCollectionCell {
         let bounds = contentView.bounds
         let height: CGFloat = 0.5
         separator.frame = CGRect(x: leftSeparatorInset, y: bounds.height - height, width: bounds.width - leftSeparatorInset, height: height)
+    }
+
+    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        setNeedsLayout()
+        layoutIfNeeded()
+        let size = contentView.systemLayoutSizeFitting(layoutAttributes.size)
+        var newFrame = layoutAttributes.frame
+        // note: don't change the width
+        newFrame.size.height = ceil(size.height)
+        layoutAttributes.frame = newFrame
+        return layoutAttributes
     }
 }
 

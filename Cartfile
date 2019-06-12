@@ -19,6 +19,9 @@ github "airbnb/AloeStackView" "master"
 # https://github.com/SCENEE/FloatingPanel/releases
 github "SCENEE/FloatingPanel" ==1.5.0
 
+# https://github.com/SwipeCellKit/SwipeCellKit
+github "SwipeCellKit/SwipeCellKit" ~>2.5.4
+
 # -----------------------
 
 # Cool stuff to consider using:

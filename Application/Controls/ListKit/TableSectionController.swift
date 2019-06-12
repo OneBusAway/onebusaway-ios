@@ -8,8 +8,9 @@
 
 import UIKit
 import IGListKit
+import SwipeCellKit
 
-final public class TableSectionController: ListSectionController, ListSupplementaryViewSource {
+final public class TableSectionController: ListSectionController, ListSupplementaryViewSource, SwipeCollectionViewCellDelegate {
     var data: TableSectionData?
 
     public override init() {
@@ -43,6 +44,7 @@ final public class TableSectionController: ListSectionController, ListSupplement
             fatalError()
         }
 
+        cell.delegate = self
         cell.data = rowData
         return cell
     }
@@ -88,7 +90,23 @@ final public class TableSectionController: ListSectionController, ListSupplement
         return CGSize(width: collectionContext!.containerSize.width, height: 20)
     }
 
-    // MARK: Private
+    // MARK: - SwipeCollectionViewCellDelegate
+
+    public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard orientation == .right else { return nil }
+
+        let deleteAction = SwipeAction(style: .destructive, title: "Delete") { action, indexPath in
+            // handle action by updating model with deletion
+        }
+
+        // customize the action appearance
+        deleteAction.image = UIImage(named: "delete")
+
+        return [deleteAction]
+    }
+
+    // MARK: - Private
+
     private func userHeaderView(atIndex index: Int) -> UICollectionReusableView {
         guard let view = collectionContext?.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, for: self, class: TableSectionHeaderView.self, at: index) as? TableSectionHeaderView else {
             fatalError()

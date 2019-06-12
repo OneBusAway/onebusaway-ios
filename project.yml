@@ -5,7 +5,7 @@ targets:
   DemoApp:
     type: application
     platform: iOS
-    deploymentTarget: "13.0"
+    deploymentTarget: "12.3"
     sources: [DemoApp]
     dependencies:
       - target: OBAKit
@@ -37,7 +37,7 @@ targets:
   OBAKit:
     type: framework
     platform: iOS
-    deploymentTarget: "13.0"
+    deploymentTarget: "12.3"
     sources: [Application, Location, Models, Network]
     dependencies:
       - carthage: AloeStackView
@@ -46,6 +46,7 @@ targets:
       - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: SwiftProtobuf
+      - carthage: SwipeCellKit
     postBuildScripts:
       - path: scripts/swiftlint.sh
         name: Swiftlint
@@ -54,7 +55,7 @@ targets:
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "13.0"
+    deploymentTarget: "12.3"
     sources: [OBAKitTests]
     dependencies:
       - target: DemoApp
