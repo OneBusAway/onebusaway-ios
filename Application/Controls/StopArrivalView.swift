@@ -49,12 +49,17 @@ public class StopArrivalView: UIView {
         return view
     }()
 
+    /// When `true`, decrease the `alpha` value of this cell if it happened in the past.
+    public var deemphasizePastEvents = true
+
     public var formatters: Formatters!
 
     @objc public var arrivalDeparture: ArrivalDeparture! {
         didSet {
-            // 'Gray out' the view if it occurred in the past.
-            alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
+            if deemphasizePastEvents {
+                // 'Gray out' the view if it occurred in the past.
+                alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
+            }
 
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
