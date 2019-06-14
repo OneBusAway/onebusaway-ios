@@ -150,8 +150,14 @@ public class Application: NSObject {
         BorderedButton.appearance().setTitleColor(theme.colors.lightText, for: .normal)
         BorderedButton.appearance().tintColor = theme.colors.dark
 
+        EmptyDataSetView.appearance().bodyLabelFont = theme.fonts.body
+        EmptyDataSetView.appearance().textColor = theme.colors.subduedText
+        EmptyDataSetView.appearance().titleLabelFont = theme.fonts.largeTitle
+
         FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
         FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
+
+        HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
 
         IndeterminateProgressView.appearance().progressColor = theme.colors.primary
 
@@ -161,20 +167,15 @@ public class Application: NSObject {
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
-        StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
+        StopAnnotationView.appearance().fillColor = theme.colors.primary
         StopAnnotationView.appearance().mapTextColor = theme.colors.mapText
         StopAnnotationView.appearance().mapTextFont = theme.fonts.mapAnnotation
-        StopAnnotationView.appearance().fillColor = theme.colors.primary
-
-        EmptyDataSetView.appearance().titleLabelFont = theme.fonts.largeTitle
-        EmptyDataSetView.appearance().bodyLabelFont = theme.fonts.body
-        EmptyDataSetView.appearance().textColor = theme.colors.subduedText
+        StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
+        StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
 
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
-        HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 
@@ -186,11 +187,6 @@ public class Application: NSObject {
 
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false
-
-//
-//        [[UITableViewCell appearance] setPreservesSuperviewLayoutMargins:YES];
-//        [[[UITableViewCell appearance] contentView] setPreservesSuperviewLayoutMargins:YES];
-//
     }
 }
 
