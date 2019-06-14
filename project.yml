@@ -43,6 +43,7 @@ targets:
       - carthage: AloeStackView
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
+      - carthage: Eureka
       - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: SwiftProtobuf

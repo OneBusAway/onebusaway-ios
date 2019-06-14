@@ -1,0 +1,14 @@
+language: objective-c
+osx_image: xcode10.2
+branches:
+  only:
+    - master
+env:
+  - DESTINATION="OS=12.2,name=iPhone XS" SCHEME="Eureka" SDK=iphonesimulator
+before_install:
+  - brew update
+  - brew outdated carthage || brew upgrade carthage
+script:
+  - set -o pipefail
+  - xcodebuild -version
+  - xcodebuild -project Eureka.xcodeproj -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" -configuration Debug ONLY_ACTIVE_ARCH=NO test | xcpretty
