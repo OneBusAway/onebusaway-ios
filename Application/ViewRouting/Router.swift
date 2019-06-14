@@ -21,6 +21,13 @@ public class ViewRouter: NSObject {
         super.init()
     }
 
+    /// Modally presents the specified view controller.
+    /// - Parameter presentedController: The modally-presented controller.
+    /// - Parameter fromController: The controller that presents `presentedController`.
+    public func present(_ presentedController: UIViewController, from fromController: UIViewController) {
+        fromController.present(presentedController, animated: true, completion: nil)
+    }
+
     /// Navigates from `fromController` to `viewController`.
     ///
     /// - Parameters:
