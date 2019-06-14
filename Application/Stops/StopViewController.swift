@@ -18,7 +18,7 @@ import FloatingPanel
 public class StopViewController: UIViewController {
     private let kUseDebugColors = false
 
-    lazy var stackView: AloeStackView = {
+    private lazy var stackView: AloeStackView = {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.addSubview(refreshControl)
@@ -300,12 +300,7 @@ public class StopViewController: UIViewController {
         stackView.addRow(loadMoreButton, hideSeparator: true)
 
         if minutesAfter != StopViewController.defaultMinutesAfter {
-            // We are showing a wider range of time, which means we should show a label
-            // that depicts the timeframe that is being viewed.
-            let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
-            let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
-            timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-            stackView.addRow(timeframeLabel, hideSeparator: true)
+            displayTimeframeLabel()
         }
     }
 
@@ -328,6 +323,16 @@ public class StopViewController: UIViewController {
 
         stackView.addRow(arrivalView, hideSeparator: hideSeparator)
         arrivalView.arrivalDeparture = arrivalDeparture
+    }
+
+    /// Creates a label that depicts the arrival/departure timeframe that the user is viewing, and adds it to the `stackView`.
+    private func displayTimeframeLabel() {
+        // We are showing a wider range of time, which means we should show a label
+        // that depicts the timeframe that is being viewed.
+        let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
+        let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
+        timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
+        stackView.addRow(timeframeLabel, hideSeparator: true)
     }
 }
 
@@ -356,7 +361,7 @@ extension StopViewController {
 
     /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
     @objc private func loadMore() {
-        self.minutesAfter += 30
+        minutesAfter += 30
         updateData()
     }
 }
