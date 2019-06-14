@@ -302,6 +302,11 @@ public class StopViewController: UIViewController {
         if minutesAfter != StopViewController.defaultMinutesAfter {
             displayTimeframeLabel()
         }
+
+        let reportProblem = UIButton(type: .system)
+        reportProblem.setTitle("Report Problem", for: .normal)
+        reportProblem.addTarget(self, action: #selector(showReportProblem), for: .touchUpInside)
+        stackView.addRow(reportProblem)
     }
 
     /// Adds a `StopArrivalView` to the `stackView` that corresponds to `arrivalDeparture`.
@@ -363,5 +368,11 @@ extension StopViewController {
     @objc private func loadMore() {
         minutesAfter += 30
         updateData()
+    }
+
+    @objc private func showReportProblem() {
+        guard let stop = stop else { return }
+        let reportProblemController = ReportProblemViewController(application: application, stop: stop)
+        application.viewRouter.present(UINavigationController(rootViewController: reportProblemController), from: self)
     }
 }

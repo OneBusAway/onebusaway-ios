@@ -78,6 +78,12 @@ public class ThemeColors: NSObject {
     /// The color used to highlight changing properties in the UI.
     public let propertyChanged: UIColor
 
+    /// The background color of a grouped table.
+    public let groupedTableBackground: UIColor
+
+    /// The background color of a row in a grouped table.
+    public let groupedTableRowBackground: UIColor
+
     public override convenience init() {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
@@ -95,6 +101,15 @@ public class ThemeColors: NSObject {
         departureOnTime = UIColor(named: "departureOnTime", in: bundle, compatibleWith: traitCollection)!
         departureUnknown = UIColor(named: "departureUnknown", in: bundle, compatibleWith: traitCollection)!
         propertyChanged = UIColor(named: "propertyChanged", in: bundle, compatibleWith: traitCollection)!
+
+        if #available(iOS 13, *) {
+            groupedTableBackground = .systemGroupedBackground
+            groupedTableRowBackground = .white
+        }
+        else {
+            groupedTableBackground = .groupTableViewBackground
+            groupedTableRowBackground = .white
+        }
     }
 }
 
@@ -105,9 +120,13 @@ public class ThemeFonts: NSObject {
 
     public lazy var largeTitle = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title1)
     public lazy var title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title2)
+
     public lazy var body = ThemeFonts.font(textStyle: UIFont.TextStyle.body)
     public lazy var boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
+
     public lazy var footnote = ThemeFonts.font(textStyle: UIFont.TextStyle.footnote)
+    public lazy var boldFootnote = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.footnote)
+
     public lazy var mapAnnotation: UIFont = {
         let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle.footnote)
         return UIFont.systemFont(ofSize: descriptor.pointSize - 2.0, weight: .black)
