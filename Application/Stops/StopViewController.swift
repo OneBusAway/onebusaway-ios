@@ -372,7 +372,8 @@ extension StopViewController {
 
     @objc private func showReportProblem() {
         guard let stop = stop else { return }
+
         let reportProblemController = ReportProblemViewController(application: application, stop: stop)
-        application.viewRouter.present(UINavigationController(rootViewController: reportProblemController), from: self)
+        application.viewRouter.present(UINavigationController(rootViewController: reportProblemController), from: self, isModalInPresentation: true)
     }
 }
