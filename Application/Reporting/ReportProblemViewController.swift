@@ -8,9 +8,6 @@
 import UIKit
 import AloeStackView
 
-// abxoxo - next up: build this out!
-// Eureka isn't going to work for me here. I need to duplicate StopViewController's ability to show a list of ArrivalDEparture objects.
-
 /// The 'hub' view controller for reporting problems about stops and trips.
 ///
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
@@ -104,7 +101,11 @@ public class ReportProblemViewController: UIViewController {
     }
 
     private func addProblemWithTheStopRow(_ stop: Stop) {
-        let stopHeader = TableHeaderView(text: NSLocalizedString("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."))
+        let stopHeader = TableHeaderView(
+            text: NSLocalizedString("report_problem_controller.stop_problem.header",
+                                    value: "Problem with the Stop",
+                                    comment: "A table header in the 'Report Problem' view controller.")
+        )
         stackView.addRow(stopHeader, hideSeparator: false)
         stackView.setSeparatorInset(forRow: stopHeader, inset: .zero)
 
