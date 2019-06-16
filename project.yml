@@ -46,6 +46,7 @@ targets:
       - carthage: Eureka
       - carthage: FloatingPanel
       - carthage: IGListKit
+      - carthage: SVProgressHUD
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
     postBuildScripts:
