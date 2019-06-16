@@ -107,13 +107,9 @@ public class ReportProblemViewController: UIViewController {
     }
 
     private func addProblemWithTheStopRow(_ stop: Stop) {
-        let stopHeader = TableHeaderView(
-            text: NSLocalizedString("report_problem_controller.stop_problem.header",
-                                    value: "Problem with the Stop",
-                                    comment: "A table header in the 'Report Problem' view controller.")
-        )
-        stackView.addRow(stopHeader, hideSeparator: false)
-        stackView.setSeparatorInset(forRow: stopHeader, inset: .zero)
+        addTableHeaderToStack(text: NSLocalizedString("report_problem_controller.stop_problem.header",
+                                                      value: "Problem with the Stop",
+                                                      comment: "A table header in the 'Report Problem' view controller."))
 
         let fmt = NSLocalizedString(
             "report_problem_controller.report_stop_problem_fmt",
@@ -138,10 +134,9 @@ public class ReportProblemViewController: UIViewController {
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
-        let vehicleHeader = TableHeaderView.autolayoutNew()
-        vehicleHeader.textLabel.text = NSLocalizedString("report_problem_controller.stop_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller.")
-        stackView.addRow(vehicleHeader, hideSeparator: false)
-        stackView.setSeparatorInset(forRow: vehicleHeader, inset: .zero)
+        addTableHeaderToStack(text: NSLocalizedString("report_problem_controller.stop_problem.header",
+                                                      value: "Problem with a Vehicle at the Stop",
+                                                      comment: "A table header in the 'Report Problem' view controller."))
 
         let rows = arrivalsAndDepartures.map { arrDep -> UIView in
             let arrivalView = StopArrivalView.autolayoutNew()
@@ -161,6 +156,13 @@ public class ReportProblemViewController: UIViewController {
         if let lastRow = rows.last {
             stackView.setSeparatorInset(forRow: lastRow, inset: .zero)
         }
+    }
+
+    private func addTableHeaderToStack(text: String) {
+        let header = TableHeaderView.autolayoutNew()
+        header.textLabel.text = text
+        stackView.addRow(header, hideSeparator: false)
+        stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 
     private func addTableRowToStack(_ row: UIView) {
