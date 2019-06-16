@@ -18,6 +18,10 @@ public class Strings: NSObject {
 
     public static let delete = NSLocalizedString("common.delete", value: "Delete", comment: "The verb 'to delete', as in to destroy something.")
 
+    public static let dismiss = NSLocalizedString("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")
+
+    public static let error = NSLocalizedString("common.error", value: "Error", comment: "The noun 'error', as in 'something went wrong'.")
+
     public static let filter = NSLocalizedString("common.filter", value: "Filter", comment: "The verb 'to filter'.")
 
     public static let map = NSLocalizedString("common.map", value: "Map", comment: "The noun for a map.")
