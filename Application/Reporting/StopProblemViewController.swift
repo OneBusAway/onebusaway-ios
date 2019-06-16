@@ -7,7 +7,11 @@
 
 import UIKit
 import Eureka
+import SVProgressHUD
 
+// TODO: this seems...busted. I can't figure out when this
+// initializer will actually be called, though. Do I even
+// really need it?
 extension StopProblemCode: InputTypeInitiable {
     public init?(string stringValue: String) {
         return nil
@@ -71,9 +75,20 @@ class StopProblemViewController: FormViewController {
 
         let location = application.locationService.currentLocation
 
+        SVProgressHUD.show()
+
         let op = modelService.getStopProblem(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
-        op.then {
-            // abxoxo - todo!
+        op.then { [weak self] in
+            guard let self = self else { return }
+
+            if let error = op.error {
+                AlertPresenter.show(error: error, presentingController: self)
+                SVProgressHUD.dismiss()
+            }
+            else {
+                SVProgressHUD.showSuccessAndDismiss()
+                self.dismiss(animated: true, completion: nil)
+            }
         }
     }
 }

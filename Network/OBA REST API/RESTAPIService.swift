@@ -298,7 +298,7 @@ public class RESTAPIService: APIService {
     ///   - location: An optional location value to provide more context.
     /// - Returns: The enqueued network operation.
     @objc
-    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemOperation {
+    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?) -> StopProblemOperation {
         let url = StopProblemOperation.buildURL(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url)
     }
