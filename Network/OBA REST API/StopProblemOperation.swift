@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 
 @objc(OBAStopProblemCode)
-public enum StopProblemCode: Int {
+public enum StopProblemCode: Int, CaseIterable {
     case nameWrong
     case numberWrong
     case locationWrong
@@ -18,7 +18,7 @@ public enum StopProblemCode: Int {
     case other
 }
 
-func stopProblemCodeToString(_ code: StopProblemCode) -> String {
+func stopProblemCodeToAPIString(_ code: StopProblemCode) -> String {
     switch code {
     case .nameWrong:
         return "stop_name_wrong"
@@ -33,6 +33,16 @@ func stopProblemCodeToString(_ code: StopProblemCode) -> String {
     }
 }
 
+func stopProblemCodeToUserFacingString(_ code: StopProblemCode) -> String {
+    switch code {
+    case .nameWrong: return NSLocalizedString("stop_problem_code.user_description.name_wrong", value: "Name is wrong", comment: "User-facing string that means the name of the stop is wrong.")
+    case .numberWrong: return NSLocalizedString("stop_problem_code.user_description.number_wrong", value: "Number is wrong", comment: "User-facing string that means the number/ID of the stop is wrong.")
+    case .locationWrong: return NSLocalizedString("stop_problem_code.user_description.location_wrong", value: "Location is wrong", comment: "User-facing string that means the location of the stop on the map is wrong.")
+    case .routeOrTripMissing: return NSLocalizedString("stop_problem_code.user_description.route_or_trip_missing", value: "Route or scheduled trip is missing", comment: "User-facing string that means our data is wrong about a route or a scheduled trip")
+    case .other: return NSLocalizedString("stop_problem_code.user_description.other", value: "Other", comment: "User-facing string that means that something else is wrong")
+    }
+}
+
 @objc(OBAStopProblemOperation)
 public class StopProblemOperation: RESTAPIOperation {
 
@@ -41,7 +51,7 @@ public class StopProblemOperation: RESTAPIOperation {
     public class func buildURL(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
         var args: [String: Any] = [
             "stopId": stopID,
-            "code": stopProblemCodeToString(code)
+            "code": stopProblemCodeToAPIString(code)
         ]
 
         if let comment = comment {

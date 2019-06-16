@@ -259,7 +259,7 @@ public class RESTAPIModelService: NSObject {
     ///   - comment: An optional free text field that allows the user to provide more context.
     ///   - location: An optional location value to provide more context.
     /// - Returns: The enqueued model operation.
-    @objc public func getStopProblem(stopID: String, code: StopProblemCode, comment: String, location: CLLocation?) -> StopProblemModelOperation {
+    @objc public func getStopProblem(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?) -> StopProblemModelOperation {
         let service = apiService.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
         return generateModels(type: StopProblemModelOperation.self, serviceOperation: service)
     }

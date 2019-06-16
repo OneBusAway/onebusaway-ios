@@ -36,7 +36,12 @@ public class ReportProblemViewController: UIViewController {
 
     // MARK: - Init
 
-    public init(application: Application, stop: Stop) {
+    /// This is the default initializer for `ReportProblemViewController`.
+    /// - Parameter application: The application object
+    /// - Parameter stop: The `Stop` object about which a problem is being reported. This will be used to load available `ArrivalDeparture` objects, as well.
+    ///
+    /// Initialize the view controller, wrap it with a navigation controller, and then modally present it to use.
+    @objc public init(application: Application, stop: Stop) {
         self.application = application
         self.stop = stop
 
@@ -55,6 +60,7 @@ public class ReportProblemViewController: UIViewController {
 
     // MARK: - UIViewController
 
+    /// :nodoc:
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -122,6 +128,13 @@ public class ReportProblemViewController: UIViewController {
 
         addTableRowToStack(reportStopProblemRow)
         stackView.setSeparatorInset(forRow: reportStopProblemRow, inset: .zero)
+
+        stackView.setTapHandler(forRow: reportStopProblemRow) { _ in
+            let stopProblemController = StopProblemViewController(application: self.application, stop: stop)
+            self.navigationController?.pushViewController(stopProblemController, animated: true)
+        }
+        reportStopProblemRow.isUserInteractionEnabled = true
+
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
@@ -136,6 +149,12 @@ public class ReportProblemViewController: UIViewController {
             arrivalView.formatters = application.formatters
             arrivalView.arrivalDeparture = arrDep
             addTableRowToStack(arrivalView)
+
+            stackView.setTapHandler(forRow: arrivalView) { _ in
+                // abxoxo - todo!
+            }
+            arrivalView.isUserInteractionEnabled = true
+
             return arrivalView
         }
 
