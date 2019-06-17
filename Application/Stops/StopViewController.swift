@@ -285,11 +285,7 @@ public class StopViewController: UIViewController {
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
-        guard let stopArrivals = stopArrivals else {
-            return
-        }
-
-        stop = stopArrivals.stop
+        guard let stopArrivals = stopArrivals else { return }
 
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
 
@@ -299,10 +295,52 @@ public class StopViewController: UIViewController {
 
         stackView.addRow(loadMoreButton, hideSeparator: true)
 
-        if minutesAfter != StopViewController.defaultMinutesAfter {
-            displayTimeframeLabel()
+        displayTimeframeLabel()
+
+        addMoreOptionsTableRows()
+    }
+
+    private func addAppleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
+        let appleMaps = DefaultTableRowView(title: NSLocalizedString("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator)
+        stackView.addRow(appleMaps)
+        stackView.setTapHandler(forRow: appleMaps) { [weak self] _ in
+            guard
+                let self = self,
+                let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate)
+                else { return }
+
+            self.application.open(url, options: [:], completionHandler: nil)
+        }
+    }
+
+    private func addGoogleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
+        guard
+            let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
+            application.canOpenURL(url)
+        else { return }
+
+        let row = DefaultTableRowView(title: NSLocalizedString("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator)
+        stackView.addRow(row, hideSeparator: false)
+        stackView.setTapHandler(forRow: row) { [weak self] _ in
+            guard let self = self else { return }
+            self.application.open(url, options: [:], completionHandler: nil)
+        }
+    }
+
+    private func addMoreOptionsTableRows() {
+        // Header
+        let moreOptionsHeader = TableHeaderView(text: NSLocalizedString("stop_controller.more_options_header", value: "More Options", comment: "Header for the Stop Controller's More Options section"))
+        stackView.addRow(moreOptionsHeader)
+
+        // Nearby Stops
+        // abxoxo - todo!
+
+        if let coordinate = stop?.coordinate {
+            addAppleMapsTableRow(coordinate)
+            addGoogleMapsTableRow(coordinate)
         }
 
+        // Report Problem
         let reportProblem = DefaultTableRowView(title: NSLocalizedString("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator)
         stackView.addRow(reportProblem)
         stackView.setTapHandler(forRow: reportProblem) { [weak self] _ in
@@ -339,7 +377,7 @@ public class StopViewController: UIViewController {
         let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-        stackView.addRow(timeframeLabel, hideSeparator: true)
+        stackView.addRow(timeframeLabel, hideSeparator: false)
     }
 }
 

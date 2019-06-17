@@ -74,6 +74,14 @@
     self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:picker];
 }
 
+- (BOOL)canOpenURL:(NSURL*)url {
+    return [UIApplication.sharedApplication canOpenURL:url];
+}
+
+- (void)open:(NSURL * _Nonnull)url options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey,id> * _Nonnull)options completionHandler:(void (^ _Nullable)(BOOL))completion {
+    [UIApplication.sharedApplication openURL:url options:options completionHandler:completion];
+}
+
 #pragma mark - UITabBarControllerDelegate
 
 - (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {

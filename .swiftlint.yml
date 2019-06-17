@@ -25,3 +25,6 @@ force_try:
 function_body_length:
   excluded:
     - OBAKitTests
+file_length:
+  warning: 900
+  error: 1000

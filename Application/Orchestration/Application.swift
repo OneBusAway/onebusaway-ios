@@ -30,6 +30,13 @@ public protocol ApplicationDelegate {
     /// This proxies the `isIdleTimerDisabled` property on UIApplication, which prevents
     /// the screen from turning off when it is set to `true`.
     @objc(idleTimerDisabled) var isIdleTimerDisabled: Bool { get set }
+
+    /// Proxies `UIApplication.canOpenURL()`
+    /// - Parameter url: The URL that we are checking can be opened.
+    @objc func canOpenURL(_ url: URL) -> Bool
+
+    /// Proxies the equivalent method on `UIApplication`
+    @objc func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?)
 }
 
 @objc(OBAApplication)
@@ -130,6 +137,17 @@ public class Application: NSObject {
     /// access `Info.plist` data, among other things.
     public var applicationBundle: Bundle {
         return Bundle.main
+    }
+
+    /// Proxies `UIApplication.canOpenURL()`
+    /// - Parameter url: The URL that we are checking can be opened.
+    public func canOpenURL(_ url: URL) -> Bool {
+        return delegate?.canOpenURL(url) ?? false
+    }
+
+    /// Proxies the equivalent method on `UIApplication`
+    @objc func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?) {
+        delegate?.open(url, options: options, completionHandler: completion)
     }
 
     // MARK: - Appearance and Themes

@@ -14,14 +14,21 @@ targets:
       path: DemoApp/Info.plist
       properties:
         DeepLinkServerBaseAddress: "http://alerts.onebusaway.org"
+        LSApplicationQueriesScheme:
+          - fb
+          - twitter
+          - comgooglemaps
+          - fb313213768708402HART
+          - org.sdmts.riderapp.compassmobile.payments
+          - co.bytemark.tgt
         LSRequiresIPhoneOS: true
         NSUserActivityTypes:
           - org.onebusaway.DemoApp.user_activity.stop
           - org.onebusaway.DemoApp.user_activity.trip
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
-        NSLocationAlwaysAndWhenInUseUsageDescription: Show you your location on the map
-        NSLocationWhenInUseUsageDescription: Show you your location on the map
+        NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
+        NSLocationWhenInUseUsageDescription: Show your location on the map
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities:
           - armv7
