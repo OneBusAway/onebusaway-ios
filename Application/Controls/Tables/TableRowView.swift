@@ -13,7 +13,7 @@ import UIKit
 
 public class TableRowView: UIView {
 
-    fileprivate let kUseDebugColors = false
+    var useDebugColors = false
 
     // MARK: - Initialization
 
@@ -23,12 +23,14 @@ public class TableRowView: UIView {
         addSubview(contentStack)
         contentStack.pinToSuperview(.edges)
 
+        let heightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+        heightConstraint.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
-            heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0),
-            imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth
+            heightConstraint, imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth
         ])
 
-        if kUseDebugColors {
+        if useDebugColors {
             backgroundColor = .red
             accessoryImageView.backgroundColor = .red
             accessoryImageViewWrapper.backgroundColor = .brown
@@ -212,7 +214,7 @@ class SubtitleTableRowView: TableRowView {
         let spacer = UIView.autolayoutNew()
         spacer.setContentHuggingPriority(.defaultLow, for: .vertical)
 
-        if kUseDebugColors {
+        if useDebugColors {
             spacer.backgroundColor = .purple
         }
 

@@ -337,7 +337,9 @@ public class StopViewController: UIViewController {
 
         if let coordinate = stop?.coordinate {
             addAppleMapsTableRow(coordinate)
+            #if !targetEnvironment(simulator)
             addGoogleMapsTableRow(coordinate)
+            #endif
         }
 
         // Report Problem
