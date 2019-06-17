@@ -14,7 +14,7 @@ import CoreLocation
 
 class TripProblemModelOperationTests: OBATestCase {
     let tripID = "123456"
-    let serviceDate = Int64(101010101)
+    let serviceDate = Date(timeIntervalSince1970: 101010101)
     let vehicleID = "987654321"
     let stopID = "1_1234"
     let code = TripProblemCode.neverCame
@@ -23,7 +23,7 @@ class TripProblemModelOperationTests: OBATestCase {
     let location = CLLocation(latitude: 47.1, longitude: -122.1)
     lazy var expectedParams: [String: String] = [
         "tripId": tripID,
-        "serviceDate": "101010101",
+        "serviceDate": "101010101000",
         "code": "vehicle_never_came",
         "vehicleId": vehicleID,
         "userOnVehicle": "true",

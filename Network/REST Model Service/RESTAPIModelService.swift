@@ -264,7 +264,7 @@ public class RESTAPIModelService: NSObject {
         return generateModels(type: StopProblemModelOperation.self, serviceOperation: service)
     }
 
-    @objc public func getTripProblem(tripID: String, serviceDate: Int64, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
+    @objc public func getTripProblem(tripID: String, serviceDate: Date, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
         let service = apiService.getTripProblem(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
         return generateModels(type: TripProblemModelOperation.self, serviceOperation: service)
     }

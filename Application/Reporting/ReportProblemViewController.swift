@@ -145,8 +145,10 @@ public class ReportProblemViewController: UIViewController {
             arrivalView.arrivalDeparture = arrDep
             addTableRowToStack(arrivalView)
 
-            stackView.setTapHandler(forRow: arrivalView) { _ in
-                // abxoxo - todo!
+            stackView.setTapHandler(forRow: arrivalView) { [weak self] _ in
+                guard let self = self else { return }
+                let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
+                self.navigationController?.pushViewController(controller, animated: true)
             }
             arrivalView.isUserInteractionEnabled = true
 

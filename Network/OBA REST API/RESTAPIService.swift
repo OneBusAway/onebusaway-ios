@@ -303,9 +303,27 @@ public class RESTAPIService: APIService {
         return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url)
     }
 
+    /// Submit a user-generated problem report for a particular trip.
+    ///
+    /// - API Endpoint: `/api/where/report-problem-with-trip/{stopID}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/1.1.19/api/where/methods/report-problem-with-trip.html)
+    ///
+    /// The reporting mechanism provides lots of fields that can be specified to give more context about the details of the
+    /// problem (which trip, stop, vehicle, etc was involved), making it easier for a developer or transit agency staff to
+    /// diagnose the problem. These reports feed into the problem reporting admin interface.
+    ///
+    /// - Parameter tripID: The trip ID on which the problem was encountered.
+    /// - Parameter serviceDate: The service date of the trip.
+    /// - Parameter vehicleID: Optional. The vehicle ID on which the problem was encountered.
+    /// - Parameter stopID: Optional. The stop ID indicating the stop where the problem was encountered.
+    /// - Parameter code: An identifier clarifying the type of problem encountered.
+    /// - Parameter comment: Optional. Free-form user input describing the issue.
+    /// - Parameter userOnVehicle: Indicates if the user is on the vehicle experiencing the issue.
+    /// - Parameter location: Optional. The user's current location.
+    /// - Returns: The enqueued network operation.
     @objc public func getTripProblem(
         tripID: String,
-        serviceDate: Int64,
+        serviceDate: Date,
         vehicleID: String?,
         stopID: String?,
         code: TripProblemCode,
