@@ -303,10 +303,12 @@ public class StopViewController: UIViewController {
             displayTimeframeLabel()
         }
 
-        let reportProblem = UIButton(type: .system)
-        reportProblem.setTitle("Report Problem", for: .normal)
-        reportProblem.addTarget(self, action: #selector(showReportProblem), for: .touchUpInside)
+        let reportProblem = DefaultTableRowView(title: NSLocalizedString("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator)
         stackView.addRow(reportProblem)
+        stackView.setTapHandler(forRow: reportProblem) { [weak self] _ in
+            guard let self = self else { return }
+            self.showReportProblem()
+        }
     }
 
     /// Adds a `StopArrivalView` to the `stackView` that corresponds to `arrivalDeparture`.
