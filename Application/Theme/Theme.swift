@@ -26,6 +26,10 @@ public class ThemeMetrics: NSObject {
 
     public static let padding: CGFloat = 8.0
 
+    public static let compactPadding: CGFloat = 4.0
+
+    public static let ultraCompactPadding: CGFloat = 2.0
+
     public static let controllerMargin: CGFloat = 20.0
 
     public static let defaultMapAnnotationSize: CGFloat = 54.0

@@ -9,7 +9,6 @@
 #import "AppDelegate.h"
 @import OBAKit;
 
-#import "DemoViewController.h"
 #import "PermissionPromptViewController.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate>

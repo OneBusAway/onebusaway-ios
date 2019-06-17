@@ -45,7 +45,7 @@ targets:
     type: framework
     platform: iOS
     deploymentTarget: "12.3"
-    sources: [Application, Location, Models, Network]
+    sources: [Application, Location, Models, Network, TripPlanning]
     dependencies:
       - carthage: AloeStackView
       - carthage: CocoaLumberjack

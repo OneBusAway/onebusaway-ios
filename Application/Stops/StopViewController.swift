@@ -287,17 +287,52 @@ public class StopViewController: UIViewController {
     private func dataDidReload() {
         guard let stopArrivals = stopArrivals else { return }
 
+        // Stop Header
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
+        stackView.setInset(forRow: stopHeader.view, inset: .zero)
+
+       // Walking Time and Arrival/Departures
+        var walkingTimeInserted = false
 
         for arrDep in stopArrivals.arrivalsAndDepartures {
+            if !walkingTimeInserted {
+                walkingTimeInserted = addWalkingTimeRow(before: arrDep)
+            }
+
             addStopArrivalView(for: arrDep, hideSeparator: false)
         }
 
+        // Load More and Timeframe
         stackView.addRow(loadMoreButton, hideSeparator: true)
-
         displayTimeframeLabel()
 
+        // More Options
         addMoreOptionsTableRows()
+    }
+
+    private func addWalkingTimeRow(before arrivalDeparture: ArrivalDeparture) -> Bool {
+        let interval = arrivalDeparture.arrivalDepartureDate.timeIntervalSinceNow
+
+        guard
+            let currentLocation = application.locationService.currentLocation,
+            let stopLocation = stop?.location,
+            let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation),
+            interval >= walkingTime
+        else { return false }
+
+        if let lastRow = stackView.lastRow {
+            stackView.removeRow(lastRow)
+            stackView.addRow(lastRow, hideSeparator: true)
+        }
+
+        let walkTimeRow = WalkTimeView.autolayoutNew()
+        walkTimeRow.formatters = application.formatters
+        walkTimeRow.set(distance: currentLocation.distance(from: stopLocation), timeToWalk: walkingTime)
+
+        stackView.addRow(walkTimeRow, hideSeparator: true)
+        stackView.setInset(forRow: walkTimeRow, inset: .zero)
+
+        return true
     }
 
     private func addAppleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
@@ -328,10 +363,6 @@ public class StopViewController: UIViewController {
     }
 
     private func addMoreOptionsTableRows() {
-        // Header
-        let moreOptionsHeader = TableHeaderView(text: NSLocalizedString("stop_controller.more_options_header", value: "More Options", comment: "Header for the Stop Controller's More Options section"))
-        stackView.addRow(moreOptionsHeader)
-
         // Nearby Stops
         // abxoxo - todo!
 

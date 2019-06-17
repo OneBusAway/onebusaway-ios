@@ -23,6 +23,15 @@ public class Formatters: NSObject {
         self.themeColors = themeColors
     }
 
+    // MARK: - Distance Formatting
+
+    /// Formats distances into human-readable strings that conform to the user's locale.
+    public lazy var distanceFormatter: MKDistanceFormatter = {
+        let formatter = MKDistanceFormatter()
+        formatter.locale = locale
+        return formatter
+    }()
+
     // MARK: - Formatted Times
 
     /// Converts a date into a human-readable time string that conforms to the user's locale.
@@ -42,6 +51,15 @@ public class Formatters: NSObject {
 
         return String(format: format, fromString, toString)
     }
+
+    /// Creates formatted strings for time intervals.
+    public lazy var positionalTimeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = locale.calendar
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .positional
+        return formatter
+    }()
 
     // MARK: - ArrivalDeparture
 

@@ -25,6 +25,4 @@ public class AlertPresenter: NSObject {
         alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default, handler: nil))
         presentingController.present(alert, animated: true, completion: nil)
     }
-
-
 }

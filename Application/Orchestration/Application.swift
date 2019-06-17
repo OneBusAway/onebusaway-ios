@@ -197,6 +197,10 @@ public class Application: NSObject {
         TableHeaderView.appearance().font = theme.fonts.boldFootnote
         TableHeaderView.appearance().textColor = theme.colors.subduedText
 
+        WalkTimeView.appearance().font = theme.fonts.footnote
+        WalkTimeView.appearance().backgroundBarColor = theme.colors.primary
+        WalkTimeView.appearance().textColor = theme.colors.lightText
+
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 
         UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
