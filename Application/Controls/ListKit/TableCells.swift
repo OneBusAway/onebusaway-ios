@@ -16,7 +16,7 @@ class TableRowCell: SwipeCollectionViewCell {
     fileprivate var tableRowView: TableRowView! {
         didSet {
             contentView.addSubview(tableRowView)
-            tableRowView.pinToSuperview(.layoutMargins) // abxoxo - edges or layoutMargins?
+            tableRowView.pinToSuperview(.layoutMargins)
             tableRowView.useDebugColors = kUseDebugColors
         }
     }

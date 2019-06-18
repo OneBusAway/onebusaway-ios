@@ -132,7 +132,6 @@ public extension FloatingPanelContainer where Self: UIViewController {
         previousFloatingPanelPosition = floatingPanelController.position
 
         // 2. Create a new floating panel.
-        // abxoxo
         let detailPanel = createFloatingPanelController(contentController: contentController, scrollView: scrollView)
 
         // 3. Display the new floating panel.

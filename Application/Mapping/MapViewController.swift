@@ -129,12 +129,12 @@ public class MapViewController: UIViewController {
     func displayWalkingRoute(stopID: String) {
         mapRegionManager.fetchStopWithID(stopID) { (stop) in
             guard let stop = stop else {
-                // abxoxo - todo show an error.
+                let msg = NSLocalizedString("map_view_controller.error_messages.display_walking_route_failed", value: "Unable to fetch walking directions.", comment: "An error message displayed when the app is unable to fetch walking directions to show to the user.")
+                AlertPresenter.show(errorMessage: msg, presentingController: self)
                 return
             }
 
             let directions = MKDirections.walkingDirections(to: stop.coordinate)
-
             directions.calculate { [weak self] response, error in
                 guard
                     let unwrappedResponse = response,
@@ -143,6 +143,7 @@ public class MapViewController: UIViewController {
 
                 if let error = error {
                     DDLogError("Error retrieving walking directions: \(error)")
+                    AlertPresenter.show(error: error, presentingController: self)
                 }
 
                 for route in unwrappedResponse.routes {
