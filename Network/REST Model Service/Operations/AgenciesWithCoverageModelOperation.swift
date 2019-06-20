@@ -11,6 +11,9 @@ import Foundation
 public class AgenciesWithCoverageModelOperation: RESTModelOperation {
     public private(set) var agenciesWithCoverage = [AgencyWithCoverage]()
 
+    /// Performs this class's non-concurrent task.
+    ///
+    /// - Note: Do not call this method directly. It will be invoked by the `OperationQueue` that manages this operation.
     override public func main() {
         super.main()
         agenciesWithCoverage = decodeModels(type: AgencyWithCoverage.self)

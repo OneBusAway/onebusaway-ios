@@ -8,14 +8,16 @@
 
 import Foundation
 
-@objc(OBAAgencyAlert) public class AgencyAlert: NSObject {
+/// A wrapper around a Protocol Buffer alert object. ProtoBuf is somewhat unpleasant to use directly,
+/// and so this class offers some Swifty niceties on top of its jank.
+public class AgencyAlert: NSObject {
     private let alert: TransitRealtime_Alert
 
-    @objc public let id: String
+    public let id: String
 
     // MARK: - Agency
 
-    @objc public let agencyID: String
+    public let agencyID: String
 
     private static func findAgencyInList(list: [TransitRealtime_EntitySelector]) -> TransitRealtime_EntitySelector? {
         for sel in list where sel.hasAgencyID {
@@ -24,7 +26,7 @@ import Foundation
         return nil
     }
 
-    @objc public let agency: AgencyWithCoverage?
+    public let agency: AgencyWithCoverage?
 
     // MARK: - Translation Properties
 
@@ -78,7 +80,7 @@ extension AgencyAlert {
 
 // MARK: - Timeframes
 extension AgencyAlert {
-    @objc public var startDate: Date? {
+    public var startDate: Date? {
         guard
             let period = alert.activePeriod.first,
             period.hasStart
@@ -89,7 +91,7 @@ extension AgencyAlert {
         return Date(timeIntervalSince1970: TimeInterval(period.start))
     }
 
-    @objc public var endDate: Date? {
+    public var endDate: Date? {
         guard
             let period = alert.activePeriod.first,
             period.hasEnd
@@ -103,7 +105,7 @@ extension AgencyAlert {
 
 // MARK: - Translated Text
 extension AgencyAlert {
-    @objc public func url(language: String) -> URL? {
+    public func url(language: String) -> URL? {
         guard
             alert.hasURL,
             let urlString = translation(key: language, from: urlTranslations)
@@ -114,7 +116,7 @@ extension AgencyAlert {
         return URL(string: urlString)
     }
 
-    @objc public func title(language: String) -> String? {
+    public func title(language: String) -> String? {
         guard alert.hasHeaderText else {
             return nil
         }
@@ -122,7 +124,7 @@ extension AgencyAlert {
         return translation(key: language, from: titleTranslations)
     }
 
-    @objc public func body(language: String) -> String? {
+    public func body(language: String) -> String? {
         guard alert.hasDescriptionText else {
             return nil
         }

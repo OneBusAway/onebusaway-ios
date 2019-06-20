@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(OBATripArrivalDepartureOperation)
+/// The operation for loading the `/api/where/arrival-and-departure-for-stop/{id}.json` endpoint.
 public class TripArrivalDepartureOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction

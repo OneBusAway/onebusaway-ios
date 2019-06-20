@@ -12,7 +12,6 @@ import Foundation
 /// Frequency-based scheduling is where a trip doesn't have specifically scheduled stop times,
 /// but instead just a headway specifying the frequency of service (ex. service every 10 minutes).
 /// The frequency element can be a sub-element of `TripStatus` and `ArrivalAndDeparture`
-@objc(OBAFrequency)
 public class Frequency: NSObject, Decodable {
     /// the start time when the frequency block starts
     public let startTime: Date

@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBATripDetailsOperation)
 public class TripDetailsOperation: RESTAPIOperation {
     // MARK: - API Call and URL Construction
 

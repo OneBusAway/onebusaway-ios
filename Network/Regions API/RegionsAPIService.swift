@@ -8,10 +8,9 @@
 
 import Foundation
 
-@objc(OBARegionsAPIService)
 public class RegionsAPIService: APIService {
 
-    @objc public func getRegions() -> RegionsOperation {
+    public func getRegions() -> RegionsOperation {
         let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
         let request = RegionsOperation.buildRequest(for: url)
         let operation = RegionsOperation(request: request)

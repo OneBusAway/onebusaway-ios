@@ -8,7 +8,6 @@
 
 import UIKit
 
-@objc(OBATheme)
 public class Theme: NSObject {
     public let colors: ThemeColors
     public let fonts: ThemeFonts
@@ -23,7 +22,6 @@ public class Theme: NSObject {
     }
 }
 
-@objc(OBAMetrics)
 public class ThemeMetrics: NSObject {
 
     public static let padding: CGFloat = 8.0
@@ -39,7 +37,6 @@ public class ThemeMetrics: NSObject {
     public static let collectionViewLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: padding, bottom: 0, trailing: padding)
 }
 
-@objc(OBAThemeColors)
 public class ThemeColors: NSObject {
 
     /// Primary theme color.
@@ -113,7 +110,6 @@ public class ThemeColors: NSObject {
     }
 }
 
-@objc(OBAThemeFonts)
 public class ThemeFonts: NSObject {
 
     // MARK: - Fonts
@@ -149,7 +145,6 @@ public class ThemeFonts: NSObject {
     }
 }
 
-@objc(OBAThemeBehaviors)
 public class ThemeBehaviors: NSObject {
     /// When true, the app will use floating panels in lieu of a tabbed UI.
     public let useFloatingPanelNavigation = false

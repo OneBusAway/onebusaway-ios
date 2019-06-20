@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBACreateAlarmOperation)
 public class CreateAlarmOperation: NetworkOperation {
 
     private static let apiPath = "/api/v1/regions/%@/alarms"

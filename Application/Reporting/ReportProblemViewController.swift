@@ -13,7 +13,6 @@ import AloeStackView
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
 ///
 /// - Note: This view controller expects to be presented modally.
-@objc(OBAReportProblemViewController)
 public class ReportProblemViewController: UIViewController {
 
     private lazy var stackView: AloeStackView = {
@@ -41,7 +40,7 @@ public class ReportProblemViewController: UIViewController {
     /// - Parameter stop: The `Stop` object about which a problem is being reported. This will be used to load available `ArrivalDeparture` objects, as well.
     ///
     /// Initialize the view controller, wrap it with a navigation controller, and then modally present it to use.
-    @objc public init(application: Application, stop: Stop) {
+    public init(application: Application, stop: Stop) {
         self.application = application
         self.stop = stop
 

@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAWeatherOperation)
 public class WeatherOperation: NetworkOperation {
 
     private static let apiPath = "/api/v1/regions/%@/weather.json"

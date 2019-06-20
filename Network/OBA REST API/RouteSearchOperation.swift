@@ -11,7 +11,7 @@ import CoreLocation
 
 // swiftlint:disable opening_brace
 
-@objc(OBARouteSearchOperation)
+/// The operation for loading data from the `/api/where/routes-for-location.json` endpoint.
 public class RouteSearchOperation: RESTAPIOperation {
     public private(set) var outOfRange = false
 

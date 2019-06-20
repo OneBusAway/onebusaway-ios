@@ -12,7 +12,6 @@ import UIKit
 ///
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
-@objc(OBAStopArrivalView)
 public class StopArrivalView: UIView {
 
     let kUseDebugColors = false
@@ -54,7 +53,7 @@ public class StopArrivalView: UIView {
 
     public var formatters: Formatters!
 
-    @objc public var arrivalDeparture: ArrivalDeparture! {
+    public var arrivalDeparture: ArrivalDeparture! {
         didSet {
             if deemphasizePastEvents {
                 // 'Gray out' the view if it occurred in the past.
@@ -72,7 +71,7 @@ public class StopArrivalView: UIView {
         }
     }
 
-    @objc override init(frame: CGRect) {
+    override init(frame: CGRect) {
         super.init(frame: frame)
 
         let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel])

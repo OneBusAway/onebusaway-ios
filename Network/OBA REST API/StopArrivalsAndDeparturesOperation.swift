@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAStopArrivalsAndDeparturesOperation)
 public class StopArrivalsAndDeparturesOperation: RESTAPIOperation {
 
     private static let apiPath = "/api/where/arrivals-and-departures-for-stop/%@.json"

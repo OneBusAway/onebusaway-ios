@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc(OBAStackedButton)
+/// A subclass of `UIControl` that looks like a two row button with an icon on top and a text label below.
 public class StackedButton: UIControl {
 
     let kDebugColors = false
@@ -18,7 +18,7 @@ public class StackedButton: UIControl {
         set { textLabel.font = newValue }
     }
 
-    @objc public let textLabel: UILabel = {
+    public let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 1
         label.textColor = .black
@@ -31,7 +31,7 @@ public class StackedButton: UIControl {
         return label
     }()
 
-    @objc public let imageView: UIImageView = {
+    public let imageView: UIImageView = {
         let imageView = UIImageView.autolayoutNew()
         imageView.contentMode = .scaleAspectFit
         imageView.setContentHuggingPriority(.required, for: .vertical)

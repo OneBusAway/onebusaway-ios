@@ -42,7 +42,6 @@ public class SearchResponse: NSObject {
     }
 }
 
-@objc(OBASearchManager)
 public class SearchManager: NSObject {
     private let application: Application
 

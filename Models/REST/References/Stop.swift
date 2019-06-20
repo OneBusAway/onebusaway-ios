@@ -24,7 +24,6 @@ public enum Direction: Int {
     case n, ne, e, se, s, sw, w, nw, unknown
 }
 
-@objc(OBAStopLocationType)
 public enum StopLocationType: Int, Decodable {
     /// Stop. A location where passengers board or disembark from a transit vehicle.
     case stop

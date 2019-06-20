@@ -10,13 +10,11 @@ import Foundation
 import CoreLocation
 import CocoaLumberjackSwift
 
-@objc(OBARegionsServiceDelegate)
-public protocol RegionsServiceDelegate {
+@objc(OBARegionsServiceDelegate) public protocol RegionsServiceDelegate: NSObjectProtocol {
     func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     func regionsService(_ service: RegionsService, updatedRegion region: Region)
 }
 
-@objc(OBARegionsService)
 public class RegionsService: NSObject {
     private let modelService: RegionsModelService
     private let locationService: LocationService
@@ -48,12 +46,10 @@ public class RegionsService: NSObject {
 
     private let delegates = NSHashTable<RegionsServiceDelegate>.weakObjects()
 
-    @objc
     public func addDelegate(_ delegate: RegionsServiceDelegate) {
         delegates.add(delegate)
     }
 
-    @objc
     public func removeDelegate(_ delegate: RegionsServiceDelegate) {
         delegates.remove(delegate)
     }
@@ -72,7 +68,6 @@ public class RegionsService: NSObject {
 
     // MARK: - Regions Data
 
-    @objc
     public private(set) var regions: [Region] {
         didSet {
             storeRegions()
@@ -80,7 +75,7 @@ public class RegionsService: NSObject {
         }
     }
 
-    @objc public var currentRegion: Region? {
+    public var currentRegion: Region? {
         didSet {
             if let currentRegion = currentRegion {
                 notifyDelegatesRegionChanged(currentRegion)

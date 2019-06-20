@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAVehicleStatusModelOperation)
 public class VehicleStatusModelOperation: RESTModelOperation {
     public private(set) var vehicles: [VehicleStatus] = []
 

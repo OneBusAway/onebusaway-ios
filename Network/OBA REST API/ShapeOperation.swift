@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(OBAShapeOperation)
+/// The operation for loading data from the `/api/where/shape/{shape_id}.json` endpoint.
 public class ShapeOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction

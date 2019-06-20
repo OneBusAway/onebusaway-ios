@@ -18,11 +18,9 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     @objc optional func locationService(_ service: LocationService, errorReceived error: Error)
 }
 
-@objc(OBALocationService)
-public class LocationService: NSObject, CLLocationManagerDelegate {
+@objc(OBALocationService) public class LocationService: NSObject, CLLocationManagerDelegate {
     private var locationManager: LocationManager
 
-    @objc
     public private(set) var currentLocation: CLLocation? {
         didSet {
             if let currentLocation = currentLocation {
@@ -31,18 +29,17 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    @objc
     public private(set) var currentHeading: CLHeading? {
         didSet {
             notifyDelegatesHeadingChanged(currentHeading)
         }
     }
 
-    @objc public convenience override init() {
+    public convenience override init() {
         self.init(locationManager: CLLocationManager())
     }
 
-    @objc public init(locationManager: LocationManager) {
+    public init(locationManager: LocationManager) {
         self.locationManager = locationManager
         self.authorizationStatus = locationManager.authorizationStatus
 
@@ -55,12 +52,10 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
 
     private let delegates = NSHashTable<LocationServiceDelegate>.weakObjects()
 
-    @objc
     public func addDelegate(_ delegate: LocationServiceDelegate) {
         delegates.add(delegate)
     }
 
-    @objc
     public func removeDelegate(_ delegate: LocationServiceDelegate) {
         delegates.remove(delegate)
     }
@@ -92,7 +87,6 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     // MARK: - Authorization
 
     /// The current authorization state of the app.
-    @objc
     public private(set) var authorizationStatus: CLAuthorizationStatus {
         didSet {
             guard authorizationStatus != oldValue else {
@@ -111,19 +105,16 @@ public class LocationService: NSObject, CLLocationManagerDelegate {
     /// prompted for location services authorization. In other words: the app has
     /// not been denied or approved, and the user also has not generally restricted
     /// access to location services.
-    @objc
     public var canRequestAuthorization: Bool {
         return authorizationStatus == .notDetermined
     }
 
     /// Prompts the user for permission to access location services. (e.g. GPS.)
-    @objc
-    public func requestInUseAuthorization() {
+    @objc public func requestInUseAuthorization() {
         locationManager.requestWhenInUseAuthorization()
     }
 
     /// Answers the question of whether the device GPS can be consulted for location data.
-    @objc
     public var isLocationUseAuthorized: Bool {
         return locationManager.isLocationServicesEnabled && authorizationStatus == .authorizedWhenInUse
     }

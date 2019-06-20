@@ -11,7 +11,6 @@ import Foundation
 /// Retrieves data and converts it into models from the Obaco/alerts API server
 ///
 /// This is the service responsible for supplementary features: alarms, regional alerts, and weather.
-@objc(OBAObacoModelService)
 public class ObacoModelService: ModelService {
     private let apiService: ObacoService
 
@@ -31,7 +30,7 @@ public class ObacoModelService: ModelService {
     ///
     /// - Parameter regionID: The region identifier for which to fetch the weather. This is the `Region.regionIdentifier` field.
     /// - Returns: A model operation that returns a `Weather` object.
-    @objc public func getWeather(regionID: String) -> WeatherModelOperation {
+    public func getWeather(regionID: String) -> WeatherModelOperation {
         let service = apiService.getWeather(regionID: regionID)
         let data = WeatherModelOperation()
 
@@ -54,7 +53,7 @@ public class ObacoModelService: ModelService {
     ///   - stopSequence: The stop sequence for the trip.
     ///   - userPushID: The user's unique push ID.
     /// - Returns: A model operation that returns an `Alarm` object.
-    @objc public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> AlarmModelOperation {
+    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> AlarmModelOperation {
         let service = apiService.postAlarm(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID)
         let data = AlarmModelOperation()
 
@@ -69,7 +68,7 @@ public class ObacoModelService: ModelService {
     ///
     /// - Parameter alarm: The alarm to cancel.
     /// - Returns: A network operation that will cancel the alarm.
-    @objc public func deleteAlarm(alarm: Alarm) -> NetworkOperation {
+    public func deleteAlarm(alarm: Alarm) -> NetworkOperation {
         return apiService.deleteAlarm(url: alarm.url)
     }
 
@@ -79,7 +78,7 @@ public class ObacoModelService: ModelService {
     ///
     /// - Parameter query: The vehicle query. e.g. "1234" will match vehicles "1_1234", "2_1234", etc.
     /// - Returns: A model operation that retrieves a list of matching vehicles.
-    @objc public func getVehicles(matching query: String) -> AgencyVehicleModelOperation {
+    public func getVehicles(matching query: String) -> AgencyVehicleModelOperation {
         let service = apiService.getVehicles(matching: query)
         let data = AgencyVehicleModelOperation()
 

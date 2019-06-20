@@ -9,7 +9,6 @@
 import UIKit
 
 /// Effectively a 'dummy' search bar. Taps on this control are intercepted and used to trigger display of the 'real' search UI.
-@objc(OBATapPresenterSearchBar)
 public class TapPresenterSearchBar: UISearchBar, UISearchBarDelegate {
 
     override init(frame: CGRect) {

@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAStopsForRouteOperation)
 public class StopsForRouteOperation: RESTAPIOperation {
     // MARK: - API Call and URL Construction
 

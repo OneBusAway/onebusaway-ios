@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAVehicleTripOperation)
 public class VehicleTripOperation: RESTAPIOperation {
 
     private static let apiPath = "/api/where/trip-for-vehicle/%@.json"

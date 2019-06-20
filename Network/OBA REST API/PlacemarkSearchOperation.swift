@@ -9,14 +9,17 @@
 import Foundation
 import MapKit
 
-@objc(OBAPlacemarkSearchOperation)
+/// The operation for performing a placemark-search operation.
+///
+/// - Note: this operation uses `MKLocalSearch` under the hood, which is why it inherits from `AsyncOperation`
+///         instead of `NetworkOperation`.
 public class PlacemarkSearchOperation: AsyncOperation {
 
     public let request: MKLocalSearch.Request
     private var localSearch: MKLocalSearch?
     public private(set) var response: MKLocalSearch.Response?
 
-    @objc public init(query: String, region: MKCoordinateRegion) {
+    public init(query: String, region: MKCoordinateRegion) {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = query
         request.region = region
@@ -29,13 +32,10 @@ public class PlacemarkSearchOperation: AsyncOperation {
         let search = MKLocalSearch(request: request)
 
         search.start { [weak self] (response, error) in
-            guard let self = self else {
-                return
-            }
-
-            if self.isCancelled {
-                return
-            }
+            guard
+                let self = self,
+                !self.isCancelled
+            else { return }
 
             self.error = error
             self.response = response

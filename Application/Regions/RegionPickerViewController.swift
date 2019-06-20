@@ -8,6 +8,7 @@
 
 import UIKit
 
+/// Displayed when the user's region cannot be automatically determined by location services, such as when the user has denied the app access to their location.
 @objc(OBARegionPickerViewController)
 public class RegionPickerViewController: UIViewController {
     let application: Application

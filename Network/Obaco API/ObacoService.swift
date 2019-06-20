@@ -8,19 +8,18 @@
 
 import Foundation
 
-@objc(OBAObacoService)
 public class ObacoService: APIService {
 
     private let regionID: String
 
-    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: OperationQueue) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: OperationQueue) {
         self.regionID = regionID
         super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue)
     }
 
     // MARK: - Weather
 
-    @objc public func getWeather(regionID: String) -> WeatherOperation {
+    public func getWeather(regionID: String) -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = WeatherOperation.buildRequest(for: url)
         let operation = WeatherOperation(request: request)
@@ -31,7 +30,7 @@ public class ObacoService: APIService {
 
     // MARK: - Alarms
 
-    @objc public func postAlarm(
+    public func postAlarm(
         secondsBefore: TimeInterval,
         stopID: String,
         tripID: String,
@@ -59,7 +58,7 @@ public class ObacoService: APIService {
         return operation
     }
 
-    @objc public func deleteAlarm(url: URL) -> NetworkOperation {
+    public func deleteAlarm(url: URL) -> NetworkOperation {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
 
@@ -69,7 +68,7 @@ public class ObacoService: APIService {
         return op
     }
 
-    @objc public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
+    public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = MatchingVehiclesOperation.buildRequest(for: url)
         let operation = MatchingVehiclesOperation(request: request)

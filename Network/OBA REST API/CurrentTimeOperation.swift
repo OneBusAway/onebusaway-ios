@@ -8,8 +8,9 @@
 
 import Foundation
 
+/// The operation for loading the `/api/where/current-time.json` endpoint.
 public class CurrentTimeOperation: RESTAPIOperation {
-    @objc public var currentTime: Date? {
+    public var currentTime: Date? {
         guard
             let decodedBody = decodedJSONBody as? [String: Any],
             let currentTime = decodedBody["currentTime"] as? Double else {

@@ -9,7 +9,6 @@
 import Foundation
 import UIKit
 
-@objc(OBARouteType)
 public enum RouteType: Int, Codable {
     /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
     case lightRail = 0
@@ -44,20 +43,19 @@ public enum RouteType: Int, Codable {
     }
 }
 
-@objc(OBARoute)
 public class Route: NSObject, Codable, HasReferences {
 
     let agencyID: String
-    @objc public var agency: Agency!
+    public var agency: Agency!
 
-    @objc public let color: UIColor?
-    @objc public let routeDescription: String?
-    @objc public let id: String
-    @objc public let longName: String?
-    @objc public let shortName: String
-    @objc public let textColor: UIColor?
-    @objc public let routeType: RouteType
-    @objc public let routeURL: URL?
+    public let color: UIColor?
+    public let routeDescription: String?
+    public let id: String
+    public let longName: String?
+    public let shortName: String
+    public let textColor: UIColor?
+    public let routeType: RouteType
+    public let routeURL: URL?
 
     private enum CodingKeys: String, CodingKey {
         case agency

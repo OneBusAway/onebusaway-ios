@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBATripDetailsModelOperation)
 public class TripDetailsModelOperation: RESTModelOperation {
     public private(set) var tripDetails: TripDetails?
 

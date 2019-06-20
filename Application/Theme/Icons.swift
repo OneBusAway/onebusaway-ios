@@ -8,7 +8,6 @@
 
 import UIKit
 
-@objc(OBAIcons)
 public class Icons: NSObject {
 
     // MARK: - Tab Icons

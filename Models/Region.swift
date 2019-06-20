@@ -12,7 +12,6 @@ import MapKit
 
 /// Represents a OneBusAway server deployment.
 /// For example, OBA regions include Tampa, Puget Sound, and Washington, D.C.
-@objc(OBARegion)
 public class Region: NSObject, Codable {
 
     /// The human-readable name of the region. Example: Puget Sound.
@@ -264,7 +263,7 @@ public class Region: NSObject, Codable {
     let regionBounds: [RegionBound]
 
     /// Returns a map rect that describes this region's boundaries.
-    @objc public lazy var serviceRect: MKMapRect = {
+    public lazy var serviceRect: MKMapRect = {
         var minX: Double = .greatestFiniteMagnitude
         var minY: Double = .greatestFiniteMagnitude
         var maxX: Double = .leastNormalMagnitude
@@ -301,7 +300,7 @@ public class Region: NSObject, Codable {
     ///
     /// - Parameter location: The location to calculate inclusion in this region. Optional. If `nil` is provided, then this method will always return `false`.
     /// - Returns: True if the location is within `serviceRect` and false otherwise.
-    @objc public func contains(location: CLLocation?) -> Bool {
+    public func contains(location: CLLocation?) -> Bool {
         guard let location = location else {
             return false
         }

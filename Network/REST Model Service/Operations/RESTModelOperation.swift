@@ -9,7 +9,6 @@
 import Foundation
 import CocoaLumberjackSwift
 
-@objc(OBARESTModelOperation)
 public class RESTModelOperation: Operation {
     public var apiOperation: RESTAPIOperation?
     public private(set) var references: References?

@@ -8,6 +8,7 @@
 
 import UIKit
 
+/// A modal view controller that tells the user a little bit about OneBusAway and prompts them to allow access to their location.
 @objc(OBAPermissionPromptViewController)
 public class PermissionPromptViewController: UIViewController {
 

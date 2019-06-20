@@ -8,7 +8,7 @@
 import Foundation
 
 /// Creates deep links (i.e. Universal Links) to OBA-associated web pages.
-@objc(OBADeepLinkRouter) public class DeepLinkRouter: NSObject {
+public class DeepLinkRouter: NSObject {
     private let baseURL: URL
 
     /// Initializes the `DeepLinkRouter`

@@ -12,7 +12,6 @@ import Foundation
 ///
 /// - Note: An `error` with Domain=NSCocoaErrorDomain, Code=3840 usually means that you're hitting a captive portal.
 ///
-@objc(OBARESTAPIOperation)
 public class RESTAPIOperation: NetworkOperation {
     public var entries: [[String: Any]]? {
         return restDecoder?.entries

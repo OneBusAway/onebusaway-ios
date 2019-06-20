@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBARegionsOperation)
 public class RegionsOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction

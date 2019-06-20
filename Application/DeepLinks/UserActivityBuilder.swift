@@ -9,11 +9,10 @@ import Foundation
 import Intents
 
 /// Simplifies creating `NSUserActivity` objects suitable for use with Handoff and Siri.
-@objc(OBAUserActivityBuilder)
 public class UserActivityBuilder: NSObject {
     private let application: Application
 
-    @objc public init(application: Application) {
+    public init(application: Application) {
         self.application = application
         super.init()
 
@@ -23,7 +22,7 @@ public class UserActivityBuilder: NSObject {
     public let stopIDUserInfoKey = "stopID"
     public let regionIDUserInfoKey = "regionID"
 
-    @objc public func userActivity(for stop: Stop, region: Region) -> NSUserActivity {
+    public func userActivity(for stop: Stop, region: Region) -> NSUserActivity {
         let activity = NSUserActivity(activityType: stopActivityType)
         activity.title = Formatters.formattedTitle(stop: stop)
 
@@ -68,27 +67,3 @@ public class UserActivityBuilder: NSObject {
         }
     }
 }
-
-//@objc public class func createUserActivity(name: String, stopID: String, regionID: Int) -> NSUserActivity {
-//    let activity = NSUserActivity(activityType: OBAHandoff.activityTypeStop)
-//    activity.title = name
-//    activity.isEligibleForHandoff = true
-//
-//    // Per WWDC 2018 Session "Intro to Siri Shortcuts", this must be set to `true`
-//    // for `isEligibleForPrediction` to have any effect. Timecode: 8:30
-//    activity.isEligibleForSearch = true
-//
-//    if #available(iOS 12.0, *) {
-//        activity.isEligibleForPrediction = true
-//        activity.suggestedInvocationPhrase = NSLocalizedString("handoff.show_me_my_bus", comment: "Suggested invocation phrase for Siri Shortcut")
-//        activity.persistentIdentifier = "region_\(regionID)_stop_\(stopID)"
-//    }
-//
-//    activity.requiredUserInfoKeys = [OBAHandoff.stopIDKey, OBAHandoff.regionIDKey]
-//    activity.userInfo = [OBAHandoff.stopIDKey: stopID, OBAHandoff.regionIDKey: regionID]
-//
-//    let deepLinkRouter = DeepLinkRouter(baseURL: URL(string: OBADeepLinkServerAddress)!)
-//    activity.webpageURL = deepLinkRouter.deepLinkURL(stopID: stopID, regionID: regionID)
-//
-//    return activity
-//}

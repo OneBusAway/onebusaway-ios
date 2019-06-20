@@ -412,6 +412,7 @@ extension StopViewController {
         updateData()
     }
 
+    /// Shows the Report Problem UI.
     @objc private func showReportProblem() {
         guard let stop = stop else { return }
 

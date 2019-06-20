@@ -8,12 +8,17 @@
 
 import Foundation
 
+/// The core class for interacting with the OBA REST API.
+///
+/// This class is responsible for managing the base URL for the OBA REST API server,
+/// the network queue for in-flight operations, and the query parameters that are
+/// common to every request.
 public class APIService: NSObject {
     let baseURL: URL
     let networkQueue: OperationQueue
     let defaultQueryItems: [URLQueryItem]
 
-    @objc public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue) {
         self.baseURL = baseURL
 
         var queryItems = [URLQueryItem]()
@@ -26,7 +31,7 @@ public class APIService: NSObject {
         self.networkQueue = networkQueue
     }
 
-    @objc public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
+    public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
         self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue())
     }
 }

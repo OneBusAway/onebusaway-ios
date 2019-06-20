@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBARegionsModelOperation)
 public class RegionsModelOperation: RESTModelOperation {
 
     /// A list of loaded `Region` objects.

@@ -9,7 +9,6 @@
 import Foundation
 import CoreLocation
 
-@objc(OBATripProblemCode)
 public enum TripProblemCode: Int, CaseIterable {
     case neverCame
     case cameEarly
@@ -41,7 +40,6 @@ func tripProblemCodeToUserFacingString(_ code: TripProblemCode) -> String {
     }
 }
 
-@objc(OBATripProblemOperation)
 public class TripProblemOperation: RESTAPIOperation {
     public static let apiPath = "/api/where/report-problem-with-trip.json"
 

@@ -10,14 +10,12 @@ import UIKit
 import IGListKit
 import FloatingPanel
 
-@objc(OBANearbyDelegate)
-public protocol NearbyDelegate {
+public protocol NearbyDelegate: NSObjectProtocol {
     func nearbyController(_ nearbyController: NearbyViewController, didSelectStopID stopID: String)
     func nearbyControllerRequestFullScreen(_ nearbyController: NearbyViewController)
     func nearbyControllerRequestDefaultLayout(_ nearbyController: NearbyViewController)
 }
 
-@objc(OBANearbyViewController)
 public class NearbyViewController: VisualEffectViewController, ListProvider {
     let mapRegionManager: MapRegionManager
 

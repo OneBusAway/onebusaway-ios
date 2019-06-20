@@ -9,7 +9,6 @@
 import Foundation
 import CoreLocation
 
-@objc(OBALocationManager)
 public protocol LocationManager {
     var delegate: CLLocationManagerDelegate? { get set }
 

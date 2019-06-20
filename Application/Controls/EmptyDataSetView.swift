@@ -8,7 +8,6 @@
 import UIKit
 
 /// Provides a simple implementation of the 'empty data set' UI pattern.
-@objc(OBAEmptyDataSetView)
 public class EmptyDataSetView: UIView {
 
     /// The font used on the title label.

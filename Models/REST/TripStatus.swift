@@ -10,7 +10,6 @@ import Foundation
 import CoreLocation
 
 /// The `tripStatus` element captures information about the current status of a transit vehicle serving a trip. It is returned as a sub-element in a number of api calls.
-@objc(OBATripStatus)
 public class TripStatus: NSObject, Decodable {
 
     /// the trip id of the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip

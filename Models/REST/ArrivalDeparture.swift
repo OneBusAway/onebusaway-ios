@@ -269,7 +269,7 @@ extension ArrivalDeparture {
     ///
     /// - Note: This value is an approximation, and is calculated by rounding and then
     ///         truncating the raw deviation.
-    @objc public var deviationFromScheduleInMinutes: Int {
+    public var deviationFromScheduleInMinutes: Int {
         return Int(round(rawDeviationFromScheduleInMinutes))
     }
 
@@ -279,7 +279,7 @@ extension ArrivalDeparture {
     }
 
     /// Is this trip early, on time, delayed, or of an unknown status?
-    @objc public var scheduleStatus: ScheduleStatus {
+    public var scheduleStatus: ScheduleStatus {
         guard predicted else {
             return .unknown
         }
@@ -297,17 +297,14 @@ extension ArrivalDeparture {
     }
 }
 
-@objc(OBAArrivalDepartureStatus)
 public enum ArrivalDepartureStatus: Int {
     case arriving, departing
 }
 
-@objc(OBAScheduleStatus)
 public enum ScheduleStatus: Int {
     case unknown, early, onTime, delayed
 }
 
-@objc(OBATemporalState)
 public enum TemporalState: Int {
     case past, present, future
 }

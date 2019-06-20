@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(OBAAgenciesWithCoverageOperation)
+/// The operation for loading the `/api/where/agencies-with-coverage.json` endpoint.
 public class AgenciesWithCoverageOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction

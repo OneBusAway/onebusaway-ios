@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(OBANetworkHelpers)
+/// Helper functions for creating network requests.
 public class NetworkHelpers: NSObject {
 
     /// Creates an array of `URLQueryItem`s from a dictionary.

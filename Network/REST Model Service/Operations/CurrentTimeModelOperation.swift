@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBACurrentTimeModelOperation)
 public class CurrentTimeModelOperation: RESTModelOperation {
     public private(set) var currentTime: Date?
 

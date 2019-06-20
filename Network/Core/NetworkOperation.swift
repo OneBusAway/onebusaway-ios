@@ -8,7 +8,10 @@
 
 import Foundation
 
-@objc(OBANetworkOperation)
+/// The core operation class for creating network requests.
+///
+/// This class is not specific to the service from which data will be fetched, nor does it care what kind of data is returned.
+/// To be clear: you should use this for your network operations.
 public class NetworkOperation: AsyncOperation {
     public let request: URLRequest
     public private(set) var data: Data?

@@ -8,7 +8,7 @@
 
 import Foundation
 
-@objc(OBARegionalAlertsOperation)
+/// The opertion for fetching data from the `alerts-for-agency` ProtoBuf REST API endpoint.
 public class RegionalAlertsOperation: NetworkOperation {
     private static let apiPath = "/api/gtfs_realtime/alerts-for-agency/%@.pb"
 

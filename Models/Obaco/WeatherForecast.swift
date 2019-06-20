@@ -9,7 +9,7 @@
 import CoreLocation
 import Foundation
 
-@objc(OBAWeatherForecast)
+/// Represents a weather forecast—usually for the region where the user is located.
 public class WeatherForecast: NSObject, Decodable {
     public let location: CLLocation
 

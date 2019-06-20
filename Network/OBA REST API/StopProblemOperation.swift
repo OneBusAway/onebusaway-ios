@@ -9,7 +9,6 @@
 import Foundation
 import CoreLocation
 
-@objc(OBAStopProblemCode)
 public enum StopProblemCode: Int, CaseIterable {
     case nameWrong
     case numberWrong
@@ -43,7 +42,6 @@ func stopProblemCodeToUserFacingString(_ code: StopProblemCode) -> String {
     }
 }
 
-@objc(OBAStopProblemOperation)
 public class StopProblemOperation: RESTAPIOperation {
 
     public static let apiPath = "/api/where/report-problem-with-stop.json"

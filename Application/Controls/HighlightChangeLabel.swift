@@ -8,7 +8,6 @@
 import UIKit
 
 /// Alerts the user when its value changes by temporarily changing its background color.
-@objc(OBAHighlightChangeLabel)
 public class HighlightChangeLabel: UILabel {
 
     public override var text: String? {

@@ -24,7 +24,6 @@ public protocol MapRegionDelegate {
     @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
 }
 
-@objc(OBAMapRegionManager)
 public class MapRegionManager: NSObject {
 
     private let application: Application
@@ -37,14 +36,14 @@ public class MapRegionManager: NSObject {
         }
     }
 
-    @objc public let mapView: MKMapView = {
+    public let mapView: MKMapView = {
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
 
         return mapView
     }()
 
-    @objc public init(application: Application) {
+    public init(application: Application) {
         self.application = application
 
         mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
@@ -117,12 +116,10 @@ public class MapRegionManager: NSObject {
 
     private let delegates = NSHashTable<MapRegionDelegate>.weakObjects()
 
-    @objc
     public func addDelegate(_ delegate: MapRegionDelegate) {
         delegates.add(delegate)
     }
 
-    @objc
     public func removeDelegate(_ delegate: MapRegionDelegate) {
         delegates.remove(delegate)
     }
@@ -234,7 +231,7 @@ public class MapRegionManager: NSObject {
     ///
     /// - Note: This method can be called repeatedly, and will not have any effect after the first invocation.
     ///
-    @objc public func addStatusOverlayToMap() {
+    public func addStatusOverlayToMap() {
         guard statusOverlay.superview == nil else {
             return
         }

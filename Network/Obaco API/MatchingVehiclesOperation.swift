@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAMatchingVehiclesOperation)
 public class MatchingVehiclesOperation: NetworkOperation {
 
     private static let apiPath = "/api/v1/regions/%@/vehicles"

@@ -8,7 +8,7 @@
 import UIKit
 
 /// Renders a stop icon 'badge'. In other words, the core of a stop annotation view's rendered appearance on the map.
-@objc(OBAStopIconFactory) public class StopIconFactory: NSObject {
+public class StopIconFactory: NSObject {
     private let iconSize: CGFloat
 
     private var iconBackgroundColor: UIColor = .white
@@ -16,11 +16,11 @@ import UIKit
     private var textColor: UIColor = .white
     private let iconCache = NSCache<NSString, UIImage>()
 
-    @objc public init(iconSize: CGFloat) {
+    public init(iconSize: CGFloat) {
         self.iconSize = iconSize
     }
 
-    @objc public func buildIcon(for stop: Stop, strokeColor: UIColor) -> UIImage {
+    public func buildIcon(for stop: Stop, strokeColor: UIColor) -> UIImage {
         // First, let's compose the cache key out of the name and orientation, then
         // see if we've already got one that matches.
 

@@ -14,7 +14,6 @@ import CocoaLumberjackSwift
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
-@objc(OBAMapViewController)
 public class MapViewController: UIViewController {
 
     // MARK: - Floating Panel and Hoverbar
@@ -97,8 +96,7 @@ public class MapViewController: UIViewController {
 
     // MARK: - Public Methods
 
-    @objc
-    public func centerMapOnUserLocation() {
+    @objc public func centerMapOnUserLocation() {
         guard isViewLoaded, view.window != nil else { return }
 
         let userLocation = mapRegionManager.mapView.userLocation.coordinate
@@ -111,9 +109,6 @@ public class MapViewController: UIViewController {
     ///
     /// - Parameter stop: The stop to display.
     func show(stop: Stop) {
-//        displayWalkingRoute(stopID: id)
-//        let stopController = FloatingStopViewController(application: application, stopID: id, delegate: self)
-//        presentFloatingPanel(contentController: stopController, scrollView: stopController.stackView, animated: true)
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 

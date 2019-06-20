@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAFormatters)
 public class Formatters: NSObject {
 
     private let locale: Locale
@@ -19,7 +18,7 @@ public class Formatters: NSObject {
     /// - Note: You can (and probably should) pass in `Locale.autoupdatingCurrent` to this method.
     ///
     /// - Parameter locale: The current locale of the user's device.
-    @objc public init(locale: Locale, themeColors: ThemeColors) {
+    public init(locale: Locale, themeColors: ThemeColors) {
         self.locale = locale
         self.themeColors = themeColors
     }

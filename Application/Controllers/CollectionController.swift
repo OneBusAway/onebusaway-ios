@@ -64,6 +64,6 @@ public class CollectionController: UIViewController {
     }
 }
 
-@objc public protocol ListProvider: ListAdapterDataSource {
+public protocol ListProvider: ListAdapterDataSource {
     var collectionController: CollectionController { get }
 }

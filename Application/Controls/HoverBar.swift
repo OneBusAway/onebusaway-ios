@@ -14,7 +14,6 @@ fileprivate let defaultOrientation = NSLayoutConstraint.Axis.horizontal
 ///
 /// - Note: This class is a Swift port of [ISHHoverBar](https://github.com/iosphere/ISHHoverBar/).
 ///
-@objc(OBAHoverBar)
 public class HoverBar: RoundedShadowView {
 
     // MARK: - Public Interface

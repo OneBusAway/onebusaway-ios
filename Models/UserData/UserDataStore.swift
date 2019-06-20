@@ -115,7 +115,6 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     // MARK: - View State/Last Selected Tab
 
-    @objc
     public var lastSelectedView: SelectedTab {
         get {
             guard userDefaults.contains(key: UserDefaultsKeys.lastSelectedView.rawValue) else {

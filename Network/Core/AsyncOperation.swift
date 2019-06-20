@@ -8,7 +8,6 @@
 
 import Foundation
 
-@objc(OBAAsyncOperation)
 public class AsyncOperation: Operation {
 
     // MARK: - Errors

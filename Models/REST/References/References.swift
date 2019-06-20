@@ -9,7 +9,6 @@
 import Foundation
 import CocoaLumberjackSwift
 
-@objc(OBAReferences)
 public class References: NSObject, Decodable {
     public let agencies: [Agency]
     public let routes: [Route]
