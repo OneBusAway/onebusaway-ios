@@ -93,10 +93,13 @@ public class StopViewController: UIViewController {
     var stop: Stop? {
         didSet {
             guard let stop = stop else { return }
-
-            application.userDataStore.addRecentStop(stop)
-            stopHeader.stop = stop
+            performStopConfiguration(stop)
         }
+    }
+
+    private func performStopConfiguration(_ stop: Stop) {
+        application.userDataStore.addRecentStop(stop)
+        stopHeader.stop = stop
     }
 
     /// Arrival/Departure data for this stop.
@@ -123,6 +126,7 @@ public class StopViewController: UIViewController {
     public convenience init(application: Application, stop: Stop) {
         self.init(application: application, stopID: stop.id)
         self.stop = stop
+        performStopConfiguration(stop)
     }
 
     /// Creates the view controller with only a `stopID`, which requires
