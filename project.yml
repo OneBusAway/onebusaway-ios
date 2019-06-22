@@ -2,7 +2,7 @@ name: OBAKit
 options:
   bundleIdPrefix: org.onebusaway
 targets:
-  DemoApp:
+  OneBusAway:
     type: application
     platform: iOS
     deploymentTarget: "12.3"
@@ -14,17 +14,11 @@ targets:
       path: DemoApp/Info.plist
       properties:
         DeepLinkServerBaseAddress: "http://alerts.onebusaway.org"
-        LSApplicationQueriesScheme:
-          - fb
-          - twitter
-          - comgooglemaps
-          - fb313213768708402HART
-          - org.sdmts.riderapp.compassmobile.payments
-          - co.bytemark.tgt
+        LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSUserActivityTypes:
-          - org.onebusaway.DemoApp.user_activity.stop
-          - org.onebusaway.DemoApp.user_activity.trip
+          - org.onebusaway.OneBusAway.user_activity.stop
+          - org.onebusaway.OneBusAway.user_activity.trip
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
@@ -41,6 +35,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+    scheme:
+      gatherCoverageData: true
   OBAKit:
     type: framework
     platform: iOS
@@ -67,6 +63,6 @@ targets:
     deploymentTarget: "12.3"
     sources: [OBAKitTests]
     dependencies:
-      - target: DemoApp
+      - target: OneBusAway
       - carthage: Nimble
       - carthage: OHHTTPStubs

@@ -14,19 +14,27 @@ import CoreLocation
 // swiftlint:disable force_try
 
 class UserDefaultsStoreTests: OBATestCase {
-
-    var userDefaults: UserDefaults!
     var userDefaultsStore: UserDefaultsStore!
+    var region: Region!
 
     override func setUp() {
         super.setUp()
-        userDefaults = UserDefaults(suiteName: String(describing: self))
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
+        region = try! loadSomeRegions()[1]
     }
 
     override func tearDown() {
         super.tearDown()
-        userDefaults.removeSuite(named: String(describing: self))
+    }
+
+    // MARK: - Core
+
+    func test_garbageData_doesNotBreakApp() {
+        let garbageDefaults = UserDefaults(suiteName: "garbage data test")!
+        garbageDefaults.set("garbage data", forKey: "bookmarkGroups")
+        let garbageStore = UserDefaultsStore(userDefaults: garbageDefaults)
+
+        expect(garbageStore.bookmarkGroups) == []
     }
 
     // MARK: - Recent Stops
@@ -34,7 +42,7 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_recentStops_addStop() {
         let stops = try! loadSomeStops()
         let stop = stops.first!
-        userDefaultsStore.addRecentStop(stop)
+        userDefaultsStore.addRecentStop(stop, region: region)
 
         expect(self.userDefaultsStore.recentStops) == [stop]
     }
@@ -42,8 +50,8 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_recentStops_uniqueStops() {
         let stops = try! loadSomeStops()
         let stop = stops.first!
-        userDefaultsStore.addRecentStop(stop)
-        userDefaultsStore.addRecentStop(stop)
+        userDefaultsStore.addRecentStop(stop, region: region)
+        userDefaultsStore.addRecentStop(stop, region: region)
 
         expect(self.userDefaultsStore.recentStops) == [stop]
     }
@@ -53,7 +61,7 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
 
         for s in stops {
-            userDefaultsStore.addRecentStop(s)
+            userDefaultsStore.addRecentStop(s, region: region)
         }
 
         expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount
@@ -62,7 +70,7 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_recentStops_removeAll() {
         let stops = try! loadSomeStops()
         let stop = stops.first!
-        userDefaultsStore.addRecentStop(stop)
+        userDefaultsStore.addRecentStop(stop, region: region)
 
         userDefaultsStore.deleteAllRecentStops()
 
@@ -74,7 +82,7 @@ class UserDefaultsStoreTests: OBATestCase {
         let stop = stops.first!
 
         for s in stops {
-            userDefaultsStore.addRecentStop(s)
+            userDefaultsStore.addRecentStop(s, region: region)
         }
 
         userDefaultsStore.delete(recentStop: stop)

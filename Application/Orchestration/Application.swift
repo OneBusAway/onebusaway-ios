@@ -64,6 +64,11 @@ public class Application: NSObject {
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
     @objc public let regionsService: RegionsService
 
+    /// Helper property that returns `regionsService.currentRegion`.
+    @objc public var currentRegion: Region? {
+        return regionsService.currentRegion
+    }
+
     /// Provides access to the OneBusAway REST API
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)

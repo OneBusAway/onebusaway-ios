@@ -98,7 +98,10 @@ public class StopViewController: UIViewController {
     }
 
     private func performStopConfiguration(_ stop: Stop) {
-        application.userDataStore.addRecentStop(stop)
+        if let region = application.currentRegion {
+            application.userDataStore.addRecentStop(stop, region: region)
+        }
+
         stopHeader.stop = stop
     }
 

@@ -16,6 +16,13 @@ import Nimble
 // swiftlint:disable large_tuple
 
 class TestAppDelegate: ApplicationDelegate {
+    func canOpenURL(_ url: URL) -> Bool {
+        return false
+    }
+
+    func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?) {
+        //
+    }
 
     var called_applicationDisplayRegionPicker = false
     func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController) {
@@ -30,7 +37,7 @@ class TestAppDelegate: ApplicationDelegate {
     var isIdleTimerDisabled = false
 }
 
-class TestRegionsServiceDelegate: RegionsServiceDelegate {
+class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         //
     }

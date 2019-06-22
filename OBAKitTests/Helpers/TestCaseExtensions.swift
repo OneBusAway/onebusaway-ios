@@ -91,6 +91,13 @@ public extension Date {
 }
 
 public extension XCTestCase {
+
+    func roundtripCodable<T>(type: T.Type, model: T) throws -> T where T: Codable {
+        let encoded = try PropertyListEncoder().encode(model)
+        let decoded = try PropertyListDecoder().decode(type, from: encoded)
+        return decoded
+    }
+
     func loadData(file: String) -> Data {
         let path = OHPathForFile(file, type(of: self))!
         let data = NSData(contentsOfFile: path)!
@@ -110,18 +117,26 @@ public extension XCTestCase {
     /// - Parameters:
     ///   - type: The model type
     ///   - json: The JSON data to decode from.
+    ///   - skipReferences: Don't try decoding references. Used for Regions.
     /// - Returns: A decoded array of models.
     /// - Throws: Errors in case of a decoding failure.
-    func decodeModels<T>(type: T.Type, json: [String: Any]) throws -> [T] where T: Decodable {
+    func decodeModels<T>(type: T.Type, json: [String: Any], skipReferences: Bool = false) throws -> [T] where T: Decodable {
         guard let data = json["data"] as? [String: Any] else {
             throw ModelDecodingError.invalidData
         }
 
-        guard let references = data["references"] as? [String: Any] else {
-            throw ModelDecodingError.invalidReferences
-        }
+        let decodedReferences: References?
 
-        let decodedReferences = try References.decodeReferences(references)
+        if skipReferences {
+            decodedReferences = nil
+        }
+        else {
+            guard let references = data["references"] as? [String: Any] else {
+                throw ModelDecodingError.invalidReferences
+            }
+
+            decodedReferences = try References.decodeReferences(references)
+        }
 
         let modelDicts: [[String: Any]]
         if let list = data["list"] as? [[String: Any]] {
@@ -145,6 +160,11 @@ public extension OBATestCase {
     func loadSomeStops() throws -> [Stop] {
         let json = loadJSONDictionary(file: "stops_for_location_seattle.json")
         return try decodeModels(type: Stop.self, json: json)
+    }
+
+    func loadSomeRegions() throws -> [Region] {
+        let json = loadJSONDictionary(file: "regions-v3.json")
+        return try decodeModels(type: Region.self, json: json, skipReferences: true)
     }
 }
 
