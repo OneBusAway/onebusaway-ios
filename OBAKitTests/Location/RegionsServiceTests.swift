@@ -13,13 +13,6 @@ import CoreLocation
 import Nimble
 
 class RegionsServiceTests: OBATestCase {
-    let userDefaults = UserDefaults.standard
-
-    public override func tearDown() {
-        super.tearDown()
-
-        UserDefaults.resetStandardUserDefaults()
-    }
 
     // MARK: - Upon creating the Regions Service
 

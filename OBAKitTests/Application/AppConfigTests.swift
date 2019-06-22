@@ -19,18 +19,13 @@ class AppConfigTests: OBATestCase {
     let apiKey = "apikey"
     let uuid = "uuid-string"
     let appVersion = "app-version"
-    var userDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
-
-        userDefaults = UserDefaults(suiteName: "apptests")
     }
 
     override func tearDown() {
         super.tearDown()
-
-        userDefaults.removeSuite(named: "apptests")
     }
 
     func testAppConfig_creation_propertiesWork() {

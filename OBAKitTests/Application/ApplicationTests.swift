@@ -45,14 +45,10 @@ class ApplicationTests: OBATestCase {
     let apiKey = "apikey"
     let uuid = "uuid-string"
     let appVersion = "app-version"
-    var userDefaults: UserDefaults!
     let queue = OperationQueue()
 
     override func setUp() {
         super.setUp()
-
-        userDefaults = UserDefaults.standard
-        userDefaults.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
     }
 
     override func tearDown() {
