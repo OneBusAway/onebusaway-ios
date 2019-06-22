@@ -9,8 +9,6 @@
 #import "AppDelegate.h"
 @import OBAKit;
 
-#import "PermissionPromptViewController.h"
-
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
@@ -57,7 +55,7 @@
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     if (application.showPermissionPromptUI) {
-        PermissionPromptViewController *promptViewController = [[PermissionPromptViewController alloc] initWithLocationService:application.locationService];
+        OBAPermissionPromptViewController *promptViewController = [[OBAPermissionPromptViewController alloc] initWithApplication:application];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
         self.window.rootViewController = nav;
     }
