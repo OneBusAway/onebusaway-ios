@@ -139,6 +139,16 @@ public class Route: NSObject, Codable, HasReferences {
     }
 
     public override var hash: Int {
-        return id.hash
+        var hasher = Hasher()
+        hasher.combine(agencyID)
+        hasher.combine(color)
+        hasher.combine(routeDescription)
+        hasher.combine(id)
+        hasher.combine(longName)
+        hasher.combine(shortName)
+        hasher.combine(textColor)
+        hasher.combine(routeType)
+        hasher.combine(routeURL)
+        return hasher.finalize()
     }
 }

@@ -87,9 +87,7 @@ public class TableRowData: ListViewModel {
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? TableRowData else {
-            return false
-        }
+        guard let rhs = object as? TableRowData else { return false }
 
         return
             title == rhs.title &&
@@ -97,6 +95,16 @@ public class TableRowData: ListViewModel {
             subtitle == rhs.subtitle &&
             accessoryType == rhs.accessoryType &&
             style == rhs.style
+    }
+
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(title)
+        hasher.combine(attributedTitle)
+        hasher.combine(subtitle)
+        hasher.combine(accessoryType)
+        hasher.combine(style)
+        return hasher.finalize()
     }
 }
 

@@ -208,6 +208,16 @@ public class Stop: NSObject, Codable, HasReferences {
     }
 
     public override var hash: Int {
-        return id.hash
+        var hasher = Hasher()
+        hasher.combine(code)
+        hasher.combine(direction)
+        hasher.combine(id)
+        hasher.combine(location.coordinate.latitude)
+        hasher.combine(location.coordinate.longitude)
+        hasher.combine(locationType)
+        hasher.combine(name)
+        hasher.combine(routeIDs)
+        hasher.combine(wheelchairBoarding)
+        return hasher.finalize()
     }
 }

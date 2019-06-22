@@ -66,8 +66,23 @@ public class AgencyAlert: NSObject {
         self.agency = agency
     }
 
+    // MARK: - Equality and Hashing
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? AgencyAlert else { return false }
+        return alert == rhs.alert &&
+               id == rhs.id &&
+               agencyID == rhs.agencyID &&
+               agency == rhs.agency
+    }
+
     override public var hash: Int {
-        return String(format: "%@_%@_%@", id, agencyID, title(language: "en") ?? "").hashValue
+        var hasher = Hasher()
+        hasher.combine(alert)
+        hasher.combine(id)
+        hasher.combine(agencyID)
+        hasher.combine(agency)
+        return hasher.finalize()
     }
 }
 
