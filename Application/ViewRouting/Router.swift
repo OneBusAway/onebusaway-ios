@@ -59,4 +59,15 @@ public class ViewRouter: NSObject {
         let stopController = StopViewController(application: application, stop: stop)
         navigate(to: stopController, from: fromController)
     }
+
+    // MARK: - Helpers
+
+    /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.
+    /// - Parameter controller: The `rootViewController` of the `UINavigationController`.
+    public func buildNavigation(controller: UIViewController) -> UINavigationController {
+        let navigation = UINavigationController(rootViewController: controller)
+        navigation.navigationBar.prefersLargeTitles = true
+
+        return navigation
+    }
 }

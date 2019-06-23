@@ -11,6 +11,15 @@ import AloeStackView
 
 public extension AloeStackView {
 
+    /// Configures a new `AloeStackView` to work with Auto Layout.
+    /// - Parameter backgroundColor: Optional. Background color for the stack.
+    class func autolayoutNew(backgroundColor: UIColor?) -> AloeStackView {
+        let stack = AloeStackView()
+        stack.backgroundColor = backgroundColor
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }
+
     /// Extension: Add a row, plus specify separator visibility and insets in a single call.
     ///
     /// - Parameters:
@@ -26,5 +35,28 @@ public extension AloeStackView {
         if let insets = insets {
             self.setInset(forRow: view, inset: insets)
         }
+    }
+}
+
+protocol AloeStackTableBuilder {
+    var stackView: AloeStackView { get }
+    var theme: Theme { get }
+
+    func addTableHeaderToStack(headerText: String)
+    func addTableRowToStack(_ row: UIView)
+}
+
+extension AloeStackTableBuilder where Self: UIViewController {
+
+    func addTableHeaderToStack(headerText: String) {
+        let header = TableHeaderView.autolayoutNew()
+        header.textLabel.text = headerText
+        stackView.addRow(header, hideSeparator: false)
+        stackView.setSeparatorInset(forRow: header, inset: .zero)
+    }
+
+    func addTableRowToStack(_ row: UIView) {
+        stackView.addRow(row, hideSeparator: false)
+        stackView.setBackgroundColor(forRow: row, color: theme.colors.groupedTableRowBackground)
     }
 }

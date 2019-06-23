@@ -13,16 +13,15 @@ import AloeStackView
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
 ///
 /// - Note: This view controller expects to be presented modally.
-public class ReportProblemViewController: UIViewController {
+public class ReportProblemViewController: UIViewController, AloeStackTableBuilder {
 
-    private lazy var stackView: AloeStackView = {
-        let stack = AloeStackView()
-        stack.backgroundColor = application.theme.colors.groupedTableBackground
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
+    lazy var stackView = AloeStackView.autolayoutNew(
+        backgroundColor: application.theme.colors.groupedTableBackground
+    )
 
     private let application: Application
+    var theme: Theme { application.theme }
+
     private let stop: Stop
 
     private var operation: StopArrivalsModelOperation?
@@ -63,7 +62,7 @@ public class ReportProblemViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = application.theme.colors.groupedTableBackground
+        view.backgroundColor = theme.colors.groupedTableBackground
 
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)
@@ -106,9 +105,9 @@ public class ReportProblemViewController: UIViewController {
     }
 
     private func addProblemWithTheStopRow(_ stop: Stop) {
-        addTableHeaderToStack(text: NSLocalizedString("report_problem_controller.stop_problem.header",
-                                                      value: "Problem with the Stop",
-                                                      comment: "A table header in the 'Report Problem' view controller."))
+        addTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
+                                                            value: "Problem with the Stop",
+                                                            comment: "A table header in the 'Report Problem' view controller."))
 
         let fmt = NSLocalizedString(
             "report_problem_controller.report_stop_problem_fmt",
@@ -133,7 +132,7 @@ public class ReportProblemViewController: UIViewController {
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
-        addTableHeaderToStack(text: NSLocalizedString("report_problem_controller.stop_problem.header",
+        addTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
                                                       value: "Problem with a Vehicle at the Stop",
                                                       comment: "A table header in the 'Report Problem' view controller."))
 
@@ -157,17 +156,5 @@ public class ReportProblemViewController: UIViewController {
         if let lastRow = rows.last {
             stackView.setSeparatorInset(forRow: lastRow, inset: .zero)
         }
-    }
-
-    private func addTableHeaderToStack(text: String) {
-        let header = TableHeaderView.autolayoutNew()
-        header.textLabel.text = text
-        stackView.addRow(header, hideSeparator: false)
-        stackView.setSeparatorInset(forRow: header, inset: .zero)
-    }
-
-    private func addTableRowToStack(_ row: UIView) {
-        stackView.addRow(row, hideSeparator: false)
-        stackView.setBackgroundColor(forRow: row, color: application.theme.colors.groupedTableRowBackground)
     }
 }

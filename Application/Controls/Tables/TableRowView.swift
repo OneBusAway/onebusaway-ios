@@ -7,10 +7,7 @@
 
 import UIKit
 
-/// A view that approximates the appearance of a `UITableViewCell`.
-///
-/// - Note: Nominally, this is meant to be used in an `AloeStackView` or with `IGListKit`.
-
+/// A view that approximates the appearance of a `UITableViewCell`. Meant to be used directly in an `AloeStackView`.
 public class TableRowView: UIView {
 
     var useDebugColors = false
