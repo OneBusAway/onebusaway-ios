@@ -6,12 +6,22 @@
 //
 
 import UIKit
+import AloeStackView
 
 /// This view controller powers the Bookmarks tab.
-@objc(OBABookmarksViewController) public class BookmarksViewController: UIViewController {
+@objc(OBABookmarksViewController) public class BookmarksViewController: UIViewController, AloeStackTableBuilder {
 
+    /// The OBA application object
     private let application: Application
 
+    var theme: Theme { return application.theme }
+
+    lazy var stackView = AloeStackView.autolayoutNew(
+        backgroundColor: application.theme.colors.systemBackground
+    )
+
+    /// Creates a Bookmarks controller
+    /// - Parameter application: The OBA application object
     public init(application: Application) {
         self.application = application
 
@@ -21,7 +31,40 @@ import UIKit
         tabBarItem.image = Icons.bookmarksTabIcon
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.addSubview(stackView)
+        stackView.pinToSuperview(.edges)
+
+        reloadTable()
+    }
+
+    private func reloadTable() {
+        stackView.removeAllRows()
+
+        for group in application.userDataStore.bookmarkGroups {
+            let bookmarks = application.userDataStore.bookmarksInGroup(group)
+            if bookmarks.count > 0 {
+                addRowsForGroup(name: group.name, bookmarks: bookmarks)
+            }
+        }
+
+        addRowsForGroup(name: self.title!, bookmarks: application.userDataStore.bookmarksInGroup(nil))
+    }
+
+    private func addRowsForGroup(name: String, bookmarks: [Bookmark]) {
+        addTableHeaderToStack(headerText: name)
+
+        for b in bookmarks {
+            let row = DefaultTableRowView(title: b.name, accessoryType: .disclosureIndicator)
+            addTableRowToStack(row)
+            stackView.setTapHandler(forRow: row) { [weak self] _ in
+                guard let self = self else { return }
+                self.application.viewRouter.navigateTo(stop: b.stop, from: self)
+            }
+        }
     }
 }
