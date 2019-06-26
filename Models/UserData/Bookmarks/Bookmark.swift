@@ -30,6 +30,9 @@ import Foundation
     /// to by this object.
     public let stopID: String
 
+    /// Whether or not this `Bookmark` should be displayed in the Today widget, for example. `false` by default.
+    public var isFavorite: Bool
+
     /// This object stores a complete copy of its underlying `Stop` in order to be able to show additional information
     /// to the user.
     ///
@@ -49,6 +52,7 @@ import Foundation
         self.regionIdentifier = regionIdentifier
         self.stopID = stop.id
         self.stop = stop
+        self.isFavorite = false
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -60,7 +64,8 @@ import Foundation
             name == rhs.name &&
             regionIdentifier == rhs.regionIdentifier &&
             stopID == rhs.stopID &&
-            stop == rhs.stop
+            stop == rhs.stop &&
+            isFavorite == rhs.isFavorite
     }
 
     public override var hash: Int {
@@ -71,12 +76,13 @@ import Foundation
         hasher.combine(regionIdentifier)
         hasher.combine(stopID)
         hasher.combine(stop)
+        hasher.combine(isFavorite)
         return hasher.finalize()
     }
 
     override public var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["uuid": uuid as Any, "groupUUID": groupUUID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any]
+        let props: [String: Any] = ["uuid": uuid as Any, "groupUUID": groupUUID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any]
         return "\(desc) \(props)"
     }
 }
