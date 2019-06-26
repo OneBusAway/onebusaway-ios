@@ -73,7 +73,7 @@ extension UIView {
         return wrapper
     }
 
-    public func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero) {
+    private func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero) {
         guard let superview = superview else {
             return
         }
