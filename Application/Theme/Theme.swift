@@ -85,6 +85,9 @@ public class ThemeColors: NSObject {
     /// The background color of a row in a grouped table.
     public let groupedTableRowBackground: UIColor
 
+    /// The system background color. Works with Dark Mode in iOS 13 and above.
+    public let systemBackground: UIColor
+
     public override convenience init() {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
@@ -106,10 +109,12 @@ public class ThemeColors: NSObject {
         if #available(iOS 13, *) {
             groupedTableBackground = .systemGroupedBackground
             groupedTableRowBackground = .white
+            systemBackground = .systemBackground
         }
         else {
             groupedTableBackground = .groupTableViewBackground
             groupedTableRowBackground = .white
+            systemBackground = .white
         }
     }
 }

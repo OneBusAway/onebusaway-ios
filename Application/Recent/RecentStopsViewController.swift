@@ -33,7 +33,7 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."), style: .plain, target: self, action: #selector(deleteAll))
 
-        view.backgroundColor = .white
+        view.backgroundColor = application.theme.colors.systemBackground
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
     }

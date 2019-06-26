@@ -71,7 +71,7 @@ public class PermissionPromptViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = .white
+        view.backgroundColor = application.theme.colors.systemBackground
 
         let imageViewWrapper = topImageView.embedInWrapperView(setConstraints: false)
         imageViewWrapper.backgroundColor = topImageView.backgroundColor
