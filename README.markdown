@@ -11,6 +11,18 @@ OBAKit uses [Xcodegen](https://github.com/yonaskolb/XcodeGen) to generate its `x
     xcodegen
     open OBAKit.xcodeproj
 
+### Things Not Working Right?
+
+After running XcodeGen and opening `OBAKit.xcodeproj`, you should be able to run the OneBusAway app (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
+
+1. `Product` Menu > `Scheme` > `Manage Schemes`
+2. Delete the `OneBusAway` scheme (if it exists)
+3. Click on the `Autocreate Schemes Now` button.
+4. Click on the `Close` button.
+5. Change the active scheme to `OneBusAway`.
+
+I'm sure there's a bug in the `project.yml` file that I have written that is causing this issue. Pull Requests to address this issue are welcome!
+
 ## Code and Structure
 
 OBAKit is written almost entirely in Swift 5, with the exception of few small, ancillary pieces.
