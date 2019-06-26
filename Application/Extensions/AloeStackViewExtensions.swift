@@ -16,6 +16,7 @@ public extension AloeStackView {
     class func autolayoutNew(backgroundColor: UIColor?) -> AloeStackView {
         let stack = AloeStackView()
         stack.backgroundColor = backgroundColor
+        stack.rowInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }
@@ -43,7 +44,7 @@ protocol AloeStackTableBuilder {
     var theme: Theme { get }
 
     func addTableHeaderToStack(headerText: String)
-    func addTableRowToStack(_ row: UIView)
+    func addTableRowToStack(_ row: UIView, isLastRow: Bool)
 }
 
 extension AloeStackTableBuilder where Self: UIViewController {
@@ -55,8 +56,12 @@ extension AloeStackTableBuilder where Self: UIViewController {
         stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 
-    func addTableRowToStack(_ row: UIView) {
+    func addTableRowToStack(_ row: UIView, isLastRow: Bool = false) {
         stackView.addRow(row, hideSeparator: false)
         stackView.setBackgroundColor(forRow: row, color: theme.colors.groupedTableRowBackground)
+
+        if isLastRow {
+            stackView.setSeparatorInset(forRow: row, inset: .zero)
+        }
     }
 }

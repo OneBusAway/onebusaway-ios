@@ -36,7 +36,7 @@ public class TableHeaderView: UIView {
         super.init(frame: frame)
 
         addSubview(textLabel)
-        textLabel.pinToSuperview(.edges)
+        textLabel.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: -ThemeMetrics.compactPadding, trailing: 0))
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

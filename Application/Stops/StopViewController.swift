@@ -421,6 +421,18 @@ public class StopViewController: UIViewController {
     }
 }
 
+// MARK: - Bookmark Editor
+extension StopViewController: BookmarkEditorDelegate {
+    func bookmarkEditorCancelled(_ viewController: UIViewController) {
+        viewController.dismiss(animated: true, completion: nil)
+    }
+
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark) {
+        // abxoxo todo - show some sort of status message when a bookmark is added or changed.
+        viewController.dismiss(animated: true, completion: nil)
+    }
+}
+
 // MARK: - Actions
 extension StopViewController {
 
@@ -436,7 +448,12 @@ extension StopViewController {
 
     /// Initiates the 'Add Bookmark' workflow.
     @objc private func addBookmark() {
+        guard let stop = stop else { return }
 
+        let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
+
+        let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
+        application.viewRouter.present(navigation, from: self, isModalInPresentation: true)
     }
 
     /// Initiates the Route Filter workflow.
@@ -455,8 +472,7 @@ extension StopViewController {
         guard let stop = stop else { return }
 
         let reportProblemController = ReportProblemViewController(application: application, stop: stop)
-        let navigation = UINavigationController(rootViewController: reportProblemController)
-        navigation.navigationBar.prefersLargeTitles = true
+        let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
         application.viewRouter.present(navigation, from: self, isModalInPresentation: true)
     }
 }
