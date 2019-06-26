@@ -35,6 +35,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Note: `Bookmark`s should not be deleted when their `BookmarkGroup` is deleted.
     func delete(bookmarkGroup: BookmarkGroup)
 
+    /// Finds the `BookmarkGroup` with a matching `uuid` if it exists.
+    /// - Parameter uuid: The `UUID` for which to search in existing bookmark groups.
+    func findGroup(uuid: UUID) -> BookmarkGroup?
+
     // MARK: - Bookmarks
 
     /// Retrieves a list of `Bookmark` objects.
@@ -53,6 +57,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter bookmark: The `Bookmark` to delete.
     /// - Returns: The index of the bookmark, if found. Otherwise returns `NSNotFound`.
     func delete(bookmark: Bookmark) -> Int
+
+    /// Finds the `Bookmark` with a matching `uuid` if it exists.
+    /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
+    func findBookmark(uuid: UUID) -> Bookmark?
 
     // MARK: - Recent Stops
 
@@ -123,6 +131,10 @@ public class UserDefaultsStore: NSObject, UserDataStore {
         }
     }
 
+    public func findGroup(uuid: UUID) -> BookmarkGroup? {
+        bookmarkGroups.first { $0.uuid == uuid }
+    }
+
     // MARK: - Bookmarks
 
     public var bookmarks: [Bookmark] {
@@ -177,7 +189,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     /// Finds the `Bookmark` with a matching `uuid` if it exists.
     /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
-    func findBookmark(uuid: UUID) -> Bookmark? {
+    public func findBookmark(uuid: UUID) -> Bookmark? {
         bookmarks.first { $0.uuid == uuid }
     }
 
