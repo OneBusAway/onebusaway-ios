@@ -18,7 +18,7 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("recent_stops_controller.title", value: "Recent Stops", comment: "The title of the Recent Stops controller.")
+        title = NSLocalizedString("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
         tabBarItem.image = Icons.recentTabIcon
     }
 
