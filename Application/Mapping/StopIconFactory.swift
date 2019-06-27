@@ -57,7 +57,7 @@ public class StopIconFactory: NSObject {
             let ctx = rendererContext.cgContext
 
             self.drawBackground(rect: rect, context: ctx)
-            self.drawBorder(rect: rect, context: ctx)
+            self.drawBorder(rect: rect, color: strokeColor, context: ctx)
             self.drawIcon(routeType: stop.prioritizedRouteTypeForDisplay, rect: rect, context: ctx)
             self.drawArrowImage(direction: stop.direction, rect: imageBounds, context: ctx)
         }
@@ -73,12 +73,12 @@ public class StopIconFactory: NSObject {
         }
     }
 
-    private func drawBorder(rect: CGRect, context: CGContext) {
+    private func drawBorder(rect: CGRect, color: UIColor, context: CGContext) {
         context.pushPop {
             let inset = borderWidth / 2.0
             let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
             bezierPath.lineWidth = borderWidth
-            context.setStrokeColor(borderColor.cgColor)
+            context.setStrokeColor(color.cgColor)
             bezierPath.stroke()
         }
     }

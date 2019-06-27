@@ -9,7 +9,15 @@
 import UIKit
 import MapKit
 
-public class StopAnnotationView: MKAnnotationView {
+protocol StopAnnotationDelegate: NSObjectProtocol {
+    func isStopBookmarked(_ stop: Stop) -> Bool
+    var iconFactory: StopIconFactory { get }
+}
+
+class StopAnnotationView: MKAnnotationView {
+
+    // MARK: - Delegate
+    public weak var delegate: StopAnnotationDelegate?
 
     // MARK: - View Config Constants
 
@@ -76,10 +84,14 @@ public class StopAnnotationView: MKAnnotationView {
     public override func prepareForDisplay() {
         super.prepareForDisplay()
 
-        guard let stop = annotation as? Stop else { return }
+        guard
+            let stop = annotation as? Stop,
+            let delegate = delegate
+        else { return }
 
-        let iconFactory = StopIconFactory(iconSize: annotationSize)
-        image = iconFactory.buildIcon(for: stop, strokeColor: .black)
+        let iconFactory = delegate.iconFactory
+        let iconStrokeColor: UIColor = delegate.isStopBookmarked(stop) ? bookmarkedStrokeColor : strokeColor
+        image = iconFactory.buildIcon(for: stop, strokeColor: iconStrokeColor)
 
         titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
         subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
@@ -110,6 +122,20 @@ public class StopAnnotationView: MKAnnotationView {
         set { _fillColor = newValue }
     }
     private var _fillColor: UIColor!
+
+    /// Stroke color for this annotation view and its directional arrow.
+    @objc dynamic var strokeColor: UIColor {
+        get { return _strokeColor }
+        set { _strokeColor = newValue }
+    }
+    private var _strokeColor: UIColor!
+
+    /// Stroke color for this annotation view and its directional arrow, when it represents a bookmarked stop.
+    @objc dynamic var bookmarkedStrokeColor: UIColor {
+        get { return _bookmarkedStrokeColor }
+        set { _bookmarkedStrokeColor = newValue }
+    }
+    private var _bookmarkedStrokeColor: UIColor!
 
     /// UIAppearance proxy-compatible version of `canShowCallout`.
     @objc dynamic var showsCallout: Bool {

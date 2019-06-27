@@ -24,7 +24,7 @@ public protocol MapRegionDelegate {
     @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
 }
 
-public class MapRegionManager: NSObject {
+public class MapRegionManager: NSObject, StopAnnotationDelegate {
 
     private let application: Application
 
@@ -265,6 +265,16 @@ public class MapRegionManager: NSObject {
             notifyDelegatesSearchResultsChanged()
         }
     }
+
+    // MARK: - Stop Annotation Delegate
+
+    func isStopBookmarked(_ stop: Stop) -> Bool {
+        application.userDataStore.findBookmark(stopID: stop.id) != nil
+    }
+
+    var iconFactory: StopIconFactory {
+        application.stopIconFactory
+    }
 }
 
 // MARK: - Map View Delegate
@@ -309,6 +319,10 @@ extension MapRegionManager: MKMapViewDelegate {
 
         if self.userLocationAnnotationView == nil, let userLocation = annotationView as? PulsingAnnotationView {
             self.userLocationAnnotationView = userLocation
+        }
+
+        if let stopAnnotation = annotationView as? StopAnnotationView {
+            stopAnnotation.delegate = self
         }
 
         return annotationView

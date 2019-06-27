@@ -69,6 +69,9 @@ public class Application: NSObject {
         return regionsService.currentRegion
     }
 
+    /// Responsible for creating stop 'badges' for the map.
+    public lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize)
+
     /// Provides access to the OneBusAway REST API
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
@@ -190,10 +193,12 @@ public class Application: NSObject {
         StatusOverlayView.appearance().textColor = theme.colors.lightText
 
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
+        StopAnnotationView.appearance().bookmarkedStrokeColor = theme.colors.primary
         StopAnnotationView.appearance().fillColor = theme.colors.primary
         StopAnnotationView.appearance().mapTextColor = theme.colors.mapText
         StopAnnotationView.appearance().mapTextFont = theme.fonts.mapAnnotation
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
+        StopAnnotationView.appearance().strokeColor = UIColor.black
         StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
 
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote

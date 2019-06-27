@@ -62,6 +62,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
     func findBookmark(uuid: UUID) -> Bookmark?
 
+    /// Finds the `Bookmark` with a matching `stopID` if it exists.
+    /// - Parameter stopID: The Stop ID for which to search in existing bookmarks.
+    func findBookmark(stopID: String) -> Bookmark?
+
     // MARK: - Recent Stops
 
     /// A list of recently-viewed stops
@@ -191,6 +195,10 @@ public class UserDefaultsStore: NSObject, UserDataStore {
     /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
     public func findBookmark(uuid: UUID) -> Bookmark? {
         bookmarks.first { $0.uuid == uuid }
+    }
+
+    public func findBookmark(stopID: String) -> Bookmark? {
+        bookmarks.first { $0.stopID == stopID }
     }
 
     private func updateBookmarksWithStop(_ stop: Stop, region: Region) {
