@@ -14,6 +14,7 @@ targets:
       path: DemoApp/Info.plist
       properties:
         DeepLinkServerBaseAddress: "http://alerts.onebusaway.org"
+        PrivacyPolicyURL: "http://onebusaway.org/privacy/"
         LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSUserActivityTypes:

@@ -20,6 +20,10 @@ import CocoaLumberjackSwift
 @objc(OBAUserDataStore)
 public protocol UserDataStore: NSObjectProtocol {
 
+    // MARK: - Debug Mode
+
+    var debugMode: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -103,6 +107,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
     let userDefaults: UserDefaults
 
     enum UserDefaultsKeys: String {
+        case debugMode
         case bookmarks
         case bookmarkGroups
         case recentStops
@@ -111,6 +116,19 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
+
+        self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode.rawValue: false])
+    }
+
+    // MARK: - Debug Mode
+
+    public var debugMode: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.debugMode.rawValue)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.debugMode.rawValue)
+        }
     }
 
     // MARK: - Bookmark Groups

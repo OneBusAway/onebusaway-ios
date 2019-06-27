@@ -30,6 +30,8 @@ public class Strings: NSObject {
 
     public static let save = NSLocalizedString("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")
 
+    public static let settings = NSLocalizedString("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
+
     public static let updatedAtFormat = NSLocalizedString("common.updated_at_fmt", value: "Updated: %@", comment: "A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.")
 
     public static let updating = NSLocalizedString("common.updating", value: "Updating…", comment: "Used to tell the user that the UI they are looking at is actively being updated with new data from the server.")

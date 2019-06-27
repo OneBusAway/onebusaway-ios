@@ -27,9 +27,9 @@ public class Icons: NSObject {
         return imageNamed("bookmarks")
     }
 
-    /// The Settings tab icon, for apps using a tab bar UI metaphor.
-    public class var settingsTabIcon: UIImage {
-        return imageNamed("settings")
+    /// A More tab icon, for apps using a tab bar UI metaphor.
+    public class var moreTabIcon: UIImage {
+        return imageNamed("more")
     }
 
     // MARK: - Table Accessories

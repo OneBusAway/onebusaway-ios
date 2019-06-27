@@ -25,6 +25,12 @@ public extension Bundle {
         guard let address = object(forInfoDictionaryKey: "DeepLinkServerBaseAddress") as? String else { return nil }
         return URL(string: address)
     }
+
+    /// A helper method for accessing the bundle's privacy policy URL
+    var privacyPolicyURL: URL? {
+        guard let address = object(forInfoDictionaryKey: "PrivacyPolicyURL") as? String else { return nil }
+        return URL(string: address)
+    }
 }
 
 public extension Sequence where Element == String {

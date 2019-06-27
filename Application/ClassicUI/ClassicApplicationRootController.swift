@@ -23,14 +23,18 @@ public class ClassicApplicationRootController: UITabBarController {
         self.bookmarksController = BookmarksViewController(application: application)
         let bookmarksNav = UINavigationController(rootViewController: self.bookmarksController)
 
+        self.moreController = MoreViewController(application: application)
+        let moreNav = UINavigationController(rootViewController: self.moreController)
+
         super.init(nibName: nil, bundle: nil)
 
-        self.viewControllers = [mapNav, recentStopsNav, bookmarksNav]
+        self.viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
     }
 
     @objc public let mapController: MapViewController
     @objc public let recentStopsController: RecentStopsViewController
     @objc public let bookmarksController: BookmarksViewController
+    @objc public let moreController: MoreViewController
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
