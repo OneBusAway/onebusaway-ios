@@ -86,7 +86,9 @@ class ContactUsHelper: NSObject {
         let template = """
         <html><body>
         <p>How can we help? Please enter your response below:</p>
-        <p style='border: solid 1px #f1f1f1'></p>
+        <p style='border: solid 1px #ccc'>
+        <br><br><br>
+        </p>
         <hr>
         <p>The following information is provided for troubleshooting purposes.
            If you are uncomfortable sharing any of the following information

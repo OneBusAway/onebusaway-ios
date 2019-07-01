@@ -246,7 +246,6 @@ public extension UIPasteboard {
     }
 }
 
-
 // MARK: - UIViewController
 
 extension UIViewController {
