@@ -10,6 +10,18 @@ import Foundation
 
 public extension Bundle {
 
+    private func string(for key: String) -> String {
+        object(forInfoDictionaryKey: key) as! String //swiftlint:disable:this force_cast
+    }
+
+    var appName: String {
+        string(for: "CFBundleDisplayName")
+    }
+
+    var copyright: String {
+        string(for: "NSHumanReadableCopyright")
+    }
+
     /// A helper method for accessing the app's version number. e.g. `"19.1.0"`
     var appVersion: String {
         return object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String //swiftlint:disable:this force_cast

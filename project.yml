@@ -16,8 +16,10 @@ targets:
         AppDevelopersEmailAddress: iphone-app@onebusaway.org
         DeepLinkServerBaseAddress: http://alerts.onebusaway.org
         PrivacyPolicyURL: http://onebusaway.org/privacy/
+        CFBundleDisplayName: OneBusAway
         LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
+        NSHumanReadableCopyright: "© Open Transit Software Foundation"
         NSUserActivityTypes:
           - org.onebusaway.OneBusAway.user_activity.stop
           - org.onebusaway.OneBusAway.user_activity.trip

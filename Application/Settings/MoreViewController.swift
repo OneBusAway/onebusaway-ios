@@ -70,8 +70,12 @@ import MessageUI
 
     // MARK: - Table Section Builders
 
+    private lazy var moreHeaderController = MoreHeaderViewController(application: application)
+
     private func addHeader() {
-        // TODO
+        prepareChildController(moreHeaderController) {
+            stackView.addRow(moreHeaderController.view, hideSeparator: true, insets: .zero)
+        }
     }
 
     private func addUpdatesAndAlerts() {
