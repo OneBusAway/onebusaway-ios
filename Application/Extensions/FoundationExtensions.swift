@@ -10,6 +10,11 @@ import Foundation
 
 public extension Bundle {
 
+    /// A helper method for accessing the app's version number. e.g. `"19.1.0"`
+    var appVersion: String {
+        return object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String //swiftlint:disable:this force_cast
+    }
+
     /// A helper method for easily accessing the bundle's `CFBundleIdentifier`.
     var bundleIdentifier: String {
         return object(forInfoDictionaryKey: "CFBundleIdentifier") as! String //swiftlint:disable:this force_cast
@@ -30,6 +35,10 @@ public extension Bundle {
     var privacyPolicyURL: URL? {
         guard let address = object(forInfoDictionaryKey: "PrivacyPolicyURL") as? String else { return nil }
         return URL(string: address)
+    }
+
+    var appDevelopersEmailAddress: String? {
+        return object(forInfoDictionaryKey: "AppDevelopersEmailAddress") as? String
     }
 }
 

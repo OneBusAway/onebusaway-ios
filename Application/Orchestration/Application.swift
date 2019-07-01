@@ -27,9 +27,12 @@ public protocol ApplicationDelegate {
     ///   - picker: The region picker view controller to display to the user.
     @objc func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController)
 
-    /// This proxies the `isIdleTimerDisabled` property on UIApplication, which prevents
+    /// This proxies the `isIdleTimerDisabled` property on `UIApplication`, which prevents
     /// the screen from turning off when it is set to `true`.
     @objc(idleTimerDisabled) var isIdleTimerDisabled: Bool { get set }
+
+    /// This proxies the `isRegisteredForRemoteNotifications` property on `UIApplication`.
+    @objc(registeredForRemoteNotifications) var isRegisteredForRemoteNotifications: Bool { get }
 
     /// Proxies `UIApplication.canOpenURL()`
     /// - Parameter url: The URL that we are checking can be opened.
@@ -139,6 +142,10 @@ public class Application: NSObject {
         set {
             delegate?.isIdleTimerDisabled = newValue
         }
+    }
+
+    public var isRegisteredForRemoteNotifications: Bool {
+        delegate?.isRegisteredForRemoteNotifications ?? false
     }
 
     /// Provides access to the client app's main `Bundle`, from which you can

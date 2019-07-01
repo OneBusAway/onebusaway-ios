@@ -34,7 +34,7 @@ class AddGroupAlertController: NSObject {
             textField.text = group?.name
         }
 
-        self.alertController.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
+        self.alertController.addAction(UIAlertAction.cancelAction)
         self.alertController.addAction(UIAlertAction(title: Strings.save, style: .default, handler: { [weak self] _ in
             guard
                 let self = self,

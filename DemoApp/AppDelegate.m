@@ -53,6 +53,10 @@
     return UIApplication.sharedApplication.idleTimerDisabled;
 }
 
+- (BOOL)registeredForRemoteNotifications {
+    return UIApplication.sharedApplication.registeredForRemoteNotifications;
+}
+
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     if (application.showPermissionPromptUI) {
         OBAPermissionPromptViewController *promptViewController = [[OBAPermissionPromptViewController alloc] initWithApplication:application];

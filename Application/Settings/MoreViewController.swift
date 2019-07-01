@@ -8,9 +8,10 @@
 import UIKit
 import AloeStackView
 import SafariServices
+import MessageUI
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
-@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder {
+@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate {
 
     /// The OBA application object
     private let application: Application
@@ -20,6 +21,9 @@ import SafariServices
     lazy var stackView = AloeStackView.autolayoutNew(
         backgroundColor: application.theme.colors.groupedTableBackground
     )
+
+    /// A helper object that crafts support emails or alerts when the user's email client isn't configured properly.
+    private lazy var contactUsHelper = ContactUsHelper(application: application)
 
     /// Creates a Settings controller
     /// - Parameter application: The OBA application object
@@ -31,6 +35,8 @@ import SafariServices
         title = NSLocalizedString("more_controller.title", value: "More", comment: "Title of the More tab")
         tabBarItem.image = Icons.moreTabIcon
 
+        let contactUs = NSLocalizedString("more_controller.contact_us", value: "Contact Us", comment: "A button to contact transit agency/developers.")
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: contactUs, style: .plain, target: self, action: #selector(showContactUsDialog))
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.settings, style: .plain, target: self, action: #selector(showSettings))
     }
 
@@ -53,7 +59,6 @@ import SafariServices
         addHeader()
         addUpdatesAndAlerts()
         addLocationSettings()
-        addContactUs()
         addAbout()
     }
 
@@ -116,30 +121,52 @@ import SafariServices
 
     }
 
-    private func addContactUs() {
-        
-//        - (OBATableSection*)contactTableSection {
-//            NSMutableArray *rows = [[NSMutableArray alloc] init];
-//
-//            OBATableRow *contactTransitAgency = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"msg_data_schedule_issues", @"Info Page Contact Us Row Title") action:^(OBABaseRow *r2) {
-//            [self logRowTapAnalyticsEvent:@"Contact Transit Agency"];
-//            [self contactTransitAgency];
-//            }];
-//            contactTransitAgency.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-//            [rows addObject:contactTransitAgency];
-//
-//            OBATableRow *contactAppDevelopers = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"info_controller.contact_app_developers_row_title", @"'Contact app developers about a bug' row") action:^(OBABaseRow *r2) {
-//            [self logRowTapAnalyticsEvent:@"Contact Developers"];
-//            [self contactAppDevelopers];
-//            }];
-//            contactAppDevelopers.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-//            [rows addObject:contactAppDevelopers];
-//
-//            OBATableSection *section = [OBATableSection tableSectionWithTitle:NSLocalizedString(@"msg_contact_us", @"") rows:rows];
-//
-//            return section;
-//        }
+    // MARK: - Contact Us
+
+    func presentEmailFeedbackForm(target: EmailTarget) {
+        guard let composer = contactUsHelper.buildMailComposer(target: target) else {
+            let alert = contactUsHelper.buildCantSendEmailAlert(target: target)
+            present(alert, animated: true, completion: nil)
+            return
+        }
+
+        composer.mailComposeDelegate = self
+        present(composer, animated: true, completion: nil)
     }
+
+    public func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+        controller.dismiss(animated: true, completion: nil)
+
+        if let error = error {
+            AlertPresenter.show(error: error, presentingController: self)
+        }
+    }
+
+    @objc func showContactUsDialog() {
+        // TODO
+        let sheetTitle = NSLocalizedString("more_controller.contact_us_alert_title", value: "Contact Us", comment: "Contact Us alert title.")
+        let sheet = UIAlertController(title: sheetTitle, message: nil, preferredStyle: .actionSheet)
+
+        // Contact Developers
+        let contactDevelopers = NSLocalizedString("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")
+        sheet.addAction(UIAlertAction(title: contactDevelopers, style: .default, handler: { [weak self] _ in
+            guard let self = self else { return }
+            self.presentEmailFeedbackForm(target: .appDevelopers)
+        }))
+
+        // Contact Transit Agency
+        let contactTransit = NSLocalizedString("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")
+        sheet.addAction(UIAlertAction(title: contactTransit, style: .default, handler: { [weak self] _ in
+            guard let self = self else { return }
+            self.presentEmailFeedbackForm(target: .transitAgency)
+        }))
+
+        sheet.addAction(UIAlertAction.cancelAction)
+
+        present(sheet, animated: true, completion: nil)
+    }
+
+    // MARK: - About
 
     private func addAbout() {
         // Header

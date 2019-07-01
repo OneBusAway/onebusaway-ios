@@ -7,6 +7,16 @@
 //
 
 import UIKit
+import MobileCoreServices
+
+// MARK: - UIAlertAction
+extension UIAlertAction {
+
+    /// An alert action for cancelling an alert controller.
+    public class var cancelAction: UIAlertAction {
+        return UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil)
+    }
+}
 
 // MARK: - UIAlertController
 extension UIAlertController {
@@ -19,7 +29,7 @@ extension UIAlertController {
     public class func deletionAlert(title: String, handler: @escaping ((UIAlertAction) -> Void)) -> UIAlertController {
         let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
 
-        controller.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
+        controller.addAction(UIAlertAction.cancelAction)
         controller.addAction(UIAlertAction(title: Strings.delete, style: .destructive, handler: handler))
 
         return controller
@@ -111,6 +121,25 @@ public extension UIColor {
     }
 }
 
+// MARK: - UIDevice
+
+public extension UIDevice {
+
+    /// Returns the device's model identifier. e.g. an iPhone XS is `iPhone11,2`.
+    ///
+    /// - Note: derived from [https://stackoverflow.com/questions/11197509/how-to-get-device-make-and-model-on-ios/11197770#11197770](https://stackoverflow.com/questions/11197509/how-to-get-device-make-and-model-on-ios/11197770#11197770)
+    var modelName: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier
+    }
+}
+
 // MARK: - UIEdgeInsets
 
 public extension UIEdgeInsets {
@@ -188,6 +217,35 @@ public extension UIImage {
         return image!
     }
 }
+
+// MARK: - UIPasteboard
+
+public extension UIPasteboard {
+
+    private var UTTypeRTF: String {
+        (kUTTypeRTF as String)
+    }
+
+    private var UTTypePlainText: String {
+        (kUTTypeUTF8PlainText as String)
+    }
+
+    /// A convenience method for setting the pasteboard to an attributed string as RTF data.
+    /// - Parameter attributedString: The attributed string to which the pasteboard will be set.
+    /// - Note: adapted from [https://stackoverflow.com/a/21911997/136839](https://stackoverflow.com/a/21911997/136839)
+    func set(attributedString: NSAttributedString?) {
+        guard
+            let attributedString = attributedString,
+            let rtfData = try? attributedString.data(
+                from: NSRange(location: 0, length: attributedString.length),
+                documentAttributes: [NSAttributedString.DocumentAttributeKey.documentType: NSAttributedString.DocumentType.rtf]),
+            let rtfString = NSString(data: rtfData, encoding: String.Encoding.utf8.rawValue)
+        else { return }
+
+        items = [[UTTypeRTF: rtfString, UTTypePlainText: attributedString.string]]
+    }
+}
+
 
 // MARK: - UIViewController
 

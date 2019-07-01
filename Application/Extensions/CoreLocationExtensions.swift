@@ -8,6 +8,22 @@
 
 import CoreLocation
 
+extension CLAuthorizationStatus: LosslessStringConvertible {
+    public init?(_ description: String) { nil }
+
+    public var description: String {
+        switch self {
+        case .authorizedAlways: return "authorizedAlways"
+        case .authorizedWhenInUse: return "authorizedWhenInUse"
+        case .denied: return "denied"
+        case .notDetermined: return "notDetermined"
+        case .restricted: return "restricted"
+        @unknown default:
+            return "unknown value: \(self)"
+        }
+    }
+}
+
 public extension CLLocationDirection {
 
     /// Creates an affine transform from the specified rotation, and allows for an
