@@ -10,48 +10,41 @@ import Foundation
 
 public extension Bundle {
 
-    private func string(for key: String) -> String {
-        object(forInfoDictionaryKey: key) as! String //swiftlint:disable:this force_cast
+    private func url(for key: String) -> URL? {
+        guard let address = optionalValue(for: key, type: String.self) else { return nil }
+        return URL(string: address)
     }
 
-    var appName: String {
-        string(for: "CFBundleDisplayName")
+    private func value<T>(for key: String, type: T.Type) -> T {
+        optionalValue(for: key, type: type)!
     }
 
-    var copyright: String {
-        string(for: "NSHumanReadableCopyright")
+    private func optionalValue<T>(for key: String, type: T.Type) -> T? {
+        object(forInfoDictionaryKey: key) as? T
     }
 
-    /// A helper method for accessing the app's version number. e.g. `"19.1.0"`
-    var appVersion: String {
-        return object(forInfoDictionaryKey: "CFBundleShortVersionString") as! String //swiftlint:disable:this force_cast
-    }
+    /// The display name of the app. e.g. "OneBusAway".
+    var appName: String { value(for: "CFBundleDisplayName", type: String.self) }
+
+    /// The copyright string for the app. e.g. "© Open Transit Software Foundation".
+    var copyright: String { value(for: "NSHumanReadableCopyright", type: String.self) }
+
+    /// The app's version number. e.g. "19.1.0".
+    var appVersion: String { value(for: "CFBundleShortVersionString", type: String.self) }
 
     /// A helper method for easily accessing the bundle's `CFBundleIdentifier`.
-    var bundleIdentifier: String {
-        return object(forInfoDictionaryKey: "CFBundleIdentifier") as! String //swiftlint:disable:this force_cast
-    }
+    var bundleIdentifier: String { value(for: "CFBundleIdentifier", type: String.self) }
 
     /// A helper method for easily accessing the bundle's `NSUserActivityTypes`.
-    var userActivityTypes: [String]? {
-        return object(forInfoDictionaryKey: "NSUserActivityTypes") as? [String]
-    }
+    var userActivityTypes: [String]? { optionalValue(for: "NSUserActivityTypes", type: [String].self) }
 
     /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
-    var deepLinkServerBaseAddress: URL? {
-        guard let address = object(forInfoDictionaryKey: "DeepLinkServerBaseAddress") as? String else { return nil }
-        return URL(string: address)
-    }
+    var deepLinkServerBaseAddress: URL? { url(for: "DeepLinkServerBaseAddress") }
 
     /// A helper method for accessing the bundle's privacy policy URL
-    var privacyPolicyURL: URL? {
-        guard let address = object(forInfoDictionaryKey: "PrivacyPolicyURL") as? String else { return nil }
-        return URL(string: address)
-    }
+    var privacyPolicyURL: URL? { url(for: "PrivacyPolicyURL") }
 
-    var appDevelopersEmailAddress: String? {
-        return object(forInfoDictionaryKey: "AppDevelopersEmailAddress") as? String
-    }
+    var appDevelopersEmailAddress: String? { optionalValue(for: "AppDevelopersEmailAddress", type: String.self) }
 }
 
 public extension Sequence where Element == String {
