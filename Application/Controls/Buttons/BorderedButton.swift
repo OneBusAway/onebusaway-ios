@@ -24,11 +24,8 @@ public class BorderedButton: UIButton {
     }
 
     func configureButton() {
-        contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        contentEdgeInsets = UIEdgeInsets(top: 0, left: ThemeMetrics.padding, bottom: 0, right: ThemeMetrics.padding)
         layer.cornerRadius = 4.0
-        layer.shadowRadius = 2.0
-        layer.shadowOpacity = 0.25
-        layer.shadowOffset = CGSize(width: 0, height: 1)
     }
 
     public override var tintColor: UIColor! {
