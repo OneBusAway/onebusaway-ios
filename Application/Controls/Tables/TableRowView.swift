@@ -56,32 +56,32 @@ public class TableRowView: UIView {
 
             subtitleLabel.text = data.subtitle
 
-            configureAccessoryType(with: data.accessoryType, oldValue: oldValue?.accessoryType)
+            accessoryType = data.accessoryType
         }
     }
 
     // MARK: - Accessory Types
 
-    private func configureAccessoryType(
-        with accessoryType: UITableViewCell.AccessoryType,
-        oldValue: UITableViewCell.AccessoryType?
-    ) {
-        guard oldValue != accessoryType else { return }
+    public var accessoryType: UITableViewCell.AccessoryType = .none {
+        didSet {
+            guard oldValue != accessoryType else { return }
+            guard accessoryType != .none else {
+                contentStack.removeArrangedSubview(accessoryImageViewWrapper)
+                accessoryImageViewWrapper.isHidden = true
+                return
+            }
 
-        guard accessoryType != .none else {
-            accessoryImageViewWrapper.removeFromSuperview()
-            return
-        }
+            if !contentStack.arrangedSubviews.contains(accessoryImageViewWrapper) {
+                contentStack.addArrangedSubview(accessoryImageViewWrapper)
+                accessoryImageViewWrapper.isHidden = false
+            }
 
-        if accessoryImageViewWrapper.superview == nil {
-            contentStack.insertSubview(accessoryImageViewWrapper, belowSubview: labelWrapper)
-        }
+            accessoryImageView.image = Icons.from(accessoryType: accessoryType)
 
-        accessoryImageView.image = Icons.from(accessoryType: accessoryType)
-
-        if let image = accessoryImageView.image {
-            imageViewHeight.constant = min(maxImageSize, image.size.height)
-            imageViewWidth.constant = min(maxImageSize, image.size.width)
+            if let image = accessoryImageView.image {
+                imageViewHeight.constant = min(maxImageSize, image.size.height)
+                imageViewWidth.constant = min(maxImageSize, image.size.width)
+            }
         }
     }
 
