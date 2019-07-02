@@ -45,7 +45,7 @@ protocol AloeStackTableBuilder {
     var theme: Theme { get }
 
     func addTableHeaderToStack(headerText: String)
-    func addTableRowToStack(_ row: UIView, isLastRow: Bool)
+    func addGroupedTableRowToStack(_ row: UIView, isLastRow: Bool)
 }
 
 extension AloeStackTableBuilder where Self: UIViewController {
@@ -57,7 +57,7 @@ extension AloeStackTableBuilder where Self: UIViewController {
         stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 
-    func addTableRowToStack(_ row: UIView, isLastRow: Bool = false) {
+    func addGroupedTableRowToStack(_ row: UIView, isLastRow: Bool = false) {
         stackView.addRow(row, hideSeparator: false)
         stackView.setBackgroundColor(forRow: row, color: theme.colors.groupedTableRowBackground)
 

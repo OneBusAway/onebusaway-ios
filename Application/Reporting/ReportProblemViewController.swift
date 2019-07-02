@@ -120,7 +120,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
             accessoryType: .disclosureIndicator
         )
 
-        addTableRowToStack(reportStopProblemRow)
+        addGroupedTableRowToStack(reportStopProblemRow)
         stackView.setSeparatorInset(forRow: reportStopProblemRow, inset: .zero)
 
         stackView.setTapHandler(forRow: reportStopProblemRow) { _ in
@@ -141,7 +141,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
             arrivalView.deemphasizePastEvents = false
             arrivalView.formatters = application.formatters
             arrivalView.arrivalDeparture = arrDep
-            addTableRowToStack(arrivalView)
+            addGroupedTableRowToStack(arrivalView)
 
             stackView.setTapHandler(forRow: arrivalView) { [weak self] _ in
                 guard let self = self else { return }

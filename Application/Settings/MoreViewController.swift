@@ -86,7 +86,7 @@ import MessageUI
         let fmtString = NSLocalizedString("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
         let text = String(format: fmtString, region.regionName)
         let row = DefaultTableRowView(title: text, accessoryType: .disclosureIndicator)
-        addTableRowToStack(row, isLastRow: true)
+        addGroupedTableRowToStack(row, isLastRow: true)
         stackView.setTapHandler(forRow: row) { _ in
             // TODO
         }
@@ -178,14 +178,14 @@ import MessageUI
 
         // Credits
         let credits = DefaultTableRowView(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
-        addTableRowToStack(credits)
+        addGroupedTableRowToStack(credits)
         stackView.setTapHandler(forRow: credits) { _ in
             // TODO
         }
 
         // Privacy
         let privacy = DefaultTableRowView(title: NSLocalizedString("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator)
-        addTableRowToStack(privacy)
+        addGroupedTableRowToStack(privacy)
         stackView.setTapHandler(forRow: privacy) { [weak self] _ in
             guard
                 let self = self,
@@ -199,7 +199,7 @@ import MessageUI
 
         // Weather
         let weather = DefaultTableRowView(title: NSLocalizedString("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator)
-        addTableRowToStack(weather, isLastRow: true)
+        addGroupedTableRowToStack(weather, isLastRow: true)
         stackView.setTapHandler(forRow: weather) { [weak self] _ in
             guard let self = self else { return }
             self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
