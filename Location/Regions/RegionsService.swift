@@ -10,12 +10,13 @@ import Foundation
 import CoreLocation
 import CocoaLumberjackSwift
 
-@objc(OBARegionsServiceDelegate) public protocol RegionsServiceDelegate: NSObjectProtocol {
+@objc(OBARegionsServiceDelegate)
+public protocol RegionsServiceDelegate: NSObjectProtocol {
     func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     func regionsService(_ service: RegionsService, updatedRegion region: Region)
 }
 
-public class RegionsService: NSObject {
+public class RegionsService: NSObject, LocationServiceDelegate {
     private let modelService: RegionsModelService
     private let locationService: LocationService
     private let userDefaults: UserDefaults
@@ -25,13 +26,20 @@ public class RegionsService: NSObject {
         self.locationService = locationService
         self.userDefaults = userDefaults
 
+        self.userDefaults.register(defaults: [
+            RegionsService.automaticallySelectRegionUserDefaultsKey: true
+        ])
+
         let regions = RegionsService.loadStoredRegions(from: userDefaults)
         self.regions = regions
 
         if let currentRegion = RegionsService.loadCurrentRegion(from: userDefaults) {
             self.currentRegion = currentRegion
         }
-        else if let location = locationService.currentLocation {
+        else if
+            self.userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey),
+            let location = locationService.currentLocation
+        {
             self.currentRegion = RegionsService.firstRegion(in: regions, containing: location)
         }
 
@@ -84,10 +92,19 @@ public class RegionsService: NSObject {
             storeCurrentRegion()
         }
     }
-}
 
-// MARK: - Region Data Storage
-extension RegionsService {
+    public var automaticallySelectRegion: Bool {
+        get {
+            userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        }
+        set {
+            userDefaults.set(newValue, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+        }
+    }
+
+    // MARK: - Region Data Storage
+
+    private static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
     private static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
     private static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
     private static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
@@ -150,9 +167,9 @@ extension RegionsService {
         let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data
         return DictionaryDecoder.decodeRegionsFileData(data)
     }
-}
 
-extension RegionsService {
+    // MARK: - Public Methods
+
     public func updateRegionsList(forceUpdate: Bool = false) {
         // only update once per week, unless forceUpdate is true.
         if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
@@ -171,10 +188,9 @@ extension RegionsService {
             self.updateCurrentRegion()
         }
     }
-}
 
-// MARK: - Region Updates
-extension RegionsService: LocationServiceDelegate {
+    // MARK: - LocationServiceDelegate
+
     public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         updateCurrentRegion()
     }

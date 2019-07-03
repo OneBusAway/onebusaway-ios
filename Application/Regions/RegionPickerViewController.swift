@@ -7,11 +7,13 @@
 //
 
 import UIKit
-
+import AloeStackView
 /// Displayed when the user's region cannot be automatically determined by location services, such as when the user has denied the app access to their location.
 @objc(OBARegionPickerViewController)
-public class RegionPickerViewController: UIViewController {
+public class RegionPickerViewController: UIViewController, AloeStackTableBuilder {
     let application: Application
+    var theme: Theme { application.theme }
+
     var regions = [Region]()
 
     var selectedRegion: Region? {
@@ -20,11 +22,9 @@ public class RegionPickerViewController: UIViewController {
         }
     }
 
-    private lazy var tableView: UITableView = {
-        let table = UITableView(frame: .zero)
-        table.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        return table
-    }()
+    lazy var stackView = AloeStackView.autolayoutNew(
+        backgroundColor: application.theme.colors.systemBackground
+    )
 
     init(application: Application) {
         self.application = application
@@ -42,12 +42,10 @@ public class RegionPickerViewController: UIViewController {
     override public func viewDidLoad() {
         super.viewDidLoad()
 
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: RegionPickerViewController.cellIdentifier)
-        tableView.dataSource = self
-        tableView.delegate = self
+        view.addSubview(stackView)
+        stackView.pinToSuperview(.edges)
 
-        tableView.frame = view.bounds
-        view.addSubview(tableView)
+        loadData()
     }
 
     @objc func updateRegionSelection() {
@@ -58,35 +56,38 @@ public class RegionPickerViewController: UIViewController {
         application.regionsService.currentRegion = selectedRegion
         application.reloadRootUserInterface()
     }
-}
 
-extension RegionPickerViewController: UITableViewDataSource, UITableViewDelegate {
-    private static let cellIdentifier = "CellIdentifier"
+    // MARK: - Data Loading
 
-    public func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return application.regionsService.regions.count
+    private func loadData() {
+        let selectedRegionIdentifier = selectedRegion?.regionIdentifier ?? -1
+
+        // add auto select switch
+
+        for region in regions {
+            var accessory: UITableViewCell.AccessoryType = .none
+
+            if region.regionIdentifier == selectedRegionIdentifier {
+                accessory = .checkmark
+            }
+
+            let row = DefaultTableRowView(title: region.regionName, accessoryType: accessory)
+            addGroupedTableRowToStack(row)
+            stackView.setTapHandler(forRow: row) { [weak self] _ in
+                guard let self = self else { return }
+
+                self.selectedRow = row
+                self.selectedRegion = region
+            }
+        }
     }
 
-    public func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: RegionPickerViewController.cellIdentifier, for: indexPath)
-        let region = regions[indexPath.row]
-
-        cell.textLabel?.text = region.regionName
-
-        if region == selectedRegion {
-            cell.accessoryType = .checkmark
+    private var selectedRow: DefaultTableRowView? {
+        didSet {
+            if let oldValue = oldValue {
+                oldValue.accessoryType = .none
+            }
+            selectedRow?.accessoryType = .checkmark
         }
-        else {
-            cell.accessoryType = .none
-        }
-
-        return cell
-    }
-
-    public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let region = regions[indexPath.row]
-        selectedRegion = region
-
-        tableView.reloadData()
     }
 }
