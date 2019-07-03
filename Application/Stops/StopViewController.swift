@@ -22,6 +22,7 @@ public class StopViewController: UIViewController {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.addSubview(refreshControl)
+        stack.alwaysBounceVertical = true
         return stack
     }()
 

@@ -39,14 +39,14 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
     public let mapView: MKMapView = {
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
-
+        mapView.showsUserLocation = true
+        mapView.showsScale = true
+        mapView.showsTraffic = true
         return mapView
     }()
 
     public init(application: Application) {
         self.application = application
-
-        mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
 
         super.init()
 
@@ -350,7 +350,7 @@ extension MapRegionManager: MKMapViewDelegate {
 
 extension MapRegionManager: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        mapView.showsUserLocation = service.isLocationUseAuthorized
+        // nop?
     }
 
     public func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {
