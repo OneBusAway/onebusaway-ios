@@ -52,8 +52,13 @@ extension AloeStackTableBuilder where Self: UIViewController {
 
     func addTableHeaderToStack(headerText: String) {
         let header = TableHeaderView.autolayoutNew()
-        header.textLabel.text = headerText
+        header.text = headerText
         stackView.addRow(header, hideSeparator: false)
+
+        var insets = stackView.rowInset
+        insets.top = ThemeMetrics.tableHeaderTopPadding
+        stackView.setInset(forRow: header, inset: insets)
+
         stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 

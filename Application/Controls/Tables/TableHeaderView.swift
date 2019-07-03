@@ -11,7 +11,23 @@ import UIKit
 ///
 /// - Note: Nominally, this is meant to be used in an `AloeStackView` or with `IGListKit`.
 public class TableHeaderView: UIView {
-    public let textLabel = UILabel.autolayoutNew()
+    private let textLabel = UILabel.autolayoutNew()
+
+    public var text: String? {
+        get {
+            textLabel.text
+        }
+        set {
+            if let newValue = newValue {
+                textLabel.text = newValue.uppercased()
+                textLabel.accessibilityLabel = newValue
+            }
+            else {
+                textLabel.text = nil
+                textLabel.accessibilityLabel = nil
+            }
+        }
+    }
 
     @objc public dynamic var font: UIFont {
         get { return textLabel.font }
@@ -21,15 +37,6 @@ public class TableHeaderView: UIView {
     @objc public dynamic var textColor: UIColor {
         get { return textLabel.textColor }
         set { textLabel.textColor = newValue }
-    }
-
-    /// A convenience initializer for use with Auto Layout.
-    ///
-    /// - Parameter text: The text to display in this view's `textLabel`.
-    public convenience init(text: String) {
-        self.init(frame: .zero)
-        translatesAutoresizingMaskIntoConstraints = false
-        textLabel.text = text
     }
 
     public override init(frame: CGRect) {

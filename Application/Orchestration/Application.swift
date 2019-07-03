@@ -214,7 +214,7 @@ public class Application: NSObject {
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
-        TableHeaderView.appearance().font = theme.fonts.boldFootnote
+        TableHeaderView.appearance().font = theme.fonts.footnote
         TableHeaderView.appearance().textColor = theme.colors.subduedText
 
         WalkTimeView.appearance().font = theme.fonts.footnote
