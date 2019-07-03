@@ -121,21 +121,21 @@ class StopAnnotationView: MKAnnotationView {
         get { return _fillColor }
         set { _fillColor = newValue }
     }
-    private var _fillColor: UIColor!
+    private var _fillColor: UIColor = .green
 
     /// Stroke color for this annotation view and its directional arrow.
     @objc dynamic var strokeColor: UIColor {
         get { return _strokeColor }
         set { _strokeColor = newValue }
     }
-    private var _strokeColor: UIColor!
+    private var _strokeColor: UIColor = .white
 
     /// Stroke color for this annotation view and its directional arrow, when it represents a bookmarked stop.
     @objc dynamic var bookmarkedStrokeColor: UIColor {
         get { return _bookmarkedStrokeColor }
         set { _bookmarkedStrokeColor = newValue }
     }
-    private var _bookmarkedStrokeColor: UIColor!
+    private var _bookmarkedStrokeColor: UIColor = .red
 
     /// UIAppearance proxy-compatible version of `canShowCallout`.
     @objc dynamic var showsCallout: Bool {
