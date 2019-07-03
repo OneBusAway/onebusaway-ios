@@ -131,7 +131,7 @@ import MessageUI
     private func addAgenciesRowToStackView() {
         let rowTitle = NSLocalizedString("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section")
         let row = DefaultTableRowView(title: rowTitle, accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(row) { [weak self] _ in
+        addGroupedTableRowToStack(row, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
             self.logRowTapAnalyticsEvent(name: "Show Agencies")
             let agencies = AgenciesViewController(application: self.application)
