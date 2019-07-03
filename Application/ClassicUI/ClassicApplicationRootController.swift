@@ -15,18 +15,16 @@ public class ClassicApplicationRootController: UITabBarController {
         self.application = application
 
         self.mapController = MapViewController(application: application)
-        let mapNav = UINavigationController(rootViewController: self.mapController)
-
         self.recentStopsController = RecentStopsViewController(application: application)
-        let recentStopsNav = UINavigationController(rootViewController: self.recentStopsController)
-
         self.bookmarksController = BookmarksViewController(application: application)
-        let bookmarksNav = UINavigationController(rootViewController: self.bookmarksController)
-
         self.moreController = MoreViewController(application: application)
-        let moreNav = UINavigationController(rootViewController: self.moreController)
 
         super.init(nibName: nil, bundle: nil)
+
+        let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
+        let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController)
+        let bookmarksNav = application.viewRouter.buildNavigation(controller: self.bookmarksController)
+        let moreNav = application.viewRouter.buildNavigation(controller: self.moreController)
 
         self.viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
     }

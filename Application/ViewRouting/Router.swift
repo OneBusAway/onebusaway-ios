@@ -41,12 +41,14 @@ public class ViewRouter: NSObject {
     }
 
     /// Navigates from `fromController` to `viewController`.
+    /// - Note: Sets `hidesBottomBarWhenPushed` to `true`for `viewController`.
     ///
     /// - Parameters:
     ///   - viewController: The 'to' view controller.
     ///   - fromController: The 'from' view controller.
     public func navigate(to viewController: UIViewController, from fromController: UIViewController) {
         assert(fromController.navigationController != nil)
+        viewController.hidesBottomBarWhenPushed = true
         fromController.navigationController?.pushViewController(viewController, animated: true)
     }
 
@@ -64,9 +66,10 @@ public class ViewRouter: NSObject {
 
     /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.
     /// - Parameter controller: The `rootViewController` of the `UINavigationController`.
-    public func buildNavigation(controller: UIViewController) -> UINavigationController {
+    /// - Parameter prefersLargeTitles: Controls the `prefersLargeTitle` setting of the navigation bar.
+    public func buildNavigation(controller: UIViewController, prefersLargeTitles: Bool = true) -> UINavigationController {
         let navigation = UINavigationController(rootViewController: controller)
-        navigation.navigationBar.prefersLargeTitles = true
+        navigation.navigationBar.prefersLargeTitles = prefersLargeTitles
 
         return navigation
     }
