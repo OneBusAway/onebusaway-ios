@@ -13,49 +13,6 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
     func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark)
 }
 
-class OperationController<T, D>: UIViewController where T: Operation {
-    let application: Application
-
-    var theme: Theme {
-        application.theme
-    }
-
-    var operation: T?
-    var data: D? {
-        didSet {
-            updateUI()
-        }
-    }
-
-    /// This is the default initializer for `OperationController`.
-    /// - Parameter application: The application object
-    public init(application: Application) {
-        self.application = application
-
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    deinit {
-        operation?.cancel()
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        self.operation = loadData()
-    }
-
-    open func loadData() -> T? {
-        return nil
-    }
-
-    open func updateUI() {
-        // nop
-    }
-}
-
 /// The entry-point view controller for creating a new bookmark.
 ///
 /// - Note: This controller expects to be presented modally.
