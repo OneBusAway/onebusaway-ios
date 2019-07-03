@@ -58,7 +58,7 @@ import MessageUI
 
         addHeader()
         addUpdatesAndAlerts()
-        addLocationSettings()
+        addMyLocationSection()
         addAbout()
     }
 
@@ -86,43 +86,57 @@ import MessageUI
         let fmtString = NSLocalizedString("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
         let text = String(format: fmtString, region.regionName)
         let row = DefaultTableRowView(title: text, accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(row, isLastRow: true)
-        stackView.setTapHandler(forRow: row) { _ in
+        addGroupedTableRowToStack(row, isLastRow: true) { _ in
             // TODO
         }
     }
 
-    private func addLocationSettings() {
-//        - (OBATableSection*)settingsTableSection {
-//            NSMutableArray *rows = [[NSMutableArray alloc] init];
-//
-//            OBATableRow *region = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"msg_region", @"") action:^(OBABaseRow *r2) {
-//            [self logRowTapAnalyticsEvent:@"Region List"];
-//            [self.navigationController pushViewController:[[OBARegionListViewController alloc] initWithApplication:OBAApplication.sharedApplication] animated:YES];
-//            }];
-//            region.style = UITableViewCellStyleValue1;
-//            region.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-//            region.subtitle = self.modelDAO.currentRegion.regionName;
-//            [rows addObject:region];
-//
-//            if (self.modelDAO.currentRegion.supportsMobileFarePayment) {
-//                OBATableRow *payFare = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"msg_pay_fare", @"Pay My Fare table row") action:^(OBABaseRow *row) {
-//                    [self logRowTapAnalyticsEvent:@"Pay Fare"];
-//                    [self.farePayments beginFarePaymentWorkflow];
-//                    }];
-//                [rows addObject:payFare];
-//            }
-//
-//            OBATableRow *agencies = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"msg_agencies", @"Info Page Agencies Row Title") action:^(OBABaseRow *r2) {
-//                [self logRowTapAnalyticsEvent:@"Show Agencies"];
-//                [self openAgencies];
-//                }];
-//            agencies.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-//            [rows addObject:agencies];
-//
-//            return [OBATableSection tableSectionWithTitle:NSLocalizedString(@"msg_your_location", @"Settings section title on info page") rows:rows];
-//        }
+    // MARK: - My Location Section
 
+    private func addMyLocationSection() {
+        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."))
+
+        addRegionPickerRowToStackView()
+
+        if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
+            addPayMyFareRowToStackView()
+        }
+
+        addAgenciesRowToStackView()
+    }
+
+    private func addRegionPickerRowToStackView() {
+        let regionRowTitle = NSLocalizedString("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region.")
+        let currentRegionName = application.currentRegion?.regionName ?? ""
+        let regionRow = ValueTableRowView(title: regionRowTitle, subtitle: currentRegionName, accessoryType: .disclosureIndicator)
+        addGroupedTableRowToStack(regionRow) { [weak self] _ in
+            guard let self = self else { return }
+
+            let regionPicker = RegionPickerViewController(application: self.application)
+            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
+            self.application.viewRouter.present(nav, from: self)
+        }
+    }
+
+    private func addPayMyFareRowToStackView() {
+        let rowTitle = NSLocalizedString("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row")
+        let payMyFareRow = DefaultTableRowView(title: rowTitle, accessoryType: .none)
+        addGroupedTableRowToStack(payMyFareRow) { [weak self] _ in
+            guard let self = self else { return }
+            self.logRowTapAnalyticsEvent(name: "Pay Fare")
+            // todo: fare payment workflow.
+        }
+    }
+
+    private func addAgenciesRowToStackView() {
+        let rowTitle = NSLocalizedString("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section")
+        let row = DefaultTableRowView(title: rowTitle, accessoryType: .disclosureIndicator)
+        addGroupedTableRowToStack(row) { [weak self] _ in
+            guard let self = self else { return }
+            self.logRowTapAnalyticsEvent(name: "Show Agencies")
+            let agencies = AgenciesViewController(application: self.application)
+            self.application.viewRouter.navigate(to: agencies, from: self)
+        }
     }
 
     // MARK: - Contact Us
@@ -178,15 +192,13 @@ import MessageUI
 
         // Credits
         let credits = DefaultTableRowView(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(credits)
-        stackView.setTapHandler(forRow: credits) { _ in
+        addGroupedTableRowToStack(credits) { _ in
             // TODO
         }
 
         // Privacy
         let privacy = DefaultTableRowView(title: NSLocalizedString("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(privacy)
-        stackView.setTapHandler(forRow: privacy) { [weak self] _ in
+        addGroupedTableRowToStack(privacy) { [weak self] _ in
             guard
                 let self = self,
                 let url = Bundle.main.privacyPolicyURL
@@ -199,8 +211,7 @@ import MessageUI
 
         // Weather
         let weather = DefaultTableRowView(title: NSLocalizedString("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(weather, isLastRow: true)
-        stackView.setTapHandler(forRow: weather) { [weak self] _ in
+        addGroupedTableRowToStack(weather, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
             self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
         }
@@ -246,4 +257,9 @@ import MessageUI
 //        }
     }
 
+    // MARK: - Private Helpers
+
+    private func logRowTapAnalyticsEvent(name: String) {
+        application.analytics?.logEvent(name: "infoRowTapped", parameters: ["row": name])
+    }
 }

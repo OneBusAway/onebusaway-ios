@@ -144,6 +144,8 @@ public class Region: NSObject, Codable {
     /// More information on this iOS feature can be found here: https://developer.apple.com/documentation/uikit/core_app/allowing_apps_and_websites_to_link_to_your_content/communicating_with_other_apps_using_custom_urls?language=objc
     public let paymentiOSAppURLScheme: String?
 
+    // MARK: - Codable
+
     private enum CodingKeys: String, CodingKey {
         case regionName
         case regionIdentifier = "id"
@@ -249,7 +251,7 @@ public class Region: NSObject, Codable {
         return "\(super.debugDescription) - \(regionName)"
     }
 
-    // MARK: - Regional Boundaries
+    // MARK: - Location Helpers
 
     /// Internal type for constructing regional boundaries from the server's JSON output.
     struct RegionBound: Codable {
@@ -307,6 +309,24 @@ public class Region: NSObject, Codable {
 
         let point = MKMapPoint(location.coordinate)
         return serviceRect.contains(point)
+    }
+
+    // MARK: - Fare Payment
+
+    public var supportsMobileFarePayment: Bool {
+        paymentiOSAppURLScheme != nil
+    }
+
+    public var paymentAppDoesNotCoverFullRegion: Bool {
+        paymentWarningTitle != nil && paymentWarningBody != nil
+    }
+
+    public var paymentAppDeepLinkURL: URL? {
+        guard let paymentiOSAppURLScheme = paymentiOSAppURLScheme else {
+            return nil
+        }
+
+        return URL(string: String(format: "%@://onebusaway", paymentiOSAppURLScheme))
     }
 }
 
