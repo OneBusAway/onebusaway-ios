@@ -19,12 +19,38 @@ public class AppConfig: NSObject {
     let queue: OperationQueue
     let userDefaults: UserDefaults
     let locationService: LocationService
+    let analytics: Analytics?
 
-    @objc public convenience init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults) {
-        self.init(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, queue: OperationQueue(), locationService: LocationService(locationManager: CLLocationManager()))
+    @objc public convenience init(
+        regionsBaseURL: URL,
+        apiKey: String,
+        uuid: String,
+        appVersion: String,
+        userDefaults: UserDefaults,
+        analytics: Analytics?
+    ) {
+        self.init(
+            regionsBaseURL: regionsBaseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: analytics,
+            queue: OperationQueue(),
+            locationService: LocationService(locationManager: CLLocationManager())
+        )
     }
 
-    @objc public init(regionsBaseURL: URL, apiKey: String, uuid: String, appVersion: String, userDefaults: UserDefaults, queue: OperationQueue, locationService: LocationService) {
+    @objc public init(
+        regionsBaseURL: URL,
+        apiKey: String,
+        uuid: String,
+        appVersion: String,
+        userDefaults: UserDefaults,
+        analytics: Analytics?,
+        queue: OperationQueue,
+        locationService: LocationService
+    ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
         self.uuid = uuid
@@ -32,6 +58,7 @@ public class AppConfig: NSObject {
         self.userDefaults = userDefaults
         self.queue = queue
         self.locationService = locationService
+        self.analytics = analytics
     }
 
     // MARK: - Regions

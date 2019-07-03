@@ -91,6 +91,8 @@ public class Application: NSObject {
 
     @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress!)
 
+    @objc public private(set) var analytics: Analytics?
+
     @objc public weak var delegate: ApplicationDelegate?
 
     // MARK: - Init
@@ -100,6 +102,7 @@ public class Application: NSObject {
         userDataStore = UserDefaultsStore(userDefaults: config.userDefaults)
         locationService = config.locationService
         regionsService = config.regionsService
+        analytics = config.analytics
 
         theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 

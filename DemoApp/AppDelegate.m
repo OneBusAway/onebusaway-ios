@@ -9,7 +9,7 @@
 #import "AppDelegate.h"
 @import OBAKit;
 
-@interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate>
+@interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
@@ -27,7 +27,7 @@
         _userDefaults = [NSUserDefaults standardUserDefaults];
 
         NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults analytics:self];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
     }
@@ -93,6 +93,12 @@
     }
 
     self.app.userDataStore.lastSelectedView = (OBASelectedTab)index;
+}
+
+#pragma mark - OBAAnalytics
+
+- (void)logEventWithName:(NSString *)name parameters:(NSDictionary<NSString *,id> *)parameters {
+    // abxoxo - TODO!
 }
 
 @end
