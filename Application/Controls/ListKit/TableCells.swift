@@ -123,6 +123,7 @@ class DefaultTableCell: TableRowCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         tableRowView = DefaultTableRowView.autolayoutNew()
+        tableRowView.heightConstraint.priority = .defaultHigh
     }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
@@ -133,6 +134,7 @@ class ValueTableCell: TableRowCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         tableRowView = ValueTableRowView.autolayoutNew()
+        tableRowView.heightConstraint.priority = .defaultHigh
     }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }
@@ -143,6 +145,7 @@ class SubtitleTableCell: TableRowCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         tableRowView = SubtitleTableRowView.autolayoutNew()
+        tableRowView.heightConstraint.priority = .defaultHigh
     }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

@@ -12,6 +12,11 @@ public class TableRowView: UIView {
 
     var useDebugColors = false
 
+    /// The height constraint for this view.
+    ///
+    /// - Note: This is exposed primarily so that the constraint priority can be adjusted by `IGListKit` cells.
+    var heightConstraint: NSLayoutConstraint!
+
     // MARK: - Initialization
 
     public override init(frame: CGRect) {
@@ -20,8 +25,8 @@ public class TableRowView: UIView {
         addSubview(contentStack)
         contentStack.pinToSuperview(.edges)
 
-        let heightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
-        heightConstraint.priority = .defaultHigh
+        heightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+        heightConstraint.priority = .required
 
         NSLayoutConstraint.activate([
             heightConstraint, imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth
