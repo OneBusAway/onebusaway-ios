@@ -45,7 +45,7 @@ protocol AloeStackTableBuilder {
     var theme: Theme { get }
 
     func addTableHeaderToStack(headerText: String)
-    func addGroupedTableRowToStack(_ row: UIView, isLastRow: Bool)
+    func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool, tapHandler: ((T) -> Void)?) where T: UIView
 }
 
 extension AloeStackTableBuilder where Self: UIViewController {
@@ -57,12 +57,16 @@ extension AloeStackTableBuilder where Self: UIViewController {
         stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 
-    func addGroupedTableRowToStack(_ row: UIView, isLastRow: Bool = false) {
+    func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool = false, tapHandler: ((T) -> Void)? = nil) where T: UIView {
         stackView.addRow(row, hideSeparator: false)
         stackView.setBackgroundColor(forRow: row, color: theme.colors.groupedTableRowBackground)
 
         if isLastRow {
             stackView.setSeparatorInset(forRow: row, inset: .zero)
+        }
+
+        if let tapHandler = tapHandler {
+            stackView.setTapHandler(forRow: row, handler: tapHandler)
         }
     }
 }

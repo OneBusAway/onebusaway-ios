@@ -68,8 +68,7 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
         // Bookmark the Whole Stop
         addTableHeaderToStack(headerText: NSLocalizedString("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."))
         let stopRow = DefaultTableRowView(title: Formatters.formattedTitle(stop: stop), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(stopRow, isLastRow: true)
-        stackView.setTapHandler(forRow: stopRow) { [weak self] _ in
+        addGroupedTableRowToStack(stopRow, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
 
             let editStopController = EditStopBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)

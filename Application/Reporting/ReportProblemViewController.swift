@@ -120,15 +120,14 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
             accessoryType: .disclosureIndicator
         )
 
-        addGroupedTableRowToStack(reportStopProblemRow)
-        stackView.setSeparatorInset(forRow: reportStopProblemRow, inset: .zero)
-
-        stackView.setTapHandler(forRow: reportStopProblemRow) { _ in
+        addGroupedTableRowToStack(reportStopProblemRow) { [weak self] _ in
+            guard let self = self else { return }
             let stopProblemController = StopProblemViewController(application: self.application, stop: stop)
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
-        reportStopProblemRow.isUserInteractionEnabled = true
+        stackView.setSeparatorInset(forRow: reportStopProblemRow, inset: .zero)
 
+        reportStopProblemRow.isUserInteractionEnabled = true
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
@@ -141,9 +140,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
             arrivalView.deemphasizePastEvents = false
             arrivalView.formatters = application.formatters
             arrivalView.arrivalDeparture = arrDep
-            addGroupedTableRowToStack(arrivalView)
-
-            stackView.setTapHandler(forRow: arrivalView) { [weak self] _ in
+            addGroupedTableRowToStack(arrivalView) { [weak self] _ in
                 guard let self = self else { return }
                 let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
                 self.navigationController?.pushViewController(controller, animated: true)

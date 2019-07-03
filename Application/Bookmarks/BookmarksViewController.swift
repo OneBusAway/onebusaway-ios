@@ -60,8 +60,7 @@ import AloeStackView
 
         for b in bookmarks {
             let row = DefaultTableRowView(title: b.name, accessoryType: .disclosureIndicator)
-            addGroupedTableRowToStack(row)
-            stackView.setTapHandler(forRow: row) { [weak self] _ in
+            addGroupedTableRowToStack(row) { [weak self] _ in
                 guard let self = self else { return }
                 self.application.viewRouter.navigateTo(stop: b.stop, from: self)
             }

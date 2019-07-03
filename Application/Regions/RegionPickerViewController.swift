@@ -72,8 +72,7 @@ public class RegionPickerViewController: UIViewController, AloeStackTableBuilder
             }
 
             let row = DefaultTableRowView(title: region.regionName, accessoryType: accessory)
-            addGroupedTableRowToStack(row)
-            stackView.setTapHandler(forRow: row) { [weak self] _ in
+            addGroupedTableRowToStack(row) { [weak self] _ in
                 guard let self = self else { return }
 
                 self.selectedRow = row
