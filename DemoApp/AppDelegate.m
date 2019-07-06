@@ -72,7 +72,9 @@
 }
 
 - (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {
-    self.window.rootViewController = [[UINavigationController alloc] initWithRootViewController:picker];
+    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:picker];
+    nav.navigationBar.prefersLargeTitles = YES;
+    self.window.rootViewController = nav;
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {
