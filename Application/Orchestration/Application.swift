@@ -217,6 +217,8 @@ public class Application: NSObject {
         TableHeaderView.appearance().font = theme.fonts.footnote
         TableHeaderView.appearance().textColor = theme.colors.subduedText
 
+        ValueTableRowView.appearance().subtitleTextColor = theme.colors.subduedText
+
         WalkTimeView.appearance().font = theme.fonts.footnote
         WalkTimeView.appearance().backgroundBarColor = theme.colors.primary
         WalkTimeView.appearance().textColor = theme.colors.lightText
