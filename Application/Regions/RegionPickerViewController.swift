@@ -7,86 +7,172 @@
 //
 
 import UIKit
-import AloeStackView
-/// Displayed when the user's region cannot be automatically determined by location services, such as when the user has denied the app access to their location.
+import Eureka
+
+public enum RegionPickerMessage: Int {
+    case none, manualSelectionMessage
+}
+
+/// Entrypoint for manual management of `Region`s in the app. Includes affordances for creating custom `Region`s.
 @objc(OBARegionPickerViewController)
-public class RegionPickerViewController: UIViewController, AloeStackTableBuilder {
-    let application: Application
-    var theme: Theme { application.theme }
+public class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
-    var regions = [Region]()
+    // MARK: - Properties
 
-    var selectedRegion: Region? {
-        didSet {
-            navigationItem.rightBarButtonItem?.isEnabled = selectedRegion != nil
-        }
-    }
+    private let application: Application
+    private let message: RegionPickerMessage
+    private lazy var doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissRegionPicker))
 
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.systemBackground
-    )
+    // MARK: - Init
 
-    init(application: Application) {
+    public init(application: Application, message: RegionPickerMessage) {
         self.application = application
-        self.regions = self.application.regionsService.regions
+        self.message = message
 
         super.init(nibName: nil, bundle: nil)
 
         title = NSLocalizedString("region_picker_controller.title", value: "Select a Region", comment: "Region Picker view controller title")
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(updateRegionSelection))
+        doneButton.isEnabled = (application.regionsService.currentRegion != nil)
+        navigationItem.rightBarButtonItem = doneButton
     }
 
-    required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - UIViewController
 
     override public func viewDidLoad() {
         super.viewDidLoad()
+        form
+            +++ autoSelectSwitchSection
+            +++ selectedRegionSection
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
-        loadData()
+        setFormValues()
     }
 
-    @objc func updateRegionSelection() {
-        guard let selectedRegion = selectedRegion else {
-            return
-        }
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
 
-        application.regionsService.currentRegion = selectedRegion
-        application.reloadRootUserInterface()
-    }
-
-    // MARK: - Data Loading
-
-    private func loadData() {
-        let selectedRegionIdentifier = selectedRegion?.regionIdentifier ?? -1
-
-        // add auto select switch
-
-        for region in regions {
-            var accessory: UITableViewCell.AccessoryType = .none
-
-            if region.regionIdentifier == selectedRegionIdentifier {
-                accessory = .checkmark
-            }
-
-            let row = DefaultTableRowView(title: region.regionName, accessoryType: accessory)
-            addGroupedTableRowToStack(row) { [weak self] _ in
-                guard let self = self else { return }
-
-                self.selectedRow = row
-                self.selectedRegion = region
-            }
+        if
+            !application.regionsService.automaticallySelectRegion,
+            let selectedRow = selectedRegionSection.selectedRow(),
+            let stringValue = selectedRow.selectableValue,
+            let regionID = Int(stringValue),
+            let region = application.regionsService.find(id: regionID)
+        {
+            application.regionsService.currentRegion = region
         }
     }
 
-    private var selectedRow: DefaultTableRowView? {
-        didSet {
-            if let oldValue = oldValue {
-                oldValue.accessoryType = .none
-            }
-            selectedRow?.accessoryType = .checkmark
+    // MARK: - Load Form
+
+    private func setFormValues() {
+        var values = [String: Any]()
+        values[autoSelectTag] = application.regionsService.automaticallySelectRegion
+        form.setValues(values)
+    }
+
+    // MARK: - Auto-Select Switch
+
+    private lazy var autoSelectSwitchSection: Section = {
+        let section: Section
+
+        switch message {
+        case .manualSelectionMessage:
+            section = Section(
+                footer: NSLocalizedString("region_picker.manual_selection_message",
+                                          value: "We can't automatically select a region for you. Please choose a region below and then tap on the Done button.",
+                                          comment: "Explanation for why the user is seeing this screen."))
+        case .none:
+            section = Section()
         }
+
+        var skipFirst = false
+
+        section <<< SwitchRow(autoSelectTag) {
+            $0.tag = autoSelectTag
+            $0.title = NSLocalizedString("region_picker_controller.automatically_select_region_switch_title", value: "Automatically select region", comment: "Title next to the switch that toggles whether the user can manually pick their region.")
+            $0.onChange { [weak self] (row) in
+                guard
+                    skipFirst,
+                    let self = self,
+                    let value = row.value
+                else {
+                    skipFirst = true
+                    return
+                }
+
+                self.application.regionsService.automaticallySelectRegion = value
+            }
+        }
+
+        return section
+    }()
+
+    // MARK: - Region List Section
+
+    private lazy var selectedRegionSection: SelectableSection<ListCheckRow<String>> = {
+        let title = NSLocalizedString("region_picker.region_section.title", value: "Regions", comment: "Title of the Regions section.")
+        let section = SelectableSection<ListCheckRow<String>>(title, selectionType: .singleSelection(enableDeselection: false)) {
+            $0.onSelectSelectableRow = { [weak self] _, row in
+                guard
+                    let self = self,
+                    row.selectableValue != nil
+                else { return }
+
+                self.doneButton.isEnabled = true
+            }
+        }
+
+        let selectedRegionID: String?
+        if let region = application.regionsService.currentRegion {
+            selectedRegionID = String(region.regionIdentifier)
+        }
+        else {
+            selectedRegionID = nil
+        }
+
+        for region in sortedRegions {
+            let regionID = String(region.regionIdentifier)
+            section <<< ListCheckRow<String>(regionID) {
+                $0.tag = selectedRegionTag
+                $0.title = region.regionName
+                $0.selectableValue = regionID
+                $0.value = selectedRegionID == regionID ? regionID : nil
+                $0.disabled = "$autoSelectTag == true"
+            }
+        }
+
+        return section
+    }()
+
+    /// Sorts the `regions` list by selection and then alphabetically.
+    private var sortedRegions: [Region] {
+        let currentRegionID = application.currentRegion?.regionIdentifier
+
+        let regions = application.regionsService.regions.sorted { (r1, r2) -> Bool in
+            if r1.regionIdentifier == currentRegionID {
+                return true
+            }
+            else if r2.regionIdentifier == currentRegionID {
+                return false
+            }
+            else {
+                return r2.regionName > r1.regionName
+            }
+        }
+
+        return regions
+    }
+
+    private let selectedRegionTag = "selectedRegionTag"
+    private let autoSelectTag = "autoSelectTag"
+
+    // MARK: - Actions
+
+    @objc private func dismissRegionPicker() {
+        dismiss(animated: true, completion: nil)
     }
 }

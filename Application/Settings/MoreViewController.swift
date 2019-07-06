@@ -11,7 +11,7 @@ import SafariServices
 import MessageUI
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
-@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate {
+@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate, RegionsServiceDelegate {
 
     /// The OBA application object
     private let application: Application
@@ -38,6 +38,8 @@ import MessageUI
         let contactUs = NSLocalizedString("more_controller.contact_us", value: "Contact Us", comment: "A button to contact transit agency/developers.")
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: contactUs, style: .plain, target: self, action: #selector(showContactUsDialog))
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.settings, style: .plain, target: self, action: #selector(showSettings))
+
+        application.regionsService.addDelegate(self)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -48,10 +50,17 @@ import MessageUI
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)
 
-        reloadTable()
+        reloadData()
     }
 
-    private func reloadTable() {
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        regionPickerRow.subtitleLabel.text = application.currentRegion?.regionName ?? ""
+    }
+
+    /// Reloads the stack view from scratch
+    private func reloadData() {
+        stackView.removeAllRows()
         if application.userDataStore.debugMode {
             addDebug()
         }
@@ -60,6 +69,17 @@ import MessageUI
         addUpdatesAndAlerts()
         addMyLocationSection()
         addAbout()
+
+        refreshTableData()
+    }
+
+    /// Refreshes individual rows whose data might change between presentations of this controller.
+    private func refreshTableData() {
+        if let region = application.currentRegion {
+            regionPickerRow.subtitleLabel.text = region.regionName
+            let fmtString = NSLocalizedString("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
+            alertsForRegionRow.titleLabel.text = String(format: fmtString, region.regionName)
+        }
     }
 
     // MARK: - Actions
@@ -68,7 +88,7 @@ import MessageUI
         // TODO
     }
 
-    // MARK: - Table Section Builders
+    // MARK: - Controller Header
 
     private lazy var moreHeaderController = MoreHeaderViewController(application: application)
 
@@ -78,15 +98,14 @@ import MessageUI
         }
     }
 
-    private func addUpdatesAndAlerts() {
-        guard let region = application.currentRegion else { return }
+    // MARK: - Regional Alerts Section
 
+    private lazy var alertsForRegionRow = DefaultTableRowView(title: "Alerts", accessoryType: .disclosureIndicator)
+
+    private func addUpdatesAndAlerts() {
         addTableHeaderToStack(headerText: NSLocalizedString("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
 
-        let fmtString = NSLocalizedString("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
-        let text = String(format: fmtString, region.regionName)
-        let row = DefaultTableRowView(title: text, accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(row, isLastRow: true) { _ in
+        addGroupedTableRowToStack(alertsForRegionRow, isLastRow: true) { _ in
             // TODO
         }
     }
@@ -106,16 +125,21 @@ import MessageUI
     }
 
     private func addRegionPickerRowToStackView() {
-        let regionRowTitle = NSLocalizedString("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region.")
-        let currentRegionName = application.currentRegion?.regionName ?? ""
-        let regionRow = ValueTableRowView(title: regionRowTitle, subtitle: currentRegionName, accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(regionRow) { [weak self] _ in
+        addGroupedTableRowToStack(regionPickerRow) { [weak self] _ in
             guard let self = self else { return }
-
-            let regionPicker = RegionPickerViewController(application: self.application)
-            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
-            self.application.viewRouter.present(nav, from: self)
+            self.showRegionPicker()
         }
+    }
+
+    private lazy var regionPickerRow: ValueTableRowView = {
+        let regionRowTitle = NSLocalizedString("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region.")
+        return ValueTableRowView(title: regionRowTitle, subtitle: "", accessoryType: .disclosureIndicator)
+    }()
+
+    private func showRegionPicker() {
+        let regionPicker = RegionPickerViewController(application: application, message: .none)
+        let nav = application.viewRouter.buildNavigation(controller: regionPicker)
+        application.viewRouter.present(nav, from: self)
     }
 
     private func addPayMyFareRowToStackView() {
@@ -139,7 +163,7 @@ import MessageUI
         }
     }
 
-    // MARK: - Contact Us
+    // MARK: - Contact Us Button
 
     func presentEmailFeedbackForm(target: EmailTarget) {
         guard let composer = contactUsHelper.buildMailComposer(target: target) else {
@@ -184,7 +208,7 @@ import MessageUI
         present(sheet, animated: true, completion: nil)
     }
 
-    // MARK: - About
+    // MARK: - About Section
 
     private func addAbout() {
         // Header
@@ -255,6 +279,12 @@ import MessageUI
 //
 //            return section;
 //        }
+    }
+
+    // MARK: - Regions Service Delegate
+
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        refreshTableData()
     }
 
     // MARK: - Private Helpers

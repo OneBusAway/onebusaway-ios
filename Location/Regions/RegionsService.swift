@@ -12,8 +12,8 @@ import CocoaLumberjackSwift
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate: NSObjectProtocol {
-    func regionsServiceUnableToSelectRegion(_ service: RegionsService)
-    func regionsService(_ service: RegionsService, updatedRegion region: Region)
+    @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
+    @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
 }
 
 public class RegionsService: NSObject, LocationServiceDelegate {
@@ -33,17 +33,13 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         let regions = RegionsService.loadStoredRegions(from: userDefaults)
         self.regions = regions
 
-        if let currentRegion = RegionsService.loadCurrentRegion(from: userDefaults) {
-            self.currentRegion = currentRegion
-        }
-        else if
-            self.userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey),
-            let location = locationService.currentLocation
-        {
-            self.currentRegion = RegionsService.firstRegion(in: regions, containing: location)
-        }
-
         super.init()
+
+        if self.currentRegion == nil,
+            userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey),
+            let location = locationService.currentLocation {
+            currentRegion = RegionsService.firstRegion(in: regions, containing: location)
+        }
 
         updateRegionsList()
 
@@ -64,13 +60,13 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     private func notifyDelegatesRegionChanged(_ region: Region) {
         for delegate in delegates.allObjects {
-            delegate.regionsService(self, updatedRegion: region)
+            delegate.regionsService?(self, updatedRegion: region)
         }
     }
 
     private func notifyDelegatesUnableToSelectRegion() {
         for delegate in delegates.allObjects {
-            delegate.regionsServiceUnableToSelectRegion(self)
+            delegate.regionsServiceUnableToSelectRegion?(self)
         }
     }
 
@@ -79,17 +75,32 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public private(set) var regions: [Region] {
         didSet {
             storeRegions()
-            updateCurrentRegion()
+            updateCurrentRegionFromLocation()
         }
     }
 
     public var currentRegion: Region? {
-        didSet {
-            if let currentRegion = currentRegion {
-                notifyDelegatesRegionChanged(currentRegion)
+        get {
+            do {
+                return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
+            }
+            catch let error {
+                DDLogError("Unable to read region from user defaults: \(error)")
+                return nil
+            }
+        }
+        set {
+            guard let newValue = newValue else {
+                return
             }
 
-            storeCurrentRegion()
+            do {
+                try userDefaults.encodeUserDefaultsObjects(newValue, key: RegionsService.currentRegionUserDefaultsKey)
+                notifyDelegatesRegionChanged(newValue)
+            }
+            catch {
+                DDLogError("Unable to write currentRegion to user defaults: \(error)")
+            }
         }
     }
 
@@ -99,7 +110,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
         set {
             userDefaults.set(newValue, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+            if newValue {
+                // When this value toggles to true, we should refresh the current region.
+                updateCurrentRegionFromLocation()
+            }
         }
+    }
+
+    public func find(id: Int) -> Region? {
+        regions.first { $0.regionIdentifier == id }
     }
 
     // MARK: - Region Data Storage
@@ -113,8 +132,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     private func storeRegions() {
         do {
-            let regionsData = try PropertyListEncoder().encode(regions)
-            userDefaults.set(regionsData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+            try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedRegionsUserDefaultsKey)
             userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         }
         catch {
@@ -122,26 +140,11 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
-    private func storeCurrentRegion() {
-        guard let currentRegion = currentRegion else {
-            return
-        }
-
-        do {
-            let encoded = try PropertyListEncoder().encode(currentRegion)
-            userDefaults.set(encoded, forKey: RegionsService.currentRegionUserDefaultsKey)
-        }
-        catch {
-            DDLogError("Unable to write currentRegion to user defaults: \(error)")
-        }
-    }
-
     // MARK: - Load Stored Regions
 
     private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region] {
         guard
-            let regionsData = userDefaults.object(forKey: storedRegionsUserDefaultsKey) as? Data,
-            let regions = try? PropertyListDecoder().decode([Region].self, from: regionsData),
+            let regions = try? userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
             regions.count > 0
         else {
             return bundledRegions
@@ -151,20 +154,20 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     private class func loadCurrentRegion(from userDefaults: UserDefaults) -> Region? {
-        guard let encodedData = userDefaults.object(forKey: currentRegionUserDefaultsKey) as? Data else {
+        do {
+            return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
+        }
+        catch let error {
+            DDLogError("Unable to decode current region data: \(error)")
             return nil
         }
-
-        return try? PropertyListDecoder().decode(Region.self, from: encodedData)
     }
 
     // MARK: - Bundled Regions
 
     private class var bundledRegions: [Region] {
-        let bundle = Bundle(for: self)
-        let bundledRegionsFilePath = bundle.path(forResource: "regions-v3", ofType: "json")!
-        // swiftlint:disable:next force_try
-        let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data
+        let bundledRegionsFilePath = Bundle(for: self).path(forResource: "regions-v3", ofType: "json")!
+        let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data // swiftlint:disable:this force_try
         return DictionaryDecoder.decodeRegionsFileData(data)
     }
 
@@ -185,21 +188,23 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             }
 
             self.regions = op.regions
-            self.updateCurrentRegion()
+            self.updateCurrentRegionFromLocation()
         }
     }
 
     // MARK: - LocationServiceDelegate
 
     public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
-        updateCurrentRegion()
+        updateCurrentRegionFromLocation()
     }
 
     private class func firstRegion(in regions: [Region], containing location: CLLocation) -> Region? {
         return (regions.filter { $0.contains(location: location) }).first
     }
 
-    private func updateCurrentRegion() {
+    /// Refreshes the `currentRegion` based upon the user's current location.
+    /// - Note: If `locationService.currentLocation` returns `nil`, then this method will do nothing.
+    private func updateCurrentRegionFromLocation() {
         guard let location = locationService.currentLocation else {
             return
         }

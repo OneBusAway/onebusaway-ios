@@ -240,7 +240,9 @@ public class Application: NSObject {
 
 extension Application: RegionsServiceDelegate {
     @objc public func manuallySelectRegion() {
-        let regionPickerController = RegionPickerViewController(application: self)
+        regionsService.automaticallySelectRegion = false
+
+        let regionPickerController = RegionPickerViewController(application: self, message: .manualSelectionMessage)
         delegate?.application(self, displayRegionPicker: regionPickerController)
     }
 
