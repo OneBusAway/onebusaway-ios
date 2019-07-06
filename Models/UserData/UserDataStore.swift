@@ -308,12 +308,9 @@ public class UserDefaultsStore: NSObject, UserDataStore {
     ///
     /// - Note: If an error is encountered while decoding the array, a message will be printed to the console and an empty array returned.
     private func decodeUserDefaultsObjects<T>(type: T.Type, key: UserDefaultsKeys) -> [T] where T: Decodable {
-        guard let data = try? userDefaults.object(type: Data.self, forKey: key.rawValue) else {
-            return []
-        }
-
         do {
-            return try PropertyListDecoder().decode([T].self, from: data)
+            let obj = try userDefaults.decodeUserDefaultsObjects(type: [T].self, key: key.rawValue)
+            return obj ?? []
         }
         catch let error {
             DDLogError("Unable to decode \(key.rawValue): \(error)")
@@ -325,7 +322,6 @@ public class UserDefaultsStore: NSObject, UserDataStore {
     /// - Parameter objects: An array of `Encodable` objects. For example, bookmarks.
     /// - Parameter key: The user defaults key that corresponds to the data being saved.
     private func encodeUserDefaultsObjects<T>(_ objects: [T], key: UserDefaultsKeys) throws where T: Encodable {
-        let encoded = try PropertyListEncoder().encode(objects)
-        userDefaults.set(encoded, forKey: key.rawValue)
+        try userDefaults.encodeUserDefaultsObjects(objects, key: key.rawValue)
     }
 }

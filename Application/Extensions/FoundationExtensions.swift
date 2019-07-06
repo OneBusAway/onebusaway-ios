@@ -8,6 +8,8 @@
 
 import Foundation
 
+// MARK: - Bundle
+
 public extension Bundle {
 
     private func url(for key: String) -> URL? {
@@ -47,6 +49,8 @@ public extension Bundle {
     var appDevelopersEmailAddress: String? { optionalValue(for: "AppDevelopersEmailAddress", type: String.self) }
 }
 
+// MARK: - Sequence
+
 public extension Sequence where Element == String {
 
     /// Performs a localized case insensitive sort on the receiver.
@@ -59,6 +63,8 @@ public extension Sequence where Element == String {
     }
 }
 
+// MARK: - String
+
 // From https://stackoverflow.com/a/55619708/136839
 public extension String {
 
@@ -69,6 +75,8 @@ public extension String {
         return Set(self).isSubset(of: nums)
     }
 }
+
+// MARK: - User Defaults
 
 public extension UserDefaults {
 
@@ -102,5 +110,28 @@ public extension UserDefaults {
     /// - Returns: `true` if the value exists, and `false` if it does not.
     func contains(key: String) -> Bool {
         return object(forKey: key) != nil
+    }
+
+    /// Decodes arrays of `Decodable` objects stored in user defaults.
+    ///
+    /// - Parameter type: the type of the object to be decoded. For example, `Bookmark.self` or `[Bookmark].self`.
+    /// - Parameter key: The user defaults key that corresponds to the data type.
+    /// - Returns: An object of type `T`.
+    ///
+    /// - throws: An error if any value throws an error during decoding.
+    func decodeUserDefaultsObjects<T>(type: T.Type, key: String) throws -> T? where T: Decodable {
+        guard let data = try object(type: Data.self, forKey: key) else {
+            return nil
+        }
+
+        return try PropertyListDecoder().decode(T.self, from: data)
+    }
+
+    /// Encodes an `Encodable` object and stores it in user defaults.
+    /// - Parameter object: An `Encodable` object. For example, a `Bookmark` or `[Bookmark]`.
+    /// - Parameter key: The user defaults key that corresponds to the data being saved.
+    func encodeUserDefaultsObjects<T>(_ object: T, key: String) throws where T: Encodable {
+        let encoded = try PropertyListEncoder().encode(object)
+        set(encoded, forKey: key)
     }
 }
