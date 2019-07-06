@@ -91,6 +91,18 @@ public class TableRowView: UIView, Highlightable {
         }
     }
 
+    public var accessoryView: UIView? {
+        didSet {
+            if let oldValue = oldValue {
+                contentStack.removeArrangedSubview(oldValue)
+                oldValue.removeFromSuperview()
+            }
+            if let accessoryView = accessoryView {
+                contentStack.insertArrangedSubview(accessoryView, at: 1)
+            }
+        }
+    }
+
     // MARK: - UIAppearance Selectors
 
     @objc dynamic var titleFont: UIFont {
