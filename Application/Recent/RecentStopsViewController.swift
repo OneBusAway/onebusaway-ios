@@ -9,9 +9,11 @@ import UIKit
 import IGListKit
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
-public class RecentStopsViewController: UIViewController, ModelViewModelConverters {
+public class RecentStopsViewController: UIViewController, ModelViewModelConverters, ListAdapterDataSource {
 
     let application: Application
+
+    // MARK: - Init
 
     public init(application: Application) {
         self.application = application
@@ -61,9 +63,8 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
 
         present(alertController, animated: true, completion: nil)
     }
-}
 
-extension RecentStopsViewController: ListAdapterDataSource {
+    // MARK: - ListAdapterDataSource
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []

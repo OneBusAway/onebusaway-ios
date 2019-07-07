@@ -33,15 +33,15 @@ public class CollectionController: UIViewController {
         let layout = UICollectionViewFlowLayout()
         layout.estimatedItemSize = CGSize(width: 375, height: 40)
         layout.itemSize = UICollectionViewFlowLayout.automaticSize
+        layout.sectionHeadersPinToVisibleBounds = true
         return layout
     }()
 
     public lazy var collectionView: UICollectionView = {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.isScrollEnabled = false
+        collectionView.isScrollEnabled = true
         collectionView.backgroundColor = .clear
-        collectionView.showsVerticalScrollIndicator = false
         collectionView.alwaysBounceVertical = true
         collectionView.directionalLayoutMargins = ThemeMetrics.collectionViewLayoutMargins
 

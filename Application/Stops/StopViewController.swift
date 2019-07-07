@@ -15,10 +15,10 @@ import FloatingPanel
 /// arrivals and departures at this stop, along with the ability to create push
 /// notification 'alarms' and bookmarks, view information about the location of a
 /// particular vehicle, and report problems with a trip.
-public class StopViewController: UIViewController {
+public class StopViewController: UIViewController, AloeStackTableBuilder {
     private let kUseDebugColors = false
 
-    private lazy var stackView: AloeStackView = {
+    lazy var stackView: AloeStackView = {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.addSubview(refreshControl)
@@ -29,6 +29,8 @@ public class StopViewController: UIViewController {
     private let refreshControl = UIRefreshControl()
 
     let application: Application
+    var theme: Theme { application.theme }
+
     let stopID: String
 
     let minutesBefore: UInt = 5
@@ -343,6 +345,18 @@ public class StopViewController: UIViewController {
         return true
     }
 
+    private func addNearbyStopsTableRow(stop: Stop) {
+        let row = DefaultTableRowView(title: NSLocalizedString("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator)
+        addGroupedTableRowToStack(row, isLastRow: false) { [weak self] _ in
+            guard
+                let self = self
+            else { return }
+
+            let nearbyController = NearbyStopsViewController(stop: stop, application: self.application)
+            self.application.viewRouter.navigate(to: nearbyController, from: self)
+        }
+    }
+
     private func addAppleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
         let appleMaps = DefaultTableRowView(title: NSLocalizedString("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator)
         stackView.addRow(appleMaps)
@@ -371,13 +385,13 @@ public class StopViewController: UIViewController {
     }
 
     private func addMoreOptionsTableRows() {
-        // Nearby Stops
-        // abxoxo - todo!
+        if let stop = stop {
+            addNearbyStopsTableRow(stop: stop)
 
-        if let coordinate = stop?.coordinate {
-            addAppleMapsTableRow(coordinate)
+            addAppleMapsTableRow(stop.coordinate)
+
             #if !targetEnvironment(simulator)
-            addGoogleMapsTableRow(coordinate)
+            addGoogleMapsTableRow(stop.coordinate)
             #endif
         }
 
