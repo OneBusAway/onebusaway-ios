@@ -85,6 +85,10 @@
     [UIApplication.sharedApplication openURL:url options:options completionHandler:completion];
 }
 
+- (NSDictionary<NSString*, NSString*>*)credits {
+    return @{@"Firebase": @"Contains the Google Firebase SDK, whose license can be found here: https://raw.githubusercontent.com/firebase/firebase-ios-sdk/master/LICENSE"};
+}
+
 #pragma mark - UITabBarControllerDelegate
 
 - (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {

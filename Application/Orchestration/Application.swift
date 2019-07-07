@@ -40,6 +40,9 @@ public protocol ApplicationDelegate {
 
     /// Proxies the equivalent method on `UIApplication`
     @objc func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?)
+
+    /// An optional property that allows the delegate to specify libraries that require attribution within this app.
+    @objc optional var credits: [String: String] { get }
 }
 
 @objc(OBAApplication)
@@ -171,6 +174,11 @@ public class Application: NSObject {
     /// Proxies the equivalent method on `UIApplication`
     @objc func open(_ url: URL, options: [UIApplication.OpenExternalURLOptionsKey: Any], completionHandler completion: ((Bool) -> Void)?) {
         delegate?.open(url, options: options, completionHandler: completion)
+    }
+
+    /// Proxies the delegate method.
+    var credits: [String: String] {
+        delegate?.credits ?? [:]
     }
 
     // MARK: - Appearance and Themes

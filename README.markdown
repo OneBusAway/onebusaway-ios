@@ -113,7 +113,7 @@ Includes DictionaryCoding code by Sam Deane, Elegant Chaos Limited.
 
 # Apache 2.0 License
 
-    Copyright 2018 Aaron Brethorst
+    Copyright 2018-Present Aaron Brethorst
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

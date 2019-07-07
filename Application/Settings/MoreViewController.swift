@@ -218,8 +218,10 @@ import MessageUI
 
         // Credits
         let credits = DefaultTableRowView(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(credits) { _ in
-            // TODO
+        addGroupedTableRowToStack(credits) { [weak self] _ in
+            guard let self = self else { return }
+            let credits = CreditsViewController(application: self.application)
+            self.application.viewRouter.navigate(to: credits, from: self)
         }
 
         // Privacy

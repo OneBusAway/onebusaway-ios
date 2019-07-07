@@ -246,17 +246,6 @@ public extension UIPasteboard {
     }
 }
 
-// MARK: - UIViewController
-
-extension UIViewController {
-
-    /// True if this controller's `toolbarItems` property has one or more bar button items, and false if it does not.
-    public var hasToolbarItems: Bool {
-        let count = toolbarItems?.count ?? 0
-        return count > 0
-    }
-}
-
 // MARK: - UIStackView
 
 extension UIStackView {
@@ -281,6 +270,22 @@ extension UIStackView {
         stack.axis = axis
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
+    }
+}
+
+// MARK: - UIViewController
+
+extension UIViewController {
+
+    /// True if this controller's `toolbarItems` property has one or more bar button items, and false if it does not.
+    public var hasToolbarItems: Bool {
+        let count = toolbarItems?.count ?? 0
+        return count > 0
+    }
+
+    /// Returns the containing bundle for `self`. In a framework, this will not be `Bundle.main`.
+    public var bundle: Bundle {
+        Bundle(for: type(of: self))
     }
 }
 

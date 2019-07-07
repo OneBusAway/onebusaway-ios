@@ -49,6 +49,24 @@ public extension Bundle {
     var appDevelopersEmailAddress: String? { optionalValue(for: "AppDevelopersEmailAddress", type: String.self) }
 }
 
+// MARK: - Dictionary
+
+extension Dictionary where Key == String {
+
+    /// Creates a new `Dictionary<String, Value>` from the XML Property List at `plistPath`.
+    /// - Parameter plistPath: The path to the XML Property List file.
+    init?(plistPath: String) throws {
+        var format = PropertyListSerialization.PropertyListFormat.xml
+
+        guard
+            let data = FileManager.default.contents(atPath: plistPath),
+            let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Value]
+        else { return nil }
+
+        self = decoded
+    }
+}
+
 // MARK: - Sequence
 
 public extension Sequence where Element == String {
