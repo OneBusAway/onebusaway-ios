@@ -231,7 +231,6 @@ import MessageUI
             else { return }
 
             let safari = SFSafariViewController(url: url)
-            safari.modalPresentationStyle = .overFullScreen
             self.application.viewRouter.present(safari, from: self)
         }
 
