@@ -107,4 +107,8 @@
     // abxoxo - TODO!
 }
 
+- (void)reportEventWithCategory:(enum OBAAnalyticsCategory)category action:(NSString *)action label:(NSString *)label value:(id)value {
+    // abxoxo - TODO!
+}
+
 @end

@@ -16,6 +16,8 @@ public class Strings: NSObject {
 
     public static let close = NSLocalizedString("common.close", value: "Close", comment: "The verb 'to close'.")
 
+    public static let `continue` = NSLocalizedString("common.continue", value: "Continue", comment: "The verb 'to continue'.")
+
     public static let delete = NSLocalizedString("common.delete", value: "Delete", comment: "The verb 'to delete', as in to destroy something.")
 
     public static let dismiss = NSLocalizedString("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")

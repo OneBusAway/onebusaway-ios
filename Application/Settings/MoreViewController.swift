@@ -11,7 +11,7 @@ import SafariServices
 import MessageUI
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
-@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate, RegionsServiceDelegate {
+@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate, RegionsServiceDelegate, FarePaymentsDelegate {
 
     /// The OBA application object
     private let application: Application
@@ -150,7 +150,7 @@ import MessageUI
         addGroupedTableRowToStack(payMyFareRow) { [weak self] _ in
             guard let self = self else { return }
             self.logRowTapAnalyticsEvent(name: "Pay Fare")
-            // todo: fare payment workflow.
+            self.farePayments.beginFarePaymentsWorkflow()
         }
     }
 
@@ -282,6 +282,18 @@ import MessageUI
 //
 //            return section;
 //        }
+    }
+
+    // MARK: - Fare Payments
+
+    private lazy var farePayments = FarePayments(application: application, delegate: self)
+
+    public func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+        application.viewRouter.present(viewController, from: self, isModalInPresentation: true)
+    }
+
+    public func farePayments(_ farePayments: FarePayments, present error: Error) {
+        AlertPresenter.show(error: error, presentingController: self)
     }
 
     // MARK: - Regions Service Delegate
