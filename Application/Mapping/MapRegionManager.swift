@@ -40,17 +40,51 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
-        mapView.showsScale = true
-        mapView.showsTraffic = true
         return mapView
     }()
+
+    // MARK: - User Defaults
+
+    /// Whether the map view displays current traffic conditions.
+    ///
+    /// `true` by default.
+    public var mapViewShowsTraffic: Bool {
+        get { application.userDefaults.bool(forKey: mapViewShowsTrafficKey) }
+        set {
+            application.userDefaults.set(newValue, forKey: mapViewShowsTrafficKey)
+            mapView.showsTraffic = newValue
+        }
+    }
+    private let mapViewShowsTrafficKey = "mapRegionManager.mapViewShowsTraffic"
+
+    /// Whether the map view displays a scale indicator while zooming.
+    ///
+    /// `true` by default.
+    public var mapViewShowsScale: Bool {
+        get { application.userDefaults.bool(forKey: mapViewShowsScaleKey) }
+        set {
+            application.userDefaults.set(newValue, forKey: mapViewShowsScaleKey)
+            mapView.showsScale = newValue
+        }
+    }
+    private let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
+
+    // MARK: - Init
 
     public init(application: Application) {
         self.application = application
 
+        application.userDefaults.register(defaults: [
+            mapViewShowsTrafficKey: true,
+            mapViewShowsScaleKey: true
+        ])
+
         super.init()
 
         application.locationService.addDelegate(self)
+
+        mapView.showsScale = mapViewShowsScale
+        mapView.showsTraffic = mapViewShowsTraffic
 
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
@@ -80,9 +114,8 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
             }
         }
         set {
-            if let v = newValue {
-                mapView.visibleMapRect = v
-            }
+            guard let newValue = newValue else { return }
+            mapView.visibleMapRect = newValue
         }
     }
 

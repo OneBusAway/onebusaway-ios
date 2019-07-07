@@ -53,6 +53,10 @@ public class Application: NSObject {
 
     // MARK: - Public Properties
 
+    /// Shared user defaults
+    @objc public let userDefaults: UserDefaults
+
+    /// The data store for information like bookmarks, groups, and recent stops.
     @objc public let userDataStore: UserDataStore
 
     /// Commonly used formatters configured with the user's current, auto-updating locale and the app's theme colors.
@@ -99,7 +103,8 @@ public class Application: NSObject {
 
     @objc public init(config: AppConfig) {
         self.config = config
-        userDataStore = UserDefaultsStore(userDefaults: config.userDefaults)
+        userDefaults = config.userDefaults
+        userDataStore = UserDefaultsStore(userDefaults: userDefaults)
         locationService = config.locationService
         regionsService = config.regionsService
         analytics = config.analytics

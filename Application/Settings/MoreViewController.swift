@@ -85,7 +85,9 @@ import MessageUI
     // MARK: - Actions
 
     @objc func showSettings() {
-        // TODO
+        let settingsController = SettingsViewController(application: application)
+        let navigation = application.viewRouter.buildNavigation(controller: settingsController)
+        application.viewRouter.present(navigation, from: self)
     }
 
     // MARK: - Controller Header
