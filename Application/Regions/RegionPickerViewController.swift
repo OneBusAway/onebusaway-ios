@@ -173,6 +173,15 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
     // MARK: - Actions
 
     @objc private func dismissRegionPicker() {
-        dismiss(animated: true, completion: nil)
+        // This is sort of a hacky test for determining whether we
+        // should be reloading the root interface or simply dismissing
+        // this controller, but it's good enough for now. Nice thing to
+        // revisit later though.
+        if message == .manualSelectionMessage {
+            application.reloadRootUserInterface()
+        }
+        else {
+            dismiss(animated: true, completion: nil)
+        }
     }
 }
