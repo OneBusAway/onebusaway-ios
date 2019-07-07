@@ -66,8 +66,7 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
                 guard let self = self else { return }
 
                 let safari = SFSafariViewController(url: agency.agency.agencyURL)
-                safari.modalPresentationStyle = .overFullScreen
-                self.application.viewRouter.navigate(to: safari, from: self)
+                self.application.viewRouter.present(safari, from: self)
             }
         }
     }
