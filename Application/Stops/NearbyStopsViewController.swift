@@ -9,9 +9,17 @@ import UIKit
 import IGListKit
 import SVProgressHUD
 
-class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ModelViewModelConverters, ListAdapterDataSource {
+class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ModelViewModelConverters, ListAdapterDataSource, UISearchResultsUpdating {
 
     private let stop: Stop
+
+    private var searchFilter: String? {
+        didSet {
+            guard oldValue != searchFilter else { return }
+            let animated = searchFilter != nil
+            collectionController.reload(animated: animated)
+        }
+    }
 
     // MARK: - Init
 
@@ -33,6 +41,8 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
         view.backgroundColor = application.theme.colors.systemBackground
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
+
+        configureSearchController()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -62,7 +72,23 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
     }
 
     override func updateUI() {
+        searchFilter = nil
         collectionController.reload(animated: false)
+    }
+
+    // MARK: - Search
+
+    private lazy var searchController = UISearchController(searchResultsController: nil)
+
+    func updateSearchResults(for searchController: UISearchController) {
+        searchFilter = searchController.searchBar.text
+    }
+
+    private func configureSearchController() {
+        searchController.searchResultsUpdater = self
+        searchController.obscuresBackgroundDuringPresentation = false
+        navigationItem.searchController = searchController
+        definesPresentationContext = true
     }
 
     // MARK: - Data and Collection Controller
@@ -76,9 +102,14 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
             return []
         }
 
+        let filter = ModelHelpers.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
+
         var directions = [Direction: [Stop]]()
 
         for stop in data {
+            if !stop.matchesQuery(filter) {
+                continue
+            }
             var list = directions[stop.direction, default: [Stop]()]
             list.append(stop)
             directions[stop.direction] = list
@@ -91,7 +122,8 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
         var sections: [ListDiffable] = []
         for dir in directions.keys {
-            let section = tableSection(from: data, tapped: tapHandler, deleted: nil)
+            let stops = directions[dir] ?? []
+            let section = tableSection(from: stops, tapped: tapHandler, deleted: nil)
             section.title = Formatters.adjectiveFormOfCardinalDirection(dir)
             sections.append(section)
         }

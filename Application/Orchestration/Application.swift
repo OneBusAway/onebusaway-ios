@@ -102,6 +102,8 @@ public class Application: NSObject {
 
     @objc public weak var delegate: ApplicationDelegate?
 
+    @objc public let notificationCenter: NotificationCenter
+
     // MARK: - Init
 
     @objc public init(config: AppConfig) {
@@ -111,6 +113,7 @@ public class Application: NSObject {
         locationService = config.locationService
         regionsService = config.regionsService
         analytics = config.analytics
+        notificationCenter = NotificationCenter.default
 
         theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 

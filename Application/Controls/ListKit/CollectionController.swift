@@ -33,7 +33,6 @@ public class CollectionController: UIViewController {
         let layout = UICollectionViewFlowLayout()
         layout.estimatedItemSize = CGSize(width: 375, height: 40)
         layout.itemSize = UICollectionViewFlowLayout.automaticSize
-        layout.sectionHeadersPinToVisibleBounds = true
         return layout
     }()
 
@@ -55,12 +54,49 @@ public class CollectionController: UIViewController {
         collectionView.pinToSuperview(.edges)
     }
 
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        registerKeyboardNotifications()
+    }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        unregisterKeyboardNotifications()
+    }
+
     // MARK: - Public Methods
 
     /// Reloads the collection controller's underlying `listAdapter`
     /// - Parameter animated: Animate the reload or not.
     public func reload(animated: Bool) {
         listAdapter.performUpdates(animated: animated)
+    }
+
+    // MARK: - Keyboard
+
+    private func registerKeyboardNotifications() {
+        application.notificationCenter.addObserver(self, selector: #selector(keyboardWasShown(_:)), name: UIResponder.keyboardDidShowNotification, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(keyboardWillBeHidden(_:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
+    private func unregisterKeyboardNotifications() {
+        application.notificationCenter.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
+        application.notificationCenter.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
+    @objc private func keyboardWasShown(_ notification: Notification) {
+        guard let kbRect = notification.userInfo?[UIResponder.keyboardFrameBeginUserInfoKey] as? CGRect else {
+            return
+        }
+
+        let contentInsets = UIEdgeInsets(top: collectionView.contentInset.top, left: 0, bottom: kbRect.height, right: 0)
+        collectionView.contentInset = contentInsets
+        collectionView.scrollIndicatorInsets = contentInsets
+    }
+
+    @objc private func keyboardWillBeHidden(_ notification: Notification) {
+        collectionView.contentInset = UIEdgeInsets(top: collectionView.contentInset.top, left: 0, bottom: 0, right: 0)
+        collectionView.scrollIndicatorInsets = collectionView.contentInset
     }
 }
 

@@ -23,7 +23,7 @@ public class HighlightChangeLabel: UILabel {
         get { return _highlightedBackgroundColor }
         set { _highlightedBackgroundColor = newValue }
     }
-    private var _highlightedBackgroundColor: UIColor!
+    private var _highlightedBackgroundColor: UIColor = .yellow
 
     /// If `true`, this will cause the next invocation of `highlightBackground()` to immediately return.
     ///
