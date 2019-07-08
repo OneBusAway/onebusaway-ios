@@ -151,8 +151,6 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
 
         super.init(nibName: nil, bundle: nil)
 
-        hidesBottomBarWhenPushed = true
-
         toolbarItems = buildToolbarItems()
 
         configureCurrentThemeBehaviors()
@@ -226,16 +224,12 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         }
 
         updateData()
-
-        navigationController?.setToolbarHidden(false, animated: true)
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         application.isIdleTimerDisabled = false
-
-        navigationController?.setToolbarHidden(true, animated: true)
     }
 
     // MARK: - NSUserActivity

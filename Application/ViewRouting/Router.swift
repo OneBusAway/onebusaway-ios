@@ -13,7 +13,7 @@ import UIKit
 /// For example, this router can be used identically when the app is configured to
 /// use floating panels or standard `UINavigationController` stacks.
 ///
-public class ViewRouter: NSObject {
+public class ViewRouter: NSObject, UINavigationControllerDelegate {
     private let application: Application
 
     public init(application: Application) {
@@ -70,7 +70,14 @@ public class ViewRouter: NSObject {
     public func buildNavigation(controller: UIViewController, prefersLargeTitles: Bool = true) -> UINavigationController {
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = prefersLargeTitles
+        navigation.delegate = self
 
         return navigation
+    }
+
+    // MARK: - UINavigationControllerDelegate
+
+    public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
+        navigationController.setToolbarHidden(!viewController.hasToolbarItems, animated: animated)
     }
 }

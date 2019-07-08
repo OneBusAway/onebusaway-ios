@@ -21,8 +21,6 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
     override init(application: Application) {
         super.init(application: application)
 
-        hidesBottomBarWhenPushed = true
-
         title = NSLocalizedString("agencies_controller.title", value: "Agencies", comment: "Title of the Agencies controller")
     }
 
