@@ -1,28 +1,30 @@
 name: OBAKit
+
 options:
   bundleIdPrefix: org.onebusaway
+
 targets:
-  OneBusAway:
+  OBADemo:
     type: application
     platform: iOS
     deploymentTarget: "12.3"
-    sources: [DemoApp]
+    sources: [Apps/DemoApp]
     dependencies:
       - target: OBAKit
       - carthage: SwiftProtobuf
     info:
-      path: DemoApp/Info.plist
+      path: Apps/DemoApp/Info.plist
       properties:
         AppDevelopersEmailAddress: iphone-app@onebusaway.org
         DeepLinkServerBaseAddress: http://alerts.onebusaway.org
         PrivacyPolicyURL: http://onebusaway.org/privacy/
-        CFBundleDisplayName: OneBusAway
+        CFBundleDisplayName: OBADemo
         LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSHumanReadableCopyright: "© Open Transit Software Foundation"
         NSUserActivityTypes:
-          - org.onebusaway.OneBusAway.user_activity.stop
-          - org.onebusaway.OneBusAway.user_activity.trip
+          - org.onebusaway.demoapp.user_activity.stop
+          - org.onebusaway.demoapp.user_activity.trip
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
@@ -41,6 +43,9 @@ targets:
           - UIInterfaceOrientationLandscapeRight
     scheme:
       gatherCoverageData: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.demoapp
   OBAKit:
     type: framework
     platform: iOS
@@ -67,6 +72,6 @@ targets:
     deploymentTarget: "12.3"
     sources: [OBAKitTests]
     dependencies:
-      - target: OneBusAway
+      - target: OBADemo
       - carthage: Nimble
       - carthage: OHHTTPStubs
