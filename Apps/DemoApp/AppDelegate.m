@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 @import OBAKit;
+#import "Firebase.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
@@ -39,6 +40,8 @@
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     [self applicationReloadRootInterface:self.app];
     [self.window makeKeyAndVisible];
+
+    [FIRApp configure];
 
     return YES;
 }

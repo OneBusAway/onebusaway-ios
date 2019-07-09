@@ -12,6 +12,22 @@ targets:
     dependencies:
       - target: OBAKit
       - carthage: SwiftProtobuf
+      - framework: FIRAnalyticsConnector.framework
+        embed: false
+      - framework: FirebaseAnalytics.framework
+        embed: false
+      - framework: FirebaseCore.framework
+        embed: false
+      - framework: FirebaseCoreDiagnostics.framework
+        embed: false
+      - framework: FirebaseInstanceID.framework
+        embed: false
+      - framework: GoogleAppMeasurement.framework
+        embed: false
+      - framework: GoogleUtilities.framework
+        embed: false
+      - framework: nanopb.framework
+        embed: false
     info:
       path: Apps/DemoApp/Info.plist
       properties:
@@ -45,7 +61,9 @@ targets:
       gatherCoverageData: true
     settings:
       base:
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.demoapp
+        OTHER_LDFLAGS: -ObjC
   OBAKit:
     type: framework
     platform: iOS

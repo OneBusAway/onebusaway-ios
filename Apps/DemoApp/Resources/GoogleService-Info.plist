@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>265765489407-8q46551bv1aod3d0osg0fchsf597gbej.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.265765489407-8q46551bv1aod3d0osg0fchsf597gbej</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCEDUip6KwJU0YMMXKKEXPtOQ-R-vwlYyQ</string>
+	<key>GCM_SENDER_ID</key>
+	<string>265765489407</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.onebusaway.demoapp</string>
+	<key>PROJECT_ID</key>
+	<string>oba-ios-7a4b0</string>
+	<key>STORAGE_BUCKET</key>
+	<string>oba-ios-7a4b0.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:265765489407:ios:5032784be5ac4fbf</string>
+	<key>DATABASE_URL</key>
+	<string>https://oba-ios-7a4b0.firebaseio.com</string>
+</dict>
+</plist>
