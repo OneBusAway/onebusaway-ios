@@ -201,7 +201,7 @@ public class Region: NSObject, Codable {
 
         // Uninitialized properties
         facebookURL = nil
-        language = nil
+        language = "en_US"
         open311Servers = []
         openTripPlannerContactEmail = nil
         openTripPlannerURL = nil

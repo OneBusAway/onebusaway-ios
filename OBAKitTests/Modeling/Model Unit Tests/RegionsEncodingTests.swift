@@ -78,7 +78,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
     }
 
-    func testCustomRegions() {
+    func testCustomRegions_creation() {
         let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
 
         let customRegion = Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
@@ -91,5 +91,24 @@ class RegionsEncodingTests: OBATestCase {
         expect(customRegion.serviceRect.origin.coordinate.longitude).to(beCloseTo(-93.2650, within: 0.1))
         expect(customRegion.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
         expect(customRegion.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
+    }
+
+    func testCustomRegions_roundtripping() {
+        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
+
+        let customRegion = Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
+
+        let plistData = try! PropertyListEncoder().encode([customRegion])
+        let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
+        let customRegionRT = roundTripped[0]
+
+        expect(customRegionRT.name) == "Custom Region"
+        expect(customRegionRT.OBABaseURL.absoluteString) == "http://www.example.com"
+        expect(customRegionRT.contactEmail) == "contact@example.com"
+
+        expect(customRegionRT.serviceRect.origin.coordinate.latitude).to(beCloseTo(44.9778, within: 0.1))
+        expect(customRegionRT.serviceRect.origin.coordinate.longitude).to(beCloseTo(-93.2650, within: 0.1))
+        expect(customRegionRT.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
+        expect(customRegionRT.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
     }
 }
