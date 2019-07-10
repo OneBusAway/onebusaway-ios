@@ -45,8 +45,10 @@ public protocol ApplicationDelegate {
     @objc optional var credits: [String: String] { get }
 }
 
+// MARK: - Application Class
+
 @objc(OBAApplication)
-public class Application: NSObject {
+public class Application: NSObject, RegionsServiceDelegate, LocationServiceDelegate {
 
     // MARK: - Private Properties
 
@@ -250,11 +252,9 @@ public class Application: NSObject {
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false
     }
-}
 
-// MARK: - Regions Management
+    // MARK: - Regions Management
 
-extension Application: RegionsServiceDelegate {
     @objc public func manuallySelectRegion() {
         regionsService.automaticallySelectRegion = false
 
@@ -278,11 +278,9 @@ extension Application: RegionsServiceDelegate {
         let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
-}
 
-// MARK: - LocationServiceDelegate
+    // MARK: - LocationServiceDelegate
 
-extension Application: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         reloadRootUserInterface()
     }

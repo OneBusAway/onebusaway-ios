@@ -10,6 +10,8 @@ import UIKit
 import CoreLocation
 import MapKit
 
+// MARK: - MapRegionDelegate
+
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
@@ -23,6 +25,8 @@ public protocol MapRegionDelegate {
 
     @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
 }
+
+// MARK: - MapRegionManager
 
 public class MapRegionManager: NSObject, StopAnnotationDelegate {
 
