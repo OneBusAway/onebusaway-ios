@@ -24,6 +24,7 @@ class RegionsEncodingTests: OBATestCase {
 
         let tampa = regionsObjects[0]
         expect(tampa.name) == "Tampa Bay"
+        expect(tampa.isCustom).to(beFalse())
 
         let plistData = try! PropertyListEncoder().encode(regionsObjects)
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
@@ -42,6 +43,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(tampaRT.supportsSiriRealtimeAPIs).to(beTrue())
         expect(tampaRT.isActive).to(beTrue())
         expect(tampaRT.isExperimental).to(beFalse())
+        expect(tampaRT.isCustom).to(beFalse())
 
         expect(tampaRT.facebookURL).to(beNil())
         expect(tampaRT.contactEmail) == "onebusaway@gohart.org"
@@ -74,5 +76,20 @@ class RegionsEncodingTests: OBATestCase {
         expect(bounds[1].lon).to(beCloseTo(-82.652145))
         expect(bounds[1].latSpan).to(beCloseTo(0.47208000000000183))
         expect(bounds[1].lonSpan).to(beCloseTo(0.3967700000000036))
+    }
+
+    func testCustomRegions() {
+        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
+
+        let customRegion = Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
+
+        expect(customRegion.name) == "Custom Region"
+        expect(customRegion.OBABaseURL.absoluteString) == "http://www.example.com"
+        expect(customRegion.contactEmail) == "contact@example.com"
+
+        expect(customRegion.serviceRect.origin.coordinate.latitude).to(beCloseTo(44.9778, within: 0.1))
+        expect(customRegion.serviceRect.origin.coordinate.longitude).to(beCloseTo(-93.2650, within: 0.1))
+        expect(customRegion.serviceRect.height).to(beCloseTo(9485.2270, within: 0.1))
+        expect(customRegion.serviceRect.width).to(beCloseTo(9453.3477, within: 0.1))
     }
 }

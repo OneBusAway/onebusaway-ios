@@ -153,6 +153,7 @@ public class Region: NSObject, Codable {
         case name = "regionName"
         case regionIdentifier = "id"
         case isActive = "active"
+        case isCustom = "custom"
         case isExperimental = "experimental"
         case OBABaseURL = "obaBaseUrl"
         case siriBaseURL = "siriBaseUrl"
@@ -178,6 +179,48 @@ public class Region: NSObject, Codable {
         case paymentiOSAppURLScheme = "paymentiOSAppUrlScheme"
     }
 
+    /// Allows you to create custom `Region` objects within the app.
+    ///
+    /// This is useful for testing out new regions.
+    /// - Parameter name: The user-visible name of the region.
+    /// - Parameter OBABaseURL: The base URL against which API requests will be made.
+    /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
+    /// - Parameter contactEmail: The contact email address for this region.
+    public init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String) {
+        self.name = name
+        regionIdentifier = 1000 + Int.random(in: 0...999)
+        isActive = true
+        isExperimental = false
+        isCustom = true
+
+        self.OBABaseURL = OBABaseURL
+
+        let bound = RegionBound(lat: coordinateRegion.center.latitude, lon: coordinateRegion.center.longitude, latSpan: coordinateRegion.span.latitudeDelta, lonSpan: coordinateRegion.span.longitudeDelta)
+        regionBounds = [bound]
+        self.contactEmail = contactEmail
+
+        // Uninitialized properties
+        facebookURL = nil
+        language = nil
+        open311Servers = []
+        openTripPlannerContactEmail = nil
+        openTripPlannerURL = nil
+        paymentAndroidAppID = nil
+        paymentWarningBody = nil
+        paymentWarningTitle = nil
+        paymentiOSAppStoreIdentifier = nil
+        paymentiOSAppURLScheme = nil
+        siriBaseURL = nil
+        stopInfoURL = nil
+        supportsEmbeddedSocial = false
+        supportsOBADiscoveryAPIs = true
+        supportsOBARealtimeAPIs = true
+        supportsOTPBikeshare = false
+        supportsSiriRealtimeAPIs = false
+        twitterURL = nil
+        versionInfo = "x.y.z.custom"
+    }
+
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
@@ -185,6 +228,7 @@ public class Region: NSObject, Codable {
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
         isActive = try container.decode(Bool.self, forKey: .isActive)
         isExperimental = try container.decode(Bool.self, forKey: .isExperimental)
+        isCustom = (try? container.decode(Bool.self, forKey: .isCustom)) ?? false
 
         OBABaseURL = try container.decode(URL.self, forKey: .OBABaseURL)
         siriBaseURL = try? container.decode(URL.self, forKey: .siriBaseURL)
