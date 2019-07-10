@@ -12,6 +12,8 @@ import XCTest
 import CoreLocation
 import Nimble
 
+// swiftlint:disable force_try
+
 class RegionsServiceTests: OBATestCase {
 
     // MARK: - Upon creating the Regions Service
@@ -26,6 +28,18 @@ class RegionsServiceTests: OBATestCase {
     }
 
     // It loads regions saved to the user defaults when they exist
+    func test_init_loadsSavedRegions() {
+        let customRegion = customMinneapolisRegion
+        let plistData = try! PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+
+        expect(regionsService.regions.first!.name) == "Custom Region"
+        expect(regionsService.regions.count) == 1
+    }
 
     // It loads the current region from user defaults when it exists
 

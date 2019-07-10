@@ -79,9 +79,7 @@ class RegionsEncodingTests: OBATestCase {
     }
 
     func testCustomRegions_creation() {
-        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
-
-        let customRegion = Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
+        let customRegion = customMinneapolisRegion
 
         expect(customRegion.name) == "Custom Region"
         expect(customRegion.OBABaseURL.absoluteString) == "http://www.example.com"
@@ -94,10 +92,7 @@ class RegionsEncodingTests: OBATestCase {
     }
 
     func testCustomRegions_roundtripping() {
-        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
-
-        let customRegion = Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
-
+        let customRegion = customMinneapolisRegion
         let plistData = try! PropertyListEncoder().encode([customRegion])
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
         let customRegionRT = roundTripped[0]

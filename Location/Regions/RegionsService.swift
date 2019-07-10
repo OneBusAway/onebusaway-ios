@@ -30,15 +30,19 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             RegionsService.automaticallySelectRegionUserDefaultsKey: true
         ])
 
-        let regions = RegionsService.loadStoredRegions(from: userDefaults)
-        self.regions = regions
+        if let regions = RegionsService.loadStoredRegions(from: userDefaults), regions.count > 0 {
+            self.regions = regions
+        }
+        else {
+            self.regions = RegionsService.bundledRegions
+        }
 
         super.init()
 
         if self.currentRegion == nil,
             userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey),
             let location = locationService.currentLocation {
-            currentRegion = RegionsService.firstRegion(in: regions, containing: location)
+            currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
         }
 
         updateRegionsList()
@@ -124,7 +128,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     // MARK: - Region Data Storage
 
     private static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
-    private static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
+    static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
     private static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
     private static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
 
@@ -142,12 +146,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Load Stored Regions
 
-    private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region] {
+    private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region]? {
         guard
             let regions = try? userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
             regions.count > 0
         else {
-            return bundledRegions
+            return nil
         }
 
         return regions

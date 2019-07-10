@@ -166,6 +166,12 @@ public extension OBATestCase {
         let json = loadJSONDictionary(file: "regions-v3.json")
         return try decodeModels(type: Region.self, json: json, skipReferences: true)
     }
+
+    var customMinneapolisRegion: Region {
+        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
+
+        return Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
+    }
 }
 
 // MARK: - Data Loading
