@@ -15,7 +15,7 @@ import MapKit
 public class Region: NSObject, Codable {
 
     /// The human-readable name of the region. Example: Puget Sound.
-    public let regionName: String
+    public let name: String
 
     /// The unique ID for the region.
     public let regionIdentifier: Int
@@ -27,11 +27,14 @@ public class Region: NSObject, Codable {
 
     /// Is this region publicly supported?
     ///
-    /// TRUE if the server is experimental and has not yet been approved by the community as a "production" OBA server.
+    /// `true` if the server is experimental and has not yet been approved by the community as a "production" OBA server.
     /// Mobile app users have to explicitly opt-in to see experimental servers in the app.
-    /// FALSE if the OBA community has approved this server as a "production" server that appears by default in the mobile apps.
+    /// `false` if the OBA community has approved this server as a "production" server that appears by default in the mobile apps.
     /// See https://groups.google.com/forum/#!topic/onebusaway-developers/xxkBT8GN_PY for details.
     public let isExperimental: Bool
+
+    /// Custom regions are created by the user inside of the app for testing purposes. These are not regions that exist within the `regions` JSON file.
+    public let isCustom: Bool?
 
     /// The base URL for making OBA REST API requests.
     public let OBABaseURL: URL
@@ -147,7 +150,7 @@ public class Region: NSObject, Codable {
     // MARK: - Codable
 
     private enum CodingKeys: String, CodingKey {
-        case regionName
+        case name = "regionName"
         case regionIdentifier = "id"
         case isActive = "active"
         case isExperimental = "experimental"
@@ -178,7 +181,7 @@ public class Region: NSObject, Codable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        regionName = try container.decode(String.self, forKey: .regionName)
+        name = try container.decode(String.self, forKey: .name)
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
         isActive = try container.decode(Bool.self, forKey: .isActive)
         isExperimental = try container.decode(Bool.self, forKey: .isExperimental)
@@ -217,7 +220,7 @@ public class Region: NSObject, Codable {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(regionName, forKey: .regionName)
+        try container.encode(name, forKey: .name)
         try container.encode(regionIdentifier, forKey: .regionIdentifier)
         try container.encode(isActive, forKey: .isActive)
         try container.encode(isExperimental, forKey: .isExperimental)
@@ -248,7 +251,7 @@ public class Region: NSObject, Codable {
     // MARK: - NSObject Overrides
 
     public override var debugDescription: String {
-        return "\(super.debugDescription) - \(regionName)"
+        return "\(super.debugDescription) - \(name)"
     }
 
     // MARK: - Location Helpers

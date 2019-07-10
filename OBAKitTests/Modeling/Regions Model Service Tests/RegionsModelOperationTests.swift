@@ -32,7 +32,7 @@ class RegionsModelOperationTests: OBATestCase {
                 let tampa = regions.first!
 
                 expect(tampa.regionIdentifier) == 0
-                expect(tampa.regionName) == "Tampa Bay"
+                expect(tampa.name) == "Tampa Bay"
                 expect(tampa.versionInfo) == "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9"
                 expect(tampa.language) == "en_US"
 
@@ -72,7 +72,7 @@ class RegionsModelOperationTests: OBATestCase {
 
                 let pugetSound = regions[1]
 
-                expect(pugetSound.regionName) == "Puget Sound"
+                expect(pugetSound.name) == "Puget Sound"
 
                 let mapRect = MKMapRect(x: 42206703.270115554, y: 92590980.991902918, width: 1338771.0533083975, height: 1897888.1099742353)
                 expect(pugetSound.serviceRect.minX) == mapRect.minX

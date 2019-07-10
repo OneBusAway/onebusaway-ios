@@ -55,7 +55,7 @@ import MessageUI
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        regionPickerRow.subtitleLabel.text = application.currentRegion?.regionName ?? ""
+        regionPickerRow.subtitleLabel.text = application.currentRegion?.name ?? ""
     }
 
     /// Reloads the stack view from scratch
@@ -76,9 +76,9 @@ import MessageUI
     /// Refreshes individual rows whose data might change between presentations of this controller.
     private func refreshTableData() {
         if let region = application.currentRegion {
-            regionPickerRow.subtitleLabel.text = region.regionName
+            regionPickerRow.subtitleLabel.text = region.name
             let fmtString = NSLocalizedString("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
-            alertsForRegionRow.titleLabel.text = String(format: fmtString, region.regionName)
+            alertsForRegionRow.titleLabel.text = String(format: fmtString, region.name)
         }
     }
 

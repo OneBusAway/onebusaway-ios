@@ -23,7 +23,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(regionsObjects.count) == 12
 
         let tampa = regionsObjects[0]
-        expect(tampa.regionName) == "Tampa Bay"
+        expect(tampa.name) == "Tampa Bay"
 
         let plistData = try! PropertyListEncoder().encode(regionsObjects)
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
@@ -32,7 +32,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(roundTripped.count) == 12
 
         expect(tampaRT.regionIdentifier) == 0
-        expect(tampaRT.regionName) == "Tampa Bay"
+        expect(tampaRT.name) == "Tampa Bay"
         expect(tampaRT.versionInfo) == "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9"
         expect(tampaRT.language) == "en_US"
 

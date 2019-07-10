@@ -67,7 +67,7 @@ public class SearchViewController: VisualEffectViewController, ListProvider {
     /// - Returns: A formatted string to be used in the `placeholder` property.
     public static func searchPlaceholderText(region: Region) -> String {
         let fmt = NSLocalizedString("search_controller.search_bar_placeholder_fmt", value: "Search in %@", comment: "Placeholder text for the search bar: 'Search in {REGION NAME}'")
-        return String(format: fmt, region.regionName)
+        return String(format: fmt, region.name)
     }
 
     public var rawSearchText: String? {
