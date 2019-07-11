@@ -127,10 +127,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Region Data Storage
 
-    private static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
+    static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
     static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
-    private static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
-    private static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
+    static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
+    static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
 
     // MARK: - Save Regions
 

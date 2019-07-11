@@ -42,6 +42,25 @@ class RegionsServiceTests: OBATestCase {
     }
 
     // It loads the current region from user defaults when it exists
+    func test_init_loadsCurrentRegion_autoSelectDisabled() {
+        let customRegion = customMinneapolisRegion
+        let plistArrayData = try! PropertyListEncoder().encode([customRegion])
+        userDefaults.set(plistArrayData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+
+        let plistData = try! PropertyListEncoder().encode(customRegion)
+        userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+
+        expect(regionsService.currentRegion) == customRegion
+    }
+
+    func test_init_loadsCurrentRegion_autoSelectEnabled() {
+        // todo!
+    }
 
     // It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
 

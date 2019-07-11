@@ -268,6 +268,7 @@ public class Region: NSObject, Codable {
         try container.encode(regionIdentifier, forKey: .regionIdentifier)
         try container.encode(isActive, forKey: .isActive)
         try container.encode(isExperimental, forKey: .isExperimental)
+        try container.encode(isCustom, forKey: .isCustom)
         try container.encode(OBABaseURL, forKey: .OBABaseURL)
         try? container.encode(siriBaseURL, forKey: .siriBaseURL)
         try? container.encode(openTripPlannerURL, forKey: .openTripPlannerURL)
@@ -296,6 +297,69 @@ public class Region: NSObject, Codable {
 
     public override var debugDescription: String {
         return "\(super.debugDescription) - \(name)"
+    }
+
+    // MARK: - Equality and Hashing
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Region else { return false }
+        return name == rhs.name &&
+            regionIdentifier == rhs.regionIdentifier &&
+            isActive == rhs.isActive &&
+            isExperimental == rhs.isExperimental &&
+            isCustom == rhs.isCustom &&
+            OBABaseURL == rhs.OBABaseURL &&
+            siriBaseURL == rhs.siriBaseURL &&
+            openTripPlannerURL == rhs.openTripPlannerURL &&
+            stopInfoURL == rhs.stopInfoURL &&
+            open311Servers == rhs.open311Servers &&
+            supportsEmbeddedSocial == rhs.supportsEmbeddedSocial &&
+            supportsOBARealtimeAPIs == rhs.supportsOBARealtimeAPIs &&
+            supportsOBADiscoveryAPIs == rhs.supportsOBADiscoveryAPIs &&
+            supportsOTPBikeshare == rhs.supportsOTPBikeshare &&
+            supportsSiriRealtimeAPIs == rhs.supportsSiriRealtimeAPIs &&
+            contactEmail == rhs.contactEmail &&
+            twitterURL == rhs.twitterURL &&
+            facebookURL == rhs.facebookURL &&
+            openTripPlannerContactEmail == rhs.openTripPlannerContactEmail &&
+            language == rhs.language &&
+            versionInfo == rhs.versionInfo &&
+            paymentWarningBody == rhs.paymentWarningBody &&
+            paymentWarningTitle == rhs.paymentWarningTitle &&
+            paymentAndroidAppID == rhs.paymentAndroidAppID &&
+            paymentiOSAppStoreIdentifier == rhs.paymentiOSAppStoreIdentifier &&
+            paymentiOSAppURLScheme == rhs.paymentiOSAppURLScheme
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(name)
+        hasher.combine(regionIdentifier)
+        hasher.combine(isActive)
+        hasher.combine(isExperimental)
+        hasher.combine(isCustom)
+        hasher.combine(OBABaseURL)
+        hasher.combine(siriBaseURL)
+        hasher.combine(openTripPlannerURL)
+        hasher.combine(stopInfoURL)
+        hasher.combine(open311Servers)
+        hasher.combine(supportsEmbeddedSocial)
+        hasher.combine(supportsOBARealtimeAPIs)
+        hasher.combine(supportsOBADiscoveryAPIs)
+        hasher.combine(supportsOTPBikeshare)
+        hasher.combine(supportsSiriRealtimeAPIs)
+        hasher.combine(contactEmail)
+        hasher.combine(twitterURL)
+        hasher.combine(facebookURL)
+        hasher.combine(openTripPlannerContactEmail)
+        hasher.combine(language)
+        hasher.combine(versionInfo)
+        hasher.combine(paymentWarningBody)
+        hasher.combine(paymentWarningTitle)
+        hasher.combine(paymentAndroidAppID)
+        hasher.combine(paymentiOSAppStoreIdentifier)
+        hasher.combine(paymentiOSAppURLScheme)
+        return hasher.finalize()
     }
 
     // MARK: - Location Helpers
