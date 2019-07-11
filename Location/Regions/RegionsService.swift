@@ -13,15 +13,17 @@ import CocoaLumberjackSwift
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate: NSObjectProtocol {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
+    @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
     @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
 }
 
+/// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
 public class RegionsService: NSObject, LocationServiceDelegate {
     private let modelService: RegionsModelService
     private let locationService: LocationService
     private let userDefaults: UserDefaults
 
-    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults) {
+    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults, delegate: RegionsServiceDelegate? = nil) {
         self.modelService = modelService
         self.locationService = locationService
         self.userDefaults = userDefaults
@@ -38,6 +40,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         super.init()
+
+        if let delegate = delegate {
+            addDelegate(delegate)
+        }
 
         let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
 
@@ -68,6 +74,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
+    private func notifyDelegatesRegionsListUpdated() {
+        for delegate in delegates.allObjects {
+            delegate.regionsService?(self, updatedRegionsList: regions)
+        }
+    }
+
     private func notifyDelegatesUnableToSelectRegion() {
         for delegate in delegates.allObjects {
             delegate.regionsServiceUnableToSelectRegion?(self)
@@ -79,6 +91,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public private(set) var regions: [Region] {
         didSet {
             storeRegions()
+            notifyDelegatesRegionsListUpdated()
             updateCurrentRegionFromLocation()
         }
     }
@@ -181,7 +194,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         // only update once per week, unless forceUpdate is true.
         if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
            abs(lastUpdatedAt.timeIntervalSinceNow) < 604800,
-           !forceUpdate {
+           !forceUpdate
+        { // swiftlint:disable:this opening_brace
             return
         }
 

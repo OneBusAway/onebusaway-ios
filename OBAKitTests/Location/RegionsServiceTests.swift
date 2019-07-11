@@ -11,8 +11,33 @@ import XCTest
 @testable import OBAKit
 import CoreLocation
 import Nimble
+import OHHTTPStubs
 
 // swiftlint:disable force_try
+
+class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
+    var unableToSelectRegionsCallbacks = [(() -> Void)]()
+    var updatedRegionsListCallbacks = [(() -> Void)]()
+    var updatedRegionCallbacks = [(() -> Void)]()
+
+    func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
+        for callback in unableToSelectRegionsCallbacks {
+            callback()
+        }
+    }
+
+    func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        for callback in updatedRegionsListCallbacks {
+            callback()
+        }
+    }
+
+    func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        for callback in updatedRegionCallbacks {
+            callback()
+        }
+    }
+}
 
 class RegionsServiceTests: OBATestCase {
 
@@ -73,6 +98,27 @@ class RegionsServiceTests: OBATestCase {
     }
 
     // It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
+    func test_init_updateRegionsList() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-v3.json")
+        }
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+
+        var regionsService: RegionsService!
+        let testDelegate = RegionsServiceTestDelegate()
+
+        waitUntil { done in
+            let callback = {
+                expect(regionsService.regions.count) == 12
+                done()
+            }
+            testDelegate.updatedRegionsListCallbacks.append(callback)
+
+            regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: testDelegate)
+        }
+    }
 
     // It *does not* download a list of regions if the list was last updated less than a week ago.
 
