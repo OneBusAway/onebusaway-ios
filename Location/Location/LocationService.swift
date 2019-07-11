@@ -41,7 +41,8 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     public init(locationManager: LocationManager) {
         self.locationManager = locationManager
-        self.authorizationStatus = locationManager.authorizationStatus
+        authorizationStatus = locationManager.authorizationStatus
+        currentLocation = locationManager.location
 
         super.init()
 

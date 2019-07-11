@@ -39,9 +39,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         super.init()
 
-        if self.currentRegion == nil,
-            userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey),
-            let location = locationService.currentLocation {
+        let autoSelectRegion = userDefaults.bool(forKey: RegionsService.automaticallySelectRegionUserDefaultsKey) || currentRegion == nil
+
+        if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
         }
 

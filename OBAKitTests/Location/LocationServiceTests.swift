@@ -74,14 +74,15 @@ class LocationServiceTests: XCTestCase {
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(locationManager: locationManagerMock)
+        let locManager = CLLocationManager()
 
         expect(service.currentLocation).to(beNil())
 
-        service.locationManager(CLLocationManager(), didUpdateLocations: [TestData.mockSeattleLocation])
+        service.locationManager(locManager, didUpdateLocations: [TestData.mockSeattleLocation])
         expect(service.currentLocation) == TestData.mockSeattleLocation
 
         let badLocation = CLLocation(coordinate: TestData.tampaCoordinate, altitude: 10.0, horizontalAccuracy: 1000, verticalAccuracy: 1000, timestamp: Date())
-        service.locationManager(CLLocationManager(), didUpdateLocations: [badLocation])
+        service.locationManager(locManager, didUpdateLocations: [badLocation])
 
         expect(service.currentLocation) == TestData.mockSeattleLocation
     }
