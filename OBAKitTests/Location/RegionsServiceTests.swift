@@ -176,7 +176,6 @@ class RegionsServiceTests: OBATestCase {
 
         let locationManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locationManager)
-
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
         let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
@@ -193,6 +192,27 @@ class RegionsServiceTests: OBATestCase {
     // MARK: - Persistence
 
     // It stores downloaded region data in user defaults when the regions property is set.
+    func test_persistence() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-just-puget-sound.json")
+        }
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+
+        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+
+        waitUntil { done in
+            self.testDelegate.updatedRegionsListCallbacks.append {
+                let regions: [Region]! = try! self.userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey)
+                expect(regions.count) == 1
+                expect(regions?.first!.name) == "Puget Sound"
+                done()
+            }
+            regionsService.updateRegionsList(forceUpdate: true)
+        }
+    }
 
     // It loads the bundled regions when the data in the user defaults is corrupted.
 
