@@ -19,6 +19,14 @@ class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     var unableToSelectRegionsCallbacks = [(() -> Void)]()
     var updatedRegionsListCallbacks = [(() -> Void)]()
     var updatedRegionCallbacks = [(() -> Void)]()
+    var regionUpdateCancelledCallbacks = [(() -> Void)]()
+
+    func tearDown() {
+        unableToSelectRegionsCallbacks.removeAll()
+        updatedRegionsListCallbacks.removeAll()
+        updatedRegionCallbacks.removeAll()
+        regionUpdateCancelledCallbacks.removeAll()
+    }
 
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         for callback in unableToSelectRegionsCallbacks {
@@ -37,9 +45,28 @@ class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
             callback()
         }
     }
+
+    func regionsServiceListUpdateCancelled(_ service: RegionsService) {
+        for callback in regionUpdateCancelledCallbacks {
+            callback()
+        }
+    }
 }
 
 class RegionsServiceTests: OBATestCase {
+
+    var testDelegate: RegionsServiceTestDelegate!
+
+    override func setUp() {
+        super.setUp()
+        testDelegate = RegionsServiceTestDelegate()
+    }
+
+    override func tearDown() {
+        super.tearDown()
+        testDelegate.tearDown()
+        testDelegate = nil
+    }
 
     // MARK: - Upon creating the Regions Service
 
@@ -97,7 +124,7 @@ class RegionsServiceTests: OBATestCase {
         expect(regionsService.currentRegion!.name) == "Puget Sound"
     }
 
-    // It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
+    /// It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
     func test_init_updateRegionsList() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
             return self.JSONFile(named: "regions-just-puget-sound.json")
@@ -107,20 +134,61 @@ class RegionsServiceTests: OBATestCase {
         let locationService = LocationService(locationManager: locationManager)
 
         var regionsService: RegionsService!
-        let testDelegate = RegionsServiceTestDelegate()
 
         waitUntil { done in
             let callback = {
                 expect(regionsService.regions.count) == 1
                 done()
             }
-            testDelegate.updatedRegionsListCallbacks.append(callback)
+            self.testDelegate.updatedRegionsListCallbacks.append(callback)
 
-            regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: testDelegate)
+            regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
         }
     }
 
-    // It *does not* download a list of regions if the list was last updated less than a week ago.
+    /// It *does not* download a list of regions if the list was last updated less than a week ago.
+    func test_init_skipUpdateRegionsList() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-just-puget-sound.json")
+        }
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+
+        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+
+        waitUntil { done in
+            self.testDelegate.regionUpdateCancelledCallbacks.append {
+                expect(regionsService.regions.count) == 12
+                done()
+            }
+            regionsService.updateRegionsList()
+        }
+    }
+
+    /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced..
+    func test_init_forceUpdateRegionsList() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-just-puget-sound.json")
+        }
+
+        let locationManager = LocationManagerMock()
+        let locationService = LocationService(locationManager: locationManager)
+
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+
+        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+
+        waitUntil { done in
+            self.testDelegate.updatedRegionsListCallbacks.append {
+                expect(regionsService.regions.count) == 1
+                done()
+            }
+            regionsService.updateRegionsList(forceUpdate: true)
+        }
+    }
 
     // MARK: - Persistence
 

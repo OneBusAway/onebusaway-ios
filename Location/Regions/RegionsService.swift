@@ -15,6 +15,12 @@ public protocol RegionsServiceDelegate: NSObjectProtocol {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
     @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
+
+    /// This delegate method is called when the region list update is cancelled before retrieving data.
+    ///
+    /// The update will be cancelled when the regions list has been updated within the past week, and an update is not forced.
+    /// - parameter service: The `RegionsService` object.
+    @objc optional func regionsServiceListUpdateCancelled(_ service: RegionsService)
 }
 
 /// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
@@ -83,6 +89,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private func notifyDelegatesUnableToSelectRegion() {
         for delegate in delegates.allObjects {
             delegate.regionsServiceUnableToSelectRegion?(self)
+        }
+    }
+
+    private func notifyDelegatesRegionListUpdateCancelled() {
+        for delegate in delegates.allObjects {
+            delegate.regionsServiceListUpdateCancelled?(self)
         }
     }
 
@@ -196,6 +208,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
            abs(lastUpdatedAt.timeIntervalSinceNow) < 604800,
            !forceUpdate
         { // swiftlint:disable:this opening_brace
+            notifyDelegatesRegionListUpdateCancelled()
             return
         }
 
