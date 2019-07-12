@@ -100,7 +100,7 @@ class RegionsServiceTests: OBATestCase {
     // It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
     func test_init_updateRegionsList() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-v3.json")
+            return self.JSONFile(named: "regions-just-puget-sound.json")
         }
 
         let locationManager = LocationManagerMock()
@@ -111,7 +111,7 @@ class RegionsServiceTests: OBATestCase {
 
         waitUntil { done in
             let callback = {
-                expect(regionsService.regions.count) == 12
+                expect(regionsService.regions.count) == 1
                 done()
             }
             testDelegate.updatedRegionsListCallbacks.append(callback)

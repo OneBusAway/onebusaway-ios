@@ -1,0 +1,92 @@
+{
+  "code": 200,
+  "text": "OK",
+  "version": 3,
+  "data": {
+    "list": [
+      {
+        "siriBaseUrl": "http://pugetsound.onebusaway.org/onebusaway-api-webapp/siri/",
+        "supportsEmbeddedSocial": true,
+        "supportsObaRealtimeApis": true,
+        "contactEmail": "onebusaway@soundtransit.org",
+        "obaBaseUrl": "http://api.pugetsound.onebusaway.org/",
+        "supportsObaDiscoveryApis": true,
+        "regionName": "Puget Sound",
+        "obaVersionInfo": "1.1.7|1|1|7||c8ee3d4906dd55ecafdd124f31f39c0f54a37b52",
+        "id": 1,
+        "supportsOtpBikeshare": false,
+        "otpContactEmail": "otp-pugetsound@onebusaway.org",
+        "otpBaseUrl": "http://tpng.api.soundtransit.org/tripplanner/st/",
+        "paymentWarningBody": "The mobile fare payment app for Puget Sound does not support all transit service shown in OneBusAway. Please check that a ticket is eligible for your agency and route before you purchase!",
+        "supportsSiriRealtimeApis": true,
+        "twitterUrl": "http://mobile.twitter.com/oba_pugetsound",
+        "paymentAndroidAppId": "co.bytemark.tgt",
+        "paymentiOSAppStoreIdentifier": "1131345078",
+        "paymentiOSAppUrlScheme": "co.bytemark.tgt",
+        "active": true,
+        "open311Servers": [],
+        "paymentWarningTitle": "Check before you buy!",
+        "language": "en_US",
+        "bounds": [
+          {
+            "lat": 47.221315,
+            "latSpan": 0.33704,
+            "lon": -122.4051325,
+            "lonSpan": 0.440483
+          },
+          {
+            "lat": 47.5607395,
+            "latSpan": 0.743251,
+            "lon": -122.1462785,
+            "lonSpan": 0.720901
+          },
+          {
+            "lat": 47.556288,
+            "latSpan": 0.090694,
+            "lon": -122.4013255,
+            "lonSpan": 0.126793
+          },
+          {
+            "lat": 47.093563,
+            "latSpan": 0.320892,
+            "lon": -122.701637,
+            "lonSpan": 0.55098
+          },
+          {
+            "lat": 47.5346090123,
+            "latSpan": 0.889378024643,
+            "lon": -122.3294835,
+            "lonSpan": 0.621109
+          },
+          {
+            "lat": 47.9747595,
+            "latSpan": 1.336481,
+            "lon": -122.8512,
+            "lonSpan": 1.0904
+          },
+          {
+            "lat": 47.6204755,
+            "latSpan": 0.014397,
+            "lon": -122.335392,
+            "lonSpan": 0.00635600000001
+          },
+          {
+            "lat": 47.64585,
+            "latSpan": 0.0669,
+            "lon": -122.2963,
+            "lonSpan": 0.0802
+          },
+          {
+            "lat": 47.9347358907,
+            "latSpan": 0.68796117128,
+            "lon": -121.993246104,
+            "lonSpan": 0.784555996061
+          }
+        ],
+        "facebookUrl": "https://www.facebook.com/pages/OneBusAway/216091804930",
+        "stopInfoUrl": null,
+        "experimental": false
+      }
+    ]
+  }
+}
