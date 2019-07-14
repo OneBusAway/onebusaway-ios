@@ -18,13 +18,13 @@ import OHHTTPStubs
 class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     var unableToSelectRegionsCallbacks = [(() -> Void)]()
     var updatedRegionsListCallbacks = [(() -> Void)]()
-    var updatedRegionCallbacks = [(() -> Void)]()
+    var newRegionSelectedCallbacks = [(() -> Void)]()
     var regionUpdateCancelledCallbacks = [(() -> Void)]()
 
     func tearDown() {
         unableToSelectRegionsCallbacks.removeAll()
         updatedRegionsListCallbacks.removeAll()
-        updatedRegionCallbacks.removeAll()
+        newRegionSelectedCallbacks.removeAll()
         regionUpdateCancelledCallbacks.removeAll()
     }
 
@@ -41,7 +41,7 @@ class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     }
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        for callback in updatedRegionCallbacks {
+        for callback in newRegionSelectedCallbacks {
             callback()
         }
     }
@@ -203,8 +203,6 @@ class RegionsServiceTests: OBATestCase {
 
         expect(regionsService.regions.count) == 12
     }
-
-    // It stores the current region in user defaults when that property is written.
 
     // It calls delegates to tell them that the current region is updated when that property is written.
 
