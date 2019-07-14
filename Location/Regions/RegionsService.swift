@@ -182,16 +182,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         return regions
     }
 
-    private class func loadCurrentRegion(from userDefaults: UserDefaults) -> Region? {
-        do {
-            return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
-        }
-        catch let error {
-            DDLogError("Unable to decode current region data: \(error)")
-            return nil
-        }
-    }
-
     // MARK: - Bundled Regions
 
     private class var bundledRegions: [Region] {

@@ -196,7 +196,13 @@ class RegionsServiceTests: OBATestCase {
         }
     }
 
-    // It loads the bundled regions when the data in the user defaults is corrupted.
+    /// It loads the bundled regions when the data in the user defaults is corrupted.
+    func test_corruptedDefaults() {
+        self.userDefaults.set(["hello world!"], forKey: RegionsService.storedRegionsUserDefaultsKey)
+        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+
+        expect(regionsService.regions.count) == 12
+    }
 
     // It stores the current region in user defaults when that property is written.
 
