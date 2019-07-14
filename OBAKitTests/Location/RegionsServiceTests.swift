@@ -13,7 +13,7 @@ import CoreLocation
 import Nimble
 import OHHTTPStubs
 
-// swiftlint:disable force_try
+// swiftlint:disable force_try weak_delegate
 
 class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     var unableToSelectRegionsCallbacks = [(() -> Void)]()
@@ -66,6 +66,14 @@ class RegionsServiceTests: OBATestCase {
         super.tearDown()
         testDelegate.tearDown()
         testDelegate = nil
+    }
+
+    // MARK: - OHHTTPStubs
+
+    private func stubRegionsJustPugetSound() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-just-puget-sound.json")
+        }
     }
 
     // MARK: - Upon creating the Regions Service
@@ -126,9 +134,7 @@ class RegionsServiceTests: OBATestCase {
 
     /// It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
     func test_init_updateRegionsList() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-just-puget-sound.json")
-        }
+        stubRegionsJustPugetSound()
 
         let locationManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locationManager)
@@ -148,9 +154,7 @@ class RegionsServiceTests: OBATestCase {
 
     /// It *does not* download a list of regions if the list was last updated less than a week ago.
     func test_init_skipUpdateRegionsList() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-just-puget-sound.json")
-        }
+        stubRegionsJustPugetSound()
 
         let locationManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locationManager)
@@ -170,9 +174,7 @@ class RegionsServiceTests: OBATestCase {
 
     /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced..
     func test_init_forceUpdateRegionsList() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-just-puget-sound.json")
-        }
+        stubRegionsJustPugetSound()
 
         let locationManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locationManager)
@@ -193,10 +195,6 @@ class RegionsServiceTests: OBATestCase {
 
     // It stores downloaded region data in user defaults when the regions property is set.
     func test_persistence() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-just-puget-sound.json")
-        }
-
         let locationManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locationManager)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
