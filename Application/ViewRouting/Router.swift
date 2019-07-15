@@ -67,7 +67,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.
     /// - Parameter controller: The `rootViewController` of the `UINavigationController`.
     /// - Parameter prefersLargeTitles: Controls the `prefersLargeTitle` setting of the navigation bar.
-    public func buildNavigation(controller: UIViewController, prefersLargeTitles: Bool = true) -> UINavigationController {
+    public func buildNavigation(controller: UIViewController, prefersLargeTitles: Bool = false) -> UINavigationController {
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = prefersLargeTitles
         navigation.delegate = self

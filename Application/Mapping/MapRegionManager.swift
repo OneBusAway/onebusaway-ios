@@ -87,6 +87,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
 
         application.locationService.addDelegate(self)
 
+        mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
 
@@ -387,7 +388,7 @@ extension MapRegionManager: MKMapViewDelegate {
 
 extension MapRegionManager: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        // nop?
+        mapView.showsUserLocation = service.isLocationUseAuthorized
     }
 
     public func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {

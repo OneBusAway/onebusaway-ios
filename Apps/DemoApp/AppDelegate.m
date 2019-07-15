@@ -81,7 +81,7 @@
 
 - (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:picker];
-    nav.navigationBar.prefersLargeTitles = YES;
+    nav.navigationBar.prefersLargeTitles = NO;
     self.window.rootViewController = nav;
 }
 
