@@ -28,6 +28,10 @@ targets:
         embed: false
       - framework: nanopb.framework
         embed: false
+      - framework: Fabric.framework
+        embed: false
+      - framework: Crashlytics.framework
+        embed: false
     info:
       path: Apps/DemoApp/Info.plist
       properties:
@@ -46,8 +50,7 @@ targets:
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
         NSLocationWhenInUseUsageDescription: Show your location on the map
         UILaunchStoryboardName: LaunchScreen
-        UIRequiredDeviceCapabilities:
-          - armv7
+        UIRequiredDeviceCapabilities: [armv7]
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -57,11 +60,13 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+    postBuildScripts:
+      - { name: Crashlytics, script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run", inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"], runOnlyWhenInstalling: true }
     scheme:
       gatherCoverageData: true
     settings:
       base:
-        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics"
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.demoapp
         OTHER_LDFLAGS: -ObjC
   OBAKit:
@@ -80,8 +85,7 @@ targets:
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
     postBuildScripts:
-      - path: scripts/swiftlint.sh
-        name: Swiftlint
+      - { path: "scripts/swiftlint.sh", name: Swiftlint }
     scheme:
       gatherCoverageData: true
   OBAKitTests:
