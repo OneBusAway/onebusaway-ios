@@ -61,11 +61,13 @@ import MessageUI
     /// Reloads the stack view from scratch
     private func reloadData() {
         stackView.removeAllRows()
+
+        addHeader()
+
         if application.userDataStore.debugMode {
             addDebug()
         }
 
-        addHeader()
         addUpdatesAndAlerts()
         addMyLocationSection()
         addAbout()
@@ -245,6 +247,15 @@ import MessageUI
     }
 
     private func addDebug() {
+        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
+
+        if application.shouldShowCrashButton {
+            let crashRow = DefaultTableRowView(title: NSLocalizedString("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
+            addGroupedTableRowToStack(crashRow) { [weak self] _ in
+                guard let self = self else { return }
+                self.application.performTestCrash()
+            }
+        }
 //        - (OBATableSection*)debugTableSection {
 //            OBATableSection *section = [[OBATableSection alloc] initWithTitle:NSLocalizedString(@"info_controller.debug_section_title", @"The table section title for the debugging tools.")];
 //

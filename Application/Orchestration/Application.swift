@@ -43,6 +43,12 @@ public protocol ApplicationDelegate {
 
     /// An optional property that allows the delegate to specify libraries that require attribution within this app.
     @objc optional var credits: [String: String] { get }
+
+    /// Implement this method in your delegate to add a 'Crash' button to the More tab of the app.
+    ///
+    /// Tapping the 'Crash' button will crash the app, which is useful for testing your integration of third-party
+    /// crash reporter libraries, like Crashlytics.
+    @objc optional func performTestCrash()
 }
 
 // MARK: - Application Class
@@ -147,6 +153,33 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     /// region transitioning from nil -> not-nil.
     public func reloadRootUserInterface() {
         delegate?.applicationReloadRootInterface(self)
+    }
+
+    // MARK: - App Crashes
+
+    /// Returns `true` if the delegate implements the `performTestCrash()` method.
+    ///
+    /// Tapping the 'Crash' button will crash the app, which is useful for testing your integration of third-party
+    /// crash reporter libraries, like Crashlytics.
+    /// - Note: This method always returns `false` when running on a device. It will only ever return `true` on the Simulator.
+    var shouldShowCrashButton: Bool {
+        #if targetEnvironment(simulator)
+        guard let delegate = delegate as? NSObject & ApplicationDelegate else {
+            return false
+        }
+
+        return delegate.performTestCrash != nil
+        #else
+        return false
+        #endif
+    }
+
+    /// Crashes the app by calling the appropriate delegate method.
+    ///
+    /// Useful for testing Crashlytics integration, for example.
+    func performTestCrash() {
+        guard shouldShowCrashButton else { return }
+        delegate?.performTestCrash?()
     }
 
     // MARK: - UIApplication Hooks

@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 @import OBAKit;
 #import "Firebase.h"
+@import Crashlytics;
 
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
@@ -47,6 +48,10 @@
 }
 
 #pragma mark - OBAApplicationDelegate
+
+- (void)performTestCrash {
+    [Crashlytics.sharedInstance crash];
+}
 
 - (void)setIdleTimerDisabled:(BOOL)idleTimerDisabled {
     UIApplication.sharedApplication.idleTimerDisabled = idleTimerDisabled;
