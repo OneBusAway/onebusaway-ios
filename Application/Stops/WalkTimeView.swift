@@ -18,6 +18,7 @@ class WalkTimeView: UIView {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .right
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return label
     }()
@@ -110,14 +111,13 @@ class WalkTimeView: UIView {
         }
     }
 
+    private var maximumIntrinsicHeight: CGFloat = 24.0
+
     public override var intrinsicContentSize: CGSize {
         let intrinsic = super.intrinsicContentSize
-        if intrinsic.height > 0 {
-            return intrinsic
-        }
-        else {
-            return CGSize(width: UIView.noIntrinsicMetric, height: 4.0)
-        }
+
+        maximumIntrinsicHeight = max(maximumIntrinsicHeight, intrinsic.height)
+        return CGSize(width: UIView.noIntrinsicMetric, height: maximumIntrinsicHeight)
     }
 
     override func draw(_ rect: CGRect) {
