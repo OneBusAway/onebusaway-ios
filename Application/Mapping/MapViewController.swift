@@ -74,6 +74,8 @@ public class MapViewController: UIViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        navigationController?.setNavigationBarHidden(true, animated: false)
+
         if let currentRegion = application.regionsService.currentRegion {
             if let location = application.locationService.currentLocation {
                 programmaticallyUpdateVisibleMapRegion(location: location)
@@ -92,6 +94,11 @@ public class MapViewController: UIViewController {
 
         // Start showing the status overlay on the map once this controller has appeared.
         mapRegionManager.addStatusOverlayToMap()
+    }
+
+    public override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: false)
     }
 
     // MARK: - Public Methods
