@@ -16,16 +16,14 @@ public protocol SearchDelegate: NSObjectProtocol {
 
 public class SearchViewController: VisualEffectViewController, ListProvider {
     public weak var searchDelegate: SearchDelegate?
-    public weak var floatingPanelDelegate: FloatingPanelContainer?
 
     private let application: Application
 
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     private lazy var stackView = UIStackView.verticalStack(arangedSubviews: [searchBar, collectionController.view])
 
-    public init(application: Application, floatingPanelDelegate: FloatingPanelContainer?) {
+    public init(application: Application) {
         self.application = application
-        self.floatingPanelDelegate = floatingPanelDelegate
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -38,7 +36,9 @@ public class SearchViewController: VisualEffectViewController, ListProvider {
 
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
-            stackView.pinToSuperview(.edges, insets: FloatingPanelSurfaceView.searchBarEdgeInsets)
+
+            let insets = NSDirectionalEdgeInsets(top: 0, leading: ThemeMetrics.controllerMargin, bottom: 0, trailing: ThemeMetrics.controllerMargin)
+            stackView.pinToSuperview(.edges, insets: insets)
         }
     }
 
@@ -157,6 +157,6 @@ extension SearchViewController: UISearchBarDelegate {
 
     public func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         searchBar.resignFirstResponder()
-        floatingPanelDelegate?.closePanel(containing: self, model: nil)
+//        floatingPanelDelegate?.closePanel(containing: self, model: nil)
     }
 }

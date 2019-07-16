@@ -30,15 +30,13 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
     }()
 
     private let application: Application
-    public weak var floatingPanelDelegate: FloatingPanelContainer?
     public weak var delegate: SearchResultsDelegate?
 
     private let searchResponse: SearchResponse
 
-    public init(searchResponse: SearchResponse, application: Application, floatingPanelDelegate: FloatingPanelContainer, delegate: SearchResultsDelegate) {
+    public init(searchResponse: SearchResponse, application: Application, delegate: SearchResultsDelegate) {
         self.searchResponse = searchResponse
         self.application = application
-        self.floatingPanelDelegate = floatingPanelDelegate
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
     }
@@ -52,7 +50,8 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
 
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
-            stackView.pinToSuperview(.edges, insets: FloatingPanelSurfaceView.searchBarEdgeInsets)
+            let insets = ThemeMetrics.controllerMargin
+            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 0, leading: insets, bottom: 0, trailing: insets))
         }
 
         // Configure title bar
@@ -64,7 +63,7 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
     // MARK: - Actions
 
     @objc private func closePanel() {
-        floatingPanelDelegate?.closePanel(containing: self, model: nil)
+//        floatingPanelDelegate?.closePanel(containing: self, model: nil)
     }
 
     /// Used in conjunction with the `search` and `delegate` to sidestep displaying

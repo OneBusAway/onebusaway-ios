@@ -19,7 +19,7 @@ public protocol NearbyDelegate: NSObjectProtocol {
 public class NearbyViewController: VisualEffectViewController, ListProvider {
     let mapRegionManager: MapRegionManager
 
-    public weak var nearbyDelegate: (FloatingPanelContainer & NearbyDelegate)?
+    public weak var nearbyDelegate: NearbyDelegate?
 
     private let application: Application
 
@@ -31,7 +31,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
 
     // MARK: - Init/Deinit
 
-    init(application: Application, mapRegionManager: MapRegionManager, delegate: FloatingPanelContainer & NearbyDelegate) {
+    init(application: Application, mapRegionManager: MapRegionManager, delegate: NearbyDelegate) {
         self.application = application
         self.mapRegionManager = mapRegionManager
         self.nearbyDelegate = delegate
@@ -61,15 +61,15 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
         if let region = application.regionsService.currentRegion {
             searchBar.placeholder = SearchViewController.searchPlaceholderText(region: region)
         }
-        searchBar.tapped = { [weak self] in
-            guard let self = self else { return }
-            self.nearbyDelegate?.presentFloatingPanel(contentController: self.searchController, scrollView: self.searchController.collectionController.collectionView, animated: true, position: .full)
-        }
+//        searchBar.tapped = { [weak self] in
+//            guard let self = self else { return }
+//            self.nearbyDelegate?.presentFloatingPanel(contentController: self.searchController, scrollView: self.searchController.collectionController.collectionView, animated: true, position: .full)
+//        }
         return searchBar
     }()
 
     private lazy var searchController: SearchViewController = {
-        let ctl = SearchViewController(application: application, floatingPanelDelegate: nearbyDelegate!)
+        let ctl = SearchViewController(application: application)
         ctl.searchDelegate = self
         return ctl
     }()
@@ -80,7 +80,8 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
         super.viewDidLoad()
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
-            stackView.pinToSuperview(.edges, insets: FloatingPanelSurfaceView.searchBarEdgeInsets)
+            let insets = NSDirectionalEdgeInsets(top: 0, leading: ThemeMetrics.controllerMargin, bottom: 0, trailing: ThemeMetrics.controllerMargin)
+            stackView.pinToSuperview(.edges, insets: insets)
         }
     }
 }
@@ -89,7 +90,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
 
 extension NearbyViewController: SearchDelegate {
     public func searchController(_ searchController: SearchViewController, request: SearchRequest) {
-        nearbyDelegate?.closePanel(containing: searchController, model: nil)
+//        nearbyDelegate?.closePanel(containing: searchController, model: nil)
         application.searchManager.search(request: request)
     }
 }
@@ -127,7 +128,7 @@ extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters 
 
 // MARK: - MapRegionDelegate
 
-extension NearbyViewController: MapRegionDelegate, FloatingPanelContent {
+extension NearbyViewController: MapRegionDelegate {
 
     public var bottomScrollInset: CGFloat {
         get {
@@ -143,10 +144,10 @@ extension NearbyViewController: MapRegionDelegate, FloatingPanelContent {
     }
 
     public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
-        surfaceView()?.showProgressBar()
+//        surfaceView()?.showProgressBar()
     }
 
     public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
-        surfaceView()?.hideProgressBar()
+//        surfaceView()?.hideProgressBar()
     }
 }

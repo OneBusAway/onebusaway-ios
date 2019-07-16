@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
-public class MapViewController: UIViewController {
+public class MapViewController: UIViewController, FloatingPanelControllerDelegate, NearbyDelegate {
 
     // MARK: - Floating Panel and Hoverbar
     var floatingToolbar: HoverBar = {
@@ -61,6 +61,8 @@ public class MapViewController: UIViewController {
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
+        floatingPanel.addPanel(toParent: self)
+
         view.addSubview(floatingToolbar)
 
         NSLayoutConstraint.activate([
@@ -98,7 +100,9 @@ public class MapViewController: UIViewController {
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+
         navigationController?.setNavigationBarHidden(false, animated: false)
+        floatingPanel.removePanelFromParent(animated: false)
     }
 
     // MARK: - Public Methods
@@ -158,6 +162,37 @@ public class MapViewController: UIViewController {
                 }
             }
         }
+    }
+
+    // MARK: - Floating Panel Controller
+
+    private lazy var floatingPanel: FloatingPanelController = {
+        let panel = FloatingPanelController()
+        panel.delegate = self
+
+        // Set a content view controller.
+        panel.set(contentViewController: nearbyController)
+
+        // Track a scroll view(or the siblings) in the content view controller.
+        panel.track(scrollView: nearbyController.collectionController.collectionView)
+
+        return panel
+    }()
+
+    // MARK: - Nearby Controller
+
+    private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
+
+    public func nearbyController(_ nearbyController: NearbyViewController, didSelectStopID stopID: String) {
+        //
+    }
+
+    public func nearbyControllerRequestFullScreen(_ nearbyController: NearbyViewController) {
+        //
+    }
+
+    public func nearbyControllerRequestDefaultLayout(_ nearbyController: NearbyViewController) {
+        //
     }
 }
 
