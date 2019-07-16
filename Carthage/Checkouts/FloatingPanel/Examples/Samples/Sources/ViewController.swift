@@ -9,12 +9,7 @@
 import UIKit
 import FloatingPanel
 
-/**
- - Attention: `FloatingPanelLayout` must not be applied by the parent view
- controller of a floating panel. But here `SampleListViewController` adopts it
- purposely to check if the library prints an appropriate warning.
- */
-class SampleListViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, FloatingPanelControllerDelegate, FloatingPanelLayout {
+class SampleListViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
 
     enum Menu: Int, CaseIterable {
@@ -24,9 +19,11 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         case showModal
         case showFloatingPanelModal
         case showTabBar
+        case showPageView
         case showNestedScrollView
         case showRemovablePanel
         case showIntrinsicView
+        case showContentInset
 
         var name: String {
             switch self {
@@ -36,9 +33,11 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
             case .showModal: return "Show Modal"
             case .showFloatingPanelModal: return "Show Floating Panel Modal"
             case .showTabBar: return "Show Tab Bar"
+            case .showPageView: return "Show Page View"
             case .showNestedScrollView: return "Show Nested ScrollView"
             case .showRemovablePanel: return "Show Removable Panel"
             case .showIntrinsicView: return "Show Intrinsic View"
+            case .showContentInset: return "Show with ContentInset"
             }
         }
 
@@ -50,9 +49,11 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
             case .showModal: return "ModalViewController"
             case .showFloatingPanelModal: return nil
             case .showTabBar: return "TabBarViewController"
+            case .showPageView: return nil
             case .showNestedScrollView: return "NestedScrollViewController"
             case .showRemovablePanel: return "DetailViewController"
             case .showIntrinsicView: return "IntrinsicViewController"
+            case .showContentInset: return nil
             }
         }
     }
@@ -65,6 +66,19 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
 
     var mainPanelObserves: [NSKeyValueObservation] = []
     var settingsObserves: [NSKeyValueObservation] = []
+
+    lazy var pages: [UIViewController] = {
+        let page1 = FloatingPanelController(delegate: self)
+        page1.view.backgroundColor = .blue
+        page1.show()
+        let page2 = FloatingPanelController(delegate: self)
+        page2.view.backgroundColor = .red
+        page2.show()
+        let page3 = FloatingPanelController(delegate: self)
+        page3.view.backgroundColor = .green
+        page3.show()
+        return [page1, page2, page3]
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -118,6 +132,11 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
 
         // Enable tap-to-hide and removal interaction
         switch currentMenu {
+        case .trackingTableView:
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleSurface(tapGesture:)))
+            tapGesture.cancelsTouchesInView = false
+            tapGesture.numberOfTapsRequired = 2
+            mainPanelVC.surfaceView.addGestureRecognizer(tapGesture)
         case .showRemovablePanel, .showIntrinsicView:
             mainPanelVC.isRemovalInteractionEnabled = true
 
@@ -148,8 +167,14 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         mainPanelVC.addPanel(toParent: self, belowView: nil, animated: true)
     }
 
-    @objc func dismissDetailPanelVC()  {
-        detailPanelVC.removePanelFromParent(animated: true, completion: nil)
+    @objc
+    func handleSurface(tapGesture: UITapGestureRecognizer) {
+        switch mainPanelVC.position {
+        case .full:
+            mainPanelVC.move(to: .half, animated: true)
+        default:
+            mainPanelVC.move(to: .full, animated: true)
+        }
     }
 
     @objc func handleBackdrop(tapGesture: UITapGestureRecognizer) {
@@ -162,31 +187,6 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         default:
             break
         }
-    }
-
-    // MARK:- TableViewDatasource
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if #available(iOS 11.0, *) {
-            if navigationController?.navigationBar.prefersLargeTitles == true {
-                return Menu.allCases.count + 30
-            } else {
-                return Menu.allCases.count
-            }
-        } else {
-            return Menu.allCases.count
-        }
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
-        if Menu.allCases.count > indexPath.row {
-            let menu = Menu.allCases[indexPath.row]
-            cell.textLabel?.text = menu.name
-        } else {
-            cell.textLabel?.text = "\(indexPath.row) row"
-        }
-        return cell
     }
 
     // MARK:- Actions
@@ -213,9 +213,34 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         //  Add FloatingPanel to self.view
         settingsPanelVC.addPanel(toParent: self, belowView: nil, animated: true)
     }
+}
 
-    // MARK:- TableViewDelegate
+extension SampleListViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if #available(iOS 11.0, *) {
+            if navigationController?.navigationBar.prefersLargeTitles == true {
+                return Menu.allCases.count + 30
+            } else {
+                return Menu.allCases.count
+            }
+        } else {
+            return Menu.allCases.count
+        }
+    }
 
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
+        if Menu.allCases.count > indexPath.row {
+            let menu = Menu.allCases[indexPath.row]
+            cell.textLabel?.text = menu.name
+        } else {
+            cell.textLabel?.text = "\(indexPath.row) row"
+        }
+        return cell
+    }
+}
+
+extension SampleListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         guard Menu.allCases.count > indexPath.row else { return }
         let menu = Menu.allCases[indexPath.row]
@@ -246,6 +271,22 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         case .showModal, .showTabBar:
             let modalVC = contentVC
             present(modalVC, animated: true, completion: nil)
+
+        case .showPageView:
+            let pageVC = UIPageViewController(transitionStyle: .scroll, navigationOrientation: .horizontal, options: [:])
+            let closeButton = UIButton(type: .custom)
+            pageVC.view.addSubview(closeButton)
+            closeButton.setTitle("Close", for: .normal)
+            closeButton.translatesAutoresizingMaskIntoConstraints = false
+            closeButton.addTarget(self, action: #selector(dismissPresentedVC), for: .touchUpInside)
+            NSLayoutConstraint.activate([
+                closeButton.topAnchor.constraint(equalTo: pageVC.layoutGuide.topAnchor, constant: 16.0),
+                closeButton.leftAnchor.constraint(equalTo: pageVC.view.leftAnchor, constant: 16.0),
+                ])
+            pageVC.dataSource = self
+            pageVC.setViewControllers([pages[0]], direction: .forward, animated: false, completion: nil)
+            present(pageVC, animated: true, completion: nil)
+
         case .showFloatingPanelModal:
             let fpc = FloatingPanelController()
             let contentVC = self.storyboard!.instantiateViewController(withIdentifier: "DetailViewController")
@@ -258,6 +299,18 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
             fpc.isRemovalInteractionEnabled = true
 
             self.present(fpc, animated: true, completion: nil)
+            
+        case .showContentInset:
+            let contentViewController = UIViewController()
+            contentViewController.view.backgroundColor = .green
+            
+            let fpc = FloatingPanelController()
+            fpc.set(contentViewController: contentViewController)
+            fpc.surfaceView.contentInsets = .init(top: 20, left: 20, bottom: 0, right: 20)
+            
+            fpc.delegate = self
+            fpc.isRemovalInteractionEnabled = true
+            self.present(fpc, animated: true, completion: nil)
         default:
             detailPanelVC?.removePanelFromParent(animated: true, completion: nil)
             mainPanelVC?.removePanelFromParent(animated: true) {
@@ -266,6 +319,12 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         }
     }
 
+    @objc func dismissPresentedVC() {
+        self.presentedViewController?.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension SampleListViewController: FloatingPanelControllerDelegate {
     func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
         if vc == settingsPanelVC {
             return IntrinsicPanelLayout()
@@ -290,6 +349,9 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         switch currentMenu {
         case .showNestedScrollView:
             return (vc.contentViewController as? NestedScrollViewController)?.nestedScrollView.gestureRecognizers?.contains(gestureRecognizer) ?? false
+        case .showPageView:
+            // Tips: Need to allow recognizing the pan gesture of UIPageViewController simultaneously.
+            return true
         default:
             return false
         }
@@ -303,7 +365,14 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
             break
         }
     }
+}
 
+/**
+ - Attention: `FloatingPanelLayout` must not be applied by the parent view
+ controller of a floating panel. But here `SampleListViewController` adopts it
+ purposely to check if the library prints an appropriate warning.
+ */
+extension SampleListViewController: FloatingPanelLayout {
     var initialPosition: FloatingPanelPosition {
         return .half
     }
@@ -315,6 +384,23 @@ class SampleListViewController: UIViewController, UITableViewDataSource, UITable
         case .tip: return 69.0
         case .hidden: return nil
         }
+    }
+}
+
+extension SampleListViewController: UIPageViewControllerDataSource {
+    func pageViewController(_ pageViewController: UIPageViewController, viewControllerAfter viewController: UIViewController) -> UIViewController? {
+        guard
+            let index = pages.firstIndex(of: viewController),
+            index + 1 < pages.count
+            else { return nil }
+        return pages[index + 1]
+    }
+    func pageViewController(_ pageViewController: UIPageViewController, viewControllerBefore viewController: UIViewController) -> UIViewController? {
+        guard
+            let index = pages.firstIndex(of: viewController),
+            index - 1 >= 0
+            else { return nil }
+        return pages[index - 1]
     }
 }
 
@@ -473,7 +559,7 @@ class InspectableViewController: UIViewController {
     }
 }
 
-class DebugTableViewController: InspectableViewController, UITableViewDataSource, UITableViewDelegate {
+class DebugTableViewController: InspectableViewController {
     weak var tableView: UITableView!
     var items: [String] = []
     var itemHeight: CGFloat = 66.0
@@ -591,7 +677,9 @@ class DebugTableViewController: InspectableViewController, UITableViewDataSource
         //  Remove FloatingPanel from a view
         (self.parent as! FloatingPanelController).removePanelFromParent(animated: true, completion: nil)
     }
+}
 
+extension DebugTableViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return items.count
     }
@@ -604,6 +692,12 @@ class DebugTableViewController: InspectableViewController, UITableViewDataSource
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
         cell.textLabel?.text = items[indexPath.row]
         return cell
+    }
+}
+
+extension DebugTableViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print("DebugTableViewController -- select row \(indexPath.row)")
     }
 
     func tableView(_ tableView: UITableView, editActionsForRowAt indexPath: IndexPath) -> [UITableViewRowAction]? {
@@ -817,7 +911,7 @@ class TabBarContentViewController: UIViewController {
         dismiss(animated: true, completion: nil)
     }
 
-    // MAKR: - Private
+    // MARK: - Private
 
     @objc
     private func changeTab3Mode(_ sender: UISwitch) {
@@ -835,9 +929,9 @@ extension TabBarContentViewController: UITextViewDelegate {
         guard self.tabBarItem.tag == 2 else { return }
         // Reset an invalid content offset by a user after updating the layout
         // of `consoleVC.textView`.
-        // NOTE: FloatingPanel doesn't implicity reset the offset(i.e.
+        // NOTE: FloatingPanel doesn't implicitly reset the offset(i.e.
         // Using KVO of `scrollView.contentOffset`). Because it can lead to an
-        // infinit loop if a user also resets a content offset as below and,
+        // infinite loop if a user also resets a content offset as below and,
         // in the situation, a user has to modify the library.
         if fpc.position != .full, fpc.surfaceView.frame.minY < fpc.originYOfSurface(for: .full) {
             scrollView.contentOffset = .zero
@@ -862,6 +956,15 @@ extension TabBarContentViewController: FloatingPanelControllerDelegate {
         }
     }
 
+    func floatingPanel(_ vc: FloatingPanelController, behaviorFor newCollection: UITraitCollection) -> FloatingPanelBehavior? {
+        switch self.tabBarItem.tag {
+        case 1:
+            return TwoTabBarPanelBehavior()
+        default:
+            return nil
+        }
+    }
+
     func floatingPanelDidMove(_ vc: FloatingPanelController) {
         guard self.tabBarItem.tag == 2 else { return }
 
@@ -876,7 +979,7 @@ extension TabBarContentViewController: FloatingPanelControllerDelegate {
             }
         case .changeOffset:
             /*
-             Bad solution: Manipulate scoll content inset
+             Bad solution: Manipulate scroll content inset
 
              FloatingPanelController keeps a content offset in moving a panel
              so that changing content inset or offset causes a buggy behavior.
@@ -918,7 +1021,7 @@ extension TabBarContentViewController: FloatingPanelControllerDelegate {
             consoleVC.textViewTopConstraint?.constant = (vc.position == .full) ? vc.layoutInsets.top : 17.0
 
         case .changeOffset:
-            /* Bad Solution: Manipulate scoll content inset */
+            /* Bad Solution: Manipulate scroll content inset */
             guard let scrollView = consoleVC.textView else { return }
             var insets = vc.adjustedContentInsets
             insets.top = (vc.position == .full) ? vc.layoutInsets.top : 0.0
@@ -982,18 +1085,28 @@ class TwoTabBarPanelLayout: FloatingPanelLayout {
     var supportedPositions: Set<FloatingPanelPosition> {
         return [.full, .half]
     }
+    var topInteractionBuffer: CGFloat {
+        return 100.0
+    }
     var bottomInteractionBuffer: CGFloat {
         return 261.0 - 22.0
     }
 
     func insetFor(position: FloatingPanelPosition) -> CGFloat? {
         switch position {
-        case .full: return 16.0
+        case .full: return 100.0
         case .half: return 261.0
         default: return nil
         }
     }
 }
+
+class TwoTabBarPanelBehavior: FloatingPanelBehavior {
+    func allowsRubberBanding(for edge: UIRectEdge) -> Bool {
+        return (edge == .bottom || edge == .top)
+    }
+}
+
 
 class ThreeTabBarPanelLayout: FloatingPanelFullScreenLayout {
     weak var parentVC: UIViewController!
@@ -1047,7 +1160,7 @@ class SettingsViewController: InspectableViewController {
     override func viewDidLoad() {
         versionLabel.text = "Version: \(Bundle.main.infoDictionary?["CFBundleVersion"] ?? "--")"
     }
-    
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if #available(iOS 11.0, *) {

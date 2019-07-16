@@ -107,6 +107,9 @@ extension UIScrollView {
     var contentOffsetZero: CGPoint {
         return CGPoint(x: 0.0, y: 0.0 - contentInset.top)
     }
+    var isLocked: Bool {
+        return !showsVerticalScrollIndicator && !bounces &&  isDirectionalLockEnabled
+    }
 }
 
 extension UISpringTimingParameters {
@@ -122,5 +125,14 @@ extension CGPoint {
     static var nan: CGPoint {
         return CGPoint(x: CGFloat.nan,
                        y: CGFloat.nan)
+    }
+}
+
+extension UITraitCollection {
+    func shouldUpdateLayout(from previous: UITraitCollection) -> Bool {
+        return previous.horizontalSizeClass != horizontalSizeClass
+            || previous.verticalSizeClass != verticalSizeClass
+            || previous.preferredContentSizeCategory != preferredContentSizeCategory
+            || previous.layoutDirection != layoutDirection
     }
 }

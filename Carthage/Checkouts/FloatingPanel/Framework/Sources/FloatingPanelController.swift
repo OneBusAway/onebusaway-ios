@@ -68,12 +68,16 @@ public enum FloatingPanelPosition: Int {
     case half
     case tip
     case hidden
+
+    static var allCases: [FloatingPanelPosition] {
+        return [.full, .half, .tip, .hidden]
+    }
 }
 
 ///
 /// A container view controller to display a floating panel to present contents in parallel as a user wants.
 ///
-public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+open class FloatingPanelController: UIViewController, UIScrollViewDelegate, UIGestureRecognizerDelegate {
     /// Constants indicating how safe area insets are added to the adjusted content inset.
     public enum ContentInsetAdjustmentBehavior: Int {
         case always
@@ -145,7 +149,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     }
     private var _contentViewController: UIViewController?
 
-    private var floatingPanel: FloatingPanel!
+    private(set) var floatingPanel: FloatingPanel!
     private var preSafeAreaInsets: UIEdgeInsets = .zero // Capture the latest one
     private var safeAreaInsetsObservation: NSKeyValueObservation?
     private let modalTransition = FloatingPanelModalTransition()
@@ -181,7 +185,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     // MARK:- Overrides
 
     /// Creates the view that the controller manages.
-    override public func loadView() {
+    open override func loadView() {
         assert(self.storyboard == nil, "Storyboard isn't supported")
 
         let view = FloatingPanelPassThroughView()
@@ -196,7 +200,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         self.view = view as UIView
     }
 
-    public override func viewDidLayoutSubviews() {
+    open override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if #available(iOS 11.0, *) {}
         else {
@@ -207,7 +211,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         }
     }
 
-    public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    open override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
 
         if view.translatesAutoresizingMaskIntoConstraints {
@@ -216,19 +220,23 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         }
     }
 
-    public override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
+    open override func willTransition(to newCollection: UITraitCollection, with coordinator: UIViewControllerTransitionCoordinator) {
         super.willTransition(to: newCollection, with: coordinator)
-
-        // Change layout for a new trait collection
-        reloadLayout(for: newCollection)
-        setUpLayout()
-
-        floatingPanel.behavior = fetchBehavior(for: newCollection)
+        self.prepare(for: newCollection)
     }
 
-    public override func viewWillDisappear(_ animated: Bool) {
+    open override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         safeAreaInsetsObservation = nil
+    }
+
+    // MARK:- Internals
+    func prepare(for newCollection: UITraitCollection) {
+        guard newCollection.shouldUpdateLayout(from: traitCollection) else { return }
+        // Change a layout & behavior for a new trait collection
+        reloadLayout(for: newCollection)
+        activateLayout()
+        floatingPanel.behavior = fetchBehavior(for: newCollection)
     }
 
     // MARK:- Privates
@@ -257,7 +265,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         // Prevent an infinite loop on iOS 10: setUpLayout() -> viewDidLayoutSubviews() -> setUpLayout()
         preSafeAreaInsets = safeAreaInsets
 
-        setUpLayout()
+        activateLayout()
 
         switch contentInsetAdjustmentBehavior {
         case .always:
@@ -282,7 +290,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
         }
     }
 
-    private func setUpLayout() {
+    private func activateLayout() {
         // preserve the current content offset
         let contentOffset = scrollView?.contentOffset
 
@@ -298,7 +306,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     public func show(animated: Bool = false, completion: (() -> Void)? = nil) {
         // Must apply the current layout here
         reloadLayout(for: traitCollection)
-        setUpLayout()
+        activateLayout()
 
         if #available(iOS 11.0, *) {
             // Must track the safeAreaInsets of `self.view` to update the layout.
@@ -455,14 +463,14 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     }
 
     @available(*, unavailable, renamed: "set(contentViewController:)")
-    public override func show(_ vc: UIViewController, sender: Any?) {
+    open  override func show(_ vc: UIViewController, sender: Any?) {
         if let target = self.parent?.targetViewController(forAction: #selector(UIViewController.show(_:sender:)), sender: sender) {
             target.show(vc, sender: sender)
         }
     }
 
     @available(*, unavailable, renamed: "set(contentViewController:)")
-    public override func showDetailViewController(_ vc: UIViewController, sender: Any?) {
+    open  override func showDetailViewController(_ vc: UIViewController, sender: Any?) {
         if let target = self.parent?.targetViewController(forAction: #selector(UIViewController.showDetailViewController(_:sender:)), sender: sender) {
             target.showDetailViewController(vc, sender: sender)
         }
@@ -513,7 +521,7 @@ public class FloatingPanelController: UIViewController, UIScrollViewDelegate, UI
     /// animation block.
     public func updateLayout() {
         reloadLayout(for: traitCollection)
-        setUpLayout()
+        activateLayout()
     }
 
     /// Returns the y-coordinate of the point at the origin of the surface view.
