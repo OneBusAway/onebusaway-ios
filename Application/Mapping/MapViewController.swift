@@ -102,7 +102,6 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
-        floatingPanel.removePanelFromParent(animated: false)
     }
 
     // MARK: - Public Methods
@@ -179,20 +178,26 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         return panel
     }()
 
+    public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
+        return MapPanelLayout()
+    }
+
+    private class MapPanelLayout: FloatingPanelLayout {
+        func insetFor(position: FloatingPanelPosition) -> CGFloat? {
+            switch position {
+            case .tip: return 60.0
+            default: return nil
+            }
+        }
+        var initialPosition: FloatingPanelPosition { .tip }
+    }
+
     // MARK: - Nearby Controller
 
     private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
-    public func nearbyController(_ nearbyController: NearbyViewController, didSelectStopID stopID: String) {
-        //
-    }
-
-    public func nearbyControllerRequestFullScreen(_ nearbyController: NearbyViewController) {
-        //
-    }
-
-    public func nearbyControllerRequestDefaultLayout(_ nearbyController: NearbyViewController) {
-        //
+    public func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop) {
+        show(stop: stop)
     }
 }
 

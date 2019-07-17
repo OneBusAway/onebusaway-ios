@@ -11,9 +11,7 @@ import IGListKit
 import FloatingPanel
 
 public protocol NearbyDelegate: NSObjectProtocol {
-    func nearbyController(_ nearbyController: NearbyViewController, didSelectStopID stopID: String)
-    func nearbyControllerRequestFullScreen(_ nearbyController: NearbyViewController)
-    func nearbyControllerRequestDefaultLayout(_ nearbyController: NearbyViewController)
+    func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop)
 }
 
 public class NearbyViewController: VisualEffectViewController, ListProvider {
@@ -80,8 +78,7 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
         super.viewDidLoad()
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
-            let insets = NSDirectionalEdgeInsets(top: 0, leading: ThemeMetrics.controllerMargin, bottom: 0, trailing: ThemeMetrics.controllerMargin)
-            stackView.pinToSuperview(.edges, insets: insets)
+            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 7.0, leading: 0, bottom: 0, trailing: 0))
         }
     }
 }
@@ -103,9 +100,13 @@ extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters 
         var sections: [ListDiffable] = []
 
         if stops.count > 0 {
-            let section = tableSection(from: Array(stops.prefix(5))) { vm in
-                guard let stop = vm.object as? Stop else { return }
-                self.application.viewRouter.navigateTo(stop: stop, from: self)
+            let section = tableSection(from: Array(stops.prefix(5))) { [weak self] vm in
+                guard
+                    let self = self,
+                    let stop = vm.object as? Stop
+                else { return }
+
+                self.nearbyDelegate?.nearbyController(self, didSelectStop: stop)
             }
             sections.append(section)
         }
