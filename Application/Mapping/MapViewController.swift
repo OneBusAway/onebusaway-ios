@@ -165,9 +165,11 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
 
     // MARK: - Floating Panel Controller
 
+    /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: FloatingPanelController = {
         let panel = FloatingPanelController()
         panel.delegate = self
+        panel.isRemovalInteractionEnabled = false
 
         // Set a content view controller.
         panel.set(contentViewController: nearbyController)
@@ -186,10 +188,16 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         func insetFor(position: FloatingPanelPosition) -> CGFloat? {
             switch position {
             case .tip: return 60.0
+            case .half: return 250.0
             default: return nil
             }
         }
+
         var initialPosition: FloatingPanelPosition { .tip }
+
+        var supportedPositions: Set<FloatingPanelPosition> {
+            [.tip, .half, .full]
+        }
     }
 
     // MARK: - Nearby Controller
