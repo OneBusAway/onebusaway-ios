@@ -13,7 +13,7 @@ import CoreLocation
 import Nimble
 import OHHTTPStubs
 
-// swiftlint:disable force_try weak_delegate
+// swiftlint:disable force_cast force_try weak_delegate
 
 class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
     var unableToSelectRegionsCallbacks = [(() -> Void)]()
@@ -78,6 +78,12 @@ class RegionsServiceTests: OBATestCase {
     private func stubRegionsJustPugetSound() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
             return self.JSONFile(named: "regions-just-puget-sound.json")
+        }
+    }
+
+    private func stubRegions() {
+        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+            return self.JSONFile(named: "regions-v3.json")
         }
     }
 
@@ -204,11 +210,41 @@ class RegionsServiceTests: OBATestCase {
         expect(regionsService.regions.count) == 12
     }
 
-    // It calls delegates to tell them that the current region is updated when that property is written.
+    /// It calls delegates to tell them that the current region is updated when that property is written.
+    func test_regionUpdated_notifications() {
+        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+
+        let newRegion = customMinneapolisRegion
+
+        waitUntil { done in
+            self.testDelegate.newRegionSelectedCallbacks.append {
+                expect(regionsService.currentRegion) == newRegion
+                done()
+            }
+            regionsService.currentRegion = newRegion
+        }
+    }
 
     // MARK: - Network Data
 
     // It updates the 'last updated at' date in user defaults when the regions list is downloaded.
+    func test_regionListUpdated_updatedAtDateIsWritten() {
+        stubRegionsJustPugetSound()
+        userDefaults.set(Date.distantPast, forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+
+        var service: RegionsService!
+
+        waitUntil { done in
+            self.testDelegate.updatedRegionsListCallbacks.append {
+                let newDate = self.userDefaults.value(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as! Date
+                let interval = newDate.timeIntervalSince(Date())
+                expect(interval).to(beCloseTo(0.0, within: 2.0))
+                expect(service.regions.first!.name) == "Puget Sound"
+                done()
+            }
+            service = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        }
+    }
 
     // It updates the current region when the regions list is downloaded.
 
