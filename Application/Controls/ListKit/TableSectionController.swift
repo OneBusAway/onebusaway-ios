@@ -19,7 +19,7 @@ final public class TableSectionController: ListSectionController, ListSupplement
     }
 
     public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 55.0)
+        return CGSize(width: collectionContext!.containerSize.width, height: 40.0)
     }
 
     public override func numberOfItems() -> Int {

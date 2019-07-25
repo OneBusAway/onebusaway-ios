@@ -12,9 +12,11 @@ import FloatingPanel
 
 public protocol NearbyDelegate: NSObjectProtocol {
     func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop)
+    func nearbyControllerDisplaySearch(_ nearbyController: NearbyViewController)
+    func nearbyController(_ nearbyController: NearbyViewController, moveTo position: FloatingPanelPosition, animated: Bool)
 }
 
-public class NearbyViewController: VisualEffectViewController, ListProvider {
+public class NearbyViewController: VisualEffectViewController, ListProvider, SearchDelegate, ListAdapterDataSource, ModelViewModelConverters, UISearchBarDelegate {
     let mapRegionManager: MapRegionManager
 
     public weak var nearbyDelegate: NearbyDelegate?
@@ -50,26 +52,31 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
     private lazy var stackView = UIStackView.verticalStack(arangedSubviews: [searchBar, collectionController.view])
 
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
+    var scrollView: UIScrollView { collectionController.collectionView }
 
     // MARK: - UI/Search
 
-    private lazy var searchBar: UISearchBar = {
-        let searchBar = TapPresenterSearchBar.autolayoutNew()
-        searchBar.searchBarStyle = .minimal
-        if let region = application.regionsService.currentRegion {
-            searchBar.placeholder = SearchViewController.searchPlaceholderText(region: region)
+    public private(set) var inSearchMode = false {
+        didSet {
+            if inSearchMode {
+                nearbyDelegate?.nearbyControllerDisplaySearch(self)
+            }
+            else {
+                nearbyDelegate?.nearbyController(self, moveTo: .tip, animated: true)
+            }
+            collectionController.reload(animated: false)
         }
-//        searchBar.tapped = { [weak self] in
-//            guard let self = self else { return }
-//            self.nearbyDelegate?.presentFloatingPanel(contentController: self.searchController, scrollView: self.searchController.collectionController.collectionView, animated: true, position: .full)
-//        }
-        return searchBar
-    }()
+    }
 
-    private lazy var searchController: SearchViewController = {
-        let ctl = SearchViewController(application: application)
-        ctl.searchDelegate = self
-        return ctl
+    private lazy var searchBar: UISearchBar = {
+        let searchBar = UISearchBar.autolayoutNew()
+        searchBar.searchBarStyle = .minimal
+        searchBar.delegate = self
+
+        if let region = application.regionsService.currentRegion {
+            searchBar.placeholder = Formatters.searchPlaceholderText(region: region)
+        }
+        return searchBar
     }()
 
     // MARK: - UIViewController
@@ -78,25 +85,64 @@ public class NearbyViewController: VisualEffectViewController, ListProvider {
         super.viewDidLoad()
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
-            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 7.0, leading: 0, bottom: 0, trailing: 0))
+            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset, leading: 0, bottom: 0, trailing: 0))
         }
     }
-}
 
-// MARK: - Search Delegate
+    // MARK: - Search UI and Data
 
-extension NearbyViewController: SearchDelegate {
-    public func searchController(_ searchController: SearchViewController, request: SearchRequest) {
-//        nearbyDelegate?.closePanel(containing: searchController, model: nil)
+    func performSearch(request: SearchRequest) {
+        searchBar.resignFirstResponder()
+        nearbyDelegate?.nearbyController(self, moveTo: .half, animated: true)
         application.searchManager.search(request: request)
     }
-}
 
-// MARK: - ListAdapterDataSource (Data Loading)
+    public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        collectionController.reload(animated: false)
+    }
 
-extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters {
+    public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
+        inSearchMode = true
+        searchBar.showsCancelButton = true
+    }
+
+    public func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+        exitSearchMode()
+    }
+
+    private func exitSearchMode() {
+        searchBar.text = nil
+        searchBar.resignFirstResponder()
+        searchBar.showsCancelButton = false
+        inSearchMode = false
+    }
+
+    public func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        inSearchMode = false
+    }
+
+    private lazy var searchModeEmptyView: EmptyDataSetView = {
+        let emptyView = EmptyDataSetView(frame: view.bounds)
+        emptyView.titleLabel.text = NSLocalizedString("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
+        emptyView.bodyLabel.text = NSLocalizedString("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
+
+        return emptyView
+    }()
+
+    private lazy var searchInteractor = SearchInteractor(userDataStore: application.userDataStore, delegate: self)
+
+    // MARK: - ListAdapterDataSource (Data Loading)
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        if inSearchMode {
+            return searchInteractor.searchModeObjects(text: searchBar.text, listAdapter: listAdapter)
+        }
+        else {
+            return nearbyModeObjects(for: listAdapter)
+        }
+    }
+
+    private func nearbyModeObjects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
         if stops.count > 0 {
@@ -120,7 +166,14 @@ extension NearbyViewController: ListAdapterDataSource, ModelViewModelConverters 
         return sectionController
     }
 
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? { return nil }
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        if inSearchMode {
+            return searchModeEmptyView
+        }
+        else {
+            return nil
+        }
+    }
 
     private func createSectionController(for object: Any) -> ListSectionController {
         return defaultSectionController(for: object)
@@ -138,6 +191,11 @@ extension NearbyViewController: MapRegionDelegate {
         set {
             collectionController.collectionView.contentInset.bottom = newValue
         }
+    }
+
+    public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
+        // abxoxo
+        exitSearchMode()
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {

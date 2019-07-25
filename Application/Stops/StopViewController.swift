@@ -346,7 +346,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
                 let self = self
             else { return }
 
-            let nearbyController = NearbyStopsViewController(stop: stop, application: self.application)
+            let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
     }

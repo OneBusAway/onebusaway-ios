@@ -49,7 +49,7 @@ extension MKMapView {
     ///
     /// - Parameters:
     ///   - newAnnotations: The new annotations of the specified type that will appear on the map.
-    func updateAnnotations<T>(with newAnnotations: [T]) where T: MKAnnotation, T: Hashable {
+    func updateAnnotations<T>(with newAnnotations: [T]) where T: MKAnnotation & Hashable {
         let oldAnnotations: Set<T> = Set(annotations.filter(type: T.self))
         let newAnnotations: Set<T> = Set(newAnnotations)
 
@@ -64,6 +64,13 @@ extension MKMapView {
 
         removeAnnotations(removed.allObjects)
         addAnnotations(added.allObjects)
+    }
+
+    /// Removes all annotations from the map view, with the possible exception of the user's location annotation if available.
+    /// - Parameter excludeUserLocation: Set this to `true` to keep the user location annotation visible on the map.
+    func removeAllAnnotations(excludeUserLocation: Bool = true) {
+        let allAnnotations = excludeUserLocation ? annotations : annotations.filter { !($0 is MKUserLocation) }
+        removeAnnotations(allAnnotations)
     }
 }
 

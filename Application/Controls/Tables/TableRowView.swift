@@ -10,7 +10,6 @@ import AloeStackView
 
 /// A view that approximates the appearance of a `UITableViewCell`. Meant to be used directly in an `AloeStackView`.
 public class TableRowView: UIView, Highlightable {
-
     var useDebugColors = false
 
     /// The height constraint for this view.

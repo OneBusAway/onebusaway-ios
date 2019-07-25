@@ -16,7 +16,12 @@ class TableRowCell: SwipeCollectionViewCell {
     fileprivate var tableRowView: TableRowView! {
         didSet {
             contentView.addSubview(tableRowView)
-            tableRowView.pinToSuperview(.layoutMargins)
+            NSLayoutConstraint.activate([
+                tableRowView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
+                tableRowView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+                tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
+                tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+            ])
             tableRowView.useDebugColors = kUseDebugColors
         }
     }

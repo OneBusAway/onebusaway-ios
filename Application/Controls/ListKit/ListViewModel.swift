@@ -12,7 +12,7 @@ public typealias ListRowActionHandler = ((ListViewModel) -> Void)
 
 /// Base class for all OBAKit ListKit view models.
 public class ListViewModel: NSObject {
-    public let tapped: ListRowActionHandler?
+    public var tapped: ListRowActionHandler?
     public var deleted: ListRowActionHandler?
     public var object: Any?
 

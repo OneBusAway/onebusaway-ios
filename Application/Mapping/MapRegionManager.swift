@@ -15,7 +15,10 @@ import MapKit
 @objc(OBAMapRegionDelegate)
 public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop])
-    @objc optional func mapRegionManager(_ manager: MapRegionManager, searchUpdated searchResponse: SearchResponse)
+
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse)
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse)
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse)
 
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
     @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
@@ -28,7 +31,7 @@ public protocol MapRegionDelegate {
 
 // MARK: - MapRegionManager
 
-public class MapRegionManager: NSObject, StopAnnotationDelegate {
+public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelegate {
 
     private let application: Application
 
@@ -162,13 +165,23 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
         delegates.remove(delegate)
     }
 
-    private func notifyDelegatesSearchResultsChanged() {
-        guard let searchResponse = searchResponse else {
-            return
-        }
+    // MARK: - Delegates/Search
 
+    private func notifyDelegatesNoSearchResults(response: SearchResponse) {
         for delegate in delegates.allObjects {
-            delegate.mapRegionManager?(self, searchUpdated: searchResponse)
+            delegate.mapRegionManager?(self, noSearchResults: response)
+        }
+    }
+
+    private func notifyDelegatesDisambiguationRequired(response: SearchResponse) {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, disambiguateSearch: response)
+        }
+    }
+
+    private func notifyDelegatesShowSearchResult(response: SearchResponse) {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, showSearchResult: response)
         }
     }
 
@@ -223,43 +236,6 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
         }
     }
 
-    // MARK: - Overlays
-
-    private var walkingDirectionsOverlay: MKOverlay?
-    private var walkingDirectionsStop: Stop?
-
-    /// Adds a map overlay specifically to show walking directions from the user's current location to the stop
-    ///
-    /// - Parameters:
-    ///   - overlay: The walking directions overlay.
-    ///   - stop: The stop to which the walking directions point.
-    public func addWalkingDirectionsOverlay(_ overlay: MKOverlay, for stop: Stop) {
-        if let walkingDirectionsOverlay = walkingDirectionsOverlay {
-            mapView.removeOverlay(walkingDirectionsOverlay)
-        }
-
-        walkingDirectionsOverlay = overlay
-        walkingDirectionsStop = stop
-
-        mapView.addOverlay(walkingDirectionsOverlay!, level: MKOverlayLevel.aboveRoads)
-    }
-
-    /// Removes the walking directions overlay that matches `stop`.
-    ///
-    /// - Parameter stop: The stop to which walking directions should be removed.
-    public func removeWalkingDirectionsOverlay(for stop: Stop) {
-        guard
-            walkingDirectionsStop == stop,
-            let walkingDirectionsOverlay = walkingDirectionsOverlay
-        else {
-            return
-        }
-
-        self.walkingDirectionsStop = nil
-        self.walkingDirectionsOverlay = nil
-        mapView.removeOverlay(walkingDirectionsOverlay)
-    }
-
     // MARK: - Map Status Overlay
 
     private lazy var statusOverlay = StatusOverlayView.autolayoutNew()
@@ -298,9 +274,73 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
 
     // MARK: - Search
 
+    public func cancelSearch() {
+        searchResponse = nil
+        mapView.removeAllAnnotations()
+        mapView.removeOverlays(mapView.overlays)
+        reloadStopAnnotations()
+    }
+
+    private func searchResponseOverridesStopLoading() -> Bool {
+        guard
+            let searchResponse = searchResponse,
+            searchResponse.results.count == 1,
+            let result = searchResponse.results.first
+        else { return false }
+
+        return result is Route
+    }
+
     public var searchResponse: SearchResponse? {
         didSet {
-            notifyDelegatesSearchResultsChanged()
+            guard let searchResponse = searchResponse else {
+                return
+            }
+
+            if searchResponse.results.count == 0 {
+                notifyDelegatesNoSearchResults(response: searchResponse)
+            }
+            else if searchResponse.results.count == 1, let result = searchResponse.results.first {
+                if let result = result as? MKMapItem {
+                    mapView.setCenter(result.placemark.coordinate, animated: true)
+                    mapView.addAnnotation(result.placemark)
+                    notifyDelegatesShowSearchResult(response: searchResponse)
+                }
+                else if let result = result as? Route {
+                    loadSearchResponse(searchResponse, route: result)
+                }
+                else if let result = result as? StopsForRoute {
+                    mapView.removeAllAnnotations()
+
+                    mapView.addOverlays(result.polylines)
+                    mapView.addAnnotations(result.stops)
+
+                    let inset: CGFloat = 40.0
+                    mapView.visibleMapRect = self.mapView.mapRectThatFits(result.mapRect, edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset))
+                    notifyDelegatesShowSearchResult(response: searchResponse)
+                }
+            }
+            else {
+                notifyDelegatesDisambiguationRequired(response: searchResponse)
+            }
+        }
+    }
+
+    // MARK: - Search/Route
+
+    func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
+        guard let apiService = application.restAPIModelService else { return }
+
+        let op = apiService.getStopsForRoute(routeID: route.id)
+
+        op.then { [weak self] in
+            guard
+                let self = self,
+                let stopsForRoute = op.stopsForRoute
+            else { return }
+
+            let response = SearchResponse(response: searchResponse, substituteResult: stopsForRoute)
+            self.searchResponse = response
         }
     }
 
@@ -313,12 +353,14 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate {
     var iconFactory: StopIconFactory {
         application.stopIconFactory
     }
-}
 
-// MARK: - Map View Delegate
+    // MARK: - Map View Delegate
 
-extension MapRegionManager: MKMapViewDelegate {
-    public func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+    private func reloadStopAnnotations() {
+        if searchResponseOverridesStopLoading() {
+            return
+        }
+
         updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
         guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
@@ -328,6 +370,10 @@ extension MapRegionManager: MKMapViewDelegate {
         regionChangeRequestTimer?.invalidate()
 
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
+    }
+
+    public func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        reloadStopAnnotations()
     }
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
@@ -377,7 +423,7 @@ extension MapRegionManager: MKMapViewDelegate {
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
         renderer.strokeColor = application.theme.colors.primary.withAlphaComponent(0.75)
-        renderer.lineWidth = 6.0
+        renderer.lineWidth = 3.0
         renderer.lineCap = .round
 
         return renderer

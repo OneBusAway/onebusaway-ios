@@ -35,6 +35,13 @@ public class SearchResponse: NSObject {
         self.error = error
     }
 
+    public init(response: SearchResponse, substituteResult: Any) {
+        self.request = response.request
+        self.results = [substituteResult]
+        self.boundingRegion = response.boundingRegion
+        self.error = response.error
+    }
+
     /// Returns true if the results count does not equal 1.
     /// In other words, show the result directly if there is only a single match.
     public var needsDisambiguation: Bool {
@@ -60,23 +67,28 @@ public class SearchManager: NSObject {
         switch request.searchType {
         case .address:
             let op = modelService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-            op.then {
+            op.then { [weak self] in
+                guard let self = self else { return }
+
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
             }
         case .route:
             let op = modelService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-            op.then {
+            op.then { [weak self] in
+                guard let self = self else { return }
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.routes, boundingRegion: nil, error: op.error)
             }
         case .stopNumber:
             let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
             let op = modelService.getStops(circularRegion: region, query: request.query)
-            op.then {
+            op.then { [weak self] in
+               guard let self = self else { return }
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
             }
         case .vehicleID:
             let op = modelService.getVehicleStatus(request.query)
-            op.then {
+            op.then { [weak self] in
+               guard let self = self else { return }
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.vehicles, boundingRegion: nil, error: op.error)
             }
         }

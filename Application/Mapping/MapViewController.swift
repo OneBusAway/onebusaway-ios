@@ -11,10 +11,19 @@ import MapKit
 import FloatingPanel
 import CocoaLumberjackSwift
 
+protocol Scrollable where Self: UIViewController {
+    var scrollView: UIScrollView { get }
+}
+
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
-public class MapViewController: UIViewController, FloatingPanelControllerDelegate, NearbyDelegate {
+public class MapViewController: UIViewController,
+    FloatingPanelControllerDelegate,
+    LocationServiceDelegate,
+    MapRegionDelegate,
+    ModalDelegate,
+    NearbyDelegate {
 
     // MARK: - Floating Panel and Hoverbar
     var floatingToolbar: HoverBar = {
@@ -46,7 +55,7 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         tabBarItem.image = Icons.mapTabIcon
 
         // Assign delegates
-        self.mapRegionManager.addDelegate(self)
+        self.application.mapRegionManager.addDelegate(self)
         self.application.locationService.addDelegate(self)
     }
 
@@ -122,54 +131,33 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
-    func panelForModelDidClose(_ model: AnyObject?) {
-        if let stop = model as? Stop {
-            mapRegionManager.removeWalkingDirectionsOverlay(for: stop)
-        }
-        else {
-            // nop.
-        }
-    }
-
-    // MARK: - Routes
-
-    /// Renders walking directions to the specified stop ID as a map overlay.
-    ///
-    /// - Parameter stopID: The agency-prefixed stop ID.
-    func displayWalkingRoute(stopID: String) {
-        mapRegionManager.fetchStopWithID(stopID) { (stop) in
-            guard let stop = stop else {
-                let msg = NSLocalizedString("map_view_controller.error_messages.display_walking_route_failed", value: "Unable to fetch walking directions.", comment: "An error message displayed when the app is unable to fetch walking directions to show to the user.")
-                AlertPresenter.show(errorMessage: msg, presentingController: self)
-                return
-            }
-
-            let directions = MKDirections.walkingDirections(to: stop.coordinate)
-            directions.calculate { [weak self] response, error in
-                guard
-                    let unwrappedResponse = response,
-                    let self = self
-                else { return }
-
-                if let error = error {
-                    DDLogError("Error retrieving walking directions: \(error)")
-                    AlertPresenter.show(error: error, presentingController: self)
-                }
-
-                for route in unwrappedResponse.routes {
-                    self.mapRegionManager.addWalkingDirectionsOverlay(route.polyline, for: stop)
-                }
-            }
-        }
-    }
-
     // MARK: - Floating Panel Controller
+
+    private var semiModalPanel: FloatingPanelController?
+
+    private func showSemiModalPanel(childController: UIViewController) {
+        semiModalPanel?.removePanelFromParent(animated: false)
+
+        let panel = FloatingPanelController()
+        panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
+
+        // Set a content view controller.
+        panel.set(contentViewController: childController)
+
+        if childController is Scrollable {
+            panel.track(scrollView: (childController as! Scrollable).scrollView) // swiftlint:disable:this force_cast
+        }
+
+        panel.addPanel(toParent: self, belowView: nil, animated: true)
+
+        semiModalPanel = panel
+    }
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: FloatingPanelController = {
-        let panel = FloatingPanelController()
-        panel.delegate = self
+        let panel = FloatingPanelController(delegate: self)
         panel.isRemovalInteractionEnabled = false
+        panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
 
         // Set a content view controller.
         panel.set(contentViewController: nearbyController)
@@ -181,7 +169,7 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-        return MapPanelLayout()
+            return MapPanelLayout()
     }
 
     private class MapPanelLayout: FloatingPanelLayout {
@@ -200,6 +188,18 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
         }
     }
 
+    // MARK: - Modal Delegate
+
+    public func dismissModalController(_ controller: UIViewController) {
+        if controller == semiModalPanel?.contentViewController {
+            mapRegionManager.cancelSearch()
+            semiModalPanel?.removePanelFromParent(animated: true)
+        }
+        else {
+            controller.dismiss(animated: true, completion: nil)
+        }
+    }
+
     // MARK: - Nearby Controller
 
     private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
@@ -211,11 +211,13 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
     public func nearbyControllerDisplaySearch(_ nearbyController: NearbyViewController) {
         floatingPanel.move(to: .full, animated: true)
     }
-}
 
-// MARK: - MapRegionDelegate
+    public func nearbyController(_ nearbyController: NearbyViewController, moveTo position: FloatingPanelPosition, animated: Bool) {
+        floatingPanel.move(to: position, animated: animated)
+    }
 
-extension MapViewController: MapRegionDelegate {
+    // MARK: - MapRegionDelegate
+
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard
             !application.theme.behaviors.mapShowsCallouts,
@@ -234,40 +236,39 @@ extension MapViewController: MapRegionDelegate {
         show(stop: stop)
     }
 
-    public func mapRegionManager(_ manager: MapRegionManager, searchUpdated search: SearchResponse) {
-//        if search.needsDisambiguation {
-//            let searchResults = SearchResultsController(searchResponse: search, application: application, floatingPanelDelegate: self, delegate: self)
-//            presentFloatingPanel(contentController: searchResults, scrollView: searchResults.collectionController.collectionView, animated: true)
-//        }
-//        else {
-//            SearchResultsController.presentResult(from: search, delegate: self)
-//        }
-    }
-}
-
-// MARK: - SearchResultsDelegate
-
-extension MapViewController: SearchResultsDelegate {
-    public func searchResults(controller: SearchResultsController?, showRoute route: Route) {
-        // render polyline and what else?
+    public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
+        // abxoxo todo!
     }
 
-    public func searchResults(controller: SearchResultsController?, showMapItem mapItem: MKMapItem) {
-        // scroll/zoom to pin, show card.
+    public func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse) {
+        let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
+        let nav = UINavigationController(rootViewController: searchResults)
+        application.viewRouter.present(nav, from: self, isModalInPresentation: true)
     }
 
-    public func searchResults(controller: SearchResultsController?, showStop stop: Stop) {
-        show(stop: stop)
+    // abxoxo - todo!
+    public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
+        guard let result = response.results.first else { return }
+
+        switch result {
+        case let result as MKMapItem:
+            let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
+            showSemiModalPanel(childController: mapItemController)
+        case let result as StopsForRoute:
+            let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
+            showSemiModalPanel(childController: routeStopController)
+        case let result as Stop:
+            show(stop: result)
+        case let result as VehicleStatus:
+            AlertPresenter.show(errorMessage: "abxoxo - Add ability to show vehicle status!", presentingController: self)
+            print("Show vehicle status: \(result)")
+        default:
+            fatalError()
+        }
     }
 
-    public func searchResults(controller: SearchResultsController?, showVehicleStatus vehicleStatus: VehicleStatus) {
-        // ???
-    }
-}
+    // MARK: - LocationServiceDelegate
 
-// MARK: - LocationServiceDelegate
-
-extension MapViewController: LocationServiceDelegate {
     private static let programmaticRadiusInMeters = 200.0
 
     func programmaticallyUpdateVisibleMapRegion(location: CLLocation) {

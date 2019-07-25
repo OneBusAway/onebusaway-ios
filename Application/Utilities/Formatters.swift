@@ -289,4 +289,13 @@ public class Formatters: NSObject {
         case .unknown: return nil
         }
     }
+
+    // MARK: - Search
+
+    /// Creates search bar placeholder text for the specified region. e.g. 'Search in Puget Sound'.
+    /// - Parameter region: The region that will be specified in the placeholder text.
+    public class func searchPlaceholderText(region: Region) -> String {
+        let fmt = NSLocalizedString("formatters.search_bar_placeholder_fmt", value: "Search in %@", comment: "Placeholder text for the search bar: 'Search in {REGION NAME}'")
+        return String(format: fmt, region.name)
+    }
 }

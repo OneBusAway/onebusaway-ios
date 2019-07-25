@@ -11,7 +11,7 @@ import SVProgressHUD
 
 class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ModelViewModelConverters, ListAdapterDataSource, UISearchResultsUpdating {
 
-    private let stop: Stop
+    private let coordinate: CLLocationCoordinate2D
 
     private var searchFilter: String? {
         didSet {
@@ -23,8 +23,8 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
     // MARK: - Init
 
-    public init(stop: Stop, application: Application) {
-        self.stop = stop
+    public init(coordinate: CLLocationCoordinate2D, application: Application) {
+        self.coordinate = coordinate
 
         super.init(application: application)
 
@@ -58,7 +58,7 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
         SVProgressHUD.show()
 
-        let op = modelService.getStops(coordinate: stop.coordinate)
+        let op = modelService.getStops(coordinate: coordinate)
         op.then { [weak self] in
             guard let self = self else {
                 SVProgressHUD.dismiss()

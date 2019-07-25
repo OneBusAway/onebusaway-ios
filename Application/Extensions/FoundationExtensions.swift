@@ -153,3 +153,9 @@ public extension UserDefaults {
         set(encoded, forKey: key)
     }
 }
+
+extension URL {
+    init?(phoneNumber: String) {
+        self.init(string: "tel:\(phoneNumber)")
+    }
+}

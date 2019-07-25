@@ -72,6 +72,10 @@ public protocol UserDataStore: NSObjectProtocol {
 
     // MARK: - Recent Stops
 
+    /// Find recent stops that match `searchText`
+    /// - Parameter searchText: The search string
+    func findRecentStops(matching searchText: String) -> [Stop]
+
     /// A list of recently-viewed stops
     var recentStops: [Stop] { get }
 
@@ -268,6 +272,11 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var maximumRecentStopsCount: Int {
         return 20
+    }
+
+    public func findRecentStops(matching searchText: String) -> [Stop] {
+        let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return recentStops.filter { $0.matchesQuery(cleanedText) }
     }
 
     // MARK: - View State/Last Selected Tab

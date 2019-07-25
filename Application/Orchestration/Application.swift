@@ -241,14 +241,17 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         EmptyDataSetView.appearance().textColor = theme.colors.subduedText
         EmptyDataSetView.appearance().titleLabelFont = theme.fonts.largeTitle
 
-        FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.footnote
         FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
+        FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.body
 
         HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
 
         IndeterminateProgressView.appearance().progressColor = theme.colors.primary
 
         StackedButton.appearance().font = theme.fonts.footnote
+
+        StackedTitleView.appearance().subtitleFont = theme.fonts.footnote
+        StackedTitleView.appearance().titleFont = theme.fonts.boldFootnote
 
         StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText

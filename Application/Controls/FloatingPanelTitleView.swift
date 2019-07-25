@@ -14,12 +14,8 @@ public class FloatingPanelTitleView: UIView {
     // MARK: - Labels
 
     @objc dynamic var titleFont: UIFont {
-        get {
-            return titleLabel.font
-        }
-        set {
-            titleLabel.font = newValue
-        }
+        get { titleLabel.font }
+        set { titleLabel.font = newValue }
     }
 
     public let titleLabel: UILabel = {
@@ -31,18 +27,13 @@ public class FloatingPanelTitleView: UIView {
     }()
 
     @objc dynamic var subtitleFont: UIFont {
-        get {
-            return subtitleLabel.font
-        }
-        set {
-            subtitleLabel.font = newValue
-        }
+        get { subtitleLabel.font }
+        set { subtitleLabel.font = newValue }
     }
 
     public let subtitleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
-
         return label
     }()
 
@@ -57,6 +48,7 @@ public class FloatingPanelTitleView: UIView {
         button.setImage(Icons.closeCircle, for: .normal)
         button.accessibilityLabel = Strings.close
         button.setContentHuggingPriority(.required, for: .horizontal)
+        button.setContentCompressionResistancePriority(.required, for: .vertical)
         NSLayoutConstraint.activate([
             button.heightAnchor.constraint(equalToConstant: 30.0),
             button.widthAnchor.constraint(equalToConstant: 30.0)
@@ -69,7 +61,8 @@ public class FloatingPanelTitleView: UIView {
         NSLayoutConstraint.activate([
             closeButton.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
             closeButton.topAnchor.constraint(equalTo: wrapper.topAnchor),
-            closeButton.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor)
+            closeButton.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+            wrapper.heightAnchor.constraint(greaterThanOrEqualTo: closeButton.heightAnchor)
         ])
 
         return wrapper
@@ -82,7 +75,7 @@ public class FloatingPanelTitleView: UIView {
 
         let topStack = UIStackView.horizontalStack(arrangedSubviews: [labelStackWrapper, closeButtonWrapper])
         addSubview(topStack)
-        topStack.pinToSuperview(.edges)
+        topStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset * 2.0, leading: 0, bottom: 0, trailing: 0))
     }
 
     required init?(coder aDecoder: NSCoder) {

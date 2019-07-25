@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import MapKit
 
 /// Retrieve the set of stops serving a particular route, including groups by direction of travel.
 ///
@@ -19,7 +20,16 @@ public class StopsForRoute: NSObject, Decodable {
     let routeID: String
     public let route: Route
 
-    public let polylines: [String]
+    public let rawPolylines: [String]
+    public lazy var polylines: [MKPolyline] = rawPolylines.compactMap { Polyline(encodedPolyline: $0).mkPolyline }
+
+    public lazy var mapRect: MKMapRect = {
+        var bounds = MKMapRect.null
+        for p in polylines {
+            bounds = bounds.union(p.boundingMapRect)
+        }
+        return bounds
+    }()
 
     let stopIDs: [String]
     public let stops: [Stop]
@@ -28,7 +38,7 @@ public class StopsForRoute: NSObject, Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case routeID = "routeId"
-        case polylines
+        case rawPolylines = "polylines"
         case stopIDs = "stopIds"
         case stopGroupings
     }
@@ -40,8 +50,7 @@ public class StopsForRoute: NSObject, Decodable {
         routeID = try container.decode(String.self, forKey: .routeID)
         route = references.routeWithID(routeID)!
 
-        let rawPolylines = try container.decode([PolylineEntity].self, forKey: .polylines)
-        polylines = rawPolylines.compactMap { $0.points }
+        rawPolylines = try container.decode([PolylineEntity].self, forKey: .rawPolylines).compactMap { $0.points }
 
         stopIDs = try container.decode([String].self, forKey: .stopIDs)
         stops = references.stopsWithIDs(stopIDs)

@@ -8,37 +8,32 @@
 
 import UIKit
 import IGListKit
-import FloatingPanel
 
-public protocol SearchResultsDelegate: NSObjectProtocol {
-    func searchResults(controller: SearchResultsController?, showRoute route: Route)
-    func searchResults(controller: SearchResultsController?, showMapItem mapItem: MKMapItem)
-    func searchResults(controller: SearchResultsController?, showStop stop: Stop)
-    func searchResults(controller: SearchResultsController?, showVehicleStatus vehicleStatus: VehicleStatus)
+public protocol ModalDelegate: NSObjectProtocol {
+    func dismissModalController(_ controller: UIViewController)
 }
 
-public class SearchResultsController: VisualEffectViewController, ListProvider {
-    private let titleBar = FloatingPanelTitleView.autolayoutNew()
+public class SearchResultsController: UIViewController, ListProvider {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
+    var scrollView: UIScrollView { collectionController.collectionView }
 
-    private lazy var stackView: UIStackView = {
-        let stack = UIStackView.verticalStack(arangedSubviews: [titleBar, collectionController.view])
-        stack.isLayoutMarginsRelativeArrangement = true
-        stack.directionalLayoutMargins = ThemeMetrics.collectionViewLayoutMargins
-
-        return stack
-    }()
+    private weak var delegate: ModalDelegate?
 
     private let application: Application
-    public weak var delegate: SearchResultsDelegate?
 
     private let searchResponse: SearchResponse
 
-    public init(searchResponse: SearchResponse, application: Application, delegate: SearchResultsDelegate) {
+    private let titleView = StackedTitleView.autolayoutNew()
+
+    public init(searchResponse: SearchResponse, application: Application, delegate: ModalDelegate?) {
         self.searchResponse = searchResponse
         self.application = application
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
+
+        title = NSLocalizedString("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
+        titleView.titleLabel.text = title
+        titleView.subtitleLabel.text = subtitleText(from: searchResponse)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -48,43 +43,19 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
     override public func viewDidLoad() {
         super.viewDidLoad()
 
-        prepareChildController(collectionController) {
-            visualEffectView.contentView.addSubview(stackView)
-            let insets = ThemeMetrics.controllerMargin
-            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 0, leading: insets, bottom: 0, trailing: insets))
-        }
+        navigationItem.titleView = titleView
 
-        // Configure title bar
-        titleBar.closeButton.addTarget(self, action: #selector(closePanel), for: .touchUpInside)
-        titleBar.titleLabel.text = NSLocalizedString("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
-        titleBar.subtitleLabel.text = subtitleText(from: searchResponse)
+        view.backgroundColor = application.theme.colors.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
     }
 
     // MARK: - Actions
 
-    @objc private func closePanel() {
-//        floatingPanelDelegate?.closePanel(containing: self, model: nil)
-    }
-
-    /// Used in conjunction with the `search` and `delegate` to sidestep displaying
-    /// the search results UI when an unambiguous search response has been retrieved.
-    ///
-    /// - Parameters:
-    ///   - search: The search response.
-    ///   - delegate: The delegate capable of displaying results.
-    public class func presentResult(from search: SearchResponse, delegate: SearchResultsDelegate) {
-        // swiftlint:disable force_cast
-        switch search.request.searchType {
-        case .address:
-            delegate.searchResults(controller: nil, showMapItem: search.results.first as! MKMapItem)
-        case .route:
-            delegate.searchResults(controller: nil, showRoute: search.results.first as! Route)
-        case .stopNumber:
-            delegate.searchResults(controller: nil, showStop: search.results.first as! Stop)
-        case .vehicleID:
-            delegate.searchResults(controller: nil, showVehicleStatus: search.results.first as! VehicleStatus)
-        }
-        // swiftlint:enable force_cast
+    @objc private func close() {
+        delegate?.dismissModalController(self)
     }
 
     // MARK: - Private
@@ -106,45 +77,34 @@ public class SearchResultsController: VisualEffectViewController, ListProvider {
 }
 
 extension SearchResultsController: ListAdapterDataSource {
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
 
-        let rows: [TableRowData]
+    private func tableRowData(from item: Any) -> TableRowData? {
+        let row: TableRowData
 
-        switch searchResponse.request.searchType {
-        case .address:
-            let data = searchResponse.results as? [MKMapItem] ?? []
-            rows = data.map { item in
-                return TableRowData(title: item.name ?? "???", accessoryType: .none) { [weak self] _ in
-                    guard let self = self else { return }
-                    self.delegate?.searchResults(controller: self, showMapItem: item)
-                }
-            }
-        case .route:
-            let data = searchResponse.results as? [Route] ?? []
-            rows = data.map { route in
-                return TableRowData(title: route.shortName, subtitle: route.agency.name, accessoryType: .none) { [weak self] _ in
-                    guard let self = self else { return }
-                    self.delegate?.searchResults(controller: self, showRoute: route)
-                }
-            }
-        case .stopNumber:
-            let data = searchResponse.results as? [Stop] ?? []
-            rows = data.map { stop in
-                return TableRowData(title: stop.name, accessoryType: .none) { [weak self] _ in
-                    guard let self = self else { return }
-                    self.delegate?.searchResults(controller: self, showStop: stop)
-                }
-            }
-        case .vehicleID:
-            let data = searchResponse.results as? [VehicleStatus] ?? []
-            rows = data.map { status in
-                return TableRowData(title: status.vehicleID, accessoryType: .none) { [weak self] _ in
-                    guard let self = self else { return }
-                    self.delegate?.searchResults(controller: self, showVehicleStatus: status)
-                }
-            }
+        switch item {
+        case let item as MKMapItem:
+            row = TableRowData(title: item.name ?? "???", accessoryType: .none, tapped: nil)
+        case let item as Route:
+            row = TableRowData(title: item.shortName, subtitle: item.agency.name, accessoryType: .none, tapped: nil)
+        case let item as Stop:
+            row = TableRowData(title: item.name, accessoryType: .none, tapped: nil)
+        case let item as VehicleStatus:
+            row = TableRowData(title: item.vehicleID, accessoryType: .none, tapped: nil)
+        default:
+            return nil
         }
 
+        row.tapped = { [weak self] _ in
+            guard let self = self else { return }
+            self.application.mapRegionManager.searchResponse = SearchResponse(response: self.searchResponse, substituteResult: item)
+            self.delegate?.dismissModalController(self)
+        }
+
+        return row
+    }
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        let rows = searchResponse.results.compactMap { tableRowData(from: $0) }
         let tableSection = TableSectionData(title: nil, rows: rows)
         return [tableSection]
     }
