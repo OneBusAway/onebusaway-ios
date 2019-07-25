@@ -53,12 +53,6 @@ class TableRowCell: SwipeCollectionViewCell {
         set { _highlightedBackgroundColor = newValue }
     }
 
-    private var _leftSeparatorInset: CGFloat = 20.0
-    @objc dynamic var leftSeparatorInset: CGFloat {
-        get { return _leftSeparatorInset }
-        set { _leftSeparatorInset = newValue }
-    }
-
     @objc dynamic var separatorColor: UIColor {
         get { return UIColor(cgColor: separator.backgroundColor!) }
         set { separator.backgroundColor = newValue.cgColor }
@@ -91,6 +85,8 @@ class TableRowCell: SwipeCollectionViewCell {
             contentView.backgroundColor = isHighlighted ? highlightedBackgroundColor : .clear
         }
     }
+
+    private lazy var leftSeparatorInset: CGFloat = layoutMargins.left
 
     let separator: CALayer = {
         let layer = CALayer()
