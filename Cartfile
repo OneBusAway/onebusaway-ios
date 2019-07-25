@@ -1,12 +1,12 @@
 ## Data and Modeling
 
 # https://github.com/apple/swift-protobuf/releases
-github "apple/swift-protobuf" ~>1.5.0
+github "apple/swift-protobuf" ~>1.6.0
 
 ## Logging
 
 # https://github.com/CocoaLumberjack/CocoaLumberjack/releases
-git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.2
+git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.3
 
 ## UI
 
@@ -14,10 +14,10 @@ git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.2
 github "Instagram/IGListKit" ~>3.4.0
 
 # https://github.com/airbnb/AloeStackView/releases
-github "airbnb/AloeStackView" "master"
+github "airbnb/AloeStackView" ~>1.1.1
 
 # https://github.com/SCENEE/FloatingPanel/releases
-github "SCENEE/FloatingPanel" ==1.6.2
+github "SCENEE/FloatingPanel" ==1.6.3
 
 # https://github.com/SwipeCellKit/SwipeCellKit/releases
 github "SwipeCellKit/SwipeCellKit" ~>2.5.4

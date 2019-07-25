@@ -207,6 +207,10 @@ public class MapViewController: UIViewController, FloatingPanelControllerDelegat
     public func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop) {
         show(stop: stop)
     }
+
+    public func nearbyControllerDisplaySearch(_ nearbyController: NearbyViewController) {
+        floatingPanel.move(to: .full, animated: true)
+    }
 }
 
 // MARK: - MapRegionDelegate
