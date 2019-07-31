@@ -23,14 +23,20 @@ public class TableRowView: UIView, Highlightable {
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
-        addSubview(contentStack)
-        contentStack.pinToSuperview(.edges)
+        addSubview(contentStackWrapper)
 
         heightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
         heightConstraint.priority = .required
 
         NSLayoutConstraint.activate([
-            heightConstraint, imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth
+            heightConstraint, imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth,
+
+            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentStackWrapper.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentStackWrapper.centerYAnchor.constraint(equalTo: centerYAnchor),
+            contentStackWrapper.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: ThemeMetrics.compactPadding),
+            contentStackWrapper.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -ThemeMetrics.compactPadding),
+            heightAnchor.constraint(greaterThanOrEqualTo: contentStack.heightAnchor)
         ])
 
         if useDebugColors {
@@ -121,6 +127,8 @@ public class TableRowView: UIView, Highlightable {
     }
 
     // MARK: - UI Configuration
+
+    lazy var contentStackWrapper = contentStack.embedInWrapperView()
 
     /// This is the outermost stack view embedded within this cell. Accessory views should be added to this view.
     lazy var contentStack = UIStackView.horizontalStack(arrangedSubviews: [labelWrapper, accessoryImageViewWrapper])
