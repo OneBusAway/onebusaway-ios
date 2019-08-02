@@ -275,7 +275,7 @@ extension ArrivalDeparture {
 
     /// A more precise (but maybe not as useful?) calculation of the deviation of this trip from schedule.
     private var rawDeviationFromScheduleInMinutes: Double {
-        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / (1000.0 * 60.0)
+        return (arrivalDepartureDate.timeIntervalSinceNow - scheduledDeparture.timeIntervalSinceNow) / 60.0
     }
 
     /// Is this trip early, on time, delayed, or of an unknown status?
