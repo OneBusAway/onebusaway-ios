@@ -164,5 +164,5 @@ class StopAnnotationView: MKAnnotationView {
         get { return _mapTextFont }
         set { _mapTextFont = newValue }
     }
-    private var _mapTextFont: UIFont!
+    private var _mapTextFont = UIFont.boldSystemFont(ofSize: 13.0)
 }
