@@ -57,7 +57,7 @@ public class Formatters: NSObject {
         let formatter = DateComponentsFormatter()
         formatter.calendar = locale.calendar
         formatter.allowedUnits = [.hour, .minute]
-        formatter.unitsStyle = .positional
+        formatter.unitsStyle = .abbreviated
         return formatter
     }()
 
