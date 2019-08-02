@@ -22,6 +22,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.addSubview(refreshControl)
+        stack.rowInset = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
         stack.alwaysBounceVertical = true
         return stack
     }()
@@ -186,12 +187,10 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         if application.theme.behaviors.useFloatingPanelNavigation {
             stackView.showsVerticalScrollIndicator = false
             stackView.alwaysBounceVertical = false
-            stackView.rowInset = UIEdgeInsets(top: 5, left: 0, bottom: 5, right: 0)
         }
         else {
             stackView.showsVerticalScrollIndicator = true
             stackView.alwaysBounceVertical = true
-            stackView.rowInset = UIEdgeInsets(top: 5, left: 20, bottom: 5, right: 20)
         }
     }
 
