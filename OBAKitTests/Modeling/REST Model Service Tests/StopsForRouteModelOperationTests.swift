@@ -33,7 +33,7 @@ class StopsForRouteModelOperationTests: OBATestCase {
 
                 expect(stopsForRoute.route.routeDescription) == "Capitol Hill - Downtown Seattle"
                 expect(stopsForRoute.polylines.count) == 14
-                expect(stopsForRoute.polylines.first) == "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
+                expect(stopsForRoute.rawPolylines.first) == "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
 
                 expect(stopsForRoute.stops.count) == 35
                 expect(stopsForRoute.stopGroupings.count) == 1
