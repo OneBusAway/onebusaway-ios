@@ -71,7 +71,15 @@ public class StopArrivalView: UIView, Highlightable {
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
             let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
-            let explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+
+            let explanationText: String
+            if arrivalDeparture.scheduleStatus == .unknown {
+                explanationText = Strings.scheduledNotRealTime
+            }
+            else {
+                explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+            }
+
             let scheduleStatusColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
 
             let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
