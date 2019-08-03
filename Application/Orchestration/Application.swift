@@ -226,7 +226,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     /// To override the values that are set in here, either customize the theme that this object is
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
-    private func configureAppearanceProxies() {
+    private func configureAppearanceProxies() { // swiftlint:disable:this function_body_length
         let tintColor = theme.colors.primary
         let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
 
@@ -264,6 +264,8 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
         StopAnnotationView.appearance().strokeColor = UIColor.black
         StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
+
+        StopArrivalView.appearance().timeExplanationFont = theme.fonts.footnote
 
         SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText

@@ -49,6 +49,13 @@ public class StopArrivalView: UIView, Highlightable {
         return view
     }()
 
+    /// The font used on the time explanation label.
+    @objc public dynamic var timeExplanationFont: UIFont {
+        set { _timeExplanationFont = newValue }
+        get { return _timeExplanationFont }
+    }
+    private var _timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
+
     /// When `true`, decrease the `alpha` value of this cell if it happened in the past.
     public var deemphasizePastEvents = true
 
@@ -65,10 +72,17 @@ public class StopArrivalView: UIView, Highlightable {
 
             let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
             let explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
-            timeExplanationLabel.text = "\(arrDepTime) - \(explanationText)"
+            let scheduleStatusColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+            let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
+
+            let explanation = NSAttributedString(string: explanationText, attributes: [NSAttributedString.Key.font: timeExplanationFont, NSAttributedString.Key.foregroundColor: scheduleStatusColor])
+            attributedExplanation.append(explanation)
+
+            timeExplanationLabel.attributedText = attributedExplanation
 
             minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
-            minutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+            minutesLabel.textColor = scheduleStatusColor
         }
     }
 
