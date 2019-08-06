@@ -81,6 +81,7 @@ targets:
       - carthage: Eureka
       - carthage: FloatingPanel
       - carthage: IGListKit
+      - carthage: MarqueeLabel
       - carthage: SVProgressHUD
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
