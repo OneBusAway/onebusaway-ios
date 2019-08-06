@@ -152,8 +152,6 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
 
         super.init(nibName: nil, bundle: nil)
 
-        toolbarItems = buildToolbarItems()
-
         configureCurrentThemeBehaviors()
 
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
@@ -167,20 +165,6 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
     }
 
     // MARK: - Private Init Helpers
-
-    /// Creates an array of toolbar items used to populate the toolbar on this view controller.
-    private func buildToolbarItems() -> [UIBarButtonItem] {
-        let refreshButton = UIBarButtonItem(title: Strings.refresh, style: .plain, target: self, action: #selector(refresh))
-        refreshButton.image = Icons.refresh
-
-        let bookmarkButton = UIBarButtonItem(title: Strings.bookmark, style: .plain, target: self, action: #selector(addBookmark))
-        bookmarkButton.image = Icons.favorited
-
-        let filterButton = UIBarButtonItem(title: Strings.filter, style: .plain, target: self, action: #selector(filter))
-        filterButton.image = Icons.filter
-
-        return [filterButton, UIBarButtonItem.flexibleSpace, bookmarkButton, UIBarButtonItem.flexibleSpace, refreshButton]
-    }
 
     /// Configures the UI of this view controller based on whether we're using floating panel navigation or regular navigation.
     private func configureCurrentThemeBehaviors() {
@@ -210,7 +194,23 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
 
         view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
+        view.addSubview(stopToolbar)
+        stopToolbar.layoutIfNeeded()
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: view.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            stopToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            stopToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            stopToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        var inset = stackView.contentInset
+        inset.bottom = stopToolbar.frame.height
+        stackView.contentInset = inset
+        stackView.scrollIndicatorInsets = inset
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -229,6 +229,29 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         super.viewWillDisappear(animated)
 
         application.isIdleTimerDisabled = false
+    }
+
+    // MARK: - Toolbar
+
+    private lazy var stopToolbar: UIToolbar = {
+        let toolbar = UIToolbar.autolayoutNew()
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.items = buildToolbarItems()
+        return toolbar
+    }()
+
+    /// Creates an array of toolbar items used to populate the toolbar on this view controller.
+    private func buildToolbarItems() -> [UIBarButtonItem] {
+        let refreshButton = UIBarButtonItem(title: Strings.refresh, style: .plain, target: self, action: #selector(refresh))
+        refreshButton.image = Icons.refresh
+
+        let bookmarkButton = UIBarButtonItem(title: Strings.bookmark, style: .plain, target: self, action: #selector(addBookmark))
+        bookmarkButton.image = Icons.favorited
+
+        let filterButton = UIBarButtonItem(title: Strings.filter, style: .plain, target: self, action: #selector(filter))
+        filterButton.image = Icons.filter
+
+        return [filterButton, UIBarButtonItem.flexibleSpace, bookmarkButton, UIBarButtonItem.flexibleSpace, refreshButton]
     }
 
     // MARK: - NSUserActivity

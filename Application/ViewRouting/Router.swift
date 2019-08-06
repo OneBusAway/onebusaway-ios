@@ -70,14 +70,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     public func buildNavigation(controller: UIViewController, prefersLargeTitles: Bool = false) -> UINavigationController {
         let navigation = UINavigationController(rootViewController: controller)
         navigation.navigationBar.prefersLargeTitles = prefersLargeTitles
-        navigation.delegate = self
 
         return navigation
-    }
-
-    // MARK: - UINavigationControllerDelegate
-
-    public func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
-        navigationController.setToolbarHidden(!viewController.hasToolbarItems, animated: animated)
     }
 }
