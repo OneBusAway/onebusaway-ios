@@ -36,7 +36,7 @@ public class PermissionPromptViewController: UIViewController {
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.isSelectable = false
         textView.isEditable = false
-        textView.font = application.theme.fonts.body
+        textView.font = UIFont.preferredFont(forTextStyle: .body)
         textView.contentInset = UIEdgeInsets(top: 0, left: ThemeMetrics.controllerMargin, bottom: 0, right: ThemeMetrics.controllerMargin)
 
         textView.text = NSLocalizedString("permission_prompt_controller.explanation", value: "OneBusAway is an open source, volunteer-run app that helps you find out where your buses, trains, ferries, and more are in real time.\r\n\r\nThe app works best when it can find your location.\r\n\r\nPlease tap the button below to get started.", comment: "Explanation text in the permission prompt controller that appears when the app first launches.")

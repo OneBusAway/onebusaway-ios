@@ -84,7 +84,7 @@ public class StopHeaderViewController: UIViewController {
         label.textColor = .white
         label.shadowColor = .black
         label.shadowOffset = CGSize(width: 0, height: 1)
-        label.font = bold ? application.theme.fonts.boldBody : application.theme.fonts.body
+        label.font = bold ? UIFont.preferredFont(forTextStyle: .body).bold : UIFont.preferredFont(forTextStyle: .body)
         return label
     }
 }

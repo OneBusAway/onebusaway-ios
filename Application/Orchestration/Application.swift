@@ -237,21 +237,21 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         BorderedButton.appearance().setTitleColor(theme.colors.lightText, for: .normal)
         BorderedButton.appearance().tintColor = theme.colors.dark
 
-        EmptyDataSetView.appearance().bodyLabelFont = theme.fonts.body
+        EmptyDataSetView.appearance().bodyLabelFont = UIFont.preferredFont(forTextStyle: .body)
         EmptyDataSetView.appearance().textColor = theme.colors.subduedText
-        EmptyDataSetView.appearance().titleLabelFont = theme.fonts.largeTitle
+        EmptyDataSetView.appearance().titleLabelFont = UIFont.preferredFont(forTextStyle: .title1).bold
 
-        FloatingPanelTitleView.appearance().titleFont = theme.fonts.title
-        FloatingPanelTitleView.appearance().subtitleFont = theme.fonts.body
+        FloatingPanelTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .title2).bold
+        FloatingPanelTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .body)
 
         HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
 
         IndeterminateProgressView.appearance().progressColor = theme.colors.primary
 
-        StackedButton.appearance().font = theme.fonts.footnote
+        StackedButton.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
 
-        StackedTitleView.appearance().subtitleFont = theme.fonts.footnote
-        StackedTitleView.appearance().titleFont = theme.fonts.boldFootnote
+        StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
+        StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
 
         StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
         StatusOverlayView.appearance().textColor = theme.colors.lightText
@@ -260,22 +260,22 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         StopAnnotationView.appearance().bookmarkedStrokeColor = theme.colors.primary
         StopAnnotationView.appearance().fillColor = theme.colors.primary
         StopAnnotationView.appearance().mapTextColor = theme.colors.mapText
-        StopAnnotationView.appearance().mapTextFont = theme.fonts.mapAnnotation
+        StopAnnotationView.appearance().mapTextFont = UIFont.mapAnnotationFont
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
         StopAnnotationView.appearance().strokeColor = UIColor.black
         StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
 
-        StopArrivalView.appearance().timeExplanationFont = theme.fonts.footnote
+        StopArrivalView.appearance().timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
 
-        SubtitleTableCell.appearance().subtitleFont = theme.fonts.footnote
+        SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
         SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
-        TableHeaderView.appearance().font = theme.fonts.footnote
+        TableHeaderView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
         TableHeaderView.appearance().textColor = theme.colors.subduedText
 
         ValueTableRowView.appearance().subtitleTextColor = theme.colors.subduedText
 
-        WalkTimeView.appearance().font = theme.fonts.footnote
+        WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
         WalkTimeView.appearance().backgroundBarColor = theme.colors.primary
         WalkTimeView.appearance().textColor = theme.colors.lightText
 

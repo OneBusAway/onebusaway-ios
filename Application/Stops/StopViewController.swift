@@ -82,7 +82,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
     private lazy var timeframeLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
-        label.font = application.theme.fonts.footnote
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
         label.textColor = application.theme.colors.subduedText
 
         return label

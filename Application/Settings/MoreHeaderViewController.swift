@@ -41,7 +41,7 @@ class MoreHeaderViewController: UIViewController {
         return view
     }()
 
-    private lazy var appNameLabel = buildLabel(font: application.theme.fonts.boldBody)
+    private lazy var appNameLabel = buildLabel(font: UIFont.preferredFont(forTextStyle: .body).bold)
     private lazy var appVersionLabel = buildLabel()
     private lazy var copyrightLabel = buildLabel()
     private lazy var supportUsLabel = buildLabel()
@@ -50,7 +50,7 @@ class MoreHeaderViewController: UIViewController {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
         label.textAlignment = .center
-        label.font = font ?? application.theme.fonts.footnote
+        label.font = font ?? UIFont.preferredFont(forTextStyle: .footnote)
         label.textColor = application.theme.colors.lightText
         return label
     }

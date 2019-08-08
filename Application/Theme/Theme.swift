@@ -10,13 +10,11 @@ import UIKit
 
 public class Theme: NSObject {
     public let colors: ThemeColors
-    public let fonts: ThemeFonts
     public let metrics: ThemeMetrics
     public let behaviors: ThemeBehaviors
 
     public init(bundle: Bundle?, traitCollection: UITraitCollection?) {
         colors = ThemeColors(bundle: bundle ?? Bundle(for: Theme.self), traitCollection: traitCollection)
-        fonts = ThemeFonts()
         metrics = ThemeMetrics()
         behaviors = ThemeBehaviors()
     }
@@ -120,41 +118,6 @@ public class ThemeColors: NSObject {
             groupedTableRowBackground = .white
             systemBackground = .white
         }
-    }
-}
-
-public class ThemeFonts: NSObject {
-
-    // MARK: - Fonts
-
-    public lazy var largeTitle = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title1)
-    public lazy var title = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.title2)
-
-    public lazy var body = ThemeFonts.font(textStyle: UIFont.TextStyle.body)
-    public lazy var boldBody = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.body)
-
-    public lazy var footnote = ThemeFonts.font(textStyle: UIFont.TextStyle.footnote)
-    public lazy var boldFootnote = ThemeFonts.boldFont(textStyle: UIFont.TextStyle.footnote)
-
-    public lazy var mapAnnotation: UIFont = {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle.footnote)
-        return UIFont.systemFont(ofSize: descriptor.pointSize - 2.0, weight: .black)
-    }()
-
-    // MARK: - Internal
-
-    private static let maxFontSize: CGFloat = 32.0
-
-    private class func font(textStyle: UIFont.TextStyle, pointSize: CGFloat? = nil) -> UIFont {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle)
-        let size = pointSize ?? min(descriptor.pointSize, maxFontSize)
-        return UIFont(descriptor: descriptor, size: size)
-    }
-
-    private class func boldFont(textStyle: UIFont.TextStyle, pointSize: CGFloat? = nil) -> UIFont {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: textStyle).withSymbolicTraits(.traitBold)!
-        let size = pointSize ?? min(descriptor.pointSize, maxFontSize)
-        return UIFont(descriptor: descriptor, size: size)
     }
 }
 

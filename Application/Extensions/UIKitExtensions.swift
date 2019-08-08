@@ -152,6 +152,34 @@ public extension UIEdgeInsets {
     }
 }
 
+// MARK: - UIFont
+
+// Adapted from https://spin.atomicobject.com/2018/02/02/swift-scaled-font-bold-italic/
+
+public extension UIFont {
+    /// Returns a new font based upon the receiver with the specified traits added.
+    /// - Parameter traits: The traits to add to `self`.
+    func withTraits(traits: UIFontDescriptor.SymbolicTraits) -> UIFont {
+        let descriptor = fontDescriptor.withSymbolicTraits(traits)
+        return UIFont(descriptor: descriptor!, size: 0) // size 0 means keep the size as-is.
+    }
+
+    /// Returns a bold version of `self`.
+    var bold: UIFont {
+        return withTraits(traits: .traitBold)
+    }
+
+    /// Returns an italic version of `self`.
+    var italic: UIFont {
+        return withTraits(traits: .traitItalic)
+    }
+
+    class var mapAnnotationFont: UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle.footnote)
+        return UIFont.systemFont(ofSize: descriptor.pointSize - 2.0, weight: .black)
+    }
+}
+
 // MARK: - UIImage
 
 // Adapted from https://gist.github.com/lynfogeek/4b6ce0117fb0acdabe229f6d8759a139
