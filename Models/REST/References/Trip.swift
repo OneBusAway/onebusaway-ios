@@ -90,4 +90,14 @@ public class Trip: NSObject, Decodable, HasReferences {
     public func loadReferences(_ references: References) {
         route = references.routeWithID(routeID)
     }
+
+    // MARK: - Route Descriptions
+
+    /// A 'best effort' determination of the headsign for this `Trip`'s route.
+    public var routeHeadsign: String {
+        let bestShortName = routeShortName ?? route.shortName
+        let headsign = self.headsign
+
+        return "\(bestShortName) - \(headsign)"
+    }
 }

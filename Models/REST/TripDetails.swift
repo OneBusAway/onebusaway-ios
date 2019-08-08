@@ -77,6 +77,9 @@ public class TripDetails: NSObject, Decodable {
         let schedule = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .schedule)
         timeZone = try schedule.decode(String.self, forKey: .timeZone)
         stopTimes = try schedule.decode([TripStopTime].self, forKey: .stopTimes)
+        for st in stopTimes {
+            st.serviceDate = serviceDate
+        }
 
         previousTripID = try? schedule.decode(String.self, forKey: .previousTripID)
         previousTrip = references.tripWithID(previousTripID)
@@ -90,14 +93,29 @@ public class TripDetails: NSObject, Decodable {
 }
 
 public class TripStopTime: NSObject, Decodable {
+
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop.
-    public let arrival: TimeInterval
+    private let arrival: TimeInterval
+
+    public private(set) var arrivalDate: Date!
 
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop
-    public let departure: TimeInterval
+    private let departure: TimeInterval
+
+    public private(set) var departureDate: Date!
 
     /// The stop id of the stop visited during the trip
     public let stopID: String
+
+    /// The stop visited during the trip.
+    public let stop: Stop
+
+    fileprivate var serviceDate: Date! {
+        didSet {
+            arrivalDate = Calendar.current.date(byAdding: .second, value: Int(arrival), to: serviceDate)
+            departureDate = Calendar.current.date(byAdding: .second, value: Int(departure), to: serviceDate)
+        }
+    }
 
     private enum CodingKeys: String, CodingKey {
         case arrival = "arrivalTime"
@@ -111,5 +129,9 @@ public class TripStopTime: NSObject, Decodable {
         arrival = try container.decode(TimeInterval.self, forKey: .arrival)
         departure = try container.decode(TimeInterval.self, forKey: .departure)
         stopID = try container.decode(String.self, forKey: .stopID)
+
+        let references = decoder.references
+
+        stop = references.stopWithID(stopID)!
     }
 }

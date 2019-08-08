@@ -33,4 +33,25 @@ public class Frequency: NSObject, Decodable {
         endTime = try container.decode(Date.self, forKey: .endTime)
         headway = try container.decode(TimeInterval.self, forKey: .headway)
     }
+
+    // MARK: - Hashing and Equality
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Frequency else {
+            return false
+        }
+
+        return
+            startTime == rhs.startTime &&
+            endTime == rhs.endTime &&
+            headway == rhs.headway
+    }
+
+    public override var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(startTime)
+        hasher.combine(endTime)
+        hasher.combine(headway)
+        return hasher.finalize()
+    }
 }

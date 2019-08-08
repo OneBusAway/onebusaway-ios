@@ -90,6 +90,9 @@ public class ThemeColors: NSObject {
     /// The system background color. Works with Dark Mode in iOS 13 and above.
     public let systemBackground: UIColor
 
+    /// A gray color; useful for de-emphasized UI elements.
+    public let gray: UIColor
+
     public override convenience init() {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
@@ -109,11 +112,13 @@ public class ThemeColors: NSObject {
         propertyChanged = UIColor(named: "propertyChanged", in: bundle, compatibleWith: traitCollection)!
 
         if #available(iOS 13, *) {
+            gray = .systemGray
             groupedTableBackground = .systemGroupedBackground
             groupedTableRowBackground = .white
             systemBackground = .systemBackground
         }
         else {
+            gray = .gray
             groupedTableBackground = .groupTableViewBackground
             groupedTableRowBackground = .white
             systemBackground = .white

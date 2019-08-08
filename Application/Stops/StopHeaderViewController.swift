@@ -16,7 +16,7 @@ public class StopHeaderViewController: UIViewController {
     private let backgroundImageView = UIImageView.autolayoutNew()
     private lazy var stopNameLabel = buildLabel(bold: true)
     private lazy var stopNumberLabel = buildLabel()
-    private lazy var routesLabel = buildLabel()
+    private lazy var routesLabel = buildLabel(bold: false, numberOfLines: 0)
 
     private var snapshotter: MapSnapshotter?
 
@@ -79,10 +79,11 @@ public class StopHeaderViewController: UIViewController {
         routesLabel.text = Formatters.formattedRoutes(stop.routes)
     }
 
-    private func buildLabel(bold: Bool = false) -> UILabel {
+    private func buildLabel(bold: Bool = false, numberOfLines: Int = 1) -> UILabel {
         let label = UILabel.autolayoutNew()
         label.textColor = .white
         label.shadowColor = .black
+        label.numberOfLines = numberOfLines
         label.shadowOffset = CGSize(width: 0, height: 1)
         label.font = bold ? UIFont.preferredFont(forTextStyle: .body).bold : UIFont.preferredFont(forTextStyle: .body)
         return label

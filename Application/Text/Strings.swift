@@ -10,6 +10,8 @@ import Foundation
 
 public class Strings: NSObject {
 
+    public static let back = NSLocalizedString("common.back", value: "Back", comment: "Back, as in 'back to the previous screen.'")
+
     public static let bookmark = NSLocalizedString("common.bookmark", value: "Bookmark", comment: "The verb 'to bookmark'.")
 
     public static let cancel = NSLocalizedString("common.cancel", value: "Cancel", comment: "The verb 'to cancel', i.e. to stop an action.")

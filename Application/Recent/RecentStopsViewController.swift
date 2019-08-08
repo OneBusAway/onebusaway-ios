@@ -91,7 +91,7 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let sectionController = createSectionController(for: object)
+        let sectionController = defaultSectionController(for: object)
         sectionController.inset = .zero
         return sectionController
     }
@@ -102,9 +102,5 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
         emptyView.bodyLabel.text = NSLocalizedString("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
 
         return emptyView
-    }
-
-    private func createSectionController(for object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
     }
 }

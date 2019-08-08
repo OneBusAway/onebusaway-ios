@@ -59,8 +59,8 @@ public class TripStatus: NSObject, Decodable {
     /// Will be zero if we haven't had a location update from the vehicle.
     public let lastLocationUpdateTime: Int
 
-    /// The last known real-time update from the transit vehicle. Will be zero if we haven't heard anything from the vehicle.
-    public let lastUpdateTime: Int
+    /// The last known real-time update from the transit vehicle. Will be `nil` if we haven't heard anything from the vehicle.
+    public let lastUpdate: Date?
 
     /// Similar to `closestStopID`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -92,7 +92,7 @@ public class TripStatus: NSObject, Decodable {
     public let predicted: Bool
 
     /// If real-time arrival info is available, this lists the deviation from the schedule in seconds, where positive number indicates the trip is running late and negative indicates the trips is running early. If not real-time arrival info is available, this will be zero.
-    public let scheduleDeviation: Int
+    public let scheduleDeviation: TimeInterval
 
     /// The distance, in meters, the transit vehicle is scheduled to have progress along the active trip. This is an optional value, and will only be present if the trip is in progress.
     public let scheduledDistanceAlongTrip: Double
@@ -119,7 +119,8 @@ public class TripStatus: NSObject, Decodable {
         case activeTripID = "activeTripId"
         case blockTripSequence
         case closestStopID = "closestStop"
-        case closestStopTimeOffset, distanceAlongTrip, lastKnownDistanceAlongTrip, lastKnownLocation, lastKnownOrientation, lastLocationUpdateTime, lastUpdateTime
+        case closestStopTimeOffset, distanceAlongTrip, lastKnownDistanceAlongTrip, lastKnownLocation, lastKnownOrientation, lastLocationUpdateTime
+        case lastUpdate = "lastUpdateTime"
         case nextStopID = "nextStop"
         case nextStopTimeOffset, orientation, phase, position, predicted, scheduleDeviation, scheduledDistanceAlongTrip, serviceDate
         case situationIDs = "situationIds"
@@ -147,7 +148,14 @@ public class TripStatus: NSObject, Decodable {
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decode(Double.self, forKey: .lastKnownOrientation)
         lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
-        lastUpdateTime = try container.decode(Int.self, forKey: .lastUpdateTime)
+
+        let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
+        if lastUpdateTime == 0 {
+            lastUpdate = nil
+        }
+        else {
+            lastUpdate = Date(timeIntervalSince1970: (lastUpdateTime / 1000.0))
+        }
 
         nextStopID = try? container.decode(String.self, forKey: .nextStopID)
         nextStop = references.stopWithID(nextStopID)
@@ -157,7 +165,7 @@ public class TripStatus: NSObject, Decodable {
         phase = try container.decode(String.self, forKey: .phase)
         position = try? CLLocation(container: container, key: .position)
         predicted = try container.decode(Bool.self, forKey: .predicted)
-        scheduleDeviation = try container.decode(Int.self, forKey: .scheduleDeviation)
+        scheduleDeviation = try container.decode(TimeInterval.self, forKey: .scheduleDeviation)
         scheduledDistanceAlongTrip = try container.decode(Double.self, forKey: .scheduledDistanceAlongTrip)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
 

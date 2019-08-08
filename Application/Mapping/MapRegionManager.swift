@@ -94,8 +94,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
 
-        mapView.registerAnnotationView(StopAnnotationView.self)
-        mapView.registerAnnotationView(PulsingAnnotationView.self)
+        registerAnnotationViews(mapView: mapView)
         mapView.delegate = self
     }
 
@@ -104,6 +103,13 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         application.locationService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
         requestStopsOperation?.cancel()
+    }
+
+    // MARK: - Global Map Helpers
+
+    public func registerAnnotationViews(mapView: MKMapView) {
+        mapView.registerAnnotationView(StopAnnotationView.self)
+        mapView.registerAnnotationView(PulsingAnnotationView.self)
     }
 
     // MARK: - Map Information

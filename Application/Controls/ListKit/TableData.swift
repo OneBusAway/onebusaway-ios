@@ -9,6 +9,8 @@
 import Foundation
 import IGListKit
 
+// MARK: - TableRowData
+
 /// Models a single table row
 public class TableRowData: ListViewModel {
 
@@ -18,6 +20,8 @@ public class TableRowData: ListViewModel {
     let subtitle: String?
     let accessoryType: UITableViewCell.AccessoryType
     let style: UITableViewCell.CellStyle
+
+    // MARK: - Initialization
 
     /// Default Initializer. Lets you set everything.
     ///
@@ -80,6 +84,8 @@ public class TableRowData: ListViewModel {
         self.init(title: title, attributedTitle: nil, subtitle: value, style: .value1, accessoryType: accessoryType, tapped: tapped)
     }
 
+    // MARK: - Object Methods
+
     override public var debugDescription: String {
         let desc = super.debugDescription
         let props: [String: Any] = ["title": title as Any, "subtitle": subtitle as Any, "style": style, "accessoryType": accessoryType]
@@ -108,6 +114,8 @@ public class TableRowData: ListViewModel {
     }
 }
 
+// MARK: - TableSectionData
+
 /// Models a section in a table. Contains many `TableRowData` objects.
 public class TableSectionData: NSObject, ListDiffable {
     var title: String?
@@ -126,10 +134,20 @@ public class TableSectionData: NSObject, ListDiffable {
         return title == rhs.title && rows == rhs.rows && backgroundColor == rhs.backgroundColor
     }
 
+    /// Creates a `TableSectionData`
+    /// - Parameter title: Optional title of the section
+    /// - Parameter rows: The table rows
+    /// - Parameter backgroundColor: The background color for the section. TODO - remove this property :-\
     public init(title: String?, rows: [TableRowData], backgroundColor: UIColor? = nil) {
         self.title = title
         self.rows = rows
         self.backgroundColor = backgroundColor
         super.init()
+    }
+
+    /// Convenience initializer for creating a `TableSectionData` from a single row.
+    /// - Parameter row: The row that will comprise this section.
+    public convenience init(row: TableRowData) {
+        self.init(title: nil, rows: [row], backgroundColor: nil)
     }
 }

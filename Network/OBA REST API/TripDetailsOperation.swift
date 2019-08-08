@@ -20,13 +20,13 @@ public class TripDetailsOperation: RESTAPIOperation {
     public class func buildURL(
         tripID: String,
         vehicleID: String?,
-        serviceDate: Int64,
+        serviceDate: Date?,
         baseURL: URL,
         queryItems: [URLQueryItem]
     ) -> URL {
         var args: [String: Any] = [:]
-        if serviceDate > 0 {
-            args["serviceDate"] = serviceDate
+        if let serviceDate = serviceDate {
+            args["serviceDate"] = Int64(serviceDate.timeIntervalSince1970 * 1000)
         }
 
         if let vehicleID = vehicleID {

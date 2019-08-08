@@ -177,7 +177,7 @@ public class RESTAPIService: APIService {
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
     /// - Returns: The enqueued network operation.
-    @discardableResult public func getTrip(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsOperation {
+    @discardableResult public func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) -> TripDetailsOperation {
         let url = TripDetailsOperation.buildURL(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: TripDetailsOperation.self, url: url)
     }

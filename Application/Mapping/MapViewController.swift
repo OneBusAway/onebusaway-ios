@@ -11,10 +11,6 @@ import MapKit
 import FloatingPanel
 import CocoaLumberjackSwift
 
-protocol Scrollable where Self: UIViewController {
-    var scrollView: UIScrollView { get }
-}
-
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
 /// `MapViewController` is the average user's primary means of interacting with OneBusAway data.
@@ -116,7 +112,7 @@ public class MapViewController: UIViewController,
     // MARK: - Public Methods
 
     @objc public func centerMapOnUserLocation() {
-        guard isViewLoaded, view.window != nil else { return }
+        guard isLoadedAndOnScreen else { return }
 
         let userLocation = mapRegionManager.mapView.userLocation.coordinate
         mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation, zoomLevel: 17, animated: true)
@@ -169,23 +165,7 @@ public class MapViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-            return MapPanelLayout()
-    }
-
-    private class MapPanelLayout: FloatingPanelLayout {
-        func insetFor(position: FloatingPanelPosition) -> CGFloat? {
-            switch position {
-            case .tip: return 60.0
-            case .half: return 250.0
-            default: return nil
-            }
-        }
-
-        var initialPosition: FloatingPanelPosition { .tip }
-
-        var supportedPositions: Set<FloatingPanelPosition> {
-            [.tip, .half, .full]
-        }
+        return MapPanelLayout(initialPosition: .tip)
     }
 
     // MARK: - Modal Delegate

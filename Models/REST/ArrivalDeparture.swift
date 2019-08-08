@@ -171,13 +171,8 @@ public class ArrivalDeparture: NSObject, Decodable {
         tripStatus = try? container.decode(TripStatus.self, forKey: .tripStatus)
         vehicleID = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
     }
-}
 
-// MARK: - Helpers
-
-extension ArrivalDeparture {
-
-    // MARK: - Names
+    // MARK: - Helpers/Names
 
     /// Provides the best available trip headsign.
     public var tripHeadsign: String {
@@ -205,7 +200,7 @@ extension ArrivalDeparture {
         return "\(routeName) - \(tripHeadsign)"
     }
 
-    // MARK: - Transit Statuses and Times
+    // MARK: - Helpers/Statuses+Times
 
     /// Whether this trip represents an arrival at or departure from this stop.
     ///
@@ -295,6 +290,61 @@ extension ArrivalDeparture {
             return .delayed
         }
     }
+
+    // MARK: - Equality and Hashing
+
+    // TODO: Implement isEqual and hash on Route, Situation, Trip, and TripStatus,
+    //  and add those members back in to the methods below.
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? ArrivalDeparture else { return false }
+        return
+            arrivalEnabled == rhs.arrivalEnabled &&
+            blockTripSequence == rhs.blockTripSequence &&
+            departureEnabled == rhs.departureEnabled &&
+            distanceFromStop == rhs.distanceFromStop &&
+            frequency == rhs.frequency &&
+            lastUpdated == rhs.lastUpdated &&
+            numberOfStopsAway == rhs.numberOfStopsAway &&
+            predicted == rhs.predicted &&
+            predictedArrival == rhs.predictedArrival &&
+            predictedDeparture == rhs.predictedDeparture &&
+            routeID == rhs.routeID &&
+            _routeLongName == rhs._routeLongName &&
+            _routeShortName == rhs._routeShortName &&
+            scheduledArrival == rhs.scheduledArrival &&
+            scheduledDeparture == rhs.scheduledDeparture &&
+            serviceDate == rhs.serviceDate &&
+            situationIDs == rhs.situationIDs &&
+            status == rhs.status &&
+            stopID == rhs.stopID &&
+            stop == rhs.stop &&
+            stopSequence == rhs.stopSequence &&
+            totalStopsInTrip == rhs.totalStopsInTrip &&
+            _tripHeadsign == rhs._tripHeadsign &&
+            tripID == rhs.tripID &&
+            vehicleID == rhs.vehicleID
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(arrivalEnabled);  hasher.combine(blockTripSequence)
+        hasher.combine(departureEnabled); hasher.combine(distanceFromStop)
+        hasher.combine(frequency); hasher.combine(lastUpdated)
+        hasher.combine(numberOfStopsAway); hasher.combine(predicted)
+        hasher.combine(predictedArrival); hasher.combine(predictedDeparture)
+        hasher.combine(routeID)
+        hasher.combine(_routeLongName); hasher.combine(_routeShortName)
+        hasher.combine(scheduledArrival); hasher.combine(scheduledDeparture)
+        hasher.combine(serviceDate); hasher.combine(situationIDs)
+        hasher.combine(status)
+        hasher.combine(stopID); hasher.combine(stop)
+        hasher.combine(stopSequence); hasher.combine(totalStopsInTrip)
+        hasher.combine(_tripHeadsign); hasher.combine(tripID)
+        hasher.combine(vehicleID)
+        return hasher.finalize()
+    }
+
 }
 
 public enum ArrivalDepartureStatus: Int {

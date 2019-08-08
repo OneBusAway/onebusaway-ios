@@ -124,4 +124,9 @@ public class PolylineEntity: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         points = try container.decode(String.self, forKey: .points)
     }
+
+    public lazy var polyline: MKPolyline? = {
+        let p = Polyline(encodedPolyline: points)
+        return p.mkPolyline
+    }()
 }

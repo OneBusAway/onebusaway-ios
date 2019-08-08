@@ -155,6 +155,8 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         configureCurrentThemeBehaviors()
 
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
+
+        navigationItem.backBarButtonItem = UIBarButtonItem.backButton
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -438,6 +440,12 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         }
 
         stackView.addRow(arrivalView, hideSeparator: hideSeparator)
+        stackView.setTapHandler(forRow: arrivalView) { [weak self] _ in
+            guard let self = self else { return }
+
+            let tripController = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
+            self.application.viewRouter.navigate(to: tripController, from: self)
+        }
         arrivalView.arrivalDeparture = arrivalDeparture
     }
 

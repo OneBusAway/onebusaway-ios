@@ -19,6 +19,8 @@ public extension ListAdapterDataSource where Self: UIViewController {
         switch object {
         case is TableSectionData:
             return TableSectionController()
+        case is TripStopListItem:
+            return TripStopSectionController()
         default:
             return LabelSectionController()
         }

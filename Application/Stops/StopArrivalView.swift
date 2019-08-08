@@ -41,6 +41,20 @@ public class StopArrivalView: UIView, Highlightable {
         return label
     }()
 
+    var showDisclosureIndicator: Bool = true {
+        didSet {
+            guard oldValue != showDisclosureIndicator else { return }
+
+            if showDisclosureIndicator {
+                outerStackView.addArrangedSubview(disclosureIndicator)
+            }
+            else {
+                outerStackView.removeArrangedSubview(disclosureIndicator)
+                disclosureIndicator.removeFromSuperview()
+            }
+        }
+    }
+
     let disclosureIndicator: UIImageView = {
         let view = UIImageView(image: Icons.chevron)
         view.contentMode = .center
@@ -94,12 +108,7 @@ public class StopArrivalView: UIView, Highlightable {
         }
     }
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel])
-        let leftStackWrapper = leftStack.embedInWrapperView()
-
+    private lazy var minutesLabelWrapper: UIView = {
         let minutesLabelWrapper = minutesLabel.embedInWrapperView(setConstraints: false)
         NSLayoutConstraint.activate([
             minutesLabel.trailingAnchor.constraint(equalTo: minutesLabelWrapper.trailingAnchor),
@@ -107,12 +116,25 @@ public class StopArrivalView: UIView, Highlightable {
             minutesLabelWrapper.widthAnchor.constraint(greaterThanOrEqualTo: minutesLabel.widthAnchor),
             minutesLabelWrapper.heightAnchor.constraint(greaterThanOrEqualTo: minutesLabel.heightAnchor)
         ])
+        return minutesLabelWrapper
+    }()
 
-        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStackWrapper, minutesLabelWrapper, disclosureIndicator])
+    private lazy var leftStack: UIView = {
+        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel])
+        return leftStack.embedInWrapperView()
+    }()
+
+    private lazy var outerStackView: UIStackView = {
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesLabelWrapper, disclosureIndicator])
         outerStack.spacing = ThemeMetrics.padding
+        return outerStack
+    }()
 
-        addSubview(outerStack)
-        outerStack.pinToSuperview(.edges)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        addSubview(outerStackView)
+        outerStackView.pinToSuperview(.edges)
 
         if kUseDebugColors {
             routeHeadsignLabel.backgroundColor = .red

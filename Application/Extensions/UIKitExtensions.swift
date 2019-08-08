@@ -9,6 +9,12 @@
 import UIKit
 import MobileCoreServices
 
+// MARK: - Scrollable
+
+protocol Scrollable where Self: UIViewController {
+    var scrollView: UIScrollView { get }
+}
+
 // MARK: - UIAlertAction
 extension UIAlertAction {
 
@@ -42,6 +48,11 @@ extension UIBarButtonItem {
     /// Convenience property for creating a `flexibleSpace`-type bar button item.
     public class var flexibleSpace: UIBarButtonItem {
         return UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
+    }
+
+    /// A generic 'Back' button to use in cases where your view controller's title is too long.
+    public class var backButton: UIBarButtonItem {
+        return UIBarButtonItem(title: Strings.back, style: .plain, target: nil, action: nil)
     }
 }
 
@@ -246,6 +257,30 @@ public extension UIImage {
     }
 }
 
+// MARK: - UILabel
+
+extension UILabel {
+
+    /// Resizes the label's height to fit its text, or—if it doesn't have text—a representative sample.
+    func resizeHeightToFit() {
+        let labelText: NSString
+
+        if let text = self.text, text.count > 0 {
+            labelText = text as NSString
+        }
+        else {
+            labelText = "MWjy"
+        }
+
+        var attributes = [NSAttributedString.Key: Any]()
+        attributes[NSAttributedString.Key.font] = font
+
+        let rect = labelText.boundingRect(with: CGSize(width: frame.width, height: CGFloat.greatestFiniteMagnitude), options: [.usesLineFragmentOrigin], attributes: attributes, context: nil)
+
+        frame.size.height = rect.height
+    }
+}
+
 // MARK: - UIPasteboard
 
 public extension UIPasteboard {
@@ -308,6 +343,13 @@ extension UIViewController {
     /// Returns the containing bundle for `self`. In a framework, this will not be `Bundle.main`.
     public var bundle: Bundle {
         Bundle(for: type(of: self))
+    }
+
+    /// Use this to tell if the view controller has made it through `viewDidLoad()` and is currently on-screen.
+    ///
+    /// `true` if `isViewLoaded` is `true` and `view.window != nil`. `false` otherwise.
+    public var isLoadedAndOnScreen: Bool {
+        isViewLoaded && view.window != nil
     }
 }
 

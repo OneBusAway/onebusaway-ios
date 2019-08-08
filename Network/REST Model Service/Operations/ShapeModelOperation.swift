@@ -7,12 +7,13 @@
 //
 
 import Foundation
+import MapKit
 
 public class ShapeModelOperation: RESTModelOperation {
-    public private(set) var shape: String?
+    public private(set) var polyline: MKPolyline?
 
     override public func main() {
         super.main()
-        shape = decodeModels(type: PolylineEntity.self).first?.points
+        polyline = decodeModels(type: PolylineEntity.self).first?.polyline
     }
 }

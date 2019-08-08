@@ -190,7 +190,7 @@ public class RESTAPIModelService: NSObject {
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
     /// - Returns: The enqueued model operation.
-    func getTripDetails(tripID: String, vehicleID: String?, serviceDate: Int64) -> TripDetailsModelOperation {
+    func getTripDetails(tripID: String, vehicleID: String?, serviceDate: Date?) -> TripDetailsModelOperation {
         let service = apiService.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
         return generateModels(type: TripDetailsModelOperation.self, serviceOperation: service)
     }

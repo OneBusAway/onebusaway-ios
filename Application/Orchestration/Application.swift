@@ -273,6 +273,9 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         TableHeaderView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
         TableHeaderView.appearance().textColor = theme.colors.subduedText
 
+        TripSegmentView.appearance().imageColor = theme.colors.primary
+        TripSegmentView.appearance().lineColor = theme.colors.gray
+
         ValueTableRowView.appearance().subtitleTextColor = theme.colors.subduedText
 
         WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)

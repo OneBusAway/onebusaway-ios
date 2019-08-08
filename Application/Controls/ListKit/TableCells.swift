@@ -10,7 +10,19 @@ import UIKit
 import IGListKit
 import SwipeCellKit
 
-class TableRowCell: SwipeCollectionViewCell {
+protocol ListKitCell: NSObjectProtocol {
+    static func separatorLayer() -> CALayer
+}
+
+extension ListKitCell where Self: UICollectionViewCell {
+    static func separatorLayer() -> CALayer {
+        let layer = CALayer()
+        layer.backgroundColor = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1).cgColor
+        return layer
+    }
+}
+
+class TableRowCell: SwipeCollectionViewCell, ListKitCell {
     fileprivate let kUseDebugColors = false
 
     fileprivate var tableRowView: TableRowView! {
@@ -93,11 +105,7 @@ class TableRowCell: SwipeCollectionViewCell {
 
     private lazy var leftSeparatorInset: CGFloat = layoutMargins.left
 
-    let separator: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1).cgColor
-        return layer
-    }()
+    let separator: CALayer = TableRowCell.separatorLayer()
 
     override func layoutSubviews() {
         super.layoutSubviews()
