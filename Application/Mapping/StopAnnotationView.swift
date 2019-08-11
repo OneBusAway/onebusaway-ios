@@ -33,11 +33,7 @@ class StopAnnotationView: MKAnnotationView {
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
-        label.layer.shadowColor = UIColor.white.cgColor
-        label.layer.shadowOffset = CGSize(width: 0, height: 0)
-        label.layer.shadowOpacity = 1.0
-        label.layer.shadowRadius = 4.0
-        label.backgroundColor = UIColor(white: 1.0, alpha: 0.25)
+        label.font = UIFont.mapAnnotationFont
         return label
     }
 
@@ -91,27 +87,10 @@ class StopAnnotationView: MKAnnotationView {
 
         let iconFactory = delegate.iconFactory
         let iconStrokeColor: UIColor = delegate.isStopBookmarked(stop) ? bookmarkedStrokeColor : strokeColor
-        image = iconFactory.buildIcon(for: stop, strokeColor: iconStrokeColor)
+        image = iconFactory.buildIcon(for: stop, strokeColor: iconStrokeColor, fillColor: fillColor)
 
-        titleLabel.attributedText = buildAttributedLabelText(text: stop.mapTitle)
-        subtitleLabel.attributedText = buildAttributedLabelText(text: stop.mapSubtitle)
-    }
-
-    // MARK: - Private Helpers
-
-    private func buildAttributedLabelText(text: String?) -> NSAttributedString? {
-        guard let text = text else {
-            return nil
-        }
-
-        let strokeTextAttributes: [NSAttributedString.Key: Any] = [
-            .strokeColor: UIColor.white,
-            .foregroundColor: mapTextColor,
-            .strokeWidth: -2.0,
-            .font: mapTextFont
-        ]
-
-        return NSAttributedString(string: text, attributes: strokeTextAttributes)
+        titleLabel.text = stop.mapTitle
+        subtitleLabel.text = stop.mapSubtitle
     }
 
     // MARK: - UIAppearance Proxies
@@ -158,11 +137,4 @@ class StopAnnotationView: MKAnnotationView {
         set { _mapTextColor = newValue }
     }
     private var _mapTextColor: UIColor = .black
-
-    /// Font for text written directly onto the map as part of this annotation view.
-    @objc dynamic var mapTextFont: UIFont {
-        get { return _mapTextFont }
-        set { _mapTextFont = newValue }
-    }
-    private var _mapTextFont = UIFont.boldSystemFont(ofSize: 13.0)
 }

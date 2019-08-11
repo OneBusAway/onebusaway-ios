@@ -20,17 +20,17 @@ public class StopIconFactory: NSObject {
         self.iconSize = iconSize
     }
 
-    public func buildIcon(for stop: Stop, strokeColor: UIColor) -> UIImage {
+    public func buildIcon(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> UIImage {
         // First, let's compose the cache key out of the name and orientation, then
         // see if we've already got one that matches.
 
-        let key = cacheKey(for: stop, strokeColor: strokeColor) as NSString
+        let key = cacheKey(for: stop, strokeColor: strokeColor, fillColor: fillColor) as NSString
 
         if let cachedImage = iconCache.object(forKey: key) {
             return cachedImage
         }
 
-        let image = renderImage(for: stop, strokeColor: strokeColor)
+        let image = renderImage(for: stop, strokeColor: strokeColor, fillColor: fillColor)
         iconCache.setObject(image, forKey: key)
 
         return image
@@ -40,14 +40,12 @@ public class StopIconFactory: NSObject {
     private let arrowSize = CGSize(width: 12, height: 6)
     private let cornerRadius: CGFloat = 4.0
     private let borderWidth: CGFloat = 2.0
-    private let borderColor = UIColor.black
-    private let backgroundColor = UIColor.white
     private let backgroundAlpha: CGFloat = 0.9
-    private let iconInset: CGFloat = 8.0
+    private let iconInset: CGFloat = 6.0
 
     // MARK: - Rendering Steps
 
-    private func renderImage(for stop: Stop, strokeColor: UIColor) -> UIImage {
+    private func renderImage(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> UIImage {
         let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
         let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
 
@@ -56,19 +54,19 @@ public class StopIconFactory: NSObject {
             guard let self = self else { return }
             let ctx = rendererContext.cgContext
 
-            self.drawBackground(rect: rect, context: ctx)
+            self.drawBackground(color: fillColor, rect: rect, context: ctx)
             self.drawBorder(rect: rect, color: strokeColor, context: ctx)
             self.drawIcon(routeType: stop.prioritizedRouteTypeForDisplay, rect: rect, context: ctx)
             self.drawArrowImage(direction: stop.direction, rect: imageBounds, context: ctx)
         }
     }
 
-    private func drawBackground(rect: CGRect, context: CGContext) {
+    private func drawBackground(color: UIColor, rect: CGRect, context: CGContext) {
         context.pushPop {
             // we inset the rect the 1/2 px in order ensure that it doesn't 'bleed' past
             // the edge of the rounded rect border that we'll draw in drawBorder()
             let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: cornerRadius)
-            context.setFillColor(backgroundColor.cgColor)
+            context.setFillColor(color.cgColor)
             bezierPath.fill(with: .normal, alpha: backgroundAlpha)
         }
     }
@@ -137,11 +135,12 @@ public class StopIconFactory: NSObject {
         }
     }
 
-    private func cacheKey(for stop: Stop, strokeColor: UIColor) -> String {
+    private func cacheKey(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> String {
         let routeType = stop.prioritizedRouteTypeForDisplay.rawValue
         let direction = stop.direction.rawValue
-        let hexColor = strokeColor.toHex ?? ""
-        let cacheKey = "\(routeType):\(direction)(\(iconSize)x\(iconSize))-\(hexColor)"
+        let hexStroke = strokeColor.toHex ?? ""
+        let hexFill = fillColor.toHex ?? ""
+        let cacheKey = "\(routeType):\(direction)(\(iconSize)x\(iconSize))-\(hexStroke)-\(hexFill)"
 
         return cacheKey
     }
