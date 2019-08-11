@@ -21,11 +21,9 @@ public class PermissionPromptViewController: UIViewController {
     }
 
     public lazy var topImageView: UIImageView = {
-        let imageView = UIImageView(frame: .zero)
-        imageView.translatesAutoresizingMaskIntoConstraints = false
+        let imageView = UIImageView.autolayoutNew()
         imageView.contentMode = .scaleAspectFit
         imageView.image = Icons.header
-        imageView.heightAnchor.constraint(equalToConstant: 100.0).isActive = true
 
         return imageView
     }()
@@ -79,8 +77,9 @@ public class PermissionPromptViewController: UIViewController {
         NSLayoutConstraint.activate([
             topImageView.topAnchor.constraint(equalTo: imageViewWrapper.topAnchor, constant: ThemeMetrics.padding),
             topImageView.bottomAnchor.constraint(equalTo: imageViewWrapper.bottomAnchor, constant: -ThemeMetrics.padding),
-            topImageView.leadingAnchor.constraint(equalTo: imageViewWrapper.leadingAnchor, constant: 0),
-            topImageView.trailingAnchor.constraint(equalTo: imageViewWrapper.trailingAnchor, constant: 0)
+            topImageView.leadingAnchor.constraint(equalTo: imageViewWrapper.leadingAnchor),
+            topImageView.trailingAnchor.constraint(equalTo: imageViewWrapper.trailingAnchor),
+            topImageView.heightAnchor.constraint(equalToConstant: 100.0)
         ])
 
         let buttonWrapper = grantPermissionsButton.embedInWrapperView(setConstraints: false)
@@ -101,6 +100,7 @@ public class PermissionPromptViewController: UIViewController {
             grantPermissionsButton.backgroundColor = .green
             textView.backgroundColor = .red
             topImageView.backgroundColor = .magenta
+            buttonWrapper.backgroundColor = .yellow
         }
     }
 
