@@ -21,7 +21,7 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
     private weak var delegate: BookmarkEditorDelegate?
 
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.groupedTableBackground
+        backgroundColor: ThemeColors.shared.groupedTableBackground
     )
 
     /// This is the default initializer for `AddBookmarkViewController`.

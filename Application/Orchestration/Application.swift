@@ -71,7 +71,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     @objc public let userDataStore: UserDataStore
 
     /// Commonly used formatters configured with the user's current, auto-updating locale and the app's theme colors.
-    @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, themeColors: theme.colors)
+    @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, themeColors: ThemeColors.shared)
 
     /// Provides access to the user's location and heading.
     @objc public let locationService: LocationService
@@ -226,27 +226,27 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     /// To override the values that are set in here, either customize the theme that this object is
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
-    private func configureAppearanceProxies() { // swiftlint:disable:this function_body_length
-        let tintColor = theme.colors.primary
+    private func configureAppearanceProxies() {
+        let tintColor = ThemeColors.shared.primary
         let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
 
         for t in tintColorTypes {
             t.appearance().tintColor = tintColor
         }
 
-        BorderedButton.appearance().setTitleColor(theme.colors.lightText, for: .normal)
-        BorderedButton.appearance().tintColor = theme.colors.dark
+        BorderedButton.appearance().setTitleColor(ThemeColors.shared.lightText, for: .normal)
+        BorderedButton.appearance().tintColor = ThemeColors.shared.primary
 
         EmptyDataSetView.appearance().bodyLabelFont = UIFont.preferredFont(forTextStyle: .body)
-        EmptyDataSetView.appearance().textColor = theme.colors.subduedText
+        EmptyDataSetView.appearance().textColor = ThemeColors.shared.secondaryLabel
         EmptyDataSetView.appearance().titleLabelFont = UIFont.preferredFont(forTextStyle: .title1).bold
 
         FloatingPanelTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .title2).bold
         FloatingPanelTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .body)
 
-        HighlightChangeLabel.appearance().highlightedBackgroundColor = theme.colors.propertyChanged
+        HighlightChangeLabel.appearance().highlightedBackgroundColor = ThemeColors.shared.propertyChanged
 
-        IndeterminateProgressView.appearance().progressColor = theme.colors.primary
+        IndeterminateProgressView.appearance().progressColor = ThemeColors.shared.primary
 
         StackedButton.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
 
@@ -254,37 +254,33 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
 
         StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
-        StatusOverlayView.appearance().textColor = theme.colors.lightText
+        StatusOverlayView.appearance().textColor = ThemeColors.shared.lightText
 
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        StopAnnotationView.appearance().bookmarkedStrokeColor = theme.colors.primary
-        StopAnnotationView.appearance().fillColor = theme.colors.primary
-        StopAnnotationView.appearance().mapTextColor = theme.colors.mapText
-        StopAnnotationView.appearance().mapTextFont = UIFont.mapAnnotationFont
+        StopAnnotationView.appearance().bookmarkedStrokeColor = ThemeColors.shared.primary
+        StopAnnotationView.appearance().fillColor = ThemeColors.shared.primary
+        StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
-        StopAnnotationView.appearance().strokeColor = UIColor.black
-        StopAnnotationView.appearance().tintColor = theme.colors.stopAnnotationIcon
+        StopAnnotationView.appearance().strokeColor = ThemeColors.shared.mapStroke
+        StopAnnotationView.appearance().tintColor = ThemeColors.shared.stopAnnotationIcon
 
         StopArrivalView.appearance().timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
 
         SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
-        SubtitleTableCell.appearance().subtitleTextColor = theme.colors.subduedText
 
         TableHeaderView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-        TableHeaderView.appearance().textColor = theme.colors.subduedText
+        TableHeaderView.appearance().textColor = ThemeColors.shared.secondaryLabel
 
-        TripSegmentView.appearance().imageColor = theme.colors.primary
-        TripSegmentView.appearance().lineColor = theme.colors.gray
+        TableSectionHeaderView.appearance().backgroundColor = ThemeColors.shared.secondaryBackgroundColor
 
-        ValueTableRowView.appearance().subtitleTextColor = theme.colors.subduedText
+        TripSegmentView.appearance().imageColor = ThemeColors.shared.primary
+        TripSegmentView.appearance().lineColor = ThemeColors.shared.gray
 
         WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-        WalkTimeView.appearance().backgroundBarColor = theme.colors.primary
-        WalkTimeView.appearance().textColor = theme.colors.lightText
+        WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.primary
+        WalkTimeView.appearance().textColor = ThemeColors.shared.label
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
-
-        UIButton.appearance().setTitleColor(theme.colors.dark, for: .normal)
 
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .normal)
         UISegmentedControl.appearance().setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)

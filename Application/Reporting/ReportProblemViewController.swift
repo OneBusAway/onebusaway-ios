@@ -16,11 +16,10 @@ import AloeStackView
 public class ReportProblemViewController: UIViewController, AloeStackTableBuilder {
 
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.groupedTableBackground
+        backgroundColor: ThemeColors.shared.groupedTableBackground
     )
 
     private let application: Application
-    var theme: Theme { application.theme }
 
     private let stop: Stop
 
@@ -62,7 +61,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = theme.colors.groupedTableBackground
+        view.backgroundColor = ThemeColors.shared.groupedTableBackground
 
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)

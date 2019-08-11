@@ -25,7 +25,6 @@ public class PermissionPromptViewController: UIViewController {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFit
         imageView.image = Icons.header
-        imageView.backgroundColor = application.theme.colors.primary
         imageView.heightAnchor.constraint(equalToConstant: 100.0).isActive = true
 
         return imageView
@@ -72,7 +71,7 @@ public class PermissionPromptViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = application.theme.colors.systemBackground
+        view.backgroundColor = ThemeColors.shared.systemBackground
 
         let imageViewWrapper = topImageView.embedInWrapperView(setConstraints: false)
         imageViewWrapper.backgroundColor = topImageView.backgroundColor

@@ -13,10 +13,8 @@ import SVProgressHUD
 class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, AloeStackTableBuilder {
 
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.systemBackground
+        backgroundColor: ThemeColors.shared.systemBackground
     )
-
-    override var theme: Theme { application.theme }
 
     override init(application: Application) {
         super.init(application: application)

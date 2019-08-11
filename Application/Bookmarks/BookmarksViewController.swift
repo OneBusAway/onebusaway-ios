@@ -14,10 +14,8 @@ import AloeStackView
     /// The OBA application object
     private let application: Application
 
-    var theme: Theme { return application.theme }
-
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.systemBackground
+        backgroundColor: ThemeColors.shared.systemBackground
     )
 
     /// Creates a Bookmarks controller

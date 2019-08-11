@@ -16,10 +16,8 @@ import MessageUI
     /// The OBA application object
     private let application: Application
 
-    var theme: Theme { return application.theme }
-
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.groupedTableBackground
+        backgroundColor: ThemeColors.shared.groupedTableBackground
     )
 
     /// A helper object that crafts support emails or alerts when the user's email client isn't configured properly.

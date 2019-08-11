@@ -186,7 +186,6 @@ final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         contentView.layer.addSublayer(separator)
-        contentView.backgroundColor = .white
 
         let stack = UIStackView.horizontalStack(arrangedSubviews: [segmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
         stack.spacing = ThemeMetrics.compactPadding
@@ -216,7 +215,14 @@ final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = UIColor(white: isHighlighted ? 0.9 : 1, alpha: 1)
+            let color: UIColor?
+            if isHighlighted {
+                color = ThemeColors.shared.highlightedBackgroundColor
+            }
+            else {
+                color = nil
+            }
+            contentView.backgroundColor = color
         }
     }
 }

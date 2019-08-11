@@ -24,13 +24,13 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         stack.addSubview(refreshControl)
         stack.rowInset = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
         stack.alwaysBounceVertical = true
+        stack.backgroundColor = ThemeColors.shared.systemBackground
         return stack
     }()
 
     private let refreshControl = UIRefreshControl()
 
     let application: Application
-    var theme: Theme { application.theme }
 
     let stopID: String
 
@@ -83,7 +83,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
         label.font = UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = application.theme.colors.subduedText
+        label.textColor = ThemeColors.shared.secondaryLabel
 
         return label
     }()

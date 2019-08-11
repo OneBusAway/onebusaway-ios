@@ -55,7 +55,7 @@ final class LabelCell: UICollectionViewCell {
 
     let separator: CALayer = {
         let layer = CALayer()
-        layer.backgroundColor = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1).cgColor
+        layer.backgroundColor = ThemeColors.shared.separator.cgColor
         return layer
     }()
 
@@ -90,7 +90,7 @@ final class LabelCell: UICollectionViewCell {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = UIColor(white: isHighlighted ? 0.9 : 1, alpha: 1)
+            contentView.backgroundColor = ThemeColors.shared.highlightedBackgroundColor
         }
     }
 

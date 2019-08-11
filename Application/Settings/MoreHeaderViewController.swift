@@ -51,7 +51,7 @@ class MoreHeaderViewController: UIViewController {
         label.numberOfLines = 0
         label.textAlignment = .center
         label.font = font ?? UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = application.theme.colors.lightText
+        label.textColor = ThemeColors.shared.lightText
         return label
     }
 
@@ -75,7 +75,7 @@ class MoreHeaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = application.theme.colors.primary
+        view.backgroundColor = ThemeColors.shared.primary
 
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion

@@ -11,10 +11,6 @@ import UIKit
 class OperationController<OperationType, DataType>: UIViewController where OperationType: Operation {
     let application: Application
 
-    var theme: Theme {
-        application.theme
-    }
-
     var operation: OperationType?
     var data: DataType? {
         didSet {

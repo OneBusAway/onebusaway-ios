@@ -45,7 +45,7 @@ public class SearchResultsController: UIViewController, ListProvider {
 
         navigationItem.titleView = titleView
 
-        view.backgroundColor = application.theme.colors.systemBackground
+        view.backgroundColor = ThemeColors.shared.systemBackground
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
 

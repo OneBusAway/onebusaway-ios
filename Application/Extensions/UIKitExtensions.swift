@@ -56,10 +56,19 @@ extension UIBarButtonItem {
     }
 }
 
+// MARK: - UIColor
+
 // Adapted from https://cocoacasts.com/from-hex-to-uicolor-and-back-in-swift
 public extension UIColor {
 
-    // MARK: - Initialization
+    /// Initializes a `UIColor` using `0-255` range `Int` values.
+    /// - Parameter r: Red, `0-255`.
+    /// - Parameter g: Green, `0-255`.
+    /// - Parameter b: Blue, `0-255`.
+    /// - Parameter a: Alpha, `0.0-1.0`. Default is `1.0`.
+    convenience init(r: Int, g: Int, b: Int, a: CGFloat = 1.0) {
+        self.init(red: CGFloat(r) / 255.0, green: CGFloat(g) / 255.0, blue: CGFloat(b) / 255.0, alpha: a)
+    }
 
     /// Initialize a `UIColor` object with a hex string. Supports either "#FFFFFF" or "FFFFFF" styles.
     ///

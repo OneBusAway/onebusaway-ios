@@ -77,7 +77,7 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = application.theme.colors.systemBackground
+        view.backgroundColor = ThemeColors.shared.systemBackground
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
     }

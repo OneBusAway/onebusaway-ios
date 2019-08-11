@@ -17,7 +17,7 @@ protocol ListKitCell: NSObjectProtocol {
 extension ListKitCell where Self: UICollectionViewCell {
     static func separatorLayer() -> CALayer {
         let layer = CALayer()
-        layer.backgroundColor = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1).cgColor
+        layer.backgroundColor = ThemeColors.shared.separator.cgColor
         return layer
     }
 }
@@ -64,16 +64,7 @@ class TableRowCell: SwipeCollectionViewCell, ListKitCell {
 
     // MARK: - UIAppearance Selectors
 
-    private var _highlightedBackgroundColor = UIColor(white: 0.9, alpha: 1.0)
-    @objc dynamic var highlightedBackgroundColor: UIColor {
-        get { return _highlightedBackgroundColor }
-        set { _highlightedBackgroundColor = newValue }
-    }
-
-    @objc dynamic var separatorColor: UIColor {
-        get { return UIColor(cgColor: separator.backgroundColor!) }
-        set { separator.backgroundColor = newValue.cgColor }
-    }
+    private let highlightedBackgroundColor = ThemeColors.shared.highlightedBackgroundColor
 
     @objc dynamic var titleFont: UIFont {
         get { return tableRowView.titleFont }
@@ -83,11 +74,6 @@ class TableRowCell: SwipeCollectionViewCell, ListKitCell {
     @objc dynamic var subtitleFont: UIFont {
         get { return tableRowView.subtitleFont }
         set { tableRowView.subtitleFont = newValue }
-    }
-
-    @objc dynamic var subtitleTextColor: UIColor {
-        get { return tableRowView.subtitleTextColor }
-        set { tableRowView.subtitleTextColor = newValue }
     }
 
     // MARK: - UICollectionViewCell
@@ -182,7 +168,6 @@ class TableSectionHeaderView: UICollectionReusableView {
         super.init(frame: frame)
 
         addSubview(textLabel)
-        backgroundColor = UIColor(white: 0.95, alpha: 0.95)
 
         NSLayoutConstraint.activate([
             textLabel.leadingAnchor.constraint(equalTo: self.layoutMarginsGuide.leadingAnchor),

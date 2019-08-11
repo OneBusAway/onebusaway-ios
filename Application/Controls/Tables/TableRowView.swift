@@ -120,11 +120,6 @@ public class TableRowView: UIView, Highlightable {
         set { subtitleLabel.font = newValue }
     }
 
-    @objc dynamic var subtitleTextColor: UIColor {
-        get { return subtitleLabel.textColor }
-        set { subtitleLabel.textColor = newValue }
-    }
-
     // MARK: - UI Configuration
 
     lazy var contentStackWrapper = contentStack.embedInWrapperView()
@@ -136,7 +131,12 @@ public class TableRowView: UIView, Highlightable {
     lazy var labelStack = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
 
     let titleLabel = TableRowView.buildLabel()
-    let subtitleLabel = TableRowView.buildLabel()
+    let subtitleLabel: UILabel = {
+        let label = TableRowView.buildLabel()
+        label.textColor = ThemeColors.shared.secondaryLabel
+
+        return label
+    }()
 
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()
@@ -169,6 +169,13 @@ public class TableRowView: UIView, Highlightable {
     public func prepareForReuse() {
         titleLabel.text = nil
         subtitleLabel.text = nil
+    }
+
+    // MARK: - Highlightable
+
+    public func setIsHighlighted(_ isHighlighted: Bool) {
+      guard let cell = superview as? StackViewCell else { return }
+        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
     }
 }
 

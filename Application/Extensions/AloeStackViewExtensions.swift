@@ -42,7 +42,6 @@ public extension AloeStackView {
 
 protocol AloeStackTableBuilder {
     var stackView: AloeStackView { get }
-    var theme: Theme { get }
 
     func addTableHeaderToStack(headerText: String)
     func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool, tapHandler: ((T) -> Void)?) where T: UIView
@@ -64,7 +63,6 @@ extension AloeStackTableBuilder where Self: UIViewController {
 
     func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool = false, tapHandler: ((T) -> Void)? = nil) where T: UIView {
         stackView.addRow(row, hideSeparator: false)
-        stackView.setBackgroundColor(forRow: row, color: theme.colors.groupedTableRowBackground)
 
         if isLastRow {
             stackView.setSeparatorInset(forRow: row, inset: .zero)

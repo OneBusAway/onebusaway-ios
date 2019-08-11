@@ -428,7 +428,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
-        renderer.strokeColor = application.theme.colors.primary.withAlphaComponent(0.75)
+        renderer.strokeColor = ThemeColors.shared.primary.withAlphaComponent(0.75)
         renderer.lineWidth = 3.0
         renderer.lineCap = .round
 

@@ -13,10 +13,8 @@ import WebKit
 class CreditsViewController: UIViewController, AloeStackTableBuilder {
 
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.systemBackground
+        backgroundColor: ThemeColors.shared.systemBackground
     )
-
-    var theme: Theme { application.theme }
 
     private let application: Application
 

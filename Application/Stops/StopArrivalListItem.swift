@@ -82,7 +82,7 @@ final class StopArrivalCell: SelfSizingCollectionCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .white
+        contentView.backgroundColor = ThemeColors.shared.systemBackground
     }
 
     required init?(coder aDecoder: NSCoder) {

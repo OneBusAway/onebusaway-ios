@@ -154,4 +154,11 @@ public class StopArrivalView: UIView, Highlightable {
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         return label
     }
+
+    // MARK: - Highlightable
+
+    public func setIsHighlighted(_ isHighlighted: Bool) {
+      guard let cell = superview as? StackViewCell else { return }
+        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
+    }
 }

@@ -30,7 +30,7 @@ public class ThemeMetrics: NSObject {
 
     public static let controllerMargin: CGFloat = 20.0
 
-    public static let defaultMapAnnotationSize: CGFloat = 54.0
+    public static let defaultMapAnnotationSize: CGFloat = 48.0
 
     public static let cornerRadius: CGFloat = 8.0
 
@@ -48,17 +48,11 @@ public class ThemeColors: NSObject {
     /// Primary theme color.
     public let primary: UIColor
 
-    /// Dark variant of the primary theme color.
-    public let dark: UIColor
-
-    /// Light variant of the primary theme color.
-    public let light: UIColor
-
     /// Light text color, used on dark backgrounds.
     public let lightText: UIColor
 
     /// A gray text color, used on light backgrounds for de-emphasized text.
-    public let subduedText: UIColor
+    public let secondaryLabel: UIColor
 
     /// A dark gray text color, used on maps.
     public let mapText: UIColor
@@ -93,35 +87,62 @@ public class ThemeColors: NSObject {
     /// A gray color; useful for de-emphasized UI elements.
     public let gray: UIColor
 
+    public let mapStroke: UIColor
+
+    public let label: UIColor
+
+    public let separator: UIColor
+
+    public let highlightedBackgroundColor: UIColor
+
+    public let secondaryBackgroundColor: UIColor
+
+    public static let shared = ThemeColors()
+
     public override convenience init() {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
 
     public init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
-        dark = UIColor(named: "dark", in: bundle, compatibleWith: traitCollection)!
-        light = UIColor(named: "light", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
-        subduedText = UIColor(named: "subduedText", in: bundle, compatibleWith: traitCollection)!
-        mapText = UIColor(named: "mapTextColor", in: bundle, compatibleWith: traitCollection)!
         stopAnnotationIcon = UIColor(named: "stopAnnotationIconColor", in: bundle, compatibleWith: traitCollection)!
-        departureEarly = UIColor(named: "departureEarly", in: bundle, compatibleWith: traitCollection)!
-        departureLate = UIColor(named: "departureLate", in: bundle, compatibleWith: traitCollection)!
-        departureOnTime = UIColor(named: "departureOnTime", in: bundle, compatibleWith: traitCollection)!
-        departureUnknown = UIColor(named: "departureUnknown", in: bundle, compatibleWith: traitCollection)!
-        propertyChanged = UIColor(named: "propertyChanged", in: bundle, compatibleWith: traitCollection)!
 
         if #available(iOS 13, *) {
+            departureEarly = .systemRed
+            departureOnTime = .systemGreen
+            departureUnknown = .label
+            departureLate = .systemBlue
             gray = .systemGray
             groupedTableBackground = .systemGroupedBackground
             groupedTableRowBackground = .white
             systemBackground = .systemBackground
+            mapText = .label
+            label = .label
+            secondaryLabel = .secondaryLabel
+            separator = .separator
+            highlightedBackgroundColor = .systemFill
+            secondaryBackgroundColor = .secondarySystemBackground
+            propertyChanged = .systemYellow
+            mapStroke = .black
         }
         else {
+            departureEarly = UIColor(hex: "fc3f3b")!
+            departureOnTime = UIColor(hex: "16771a")!
+            departureUnknown = .black
+            departureLate = UIColor(hex: "0082f8")!
             gray = .gray
             groupedTableBackground = .groupTableViewBackground
             groupedTableRowBackground = .white
             systemBackground = .white
+            mapText = UIColor(r: 42, g: 44, b: 47)
+            label = .black
+            secondaryLabel = .darkGray
+            separator = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1)
+            highlightedBackgroundColor = UIColor(white: 0.9, alpha: 1)
+            secondaryBackgroundColor = UIColor(white: 0.9, alpha: 1)
+            propertyChanged = UIColor(r: 255, g: 255, b: 128)
+            mapStroke = .black
         }
     }
 }

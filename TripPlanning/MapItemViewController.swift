@@ -15,12 +15,10 @@ class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable
     /// The OBA application object
     private let application: Application
 
-    var theme: Theme { return application.theme }
-
     lazy var titleView = FloatingPanelTitleView.autolayoutNew()
 
     lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: application.theme.colors.groupedTableBackground
+        backgroundColor: ThemeColors.shared.groupedTableBackground
     )
 
     var scrollView: UIScrollView { stackView }
