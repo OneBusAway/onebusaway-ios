@@ -45,8 +45,10 @@ class SearchInteractor: NSObject {
                 //
             }
         }
-        let recentStopsSection = TableSectionData(title: NSLocalizedString("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the recent Stops search header"), rows: recentStops)
-        sections.append(recentStopsSection)
+        if recentStops.count > 0 {
+            let recentStopsSection = TableSectionData(title: NSLocalizedString("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the recent Stops search header"), rows: recentStops)
+            sections.append(recentStopsSection)
+        }
 
         return sections
     }
