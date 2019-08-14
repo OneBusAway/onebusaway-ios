@@ -9,10 +9,6 @@
 import UIKit
 import IGListKit
 
-public protocol ModalDelegate: NSObjectProtocol {
-    func dismissModalController(_ controller: UIViewController)
-}
-
 public class SearchResultsController: UIViewController, ListProvider {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     var scrollView: UIScrollView { collectionController.collectionView }
