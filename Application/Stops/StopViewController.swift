@@ -15,7 +15,12 @@ import FloatingPanel
 /// arrivals and departures at this stop, along with the ability to create push
 /// notification 'alarms' and bookmarks, view information about the location of a
 /// particular vehicle, and report problems with a trip.
-public class StopViewController: UIViewController, AloeStackTableBuilder {
+public class StopViewController: UIViewController,
+    AloeStackTableBuilder,
+    BookmarkEditorDelegate,
+    ModalDelegate,
+    StopPreferencesDelegate {
+
     private let kUseDebugColors = false
 
     lazy var stackView: AloeStackView = {
@@ -133,6 +138,8 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
     public convenience init(application: Application, stop: Stop) {
         self.init(application: application, stopID: stop.id)
         self.stop = stop
+        self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stop.id, region: application.currentRegion!)
+
         performStopConfiguration(stop)
     }
 
@@ -149,6 +156,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
     public init(application: Application, stopID: String) {
         self.application = application
         self.stopID = stopID
+        self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stopID, region: application.currentRegion!)
 
         super.init(nibName: nil, bundle: nil)
 
@@ -319,15 +327,26 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
         stackView.setInset(forRow: stopHeader.view, inset: .zero)
 
-       // Walking Time and Arrival/Departures
-        var walkingTimeInserted = false
+        if stopPreferences.hasHiddenRoutes {
+            stackView.addRow(filterToggleControl)
+            stackView.hideSeparator(forRow: filterToggleControl)
+        }
 
-        for arrDep in stopArrivals.arrivalsAndDepartures {
-            if !walkingTimeInserted {
-                walkingTimeInserted = addWalkingTimeRow(before: arrDep)
+        if stopPreferences.sortType == .time {
+            if isListFiltered {
+                addToStack(arrivalDepartures: stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences))
             }
+            else {
+                addToStack(arrivalDepartures: stopArrivals.arrivalsAndDepartures)
+            }
+        }
+        else {
+            let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
 
-            addStopArrivalView(for: arrDep, hideSeparator: false)
+            for g in groups {
+                addTableHeaderToStack(headerText: g.route.longName ?? g.route.shortName)
+                addToStack(arrivalDepartures: g.arrivalDepartures)
+            }
         }
 
         // Load More and Timeframe
@@ -336,6 +355,21 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
 
         // More Options
         addMoreOptionsTableRows()
+    }
+
+    // MARK: - UI Builders
+
+    private func addToStack(arrivalDepartures: [ArrivalDeparture]) {
+        // Walking Time and Arrival/Departures
+        var walkingTimeInserted = false
+
+        for arrDep in arrivalDepartures {
+            if !walkingTimeInserted {
+                walkingTimeInserted = addWalkingTimeRow(before: arrDep)
+            }
+
+            addStopArrivalView(for: arrDep, hideSeparator: false)
+        }
     }
 
     private func addWalkingTimeRow(before arrivalDeparture: ArrivalDeparture) -> Bool {
@@ -458,10 +492,9 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
         timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
         stackView.addRow(timeframeLabel, hideSeparator: false)
     }
-}
 
-// MARK: - Bookmark Editor
-extension StopViewController: BookmarkEditorDelegate {
+    // MARK: - Bookmark Editor
+
     func bookmarkEditorCancelled(_ viewController: UIViewController) {
         viewController.dismiss(animated: true, completion: nil)
     }
@@ -470,10 +503,8 @@ extension StopViewController: BookmarkEditorDelegate {
         // abxoxo todo - show some sort of status message when a bookmark is added or changed.
         viewController.dismiss(animated: true, completion: nil)
     }
-}
 
-// MARK: - Actions
-extension StopViewController {
+    // MARK: - Actions
 
     /// Reloads data.
     @objc private func refresh() {
@@ -497,7 +528,11 @@ extension StopViewController {
 
     /// Initiates the Route Filter workflow.
     @objc private func filter() {
+        guard let stop = stop else { return }
 
+        let stopPreferencesController = StopPreferencesViewController(application: application, stop: stop, delegate: self)
+        let navigation = UINavigationController(rootViewController: stopPreferencesController)
+        present(navigation, animated: true, completion: nil)
     }
 
     /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
@@ -514,4 +549,53 @@ extension StopViewController {
         let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
         application.viewRouter.present(navigation, from: self, isModalInPresentation: true)
     }
+
+    // MARK: - Modal Delegate
+
+    public func dismissModalController(_ controller: UIViewController) {
+        controller.dismiss(animated: true, completion: nil)
+    }
+
+    // MARK: - Stop Preferences
+
+    private var stopPreferences: StopPreferences {
+        willSet {
+            dataWillReload()
+        }
+        didSet {
+            dataDidReload()
+        }
+    }
+
+    func stopPreferences(_ controller: StopPreferencesViewController, updated stopPreferences: StopPreferences) {
+        self.stopPreferences = stopPreferences
+    }
+
+    private var isListFiltered: Bool = true {
+        willSet {
+            dataWillReload()
+        }
+        didSet {
+            dataDidReload()
+        }
+    }
+
+    @objc private func filterToggled() {
+        isListFiltered.toggle()
+    }
+
+    private let filterToggleControl: UISegmentedControl = {
+        let segment = UISegmentedControl.autolayoutNew()
+        segment.setTitleTextAttributes([.foregroundColor: ThemeColors.shared.label], for: .normal)
+        segment.setTitleTextAttributes([.foregroundColor: ThemeColors.shared.label], for: .selected)
+
+        segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"), at: 0, animated: false)
+        segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures"), at: 1, animated: false)
+
+        segment.selectedSegmentIndex = 1
+
+        segment.addTarget(self, action: #selector(filterToggled), for: .valueChanged)
+
+        return segment
+    }()
 }

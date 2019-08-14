@@ -43,7 +43,12 @@ public class TableHeaderView: UIView {
         super.init(frame: frame)
 
         addSubview(textLabel)
-        textLabel.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: -ThemeMetrics.compactPadding, trailing: 0))
+        NSLayoutConstraint.activate([
+            textLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            textLabel.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
+            textLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            textLabel.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor)
+        ])
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
