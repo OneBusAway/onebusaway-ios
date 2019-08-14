@@ -29,7 +29,8 @@
         _userDefaults = [NSUserDefaults standardUserDefaults];
 
         NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults analytics:self];
+        NSURL *obacoBaseURL = [NSURL URLWithString:@"http://alerts.onebusaway.org"];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL obacoBaseURL:obacoBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults analytics:self];
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
     }

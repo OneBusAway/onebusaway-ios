@@ -13,6 +13,7 @@ import CoreLocation
 public class AppConfig: NSObject {
 
     let regionsBaseURL: URL
+    let obacoBaseURL: URL?
     let apiKey: String
     let uuid: String
     let appVersion: String
@@ -23,6 +24,7 @@ public class AppConfig: NSObject {
 
     @objc public convenience init(
         regionsBaseURL: URL,
+        obacoBaseURL: URL?,
         apiKey: String,
         uuid: String,
         appVersion: String,
@@ -31,6 +33,7 @@ public class AppConfig: NSObject {
     ) {
         self.init(
             regionsBaseURL: regionsBaseURL,
+            obacoBaseURL: obacoBaseURL,
             apiKey: apiKey,
             uuid: uuid,
             appVersion: appVersion,
@@ -43,6 +46,7 @@ public class AppConfig: NSObject {
 
     @objc public init(
         regionsBaseURL: URL,
+        obacoBaseURL: URL?,
         apiKey: String,
         uuid: String,
         appVersion: String,
@@ -52,6 +56,7 @@ public class AppConfig: NSObject {
         locationService: LocationService
     ) {
         self.regionsBaseURL = regionsBaseURL
+        self.obacoBaseURL = obacoBaseURL
         self.apiKey = apiKey
         self.uuid = uuid
         self.appVersion = appVersion
