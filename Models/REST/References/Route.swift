@@ -9,6 +9,8 @@
 import Foundation
 import UIKit
 
+public typealias RouteID = String
+
 public enum RouteType: Int, Codable {
     /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
     case lightRail = 0
@@ -50,7 +52,7 @@ public class Route: NSObject, Codable, HasReferences {
 
     public let color: UIColor?
     public let routeDescription: String?
-    public let id: String
+    public let id: RouteID
     public let longName: String?
     public let shortName: String
     public let textColor: UIColor?
@@ -85,7 +87,7 @@ public class Route: NSObject, Codable, HasReferences {
         color = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
 
         routeDescription = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeDescription))
-        id = try container.decode(String.self, forKey: .id)
+        id = try container.decode(RouteID.self, forKey: .id)
         longName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .longName))
         shortName = try container.decode(String.self, forKey: .shortName)
         textColor = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))

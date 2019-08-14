@@ -44,7 +44,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     let predictedDeparture: Date?
 
     /// the route id for the arriving vehicle
-    let routeID: String
+    let routeID: RouteID
 
     /// the route for the arriving vehicle
     public let route: Route
@@ -144,7 +144,7 @@ public class ArrivalDeparture: NSObject, Decodable {
 
         predictedDeparture = ModelHelpers.nilifyEpochDate((try container.decode(Date.self, forKey: .predictedDeparture)))
 
-        routeID = try container.decode(String.self, forKey: .routeID)
+        routeID = try container.decode(RouteID.self, forKey: .routeID)
         route = references.routeWithID(routeID)!
 
         _routeLongName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeLongName))
