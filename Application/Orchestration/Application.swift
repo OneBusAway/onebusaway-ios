@@ -96,6 +96,10 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     ///         for more information on the REST API.
     @objc public private(set) var restAPIModelService: RESTAPIModelService?
 
+    @objc public private(set) var obacoService: ObacoModelService?
+
+    private var obacoNetworkQueue = OperationQueue()
+
     @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
 
     @objc public private(set) lazy var searchManager = SearchManager(application: self)
@@ -305,6 +309,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         refreshRESTAPIModelService()
+        refreshObacoService()
     }
 
     /// Recreates the `restAPIModelService` from the current region. This is
@@ -314,6 +319,24 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
         let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
+    }
+
+    public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
+
+    /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
+    /// This must be called when the region changes.
+    private func refreshObacoService() {
+        guard
+            let region = regionsService.currentRegion,
+            let baseURL = config.obacoBaseURL
+        else { return }
+
+        obacoNetworkQueue.cancelAllOperations()
+
+        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue)
+        obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
+
+        notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
     }
 
     // MARK: - LocationServiceDelegate
