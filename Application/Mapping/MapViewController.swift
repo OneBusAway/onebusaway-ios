@@ -83,7 +83,7 @@ public class MapViewController: UIViewController,
 
         floatingPanel.addPanel(toParent: self)
 
-        view.addSubview(floatingToolbar)
+        view.insertSubview(floatingToolbar, aboveSubview: mapView)
         view.addSubview(compassButton)
 
         NSLayoutConstraint.activate([
