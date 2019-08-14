@@ -22,6 +22,11 @@ extension UIAlertAction {
     public class var cancelAction: UIAlertAction {
         return UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil)
     }
+
+    /// An alert action for dismissing an alert controller.
+    public class var dismissAction: UIAlertAction {
+        return UIAlertAction(title: Strings.dismiss, style: .default, handler: nil)
+    }
 }
 
 // MARK: - UIAlertController

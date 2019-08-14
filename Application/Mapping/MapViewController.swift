@@ -21,12 +21,13 @@ public class MapViewController: UIViewController,
     ModalDelegate,
     NearbyDelegate {
 
-    // MARK: - Floating Panel and Hoverbar
-    var floatingToolbar: HoverBar = {
+    // MARK: - Hoverbar
+
+    lazy var floatingToolbar: HoverBar = {
         let hover = HoverBar.autolayoutNew()
-        hover.isHidden = true
-        hover.orientation = .horizontal
-        hover.tintColor = .black
+        hover.tintColor = ThemeColors.shared.label
+        hover.stackView.addArrangedSubview(locationButton)
+        hover.stackView.addArrangedSubview(weatherButton)
         return hover
     }()
 
@@ -57,6 +58,10 @@ public class MapViewController: UIViewController,
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    deinit {
+        weatherOperation?.cancel()
+    }
+
     // MARK: - UIViewController
 
     public override func viewDidLoad() {
@@ -71,10 +76,11 @@ public class MapViewController: UIViewController,
         view.addSubview(floatingToolbar)
 
         NSLayoutConstraint.activate([
-            floatingToolbar.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
-            floatingToolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
-            floatingToolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
-            floatingToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0)
+            floatingToolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
+            floatingToolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
+            floatingToolbar.widthAnchor.constraint(equalToConstant: 40.0),
+            locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
+            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor)
         ])
     }
 
@@ -99,6 +105,8 @@ public class MapViewController: UIViewController,
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
+        loadWeather()
+
         // Start showing the status overlay on the map once this controller has appeared.
         mapRegionManager.addStatusOverlayToMap()
     }
@@ -109,13 +117,65 @@ public class MapViewController: UIViewController,
         navigationController?.setNavigationBarHidden(false, animated: false)
     }
 
-    // MARK: - Public Methods
+    // MARK: - User Location
 
     @objc public func centerMapOnUserLocation() {
         guard isLoadedAndOnScreen else { return }
 
         let userLocation = mapRegionManager.mapView.userLocation.coordinate
         mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation, zoomLevel: 17, animated: true)
+    }
+
+    private let locationButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(Icons.mapTabIcon, for: .normal)
+        button.addTarget(self, action: #selector(centerMapOnUserLocation), for: .touchUpInside)
+        button.accessibilityLabel = NSLocalizedString("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
+        return button
+    }()
+
+    // MARK: - Weather
+
+    private let weatherButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("—", for: .normal)
+        button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
+        button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body).bold
+        button.accessibilityLabel = NSLocalizedString("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
+        return button
+    }()
+
+    @objc private func showWeather() {
+        guard let forecast = forecast else { return }
+
+        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction.dismissAction)
+        present(alert, animated: true, completion: nil)
+    }
+
+    private var weatherOperation: WeatherModelOperation?
+
+    private var forecast: WeatherForecast? {
+        didSet {
+            if let forecast = forecast {
+                let truncated = Int(forecast.currentForecast.temperature)
+                weatherButton.setTitle("\(truncated)º", for: .normal)
+            }
+            else {
+                weatherButton.setTitle("—", for: .normal)
+            }
+        }
+    }
+
+    private func loadWeather() {
+        guard let apiService = application.obacoService else { return }
+
+        let op = apiService.getWeather()
+        op.then { [weak self] in
+            guard let self = self else { return }
+            self.forecast = op.weatherForecast
+        }
+        weatherOperation = op
     }
 
     // MARK: - Content Presentation
