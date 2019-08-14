@@ -262,7 +262,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
         StopAnnotationView.appearance().bookmarkedStrokeColor = ThemeColors.shared.primary
-        StopAnnotationView.appearance().fillColor = ThemeColors.shared.primary
+        StopAnnotationView.appearance().fillColor = UIColor.white
         StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
         StopAnnotationView.appearance().strokeColor = ThemeColors.shared.mapStroke

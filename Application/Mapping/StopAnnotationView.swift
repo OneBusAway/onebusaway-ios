@@ -100,7 +100,7 @@ class StopAnnotationView: MKAnnotationView {
         get { return _fillColor }
         set { _fillColor = newValue }
     }
-    private var _fillColor: UIColor = .green
+    private var _fillColor: UIColor = .white
 
     /// Stroke color for this annotation view and its directional arrow.
     @objc dynamic var strokeColor: UIColor {
