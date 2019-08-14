@@ -15,12 +15,12 @@ public class ModelService: NSObject {
         self.dataQueue = dataQueue
     }
 
-    func transferData(from serviceOperation: Operation, to dataOperation: Operation, transfer: @escaping () -> Void) {
-        let transferOperation = BlockOperation(block: transfer)
+    func transferData(from service: Operation, to data: DataOperation) {
+        let xfer = GenericTransferOperation(serviceOperation: service, dataOperation: data)
 
-        transferOperation.addDependency(serviceOperation)
-        dataOperation.addDependency(transferOperation)
+        xfer.addDependency(service)
+        data.addDependency(xfer)
 
-        dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
+        dataQueue.addOperations([xfer, data], waitUntilFinished: false)
     }
 }

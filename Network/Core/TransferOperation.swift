@@ -34,3 +34,33 @@ class TransferOperation: Operation {
         dataOperation.apiOperation = serviceOperation
     }
 }
+
+public protocol APIAssignee {
+    var apiOperation: Operation? { get set }
+}
+
+public typealias DataOperation = Operation & APIAssignee
+
+class GenericTransferOperation: Operation {
+    private let serviceOperation: Operation
+    private var dataOperation: DataOperation
+
+    init(serviceOperation: Operation, dataOperation: DataOperation) {
+        self.serviceOperation = serviceOperation
+        self.dataOperation = dataOperation
+    }
+
+    public override func main() {
+        super.main()
+
+        guard
+            !serviceOperation.isCancelled,
+            !dataOperation.isCancelled
+            else {
+                cancel()
+                return
+        }
+
+        dataOperation.apiOperation = serviceOperation
+    }
+}

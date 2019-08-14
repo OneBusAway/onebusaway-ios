@@ -26,12 +26,17 @@ public class RegionsModelService: ModelService {
     ///
     /// - Returns: An operation from which regions can be retrieved after the operation completes.
     public func getRegions() -> RegionsModelOperation {
-        let service = apiService.getRegions()
-        let data = RegionsModelOperation()
+        let serviceOperation = apiService.getRegions()
+        let dataOperation = RegionsModelOperation()
 
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
-        return data
+        // Transfer
+        let transferOperation = TransferOperation(serviceOperation: serviceOperation, dataOperation: dataOperation)
+
+        transferOperation.addDependency(serviceOperation)
+        dataOperation.addDependency(transferOperation)
+
+        dataQueue.addOperations([transferOperation, dataOperation], waitUntilFinished: false)
+
+        return dataOperation
     }
 }

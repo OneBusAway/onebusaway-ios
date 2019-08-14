@@ -9,14 +9,16 @@
 import Foundation
 import CocoaLumberjackSwift
 
-public class AgencyVehicleModelOperation: Operation {
-    var apiOperation: MatchingVehiclesOperation?
+public class AgencyVehicleModelOperation: DataOperation {
+    public var apiOperation: Operation?
     public private(set) var matchingVehicles = [AgencyVehicle]()
 
     public override func main() {
         super.main()
 
-        guard let data = apiOperation?.data else {
+        guard
+            let apiOperation = apiOperation as? MatchingVehiclesOperation,
+            let data = apiOperation.data else {
             return
         }
 

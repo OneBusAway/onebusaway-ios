@@ -28,15 +28,10 @@ public class ObacoModelService: ModelService {
 
     /// Create an operation to fetch the weather forecast for the specified region.
     ///
-    /// - Parameter regionID: The region identifier for which to fetch the weather. This is the `Region.regionIdentifier` field.
     /// - Returns: A model operation that returns a `Weather` object.
-    public func getWeather(regionID: String) -> WeatherModelOperation {
-        let service = apiService.getWeather(regionID: regionID)
+    public func getWeather() -> WeatherModelOperation {
         let data = WeatherModelOperation()
-
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
+        transferData(from: apiService.getWeather(), to: data)
         return data
     }
 
@@ -57,9 +52,7 @@ public class ObacoModelService: ModelService {
         let service = apiService.postAlarm(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID)
         let data = AlarmModelOperation()
 
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
+        transferData(from: service, to: data)
 
         return data
     }
@@ -82,9 +75,7 @@ public class ObacoModelService: ModelService {
         let service = apiService.getVehicles(matching: query)
         let data = AgencyVehicleModelOperation()
 
-        transferData(from: service, to: data) { [unowned service, unowned data] in
-            data.apiOperation = service
-        }
+        transferData(from: service, to: data)
 
         return data
     }

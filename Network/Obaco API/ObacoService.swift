@@ -8,6 +8,9 @@
 
 import Foundation
 
+/// API service client for the Obaco (`alerts.onebusaway.org`) service.
+///
+/// Obaco provides services like weather, trip status, and alarms to the iOS app.
 public class ObacoService: APIService {
 
     private let regionID: String
@@ -19,7 +22,7 @@ public class ObacoService: APIService {
 
     // MARK: - Weather
 
-    public func getWeather(regionID: String) -> WeatherOperation {
+    public func getWeather() -> WeatherOperation {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = WeatherOperation.buildRequest(for: url)
         let operation = WeatherOperation(request: request)

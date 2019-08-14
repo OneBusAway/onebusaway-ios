@@ -8,14 +8,16 @@
 
 import Foundation
 
-public class AlarmModelOperation: Operation {
-    var apiOperation: CreateAlarmOperation?
+public class AlarmModelOperation: DataOperation {
+    public var apiOperation: Operation?
     public private(set) var alarm: Alarm?
 
     public override func main() {
         super.main()
 
-        guard let data = apiOperation?.data else {
+        guard
+            let apiOperation = apiOperation as? CreateAlarmOperation,
+            let data = apiOperation.data else {
             return
         }
 
