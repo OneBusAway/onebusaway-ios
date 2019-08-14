@@ -26,21 +26,12 @@
                                     <tabBarItem title=" " image="more" id="N5w-xu-YrQ"/>
                                 </items>
                             </tabBar>
-                            <navigationBar contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="TzE-0M-YNz">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="44"/>
-                                <items>
-                                    <navigationItem id="4K5-ML-7Wt"/>
-                                </items>
-                            </navigationBar>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
                             <constraint firstItem="6ga-Gw-Qds" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="9id-g7-eJv"/>
                             <constraint firstItem="6ga-Gw-Qds" firstAttribute="bottom" secondItem="6Tk-OE-BBY" secondAttribute="bottom" id="A2R-Ak-NFy"/>
-                            <constraint firstItem="TzE-0M-YNz" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="N8M-0K-QUo"/>
-                            <constraint firstItem="TzE-0M-YNz" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" id="Rq9-Mt-xSF"/>
                             <constraint firstItem="6ga-Gw-Qds" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="lq9-ZX-bgr"/>
-                            <constraint firstItem="TzE-0M-YNz" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="oPU-og-4pJ"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
