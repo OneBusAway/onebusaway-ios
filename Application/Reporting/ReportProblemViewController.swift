@@ -104,7 +104,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     }
 
     private func addProblemWithTheStopRow(_ stop: Stop) {
-        addTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
                                                             value: "Problem with the Stop",
                                                             comment: "A table header in the 'Report Problem' view controller."))
 
@@ -130,7 +130,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
-        addTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
                                                       value: "Problem with a Vehicle at the Stop",
                                                       comment: "A table header in the 'Report Problem' view controller."))
 

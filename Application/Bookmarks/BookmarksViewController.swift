@@ -54,7 +54,7 @@ import AloeStackView
     }
 
     private func addRowsForGroup(name: String, bookmarks: [Bookmark]) {
-        addTableHeaderToStack(headerText: name)
+        addGroupedTableHeaderToStack(headerText: name)
 
         for b in bookmarks {
             let row = DefaultTableRowView(title: b.name, accessoryType: .disclosureIndicator)

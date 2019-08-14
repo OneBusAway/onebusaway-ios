@@ -43,7 +43,7 @@ public extension AloeStackView {
 protocol AloeStackTableBuilder {
     var stackView: AloeStackView { get }
 
-    func addTableHeaderToStack(headerText: String)
+    func addGroupedTableHeaderToStack(headerText: String)
     func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool, tapHandler: ((T) -> Void)?) where T: UIView
 }
 
@@ -52,12 +52,21 @@ extension AloeStackTableBuilder where Self: UIViewController {
     func addTableHeaderToStack(headerText: String) {
         let header = TableHeaderView.autolayoutNew()
         header.text = headerText
+        header.backgroundColor = ThemeColors.shared.secondaryBackgroundColor
+        header.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: 10, bottom: ThemeMetrics.compactPadding, trailing: 10)
+        stackView.addRow(header, hideSeparator: true)
+
+        stackView.setInset(forRow: header, inset: .zero)
+    }
+
+    func addGroupedTableHeaderToStack(headerText: String) {
+        let header = TableHeaderView.autolayoutNew()
+        header.text = headerText
+        header.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: ThemeMetrics.controllerMargin, bottom: ThemeMetrics.compactPadding, trailing: ThemeMetrics.controllerMargin)
+
         stackView.addRow(header, hideSeparator: false)
 
-        var insets = stackView.rowInset
-        insets.top = ThemeMetrics.tableHeaderTopPadding
-        stackView.setInset(forRow: header, inset: insets)
-
+        stackView.setInset(forRow: header, inset: .zero)
         stackView.setSeparatorInset(forRow: header, inset: .zero)
     }
 

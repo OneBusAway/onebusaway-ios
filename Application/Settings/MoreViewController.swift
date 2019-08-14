@@ -105,7 +105,7 @@ import MessageUI
     private lazy var alertsForRegionRow = DefaultTableRowView(title: "Alerts", accessoryType: .disclosureIndicator)
 
     private func addUpdatesAndAlerts() {
-        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
 
         addGroupedTableRowToStack(alertsForRegionRow, isLastRow: true) { _ in
             // TODO
@@ -115,7 +115,7 @@ import MessageUI
     // MARK: - My Location Section
 
     private func addMyLocationSection() {
-        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."))
 
         addRegionPickerRowToStackView()
 
@@ -214,7 +214,7 @@ import MessageUI
 
     private func addAbout() {
         // Header
-        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."))
 
         // Credits
         let credits = DefaultTableRowView(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
@@ -245,7 +245,7 @@ import MessageUI
     }
 
     private func addDebug() {
-        addTableHeaderToStack(headerText: NSLocalizedString("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
 
         if application.shouldShowCrashButton {
             let crashRow = DefaultTableRowView(title: NSLocalizedString("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)

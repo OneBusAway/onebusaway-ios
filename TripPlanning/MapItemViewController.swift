@@ -53,7 +53,7 @@ class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable
         stackView.addRow(titleView)
         stackView.hideSeparator(forRow: titleView)
 
-        addTableHeaderToStack(headerText: NSLocalizedString("map_item_controller.about_header", value: "About", comment: "about section header"))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("map_item_controller.about_header", value: "About", comment: "about section header"))
 
         if let address = mapItem.placemark.postalAddress {
             let formattedAddress = CNPostalAddressFormatter.string(from: address, style: .mailingAddress)
@@ -80,7 +80,7 @@ class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable
             }
         }
 
-        addTableHeaderToStack(headerText: NSLocalizedString("map_item_controller.more_header", value: "More", comment: "More options header"))
+        addGroupedTableHeaderToStack(headerText: NSLocalizedString("map_item_controller.more_header", value: "More", comment: "More options header"))
         addGroupedTableRowToStack(DefaultTableRowView(title: NSLocalizedString("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator), isLastRow: false) { [weak self] _ in
             guard let self = self else { return }
 
