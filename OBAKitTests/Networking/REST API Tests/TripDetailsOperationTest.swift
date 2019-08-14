@@ -21,7 +21,7 @@ class TripDetailsOperationTest: OBATestCase {
     func testSuccessfulStopsForRouteRequest() {
         let tripID = "1_18196913"
         let vehicleID = "1_1234"
-        let serviceDate = Int64(1343631600000)
+        let serviceDate = Date(timeIntervalSince1970: 1343631600.0)
 
         let expectedParams = [
             "vehicleId": vehicleID,

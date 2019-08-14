@@ -112,7 +112,7 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.lastKnownLocation).to(beNil())
                 expect(tripStatus.lastKnownOrientation) == 0
                 expect(tripStatus.lastLocationUpdateTime) == 0
-                expect(tripStatus.lastUpdateTime) == 1538584269000
+                expect(tripStatus.lastUpdate) == Date(timeIntervalSince1970: 1538584269)
 
                 expect(tripStatus.nextStop!.id) == "1_565"
                 expect(tripStatus.nextStop!.name) == "University St Station - Bay A"

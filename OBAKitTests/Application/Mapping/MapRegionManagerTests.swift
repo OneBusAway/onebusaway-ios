@@ -14,6 +14,7 @@ import Nimble
 
 class MapRegionManagerTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
+    let obacoBaseURL = URL(string: "http://www.example.com")!
     let apiKey = "apikey"
     let uuid = "uuid-string"
     let appVersion = "app-version"
@@ -26,7 +27,7 @@ class MapRegionManagerTests: OBATestCase {
 
         let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
 

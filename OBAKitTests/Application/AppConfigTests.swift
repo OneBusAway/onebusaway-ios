@@ -16,6 +16,7 @@ import Nimble
 
 class AppConfigTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
+    let obacoBaseURL = URL(string: "http://www.example.com")!
     let apiKey = "apikey"
     let uuid = "uuid-string"
     let appVersion = "app-version"
@@ -34,9 +35,10 @@ class AppConfigTests: OBATestCase {
         let locationManager = AuthorizedMockLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locationManager)
         let analytics = AnalyticsMock()
-        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService)
+        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService)
 
         expect(appConfig.regionsBaseURL) == regionsBaseURL
+        expect(appConfig.obacoBaseURL) == obacoBaseURL
         expect(appConfig.apiKey) == apiKey
         expect(appConfig.uuid) == uuid
         expect(appConfig.appVersion) == appVersion

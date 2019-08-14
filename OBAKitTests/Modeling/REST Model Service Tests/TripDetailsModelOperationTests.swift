@@ -35,8 +35,8 @@ class TripDetailsModelOperationTests: OBATestCase {
         expect(tripDetails.stopTimes.count) == 53
 
         let stopTime = tripDetails.stopTimes.first!
-        expect(stopTime.arrival) == 58862
-        expect(stopTime.departure) == 58862
+        expect(stopTime.arrivalDate.timeIntervalSince1970) == 1343690462
+        expect(stopTime.departureDate.timeIntervalSince1970) == 1343690462
         expect(stopTime.stopID) == "1_9610"
 
         expect(tripDetails.previousTrip!.id) == "1_18196851"
@@ -68,7 +68,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         }
 
         waitUntil { done in
-            let op = self.restModelService.getTripDetails(tripID: self.tripID, vehicleID: "12345", serviceDate: 1234567890)
+            let op = self.restModelService.getTripDetails(tripID: self.tripID, vehicleID: "12345", serviceDate: Date())
             op.completionBlock = {
                 self.checkExpectations(op.tripDetails!)
                 done()

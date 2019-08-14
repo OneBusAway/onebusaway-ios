@@ -22,7 +22,7 @@ class WeatherModelOperationTests: OBATestCase {
         }
 
         waitUntil { done in
-            let op = self.obacoModelService.getWeather(regionID: regionID)
+            let op = self.obacoModelService.getWeather()
             op.completionBlock = {
                 let forecast = op.weatherForecast!
                 expect(forecast).toNot(beNil())

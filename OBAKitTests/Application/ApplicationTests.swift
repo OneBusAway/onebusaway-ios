@@ -51,6 +51,7 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
 
 class ApplicationTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
+    let obacoBaseURL = URL(string: "http://www.example.com")!
     let apiKey = "apikey"
     let uuid = "uuid-string"
     let appVersion = "app-version"
@@ -71,7 +72,7 @@ class ApplicationTests: OBATestCase {
     func configureAuthorizedObjects() -> (AuthorizedMockLocationManager, LocationService, AppConfig) {
         let locManager = AuthorizedMockLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
 
         return (locManager, locationService, config)
     }
@@ -108,7 +109,7 @@ class ApplicationTests: OBATestCase {
     func test_app_locationNotDetermined_init() {
         let locManager = LocationManagerMock()
         let locationService = LocationService(locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
 
@@ -123,7 +124,7 @@ class ApplicationTests: OBATestCase {
     func test_app_locationNewlyAuthorized() {
         let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
+        let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
         let appDelegate = TestAppDelegate()
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())

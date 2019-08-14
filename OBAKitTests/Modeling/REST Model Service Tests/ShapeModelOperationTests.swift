@@ -27,7 +27,11 @@ class ShapeModelOperationTests: OBATestCase {
         waitUntil { (done) in
             let op = self.restModelService.getShape(id: self.shapeID)
             op.completionBlock = {
-                expect(op.shape) == "afvaHbdpiV^?pIFdKDj@?L?xC@tC?f@?xB?`DBn@@rB?B?b@?t@@lC@^?h@?`DBZ?`DB~BHhB@?~A?z@@bD?~B@`C@bC?bC?vB@hC@bC?bC?jG@rA?n@?bC@nBD~@JlAJr@Lv@Rn@Vv@NVR`@^h@h@r@pAbAtC|BbChBdA?lA?`FBCzA?|BPn@j@nB|A~EzA|En@lBl@lBh@dB"
+                expect(op.polyline).toNot(beNil())
+
+                let coordinate = op.polyline!.coordinate
+                expect(coordinate.latitude).to(beCloseTo(47.6229))
+                expect(coordinate.longitude).to(beCloseTo(-122.3225))
                 done()
             }
         }
