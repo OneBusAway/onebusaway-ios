@@ -146,7 +146,15 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
         notifyDelegatesDataLoadingStarted()
 
-        let requestStopsOperation = modelService.getStops(region: mapView.region)
+        // Add a 'fudge factor' around the current size of the map's
+        // visible region. This will mean that we load some stops that
+        // are just outside of the visible bounds of the screen, which
+        // means that stops should (fingers crossed) seem to load instantly.
+        var mapRegion = mapView.region
+        mapRegion.span.latitudeDelta *= 1.1
+        mapRegion.span.longitudeDelta *= 1.1
+
+        let requestStopsOperation = modelService.getStops(region: mapRegion)
         requestStopsOperation.then { [weak self] in
             guard let self = self else { return }
 
