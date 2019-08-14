@@ -67,8 +67,18 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     /// Shared user defaults
     @objc public let userDefaults: UserDefaults
 
+    /// The underlying implementation of our data stores.
+    private let userDefaultsStore: UserDefaultsStore
+
     /// The data store for information like bookmarks, groups, and recent stops.
-    @objc public let userDataStore: UserDataStore
+    @objc public var userDataStore: UserDataStore {
+        return userDefaultsStore
+    }
+
+    /// The data store for `StopPreference` data.
+    public var stopPreferencesDataStore: StopPreferencesStore {
+        return userDefaultsStore
+    }
 
     /// Commonly used formatters configured with the user's current, auto-updating locale and the app's theme colors.
     @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, themeColors: ThemeColors.shared)
@@ -121,7 +131,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     @objc public init(config: AppConfig) {
         self.config = config
         userDefaults = config.userDefaults
-        userDataStore = UserDefaultsStore(userDefaults: userDefaults)
+        userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         locationService = config.locationService
         regionsService = config.regionsService
         analytics = config.analytics

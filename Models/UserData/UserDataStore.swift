@@ -103,10 +103,25 @@ public protocol UserDataStore: NSObjectProtocol {
     var lastSelectedView: SelectedTab { get set }
 }
 
+// MARK: - Stop Preferences
+
+public protocol StopPreferencesStore: NSObjectProtocol {
+    /// Updates the Stop Preferences (sorting/filtering) for the specified Stop.
+    /// - Parameter stopPreferences: The sorting and filtering options for the `Stop`.
+    /// - Parameter stop: The `Stop` to which the `stopPreferences` will be applied.
+    /// - Parameter region: The `Region` in which `stop` exists.
+    func set(stopPreferences: StopPreferences, stop: Stop, region: Region)
+
+    /// Retrieves the `stopPreferences` for the specified `Stop`. Always returns a value.
+    /// - Parameter stopID: The ID of the `Stop` for which `StopPreferences` will be retrieved.
+    /// - Parameter region: The `Region` in which `stop` exists.
+    func preferences(stopID: String, region: Region) -> StopPreferences
+}
+
 // MARK: - UserDefaultsStore
 
 @objc(OBAUserDefaultsStore)
-public class UserDefaultsStore: NSObject, UserDataStore {
+public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     let userDefaults: UserDefaults
 
@@ -115,6 +130,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
         case bookmarks
         case bookmarkGroups
         case recentStops
+        case stopPreferences
         case lastSelectedView
     }
 
@@ -139,7 +155,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var bookmarkGroups: [BookmarkGroup] {
         get {
-            return decodeUserDefaultsObjects(type: BookmarkGroup.self, key: .bookmarkGroups)
+            return decodeUserDefaultsObjects(type: [BookmarkGroup].self, key: .bookmarkGroups) ?? []
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: .bookmarkGroups) // swiftlint:disable:this force_try
@@ -165,7 +181,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var bookmarks: [Bookmark] {
         get {
-            return decodeUserDefaultsObjects(type: Bookmark.self, key: .bookmarks)
+            return decodeUserDefaultsObjects(type: [Bookmark].self, key: .bookmarks) ?? []
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: .bookmarks) // swiftlint:disable:this force_try
@@ -235,7 +251,7 @@ public class UserDefaultsStore: NSObject, UserDataStore {
 
     public var recentStops: [Stop] {
         get {
-            return decodeUserDefaultsObjects(type: Stop.self, key: .recentStops)
+            return decodeUserDefaultsObjects(type: [Stop].self, key: .recentStops) ?? []
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: .recentStops) // swiftlint:disable:this force_try
@@ -279,6 +295,32 @@ public class UserDefaultsStore: NSObject, UserDataStore {
         return recentStops.filter { $0.matchesQuery(cleanedText) }
     }
 
+    // MARK: - Stop Preferences
+
+    public func set(stopPreferences: StopPreferences, stop: Stop, region: Region) {
+        let key = stopPreferencesKey(id: stop.id, region: region)
+        self.stopPreferences[key] = stopPreferences
+    }
+
+    public func preferences(stopID: String, region: Region) -> StopPreferences {
+        let prefs = stopPreferences
+        let key = stopPreferencesKey(id: stopID, region: region)
+        return prefs[key] ?? StopPreferences()
+    }
+
+    private func stopPreferencesKey(id: String, region: Region) -> String {
+        "\(region.regionIdentifier)_\(id)"
+    }
+
+    private var stopPreferences: [String: StopPreferences] {
+        get {
+            return decodeUserDefaultsObjects(type: [String: StopPreferences].self, key: .stopPreferences) ?? [:]
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: .stopPreferences) // swiftlint:disable:this force_try
+        }
+    }
+
     // MARK: - View State/Last Selected Tab
 
     public var lastSelectedView: SelectedTab {
@@ -316,21 +358,21 @@ public class UserDefaultsStore: NSObject, UserDataStore {
     /// - Returns: An array of objects of type `T`.
     ///
     /// - Note: If an error is encountered while decoding the array, a message will be printed to the console and an empty array returned.
-    private func decodeUserDefaultsObjects<T>(type: T.Type, key: UserDefaultsKeys) -> [T] where T: Decodable {
+    private func decodeUserDefaultsObjects<T>(type: T.Type, key: UserDefaultsKeys) -> T? where T: Decodable {
         do {
-            let obj = try userDefaults.decodeUserDefaultsObjects(type: [T].self, key: key.rawValue)
-            return obj ?? []
+            let obj = try userDefaults.decodeUserDefaultsObjects(type: T.self, key: key.rawValue)
+            return obj
         }
         catch let error {
             DDLogError("Unable to decode \(key.rawValue): \(error)")
-            return []
+            return nil
         }
     }
 
     /// Encodes an array of `Encodable` objects and stores them in user defaults.
-    /// - Parameter objects: An array of `Encodable` objects. For example, bookmarks.
+    /// - Parameter objects: An `Encodable` object (or an array of them). For example, bookmarks.
     /// - Parameter key: The user defaults key that corresponds to the data being saved.
-    private func encodeUserDefaultsObjects<T>(_ objects: [T], key: UserDefaultsKeys) throws where T: Encodable {
-        try userDefaults.encodeUserDefaultsObjects(objects, key: key.rawValue)
+    private func encodeUserDefaultsObjects<T>(_ object: T, key: UserDefaultsKeys) throws where T: Encodable {
+        try userDefaults.encodeUserDefaultsObjects(object, key: key.rawValue)
     }
 }
