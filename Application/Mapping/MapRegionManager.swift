@@ -47,6 +47,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
+        mapView.showsCompass = false
         return mapView
     }()
 

@@ -62,25 +62,38 @@ public class MapViewController: UIViewController,
         weatherOperation?.cancel()
     }
 
+    // MARK: - Map Compass
+
+    private lazy var compassButton: MKCompassButton = {
+        let compassBtn = MKCompassButton(mapView: mapRegionManager.mapView)
+        compassBtn.translatesAutoresizingMaskIntoConstraints = false
+        compassBtn.compassVisibility = .adaptive
+        return compassBtn
+    }()
+
     // MARK: - UIViewController
 
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         let mapView = mapRegionManager.mapView
+        mapView.showsCompass = false
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
         floatingPanel.addPanel(toParent: self)
 
         view.addSubview(floatingToolbar)
+        view.addSubview(compassButton)
 
         NSLayoutConstraint.activate([
             floatingToolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
             floatingToolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             floatingToolbar.widthAnchor.constraint(equalToConstant: 40.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor)
+            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
+            compassButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
+            compassButton.topAnchor.constraint(equalTo: floatingToolbar.bottomAnchor, constant: ThemeMetrics.padding)
         ])
     }
 
