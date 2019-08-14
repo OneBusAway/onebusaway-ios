@@ -206,7 +206,7 @@ public class StopViewController: UIViewController, AloeStackTableBuilder {
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             stopToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stopToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stopToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            stopToolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         var inset = stackView.contentInset
