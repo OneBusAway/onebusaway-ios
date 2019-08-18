@@ -119,7 +119,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             }
         }
         set {
-            guard let newValue = newValue else {
+            guard
+                let newValue = newValue,
+                newValue != currentRegion
+            else {
                 return
             }
 
