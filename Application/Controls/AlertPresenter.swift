@@ -21,7 +21,15 @@ public class AlertPresenter: NSObject {
     /// - Parameter errorMessage: The error message that will be shown.
     /// - Parameter presentingController: The view controller that will act as the host for the presented error alert UI.
     public class func show(errorMessage: String, presentingController: UIViewController) {
-        let alert = UIAlertController(title: Strings.error, message: errorMessage, preferredStyle: .alert)
+        showDismissableAlert(title: Strings.error, message: errorMessage, presentingController: presentingController)
+    }
+
+    /// Displays an alert with a Dismiss button, presented from `presentingController`.
+    /// - Parameter title: Optional alert title.
+    /// - Parameter message: Optional alert message.
+    /// - Parameter presentingController: The presenting view controller.
+    public class func showDismissableAlert(title: String?, message: String?, presentingController: UIViewController) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default, handler: nil))
         presentingController.present(alert, animated: true, completion: nil)
     }
