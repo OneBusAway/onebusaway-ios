@@ -13,12 +13,12 @@ import OHHTTPStubs
 
 class RegionalAlertsOperationTest: OBATestCase {
     func testRegionalAlertsAPIPath() {
-        expect(RegionalAlertsOperation.buildAPIPath(agencyID: "Hello/World")) == "/api/gtfs_realtime/alerts-for-agency/Hello%2FWorld.pb"
+        expect(RegionalAlertsOperation.buildRESTAPIPath(agencyID: "Hello/World")) == "/api/gtfs_realtime/alerts-for-agency/Hello%2FWorld.pb"
     }
 
     func testSuccessfulStopsForRouteRequest() {
         let agencyID = "1"
-        let apiPath = RegionalAlertsOperation.buildAPIPath(agencyID: agencyID)
+        let apiPath = RegionalAlertsOperation.buildRESTAPIPath(agencyID: agencyID)
 
         stub(condition: isHost(self.host) &&
             isPath(apiPath)

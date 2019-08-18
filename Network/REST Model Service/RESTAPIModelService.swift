@@ -270,32 +270,19 @@ public class RESTAPIModelService: NSObject {
 
     // MARK: - Alerts
 
-    public func getRegionalAlerts() -> RegionalAlertsModelOperation {
-        // Get a list of agencies
-        let agenciesOperation = getAgenciesWithCoverage()
-
+    public func getRegionalAlerts(agencies: [AgencyWithCoverage]) -> RegionalAlertsModelOperation {
         // Set up the final operation that will collect all of our agency alerts.
         let regionalAlertsOperation = RegionalAlertsModelOperation()
 
-        // Create a transfer operation that will create `n` alert
-        // fetch operations for our `n` agencies. Also make the
-        // final operation dependent on each of those sub-ops.
-        let agenciesTransfer = BlockOperation { [unowned agenciesOperation, unowned regionalAlertsOperation] in
-            let agencies = agenciesOperation.agenciesWithCoverage
+        for agency in agencies {
+            // Create a 'fetch alerts' operation for each agency
+            let fetchAlertsOp = self.getRegionalAlerts(agency: agency)
 
-            for agency in agencies {
-                // Create a 'fetch alerts' operation for each agency
-                let fetchAlertsOp = self.getRegionalAlerts(agency: agency)
-
-                // add each 'fetch alerts' op as a dependency of the final operation.
-                regionalAlertsOperation.addDependency(fetchAlertsOp)
-            }
+            // add each 'fetch alerts' op as a dependency of the final operation.
+            regionalAlertsOperation.addDependency(fetchAlertsOp)
         }
 
-        agenciesTransfer.addDependency(agenciesOperation)
-        regionalAlertsOperation.addDependency(agenciesTransfer)
-
-        dataQueue.addOperations([agenciesTransfer, regionalAlertsOperation], waitUntilFinished: false)
+        dataQueue.addOperation(regionalAlertsOperation)
 
         return regionalAlertsOperation
     }
@@ -306,7 +293,7 @@ public class RESTAPIModelService: NSObject {
         let serviceOperation = apiService.getRegionalAlerts(agencyID: agency.agencyID)
 
         // Create the operation that will process the agencies and the GTFS data.
-        let dataOperation = AgencyAlertsModelOperation(agency: agency)
+        let dataOperation = AgencyAlertsModelOperation(agencies: [agency])
 
         // The transfer operation will prime the data operation with the raw data it needs.
         let transferOperation = BlockOperation { [unowned serviceOperation, unowned dataOperation] in

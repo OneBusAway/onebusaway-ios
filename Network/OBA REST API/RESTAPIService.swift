@@ -255,7 +255,7 @@ public class RESTAPIService: APIService {
     // MARK: - Regional Alerts
 
     public func getRegionalAlerts(agencyID: String) -> RegionalAlertsOperation {
-        let url = RegionalAlertsOperation.buildURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
+        let url = RegionalAlertsOperation.buildRESTURL(agencyID: agencyID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = RegionalAlertsOperation.buildRequest(for: url)
         let operation = RegionalAlertsOperation(request: request)
         networkQueue.addOperation(operation)

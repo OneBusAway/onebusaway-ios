@@ -8,7 +8,11 @@
 
 import Foundation
 
-public class RegionalAlertsModelOperation: Operation {
+protocol HasAgencyAlerts: NSObjectProtocol {
+    var agencyAlerts: [AgencyAlert] { get }
+}
+
+public class RegionalAlertsModelOperation: Operation, HasAgencyAlerts {
     public var agencyAlertsOperations = [AgencyAlertsModelOperation]()
     public private(set) var agencyAlerts = [AgencyAlert]()
     private let dispatchQueue = DispatchQueue(label: "org.onebusaway.regional-alerts")
@@ -25,25 +29,25 @@ public class RegionalAlertsModelOperation: Operation {
 
     override public func main() {
         super.main()
-        agencyAlerts = agencyAlertsOperations.flatMap { $0.gtfsAlerts }
+        agencyAlerts = agencyAlertsOperations.flatMap { $0.agencyAlerts }
     }
 }
 
-public class AgencyAlertsModelOperation: Operation {
-    public private(set) var gtfsAlerts = [AgencyAlert]()
+public class AgencyAlertsModelOperation: Operation, HasAgencyAlerts, APIAssignee {
+    public private(set) var agencyAlerts = [AgencyAlert]()
 
-    public var apiOperation: NetworkOperation?
-    let agency: AgencyWithCoverage
+    public var apiOperation: Operation?
+    let agencies: [AgencyWithCoverage]
 
-    public init(agency: AgencyWithCoverage) {
-        self.agency = agency
+    public init(agencies: [AgencyWithCoverage]) {
+        self.agencies = agencies
     }
 
     override public func main() {
         super.main()
 
         guard
-            let apiOperation = apiOperation,
+            let apiOperation = apiOperation as? NetworkOperation,
             let data = apiOperation.data,
             let message = try? TransitRealtime_FeedMessage(serializedData: data)
         else {
@@ -66,13 +70,12 @@ public class AgencyAlertsModelOperation: Operation {
 
         let agencyAlerts = qualifiedEntities.compactMap { (e: TransitRealtime_FeedEntity) -> AgencyAlert? in
             do {
-                let alert = try AgencyAlert(feedEntity: e, agency: agency)
-                return alert
+                return try AgencyAlert(feedEntity: e, agencies: agencies)
             } catch {
                 return nil
             }
         }
 
-        gtfsAlerts = agencyAlerts
+        self.agencyAlerts = agencyAlerts
     }
 }
