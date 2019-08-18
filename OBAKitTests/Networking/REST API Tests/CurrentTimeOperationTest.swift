@@ -14,7 +14,7 @@ import OHHTTPStubs
 class CurrentTimeTests: OBATestCase {
     func testSuccessfulAPICall() {
         stub(condition: isHost(self.host) && isPath(CurrentTimeOperation.apiPath)) { _ in
-            return self.JSONFile(named: "current_time.json")
+            return OHHTTPStubsResponse.JSONFile(named: "current_time.json")
         }
 
         waitUntil { (done) in

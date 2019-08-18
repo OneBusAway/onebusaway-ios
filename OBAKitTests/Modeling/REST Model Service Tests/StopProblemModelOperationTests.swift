@@ -28,7 +28,7 @@ class StopProblemModelOperationTests: OBATestCase {
         stub(condition: isHost(host) &&
             isPath(StopProblemOperation.apiPath) &&
             containsQueryParams(self.expectedParams)) { _ in
-                return self.JSONFile(named: "report_stop_problem.json")
+                return OHHTTPStubsResponse.JSONFile(named: "report_stop_problem.json")
         }
     }
 

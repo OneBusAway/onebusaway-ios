@@ -22,7 +22,7 @@ class ShapeOperationTest: OBATestCase {
         let apiPath = ShapeOperation.buildAPIPath(shapeID: shapeID)
 
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "shape_1_20010002.json")
+            return OHHTTPStubsResponse.JSONFile(named: "shape_1_20010002.json")
         }
 
         waitUntil { done in

@@ -37,7 +37,7 @@ class TripProblemModelOperationTests: OBATestCase {
         stub(condition: isHost(host) &&
             isPath(TripProblemOperation.apiPath) &&
             containsQueryParams(self.expectedParams)) { _ in
-                return self.JSONFile(named: "report_trip_problem.json")
+                return OHHTTPStubsResponse.JSONFile(named: "report_trip_problem.json")
         }
 
         waitUntil { done in

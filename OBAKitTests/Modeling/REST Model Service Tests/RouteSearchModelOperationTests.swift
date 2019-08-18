@@ -21,7 +21,7 @@ class RouteSearchModelOperationTests: OBATestCase {
 
     func stubAPICall() {
         stub(condition: isHost(self.host) && isPath(RouteSearchOperation.apiPath)) { _ in
-            return self.JSONFile(named: "routes-for-location-10.json")
+            return OHHTTPStubsResponse.JSONFile(named: "routes-for-location-10.json")
         }
     }
 

@@ -77,13 +77,13 @@ class RegionsServiceTests: OBATestCase {
 
     private func stubRegionsJustPugetSound() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-just-puget-sound.json")
+            return OHHTTPStubsResponse.JSONFile(named: "regions-just-puget-sound.json")
         }
     }
 
     private func stubRegions() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-v3.json")
+            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
         }
     }
 

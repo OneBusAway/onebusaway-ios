@@ -41,7 +41,7 @@ class AlarmOperationTest: OBATestCase {
                         isPath(apiPath) &&
                         isMethodPOST()
         ) { _ in
-            return self.JSONFile(named: "create_alarm.json")
+            return OHHTTPStubsResponse.JSONFile(named: "create_alarm.json")
         }
 
         waitUntil { done in

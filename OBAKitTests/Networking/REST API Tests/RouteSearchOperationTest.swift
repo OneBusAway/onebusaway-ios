@@ -22,7 +22,7 @@ class RouteSearchOperationTest: OBATestCase {
         let region = CLCircularRegion(center: center, radius: radius, identifier: "identifier")
 
         stub(condition: isHost(self.host) && isPath(RouteSearchOperation.apiPath)) { _ in
-            return self.JSONFile(named: "routes-for-location-10.json")
+            return OHHTTPStubsResponse.JSONFile(named: "routes-for-location-10.json")
         }
 
         waitUntil { done in

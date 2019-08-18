@@ -24,7 +24,7 @@ class VehicleTripOperationTest: OBATestCase {
         let apiPath = VehicleTripOperation.buildAPIPath(vehicleID: vehicleID)
 
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "trip-for-vehicle-1_2799.json")
+            return OHHTTPStubsResponse.JSONFile(named: "trip-for-vehicle-1_2799.json")
         }
 
         waitUntil { done in

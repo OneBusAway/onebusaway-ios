@@ -23,7 +23,7 @@ class RegionalAlertsOperationTest: OBATestCase {
         stub(condition: isHost(self.host) &&
             isPath(apiPath)
         ) { _ in
-            return self.dataFile(named: "puget_sound_alerts.pb")
+            return OHHTTPStubsResponse.dataFile(named: "puget_sound_alerts.pb")
         }
 
         waitUntil { done in

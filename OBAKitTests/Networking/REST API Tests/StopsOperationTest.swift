@@ -24,7 +24,7 @@ class StopsOperationTest: OBATestCase {
         stub(condition: isHost(self.host) &&
             isPath(StopsOperation.apiPath) &&
             containsQueryParams(expectedParams)) { _ in
-                return self.JSONFile(named: "stops_for_location_seattle.json")
+                return OHHTTPStubsResponse.JSONFile(named: "stops_for_location_seattle.json")
         }
 
         waitUntil { done in
@@ -63,7 +63,7 @@ class StopsOperationTest: OBATestCase {
         ]
 
         stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath) && containsQueryParams(expectedParams)) { _ in
-            return self.JSONFile(named: "stops_for_location_seattle_span.json")
+            return OHHTTPStubsResponse.JSONFile(named: "stops_for_location_seattle_span.json")
         }
 
         waitUntil { done in
@@ -91,7 +91,7 @@ class StopsOperationTest: OBATestCase {
         ]
 
         stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath) && containsQueryParams(expectedParams)) { _ in
-            return self.JSONFile(named: "stops_for_location_seattle_span.json")
+            return OHHTTPStubsResponse.JSONFile(named: "stops_for_location_seattle_span.json")
         }
 
         waitUntil { done in

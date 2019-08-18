@@ -18,7 +18,7 @@ class StopsModelOperationTests: OBATestCase {
 
     func stubApiCall() {
         stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "stops_for_location_seattle.json")
+            return OHHTTPStubsResponse.JSONFile(named: "stops_for_location_seattle.json")
         }
     }
 

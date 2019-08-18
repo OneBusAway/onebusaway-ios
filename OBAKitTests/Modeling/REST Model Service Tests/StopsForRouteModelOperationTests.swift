@@ -19,7 +19,7 @@ class StopsForRouteModelOperationTests: OBATestCase {
 
     func stubAPICall() {
         stub(condition: isHost(self.host) && isPath(self.apiPath)) { _ in
-            return self.JSONFile(named: "stops-for-route-1_100002.json")
+            return OHHTTPStubsResponse.JSONFile(named: "stops-for-route-1_100002.json")
         }
     }
 

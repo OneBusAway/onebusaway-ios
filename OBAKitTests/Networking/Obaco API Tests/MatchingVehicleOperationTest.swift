@@ -19,7 +19,7 @@ class MatchingVehicleOperationTest: OBATestCase {
         let apiPath = MatchingVehiclesOperation.buildAPIPath(regionID: obacoRegionID)
 
         stub(condition: isHost(self.obacoHost) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "vehicles-query-1_1.json")
+            return OHHTTPStubsResponse.JSONFile(named: "vehicles-query-1_1.json")
         }
 
         waitUntil { done in

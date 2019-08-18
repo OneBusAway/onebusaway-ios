@@ -34,7 +34,7 @@ class TripDetailsOperationTest: OBATestCase {
                         isPath(apiPath) &&
                         containsQueryParams(expectedParams)
         ) { _ in
-            return self.JSONFile(named: "trip_details_1_18196913.json")
+            return OHHTTPStubsResponse.JSONFile(named: "trip_details_1_18196913.json")
         }
 
         waitUntil { done in

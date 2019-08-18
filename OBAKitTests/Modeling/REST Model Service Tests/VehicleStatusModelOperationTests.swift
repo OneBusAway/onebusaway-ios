@@ -22,7 +22,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
     func stubJSON(fileName: String) {
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: fileName)
+            return OHHTTPStubsResponse.JSONFile(named: fileName)
         }
     }
 }
@@ -31,7 +31,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
 extension VehicleStatusModelOperationTests {
     func testLoading_vehicleStatus_failure_garbageData() {
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.file(named: "captive_portal.html", contentType: "text/html")
+            return OHHTTPStubsResponse.file(named: "captive_portal.html", contentType: "text/html")
         }
 
         waitUntil { done in

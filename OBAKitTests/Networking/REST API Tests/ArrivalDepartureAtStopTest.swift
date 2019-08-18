@@ -32,7 +32,7 @@ class ArrivalDepartureAtStopTest: OBATestCase {
         stub(condition: isHost(self.host) &&
                         isPath(apiPath) &&
                         containsQueryParams(expectedParams)) { _ in
-            return self.JSONFile(named: "arrival-and-departure-for-stop-1_11420.json")
+            return OHHTTPStubsResponse.JSONFile(named: "arrival-and-departure-for-stop-1_11420.json")
         }
 
         waitUntil { done in

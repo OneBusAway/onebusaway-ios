@@ -19,7 +19,7 @@ class RequestVehicleOperationSpec: OBATestCase {
         let apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
 
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "vehicle_for_id_4011.json")
+            return OHHTTPStubsResponse.JSONFile(named: "vehicle_for_id_4011.json")
         }
 
         waitUntil { done in

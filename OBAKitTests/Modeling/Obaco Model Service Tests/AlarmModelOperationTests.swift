@@ -30,7 +30,7 @@ class AlarmModelOperationTests: OBATestCase {
             isPath(createAPIPath) &&
             isMethodPOST()
         ) { _ in
-            return self.JSONFile(named: "create_alarm.json")
+            return OHHTTPStubsResponse.JSONFile(named: "create_alarm.json")
         }
 
         waitUntil { done in

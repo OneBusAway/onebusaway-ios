@@ -16,7 +16,7 @@ class CurrentTimeModelOperationTests: OBATestCase {
 
     func testCurrentTime_success() {
         stub(condition: isHost(self.host) && isPath(CurrentTimeOperation.apiPath)) { _ in
-            return self.JSONFile(named: "current_time.json")
+            return OHHTTPStubsResponse.JSONFile(named: "current_time.json")
         }
 
         let op = self.restModelService.getCurrentTime()

@@ -22,7 +22,7 @@ class StopsForRouteOperationTest: OBATestCase {
         let routeID = "1_100002"
         let apiPath = StopsForRouteOperation.buildAPIPath(routeID: routeID)
         stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "stops-for-route-1_100002.json")
+            return OHHTTPStubsResponse.JSONFile(named: "stops-for-route-1_100002.json")
         }
 
         waitUntil { done in

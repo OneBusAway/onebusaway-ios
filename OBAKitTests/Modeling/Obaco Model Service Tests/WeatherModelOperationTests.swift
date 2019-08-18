@@ -18,7 +18,7 @@ class WeatherModelOperationTests: OBATestCase {
         let apiPath = WeatherOperation.buildAPIPath(regionID: regionID)
 
         stub(condition: isHost(self.obacoHost) && isPath(apiPath)) { _ in
-            return self.JSONFile(named: "pugetsound-weather.json")
+            return OHHTTPStubsResponse.JSONFile(named: "pugetsound-weather.json")
         }
 
         waitUntil { done in

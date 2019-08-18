@@ -16,7 +16,7 @@ import MapKit
 class AgenciesWithCoverageModelOperationTests: OBATestCase {
     func stubAPICall() {
         stub(condition: isHost(self.host) && isPath(AgenciesWithCoverageOperation.apiPath)) { _ in
-            return self.JSONFile(named: "agencies_with_coverage.json")
+            return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
         }
     }
 

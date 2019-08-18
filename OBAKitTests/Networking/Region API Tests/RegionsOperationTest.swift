@@ -14,7 +14,7 @@ import OHHTTPStubs
 class RegionsOperationTest: OBATestCase {
     func testSuccessfulRegionsRequest() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-v3.json")
+            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
         }
 
         waitUntil { done in

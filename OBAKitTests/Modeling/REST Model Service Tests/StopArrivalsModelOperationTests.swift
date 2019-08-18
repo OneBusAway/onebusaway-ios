@@ -25,10 +25,10 @@ class StopArrivalsModelOperationTests: OBATestCase {
     override func setUp() {
         super.setUp()
         stub(condition: isHost(self.host) && isPath(self.campusParkwayAPIPath)) { _ in
-            return self.JSONFile(named: "arrivals-and-departures-for-stop-1_10914.json")
+            return OHHTTPStubsResponse.JSONFile(named: "arrivals-and-departures-for-stop-1_10914.json")
         }
         stub(condition: isHost(self.host) && isPath(self.galerAPIPath)) { _ in
-            return self.JSONFile(named: "arrivals_and_departures_for_stop_15th-galer.json")
+            return OHHTTPStubsResponse.JSONFile(named: "arrivals_and_departures_for_stop_15th-galer.json")
         }
     }
 

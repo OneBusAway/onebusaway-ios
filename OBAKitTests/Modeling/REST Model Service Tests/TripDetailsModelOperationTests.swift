@@ -50,7 +50,7 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     func testLoading_vehicleDetails_success() {
         stub(condition: isHost(self.host) && isPath(vehicleTripAPIPath)) { _ in
-            return self.JSONFile(named: "trip_details_1_18196913.json")
+            return OHHTTPStubsResponse.JSONFile(named: "trip_details_1_18196913.json")
         }
 
         waitUntil { done in
@@ -64,7 +64,7 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     func testLoading_tripDetails_success() {
         stub(condition: isHost(self.host) && isPath(tripDetailsAPIPath)) { _ in
-            return self.JSONFile(named: "trip_details_1_18196913.json")
+            return OHHTTPStubsResponse.JSONFile(named: "trip_details_1_18196913.json")
         }
 
         waitUntil { done in

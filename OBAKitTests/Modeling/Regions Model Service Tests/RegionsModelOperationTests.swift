@@ -18,7 +18,7 @@ import MapKit
 class RegionsModelOperationTests: OBATestCase {
     func testSuccessfulRequest() {
         stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
-            return self.JSONFile(named: "regions-v3.json")
+            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
         }
 
         waitUntil { (done) in

@@ -19,7 +19,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
     func stubAPICall() {
         stub(condition: isHost(self.host) && isPath(self.apiPath)) { _ in
-            return self.JSONFile(named: "arrival-and-departure-for-stop-MTS_11589.json")
+            return OHHTTPStubsResponse.JSONFile(named: "arrival-and-departure-for-stop-MTS_11589.json")
         }
     }
 

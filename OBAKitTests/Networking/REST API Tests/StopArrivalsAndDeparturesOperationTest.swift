@@ -35,7 +35,7 @@ class StopArrivalsAndDeparturesOperationTest: OBATestCase {
             isPath(apiPath) &&
             containsQueryParams(expectedParams)
         ) { _ in
-            return self.JSONFile(named: "arrivals-and-departures-for-stop-1_75414.json")
+            return OHHTTPStubsResponse.JSONFile(named: "arrivals-and-departures-for-stop-1_75414.json")
         }
 
         waitUntil { done in

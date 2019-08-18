@@ -16,7 +16,7 @@ class AgencyVehicleModelOperationTests: OBATestCase {
         let apiPath = MatchingVehiclesOperation.buildAPIPath(regionID: obacoRegionID)
 
         stub(condition: isHost(self.obacoHost) && isPath(apiPath)) { _ in
-            let foo = self.JSONFile(named: "vehicles-query-1_1.json")
+            let foo = OHHTTPStubsResponse.JSONFile(named: "vehicles-query-1_1.json")
             return foo
         }
 

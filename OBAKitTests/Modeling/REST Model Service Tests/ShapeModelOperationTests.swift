@@ -17,7 +17,7 @@ class ShapeModelOperationTests: OBATestCase {
     let shapeID = "shape_1_20010002"
     func stubAPICall() {
         stub(condition: isHost(self.host) && isPath(ShapeOperation.buildAPIPath(shapeID: shapeID))) { _ in
-            return self.JSONFile(named: "shape_1_20010002.json")
+            return OHHTTPStubsResponse.JSONFile(named: "shape_1_20010002.json")
         }
     }
 
