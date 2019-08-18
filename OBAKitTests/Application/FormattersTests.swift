@@ -21,9 +21,10 @@ enum ModelDecodingError: Error {
 
 class FormattersTests: OBATestCase {
     let usLocale = Locale(identifier: "en_US")
+    let calendar = Calendar(identifier: .gregorian)
 
     func testExample() {
-        let formatters = Formatters(locale: usLocale, themeColors: ThemeColors())
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
         let json = loadJSONDictionary(file: "arrivals-and-departures-for-stop-1_75414.json")
         let stopArrivals = try! decodeModels(type: StopArrivals.self, json: json)
         let arrDep = stopArrivals.first!.arrivalsAndDepartures.first!

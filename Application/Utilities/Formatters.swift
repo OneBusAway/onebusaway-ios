@@ -9,17 +9,18 @@
 import Foundation
 
 public class Formatters: NSObject {
-
     private let locale: Locale
     private let themeColors: ThemeColors
+    private let calendar: Calendar
 
-    /// Creates a new `Formatters` object that will use the provided `Locale` for locale-specific customization.
+    /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.
     ///
-    /// - Note: You can (and probably should) pass in `Locale.autoupdatingCurrent` to this method.
+    /// - Note: You probably should pass in the `autoupdatingCurrent` instances of `Locale` and `Calendar` to this method.
     ///
     /// - Parameter locale: The current locale of the user's device.
-    public init(locale: Locale, themeColors: ThemeColors) {
+    public init(locale: Locale, calendar: Calendar, themeColors: ThemeColors) {
         self.locale = locale
+        self.calendar = calendar
         self.themeColors = themeColors
     }
 
@@ -33,6 +34,30 @@ public class Formatters: NSObject {
     }()
 
     // MARK: - Formatted Times
+
+    /// Returns a representation of `date` that varies depending on whether `date` happens to be from today or another day.
+    ///
+    /// For instance, if `date` is from today, the `String` returned will simply be the time. If `date` is from any other day, then
+    /// the `String` returned will look something like "Formatted short date, 9:41".
+    /// - Parameter date: The date from which the return value will be created.
+    public func contextualDateTimeString(_ date: Date) -> String {
+        if calendar.isDateInToday(date) {
+            return timeFormatter.string(from: date)
+        }
+        else {
+            return shortDateTimeFormatter.string(from: date)
+        }
+    }
+
+    /// Converts a date into a human-readable date/time string that conforms to the user's locale.
+    public lazy var shortDateTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        formatter.locale = locale
+
+        return formatter
+    }()
 
     /// Converts a date into a human-readable time string that conforms to the user's locale.
     public lazy var timeFormatter: DateFormatter = {
