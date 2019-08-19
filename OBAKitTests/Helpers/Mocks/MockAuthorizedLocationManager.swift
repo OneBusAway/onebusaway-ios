@@ -1,5 +1,5 @@
 //
-//  AuthorizedMockLocationService.swift
+//  MockAuthorizedLocationManager.swift
 //  OBAKitTests
 //
 //  Created by Aaron Brethorst on 11/23/18.
@@ -10,7 +10,7 @@ import Foundation
 import CoreLocation
 import OBAKit
 
-class AuthorizedMockLocationManager: NSObject, LocationManager {
+class MockAuthorizedLocationManager: NSObject, LocationManager {
     weak var delegate: CLLocationManagerDelegate?
 
     private let updateLocation: CLLocation

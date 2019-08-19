@@ -162,7 +162,6 @@ public class NearbyViewController: VisualEffectViewController, ListProvider, Sea
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = defaultSectionController(for: object)
-        sectionController.inset = .zero
         return sectionController
     }
 

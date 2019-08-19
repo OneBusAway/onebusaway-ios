@@ -69,8 +69,8 @@ class ApplicationTests: OBATestCase {
 
     // MARK: - When location has already been authorized
 
-    func configureAuthorizedObjects() -> (AuthorizedMockLocationManager, LocationService, AppConfig) {
-        let locManager = AuthorizedMockLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+    func configureAuthorizedObjects() -> (MockAuthorizedLocationManager, LocationService, AppConfig) {
+        let locManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locManager)
         let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
 
