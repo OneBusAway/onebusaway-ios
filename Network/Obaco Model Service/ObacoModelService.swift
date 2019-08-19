@@ -79,4 +79,15 @@ public class ObacoModelService: ModelService {
 
         return data
     }
+
+    // MARK: - Alerts
+
+    public func getAlerts(agencies: [AgencyWithCoverage]) -> AgencyAlertsModelOperation {
+        let service = apiService.getAlerts()
+        let data = AgencyAlertsModelOperation(agencies: agencies)
+
+        transferData(from: service, to: data)
+
+        return data
+    }
 }

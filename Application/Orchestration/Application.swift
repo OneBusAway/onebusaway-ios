@@ -54,7 +54,7 @@ public protocol ApplicationDelegate {
 // MARK: - Application Class
 
 @objc(OBAApplication)
-public class Application: NSObject, RegionsServiceDelegate, LocationServiceDelegate {
+public class Application: NSObject, RegionsServiceDelegate, LocationServiceDelegate, ObacoServiceDelegate {
 
     // MARK: - Private Properties
 
@@ -104,9 +104,18 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    @objc public private(set) var restAPIModelService: RESTAPIModelService?
+    @objc public private(set) var restAPIModelService: RESTAPIModelService? {
+        didSet {
+            alertsStore.restModelService = restAPIModelService
+        }
+    }
 
-    @objc public private(set) var obacoService: ObacoModelService?
+    @objc public private(set) var obacoService: ObacoModelService? {
+        didSet {
+            notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
+            alertsStore.obacoModelService = obacoService
+        }
+    }
 
     private var obacoNetworkQueue = OperationQueue()
 
@@ -125,6 +134,8 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     @objc public weak var delegate: ApplicationDelegate?
 
     @objc public let notificationCenter: NotificationCenter
+
+    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
 
     @objc public let locale = Locale.autoupdatingCurrent
 
@@ -153,6 +164,9 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         }
 
         refreshRESTAPIModelService()
+        refreshObacoService()
+
+        alertsStore.checkForUpdates()
     }
 
     // MARK: - App State Management
@@ -345,10 +359,13 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
         obacoNetworkQueue.cancelAllOperations()
 
-        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue)
+        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue, delegate: self)
         obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
+    }
 
-        notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
+    public var shouldDisplayRegionalTestAlerts: Bool {
+        // abxoxo - base this on user defaults
+        return false
     }
 
     // MARK: - LocationServiceDelegate

@@ -12,7 +12,6 @@ import Foundation
 /// and so this class offers some Swifty niceties on top of its jank.
 public class AgencyAlert: NSObject {
     private let alert: TransitRealtime_Alert
-
     public let id: String
 
     // MARK: - Agency
@@ -50,6 +49,23 @@ public class AgencyAlert: NSObject {
 
     // MARK: - Initialization
 
+    public convenience init(feedEntity: TransitRealtime_FeedEntity, agencies: [AgencyWithCoverage]) throws {
+        guard
+            let gtfsAgency = AgencyAlert.findAgencyInList(list: feedEntity.alert.informedEntity),
+            gtfsAgency.hasAgencyID
+        else {
+            throw AlertError.invalidAlert
+        }
+
+        guard
+            let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first
+        else {
+            throw AlertError.unknownAgency
+        }
+
+        try self.init(feedEntity: feedEntity, agency: selectedAgency)
+    }
+
     public init(feedEntity: TransitRealtime_FeedEntity, agency: AgencyWithCoverage) throws {
         guard
             feedEntity.hasAlert,
@@ -84,12 +100,18 @@ public class AgencyAlert: NSObject {
         hasher.combine(agency)
         return hasher.finalize()
     }
+
+    override public var debugDescription: String {
+        let desc = super.debugDescription
+        let props: [String: Any] = ["id": id as Any, "agencyID": agencyID as Any, "agency": (agency?.agency.name ?? "(nil)") as Any]
+        return "\(desc) \(props)"
+    }
 }
 
 // MARK: - Errors
 extension AgencyAlert {
     enum AlertError: Error {
-        case invalidAlert
+        case invalidAlert, unknownAgency
     }
 }
 

@@ -8,6 +8,10 @@
 
 import Foundation
 
+public protocol ObacoServiceDelegate: NSObjectProtocol {
+    var shouldDisplayRegionalTestAlerts: Bool { get }
+}
+
 /// API service client for the Obaco (`alerts.onebusaway.org`) service.
 ///
 /// Obaco provides services like weather, trip status, and alarms to the iOS app.
@@ -15,9 +19,22 @@ public class ObacoService: APIService {
 
     private let regionID: String
 
-    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: OperationQueue) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: String, networkQueue: OperationQueue, delegate: ObacoServiceDelegate?) {
         self.regionID = regionID
+        self.delegate = delegate
         super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue)
+    }
+
+    // MARK: - Delegate
+
+    public weak var delegate: ObacoServiceDelegate?
+
+    private var shouldDisplayRegionalTestAlerts: Bool {
+        guard let delegate = delegate else {
+            return false
+        }
+
+        return delegate.shouldDisplayRegionalTestAlerts
     }
 
     // MARK: - Weather
@@ -71,10 +88,29 @@ public class ObacoService: APIService {
         return op
     }
 
+    // MARK: - Vehicles
+
     public func getVehicles(matching query: String) -> MatchingVehiclesOperation {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = MatchingVehiclesOperation.buildRequest(for: url)
         let operation = MatchingVehiclesOperation(request: request)
+        networkQueue.addOperation(operation)
+
+        return operation
+    }
+
+    // MARK: - Alerts
+
+    public func getAlerts() -> RegionalAlertsOperation {
+        var queryItems = defaultQueryItems
+
+        if shouldDisplayRegionalTestAlerts {
+            queryItems.append(URLQueryItem(name: "test", value: "1"))
+        }
+
+        let url = RegionalAlertsOperation.buildObacoURL(regionID: regionID, baseURL: baseURL, queryItems: queryItems)
+        let request = RegionalAlertsOperation.buildRequest(for: url)
+        let operation = RegionalAlertsOperation(request: request)
         networkQueue.addOperation(operation)
 
         return operation
