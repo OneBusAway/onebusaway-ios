@@ -29,10 +29,12 @@ class SettingsViewController: FormViewController {
 
         form
             +++ mapSection
+            +++ alertsSection
 
         form.setValues([
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
-            mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic
+            mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
+            AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
         ])
     }
 
@@ -54,6 +56,10 @@ class SettingsViewController: FormViewController {
         if let traffic = values[mapSectionShowsTraffic] as? Bool {
             application.mapRegionManager.mapViewShowsTraffic = traffic
         }
+
+        if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
+            application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+        }
     }
 
     // MARK: - Map Section
@@ -72,6 +78,19 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = mapSectionShowsTraffic
             $0.title = NSLocalizedString("settings_controller.map_section.shows_traffic", value: "Shows traffic", comment: "Settings > Map section > Shows traffic")
+        }
+
+        return section
+    }()
+
+    // MARK: - Alerts
+
+    private lazy var alertsSection: Section = {
+        let section = Section(NSLocalizedString("settings_controller.alerts_section.title", value: "Alerts", comment: "Settings > Alerts section title"))
+
+        section <<< SwitchRow {
+            $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
+            $0.title = NSLocalizedString("settings_controller.alerts_section.display_test_alerts", value: "Display test alerts", comment: "Settings > Alerts section > Display test alerts")
         }
 
         return section

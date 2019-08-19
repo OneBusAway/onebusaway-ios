@@ -364,8 +364,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     }
 
     public var shouldDisplayRegionalTestAlerts: Bool {
-        // abxoxo - base this on user defaults
-        return false
+        return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
     }
 
     // MARK: - LocationServiceDelegate

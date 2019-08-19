@@ -7,14 +7,6 @@
 
 import Foundation
 
-/*
- abxoxo - next up:
- x Write tests for the underlying API calls.
- * store alerts in user defaults, and store read/unread information.
- * Wire up the UI.
- * Write tests for AgencyAlertsStore.
- */
-
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
     func agencyAlertsUpdated()
 }
@@ -25,8 +17,15 @@ public class AgencyAlertsStore: NSObject {
 
     private let userDefaults: UserDefaults
 
+    public struct UserDefaultKeys {
+        static let displayRegionalTestAlerts = "displayRegionalTestAlerts"
+    }
+
     init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
+        self.userDefaults.register(defaults: [
+            UserDefaultKeys.displayRegionalTestAlerts: false
+        ])
     }
 
     deinit {
