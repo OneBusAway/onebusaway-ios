@@ -107,8 +107,10 @@ import MessageUI
     private func addUpdatesAndAlerts() {
         addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
 
-        addGroupedTableRowToStack(alertsForRegionRow, isLastRow: true) { _ in
-            // TODO
+        addGroupedTableRowToStack(alertsForRegionRow, isLastRow: true) { [weak self] _ in
+            guard let self = self else { return }
+            let alertsController = AgencyAlertsViewController(application: self.application)
+            self.application.viewRouter.navigate(to: alertsController, from: self)
         }
     }
 
