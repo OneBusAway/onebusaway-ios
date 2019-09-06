@@ -311,8 +311,6 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         StopAnnotationView.appearance().strokeColor = ThemeColors.shared.mapStroke
         StopAnnotationView.appearance().tintColor = ThemeColors.shared.stopAnnotationIcon
 
-        StopArrivalView.appearance().timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
-
         SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
 
         TableHeaderView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)

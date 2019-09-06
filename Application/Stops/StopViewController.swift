@@ -491,6 +491,7 @@ public class StopViewController: UIViewController,
         else {
             arrivalView = StopArrivalView.autolayoutNew()
             arrivalView.formatters = application.formatters
+            arrivalView.showActionsButton = true
             stopArrivalViews[arrivalDeparture.tripID] = arrivalView
         }
 

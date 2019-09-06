@@ -9,11 +9,17 @@
 import UIKit
 import AloeStackView
 
+public protocol StopArrivalDelegate: NSObjectProtocol {
+    func actionsButtonTapped(arrivalDeparture: ArrivalDeparture)
+}
+
 /// This view displays the route, headsign, and predicted arrival/departure time for an `ArrivalDeparture`.
 ///
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
 public class StopArrivalView: UIView, Highlightable {
+
+    public weak var delegate: StopArrivalDelegate?
 
     let kUseDebugColors = false
 
@@ -41,7 +47,9 @@ public class StopArrivalView: UIView, Highlightable {
         return label
     }()
 
-    var showDisclosureIndicator: Bool = true {
+    // MARK: - Disclosure Indicator
+
+    var showDisclosureIndicator: Bool = false {
         didSet {
             guard oldValue != showDisclosureIndicator else { return }
 
@@ -49,7 +57,6 @@ public class StopArrivalView: UIView, Highlightable {
                 outerStackView.addArrangedSubview(disclosureIndicator)
             }
             else {
-                outerStackView.removeArrangedSubview(disclosureIndicator)
                 disclosureIndicator.removeFromSuperview()
             }
         }
@@ -63,12 +70,33 @@ public class StopArrivalView: UIView, Highlightable {
         return view
     }()
 
-    /// The font used on the time explanation label.
-    @objc public dynamic var timeExplanationFont: UIFont {
-        set { _timeExplanationFont = newValue }
-        get { return _timeExplanationFont }
+    // MARK: - 'Actions' Button
+
+    var showActionsButton: Bool = false {
+        didSet {
+            guard oldValue != showActionsButton else { return }
+
+            if showActionsButton {
+                outerStackView.addArrangedSubview(actionsButton)
+            }
+            else {
+                actionsButton.removeFromSuperview()
+            }
+        }
     }
-    private var _timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
+
+    private lazy var actionsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(Icons.showMore, for: .normal)
+        button.addTarget(self, action: #selector(actionsButtonTapped), for: .touchUpInside)
+        return button
+    }()
+
+    @objc private func actionsButtonTapped() {
+        delegate?.actionsButtonTapped(arrivalDeparture: arrivalDeparture)
+    }
+
+    // MARK: - Public Properties
 
     /// When `true`, decrease the `alpha` value of this cell if it happened in the past.
     public var deemphasizePastEvents = true
@@ -95,6 +123,8 @@ public class StopArrivalView: UIView, Highlightable {
             }
 
             let scheduleStatusColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+            let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
 
             let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
 
@@ -125,7 +155,7 @@ public class StopArrivalView: UIView, Highlightable {
     }()
 
     private lazy var outerStackView: UIStackView = {
-        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesLabelWrapper, disclosureIndicator])
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesLabelWrapper])
         outerStack.spacing = ThemeMetrics.padding
         return outerStack
     }()
