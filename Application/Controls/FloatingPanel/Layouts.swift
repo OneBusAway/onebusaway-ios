@@ -7,8 +7,20 @@
 
 import FloatingPanel
 
-class MapPanelLayout: NSObject, FloatingPanelLayout {
+class RemovablePanelLayout: FloatingPanelIntrinsicLayout {
+    var supportedPositions: Set<FloatingPanelPosition> {
+        return [.full, .half]
+    }
 
+    func insetFor(position: FloatingPanelPosition) -> CGFloat? {
+        switch position {
+        case .half: return 130.0
+        default: return nil  // Must return nil for .full
+        }
+    }
+}
+
+class MapPanelLayout: NSObject, FloatingPanelLayout {
     init(initialPosition: FloatingPanelPosition) {
         self.initialPosition = initialPosition
     }

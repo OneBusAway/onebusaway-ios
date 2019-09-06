@@ -18,7 +18,9 @@ import FloatingPanel
 public class StopViewController: UIViewController,
     AloeStackTableBuilder,
     BookmarkEditorDelegate,
+    FloatingPanelControllerDelegate,
     ModalDelegate,
+    StopArrivalDelegate,
     StopPreferencesDelegate {
 
     private let kUseDebugColors = false
@@ -492,6 +494,8 @@ public class StopViewController: UIViewController,
             arrivalView = StopArrivalView.autolayoutNew()
             arrivalView.formatters = application.formatters
             arrivalView.showActionsButton = true
+            arrivalView.delegate = self
+
             stopArrivalViews[arrivalDeparture.tripID] = arrivalView
         }
 
@@ -502,6 +506,7 @@ public class StopViewController: UIViewController,
             let tripController = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
             self.application.viewRouter.navigate(to: tripController, from: self)
         }
+
         arrivalView.arrivalDeparture = arrivalDeparture
     }
 
@@ -513,6 +518,42 @@ public class StopViewController: UIViewController,
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
         stackView.addRow(timeframeLabel, hideSeparator: false)
+    }
+
+    // MARK: - Stop Arrival Actions
+
+    public func actionsButtonTapped(arrivalDeparture: ArrivalDeparture) {
+        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+
+        let addAlarmTitle = NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")
+        actionSheet.addAction(UIAlertAction(title: addAlarmTitle, style: .default, handler: { [weak self] _ in
+            guard let self = self else { return }
+            self.addAlarm(arrivalDeparture: arrivalDeparture)
+        }))
+
+        actionSheet.addAction(UIAlertAction.cancelAction)
+
+        application.viewRouter.present(actionSheet, from: self)
+    }
+
+    private var alarmPanel: FloatingPanelController?
+
+    func addAlarm(arrivalDeparture: ArrivalDeparture) {
+        let alarmBuilder = AlarmBuilderViewController(application: application, arrivalDeparture: arrivalDeparture, delegate: self)
+
+        let alarmPanel = FloatingPanelController(delegate: self)
+        alarmPanel.isRemovalInteractionEnabled = false
+        alarmPanel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
+
+        // Set a content view controller.
+        alarmPanel.set(contentViewController: alarmBuilder)
+        alarmPanel.addPanel(toParent: self, belowView: nil, animated: true)
+
+        self.alarmPanel = alarmPanel
+    }
+
+    public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
+        return RemovablePanelLayout()
     }
 
     // MARK: - Bookmark Editor
@@ -579,7 +620,18 @@ public class StopViewController: UIViewController,
     // MARK: - Modal Delegate
 
     public func dismissModalController(_ controller: UIViewController) {
+        if let fpc = controller.parent as? FloatingPanelController {
+            if fpc.presentingViewController != nil {
+                controller.dismiss(animated: true, completion: nil)
+            } else {
+                fpc.removePanelFromParent(animated: true, completion: nil)
+            }
+            return
+        }
+
+        // For other view controllers
         controller.dismiss(animated: true, completion: nil)
+
     }
 
     // MARK: - Stop Preferences
