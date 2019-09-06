@@ -106,7 +106,7 @@ public class ThemeColors: NSObject {
     public init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
-        stopAnnotationIcon = UIColor(named: "stopAnnotationIconColor", in: bundle, compatibleWith: traitCollection)!
+        stopAnnotationIcon = .white
 
         if #available(iOS 13, *) {
             departureEarly = .systemRed
