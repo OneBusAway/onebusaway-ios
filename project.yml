@@ -32,6 +32,15 @@ targets:
         embed: false
       - framework: Crashlytics.framework
         embed: false
+    attributes:
+      SystemCapabilities:
+        com.apple.Push:
+          enabled: 1
+    entitlements:
+      path: Apps/DemoApp/OBADemo.entitlements
+      properties:
+        com.apple.security.application-groups: org.onebusaway.demoapp
+        aps-environment: development
     info:
       path: Apps/DemoApp/Info.plist
       properties:

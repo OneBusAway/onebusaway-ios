@@ -5,6 +5,7 @@ DerivedData/
 ## Xcodegen
 OBAKit.xcodeproj
 Apps/**/Info.plist
+Apps/**/*.entitlements
 
 ## Various settings
 *.pbxuser
