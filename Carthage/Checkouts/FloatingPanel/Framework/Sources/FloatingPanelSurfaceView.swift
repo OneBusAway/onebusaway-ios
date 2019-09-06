@@ -36,8 +36,6 @@ public class FloatingPanelSurfaceView: UIView {
     public weak var contentView: UIView!
     
     /// The content insets specifying the insets around the content view.
-    ///
-    /// - important: Currently the `bottom` inset is ignored.
     public var contentInsets: UIEdgeInsets = .zero {
         didSet {
             // Needs update constraints
@@ -115,6 +113,8 @@ public class FloatingPanelSurfaceView: UIView {
     private lazy var grabberHandleHeightConstraint: NSLayoutConstraint = grabberHandle.heightAnchor.constraint(equalToConstant: grabberHandleHeight)
     private lazy var grabberHandleTopConstraint: NSLayoutConstraint = grabberHandle.topAnchor.constraint(equalTo: topAnchor, constant: grabberTopPadding)
 
+    public override class var requiresConstraintBasedLayout: Bool { return true }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         addSubViews()
@@ -155,7 +155,7 @@ public class FloatingPanelSurfaceView: UIView {
         contentViewTopConstraint?.constant = contentInsets.top
         contentViewLeftConstraint?.constant = contentInsets.left
         contentViewRightConstraint?.constant = contentInsets.right
-        contentViewHeightConstraint?.constant = -containerTopInset
+        contentViewHeightConstraint?.constant = -(containerTopInset + contentInsets.top + contentInsets.bottom)
 
         grabberHandleTopConstraint.constant = grabberTopPadding
         grabberHandleWidthConstraint.constant = grabberHandleWidth
@@ -221,7 +221,7 @@ public class FloatingPanelSurfaceView: UIView {
         let topConstraint = contentView.topAnchor.constraint(equalTo: topAnchor, constant: contentInsets.top)
         let leftConstraint = contentView.leftAnchor.constraint(equalTo: leftAnchor, constant: contentInsets.left)
         let rightConstraint = rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: contentInsets.right)
-        let heightConstraint = contentView.heightAnchor.constraint(equalTo: heightAnchor, constant: -containerTopInset)
+        let heightConstraint = contentView.heightAnchor.constraint(equalTo: heightAnchor, constant: -(containerTopInset + contentInsets.top + contentInsets.bottom))
         NSLayoutConstraint.activate([
             topConstraint,
             leftConstraint,

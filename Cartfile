@@ -14,10 +14,10 @@ git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.3
 github "Instagram/IGListKit" ~>3.4.0
 
 # https://github.com/airbnb/AloeStackView/releases
-github "airbnb/AloeStackView" ~>1.1.1
+github "airbnb/AloeStackView" ~>1.2.0
 
 # https://github.com/SCENEE/FloatingPanel/releases
-github "SCENEE/FloatingPanel" ==1.6.3
+github "SCENEE/FloatingPanel" ==1.6.5
 
 # https://github.com/SwipeCellKit/SwipeCellKit/releases
 github "SwipeCellKit/SwipeCellKit" ~>2.5.4
@@ -30,6 +30,11 @@ github "SVProgressHUD/SVProgressHUD" ~> 2.2.5
 
 # https://github.com/cbpowell/MarqueeLabel/releases
 github "cbpowell/MarqueeLabel" ~>4.0.0
+
+## Third Party Integrations
+
+# https://github.com/OneSignal/OneSignal-iOS-SDK/releases
+github "OneSignal/OneSignal-iOS-SDK" ~>2.10.2
 
 # -----------------------
 

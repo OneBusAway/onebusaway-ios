@@ -82,6 +82,7 @@ targets:
       - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: MarqueeLabel
+      - carthage: OneSignal.framework
       - carthage: SVProgressHUD
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
