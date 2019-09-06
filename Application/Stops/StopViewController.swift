@@ -117,8 +117,6 @@ public class StopViewController: UIViewController,
     /// Arrival/Departure data for this stop.
     var stopArrivals: StopArrivals? {
         didSet {
-            dataWillReload()
-
             if stopArrivals != nil {
                 dataDidReload()
                 beginUserActivity()
@@ -314,14 +312,11 @@ public class StopViewController: UIViewController,
         }
     }
 
-    /// Call this method when data is about to reloaded in this controller
-    private func dataWillReload() {
-        stackView.removeAllRows()
-    }
-
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
         guard let stopArrivals = stopArrivals else { return }
+
+        stackView.removeAllRows()
 
         // Stop Header
         stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
@@ -559,9 +554,6 @@ public class StopViewController: UIViewController,
     // MARK: - Stop Preferences
 
     private var stopPreferences: StopPreferences {
-        willSet {
-            dataWillReload()
-        }
         didSet {
             dataDidReload()
         }
@@ -572,9 +564,6 @@ public class StopViewController: UIViewController,
     }
 
     private var isListFiltered: Bool = true {
-        willSet {
-            dataWillReload()
-        }
         didSet {
             dataDidReload()
         }
