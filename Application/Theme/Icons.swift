@@ -14,22 +14,22 @@ public class Icons: NSObject {
 
     /// The Map tab icon, for apps using a tab bar UI metaphor.
     public class var mapTabIcon: UIImage {
-        return imageNamed("map")
+        imageNamed("map")
     }
 
     /// The Recent tab icon, for apps using a tab bar UI metaphor.
     public class var recentTabIcon: UIImage {
-        return imageNamed("recent")
+        imageNamed("recent")
     }
 
     /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
     public class var bookmarksTabIcon: UIImage {
-        return imageNamed("bookmarks")
+        imageNamed("bookmarks")
     }
 
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
-        return imageNamed("more")
+        imageNamed("more")
     }
 
     // MARK: - Table Accessories
