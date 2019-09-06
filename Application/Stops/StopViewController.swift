@@ -79,7 +79,7 @@ public class StopViewController: UIViewController,
     private lazy var loadMoreButton: UIButton = {
         let loadMoreButton = UIButton(type: .system)
         loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
-        loadMoreButton.addTarget(self, action: #selector(loadMore), for: .touchUpInside)
+        loadMoreButton.addTarget(self, action: #selector(loadMoreDepartures), for: .touchUpInside)
         return loadMoreButton
     }()
 
@@ -290,9 +290,35 @@ public class StopViewController: UIViewController,
             self.stopArrivals = op.stopArrivals
             self.refreshControl.endRefreshing()
             self.updateTitle()
+
+            if let arrivals = op.stopArrivals, arrivals.arrivalsAndDepartures.count == 0 {
+                self.extendLoadMoreWindow()
+            }
         }
 
         self.operation = op
+    }
+
+    /// Loads more departures for this `Stop` in cases where no `ArrivalDeparture` objects are being returned.
+    /// This is useful for instances where you are looking at a `Stop` in the middle of the night and want to
+    /// see when morning trips begin.
+    private func extendLoadMoreWindow() {
+        // Only load up to 12 hours worth of data.
+        guard minutesAfter < 720 else { return }
+
+        let minutes: UInt
+
+        if self.minutesAfter < 60 {
+            minutes = 60
+        }
+        else if self.minutesAfter < 240 {
+            minutes = 60
+        }
+        else {
+            minutes = 120
+        }
+
+        self.loadMore(minutes: minutes)
     }
 
     /// Callback used to reload the view controller every 'n' seconds.
@@ -531,9 +557,13 @@ public class StopViewController: UIViewController,
     }
 
     /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
-    @objc private func loadMore() {
-        minutesAfter += 30
+    private func loadMore(minutes: UInt) {
+        minutesAfter += minutes
         updateData()
+    }
+
+    @objc private func loadMoreDepartures() {
+        loadMore(minutes: 30)
     }
 
     /// Shows the Report Problem UI.
