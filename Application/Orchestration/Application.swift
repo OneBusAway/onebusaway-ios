@@ -90,7 +90,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     @objc public lazy var viewRouter = ViewRouter(application: self)
 
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
-    @objc public let regionsService: RegionsService
+    @objc public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
 
     /// Helper property that returns `regionsService.currentRegion`.
     @objc public var currentRegion: Region? {
@@ -146,7 +146,6 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         userDefaults = config.userDefaults
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
         locationService = config.locationService
-        regionsService = config.regionsService
         analytics = config.analytics
         notificationCenter = NotificationCenter.default
 
@@ -197,7 +196,6 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         guard let delegate = delegate as? NSObject & ApplicationDelegate else {
             return false
         }
-
         return delegate.performTestCrash != nil
         #else
         return false
@@ -212,7 +210,26 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         delegate?.performTestCrash?()
     }
 
+    // MARK: - Push Notifications
+
+    private var pushService: PushService?
+
+    private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
+        guard let pushServiceProvider = config.pushServiceProvider else { return }
+
+        #if targetEnvironment(simulator)
+        print("Push notifications don't work on the Simulator. Run this app on a device instead!")
+        return
+        #else
+        self.pushService = PushService(serviceProvider: pushServiceProvider)
+        #endif
+    }
+
     // MARK: - UIApplication Hooks
+
+    @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
+        configurePushNotifications(launchOptions: options)
+    }
 
     public var isIdleTimerDisabled: Bool {
         get {
@@ -320,6 +337,17 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         UICollectionView.appearance().isPrefetchingEnabled = false
     }
 
+    // MARK: - UUID
+
+    // abxoxo todo: store and reuse this value.
+    public lazy var userUUID: String = UUID().uuidString
+
+    // MARK: - Regions Service Internals
+
+    private lazy var regionsAPIService = RegionsAPIService(baseURL: config.regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
+
+    private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
+
     // MARK: - Regions Management
 
     @objc public func manuallySelectRegion() {
@@ -343,7 +371,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
     private func refreshRESTAPIModelService() {
         guard let region = regionsService.currentRegion else { return }
 
-        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, networkQueue: config.queue)
+        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
 
@@ -359,7 +387,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
         obacoNetworkQueue.cancelAllOperations()
 
-        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: config.uuid, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue, delegate: self)
+        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue, delegate: self)
         obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
     }
 

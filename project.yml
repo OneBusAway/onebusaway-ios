@@ -44,8 +44,11 @@ targets:
     info:
       path: Apps/DemoApp/Info.plist
       properties:
+        RESTServerAPIKey: test
+        PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
         AppDevelopersEmailAddress: iphone-app@onebusaway.org
         DeepLinkServerBaseAddress: http://alerts.onebusaway.org
+        RegionsServerBaseAddress: http://regions.onebusaway.org
         PrivacyPolicyURL: http://onebusaway.org/privacy/
         CFBundleDisplayName: OBADemo
         LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]

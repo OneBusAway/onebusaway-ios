@@ -10,6 +10,7 @@
 @import OBAKit;
 #import "Firebase.h"
 @import Crashlytics;
+@import OneSignal;
 
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
@@ -28,9 +29,12 @@
 
         _userDefaults = [NSUserDefaults standardUserDefaults];
 
-        NSURL *regionsBaseURL = [NSURL URLWithString:@"http://regions.onebusaway.org"];
-        NSURL *obacoBaseURL = [NSURL URLWithString:@"http://alerts.onebusaway.org"];
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithRegionsBaseURL:regionsBaseURL obacoBaseURL:obacoBaseURL apiKey:@"test" uuid:NSUUID.UUID.UUIDString appVersion:@"1.0.test" userDefaults:_userDefaults analytics:self];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self];
+
+        NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"PushNotificationAPIKey"];
+        OBAOneSignalPushService *pushService = [[OBAOneSignalPushService alloc] initWithAPIKey:pushKey];
+        appConfig.pushServiceProvider = pushService;
+
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
     }
@@ -40,6 +44,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+
+    [self.app application:application didFinishLaunching:launchOptions];
+
     [self applicationReloadRootInterface:self.app];
     [self.window makeKeyAndVisible];
 
@@ -119,5 +126,12 @@
 - (void)reportEventWithCategory:(enum OBAAnalyticsCategory)category action:(NSString *)action label:(NSString *)label value:(id)value {
     // abxoxo - TODO!
 }
+
+#pragma mark - Push Notifications
+
+- (BOOL)isRegisteredForRemoteNotifications {
+    return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
+}
+
 
 @end

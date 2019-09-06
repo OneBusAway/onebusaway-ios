@@ -43,6 +43,12 @@ public extension Bundle {
     /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
     var deepLinkServerBaseAddress: URL? { url(for: "DeepLinkServerBaseAddress") }
 
+    /// A helper method for accessing the bundle's `RegionsServerBaseAddress`
+    var regionsServerBaseAddress: URL? { url(for: "RegionsServerBaseAddress") }
+
+    /// A helper method for accessing the bundle's `OBARESTAPIKey`
+    var restServerAPIKey: String? { optionalValue(for: "RESTServerAPIKey", type: String.self) }
+
     /// A helper method for accessing the bundle's privacy policy URL
     var privacyPolicyURL: URL? { url(for: "PrivacyPolicyURL") }
 

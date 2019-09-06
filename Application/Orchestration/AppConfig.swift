@@ -15,36 +15,28 @@ public class AppConfig: NSObject {
     let regionsBaseURL: URL
     let obacoBaseURL: URL?
     let apiKey: String
-    let uuid: String
     let appVersion: String
     let queue: OperationQueue
     let userDefaults: UserDefaults
     let locationService: LocationService
     let analytics: Analytics?
 
-    /// Convenience initializer that elides some properties.
-    /// - Parameter regionsBaseURL: The base URL for the Regions server.
-    /// - Parameter obacoBaseURL: The base URL for the Obaco server.
-    /// - Parameter apiKey: Your API key for the REST API server.
-    /// - Parameter uuid: A unique identifier for the client.
-    /// - Parameter appVersion: The version of the app.
+    @objc public var pushServiceProvider: PushServiceProvider?
+
+    /// Convenience initializer that pulls from the host application's main `Bundle`.
+    /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
     @objc public convenience init(
-        regionsBaseURL: URL,
-        obacoBaseURL: URL?,
-        apiKey: String,
-        uuid: String,
-        appVersion: String,
+        appBundle: Bundle,
         userDefaults: UserDefaults,
         analytics: Analytics?
     ) {
         self.init(
-            regionsBaseURL: regionsBaseURL,
-            obacoBaseURL: obacoBaseURL,
-            apiKey: apiKey,
-            uuid: uuid,
-            appVersion: appVersion,
+            regionsBaseURL: appBundle.regionsServerBaseAddress!,
+            obacoBaseURL: appBundle.deepLinkServerBaseAddress!,
+            apiKey: appBundle.restServerAPIKey!,
+            appVersion: appBundle.appVersion,
             userDefaults: userDefaults,
             analytics: analytics,
             queue: OperationQueue(),
@@ -56,7 +48,6 @@ public class AppConfig: NSObject {
     /// - Parameter regionsBaseURL: The base URL for the Regions server.
     /// - Parameter obacoBaseURL: The base URL for the Obaco server.
     /// - Parameter apiKey: Your API key for the REST API server.
-    /// - Parameter uuid: A unique identifier for the client.
     /// - Parameter appVersion: The version of the app.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
@@ -66,7 +57,6 @@ public class AppConfig: NSObject {
         regionsBaseURL: URL,
         obacoBaseURL: URL?,
         apiKey: String,
-        uuid: String,
         appVersion: String,
         userDefaults: UserDefaults,
         analytics: Analytics?,
@@ -76,21 +66,12 @@ public class AppConfig: NSObject {
         self.regionsBaseURL = regionsBaseURL
         self.obacoBaseURL = obacoBaseURL
         self.apiKey = apiKey
-        self.uuid = uuid
         self.appVersion = appVersion
         self.userDefaults = userDefaults
         self.queue = queue
         self.locationService = locationService
         self.analytics = analytics
     }
-
-    // MARK: - Regions
-
-    private lazy var regionsAPIService = RegionsAPIService(baseURL: regionsBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: queue)
-
-    private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: queue)
-
-    lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
 
     // MARK: - Theme
 
