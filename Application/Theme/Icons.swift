@@ -52,65 +52,74 @@ public class Icons: NSObject {
 
     /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        return imageNamed("chevron")
+        imageNamed("chevron")
     }
 
     /// A checkmark icon.
     public class var checkmark: UIImage {
-        return imageNamed("checkmark")
+        imageNamed("checkmark")
     }
 
     /// An 'info' (i) button
     public class var info: UIImage {
-        return imageNamed("info")
+        imageNamed("info")
     }
 
     // MARK: - Actions
 
     /// A circular close button
     public class var closeCircle: UIImage {
-        return imageNamed("close_circle")
+        imageNamed("close_circle")
     }
 
     /// A refresh icon.
     public class var refresh: UIImage {
-        return imageNamed("refresh")
+        imageNamed("refresh")
     }
 
     /// A filter icon.
     public class var filter: UIImage {
-        return imageNamed("filter")
+        imageNamed("filter")
+    }
+
+    public class var addAlarm: UIImage {
+        imageNamed("add_alarm")
+    }
+
+    /// An ellipsis (...) in a circle.
+    public class var showMore: UIImage {
+        imageNamed("show_more")
     }
 
     // MARK: - Favorites
 
     /// A filled-in star icon
     public class var favorited: UIImage {
-        return imageNamed("favorited")
+        imageNamed("favorited")
     }
 
     /// A not-filled-in star icon
     public class var unfavorited: UIImage {
-        return imageNamed("unfavorited")
+        imageNamed("unfavorited")
     }
 
     // MARK: - Heading
 
     /// A gradient arc image that can be used to show the user's heading.
     public class var userHeading: UIImage {
-        return imageNamed("user_heading")
+        imageNamed("user_heading")
     }
 
     /// A gradient arc image that can be used to show a vehicle's heading.
     public class var vehicleHeading: UIImage {
-        return imageNamed("vehicle_heading")
+        imageNamed("vehicle_heading")
     }
 
     // MARK: - Branding
 
     /// A large 'header'-style version of the OBA icon/logo.
     public class var header: UIImage {
-        return imageNamed("header")
+        imageNamed("header")
     }
 
     // MARK: - Transport Icons
@@ -132,32 +141,32 @@ public class Icons: NSObject {
 
     /// A transport icon depicting a bus.
     public class var busTransport: UIImage {
-        return imageNamed("busTransport")
+        imageNamed("busTransport")
     }
 
     /// A transport icon depicting a ferry.
     public class var ferryTransport: UIImage {
-        return imageNamed("ferryTransport")
+        imageNamed("ferryTransport")
     }
 
     /// A transport icon depicting a light rail train.
     public class var lightRailTransport: UIImage {
-        return imageNamed("lightRailTransport")
+        imageNamed("lightRailTransport")
     }
 
     /// A transport icon depicting a train.
     public class var trainTransport: UIImage {
-        return imageNamed("trainTransport")
+        imageNamed("trainTransport")
     }
 
     /// A transport icon depicting a person walking.
     public class var walkTransport: UIImage {
-        return imageNamed("walkTransport")
+        imageNamed("walkTransport")
     }
 
     // MARK: - Private Helpers
 
     private static func imageNamed(_ name: String) -> UIImage {
-        return UIImage(named: name, in: Bundle(for: self), compatibleWith: nil)!
+        UIImage(named: name, in: Bundle(for: self), compatibleWith: nil)!
     }
 }
