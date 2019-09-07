@@ -31,6 +31,9 @@ github "SVProgressHUD/SVProgressHUD" ~> 2.2.5
 # https://github.com/cbpowell/MarqueeLabel/releases
 github "cbpowell/MarqueeLabel" ~>4.0.0
 
+# https://github.com/alexaubry/BulletinBoard/releases
+github "aaronbrethorst/BulletinBoard" "private-deps"
+
 ## Third Party Integrations
 
 # https://github.com/OneSignal/OneSignal-iOS-SDK/releases
