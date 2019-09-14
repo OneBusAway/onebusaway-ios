@@ -7,7 +7,7 @@
 
 import UIKit
 import AloeStackView
-import FloatingPanel
+import SVProgressHUD
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -16,13 +16,12 @@ import FloatingPanel
 /// notification 'alarms' and bookmarks, view information about the location of a
 /// particular vehicle, and report problems with a trip.
 public class StopViewController: UIViewController,
+    AlarmBuilderDelegate,
     AloeStackTableBuilder,
     BookmarkEditorDelegate,
-    FloatingPanelControllerDelegate,
     ModalDelegate,
     StopArrivalDelegate,
-    StopPreferencesDelegate {
-
+StopPreferencesDelegate {
     private let kUseDebugColors = false
 
     lazy var stackView: AloeStackView = {
@@ -525,35 +524,53 @@ public class StopViewController: UIViewController,
     public func actionsButtonTapped(arrivalDeparture: ArrivalDeparture) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        let addAlarmTitle = NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")
-        actionSheet.addAction(UIAlertAction(title: addAlarmTitle, style: .default, handler: { [weak self] _ in
-            guard let self = self else { return }
-            self.addAlarm(arrivalDeparture: arrivalDeparture)
-        }))
+        if canCreateAlarm(for: arrivalDeparture) {
+            let addAlarmTitle = NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")
+            actionSheet.addAction(UIAlertAction(title: addAlarmTitle, style: .default, handler: { [weak self] _ in
+                guard let self = self else { return }
+                self.addAlarm(arrivalDeparture: arrivalDeparture)
+            }))
+        }
 
         actionSheet.addAction(UIAlertAction.cancelAction)
 
         application.viewRouter.present(actionSheet, from: self)
     }
 
-    private var alarmPanel: FloatingPanelController?
+    // MARK: - Alarms
 
-    func addAlarm(arrivalDeparture: ArrivalDeparture) {
-        let alarmBuilder = AlarmBuilderViewController(application: application, arrivalDeparture: arrivalDeparture, delegate: self)
+    private func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
+        // abxoxo - there are other constraints on creating alarms. What are they?
+        // express them here!
+        guard
+            application.obacoService != nil,
+            application.pushService != nil
+        else {
+            return false
+        }
 
-        let alarmPanel = FloatingPanelController(delegate: self)
-        alarmPanel.isRemovalInteractionEnabled = false
-        alarmPanel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
-
-        // Set a content view controller.
-        alarmPanel.set(contentViewController: alarmBuilder)
-        alarmPanel.addPanel(toParent: self, belowView: nil, animated: true)
-
-        self.alarmPanel = alarmPanel
+        return true
     }
 
-    public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-        return RemovablePanelLayout()
+    private var alarmBuilder: AlarmBuilder?
+
+    func addAlarm(arrivalDeparture: ArrivalDeparture) {
+        alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
+        alarmBuilder?.showBulletin(above: self)
+    }
+
+    func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
+        SVProgressHUD.show()
+    }
+
+    func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
+        let message = NSLocalizedString("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
+        SVProgressHUD.showSuccessAndDismiss(message: message)
+    }
+
+    func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
+        SVProgressHUD.dismiss()
+        AlertPresenter.show(error: error, presentingController: self)
     }
 
     // MARK: - Bookmark Editor
@@ -620,18 +637,8 @@ public class StopViewController: UIViewController,
     // MARK: - Modal Delegate
 
     public func dismissModalController(_ controller: UIViewController) {
-        if let fpc = controller.parent as? FloatingPanelController {
-            if fpc.presentingViewController != nil {
-                controller.dismiss(animated: true, completion: nil)
-            } else {
-                fpc.removePanelFromParent(animated: true, completion: nil)
-            }
-            return
-        }
-
         // For other view controllers
         controller.dismiss(animated: true, completion: nil)
-
     }
 
     // MARK: - Stop Preferences

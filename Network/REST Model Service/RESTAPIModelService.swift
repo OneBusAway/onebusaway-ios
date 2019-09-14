@@ -154,7 +154,7 @@ public class RESTAPIModelService: NSObject {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued model operation.
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
+    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
         let service = apiService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         return generateModels(type: TripArrivalsModelOperation.self, serviceOperation: service)
     }

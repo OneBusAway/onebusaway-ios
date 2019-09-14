@@ -144,7 +144,19 @@ public extension OBATestCase {
         return (json as! [String: Any])
     }
 
-    /// Decodes models of type T from the supplied JSON. The JSON should be the full contents of a server response, including References.
+    /// Loads JSON data from the specified file name in the bundle, and creates a model or models of `type` from the JSON.
+    /// - Parameter type: The model type
+    /// - Parameter fileName: The name of the file in the test bundle that contains the JSON data.
+    /// - Parameter skipReferences: Don't try decoding references. Used for Regions.
+    /// - Returns: A decoded array of models.
+    /// - Throws: Errors in case of a decoding failure.
+    func loadModels<T>(type: T.Type, fileName: String, skipReferences: Bool = false) throws -> [T] where T: Decodable {
+        let json = loadJSONDictionary(file: fileName)
+        return try decodeModels(type: type, json: json, skipReferences: skipReferences)
+    }
+
+    /// Decodes models of `type` from the supplied JSON.
+    /// The JSON should be the full contents of a server response, including References.
     ///
     /// - Parameters:
     ///   - type: The model type

@@ -41,18 +41,45 @@ public extension Bundle {
     var userActivityTypes: [String]? { optionalValue(for: "NSUserActivityTypes", type: [String].self) }
 
     /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
-    var deepLinkServerBaseAddress: URL? { url(for: "DeepLinkServerBaseAddress") }
+    var deepLinkServerBaseAddress: URL? {
+        guard
+            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let str = dict["DeepLinkServerBaseAddress"] as? String
+        else { return nil }
+
+        return URL(string: str)
+    }
 
     /// A helper method for accessing the bundle's `RegionsServerBaseAddress`
-    var regionsServerBaseAddress: URL? { url(for: "RegionsServerBaseAddress") }
+    var regionsServerBaseAddress: URL? {
+        guard
+            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let str = dict["RegionsServerBaseAddress"] as? String
+        else { return nil }
+
+        return URL(string: str)
+    }
 
     /// A helper method for accessing the bundle's `OBARESTAPIKey`
-    var restServerAPIKey: String? { optionalValue(for: "RESTServerAPIKey", type: String.self) }
+    var restServerAPIKey: String? {
+        guard let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self) else { return nil }
+        return dict["RESTServerAPIKey"] as? String
+    }
 
     /// A helper method for accessing the bundle's privacy policy URL
-    var privacyPolicyURL: URL? { url(for: "PrivacyPolicyURL") }
+    var privacyPolicyURL: URL? {
+        guard
+            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let str = dict["PrivacyPolicyURL"] as? String
+        else { return nil }
 
-    var appDevelopersEmailAddress: String? { optionalValue(for: "AppDevelopersEmailAddress", type: String.self) }
+        return URL(string: str)
+    }
+
+    var appDevelopersEmailAddress: String? {
+        guard let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self) else { return nil }
+        return dict["AppDevelopersEmailAddress"] as? String
+    }
 }
 
 // MARK: - Dictionary

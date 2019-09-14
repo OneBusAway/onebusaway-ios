@@ -410,3 +410,30 @@ public extension UIViewController {
         }
     }
 }
+
+// MARK: - UIWindow
+
+public extension UIWindow {
+
+    /// Retrieve the top-most view controller in the receiver.
+    ///
+    /// - Note: Derived from [Stack Overflow](https://stackoverflow.com/a/16443826).
+    var topViewController: UIViewController? {
+        var top = rootViewController
+        while true {
+            if let presented = top?.presentedViewController {
+                top = presented
+            }
+            else if let nav = top as? UINavigationController {
+                top = nav.visibleViewController
+            }
+            else if let tab = top as? UITabBarController {
+                top = tab.selectedViewController
+            }
+            else {
+                break
+            }
+        }
+        return top
+    }
+}

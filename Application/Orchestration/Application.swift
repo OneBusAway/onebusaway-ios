@@ -14,6 +14,9 @@ import CoreLocation
 @objc(OBAApplicationDelegate)
 public protocol ApplicationDelegate {
 
+    /// Provides access to the `UIApplication` object.
+    @objc var uiApplication: UIApplication { get }
+
     /// This method is called when the delegate should reload the `rootViewController`
     /// of the app's window. This is typically done in response to permissions changes.
     @objc func applicationReloadRootInterface(_ app: Application)
@@ -54,8 +57,11 @@ public protocol ApplicationDelegate {
 // MARK: - Application Class
 
 @objc(OBAApplication)
-public class Application: NSObject, RegionsServiceDelegate, LocationServiceDelegate, ObacoServiceDelegate {
-
+public class Application: NSObject,
+    LocationServiceDelegate,
+    ObacoServiceDelegate,
+    PushServiceDelegate,
+    RegionsServiceDelegate {
     // MARK: - Private Properties
 
     /// App configuration parameters: API keys, region server, user UUID, and other
@@ -212,7 +218,7 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
 
     // MARK: - Push Notifications
 
-    private var pushService: PushService?
+    public private(set) var pushService: PushService?
 
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
@@ -221,8 +227,31 @@ public class Application: NSObject, RegionsServiceDelegate, LocationServiceDeleg
         print("Push notifications don't work on the Simulator. Run this app on a device instead!")
         return
         #else
-        self.pushService = PushService(serviceProvider: pushServiceProvider)
+        self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
+        self.pushService?.start(launchOptions: launchOptions)
         #endif
+    }
+
+    public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
+        return delegate?.uiApplication.keyWindow?.topViewController
+    }
+
+    public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
+        guard let modelService = restAPIModelService else {
+            return
+        }
+
+        let op = modelService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence)
+        op.then { [weak self] in
+            guard
+                let self = self,
+                let topController = self.delegate?.uiApplication.keyWindow?.topViewController,
+                let arrivalDeparture = op.arrivalDeparture
+            else { return }
+
+            let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
+            self.viewRouter.navigate(to: tripController, from: topController)
+        }
     }
 
     // MARK: - UIApplication Hooks

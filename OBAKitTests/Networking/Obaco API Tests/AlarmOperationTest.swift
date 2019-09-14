@@ -16,7 +16,7 @@ class AlarmOperationTest: OBATestCase {
     let secondsBefore = 600.0
     let stopID = "XO"
     let tripID = "XO"
-    let serviceDate: Int64 = 1234567890
+    let serviceDate: Date = Date(timeIntervalSince1970: 1234567890000)
     let vehicleID = "XO"
     let stopSequence = 1337
     let userPushID = "XO"

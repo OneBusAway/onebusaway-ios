@@ -160,7 +160,7 @@ public class RESTAPIService: APIService {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued network operation.
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Int64, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
+    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
         let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: TripArrivalDepartureOperation.self, url: url)
     }

@@ -4,11 +4,11 @@ options:
   bundleIdPrefix: org.onebusaway
 
 targets:
-  OBADemo:
+  App:
     type: application
     platform: iOS
-    deploymentTarget: "12.3"
-    sources: [Apps/DemoApp]
+    deploymentTarget: "12.4"
+    sources: [Apps/OneBusAway]
     dependencies:
       - target: OBAKit
       - carthage: SwiftProtobuf
@@ -37,30 +37,37 @@ targets:
         com.apple.Push:
           enabled: 1
     entitlements:
-      path: Apps/DemoApp/OBADemo.entitlements
+      path: Apps/OneBusAway/OneBusAway.entitlements
       properties:
-        com.apple.security.application-groups: org.onebusaway.demoapp
+        com.apple.security.application-groups:
+          - group.org.onebusaway.iphone
         aps-environment: development
+        com.apple.developer.associated-domains:
+          - applinks:onebusaway.co
+          - applinks:www.onebusaway.co
+          - applinks:alerts.onebusaway.org
     info:
-      path: Apps/DemoApp/Info.plist
+      path: Apps/OneBusAway/Info.plist
       properties:
-        RESTServerAPIKey: test
-        PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
-        AppDevelopersEmailAddress: iphone-app@onebusaway.org
-        DeepLinkServerBaseAddress: http://alerts.onebusaway.org
-        RegionsServerBaseAddress: http://regions.onebusaway.org
-        PrivacyPolicyURL: http://onebusaway.org/privacy/
-        CFBundleDisplayName: OBADemo
-        LSApplicationQueriesScheme: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
+        OBAKitConfig:
+          AppDevelopersEmailAddress: iphone-app@onebusaway.org
+          DeepLinkServerBaseAddress: http://alerts.onebusaway.org
+          PrivacyPolicyURL: http://onebusaway.org/privacy/
+          PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
+          RESTServerAPIKey: test
+          RegionsServerBaseAddress: http://regions.onebusaway.org
+        CFBundleDisplayName: OneBusAway
+        LSApplicationQueriesSchemes: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSHumanReadableCopyright: "© Open Transit Software Foundation"
         NSUserActivityTypes:
-          - org.onebusaway.demoapp.user_activity.stop
-          - org.onebusaway.demoapp.user_activity.trip
+          - org.onebusaway.iphone.user_activity.stop
+          - org.onebusaway.iphone.user_activity.trip
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
         NSLocationWhenInUseUsageDescription: Show your location on the map
+        UIBackgroundModes: [remote-notification]
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [armv7]
         UISupportedInterfaceOrientations:
@@ -79,22 +86,23 @@ targets:
     settings:
       base:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
-        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.demoapp
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
         OTHER_LDFLAGS: -ObjC
   OBAKit:
     type: framework
     platform: iOS
-    deploymentTarget: "12.3"
+    deploymentTarget: "12.4"
     sources: [Application, Location, Models, Network, TripPlanning]
     dependencies:
       - carthage: AloeStackView
+      - carthage: BLTNBoard
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
       - carthage: Eureka
       - carthage: FloatingPanel
       - carthage: IGListKit
       - carthage: MarqueeLabel
-      - carthage: OneSignal.framework
+      - carthage: OneSignal
       - carthage: SVProgressHUD
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
@@ -105,9 +113,9 @@ targets:
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "12.3"
+    deploymentTarget: "12.4"
     sources: [OBAKitTests]
     dependencies:
-      - target: OBADemo
+      - target: App
       - carthage: Nimble
       - carthage: OHHTTPStubs

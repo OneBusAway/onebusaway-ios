@@ -19,23 +19,26 @@ public class CreateAlarmOperation: NetworkOperation {
         secondsBefore: TimeInterval,
         stopID: String,
         tripID: String,
-        serviceDate: Int64,
-        vehicleID: String,
+        serviceDate: Date,
+        vehicleID: String?,
         stopSequence: Int,
         userPushID: String,
         regionID: String,
         baseURL: URL,
         queryItems: [URLQueryItem]
     ) -> URLRequest {
-        let params: [String: Any] = [
+        var params: [String: Any] = [
             "seconds_before": secondsBefore,
             "stop_id": stopID,
             "trip_id": tripID,
-            "service_date": serviceDate,
-            "vehicle_id": vehicleID,
+            "service_date": Int64(serviceDate.timeIntervalSince1970 * 1000),
             "stop_sequence": stopSequence,
             "user_push_id": userPushID
         ]
+
+        if let vehicleID = vehicleID {
+            params["vehicle_id"] = vehicleID
+        }
 
         let url = buildURL(fromBaseURL: baseURL, path: buildAPIPath(regionID: regionID), queryItems: queryItems)
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)

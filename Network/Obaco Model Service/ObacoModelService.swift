@@ -40,7 +40,7 @@ public class ObacoModelService: ModelService {
     /// Create a model operation to add a push notification alarm.
     ///
     /// - Parameters:
-    ///   - secondsBefore: Number of seconds before the trip departure time that the alarm should be triggered.
+    ///   - minutesBefore: Number of minutes before the trip departure time that the alarm should be triggered.
     ///   - stopID: The stop ID where the trip occurs.
     ///   - tripID: The trip's ID.
     ///   - serviceDate: The service date for the trip.
@@ -48,8 +48,17 @@ public class ObacoModelService: ModelService {
     ///   - stopSequence: The stop sequence for the trip.
     ///   - userPushID: The user's unique push ID.
     /// - Returns: A model operation that returns an `Alarm` object.
-    public func postAlarm(secondsBefore: TimeInterval, stopID: String, tripID: String, serviceDate: Int64, vehicleID: String, stopSequence: Int, userPushID: String) -> AlarmModelOperation {
-        let service = apiService.postAlarm(secondsBefore: secondsBefore, stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, userPushID: userPushID)
+    public func postAlarm(minutesBefore: Int, arrivalDeparture: ArrivalDeparture, userPushID: String) -> AlarmModelOperation {
+        let service = apiService.postAlarm(
+            secondsBefore: TimeInterval(minutesBefore * 60),
+            stopID: arrivalDeparture.stopID,
+            tripID: arrivalDeparture.tripID,
+            serviceDate: arrivalDeparture.serviceDate,
+            vehicleID: arrivalDeparture.vehicleID,
+            stopSequence: arrivalDeparture.stopSequence,
+            userPushID: userPushID
+        )
+
         let data = AlarmModelOperation()
 
         transferData(from: service, to: data)

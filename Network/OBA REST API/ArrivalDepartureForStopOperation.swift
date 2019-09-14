@@ -22,14 +22,14 @@ public class TripArrivalDepartureOperation: RESTAPIOperation {
     public class func buildURL(
         stopID: String,
         tripID: String,
-        serviceDate: Int64,
+        serviceDate: Date,
         vehicleID: String?,
         stopSequence: Int,
         baseURL: URL,
         defaultQueryItems: [URLQueryItem]
     ) -> URL {
         var args: [String: Any] = [
-            "serviceDate": serviceDate,
+            "serviceDate": Int64(serviceDate.timeIntervalSince1970 * 1000),
             "tripId": tripID
         ]
 

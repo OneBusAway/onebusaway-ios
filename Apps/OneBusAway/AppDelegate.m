@@ -31,7 +31,7 @@
 
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self];
 
-        NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"PushNotificationAPIKey"];
+        NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"OBAKitConfig"][@"PushNotificationAPIKey"];
         OBAOneSignalPushService *pushService = [[OBAOneSignalPushService alloc] initWithAPIKey:pushKey];
         appConfig.pushServiceProvider = pushService;
 
@@ -56,6 +56,10 @@
 }
 
 #pragma mark - OBAApplicationDelegate
+
+- (UIApplication*)uiApplication {
+    return [UIApplication sharedApplication];
+}
 
 - (void)performTestCrash {
     [Crashlytics.sharedInstance crash];

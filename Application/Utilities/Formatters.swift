@@ -188,7 +188,7 @@ public class Formatters: NSObject {
         }
         else if minutes < 0 {
             let str = NSLocalizedString("formatters.deviation.departure_future_early_fmt", value: "departs %d min early", comment: "Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
-            return String(format: str, minutes)
+            return String(format: str, abs(minutes))
         }
         else {
             return NSLocalizedString("formatters.deviation.departs_future_on_time", value: "departs on time", comment: "Describes an on-time departure. e.g. departs on time.")

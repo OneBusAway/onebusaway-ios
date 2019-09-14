@@ -24,10 +24,15 @@ public class OneSignalPushService: NSObject, PushServiceProvider {
     // MARK: - PushService Delegate
 
     public func start(launchOptions: [AnyHashable: Any]) {
-        let settings = [
+        let settings: [String: Any] = [
             kOSSettingsKeyAutoPrompt: false,
-            kOSSettingsKeyInAppAlerts: true
+            kOSSettingsKeyInAppAlerts: true,
+            kOSSettingsKeyInFocusDisplayOption: OSNotificationDisplayType.notification.rawValue
         ]
+
+        OneSignal.setLogLevel(.LL_ERROR, visualLevel: .LL_NONE)
+
+        OneSignal.setLocationShared(false)
 
         OneSignal.initWithLaunchOptions(launchOptions, appId: APIKey, handleNotificationAction: handleNotificationAction(result:), settings: settings)
     }

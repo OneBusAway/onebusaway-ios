@@ -54,8 +54,8 @@ public class ObacoService: APIService {
         secondsBefore: TimeInterval,
         stopID: String,
         tripID: String,
-        serviceDate: Int64,
-        vehicleID: String,
+        serviceDate: Date,
+        vehicleID: String?,
         stopSequence: Int,
         userPushID: String
     ) -> CreateAlarmOperation {

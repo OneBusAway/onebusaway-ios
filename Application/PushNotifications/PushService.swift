@@ -33,14 +33,25 @@ public protocol PushServiceProvider: NSObjectProtocol {
     var errorHandler: PushServiceErrorHandler! { get set }
 }
 
+// MARK: - PushServiceDelegate
+
+//@objc(OBAPushServiceDelegate)
+public protocol PushServiceDelegate: NSObjectProtocol {
+    func pushServicePresentingController(_ pushService: PushService) -> UIViewController?
+    func pushService(_ pushService: PushService, received arrivalDeparture: AlarmPushBody)
+}
+
 // MARK: - PushService
 
 @objc(OBAPushService)
 public class PushService: NSObject {
     private let serviceProvider: PushServiceProvider
 
-    public init(serviceProvider: PushServiceProvider) {
+    public weak var delegate: PushServiceDelegate?
+
+    public init(serviceProvider: PushServiceProvider, delegate: PushServiceDelegate?) {
         self.serviceProvider = serviceProvider
+        self.delegate = delegate
 
         super.init()
 
@@ -51,7 +62,32 @@ public class PushService: NSObject {
     // MARK: - PushServiceProvider Callbacks
 
     private func notificationReceivedHandler(message: String, additionalData: [AnyHashable: Any]?) {
-        //
+        guard
+            let additionalData = additionalData,
+            additionalData.keys.count == 1,
+            let key = additionalData.keys.first as? String
+        else {
+            displayMessage(message)
+
+            return
+        }
+
+        if
+            key == "arrival_and_departure",
+            let data = additionalData["arrival_and_departure"] as? [String: Any],
+            let pushBody = try? DictionaryDecoder.restApiServiceDecoder().decode(AlarmPushBody.self, from: data)
+        {
+            delegate?.pushService(self, received: pushBody)
+            return
+        }
+
+        displayMessage(message)
+    }
+
+    private func displayMessage(_ message: String) {
+        if let presentingController = delegate?.pushServicePresentingController(self) {
+            AlertPresenter.showDismissableAlert(title: message, message: nil, presentingController: presentingController)
+        }
     }
 
     private func errorHandler(error: Error) {
@@ -62,5 +98,13 @@ public class PushService: NSObject {
 
     @objc public func start(launchOptions: [AnyHashable: Any]) {
         serviceProvider.start(launchOptions: launchOptions)
+    }
+
+    @objc public func requestPushID(callback: @escaping PushManagerUserIDCallback) {
+        serviceProvider.requestPushID(callback)
+    }
+
+    public var isRegisteredForRemoteNotifications: Bool {
+        serviceProvider.isRegisteredForRemoteNotifications
     }
 }

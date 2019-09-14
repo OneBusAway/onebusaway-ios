@@ -35,16 +35,13 @@ class AppConfigTests: OBATestCase {
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(locationManager: locationManager)
         let analytics = AnalyticsMock()
-        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService)
+        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService)
 
         expect(appConfig.regionsBaseURL) == regionsBaseURL
         expect(appConfig.obacoBaseURL) == obacoBaseURL
         expect(appConfig.apiKey) == apiKey
-        expect(appConfig.uuid) == uuid
         expect(appConfig.appVersion) == appVersion
         expect(appConfig.queue) == queue
         expect(appConfig.userDefaults) == userDefaults
-
-        expect(appConfig.regionsService).toNot(beNil())
     }
 }
