@@ -16,7 +16,7 @@ import OHHTTPStubs
 class ArrivalDepartureAtStopTest: OBATestCase {
     let stopID = "stop_123"
     let tripID = "trip_123"
-    let serviceDate: Int64 = 1234567890
+    let serviceDate = 1234567890
     let vehicleID = "vehicle_123"
     let stopSequence = 1
 
@@ -24,7 +24,7 @@ class ArrivalDepartureAtStopTest: OBATestCase {
         let apiPath = TripArrivalDepartureOperation.buildAPIPath(stopID: stopID)
         let expectedParams: [String: String] = [
             "tripId": tripID,
-            "serviceDate": String(serviceDate),
+            "serviceDate": String(serviceDate * 1000),
             "vehicleId": vehicleID,
             "stopSequence": String(stopSequence)
             ]
@@ -36,7 +36,7 @@ class ArrivalDepartureAtStopTest: OBATestCase {
         }
 
         waitUntil { done in
-            let op = self.restService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopSequence: self.stopSequence)
+            let op = self.restService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: self.tripID, serviceDate: Date(timeIntervalSince1970: TimeInterval(self.serviceDate)), vehicleID: self.vehicleID, stopSequence: self.stopSequence)
             op.completionBlock = {
                 expect(op.entries).toNot(beNil())
                 let entry = op.entries!.first!
@@ -56,11 +56,11 @@ class ArrivalDepartureAtStopTest: OBATestCase {
 
     /// Validate that a good URL is constructed when all needed data is passed in.
     func testBuildURL_withAllData() {
-        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: [])
+        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: Date(timeIntervalSince1970: TimeInterval(self.serviceDate)), vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: [])
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
         expect(components?.queryItemValueMatching(name: "tripId")) == tripID
-        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate)
+        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate * 1000)
         expect(components?.queryItemValueMatching(name: "vehicleId")) ==  vehicleID
         expect(components?.queryItemValueMatching(name: "stopSequence")) == String(stopSequence)
 
@@ -70,11 +70,11 @@ class ArrivalDepartureAtStopTest: OBATestCase {
 
     /// The lack of a vehicle ID does not impede building a good URL.
     func testBuildURL_withoutVehicleID() {
-        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: nil, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: [])
+        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: Date(timeIntervalSince1970: TimeInterval(self.serviceDate)), vehicleID: nil, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: [])
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
         expect(components?.queryItemValueMatching(name: "tripId")) == tripID
-        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate)
+        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate * 1000)
         expect(components?.queryItemValueMatching(name: "vehicleId")).to(beNil())
         expect(components?.queryItemValueMatching(name: "stopSequence")) == String(stopSequence)
 
@@ -84,11 +84,11 @@ class ArrivalDepartureAtStopTest: OBATestCase {
 
     /// A stopSequence value of less than 1 is not included in the URL
     func testBuildURL_invalidStopSequence() {
-        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: -1, baseURL: baseURL, defaultQueryItems: [])
+        let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: Date(timeIntervalSince1970: TimeInterval(self.serviceDate)), vehicleID: vehicleID, stopSequence: -1, baseURL: baseURL, defaultQueryItems: [])
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
         expect(components?.queryItemValueMatching(name: "tripId")) == tripID
-        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate)
+        expect(components?.queryItemValueMatching(name: "serviceDate")) == String(serviceDate * 1000)
         expect(components?.queryItemValueMatching(name: "vehicleId")) ==  vehicleID
         expect(components?.queryItemValueMatching(name: "stopSequence")).to(beNil())
 

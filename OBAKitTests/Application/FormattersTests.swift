@@ -25,8 +25,7 @@ class FormattersTests: OBATestCase {
 
     func testExample() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let json = loadJSONDictionary(file: "arrivals-and-departures-for-stop-1_75414.json")
-        let stopArrivals = try! decodeModels(type: StopArrivals.self, json: json)
+        let stopArrivals = try! StopArrivals.decodeFromFile(named: "arrivals-and-departures-for-stop-1_75414.json", in: Bundle(for: type(of: self)))
         let arrDep = stopArrivals.first!.arrivalsAndDepartures.first!
 
         let str = formatters.explanation(from: arrDep)

@@ -27,7 +27,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
         stubAPICall()
 
         waitUntil { (done) in
-            let op = self.restModelService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: "trip123", serviceDate: 1234567890, vehicleID: "vehicle_123", stopSequence: 1)
+            let op = self.restModelService.getTripArrivalDepartureAtStop(stopID: self.stopID, tripID: "trip123", serviceDate: Date(timeIntervalSince1970: 1234567890), vehicleID: "vehicle_123", stopSequence: 1)
             op.completionBlock = {
                 let arrDep = op.arrivalDeparture!
                 expect(arrDep.arrivalEnabled).to(beTrue())

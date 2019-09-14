@@ -21,7 +21,7 @@ class AlarmModelOperationTests: OBATestCase {
     func testSuccessfulAlarmCreation() {
         let createAPIPath = CreateAlarmOperation.buildAPIPath(regionID: obacoRegionID)
 
-        let arrivalDeparture = try! loadModels(type: ArrivalDeparture.self, fileName: "arrival-and-departure-for-stop-1_11420.json").first!
+        let arrivalDeparture = try! ArrivalDeparture.decodeFromFile(named: "arrival-and-departure-for-stop-1_11420.json", in: Bundle(for: type(of: self))).first!
 
         stub(condition: isHost(self.obacoHost) &&
             isPath(createAPIPath) &&

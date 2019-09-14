@@ -33,8 +33,7 @@ class RegionalAlertsModelOperationTests: OBATestCase {
     func testSuccessfulRequest() {
         stubAPICalls()
 
-        let json = loadJSONDictionary(file: "agencies_with_coverage.json")
-        let agencies = try! decodeModels(type: AgencyWithCoverage.self, json: json)
+        let agencies = try! AgencyWithCoverage.decodeFromFile(named: "agencies_with_coverage.json", in: Bundle(for: type(of: self)))
 
         waitUntil { (done) in
             let op = self.restModelService.getRegionalAlerts(agencies: agencies)

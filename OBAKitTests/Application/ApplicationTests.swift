@@ -16,6 +16,8 @@ import Nimble
 // swiftlint:disable large_tuple
 
 class TestAppDelegate: ApplicationDelegate {
+    var uiApplication: UIApplication?
+
     var isRegisteredForRemoteNotifications: Bool = false
 
     func canOpenURL(_ url: URL) -> Bool {

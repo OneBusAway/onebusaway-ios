@@ -15,7 +15,7 @@ import CoreLocation
 public protocol ApplicationDelegate {
 
     /// Provides access to the `UIApplication` object.
-    @objc var uiApplication: UIApplication { get }
+    @objc var uiApplication: UIApplication? { get }
 
     /// This method is called when the delegate should reload the `rootViewController`
     /// of the app's window. This is typically done in response to permissions changes.
@@ -233,7 +233,7 @@ public class Application: NSObject,
     }
 
     public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
-        return delegate?.uiApplication.keyWindow?.topViewController
+        return delegate?.uiApplication?.keyWindow?.topViewController
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
@@ -245,7 +245,7 @@ public class Application: NSObject,
         op.then { [weak self] in
             guard
                 let self = self,
-                let topController = self.delegate?.uiApplication.keyWindow?.topViewController,
+                let topController = self.delegate?.uiApplication?.keyWindow?.topViewController,
                 let arrivalDeparture = op.arrivalDeparture
             else { return }
 
