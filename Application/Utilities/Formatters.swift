@@ -304,13 +304,13 @@ public class Formatters: NSObject {
     public class func adjectiveFormOfCardinalDirection(_ direction: Direction) -> String? {
         switch direction {
         case .n: return NSLocalizedString("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
-        case .ne: return NSLocalizedString("formatters.cardinal_adjective.northeast", value: "Northeast bound", comment: "Headed in a northeastern direction")
+        case .ne: return NSLocalizedString("formatters.cardinal_adjective.northeast", value: "NE bound", comment: "Headed in a northeastern direction")
         case .e: return NSLocalizedString("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
-        case .se: return NSLocalizedString("formatters.cardinal_adjective.southeast", value: "Southeast bound", comment: "Headed in an southeastern direction")
+        case .se: return NSLocalizedString("formatters.cardinal_adjective.southeast", value: "SE bound", comment: "Headed in an southeastern direction")
         case .s: return NSLocalizedString("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
-        case .sw: return NSLocalizedString("formatters.cardinal_adjective.southwest", value: "Southwest bound", comment: "Headed in a southwestern direction")
+        case .sw: return NSLocalizedString("formatters.cardinal_adjective.southwest", value: "SW bound", comment: "Headed in a southwestern direction")
         case .w: return NSLocalizedString("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
-        case .nw: return NSLocalizedString("formatters.cardinal_adjective.northwest", value: "Northwest bound", comment: "Headed in a northwestern direction")
+        case .nw: return NSLocalizedString("formatters.cardinal_adjective.northwest", value: "NW bound", comment: "Headed in a northwestern direction")
         case .unknown: return nil
         }
     }
