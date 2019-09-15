@@ -210,6 +210,21 @@ public extension UIFont {
 // Adapted from https://gist.github.com/lynfogeek/4b6ce0117fb0acdabe229f6d8759a139
 public extension UIImage {
 
+    /// Draws `image` onto `baseImage` at `point`.
+    /// - Parameter image: The top image.
+    /// - Parameter baseImage: The base image. Determines the size of the returned image.
+    /// - Parameter point: The point at which to draw `image`.
+    static func draw(image: UIImage, onto baseImage: UIImage, at point: CGPoint) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(baseImage.size, true, baseImage.scale)
+        baseImage.draw(at: .zero)
+        image.draw(at: point)
+
+        let composite = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return composite!
+    }
+
     // colorize image with given tint color
     // this is similar to Photoshop's "Color" layer blend mode
     // this is perfect for non-greyscale source images, and images that have both highlights and shadows that should be preserved
@@ -251,15 +266,17 @@ public extension UIImage {
         }
     }
 
-    private func modifiedImage(draw: (CGContext, CGRect) -> Void) -> UIImage {
+    private func modifiedImage(modifyOrientation: Bool = true, draw: (CGContext, CGRect) -> Void) -> UIImage {
         // using scale correctly preserves retina images
         UIGraphicsBeginImageContextWithOptions(size, false, scale)
         let context: CGContext! = UIGraphicsGetCurrentContext()
         assert(context != nil)
 
         // correctly rotate image
-        context.translateBy(x: 0, y: size.height)
-        context.scaleBy(x: 1.0, y: -1.0)
+        if modifyOrientation {
+            context.translateBy(x: 0, y: size.height)
+            context.scaleBy(x: 1.0, y: -1.0)
+        }
 
         let rect = CGRect(x: 0.0, y: 0.0, width: size.width, height: size.height)
 

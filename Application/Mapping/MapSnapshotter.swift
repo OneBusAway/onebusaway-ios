@@ -8,72 +8,73 @@
 import UIKit
 import CoreLocation
 import MapKit
-import CocoaLumberjackSwift
 
 public typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
 
 /// Convenience helpers built on top of `MKMapSnapshotter` to simplify the process of creating a map screenshot.
 public class MapSnapshotter: NSObject {
 
-    public static let defaultOverlayColor: UIColor = UIColor(white: 0.0, alpha: 0.4)
-
     private let size: CGSize
-    private let coordinate: CLLocationCoordinate2D
     private let scale: CGFloat
     private let mapType: MKMapType
     private let zoomLevel: Int
-    private let overlayColor: UIColor
+    private let stopIconFactory: StopIconFactory
 
-    private var snapshotter: MKMapSnapshotter?
-
-    public convenience init(size: CGSize, coordinate: CLLocationCoordinate2D) {
-        self.init(size: size, coordinate: coordinate, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, overlayColor: MapSnapshotter.defaultOverlayColor)
+    public convenience init(size: CGSize, stopIconFactory: StopIconFactory) {
+        self.init(size: size, screen: UIScreen.main, mapType: .mutedStandard, zoomLevel: 15, stopIconFactory: stopIconFactory)
     }
 
-    public init(size: CGSize, coordinate: CLLocationCoordinate2D, screen: UIScreen, mapType: MKMapType, zoomLevel: Int, overlayColor: UIColor) {
+    public init(size: CGSize, screen: UIScreen, mapType: MKMapType, zoomLevel: Int, stopIconFactory: StopIconFactory) {
         self.size = size
-        self.coordinate = coordinate
         self.scale = screen.scale
         self.mapType = mapType
         self.zoomLevel = zoomLevel
-        self.overlayColor = overlayColor
+        self.stopIconFactory = stopIconFactory
     }
 
-    public func snapshot(stop: Stop, completion: @escaping MapSnapshotterCompletionHandler) {
-        guard snapshotter == nil else {
-            return
-        }
-
+    private func snapshotOptions(stop: Stop, traitCollection: UITraitCollection) -> MKMapSnapshotter.Options {
         let options = MKMapSnapshotter.Options()
         options.size = size
-        options.region = MapHelpers.coordinateRegionWith(center: coordinate, zoomLevel: zoomLevel, size: size)
+        options.region = MapHelpers.coordinateRegionWith(center: stop.coordinate, zoomLevel: zoomLevel, size: size)
         options.scale = scale
         options.mapType = mapType
 
-        let snapshotter = MKMapSnapshotter(options: options)
-        snapshotter.start { (snapshot, error) in
-            guard
-                error == nil,
-                let image = snapshot?.image
-            else {
-                let error = String(describing: error)
-                DDLogError("Failed to snapshot map: \(error)")
+        if #available(iOS 13.0, *) {
+            options.traitCollection = traitCollection
+        }
+
+        return options
+    }
+
+    public func snapshot(stop: Stop, traitCollection: UITraitCollection, completion: @escaping MapSnapshotterCompletionHandler) {
+        let options = snapshotOptions(stop: stop, traitCollection: traitCollection)
+
+        let snapshot = MKMapSnapshotter(options: options)
+        snapshot.start { [weak self] (snapshot, error) in
+            guard let self = self else { return }
+
+            guard error == nil, let snapshot = snapshot else {
                 completion(nil)
-                self.snapshotter = nil
                 return
             }
 
-            // abxoxo - todo
-//            let iconForStop = StopIconFactory.icon(for: stop, strokeColor: .black)
-//            let annotatedImage = ImageHelpers.draw(iconForStop, onto: image, at: snapshot?.point(for: stop.coordinate))
-            completion(image.overlay(color: self.overlayColor))
-            self.snapshotter = nil
-        }
-        self.snapshotter = snapshotter
-    }
+            // Generate the stop icon.
+            let stopIcon = self.stopIconFactory.buildIcon(for: stop, strokeColor: ThemeColors.shared.stopAnnotationStrokeColor, fillColor: ThemeColors.shared.stopAnnotationFillColor)
 
-    public func cancel() {
-        snapshotter?.cancel()
-        snapshotter = nil
+            // Calculate the point at which to draw the stop icon.
+            // It needs to be shifted up by 1/2 the stop icon height
+            // in order to draw it at the proper location.
+            var point = snapshot.point(for: stop.coordinate)
+            point.y -= (stopIcon.size.height / 2.0)
+
+            // Render the composited image.
+            var annotatedImage = UIImage.draw(image: stopIcon, onto: snapshot.image, at: point)
+
+            if traitCollection.userInterfaceStyle == .light {
+                annotatedImage = annotatedImage.overlay(color: ThemeColors.shared.mapSnapshotOverlayColor)
+            }
+
+            completion(annotatedImage)
+        }
     }
 }

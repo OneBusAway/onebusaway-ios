@@ -337,8 +337,7 @@ public class Application: NSObject,
         StopAnnotationView.appearance().fillColor = UIColor.white
         StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
         StopAnnotationView.appearance().showsCallout = theme.behaviors.mapShowsCallouts
-        StopAnnotationView.appearance().strokeColor = ThemeColors.shared.mapStroke
-        StopAnnotationView.appearance().tintColor = ThemeColors.shared.stopAnnotationIcon
+        StopAnnotationView.appearance().strokeColor = ThemeColors.shared.stopAnnotationStrokeColor
 
         SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
 

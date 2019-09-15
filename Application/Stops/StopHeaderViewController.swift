@@ -10,7 +10,6 @@ import UIKit
 /// This view controller is meant to embedded into a classic UI
 /// `StopViewController` and used as the header view for that controller.
 public class StopHeaderViewController: UIViewController {
-
     private let kHeaderHeight: CGFloat = 120.0
 
     private let backgroundImageView = UIImageView.autolayoutNew()
@@ -29,10 +28,6 @@ public class StopHeaderViewController: UIViewController {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    deinit {
-        snapshotter?.cancel()
-    }
-
     public var stop: Stop? {
         didSet {
             updateUI()
@@ -42,7 +37,7 @@ public class StopHeaderViewController: UIViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = MapSnapshotter.defaultOverlayColor
+        view.backgroundColor = ThemeColors.shared.mapSnapshotOverlayColor
 
         view.addSubview(backgroundImageView)
         NSLayoutConstraint.activate([
@@ -56,21 +51,22 @@ public class StopHeaderViewController: UIViewController {
         let stack = UIStackView.verticalStack(arangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
         view.addSubview(stack)
 
-        stack.pinToSuperview(.layoutMargins, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.padding, leading: 0, bottom: 0, trailing: 0))
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: view.layoutMarginsGuide.topAnchor, constant: ThemeMetrics.padding),
+            stack.bottomAnchor.constraint(equalTo: view.layoutMarginsGuide.bottomAnchor)
+        ])
     }
 
     private func updateUI() {
         guard let stop = stop else { return }
 
-        snapshotter?.cancel()
-        snapshotter = nil
-
         let size = CGSize(width: UIScreen.main.bounds.width, height: kHeaderHeight)
-        snapshotter = MapSnapshotter(size: size, coordinate: stop.coordinate)
+        snapshotter = MapSnapshotter(size: size, stopIconFactory: application.stopIconFactory)
 
-        snapshotter?.snapshot(stop: stop) { [weak self] image in
+        snapshotter?.snapshot(stop: stop, traitCollection: traitCollection) { [weak self] image in
             guard let self = self else { return }
-
             self.backgroundImageView.image = image
         }
 

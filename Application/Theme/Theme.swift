@@ -57,8 +57,14 @@ public class ThemeColors: NSObject {
     /// A dark gray text color, used on maps.
     public let mapText: UIColor
 
-    /// Tint color for map annotation views representing stops.
-    public let stopAnnotationIcon: UIColor
+    /// The overlay color drawn on top of a `MapSnapshotter` image.
+    public let mapSnapshotOverlayColor: UIColor
+
+    /// Map annotation view stroke color.
+    public let stopAnnotationStrokeColor: UIColor
+
+    /// Map annotation view fill color
+    public let stopAnnotationFillColor: UIColor
 
     /// The color used to represent early departures.
     public let departureEarly: UIColor
@@ -87,8 +93,6 @@ public class ThemeColors: NSObject {
     /// A gray color; useful for de-emphasized UI elements.
     public let gray: UIColor
 
-    public let mapStroke: UIColor
-
     public let label: UIColor
 
     public let separator: UIColor
@@ -103,10 +107,10 @@ public class ThemeColors: NSObject {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
 
-    public init(bundle: Bundle, traitCollection: UITraitCollection?) {
+    public init(bundle: Bundle, traitCollection: UITraitCollection?) { // swiftlint:disable:this function_body_length
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
-        stopAnnotationIcon = .white
+        mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
         if #available(iOS 13, *) {
             departureEarly = .systemRed
@@ -124,7 +128,9 @@ public class ThemeColors: NSObject {
             highlightedBackgroundColor = .systemFill
             secondaryBackgroundColor = .secondarySystemBackground
             propertyChanged = .systemYellow
-            mapStroke = .black
+
+            stopAnnotationFillColor = .systemBackground
+            stopAnnotationStrokeColor = .label
         }
         else {
             departureEarly = UIColor(hex: "fc3f3b")!
@@ -142,7 +148,9 @@ public class ThemeColors: NSObject {
             highlightedBackgroundColor = UIColor(white: 0.9, alpha: 1)
             secondaryBackgroundColor = UIColor(white: 0.9, alpha: 1)
             propertyChanged = UIColor(r: 255, g: 255, b: 128)
-            mapStroke = .black
+
+            stopAnnotationFillColor = .white
+            stopAnnotationStrokeColor = .black
         }
     }
 }
