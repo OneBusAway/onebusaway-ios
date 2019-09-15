@@ -203,21 +203,21 @@ StopPreferencesDelegate {
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
 
         view.addSubview(stackView)
-        view.addSubview(stopToolbar)
-        stopToolbar.layoutIfNeeded()
+        view.addSubview(hoverBar)
 
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             stackView.topAnchor.constraint(equalTo: view.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stopToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            stopToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stopToolbar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            hoverBar.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
+            hoverBar.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
+            hoverBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -ThemeMetrics.controllerMargin)
         ])
 
         var inset = stackView.contentInset
-        inset.bottom = stopToolbar.frame.height
+
+        inset.bottom = 44.0 + ThemeMetrics.controllerMargin + view.safeAreaInsets.bottom
         stackView.contentInset = inset
         stackView.scrollIndicatorInsets = inset
     }
@@ -240,28 +240,34 @@ StopPreferencesDelegate {
         application.isIdleTimerDisabled = false
     }
 
-    // MARK: - Toolbar
+    // MARK: - Hover Bar
 
-    private lazy var stopToolbar: UIToolbar = {
-        let toolbar = UIToolbar.autolayoutNew()
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.items = buildToolbarItems()
-        return toolbar
+    private let hoverBar: HoverBar = {
+        let hoverBar = HoverBar.autolayoutNew()
+        hoverBar.tintColor = ThemeColors.shared.label
+
+        hoverBar.stackView.axis = .horizontal
+
+        let refreshButton = UIButton(type: .system)
+        refreshButton.accessibilityLabel = Strings.refresh
+        refreshButton.setImage(Icons.refresh, for: .normal)
+        refreshButton.addTarget(self, action: #selector(refresh), for: .touchUpInside)
+        hoverBar.stackView.addArrangedSubview(refreshButton)
+
+        let bookmarkButton = UIButton(type: .system)
+        bookmarkButton.accessibilityLabel = Strings.bookmark
+        bookmarkButton.setImage(Icons.favorited, for: .normal)
+        bookmarkButton.addTarget(self, action: #selector(addBookmark), for: .touchUpInside)
+        hoverBar.stackView.addArrangedSubview(bookmarkButton)
+
+        let filterButton = UIButton(type: .system)
+        filterButton.accessibilityLabel = Strings.filter
+        filterButton.setImage(Icons.filter, for: .normal)
+        filterButton.addTarget(self, action: #selector(filter), for: .touchUpInside)
+        hoverBar.stackView.addArrangedSubview(filterButton)
+
+        return hoverBar
     }()
-
-    /// Creates an array of toolbar items used to populate the toolbar on this view controller.
-    private func buildToolbarItems() -> [UIBarButtonItem] {
-        let refreshButton = UIBarButtonItem(title: Strings.refresh, style: .plain, target: self, action: #selector(refresh))
-        refreshButton.image = Icons.refresh
-
-        let bookmarkButton = UIBarButtonItem(title: Strings.bookmark, style: .plain, target: self, action: #selector(addBookmark))
-        bookmarkButton.image = Icons.favorited
-
-        let filterButton = UIBarButtonItem(title: Strings.filter, style: .plain, target: self, action: #selector(filter))
-        filterButton.image = Icons.filter
-
-        return [filterButton, UIBarButtonItem.flexibleSpace, bookmarkButton, UIBarButtonItem.flexibleSpace, refreshButton]
-    }
 
     // MARK: - NSUserActivity
 
@@ -343,11 +349,9 @@ StopPreferencesDelegate {
     private func dataDidReload() {
         guard let stopArrivals = stopArrivals else { return }
 
-        stackView.removeAllRows()
-
-        // Stop Header
-        stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
-        stackView.setInset(forRow: stopHeader.view, inset: .zero)
+        // Remove all of the rows except the header.
+        let rows = stackView.getAllRows()
+        stackView.removeRows(Array(rows[1...]))
 
         if stopPreferences.hasHiddenRoutes {
             stackView.addRow(filterToggleControl)
