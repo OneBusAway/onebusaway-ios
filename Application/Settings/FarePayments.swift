@@ -72,21 +72,17 @@ public class FarePayments: NSObject, SKStoreProductViewControllerDelegate {
         alert.addAction(UIAlertAction.cancelAction)
 
         // "Continue and Don't Show Again" Button
-        let dontShowAgainText = NSLocalizedString("fare_payments.dont_show_again", value: "Continue and Don't Show Again", comment: "A button that says continue and don't show again.")
-        let dontShowAgain = UIAlertAction(title: dontShowAgainText, style: .default) { [weak self] _ in
+        alert.addAction(title: NSLocalizedString("fare_payments.dont_show_again", value: "Continue and Don't Show Again", comment: "A button that says continue and don't show again.")) { [weak self] _ in
             guard let self = self else { return }
-
             self.application.userDefaults.set(false, forKey: self.showWarningDefaultsKey(region))
             self.launchAppOrShowAppStoreForRegion(region)
         }
-        alert.addAction(dontShowAgain)
 
         // "Continue" Button
-        let continueButton = UIAlertAction(title: Strings.continue, style: .default) { [weak self] _ in
+        alert.addAction(title: Strings.continue) { [weak self] _ in
             guard let self = self else { return }
             self.launchAppOrShowAppStoreForRegion(region)
         }
-        alert.addAction(continueButton)
 
         delegate?.farePayments(self, present: alert, animated: true, completion: nil)
     }

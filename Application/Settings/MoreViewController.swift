@@ -194,18 +194,16 @@ import MessageUI
         let sheet = UIAlertController(title: sheetTitle, message: nil, preferredStyle: .actionSheet)
 
         // Contact Developers
-        let contactDevelopers = NSLocalizedString("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")
-        sheet.addAction(UIAlertAction(title: contactDevelopers, style: .default, handler: { [weak self] _ in
+        sheet.addAction(title: NSLocalizedString("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")) { [weak self] _ in
             guard let self = self else { return }
             self.presentEmailFeedbackForm(target: .appDevelopers)
-        }))
+        }
 
         // Contact Transit Agency
-        let contactTransit = NSLocalizedString("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")
-        sheet.addAction(UIAlertAction(title: contactTransit, style: .default, handler: { [weak self] _ in
+        sheet.addAction(title: NSLocalizedString("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")) { [weak self] _ in
             guard let self = self else { return }
             self.presentEmailFeedbackForm(target: .transitAgency)
-        }))
+        }
 
         sheet.addAction(UIAlertAction.cancelAction)
 

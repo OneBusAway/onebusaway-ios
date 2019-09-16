@@ -59,13 +59,11 @@ class ContactUsHelper: NSObject {
 
         let alert = UIAlertController(title: title, message: String(format: bodyFormat, email), preferredStyle: .alert)
 
-        let copyEmailText = NSLocalizedString("contact_us_helper.cant_send_email.copy_email_button", value: "Copy Email Address", comment: "A button that lets the user copy an email address to the clipboard.")
-        alert.addAction(UIAlertAction(title: copyEmailText, style: .default, handler: { _ in
+        alert.addAction(title: NSLocalizedString("contact_us_helper.cant_send_email.copy_email_button", value: "Copy Email Address", comment: "A button that lets the user copy an email address to the clipboard.")) { _ in
             UIPasteboard.general.string = email
-        }))
+        }
 
-        let copyMessageText = NSLocalizedString("contact_us_helper.cant_send_email.copy_message_button", value: "Copy Debug Info", comment: "A button that lets the user copy a default message, including debug info, to the clipboard.")
-        alert.addAction(UIAlertAction(title: copyMessageText, style: .default, handler: { [weak self] _ in
+        alert.addAction(title: NSLocalizedString("contact_us_helper.cant_send_email.copy_message_button", value: "Copy Debug Info", comment: "A button that lets the user copy a default message, including debug info, to the clipboard.")) { [weak self] _ in
             guard
                 let self = self,
                 let data = self.messageTemplate(for: target).data(using: .utf8),
@@ -73,7 +71,7 @@ class ContactUsHelper: NSObject {
             else { return }
 
             UIPasteboard.general.set(attributedString: str)
-        }))
+        }
 
         alert.addAction(UIAlertAction.cancelAction)
 

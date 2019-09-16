@@ -45,6 +45,14 @@ extension UIAlertController {
 
         return controller
     }
+
+    /// Convenience method for adding a `UIAlertAction` to the receiver.
+    /// - Parameter title: The action title.
+    /// - Parameter style: The style of the action.
+    /// - Parameter handler: The callback for when the action is invoked by the user.
+    public func addAction(title: String, style: UIAlertAction.Style = .default, handler: ((UIAlertAction) -> Void)?) {
+        addAction(UIAlertAction(title: title, style: style, handler: handler))
+    }
 }
 
 // MARK: - UIBarButtonItem

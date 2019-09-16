@@ -35,7 +35,7 @@ class AddGroupAlertController: NSObject {
         }
 
         self.alertController.addAction(UIAlertAction.cancelAction)
-        self.alertController.addAction(UIAlertAction(title: Strings.save, style: .default, handler: { [weak self] _ in
+        self.alertController.addAction(title: Strings.save) { [weak self] _ in
             guard
                 let self = self,
                 let textField = self.alertController.textFields?.first,
@@ -43,7 +43,7 @@ class AddGroupAlertController: NSObject {
             else { return }
 
             self.saveChanges(text)
-        }))
+        }
     }
 
     private func saveChanges(_ text: String) {
