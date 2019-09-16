@@ -257,7 +257,7 @@ StopPreferencesDelegate {
         let bookmarkButton = UIButton(type: .system)
         bookmarkButton.accessibilityLabel = Strings.bookmark
         bookmarkButton.setImage(Icons.favorited, for: .normal)
-        bookmarkButton.addTarget(self, action: #selector(addBookmark), for: .touchUpInside)
+        bookmarkButton.addTarget(self, action: #selector(addBookmark(sender:)), for: .touchUpInside)
         hoverBar.stackView.addArrangedSubview(bookmarkButton)
 
         let filterButton = UIButton(type: .system)
@@ -529,11 +529,15 @@ StopPreferencesDelegate {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         if canCreateAlarm(for: arrivalDeparture) {
-            let addAlarmTitle = NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")
-            actionSheet.addAction(UIAlertAction(title: addAlarmTitle, style: .default, handler: { [weak self] _ in
+            actionSheet.addAction(title: NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")) { [weak self] _ in
                 guard let self = self else { return }
                 self.addAlarm(arrivalDeparture: arrivalDeparture)
-            }))
+            }
+        }
+
+        actionSheet.addAction(title: NSLocalizedString("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
+            guard let self = self else { return }
+            self.addBookmark(arrivalDeparture: arrivalDeparture)
         }
 
         actionSheet.addAction(UIAlertAction.cancelAction)
@@ -577,6 +581,13 @@ StopPreferencesDelegate {
         AlertPresenter.show(error: error, presentingController: self)
     }
 
+    // MARK: - Bookmarks
+
+    private func addBookmark(arrivalDeparture: ArrivalDeparture) {
+        // abxoxo
+        print("Todo: create a bookmark for \(arrivalDeparture)")
+    }
+
     // MARK: - Bookmark Editor
 
     func bookmarkEditorCancelled(_ viewController: UIViewController) {
@@ -601,7 +612,7 @@ StopPreferencesDelegate {
     }
 
     /// Initiates the 'Add Bookmark' workflow.
-    @objc private func addBookmark() {
+    @objc private func addBookmark(sender: Any?) {
         guard let stop = stop else { return }
 
         let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
