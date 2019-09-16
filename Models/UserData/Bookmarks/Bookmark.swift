@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// This is a bookmark for a `Stop`.
+/// This is a bookmark for a `Stop` or a trip.
 @objc(OBABookmark) public class Bookmark: NSObject, Codable {
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
@@ -46,13 +46,61 @@ import Foundation
         }
     }
 
-    public init(name: String, regionIdentifier: Int, stop: Stop) {
-        self.uuid = UUID()
+    // MARK: - Trip Bookmark Properties
+
+    public let routeShortName: String?
+    public let tripHeadsign: String?
+    public let routeID: RouteID?
+
+    // MARK: - Init
+
+    public init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture) {
+        self.routeShortName = arrivalDeparture.routeShortName
+        self.routeID = arrivalDeparture.routeID
+        self.tripHeadsign = arrivalDeparture.tripHeadsign
+
+        self.isFavorite = false
         self.name = name
         self.regionIdentifier = regionIdentifier
+        self.stop = arrivalDeparture.stop
         self.stopID = stop.id
-        self.stop = stop
+        self.uuid = UUID()
+    }
+
+    public init(name: String, regionIdentifier: Int, stop: Stop) {
+        self.routeShortName = nil
+        self.routeID = nil
+        self.tripHeadsign = nil
+
         self.isFavorite = false
+        self.name = name
+        self.regionIdentifier = regionIdentifier
+        self.stop = stop
+        self.stopID = stop.id
+        self.uuid = UUID()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case groupUUID, isFavorite, name, regionIdentifier, stop, stopID, uuid
+
+        // Trip bookmark keys
+        case routeShortName, tripHeadsign, routeID
+    }
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        groupUUID = try? container.decode(UUID.self, forKey: .groupUUID)
+        isFavorite = try container.decode(Bool.self, forKey: .isFavorite)
+        name = try container.decode(String.self, forKey: .name)
+        regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
+        stop = try container.decode(Stop.self, forKey: .stop)
+        stopID = try container.decode(String.self, forKey: .stopID)
+        uuid = try container.decode(UUID.self, forKey: .uuid)
+
+        routeShortName = try? container.decode(String.self, forKey: .routeShortName)
+        tripHeadsign = try? container.decode(String.self, forKey: .tripHeadsign)
+        routeID = try? container.decode(String.self, forKey: .routeID)
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -65,7 +113,10 @@ import Foundation
             regionIdentifier == rhs.regionIdentifier &&
             stopID == rhs.stopID &&
             stop == rhs.stop &&
-            isFavorite == rhs.isFavorite
+            isFavorite == rhs.isFavorite &&
+            routeShortName == rhs.routeShortName &&
+            routeID == rhs.routeID &&
+            tripHeadsign == rhs.tripHeadsign
     }
 
     public override var hash: Int {
@@ -77,12 +128,19 @@ import Foundation
         hasher.combine(stopID)
         hasher.combine(stop)
         hasher.combine(isFavorite)
+        hasher.combine(routeShortName)
+        hasher.combine(routeID)
+        hasher.combine(tripHeadsign)
         return hasher.finalize()
     }
 
-    override public var debugDescription: String {
+    public override var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["uuid": uuid as Any, "groupUUID": groupUUID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any]
+        let props: [String: Any] = ["uuid": uuid as Any, "groupUUID": groupUUID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any, "routeShortName": routeShortName as Any, "routeID": routeID as Any, "tripHeadsign": tripHeadsign as Any]
         return "\(desc) \(props)"
+    }
+
+    public var isTripBookmark: Bool {
+        routeShortName != nil && routeID != nil && tripHeadsign != nil
     }
 }
