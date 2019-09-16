@@ -107,7 +107,7 @@ public class ThemeColors: NSObject {
         self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
     }
 
-    public init(bundle: Bundle, traitCollection: UITraitCollection?) { // swiftlint:disable:this function_body_length
+    public init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
         lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
