@@ -50,10 +50,10 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let route: Route
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
-    let _routeLongName: String?
+    private let _routeLongName: String?
 
     /// the route short name that potentially overrides the route short name in the referenced `Route` element
-    let _routeShortName: String?
+    private let _routeShortName: String?
 
     /// The arrival date according to the schedule
     let scheduledArrival: Date
@@ -85,7 +85,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let totalStopsInTrip: Int?
 
     /// The trip headsign that potentially overrides the trip headsign in the referenced `Trip` element
-    let _tripHeadsign: String?
+    private let _tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
     let tripID: TripIdentifier

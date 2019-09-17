@@ -54,29 +54,31 @@ import Foundation
 
     // MARK: - Init
 
-    public init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture) {
-        self.routeShortName = arrivalDeparture.routeShortName
-        self.routeID = arrivalDeparture.routeID
-        self.tripHeadsign = arrivalDeparture.tripHeadsign
-
-        self.isFavorite = false
-        self.name = name
-        self.regionIdentifier = regionIdentifier
-        self.stop = arrivalDeparture.stop
-        self.stopID = stop.id
-        self.uuid = UUID()
+    public convenience init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture) {
+        self.init(name: name, regionIdentifier: regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
     }
 
-    public init(name: String, regionIdentifier: Int, stop: Stop) {
-        self.routeShortName = nil
-        self.routeID = nil
-        self.tripHeadsign = nil
+    public convenience init(name: String, regionIdentifier: Int, stop: Stop) {
+        self.init(name: name, regionIdentifier: regionIdentifier, arrivalDeparture: nil, stop: stop)
+    }
 
+    public init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture?, stop: Stop) {
+        if let arrivalDeparture = arrivalDeparture {
+            self.routeShortName = arrivalDeparture.routeShortName
+            self.routeID = arrivalDeparture.routeID
+            self.tripHeadsign = arrivalDeparture.tripHeadsign
+        }
+        else {
+            self.routeShortName = nil
+            self.routeID = nil
+            self.tripHeadsign = nil
+        }
+
+        self.stop = stop
+        self.stopID = stop.id
         self.isFavorite = false
         self.name = name
         self.regionIdentifier = regionIdentifier
-        self.stop = stop
-        self.stopID = stop.id
         self.uuid = UUID()
     }
 
@@ -100,7 +102,7 @@ import Foundation
 
         routeShortName = try? container.decode(String.self, forKey: .routeShortName)
         tripHeadsign = try? container.decode(String.self, forKey: .tripHeadsign)
-        routeID = try? container.decode(String.self, forKey: .routeID)
+        routeID = try? container.decode(RouteID.self, forKey: .routeID)
     }
 
     public override func isEqual(_ object: Any?) -> Bool {

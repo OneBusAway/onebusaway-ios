@@ -71,7 +71,7 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
         addGroupedTableRowToStack(stopRow, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
 
-            let editStopController = EditStopBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
+            let editStopController = EditBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
             self.navigationController?.pushViewController(editStopController, animated: true)
         }
     }

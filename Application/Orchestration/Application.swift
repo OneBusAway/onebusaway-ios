@@ -141,6 +141,8 @@ public class Application: NSObject,
 
     @objc public let notificationCenter: NotificationCenter
 
+    @objc public let reachability = Reachability()
+
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
 
     @objc public let locale = Locale.autoupdatingCurrent

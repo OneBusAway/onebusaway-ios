@@ -33,18 +33,26 @@ public class StopArrivalView: UIView, Highlightable {
     /// For example, this might contain the text `11:20 AM - arriving on time`.
     let timeExplanationLabel = buildLabel()
 
+    // MARK: - Minutes to Departure Labels
+
     /// Appears on the trailing side of the view; contains the number of minutes until arrival/departure.
     ///
     /// For example, this might contain the text `10m`.
-    let minutesLabel: HighlightChangeLabel = {
-        let label = HighlightChangeLabel.autolayoutNew()
-        label.setContentCompressionResistancePriority(.required, for: .vertical)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+    let topMinutesLabel = buildMinutesLabel()
 
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        label.setContentHuggingPriority(.required, for: .vertical)
+    private lazy var topMinutesWrapper = buildMinutesLabelWrapper(label: topMinutesLabel)
 
-        return label
+    let centerMinutesLabel = buildMinutesLabel()
+
+    private lazy var centerMinutesWrapper = buildMinutesLabelWrapper(label: centerMinutesLabel)
+
+    let bottomMinutesLabel = buildMinutesLabel()
+
+    private lazy var bottomMinutesWrapper = buildMinutesLabelWrapper(label: bottomMinutesLabel)
+
+    private lazy var minutesWrappers: UIView = {
+        let stack = UIStackView.verticalStack(arangedSubviews: [topMinutesWrapper, centerMinutesWrapper, bottomMinutesWrapper])
+        return stack.embedInWrapperView()
     }()
 
     // MARK: - Disclosure Indicator
@@ -103,6 +111,11 @@ public class StopArrivalView: UIView, Highlightable {
 
     public var formatters: Formatters!
 
+    // MARK: - Data Setters
+
+    /// Set this to display data in this view.
+    /// - Note: You can also display up to three `ArrivalDeparture`s by using the
+    /// `arrivalDepartures` setter instead.
     public var arrivalDeparture: ArrivalDeparture! {
         didSet {
             if deemphasizePastEvents {
@@ -112,53 +125,74 @@ public class StopArrivalView: UIView, Highlightable {
 
             routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
 
-            let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+            configureExplanationText()
 
-            let explanationText: String
-            if arrivalDeparture.scheduleStatus == .unknown {
-                explanationText = Strings.scheduledNotRealTime
-            }
-            else {
-                explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
-            }
-
-            let scheduleStatusColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
-
-            let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
-
-            let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
-
-            let explanation = NSAttributedString(string: explanationText, attributes: [NSAttributedString.Key.font: timeExplanationFont, NSAttributedString.Key.foregroundColor: scheduleStatusColor])
-            attributedExplanation.append(explanation)
-
-            timeExplanationLabel.attributedText = attributedExplanation
-
-            minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
-            minutesLabel.textColor = scheduleStatusColor
+            topMinutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
+            topMinutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
         }
     }
 
-    private lazy var minutesLabelWrapper: UIView = {
-        let minutesLabelWrapper = minutesLabel.embedInWrapperView(setConstraints: false)
-        NSLayoutConstraint.activate([
-            minutesLabel.trailingAnchor.constraint(equalTo: minutesLabelWrapper.trailingAnchor),
-            minutesLabel.centerYAnchor.constraint(equalTo: minutesLabelWrapper.centerYAnchor),
-            minutesLabelWrapper.widthAnchor.constraint(greaterThanOrEqualTo: minutesLabel.widthAnchor),
-            minutesLabelWrapper.heightAnchor.constraint(greaterThanOrEqualTo: minutesLabel.heightAnchor)
-        ])
-        return minutesLabelWrapper
-    }()
+    private func configureExplanationText() {
+        let arrDepTime = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+
+        let explanationText: String
+        if arrivalDeparture.scheduleStatus == .unknown {
+            explanationText = Strings.scheduledNotRealTime
+        }
+        else {
+            explanationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+        }
+
+        let scheduleStatusColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+        let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
+
+        let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
+
+        let explanation = NSAttributedString(string: explanationText, attributes: [NSAttributedString.Key.font: timeExplanationFont, NSAttributedString.Key.foregroundColor: scheduleStatusColor])
+        attributedExplanation.append(explanation)
+
+        timeExplanationLabel.attributedText = attributedExplanation
+    }
+
+    /// Alternative to `arrivalDeparture`. Set this to display up to three `ArrivalDeparture`s in this view.
+    public var arrivalDepartures: [ArrivalDeparture]? {
+        didSet {
+            guard let arrivalDepartures = arrivalDepartures else { return }
+
+            if let first = arrivalDepartures.first {
+                arrivalDeparture = first
+            }
+
+            let updateLabelWithDeparture = { (label: UILabel, index: Int) in
+                if arrivalDepartures.count > index {
+                    let dep = arrivalDepartures[index]
+                    label.text = self.formatters.shortFormattedTime(until: dep)
+                    label.textColor = self.formatters.colorForScheduleStatus(dep.scheduleStatus)
+                }
+                else {
+                    label.text = nil
+                }
+            }
+
+            updateLabelWithDeparture(topMinutesLabel, 0)
+            updateLabelWithDeparture(centerMinutesLabel, 1)
+            updateLabelWithDeparture(bottomMinutesLabel, 2)
+        }
+    }
 
     private lazy var leftStack: UIView = {
-        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel])
+        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
         return leftStack.embedInWrapperView()
     }()
 
     private lazy var outerStackView: UIStackView = {
-        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesLabelWrapper])
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesWrappers])
         outerStack.spacing = ThemeMetrics.padding
         return outerStack
     }()
+
+    // MARK: - Init
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -170,13 +204,33 @@ public class StopArrivalView: UIView, Highlightable {
             routeHeadsignLabel.backgroundColor = .red
             timeExplanationLabel.backgroundColor = .orange
             disclosureIndicator.backgroundColor = .blue
-            minutesLabel.backgroundColor = .purple
-            minutesLabelWrapper.backgroundColor = .green
+            topMinutesLabel.backgroundColor = .purple
+            topMinutesWrapper.backgroundColor = .green
         }
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Highlightable
+
+    public func setIsHighlighted(_ isHighlighted: Bool) {
+      guard let cell = superview as? StackViewCell else { return }
+        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
+    }
+
+    // MARK: - UI Builders
+
+    private class func buildMinutesLabel() -> HighlightChangeLabel {
+        let label = HighlightChangeLabel.autolayoutNew()
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.required, for: .vertical)
+
+        return label
     }
 
     private class func buildLabel() -> UILabel {
@@ -185,10 +239,14 @@ public class StopArrivalView: UIView, Highlightable {
         return label
     }
 
-    // MARK: - Highlightable
-
-    public func setIsHighlighted(_ isHighlighted: Bool) {
-      guard let cell = superview as? StackViewCell else { return }
-        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
+    private func buildMinutesLabelWrapper(label: UILabel) -> UIView {
+        let wrapper = label.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            label.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+            label.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
+            wrapper.widthAnchor.constraint(greaterThanOrEqualTo: label.widthAnchor),
+            wrapper.heightAnchor.constraint(greaterThanOrEqualTo: label.heightAnchor)
+        ])
+        return wrapper
     }
 }

@@ -584,8 +584,10 @@ StopPreferencesDelegate {
     // MARK: - Bookmarks
 
     private func addBookmark(arrivalDeparture: ArrivalDeparture) {
-        // abxoxo
-        print("Todo: create a bookmark for \(arrivalDeparture)")
+        let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
+        let navigation = UINavigationController(rootViewController: bookmarkController)
+
+        application.viewRouter.present(navigation, from: self)
     }
 
     // MARK: - Bookmark Editor
