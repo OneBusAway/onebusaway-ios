@@ -326,8 +326,6 @@ public class Application: NSObject,
 
         IndeterminateProgressView.appearance().progressColor = ThemeColors.shared.primary
 
-        StackedButton.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-
         StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
         StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
 

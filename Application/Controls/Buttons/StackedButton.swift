@@ -13,9 +13,14 @@ public class StackedButton: UIControl {
 
     let kDebugColors = false
 
-    @objc public dynamic var font: UIFont {
-        get { return textLabel.font }
-        set { textLabel.font = newValue }
+    public var title: String? {
+        set {
+            textLabel.text = newValue
+            accessibilityLabel = newValue
+        }
+        get {
+            return textLabel.text
+        }
     }
 
     public let textLabel: UILabel = {
@@ -27,6 +32,7 @@ public class StackedButton: UIControl {
         label.isUserInteractionEnabled = false
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
 
         return label
     }()
