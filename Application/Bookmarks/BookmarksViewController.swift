@@ -121,6 +121,7 @@ public class BookmarksViewController: UIViewController,
                 arrivalView.formatters = application.formatters
                 arrivalView.showDisclosureIndicator = true
                 arrivalView.routeHeadsignLabel.text = key.bookmarkName
+                arrivalView.showLoadingIndicator()
                 tripBookmarkViewMap[key] = arrivalView
                 view = arrivalView
             }
@@ -191,6 +192,7 @@ public class BookmarksViewController: UIViewController,
 
             for (key, deps) in keysAndDeps {
                 let view = self.tripBookmarkViewMap[key]
+                view?.hideLoadingIndicator()
                 view?.arrivalDepartures = deps
             }
         }

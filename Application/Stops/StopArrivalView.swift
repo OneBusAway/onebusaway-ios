@@ -33,6 +33,24 @@ public class StopArrivalView: UIView, Highlightable {
     /// For example, this might contain the text `11:20 AM - arriving on time`.
     let timeExplanationLabel = buildLabel()
 
+    // MARK: - Loading
+
+    lazy var loadingIndicator = LoadingIndicatorView()
+
+    public func showLoadingIndicator() {
+        guard loadingIndicator.superview == nil else { return }
+
+        leftStack.insertArrangedSubview(loadingIndicator, at: 2)
+        loadingIndicator.startAnimating()
+    }
+
+    public func hideLoadingIndicator() {
+        guard loadingIndicator.superview != nil else { return }
+
+        loadingIndicator.stopAnimating()
+        loadingIndicator.removeFromSuperview()
+    }
+
     // MARK: - Minutes to Departure Labels
 
     /// Appears on the trailing side of the view; contains the number of minutes until arrival/departure.
@@ -181,13 +199,14 @@ public class StopArrivalView: UIView, Highlightable {
         }
     }
 
-    private lazy var leftStack: UIView = {
-        let leftStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
+    private lazy var leftStack: UIStackView = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
+
+    private lazy var leftStackWrapper: UIView = {
         return leftStack.embedInWrapperView()
     }()
 
     private lazy var outerStackView: UIStackView = {
-        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStack, minutesWrappers])
+        let outerStack = UIStackView.horizontalStack(arrangedSubviews: [leftStackWrapper, minutesWrappers])
         outerStack.spacing = ThemeMetrics.padding
         return outerStack
     }()
