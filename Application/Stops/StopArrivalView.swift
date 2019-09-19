@@ -68,10 +68,9 @@ public class StopArrivalView: UIView, Highlightable {
 
     private lazy var bottomMinutesWrapper = buildMinutesLabelWrapper(label: bottomMinutesLabel)
 
-    private lazy var minutesWrappers: UIView = {
-        let stack = UIStackView.verticalStack(arangedSubviews: [topMinutesWrapper, centerMinutesWrapper, bottomMinutesWrapper])
-        return stack.embedInWrapperView()
-    }()
+    private lazy var minutesStack = UIStackView.verticalStack(arangedSubviews: [])
+
+    private lazy var minutesWrappers = minutesStack.embedInWrapperView()
 
     // MARK: - Disclosure Indicator
 
@@ -147,6 +146,8 @@ public class StopArrivalView: UIView, Highlightable {
 
             topMinutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
             topMinutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+            minutesStack.addArrangedSubview(topMinutesWrapper)
         }
     }
 
@@ -182,20 +183,25 @@ public class StopArrivalView: UIView, Highlightable {
                 arrivalDeparture = first
             }
 
-            let updateLabelWithDeparture = { (label: UILabel, index: Int) in
+            let updateLabelWithDeparture = { (label: UILabel, wrapper: UIView, index: Int) in
                 if arrivalDepartures.count > index {
                     let dep = arrivalDepartures[index]
                     label.text = self.formatters.shortFormattedTime(until: dep)
                     label.textColor = self.formatters.colorForScheduleStatus(dep.scheduleStatus)
+
+                    if wrapper.superview == nil {
+                        self.minutesStack.addArrangedSubview(wrapper)
+                    }
                 }
                 else {
+                    wrapper.removeFromSuperview()
                     label.text = nil
                 }
             }
 
-            updateLabelWithDeparture(topMinutesLabel, 0)
-            updateLabelWithDeparture(centerMinutesLabel, 1)
-            updateLabelWithDeparture(bottomMinutesLabel, 2)
+            updateLabelWithDeparture(topMinutesLabel, topMinutesWrapper, 0)
+            updateLabelWithDeparture(centerMinutesLabel, centerMinutesWrapper, 1)
+            updateLabelWithDeparture(bottomMinutesLabel, bottomMinutesWrapper, 2)
         }
     }
 
