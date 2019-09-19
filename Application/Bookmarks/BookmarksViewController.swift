@@ -120,6 +120,7 @@ public class BookmarksViewController: UIViewController,
                 let arrivalView = StopArrivalView.autolayoutNew()
                 arrivalView.formatters = application.formatters
                 arrivalView.showDisclosureIndicator = true
+                arrivalView.routeHeadsignLabel.text = key.bookmarkName
                 tripBookmarkViewMap[key] = arrivalView
                 view = arrivalView
             }
@@ -208,11 +209,12 @@ public class BookmarksViewController: UIViewController,
 // MARK: - Private Helpers
 
 /// Provides a way to group `ArrivalDeparture`s by the data elements used in trip bookmarks.
-fileprivate struct TripBookmarkKey: Hashable {
+fileprivate struct TripBookmarkKey: Hashable, Equatable {
     let stopID: String
     let routeShortName: String
     let routeID: RouteID
     let tripHeadsign: String
+    let bookmarkName: String?
 
     init?(bookmark: Bookmark) {
         guard
@@ -226,6 +228,7 @@ fileprivate struct TripBookmarkKey: Hashable {
         self.routeShortName = routeShortName
         self.routeID = routeID
         self.tripHeadsign = tripHeadsign
+        self.bookmarkName = bookmark.name
     }
 
     init(arrivalDeparture: ArrivalDeparture) {
@@ -233,6 +236,15 @@ fileprivate struct TripBookmarkKey: Hashable {
         self.routeShortName = arrivalDeparture.routeShortName
         self.routeID = arrivalDeparture.routeID
         self.tripHeadsign = arrivalDeparture.tripHeadsign
+        self.bookmarkName = nil
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        return
+            lhs.stopID == rhs.stopID &&
+            lhs.routeShortName == rhs.routeShortName &&
+            lhs.routeID == rhs.routeID &&
+            lhs.tripHeadsign == rhs.tripHeadsign
     }
 }
 
