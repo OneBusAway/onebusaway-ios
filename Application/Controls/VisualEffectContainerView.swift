@@ -7,23 +7,17 @@
 
 import UIKit
 
-/// A container view that simplifies using a `UIVisualEffectView` with blur and vibrancy effects.
+/// A container view that simplifies using a `UIVisualEffectView`.
 class VisualEffectContainerView: UIView {
     private let effectView: UIVisualEffectView
-    private let vibrancyView: UIVisualEffectView
 
     /// Add your subviews to this view, not the receiver.
-    public var contentView: UIView { vibrancyView.contentView }
+    public var contentView: UIView { effectView.contentView }
 
     init(blurEffect: UIBlurEffect) {
         effectView = UIVisualEffectView(effect: blurEffect)
         effectView.translatesAutoresizingMaskIntoConstraints = false
 
-        let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
-        vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
-        vibrancyView.translatesAutoresizingMaskIntoConstraints = false
-
-        effectView.contentView.addSubview(vibrancyView)
         super.init(frame: .zero)
 
         addSubview(effectView)
@@ -32,12 +26,7 @@ class VisualEffectContainerView: UIView {
             effectView.leadingAnchor.constraint(equalTo: leadingAnchor),
             effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
             effectView.topAnchor.constraint(equalTo: topAnchor),
-            effectView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            vibrancyView.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor),
-            vibrancyView.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor),
-            vibrancyView.topAnchor.constraint(equalTo: effectView.contentView.topAnchor),
-            vibrancyView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor)
+            effectView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 

@@ -21,7 +21,8 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     ModalDelegate,
     StopArrivalDelegate,
-StopPreferencesDelegate {
+    StopPreferencesDelegate {
+
     private let kUseDebugColors = false
 
     lazy var stackView: AloeStackView = {
@@ -203,16 +204,17 @@ StopPreferencesDelegate {
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
 
         view.addSubview(stackView)
-        view.addSubview(hoverBar)
+        view.addSubview(fakeToolbar)
 
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             stackView.topAnchor.constraint(equalTo: view.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            hoverBar.leadingAnchor.constraint(equalTo: view.layoutMarginsGuide.leadingAnchor),
-            hoverBar.trailingAnchor.constraint(equalTo: view.layoutMarginsGuide.trailingAnchor),
-            hoverBar.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -ThemeMetrics.controllerMargin)
+            fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0)
         ])
 
         var inset = stackView.contentInset
@@ -240,33 +242,55 @@ StopPreferencesDelegate {
         application.isIdleTimerDisabled = false
     }
 
-    // MARK: - Hover Bar
+    // MARK: - Bottom Toolbar
 
-    private let hoverBar: HoverBar = {
-        let hoverBar = HoverBar.autolayoutNew()
-        hoverBar.tintColor = ThemeColors.shared.label
+    private lazy var refreshButton: UIControl = {
+        let button = UIButton(type: .system)
+        button.setTitle(Strings.refresh, for: .normal)
+        button.setImage(Icons.refresh, for: .normal)
+        button.addTarget(self, action: #selector(refresh), for: .touchUpInside)
+        return button
+    }()
 
-        hoverBar.stackView.axis = .horizontal
+    private lazy var bookmarkButton: UIControl = {
+        let button = UIButton(type: .system)
+        button.setTitle(Strings.bookmark, for: .normal)
+        button.setImage(Icons.favorited, for: .normal)
+        button.addTarget(self, action: #selector(addBookmark(sender:)), for: .touchUpInside)
+        return button
+    }()
 
-        let refreshButton = UIButton(type: .system)
-        refreshButton.accessibilityLabel = Strings.refresh
-        refreshButton.setImage(Icons.refresh, for: .normal)
-        refreshButton.addTarget(self, action: #selector(refresh), for: .touchUpInside)
-        hoverBar.stackView.addArrangedSubview(refreshButton)
+    private lazy var filterButton: UIControl = {
+        let button = UIButton(type: .system)
+        button.setTitle(Strings.filter, for: .normal)
+        button.setImage(Icons.filter, for: .normal)
+        button.addTarget(self, action: #selector(filter), for: .touchUpInside)
+        return button
+    }()
 
-        let bookmarkButton = UIButton(type: .system)
-        bookmarkButton.accessibilityLabel = Strings.bookmark
-        bookmarkButton.setImage(Icons.favorited, for: .normal)
-        bookmarkButton.addTarget(self, action: #selector(addBookmark(sender:)), for: .touchUpInside)
-        hoverBar.stackView.addArrangedSubview(bookmarkButton)
+    private lazy var toolbarStack: UIStackView = {
+        let stackView = UIStackView.horizontalStack(arrangedSubviews: [refreshButton, bookmarkButton, filterButton])
+        stackView.spacing = ThemeMetrics.padding
+        stackView.alignment = .center
+        stackView.distribution = .fillEqually
+        return stackView
+    }()
 
-        let filterButton = UIButton(type: .system)
-        filterButton.accessibilityLabel = Strings.filter
-        filterButton.setImage(Icons.filter, for: .normal)
-        filterButton.addTarget(self, action: #selector(filter), for: .touchUpInside)
-        hoverBar.stackView.addArrangedSubview(filterButton)
+    private lazy var fakeToolbar: UIView = {
+        let wrapper = toolbarStack.embedInWrapperView()
 
-        return hoverBar
+        let blurContainerView = VisualEffectContainerView(blurEffect: UIBlurEffect(style: .light))
+        blurContainerView.translatesAutoresizingMaskIntoConstraints = false
+        blurContainerView.contentView.addSubview(wrapper)
+
+        NSLayoutConstraint.activate([
+            wrapper.leadingAnchor.constraint(equalTo: blurContainerView.contentView.leadingAnchor),
+            wrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
+            wrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor),
+            wrapper.bottomAnchor.constraint(equalTo: blurContainerView.contentView.bottomAnchor)
+        ])
+
+        return blurContainerView as UIView
     }()
 
     // MARK: - NSUserActivity

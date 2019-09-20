@@ -26,13 +26,14 @@ public class StackedButton: UIControl {
     public let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 1
-        label.textColor = .black
+        label.textColor = ThemeColors.shared.primary
         label.text = "LABEL"
         label.textAlignment = .center
         label.isUserInteractionEnabled = false
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
 
         return label
     }()
@@ -42,23 +43,26 @@ public class StackedButton: UIControl {
         imageView.contentMode = .scaleAspectFit
         imageView.setContentHuggingPriority(.required, for: .vertical)
         imageView.setContentHuggingPriority(.required, for: .horizontal)
+        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
         imageView.isUserInteractionEnabled = false
+        imageView.tintColor = ThemeColors.shared.primary
 
         return imageView
     }()
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
+        translatesAutoresizingMaskIntoConstraints = false
 
         isUserInteractionEnabled = true
         backgroundColor = .clear
-        layer.cornerRadius = ThemeMetrics.cornerRadius
 
         let stack = UIStackView.verticalStack(arangedSubviews: [imageView, textLabel])
         stack.isUserInteractionEnabled = false
-        addSubview(stack)
+        let wrapper = stack.embedInWrapperView()
+        addSubview(wrapper)
 
-        stack.pinToSuperview(.edges, insets: ThemeMetrics.compactTopBottomEdgeInsets)
+        wrapper.pinToSuperview(.edges)
 
         if kDebugColors {
             backgroundColor = .magenta
