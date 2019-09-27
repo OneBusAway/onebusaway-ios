@@ -110,6 +110,9 @@ targets:
       - { path: "scripts/swiftlint.sh", name: Swiftlint }
     scheme:
       gatherCoverageData: true
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS
