@@ -6,7 +6,9 @@
 //  Copyright © 2019 OneBusAway. All rights reserved.
 //
 
+import CoreGraphics
 import CoreLocation
+import MapKit
 
 extension CLAuthorizationStatus: LosslessStringConvertible {
     public init?(_ description: String) { nil }

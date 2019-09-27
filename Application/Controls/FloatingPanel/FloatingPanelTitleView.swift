@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// The top view on a floating panel. Provides a title label, subtitle label, and close button.
 public class FloatingPanelTitleView: UIView {

@@ -9,6 +9,7 @@ import UIKit
 import AloeStackView
 import SafariServices
 import MessageUI
+import OBAKitCore
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
 @objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate, RegionsServiceDelegate, FarePaymentsDelegate {

@@ -92,7 +92,7 @@ public class Stop: NSObject, Codable, HasReferences {
     /// A list of route IDs served by this stop.
     ///
     /// Route IDs correspond to values in References.
-    let routeIDs: [String]
+    public let routeIDs: [String]
 
     /// A list of `Route`s served by this stop.
     public var routes: [Route]!
@@ -199,8 +199,8 @@ public class Stop: NSObject, Codable, HasReferences {
             code == rhs.code &&
             direction == rhs.direction &&
             id == rhs.id &&
-            location.coordinate.latitude == rhs.coordinate.latitude &&
-            location.coordinate.longitude == rhs.coordinate.longitude &&
+            location.coordinate.latitude == rhs.location.coordinate.latitude &&
+            location.coordinate.longitude == rhs.location.coordinate.longitude &&
             locationType == rhs.locationType &&
             name == rhs.name &&
             routeIDs == rhs.routeIDs &&

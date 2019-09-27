@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// An activity indicator and a label stacked together horizontally.
 public class LoadingIndicatorView: UIView {

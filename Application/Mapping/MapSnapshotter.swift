@@ -8,6 +8,7 @@
 import UIKit
 import CoreLocation
 import MapKit
+import OBAKitCore
 
 public typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
 

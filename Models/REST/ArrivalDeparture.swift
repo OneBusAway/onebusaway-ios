@@ -44,7 +44,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     let predictedDeparture: Date?
 
     /// the route id for the arriving vehicle
-    let routeID: RouteID
+    public let routeID: RouteID
 
     /// the route for the arriving vehicle
     public let route: Route
@@ -73,7 +73,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let status: String
 
     /// The stop id of the stop the vehicle is arriving at
-    let stopID: String
+    public let stopID: String
 
     /// The stop the vehicle is arriving at
     public let stop: Stop
@@ -88,7 +88,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     private let _tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
-    let tripID: TripIdentifier
+    public let tripID: TripIdentifier
 
     /// The Trip for the arriving vehicle
     public let trip: Trip

@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+@import OBAKitCore;
 @import OBAKit;
 #import "Firebase.h"
 @import Crashlytics;

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// Provides a UI-independent way to display error messages and other alerts to the user.
 public class AlertPresenter: NSObject {

@@ -7,6 +7,7 @@
 
 import UIKit
 import AloeStackView
+import OBAKitCore
 
 /// The 'hub' view controller for reporting problems about stops and trips.
 ///

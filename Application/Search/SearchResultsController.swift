@@ -8,6 +8,8 @@
 
 import UIKit
 import IGListKit
+import OBAKitCore
+import MapKit
 
 public class SearchResultsController: UIViewController, ListProvider {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)

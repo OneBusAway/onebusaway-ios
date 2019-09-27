@@ -7,6 +7,8 @@
 
 import UIKit
 import AloeStackView
+import CoreLocation
+import OBAKitCore
 
 /// This view controller powers the Bookmarks tab.
 @objc(OBABookmarksViewController)

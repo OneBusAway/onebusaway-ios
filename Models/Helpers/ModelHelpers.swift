@@ -8,7 +8,7 @@
 
 import Foundation
 
-class ModelHelpers: NSObject {
+public class ModelHelpers: NSObject {
     /// Converts empty string fields into `nil`s.
     ///
     /// There are some parts of the OneBusAway REST API that return empty strings
@@ -18,7 +18,7 @@ class ModelHelpers: NSObject {
     ///
     /// - Parameter str: The string to inspect.
     /// - Returns: Nil if the string's character count is zero, and the string otherwise.
-    static func nilifyBlankValue(_ str: String?) -> String? {
+    public static func nilifyBlankValue(_ str: String?) -> String? {
         guard let str = str else {
             return nil
         }
@@ -30,7 +30,7 @@ class ModelHelpers: NSObject {
     ///
     /// - Parameter date: A date
     /// - Returns: Nil if the date was represented by the value `0` and the date otherwise.
-    static func nilifyEpochDate(_ date: Date) -> Date? {
+    public static func nilifyEpochDate(_ date: Date) -> Date? {
         if date == Date(timeIntervalSince1970: 0) {
             return nil
         }

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// Provides an standard interface for navigating between view controllers that works
 /// regardless of how inter-controller navigation is designed to work in the app.

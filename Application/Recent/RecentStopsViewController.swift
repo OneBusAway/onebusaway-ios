@@ -7,6 +7,7 @@
 
 import UIKit
 import IGListKit
+import OBAKitCore
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
 public class RecentStopsViewController: UIViewController, ModelViewModelConverters, ListAdapterDataSource {

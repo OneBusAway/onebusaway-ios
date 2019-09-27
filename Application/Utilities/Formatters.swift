@@ -7,6 +7,8 @@
 //
 
 import Foundation
+import MapKit
+import OBAKitCore
 
 public class Formatters: NSObject {
     private let locale: Locale

@@ -27,7 +27,7 @@ public class Trip: NSObject, Decodable, HasReferences {
     public let id: String
 
     /// The route_id field contains an ID that uniquely identifies a route.
-    let routeID: String
+    public let routeID: String
 
     /// The Route served by this trip.
     public var route: Route!

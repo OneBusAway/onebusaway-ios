@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 protocol AddGroupAlertDelegate: NSObjectProtocol {
     func bookmarkGroupSaved(_ group: BookmarkGroup)

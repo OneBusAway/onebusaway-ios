@@ -7,6 +7,7 @@
 
 import UIKit
 import AloeStackView
+import OBAKitCore
 
 protocol BookmarkEditorDelegate: NSObjectProtocol {
     func bookmarkEditorCancelled(_ viewController: UIViewController)

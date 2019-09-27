@@ -18,7 +18,7 @@ public enum TripProblemCode: Int, CaseIterable {
     case other
 }
 
-func tripProblemCodeToString(_ code: TripProblemCode) -> String {
+public func tripProblemCodeToString(_ code: TripProblemCode) -> String {
     switch code {
     case .neverCame: return "vehicle_never_came"
     case .cameEarly: return "vehicle_came_early"
@@ -29,7 +29,7 @@ func tripProblemCodeToString(_ code: TripProblemCode) -> String {
     }
 }
 
-func tripProblemCodeToUserFacingString(_ code: TripProblemCode) -> String {
+public func tripProblemCodeToUserFacingString(_ code: TripProblemCode) -> String {
     switch code {
     case .neverCame: return NSLocalizedString("trip_problem_code.user_description.never_came", value: "Never came", comment: "User-facing string that means the vehicle never came.")
     case .cameEarly: return NSLocalizedString("trip_problem_code.user_description.came_early", value: "Came early", comment: "User-facing string that means the vehicle came early.")

@@ -8,6 +8,7 @@
 import UIKit
 import MapKit
 import FloatingPanel
+import OBAKitCore
 
 class TripViewController: UIViewController, MKMapViewDelegate, FloatingPanelControllerDelegate {
 

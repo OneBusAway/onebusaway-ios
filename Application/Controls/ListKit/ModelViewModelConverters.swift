@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// Describes methods capable of converting REST API models into view
 /// models suitable for display in an IGListKit collection controller.

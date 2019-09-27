@@ -7,6 +7,7 @@
 
 import UIKit
 import Eureka
+import OBAKitCore
 
 protocol StopPreferencesDelegate: NSObjectProtocol {
     func stopPreferences(_ controller: StopPreferencesViewController, updated stopPreferences: StopPreferences)

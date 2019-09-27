@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// This view controller is meant to embedded into a classic UI
 /// `StopViewController` and used as the header view for that controller.

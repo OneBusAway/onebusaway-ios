@@ -18,10 +18,10 @@ public class AgencyAlertsStore: NSObject {
     private let userDefaults: UserDefaults
 
     public struct UserDefaultKeys {
-        static let displayRegionalTestAlerts = "displayRegionalTestAlerts"
+        public static let displayRegionalTestAlerts = "displayRegionalTestAlerts"
     }
 
-    init(userDefaults: UserDefaults) {
+    public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
         self.userDefaults.register(defaults: [
             UserDefaultKeys.displayRegionalTestAlerts: false

@@ -8,6 +8,7 @@
 import UIKit
 import IGListKit
 import SafariServices
+import OBAKitCore
 
 /// Displays `AgencyAlert` objects loaded from a ProtoBuf feed.
 class AgencyAlertsViewController: UIViewController, ModelViewModelConverters, ListAdapterDataSource, AgencyAlertsDelegate {

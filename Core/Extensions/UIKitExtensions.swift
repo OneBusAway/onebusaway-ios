@@ -11,33 +11,35 @@ import MobileCoreServices
 
 // MARK: - Scrollable
 
-protocol Scrollable where Self: UIViewController {
+public protocol Scrollable where Self: UIViewController {
     var scrollView: UIScrollView { get }
 }
 
 // MARK: - UIAlertAction
-extension UIAlertAction {
+
+public extension UIAlertAction {
 
     /// An alert action for cancelling an alert controller.
-    public class var cancelAction: UIAlertAction {
+    class var cancelAction: UIAlertAction {
         return UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil)
     }
 
     /// An alert action for dismissing an alert controller.
-    public class var dismissAction: UIAlertAction {
+    class var dismissAction: UIAlertAction {
         return UIAlertAction(title: Strings.dismiss, style: .default, handler: nil)
     }
 }
 
 // MARK: - UIAlertController
-extension UIAlertController {
+
+public extension UIAlertController {
 
     /// Creates a `UIAlertController` designed to ask the user if they want to delete something or cancel.
     /// - Parameter title: The title of the controller.
     /// - Parameter handler: The closure called when the Delete button is pressed.
     ///
     /// - Note: No callback is invoked when the Cancel button is pressed.
-    public class func deletionAlert(title: String, handler: @escaping ((UIAlertAction) -> Void)) -> UIAlertController {
+    class func deletionAlert(title: String, handler: @escaping ((UIAlertAction) -> Void)) -> UIAlertController {
         let controller = UIAlertController(title: title, message: nil, preferredStyle: .alert)
 
         controller.addAction(UIAlertAction.cancelAction)
@@ -50,21 +52,22 @@ extension UIAlertController {
     /// - Parameter title: The action title.
     /// - Parameter style: The style of the action.
     /// - Parameter handler: The callback for when the action is invoked by the user.
-    public func addAction(title: String, style: UIAlertAction.Style = .default, handler: ((UIAlertAction) -> Void)?) {
+    func addAction(title: String, style: UIAlertAction.Style = .default, handler: ((UIAlertAction) -> Void)?) {
         addAction(UIAlertAction(title: title, style: style, handler: handler))
     }
 }
 
 // MARK: - UIBarButtonItem
-extension UIBarButtonItem {
+
+public extension UIBarButtonItem {
 
     /// Convenience property for creating a `flexibleSpace`-type bar button item.
-    public class var flexibleSpace: UIBarButtonItem {
+    class var flexibleSpace: UIBarButtonItem {
         return UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
     }
 
     /// A generic 'Back' button to use in cases where your view controller's title is too long.
-    public class var backButton: UIBarButtonItem {
+    class var backButton: UIBarButtonItem {
         return UIBarButtonItem(title: Strings.back, style: .plain, target: nil, action: nil)
     }
 }
@@ -298,7 +301,7 @@ public extension UIImage {
 
 // MARK: - UILabel
 
-extension UILabel {
+public extension UILabel {
 
     /// Resizes the label's height to fit its text, or—if it doesn't have text—a representative sample.
     func resizeHeightToFit() {
@@ -350,12 +353,12 @@ public extension UIPasteboard {
 
 // MARK: - UIStackView
 
-extension UIStackView {
+public extension UIStackView {
     /// Creates a horizontal axis stack view
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The horizontal stack view.
-    public class func horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
+    class func horizontalStack(arrangedSubviews views: [UIView]) -> UIStackView {
         return stack(axis: .horizontal, arrangedSubviews: views)
     }
 
@@ -363,7 +366,7 @@ extension UIStackView {
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The vertical stack view.
-    public class func verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
+    class func verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
         return stack(axis: .vertical, arrangedSubviews: views)
     }
 
@@ -377,17 +380,17 @@ extension UIStackView {
 
 // MARK: - UIViewController
 
-extension UIViewController {
+public extension UIViewController {
 
     /// Returns the containing bundle for `self`. In a framework, this will not be `Bundle.main`.
-    public var bundle: Bundle {
+    var bundle: Bundle {
         Bundle(for: type(of: self))
     }
 
     /// Use this to tell if the view controller has made it through `viewDidLoad()` and is currently on-screen.
     ///
     /// `true` if `isViewLoaded` is `true` and `view.window != nil`. `false` otherwise.
-    public var isLoadedAndOnScreen: Bool {
+    var isLoadedAndOnScreen: Bool {
         isViewLoaded && view.window != nil
     }
 }

@@ -9,6 +9,7 @@ import UIKit
 import AloeStackView
 import SafariServices
 import SVProgressHUD
+import OBAKitCore
 
 class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, AloeStackTableBuilder {
 

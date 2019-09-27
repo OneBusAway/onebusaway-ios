@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import OBAKitCore
 
 protocol StopAnnotationDelegate: NSObjectProtocol {
     func isStopBookmarked(_ stop: Stop) -> Bool

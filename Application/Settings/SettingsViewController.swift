@@ -6,6 +6,7 @@
 //
 
 import Eureka
+import OBAKitCore
 
 class SettingsViewController: FormViewController {
     private let application: Application

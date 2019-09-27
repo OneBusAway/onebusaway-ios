@@ -8,6 +8,7 @@
 
 import UIKit
 import Eureka
+import OBAKitCore
 
 public enum RegionPickerMessage: Int {
     case none, manualSelectionMessage

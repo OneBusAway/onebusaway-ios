@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreLocation
+import OBAKitCore
 
 @objc(OBAAppConfig)
 public class AppConfig: NSObject {

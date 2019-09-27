@@ -8,6 +8,8 @@
 import UIKit
 import AloeStackView
 import SVProgressHUD
+import OBAKitCore
+import CoreLocation
 
 /// This is the core view controller for displaying information about a transit stop.
 ///

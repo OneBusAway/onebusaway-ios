@@ -13,8 +13,18 @@ public enum StopSort: String, Codable {
 
 /// A model that represents the user's preferences for a particular `Stop`. These preferences are for things like sort order and hidden routes.
 public struct StopPreferences: Codable {
-    public var sortType: StopSort = .time
-    public var hiddenRoutes = [RouteID]()
+    public var sortType: StopSort
+    public var hiddenRoutes: [RouteID]
+
+    public init() {
+        self.sortType = .time
+        self.hiddenRoutes = [RouteID]()
+    }
+
+    public init(sortType: StopSort, hiddenRoutes: [RouteID]) {
+        self.sortType = sortType
+        self.hiddenRoutes = hiddenRoutes
+    }
 
     /// Returns `true` if the specified `RouteID` should be hidden, and `false` otherwise.
     /// - Parameter id: The `RouteID`.

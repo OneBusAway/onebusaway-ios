@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// Creates deep links (i.e. Universal Links) to OBA-associated web pages.
 public class DeepLinkRouter: NSObject {

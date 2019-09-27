@@ -9,6 +9,7 @@
 import UIKit
 import IGListKit
 import FloatingPanel
+import OBAKitCore
 
 public protocol NearbyDelegate: NSObjectProtocol {
     func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop)

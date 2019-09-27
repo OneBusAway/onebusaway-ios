@@ -7,6 +7,7 @@
 
 import UIKit
 import IGListKit
+import OBAKitCore
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 public class TripDetailsController: UIViewController, ListProvider, ListAdapterDataSource, ModelViewModelConverters, AppContext {

@@ -32,7 +32,7 @@ func stopProblemCodeToAPIString(_ code: StopProblemCode) -> String {
     }
 }
 
-func stopProblemCodeToUserFacingString(_ code: StopProblemCode) -> String {
+public func stopProblemCodeToUserFacingString(_ code: StopProblemCode) -> String {
     switch code {
     case .nameWrong: return NSLocalizedString("stop_problem_code.user_description.name_wrong", value: "Name is wrong", comment: "User-facing string that means the name of the stop is wrong.")
     case .numberWrong: return NSLocalizedString("stop_problem_code.user_description.number_wrong", value: "Number is wrong", comment: "User-facing string that means the number/ID of the stop is wrong.")

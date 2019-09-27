@@ -8,6 +8,8 @@
 import UIKit
 import IGListKit
 import SVProgressHUD
+import CoreLocation
+import OBAKitCore
 
 class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ModelViewModelConverters, ListAdapterDataSource, UISearchResultsUpdating {
 

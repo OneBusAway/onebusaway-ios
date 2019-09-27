@@ -7,6 +7,7 @@
 
 import UIKit
 import Eureka
+import OBAKitCore
 
 /// This view controller offers support for creating and editing bookmarks.
 class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {

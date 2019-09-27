@@ -10,6 +10,7 @@ targets:
     deploymentTarget: "12.4"
     sources: [Apps/OneBusAway]
     dependencies:
+      - target: OBAKitCore
       - target: OBAKit
       - carthage: SwiftProtobuf
       - framework: FIRAnalyticsConnector.framework
@@ -88,12 +89,29 @@ targets:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
         OTHER_LDFLAGS: -ObjC
+  OBAKitCore:
+    type: framework
+    platform: iOS
+    deploymentTarget: "12.4"
+    sources: [Core, Location, Models, Network]
+    dependencies:
+      - carthage: CocoaLumberjack
+      - carthage: CocoaLumberjackSwift
+      - carthage: SwiftProtobuf
+    postBuildScripts:
+      - { path: "scripts/swiftlint.sh", name: Swiftlint }
+    scheme:
+      gatherCoverageData: true
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
   OBAKit:
     type: framework
     platform: iOS
     deploymentTarget: "12.4"
-    sources: [Application, Location, Models, Network, TripPlanning]
+    sources: [Application, TripPlanning]
     dependencies:
+      - target: OBAKitCore
       - carthage: AloeStackView
       - carthage: BLTNBoard
       - carthage: CocoaLumberjack
@@ -112,7 +130,7 @@ targets:
       gatherCoverageData: true
     settings:
       base:
-        APPLICATION_EXTENSION_API_ONLY: true
+        APPLICATION_EXTENSION_API_ONLY: false
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS

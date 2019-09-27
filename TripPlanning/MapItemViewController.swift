@@ -10,6 +10,7 @@ import MapKit
 import Contacts
 import AloeStackView
 import SafariServices
+import OBAKitCore
 
 class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable {
     /// The OBA application object

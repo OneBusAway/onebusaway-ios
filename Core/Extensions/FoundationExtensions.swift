@@ -84,7 +84,7 @@ public extension Bundle {
 
 // MARK: - Dictionary
 
-extension Dictionary where Key == String {
+public extension Dictionary where Key == String {
 
     /// Creates a new `Dictionary<String, Value>` from the XML Property List at `plistPath`.
     /// - Parameter plistPath: The path to the XML Property List file.
@@ -187,7 +187,7 @@ public extension UserDefaults {
     }
 }
 
-extension URL {
+public extension URL {
     init?(phoneNumber: String) {
         self.init(string: "tel:\(phoneNumber)")
     }

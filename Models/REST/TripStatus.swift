@@ -24,7 +24,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// the id of the closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
-    let closestStopID: String
+    public let closestStopID: String
 
     /// The closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data

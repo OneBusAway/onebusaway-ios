@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 public class Icons: NSObject {
 

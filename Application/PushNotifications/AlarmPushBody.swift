@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// Represent the body of a push notification for an alarm.
 public struct AlarmPushBody: Codable {
