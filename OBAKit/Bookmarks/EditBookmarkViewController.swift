@@ -58,10 +58,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     /// Determines the selected bookmark group from the form.
     private var selectedBookmarkGroup: BookmarkGroup? {
-        guard
-            let groupTag = form.values()[selectedGroupTag] as? String,
-            let id = UUID(uuidString: groupTag)
-        else { return nil }
+        guard let id = UUID(optionalUUIDString: selectedBookmarkGroupSection.selectedRows().first?.value) else {
+            return nil
+        }
 
         return application.userDataStore.findGroup(id: id)
     }

@@ -17,12 +17,25 @@ public class BookmarkGroup: NSObject, Codable, Identifiable {
     /// A unique identifier for this group.
     public let id: UUID
 
+    /// The sort order of this object.
+    public let sortOrder: Int
+
     /// Creates a new `BookmarkGroup`
     ///
     /// - Parameter name: The user-facing name of the `BookmarkGroup`.
-    public init(name: String) {
-        self.id = UUID()
+    /// - Parameter sortOrder: The ordering of this object.
+    public convenience init(name: String, sortOrder: Int) {
+        self.init(name: name, id: UUID(), sortOrder: sortOrder)
+    }
+
+    /// Creates a new `BookmarkGroup`.
+    /// - Parameter name: The user-facing name of the `BookmarkGroup`.
+    /// - Parameter id: A unique identifier that represents this object.
+    /// - Parameter sortOrder: The ordering of this object.
+    public init(name: String, id: UUID, sortOrder: Int) {
+        self.id = id
         self.name = name
+        self.sortOrder = sortOrder
     }
 
     // MARK: - Equatable and Hashable
@@ -32,15 +45,22 @@ public class BookmarkGroup: NSObject, Codable, Identifiable {
             return false
         }
 
-        return
-            name == rhs.name &&
-            id == rhs.id
+        return name == rhs.name && id == rhs.id && sortOrder == rhs.sortOrder
     }
 
     public override var hash: Int {
         var hasher = Hasher()
         hasher.combine(name)
         hasher.combine(id)
+        hasher.combine(sortOrder)
         return hasher.finalize()
+    }
+
+    // MARK: - Debug
+
+    override public var debugDescription: String {
+        let desc = super.debugDescription
+        let props: [String: Any] = ["name": name as Any, "sortOrder": sortOrder as Any, "id": id as Any]
+        return "\(desc) \(props)"
     }
 }

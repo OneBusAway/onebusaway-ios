@@ -12,8 +12,8 @@ import Foundation
 /// This class checks to make sure that neither of its subordinate operations have been cancelled before transfering data
 /// across, thereby helping to mitigate crashes.
 class TransferOperation: Operation {
-    private let serviceOperation: RESTAPIOperation
-    private let dataOperation: RESTModelOperation
+    private var serviceOperation: RESTAPIOperation?
+    private var dataOperation: RESTModelOperation?
 
     required init(serviceOperation: RESTAPIOperation, dataOperation: RESTModelOperation) {
         self.serviceOperation = serviceOperation
@@ -24,14 +24,19 @@ class TransferOperation: Operation {
         super.main()
 
         guard
+            let serviceOperation = self.serviceOperation,
+            let dataOperation = self.dataOperation,
             !serviceOperation.isCancelled,
             !dataOperation.isCancelled
-            else {
-                cancel()
-                return
+        else {
+            cancel()
+            return
         }
 
         dataOperation.apiOperation = serviceOperation
+
+        self.dataOperation = nil
+        self.serviceOperation = nil
     }
 }
 

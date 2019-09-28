@@ -47,7 +47,11 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Finds the `BookmarkGroup` with a matching `id` if it exists.
     /// - Parameter id: The `UUID` for which to search in existing bookmark groups.
-    func findGroup(id: UUID) -> BookmarkGroup?
+    func findGroup(id: UUID?) -> BookmarkGroup?
+
+    /// Updates, inserts, and deletes existing bookmark groups with the supplied list.
+    /// - Parameter newGroups: The new, canonical list of `BookmarkGroup`s.
+    func replaceBookmarkGroups(with newGroups: [BookmarkGroup])
 
     // MARK: - Bookmarks
 
@@ -161,7 +165,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public var bookmarkGroups: [BookmarkGroup] {
         get {
-            return decodeUserDefaultsObjects(type: [BookmarkGroup].self, key: .bookmarkGroups) ?? []
+            let groups: [BookmarkGroup] = decodeUserDefaultsObjects(type: [BookmarkGroup].self, key: .bookmarkGroups) ?? []
+            return groups.sorted { $0.sortOrder < $1.sortOrder }
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: .bookmarkGroups) // swiftlint:disable:this force_try
@@ -179,6 +184,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func deleteGroup(_ group: BookmarkGroup) {
+        // move the group's bookmarks, if any, out of the group.
+        for bm in bookmarksInGroup(group) {
+            add(bm, to: nil)
+        }
+
         if let index = findGroupIndex(id: group.id) {
             bookmarkGroups.remove(at: index)
         }
@@ -190,12 +200,36 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
     }
 
-    public func findGroup(id: UUID) -> BookmarkGroup? {
-        bookmarkGroups.first { $0.id == id }
+    public func findGroup(id: UUID?) -> BookmarkGroup? {
+        guard let id = id else {
+            return nil
+        }
+
+        return bookmarkGroups.first { $0.id == id }
     }
 
     public func findGroupIndex(id: UUID) -> Int? {
         bookmarkGroups.firstIndex { $0.id == id }
+    }
+
+    public func replaceBookmarkGroups(with newGroups: [BookmarkGroup]) {
+        // All registered groups
+        var groupsToDelete = Set(bookmarkGroups.map { $0.id })
+
+        // Remove items from the set that still exist.
+        for g in newGroups {
+            groupsToDelete.remove(g.id)
+        }
+
+        // Delete the remaining items (which definitionally are items the user has deleted).
+        for uuid in groupsToDelete {
+            deleteGroup(id: uuid)
+        }
+
+        // Update/insert the new list of groups.
+        for g in newGroups {
+            upsert(bookmarkGroup: g)
+        }
     }
 
     // MARK: - Bookmarks
