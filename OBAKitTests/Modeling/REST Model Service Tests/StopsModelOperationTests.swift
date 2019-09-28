@@ -12,6 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 
 class StopsModelOperationTests: OBATestCase {
     let coordinate = CLLocationCoordinate2D(latitude: 47.6230999, longitude: -122.3132122)

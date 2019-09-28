@@ -12,6 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 
 class TripArrivalsModelOperationTests: OBATestCase {
     let stopID = "1_10914"

@@ -8,6 +8,7 @@
 import XCTest
 import Nimble
 @testable import OBAKit
+@testable import OBAKitCore
 
 // swiftlint:disable force_try
 

@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 
 // abxoxo - find a way to mock the underlying API :-\
 

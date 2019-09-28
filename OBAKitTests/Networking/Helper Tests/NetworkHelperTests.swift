@@ -11,6 +11,7 @@ import XCTest
 import Nimble
 
 @testable import OBAKit
+@testable import OBAKitCore
 
 class NetworkHelperTests: OBATestCase {
     func testDictionaryToQueryItems_success() {

@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
+@testable import OBAKitCore
 
 // swiftlint:disable force_try
 

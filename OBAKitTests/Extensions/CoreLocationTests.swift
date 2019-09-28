@@ -11,6 +11,7 @@ import Nimble
 import XCTest
 import CoreLocation
 @testable import OBAKit
+@testable import OBAKitCore
 
 class CoreLocationTests: XCTestCase {
 

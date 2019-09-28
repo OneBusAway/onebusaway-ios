@@ -9,6 +9,7 @@
 import Foundation
 import CoreLocation
 import OBAKit
+import OBAKitCore
 
 public class LocationManagerMock: NSObject, LocationManager {
 

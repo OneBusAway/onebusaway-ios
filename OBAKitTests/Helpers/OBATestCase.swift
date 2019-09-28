@@ -8,6 +8,7 @@
 
 import XCTest
 import OBAKit
+import OBAKitCore
 import OHHTTPStubs
 
 // swiftlint:disable force_cast force_try

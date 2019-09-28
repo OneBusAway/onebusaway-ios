@@ -11,6 +11,7 @@ import Nimble
 import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
+@testable import OBAKitCore
 
 class TripDetailsModelOperationTests: OBATestCase {
     let vehicleID = "1_1234"

@@ -1,5 +1,6 @@
 import XCTest
 @testable import OBAKit
+@testable import OBAKitCore
 
 class DictionaryDecodingTests: XCTestCase {
     

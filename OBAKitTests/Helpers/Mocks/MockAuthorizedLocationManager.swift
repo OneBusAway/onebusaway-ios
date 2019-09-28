@@ -9,6 +9,7 @@
 import Foundation
 import CoreLocation
 import OBAKit
+import OBAKitCore
 
 class MockAuthorizedLocationManager: NSObject, LocationManager {
     weak var delegate: CLLocationManagerDelegate?

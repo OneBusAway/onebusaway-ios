@@ -12,6 +12,7 @@ import OHHTTPStubs
 import CoreLocation
 import MapKit
 @testable import OBAKit
+@testable import OBAKitCore
 
 // swiftlint:disable function_body_length
 

@@ -24,6 +24,7 @@ import CoreLocation
 import XCTest
 
 import OBAKit
+import OBAKitCore
 
 // swiftlint:disable colon mark comma unused_optional_binding
 

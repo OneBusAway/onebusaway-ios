@@ -1,5 +1,6 @@
 import XCTest
 @testable import OBAKit
+@testable import OBAKitCore
 
 struct Pet : Codable {
     let name : String
