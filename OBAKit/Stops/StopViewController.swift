@@ -708,8 +708,6 @@ public class StopViewController: UIViewController,
 
     private let filterToggleControl: UISegmentedControl = {
         let segment = UISegmentedControl.autolayoutNew()
-        segment.setTitleTextAttributes([.foregroundColor: ThemeColors.shared.label], for: .normal)
-        segment.setTitleTextAttributes([.foregroundColor: ThemeColors.shared.label], for: .selected)
 
         segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"), at: 0, animated: false)
         segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures"), at: 1, animated: false)
