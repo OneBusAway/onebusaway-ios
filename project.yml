@@ -93,7 +93,7 @@ targets:
     type: framework
     platform: iOS
     deploymentTarget: "12.4"
-    sources: [Core, Location, Models, Network]
+    sources: [OBAKitCore]
     dependencies:
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
@@ -109,7 +109,7 @@ targets:
     type: framework
     platform: iOS
     deploymentTarget: "12.4"
-    sources: [Application, TripPlanning]
+    sources: [OBAKit, TripPlanning]
     dependencies:
       - target: OBAKitCore
       - carthage: AloeStackView
