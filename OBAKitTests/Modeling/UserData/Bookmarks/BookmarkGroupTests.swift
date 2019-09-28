@@ -19,7 +19,7 @@ class BookmarkGroupTests: OBATestCase {
     func testCreation() {
         let group = BookmarkGroup(name: "Group 1")
         expect(group.name) == "Group 1"
-        expect(group.uuid).toNot(beNil())
+        expect(group.id).toNot(beNil())
     }
 
     func testCodableRoundtripping() {
@@ -28,7 +28,7 @@ class BookmarkGroupTests: OBATestCase {
         let decoded = try! PropertyListDecoder().decode(BookmarkGroup.self, from: encoded)
 
         expect(decoded.name) == "Group 1"
-        expect(decoded.uuid).toNot(beNil())
-        expect(decoded.uuid) == group.uuid
+        expect(decoded.id).toNot(beNil())
+        expect(decoded.id) == group.id
     }
 }

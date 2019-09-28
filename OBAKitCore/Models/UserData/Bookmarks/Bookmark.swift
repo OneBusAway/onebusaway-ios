@@ -8,13 +8,13 @@
 import Foundation
 
 /// This is a bookmark for a `Stop` or a trip.
-@objc(OBABookmark) public class Bookmark: NSObject, Codable {
+@objc(OBABookmark) public class Bookmark: NSObject, Codable, Identifiable {
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
-    public var groupUUID: UUID?
+    public var groupID: UUID?
 
     /// The unique identifier for this object.
-    public let uuid: UUID
+    public let id: UUID
 
     /// The user-visible name of this object.
     public var name: String
@@ -79,11 +79,11 @@ import Foundation
         self.isFavorite = false
         self.name = name
         self.regionIdentifier = regionIdentifier
-        self.uuid = UUID()
+        self.id = UUID()
     }
 
     private enum CodingKeys: String, CodingKey {
-        case groupUUID, isFavorite, name, regionIdentifier, stop, stopID, uuid
+        case groupID, isFavorite, name, regionIdentifier, stop, stopID, id
 
         // Trip bookmark keys
         case routeShortName, tripHeadsign, routeID
@@ -92,13 +92,13 @@ import Foundation
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        groupUUID = try? container.decode(UUID.self, forKey: .groupUUID)
+        groupID = try? container.decode(UUID.self, forKey: .groupID)
         isFavorite = try container.decode(Bool.self, forKey: .isFavorite)
         name = try container.decode(String.self, forKey: .name)
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
         stop = try container.decode(Stop.self, forKey: .stop)
         stopID = try container.decode(String.self, forKey: .stopID)
-        uuid = try container.decode(UUID.self, forKey: .uuid)
+        id = try container.decode(UUID.self, forKey: .id)
 
         routeShortName = try? container.decode(String.self, forKey: .routeShortName)
         tripHeadsign = try? container.decode(String.self, forKey: .tripHeadsign)
@@ -109,8 +109,8 @@ import Foundation
         guard let rhs = object as? Bookmark else { return false }
 
         return
-            uuid == rhs.uuid &&
-            groupUUID == rhs.groupUUID &&
+            id == rhs.id &&
+            groupID == rhs.groupID &&
             name == rhs.name &&
             regionIdentifier == rhs.regionIdentifier &&
             stopID == rhs.stopID &&
@@ -123,8 +123,8 @@ import Foundation
 
     public override var hash: Int {
         var hasher = Hasher()
-        hasher.combine(uuid)
-        hasher.combine(groupUUID)
+        hasher.combine(id)
+        hasher.combine(groupID)
         hasher.combine(name)
         hasher.combine(regionIdentifier)
         hasher.combine(stopID)
@@ -138,7 +138,7 @@ import Foundation
 
     public override var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["uuid": uuid as Any, "groupUUID": groupUUID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any, "routeShortName": routeShortName as Any, "routeID": routeID as Any, "tripHeadsign": tripHeadsign as Any]
+        let props: [String: Any] = ["id": id as Any, "groupID": groupID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any, "routeShortName": routeShortName as Any, "routeID": routeID as Any, "tripHeadsign": tripHeadsign as Any]
         return "\(desc) \(props)"
     }
 

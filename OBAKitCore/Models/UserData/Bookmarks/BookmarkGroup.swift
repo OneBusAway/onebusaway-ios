@@ -9,19 +9,19 @@ import Foundation
 
 /// Represents a collection of `Bookmark`s. For instance, the user might have groups named "To Work" and "To Home".
 @objc(OBABookmarkGroup)
-public class BookmarkGroup: NSObject, Codable {
+public class BookmarkGroup: NSObject, Codable, Identifiable {
 
     /// The user-facing name of the group.
     public var name: String
 
     /// A unique identifier for this group.
-    public let uuid: UUID
+    public let id: UUID
 
     /// Creates a new `BookmarkGroup`
     ///
     /// - Parameter name: The user-facing name of the `BookmarkGroup`.
     public init(name: String) {
-        self.uuid = UUID()
+        self.id = UUID()
         self.name = name
     }
 
@@ -34,13 +34,13 @@ public class BookmarkGroup: NSObject, Codable {
 
         return
             name == rhs.name &&
-            uuid == rhs.uuid
+            id == rhs.id
     }
 
     public override var hash: Int {
         var hasher = Hasher()
         hasher.combine(name)
-        hasher.combine(uuid)
+        hasher.combine(id)
         return hasher.finalize()
     }
 }

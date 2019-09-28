@@ -42,31 +42,31 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let group = BookmarkGroup(name: "Group!")
 
         expect(self.userDefaultsStore.bookmarkGroups) == []
-        userDefaultsStore.add(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
         expect(self.userDefaultsStore.bookmarkGroups) == [group]
     }
 
     func test_bookmarkGroups_addDuplicate() {
         let group = BookmarkGroup(name: "Group!")
 
-        userDefaultsStore.add(bookmarkGroup: group)
-        userDefaultsStore.add(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
         expect(self.userDefaultsStore.bookmarkGroups) == [group]
 
     }
 
     func test_bookmarkGroups_delete() {
         let group = BookmarkGroup(name: "Group!")
-        userDefaultsStore.add(bookmarkGroup: group)
-        userDefaultsStore.delete(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+        userDefaultsStore.deleteGroup(group)
         expect(self.userDefaultsStore.bookmarkGroups) == []
     }
 
     func test_bookmarkGroups_deleteNonexistent() {
         let group = BookmarkGroup(name: "Group!")
         let group2 = BookmarkGroup(name: "Group!")
-        userDefaultsStore.add(bookmarkGroup: group)
-        userDefaultsStore.delete(bookmarkGroup: group2)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+        userDefaultsStore.deleteGroup(group2)
         expect(self.userDefaultsStore.bookmarkGroups) == [group]
     }
 
@@ -74,7 +74,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmarks_retrieval_notInGroup() {
         let group = BookmarkGroup(name: "Group!")
-        userDefaultsStore.add(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
 
         let stop = stops[0]
 
@@ -89,7 +89,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmarks_retrieval_inGroup() {
         let group = BookmarkGroup(name: "Group!")
-        userDefaultsStore.add(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
 
         let stop = stops[0]
 
@@ -113,14 +113,14 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(uuid: bookmark.uuid)) == bookmark
+        expect(self.userDefaultsStore.findBookmark(id: bookmark.id)) == bookmark
     }
 
     func test_bookmark_find_noMatch() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
-        expect(self.userDefaultsStore.findBookmark(uuid: UUID())).to(beNil())
+        expect(self.userDefaultsStore.findBookmark(id: UUID())).to(beNil())
     }
 
     func test_bookmark_addToGroup_groupUnregistered() {
@@ -142,14 +142,14 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark, to: group)
 
         let group2 = BookmarkGroup(name: "New Group")
-        userDefaultsStore.add(bookmarkGroup: group2)
+        userDefaultsStore.upsert(bookmarkGroup: group2)
 
         userDefaultsStore.add(bookmark, to: group2)
 
         expect(self.userDefaultsStore.bookmarkGroups) == [group, group2]
-        expect(self.userDefaultsStore.bookmarks.first!.uuid) == bookmark.uuid
+        expect(self.userDefaultsStore.bookmarks.first!.id) == bookmark.id
         expect(self.userDefaultsStore.bookmarksInGroup(group)) == []
-        expect(self.userDefaultsStore.bookmarksInGroup(group2).first!.uuid) == bookmark.uuid
+        expect(self.userDefaultsStore.bookmarksInGroup(group2).first!.id) == bookmark.id
     }
 
     func test_bookmark_removeFromGroup() {
@@ -162,7 +162,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.add(bookmark, to: nil)
 
         expect(self.userDefaultsStore.bookmarkGroups) == [group]
-        expect(self.userDefaultsStore.bookmarks.first!.uuid) == bookmark.uuid
+        expect(self.userDefaultsStore.bookmarks.first!.id) == bookmark.id
         expect(self.userDefaultsStore.bookmarksInGroup(group)) == []
     }
 
@@ -170,7 +170,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let stop = stops[0]
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
         let group = BookmarkGroup(name: "My Group")
-        userDefaultsStore.add(bookmarkGroup: group)
+        userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.add(bookmark, to: group)
 
         expect(self.userDefaultsStore.bookmarkGroups) == [group]

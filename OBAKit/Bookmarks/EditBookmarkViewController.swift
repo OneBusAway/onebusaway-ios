@@ -60,10 +60,10 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     private var selectedBookmarkGroup: BookmarkGroup? {
         guard
             let groupTag = form.values()[selectedGroupTag] as? String,
-            let uuid = UUID(uuidString: groupTag)
+            let id = UUID(uuidString: groupTag)
         else { return nil }
 
-        return application.userDataStore.findGroup(uuid: uuid)
+        return application.userDataStore.findGroup(id: id)
     }
 
     private var dataObjectName: String {
@@ -88,9 +88,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             +++ addGroupSection
 
         let name = bookmark?.name ?? dataObjectName
-        let groupUUID = bookmark?.groupUUID?.uuidString ?? ""
+        let groupID = bookmark?.groupID?.uuidString ?? ""
 
-        form.setValues([bookmarkNameTag: name, selectedGroupTag: groupUUID])
+        form.setValues([bookmarkNameTag: name, selectedGroupTag: groupID])
     }
 
     /// The `Form` section that contains the Bookmark Name `TextRow`.
@@ -142,7 +142,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     /// - Parameter group: The `BookmarkGroup` to add to the section.
     /// - Parameter section: The `SelectableSection` to which the group will be added.
     private func addRow(for group: BookmarkGroup, to section: SelectableSection<ListCheckRow<String>>) {
-        let uuid = group.uuid.uuidString
+        let uuid = group.id.uuidString
         section <<< ListCheckRow<String>(uuid) {
             $0.tag = selectedGroupTag
             $0.title = group.name
