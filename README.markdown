@@ -4,10 +4,19 @@ This library is a ground-up rewrite of the core modules of OneBusAway for iOS. I
 
 ## Quick Start
 
-OBAKit uses [Xcodegen](https://github.com/yonaskolb/XcodeGen) to generate its `xcodeproj` file. Follow the copy-and-pasteable instructions below to start hacking on this project.
+To get started, you will need the following pieces of software installed on your computer:
 
-    # Make sure you have Xcode 10.x installed.
+1. [Xcode 11.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software it may prompt you to install.
+2. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen and Carthage.
+3. [Xcodegen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
+4. [Carthage](https://github.com/Carthage/Carthage) - Manages third-party dependencies.
+
+Once you have the four pieces of software install,e
+
+    # Make sure you have Xcode 11.x and Homebrew installed.
+    xcode-select --install
     brew install xcodegen
+    brew install carthage
     xcodegen
     open OBAKit.xcodeproj
 
@@ -16,10 +25,10 @@ OBAKit uses [Xcodegen](https://github.com/yonaskolb/XcodeGen) to generate its `x
 After running XcodeGen and opening `OBAKit.xcodeproj`, you should be able to run the OneBusAway app (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
 
 1. `Product` Menu > `Scheme` > `Manage Schemes`
-2. Delete the `OneBusAway` scheme (if it exists)
+2. Delete the `App` scheme (if it exists)
 3. Click on the `Autocreate Schemes Now` button.
 4. Click on the `Close` button.
-5. Change the active scheme to `OneBusAway`.
+5. Change the active scheme to `App`.
 
 I'm sure there's a bug in the `project.yml` file that I have written that is causing this issue. Pull Requests to address this issue are welcome!
 
@@ -35,7 +44,7 @@ This project is designed to be usable within both Swift and Objective-C projects
 
 This project uses [Jazzy](https://github.com/realm/jazzy), which is written in Ruby, to generate its documentation. To install Jazzy, we recommend following these steps:
 
-```ruby
+```bash
 gem install bundler
 bundle install
 ```
@@ -73,13 +82,6 @@ Management of bookmarks, recently-viewed stops, and other similar data. Basicall
 ### Application
 
 This is comprised of view controllers (e.g. `RecentStopsViewController`), controls (e.g. `BorderedButton`), theme support &amp; icons, and orchestration. 'Orchestration' is a catch-all name for the layer of the software that you, the developer, give a set of configuration data to, and are handed back a fully-configured `Application` object that represents a OneBusAway-style app. `Application` handles creating all of the services you'll need: REST, notifications, user data storage, and so forth.
-
-## Runtime Dependencies
-
-Third party dependencies that are linked to via Carthage. See the project's Cartfile for specific versions used.
-
-* [IGListKit](https://github.com/Instagram/IGListKit/) - Data-driven collection views.
-* [SwiftProtobuf](https://github.com/apple/swift-protobuf) - Apple's implementation of Protobuf serialization.
 
 # Third Party Libraries
 
