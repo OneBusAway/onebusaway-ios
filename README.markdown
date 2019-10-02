@@ -17,6 +17,7 @@ Once you have the four pieces of software install,e
     xcode-select --install
     brew install xcodegen
     brew install carthage
+    carthage build --platform iOS
     xcodegen
     open OBAKit.xcodeproj
 
