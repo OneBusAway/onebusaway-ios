@@ -1,6 +1,6 @@
 # OBAKit
 
-This library is a ground-up rewrite of the core modules of OneBusAway for iOS. It is designed to be stable, relatively bug-free, clear, and well-tested. It is designed to serve as the foundation of OneBusAway in its second decade of life.
+This library is a ground-up rewrite of the core modules of OneBusAway for iOS. It is designed to be stable, relatively bug-free, clear, and well-tested. It is designed to serve as the foundation of OneBusAway for iOS in its second decade of life.
 
 ## Quick Start
 
@@ -10,20 +10,31 @@ To get started, you will need the following pieces of software installed on your
 2. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen and Carthage.
 3. [Xcodegen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
 4. [Carthage](https://github.com/Carthage/Carthage) - Manages third-party dependencies.
+5. [SwiftLint](https://github.com/realm/SwiftLint) - A tool to enforce Swift style and conventions.
 
-Once you have the four pieces of software install,e
+
+Once you have the five pieces of software installed, clone the OneBusAway app repository on github. (After this rewrite becomes the official version of the app, it will be in the OneBusAway github repository; for now ask Aaron for an invitation.)
 
     # Make sure you have Xcode 11.x and Homebrew installed.
     xcode-select --install
     brew install xcodegen
     brew install carthage
+    brew install swiftlint
+    # connect to the directory with the app code
+    cd OBAKit
     carthage build --platform iOS
     xcodegen
     open OBAKit.xcodeproj
 
 ### Things Not Working Right?
 
-After running XcodeGen and opening `OBAKit.xcodeproj`, you should be able to run the OneBusAway app (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
+If the `xcode-select --install` command results in an error message that the command line tools are already installed, you can verify that you have the latest version by typing the command `softwareupdate --list` to check whether any software should be updated; then if need be use `softwareupdate --install <project>` to  update it.
+
+If the `carthage build --platform iOS` command gives an error claiming that it is unable to find utility "xcodebuild" because it is not a developer tool or in PATH, this should fix it:
+`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
+Or see this github issue for other potential solutions: https://github.com/nodejs/node-gyp/issues/569
+
+After running XcodeGen and opening `OBAKit.xcodeproj`, select the "App" scheme. You should then be able to run the OneBusAway app by typing (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
 
 1. `Product` Menu > `Scheme` > `Manage Schemes`
 2. Delete the `App` scheme (if it exists)
