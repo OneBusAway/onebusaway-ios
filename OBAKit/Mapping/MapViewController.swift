@@ -153,6 +153,7 @@ public class MapViewController: UIViewController,
     private let weatherButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("—", for: .normal)
+        button.titleLabel?.adjustsFontSizeToFitWidth = true
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body).bold
         button.accessibilityLabel = NSLocalizedString("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
@@ -172,8 +173,8 @@ public class MapViewController: UIViewController,
     private var forecast: WeatherForecast? {
         didSet {
             if let forecast = forecast {
-                let truncated = Int(forecast.currentForecast.temperature)
-                weatherButton.setTitle("\(truncated)º", for: .normal)
+                let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
+                weatherButton.setTitle(formattedTemp, for: .normal)
             }
             else {
                 weatherButton.setTitle("—", for: .normal)

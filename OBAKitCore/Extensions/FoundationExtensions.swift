@@ -100,6 +100,33 @@ public extension Dictionary where Key == String {
     }
 }
 
+// MARK: - MeasurementFormatter
+
+public extension MeasurementFormatter {
+    /// Converts `temperature` in the specified `unit` to `locale` without displaying a resulting unit.
+    ///
+    /// For example, converts 32ºF -> "0º" for Celsius locale, or 0ºC -> "32º" for Fahrenheit locale.
+    /// - Parameter temperature: The temperature
+    /// - Parameter unit: The unit for `temperature`
+    /// - Parameter locale: The target locale
+    class func unitlessConversion(temperature: Double, unit: UnitTemperature, to locale: Locale) -> String {
+        let temp = Measurement(value: temperature, unit: unit)
+        let formatter = MeasurementFormatter()
+        formatter.locale = locale
+        formatter.unitStyle = .short
+        formatter.numberFormatter.usesSignificantDigits = false
+        formatter.numberFormatter.maximumSignificantDigits = 0
+
+        var formattedTemp = formatter.string(from: temp)
+
+        if formattedTemp.hasSuffix("C") || formattedTemp.hasSuffix("F") {
+            formattedTemp.removeLast()
+        }
+
+        return formattedTemp
+    }
+}
+
 // MARK: - Sequence
 
 public extension Sequence where Element == String {
