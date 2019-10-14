@@ -48,10 +48,10 @@ class AddGroupAlertController: NSObject {
     }
 
     private func saveChanges(_ text: String) {
-        let group = self.group ?? BookmarkGroup(name: text)
+        let group = self.group ?? BookmarkGroup(name: text, sortOrder: Int.max)
         group.name = text
 
-        dataStore.add(bookmarkGroup: group)
+        dataStore.upsert(bookmarkGroup: group)
         delegate?.bookmarkGroupSaved(group)
     }
 }

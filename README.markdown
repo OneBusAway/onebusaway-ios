@@ -101,9 +101,11 @@ These are third party libraries directly included inside of this project.
 
 ## AwesomeSpotlight
 
-Includes AwesomeSpotlight by Aleksandr Shoshiashvili.
+<details>
+    <summary>Includes AwesomeSpotlight by Aleksandr Shoshiashvili.</summary>
 
-    Copyright (c) 2017 aleksandrshoshiashvili <aleksandr.shoshiashvili@gmail.com>
+    ```
+    Copyright (c) 2017 aleksandrshoshiashvili aleksandr.shoshiashvili@gmail.com
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -122,24 +124,32 @@ Includes AwesomeSpotlight by Aleksandr Shoshiashvili.
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
+    ```
+</details>
 
 ## DictionaryCoding
 
-Includes DictionaryCoding code by Sam Deane, Elegant Chaos Limited.
+<details>
+  <summary>Includes DictionaryCoding code by Sam Deane, Elegant Chaos Limited.</summary>
 
-    The original code is copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
+  ```
+  The original code is copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
 
-    Licensed under Apache License v2.0 with Runtime Library Exception
+  Licensed under Apache License v2.0 with Runtime Library Exception
 
-    See https://swift.org/LICENSE.txt for license information
-    See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
+  See https://swift.org/LICENSE.txt for license information
+  See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-    Modifications and additional code here is copyright (c) 2018 Sam Deane, and is licensed under the same terms.
+  Modifications and additional code here is copyright (c) 2018 Sam Deane, and is licensed under the same terms.
+  ```
+</details>
 
 ## Polyline
 
-Includes Polyline.swift by Raphaël Mor.
+<details>
+    <summary>Includes Polyline.swift by Raphaël Mor.</summary>
 
+    ```
     The MIT License (MIT)
 
     Copyright (c) 2015 Raphaël Mor
@@ -161,11 +171,15 @@ Includes Polyline.swift by Raphaël Mor.
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
+    ```
+</details>
 
 ## SVPulsingAnnotationView
 
-    Copyright (c) 2013, Sam Vermette <hello@samvermette.com>
+<details>
+    <summary>Copyright (c) 2013, Sam Vermette (hello@samvermette.com)</summary>
 
+    ```
     Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby
     granted, provided that the above copyright notice and this permission notice appear in all copies.
 
@@ -174,12 +188,16 @@ Includes Polyline.swift by Raphaël Mor.
     DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
     PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
     WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+    ```
+</details>
 
 ## Visual Effects Shadow
 
-Includes Visual Effects Shadow by Brian Coyner.
+<details>
+    <summary>Includes Visual Effects Shadow by Brian Coyner.</summary>
 
-https://github.com/briancoyner/Visual-Effects-Shadow
+    ```
+    https://github.com/briancoyner/Visual-Effects-Shadow
 
     MIT License
 
@@ -202,8 +220,12 @@ https://github.com/briancoyner/Visual-Effects-Shadow
     LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
+    ```
+</details>
 
 # Apache 2.0 License
+
+All other code is made available under the Apache 2.0 license.
 
     Copyright 2018-Present Aaron Brethorst
 

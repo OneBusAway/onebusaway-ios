@@ -14,7 +14,9 @@ import OBAKitCore
 @objc(OBABookmarksViewController)
 public class BookmarksViewController: UIViewController,
     AloeStackTableBuilder,
-    LocationServiceDelegate {
+    LocationServiceDelegate,
+    ManageBookmarksDelegate,
+    ModalDelegate {
 
     /// The OBA application object
     private let application: Application
@@ -34,6 +36,8 @@ public class BookmarksViewController: UIViewController,
 
         title = NSLocalizedString("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
         tabBarItem.image = Icons.bookmarksTabIcon
+
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: NSLocalizedString("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -50,12 +54,13 @@ public class BookmarksViewController: UIViewController,
         view.addSubview(stackView)
         stackView.pinToSuperview(.edges)
 
-        reloadTable()
         loadData()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        reloadTable()
 
         application.notificationCenter.addObserver(self, selector: #selector(reachabilityChanged), name: Reachability.statusChangedNotification, object: nil)
 
@@ -97,11 +102,10 @@ public class BookmarksViewController: UIViewController,
         tripBookmarkViewMap.removeAll()
 
         let groups = application.userDataStore.bookmarkGroups
+
         for group in groups {
             let bookmarks = application.userDataStore.bookmarksInGroup(group)
-            if bookmarks.count > 0 {
-                addRowsForGroup(name: group.name, bookmarks: bookmarks)
-            }
+            addRowsForGroup(name: group.name, bookmarks: bookmarks)
         }
 
         // Only show a title on the 'ungrouped' list if groups have been defined.
@@ -126,6 +130,7 @@ public class BookmarksViewController: UIViewController,
                 arrivalView.showLoadingIndicator()
                 tripBookmarkViewMap[key] = arrivalView
                 view = arrivalView
+                loadData(key: key)
             }
             else {
                 view = DefaultTableRowView(title: b.name, accessoryType: .disclosureIndicator)
@@ -190,7 +195,9 @@ public class BookmarksViewController: UIViewController,
             guard
                 let self = self,
                 let keysAndDeps = op.stopArrivals?.arrivalsAndDepartures.tripKeyGroupedElements
-            else { return }
+            else {
+                return
+            }
 
             for (key, deps) in keysAndDeps {
                 let view = self.tripBookmarkViewMap[key]
@@ -207,6 +214,26 @@ public class BookmarksViewController: UIViewController,
         for op in operations {
             op.cancel()
         }
+    }
+
+    // MARK: - Bookmark Groups
+
+    @objc private func manageGroups() {
+        let manageGroupsController = ManageBookmarksAndGroupsViewController(application: application, delegate: self)
+        let navigation = UINavigationController(rootViewController: manageGroupsController)
+        application.viewRouter.present(navigation, from: self)
+    }
+
+    // MARK: - ModalDelegate
+
+    public func dismissModalController(_ controller: UIViewController) {
+        controller.dismiss(animated: true, completion: nil)
+    }
+
+    // MARK: - ManageBookmarksDelegate
+
+    func manageBookmarksReloadData(_ controller: ManageBookmarksAndGroupsViewController) {
+        reloadTable()
     }
 }
 

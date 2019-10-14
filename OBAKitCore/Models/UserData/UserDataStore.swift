@@ -29,19 +29,29 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Retrieves a list of `BookmarkGroup` objects.
     var bookmarkGroups: [BookmarkGroup] { get }
 
-    /// Adds a new `BookmarkGroup` to the `UserDataStore`
+    /// Adds the `BookmarkGroup` to the `UserDataStore`, or updates it if it's new.
     /// - Parameter bookmarkGroup: The `BookmarkGroup` to add.
-    func add(bookmarkGroup: BookmarkGroup)
+    func upsert(bookmarkGroup: BookmarkGroup)
 
-    /// Removes the `BookmarkGroup` from the `UserDataStore`.
-    /// - Parameter bookmarkGroup: The `BookmarkGroup` to remove.
+    /// Removes the specified `BookmarkGroup` from the `UserDataStore`.
+    /// - Parameter group: The `BookmarkGroup` to remove.
     ///
     /// - Note: `Bookmark`s should not be deleted when their `BookmarkGroup` is deleted.
-    func delete(bookmarkGroup: BookmarkGroup)
+    func deleteGroup(_ group: BookmarkGroup)
 
-    /// Finds the `BookmarkGroup` with a matching `uuid` if it exists.
-    /// - Parameter uuid: The `UUID` for which to search in existing bookmark groups.
-    func findGroup(uuid: UUID) -> BookmarkGroup?
+    /// Removes the `BookmarkGroup` that matches `id` from the `UserDataStore`.
+    /// - Parameter id: The `UUID` of the `BookmarkGroup` to remove.
+    ///
+    /// - Note: `Bookmark`s should not be deleted when their `BookmarkGroup` is deleted.
+    func deleteGroup(id: UUID)
+
+    /// Finds the `BookmarkGroup` with a matching `id` if it exists.
+    /// - Parameter id: The `UUID` for which to search in existing bookmark groups.
+    func findGroup(id: UUID?) -> BookmarkGroup?
+
+    /// Updates, inserts, and deletes existing bookmark groups with the supplied list.
+    /// - Parameter newGroups: The new, canonical list of `BookmarkGroup`s.
+    func replaceBookmarkGroups(with newGroups: [BookmarkGroup])
 
     // MARK: - Bookmarks
 
@@ -62,9 +72,9 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Returns: The index of the bookmark, if found. Otherwise returns `NSNotFound`.
     func delete(bookmark: Bookmark) -> Int
 
-    /// Finds the `Bookmark` with a matching `uuid` if it exists.
-    /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
-    func findBookmark(uuid: UUID) -> Bookmark?
+    /// Finds the `Bookmark` with a matching `id` if it exists.
+    /// - Parameter id: The `UUID` for which to search in existing bookmarks.
+    func findBookmark(id: UUID) -> Bookmark?
 
     /// Finds the `Bookmark` with a matching `stopID` if it exists.
     /// - Parameter stopID: The Stop ID for which to search in existing bookmarks.
@@ -155,26 +165,71 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public var bookmarkGroups: [BookmarkGroup] {
         get {
-            return decodeUserDefaultsObjects(type: [BookmarkGroup].self, key: .bookmarkGroups) ?? []
+            let groups: [BookmarkGroup] = decodeUserDefaultsObjects(type: [BookmarkGroup].self, key: .bookmarkGroups) ?? []
+            return groups.sorted { $0.sortOrder < $1.sortOrder }
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: .bookmarkGroups) // swiftlint:disable:this force_try
         }
     }
 
-    public func add(bookmarkGroup: BookmarkGroup) {
-        guard bookmarkGroups.firstIndex(of: bookmarkGroup) == nil else { return }
-        bookmarkGroups.append(bookmarkGroup)
+    public func upsert(bookmarkGroup: BookmarkGroup) {
+        if let index = findGroupIndex(id: bookmarkGroup.id) {
+            bookmarkGroups.remove(at: index)
+            bookmarkGroups.insert(bookmarkGroup, at: index)
+        }
+        else {
+            bookmarkGroups.append(bookmarkGroup)
+        }
     }
 
-    public func delete(bookmarkGroup: BookmarkGroup) {
-        if let index = bookmarkGroups.firstIndex(of: bookmarkGroup) {
+    public func deleteGroup(_ group: BookmarkGroup) {
+        // move the group's bookmarks, if any, out of the group.
+        for bm in bookmarksInGroup(group) {
+            add(bm, to: nil)
+        }
+
+        if let index = findGroupIndex(id: group.id) {
             bookmarkGroups.remove(at: index)
         }
     }
 
-    public func findGroup(uuid: UUID) -> BookmarkGroup? {
-        bookmarkGroups.first { $0.uuid == uuid }
+    public func deleteGroup(id: UUID) {
+        if let group = findGroup(id: id) {
+            deleteGroup(group)
+        }
+    }
+
+    public func findGroup(id: UUID?) -> BookmarkGroup? {
+        guard let id = id else {
+            return nil
+        }
+
+        return bookmarkGroups.first { $0.id == id }
+    }
+
+    public func findGroupIndex(id: UUID) -> Int? {
+        bookmarkGroups.firstIndex { $0.id == id }
+    }
+
+    public func replaceBookmarkGroups(with newGroups: [BookmarkGroup]) {
+        // All registered groups
+        var groupsToDelete = Set(bookmarkGroups.map { $0.id })
+
+        // Remove items from the set that still exist.
+        for g in newGroups {
+            groupsToDelete.remove(g.id)
+        }
+
+        // Delete the remaining items (which definitionally are items the user has deleted).
+        for uuid in groupsToDelete {
+            deleteGroup(id: uuid)
+        }
+
+        // Update/insert the new list of groups.
+        for g in newGroups {
+            upsert(bookmarkGroup: g)
+        }
     }
 
     // MARK: - Bookmarks
@@ -189,20 +244,20 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func bookmarksInGroup(_ bookmarkGroup: BookmarkGroup?) -> [Bookmark] {
-        let uuid = bookmarkGroup?.uuid ?? nil
-        return bookmarks.filter { $0.groupUUID == uuid }
+        let id = bookmarkGroup?.id ?? nil
+        return bookmarks.filter { $0.groupID == id }
     }
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup? = nil) {
         if let group = group {
-            add(bookmarkGroup: group)
+            upsert(bookmarkGroup: group)
         }
 
-        bookmark.groupUUID = group?.uuid ?? nil
+        bookmark.groupID = group?.id ?? nil
 
         var insertionIndex = NSNotFound
 
-        if let existing = findBookmark(uuid: bookmark.uuid) {
+        if let existing = findBookmark(id: bookmark.id) {
             insertionIndex = delete(bookmark: existing)
         }
 
@@ -215,24 +270,24 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     @discardableResult public func delete(bookmark: Bookmark) -> Int {
-        let bookmark = findBookmark(uuid: bookmark.uuid, defaultValue: bookmark)
+        let bookmark = findBookmark(id: bookmark.id, defaultValue: bookmark)
         guard let index = bookmarks.firstIndex(of: bookmark) else { return NSNotFound }
 
         bookmarks.remove(at: index)
         return index
     }
 
-    /// Finds the specified `Bookmark` by UUID or returns the `defaultValue`. Useful for upserts and the like.
-    /// - Parameter uuid: The `UUID` value of the `Bookmark` you want to find.
-    /// - Parameter defaultValue: A `Bookmark` to replace if a match is not found for `uuid`.
-    func findBookmark(uuid: UUID, defaultValue: Bookmark) -> Bookmark {
-        findBookmark(uuid: uuid) ?? defaultValue
+    /// Finds the specified `Bookmark` by `id` or returns the `defaultValue`. Useful for upserts and the like.
+    /// - Parameter id: The unique identifier of the `Bookmark` you want to find.
+    /// - Parameter defaultValue: A `Bookmark` to replace if a match is not found for `id`.
+    func findBookmark(id: UUID, defaultValue: Bookmark) -> Bookmark {
+        findBookmark(id: id) ?? defaultValue
     }
 
-    /// Finds the `Bookmark` with a matching `uuid` if it exists.
-    /// - Parameter uuid: The `UUID` for which to search in existing bookmarks.
-    public func findBookmark(uuid: UUID) -> Bookmark? {
-        bookmarks.first { $0.uuid == uuid }
+    /// Finds the `Bookmark` with a matching `id` if it exists.
+    /// - Parameter id: The unique identifier for which to search in existing bookmarks.
+    public func findBookmark(id: UUID) -> Bookmark? {
+        bookmarks.first { $0.id == id }
     }
 
     public func findBookmark(stopID: String) -> Bookmark? {
@@ -340,7 +395,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     private func upsert(bookmark: Bookmark) {
         if
-            let existing = findBookmark(uuid: bookmark.uuid),
+            let existing = findBookmark(id: bookmark.id),
             let index = bookmarks.firstIndex(of: existing)
         {
             bookmarks.remove(at: index)

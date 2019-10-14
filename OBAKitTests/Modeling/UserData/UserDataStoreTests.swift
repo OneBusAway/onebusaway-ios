@@ -68,6 +68,22 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.recentStops.count) == userDefaultsStore.maximumRecentStopsCount
     }
 
+    func test_recentStops_search() {
+        let stops = try! loadSomeStops()
+
+        for s in stops {
+            userDefaultsStore.addRecentStop(s, region: region)
+        }
+
+        let stop = userDefaultsStore.recentStops[5]
+        let mungedStopName = "\r\n\(stop.name.lowercased())\r\n"
+        let matches = userDefaultsStore.findRecentStops(matching: mungedStopName)
+
+        expect(matches.count) >= 1
+        let filtered = matches.filter({ $0.id == stop.id })
+        expect(filtered.first!) == stop
+    }
+
     func test_recentStops_removeAll() {
         let stops = try! loadSomeStops()
         let stop = stops.first!
@@ -100,5 +116,19 @@ class UserDefaultsStoreTests: OBATestCase {
     func test_selectedTabIndex_changingDefaults() {
         userDefaultsStore.lastSelectedView = .bookmarks
         expect(self.userDefaultsStore.lastSelectedView) == .bookmarks
+    }
+
+    // MARK: - Debug Mode
+
+    func test_debugMode_defaultValue() {
+        expect(self.userDefaultsStore.debugMode).to(beFalse())
+    }
+
+    func test_debugMode_setValue() {
+        self.userDefaultsStore.debugMode = true
+        expect(self.userDefaultsStore.debugMode).to(beTrue())
+
+        let newStore = UserDefaultsStore(userDefaults: userDefaults)
+        expect(newStore.debugMode).to(beTrue())
     }
 }

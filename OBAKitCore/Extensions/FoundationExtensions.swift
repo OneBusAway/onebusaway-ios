@@ -125,6 +125,11 @@ public extension String {
         let nums: Set<Character> = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
         return Set(self).isSubset(of: nums)
     }
+
+    /// Removes whitespace and newlines from `self`.
+    func strip() -> String {
+        return trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 // MARK: - User Defaults
@@ -187,8 +192,19 @@ public extension UserDefaults {
     }
 }
 
+// MARK: - URL
+
 public extension URL {
     init?(phoneNumber: String) {
         self.init(string: "tel:\(phoneNumber)")
+    }
+}
+
+// MARK: - UUID
+
+public extension UUID {
+    init?(optionalUUIDString: String?) {
+        guard let optionalUUIDString = optionalUUIDString else { return nil }
+        self.init(uuidString: optionalUUIDString)
     }
 }
