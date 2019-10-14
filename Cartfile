@@ -32,7 +32,7 @@ github "SVProgressHUD/SVProgressHUD" ~> 2.2.5
 github "cbpowell/MarqueeLabel" ~>4.0.0
 
 # https://github.com/alexaubry/BulletinBoard/releases
-github "aaronbrethorst/BulletinBoard" "private-deps"
+github "alexaubry/BulletinBoard" ~> 4.1.0
 
 ## Third Party Integrations
 
