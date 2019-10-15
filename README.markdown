@@ -34,6 +34,8 @@ If the `carthage build --platform iOS` command gives an error claiming that it i
 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 Or see this github issue for other potential solutions: https://github.com/nodejs/node-gyp/issues/569
 
+### Unit Tests Not Running?
+
 After running XcodeGen and opening `OBAKit.xcodeproj`, select the "App" scheme. You should then be able to run the OneBusAway app by typing (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
 
 1. `Product` Menu > `Scheme` > `Manage Schemes`
