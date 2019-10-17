@@ -30,8 +30,8 @@ public class TableRowView: UIView, Highlightable {
         NSLayoutConstraint.activate([
             heightConstraint, imageViewHeight, imageViewWidth, imageViewWrapperHeight, imageViewWrapperWidth,
 
-            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor),
-            contentStackWrapper.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentStackWrapper.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            contentStackWrapper.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
             contentStackWrapper.centerYAnchor.constraint(equalTo: centerYAnchor),
             contentStackWrapper.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: ThemeMetrics.compactPadding),
             contentStackWrapper.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -ThemeMetrics.compactPadding),
