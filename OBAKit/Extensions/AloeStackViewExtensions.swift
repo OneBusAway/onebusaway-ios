@@ -62,7 +62,7 @@ extension AloeStackTableBuilder where Self: UIViewController {
     func addGroupedTableHeaderToStack(headerText: String) {
         let header = TableHeaderView.autolayoutNew()
         header.text = headerText
-        header.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: ThemeMetrics.controllerMargin, bottom: ThemeMetrics.compactPadding, trailing: ThemeMetrics.controllerMargin)
+        header.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.controllerMargin, leading: ThemeMetrics.controllerMargin, bottom: ThemeMetrics.compactPadding, trailing: ThemeMetrics.controllerMargin)
 
         stackView.addRow(header, hideSeparator: false)
 
@@ -72,6 +72,8 @@ extension AloeStackTableBuilder where Self: UIViewController {
 
     func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool = false, tapHandler: ((T) -> Void)? = nil) where T: UIView {
         stackView.addRow(row, hideSeparator: false)
+
+        stackView.setInset(forRow: row, inset: .zero)
 
         if isLastRow {
             stackView.setSeparatorInset(forRow: row, inset: .zero)
