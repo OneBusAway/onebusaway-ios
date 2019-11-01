@@ -28,6 +28,8 @@ class FakeToolbar: UIView {
 
         super.init(frame: .zero)
 
+        addSubview(hairline)
+
         let blurContainerView = VisualEffectContainerView(blurEffect: UIBlurEffect(style: .light))
         blurContainerView.translatesAutoresizingMaskIntoConstraints = false
         blurContainerView.contentView.addSubview(stackWrapper)
@@ -44,4 +46,17 @@ class FakeToolbar: UIView {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    private let hairline: UIView = {
+        let view = UIView()
+        view.backgroundColor = ThemeColors.shared.separator
+        return view
+    }()
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        bringSubviewToFront(hairline)
+
+        hairline.frame = CGRect(x: 0, y: 0, width: frame.width, height: 1.0 / UIScreen.main.scale)
+    }
 }
