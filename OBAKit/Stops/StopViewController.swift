@@ -204,7 +204,7 @@ public class StopViewController: UIViewController,
             fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0),
-            toolbarWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         var inset = stackView.contentInset
@@ -249,28 +249,10 @@ public class StopViewController: UIViewController,
         return button
     }
 
-    private lazy var toolbarStack: UIStackView = {
-        let stackView = UIStackView.horizontalStack(arrangedSubviews: [refreshButton, bookmarkButton, filterButton])
-        stackView.spacing = ThemeMetrics.padding
-        stackView.alignment = .center
-        stackView.distribution = .fillEqually
-        return stackView
-    }()
-
-    private lazy var toolbarWrapper = toolbarStack.embedInWrapperView()
-
-    private lazy var fakeToolbar: UIView = {
-        let blurContainerView = VisualEffectContainerView(blurEffect: UIBlurEffect(style: .light))
-        blurContainerView.translatesAutoresizingMaskIntoConstraints = false
-        blurContainerView.contentView.addSubview(toolbarWrapper)
-
-        NSLayoutConstraint.activate([
-            toolbarWrapper.leadingAnchor.constraint(equalTo: blurContainerView.contentView.leadingAnchor),
-            toolbarWrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
-            toolbarWrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor)
-        ])
-
-        return blurContainerView as UIView
+    private lazy var fakeToolbar: FakeToolbar = {
+        let toolbar = FakeToolbar(toolbarItems: [refreshButton, bookmarkButton, filterButton])
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        return toolbar
     }()
 
     // MARK: - NSUserActivity
