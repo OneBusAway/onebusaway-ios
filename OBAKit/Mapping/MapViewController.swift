@@ -276,11 +276,7 @@ public class MapViewController: UIViewController,
     // MARK: - MapRegionDelegate
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard
-            !application.theme.behaviors.mapShowsCallouts,
-            let stop = view.annotation as? Stop else {
-            return
-        }
+        guard let stop = view.annotation as? Stop else { return }
 
         show(stop: stop)
     }

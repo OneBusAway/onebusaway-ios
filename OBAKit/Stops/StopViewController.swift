@@ -162,7 +162,8 @@ public class StopViewController: UIViewController,
 
         super.init(nibName: nil, bundle: nil)
 
-        configureCurrentThemeBehaviors()
+        stackView.showsVerticalScrollIndicator = true
+        stackView.alwaysBounceVertical = true
 
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
 
@@ -174,20 +175,6 @@ public class StopViewController: UIViewController,
     deinit {
         reloadTimer.invalidate()
         operation?.cancel()
-    }
-
-    // MARK: - Private Init Helpers
-
-    /// Configures the UI of this view controller based on whether we're using floating panel navigation or regular navigation.
-    private func configureCurrentThemeBehaviors() {
-        if application.theme.behaviors.useFloatingPanelNavigation {
-            stackView.showsVerticalScrollIndicator = false
-            stackView.alwaysBounceVertical = false
-        }
-        else {
-            stackView.showsVerticalScrollIndicator = true
-            stackView.alwaysBounceVertical = true
-        }
     }
 
     // MARK: - UIViewController Overrides
