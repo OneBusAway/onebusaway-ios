@@ -112,14 +112,17 @@
 
 #pragma mark - UITabBarControllerDelegate
 
-- (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
-    NSInteger index = tabBarController.selectedIndex;
-
-    if (index == OBASelectedTabMap) {
+- (BOOL)tabBarController:(UITabBarController *)tabBarController shouldSelectViewController:(UIViewController *)viewController {
+    // If the user is already on the map tab and they tap on the map tab item again, then zoom to their location.
+    if (tabBarController.selectedViewController == viewController && tabBarController.selectedIndex == OBASelectedTabMap) {
         [self.rootController.mapController centerMapOnUserLocation];
     }
 
-    self.app.userDataStore.lastSelectedView = (OBASelectedTab)index;
+    return YES;
+}
+
+- (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
+    self.app.userDataStore.lastSelectedView = (OBASelectedTab)tabBarController.selectedIndex;
 }
 
 #pragma mark - OBAAnalytics
