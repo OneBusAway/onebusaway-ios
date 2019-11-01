@@ -11,12 +11,10 @@ import UIKit
 public class Theme: NSObject {
     public let colors: ThemeColors
     public let metrics: ThemeMetrics
-    public let behaviors: ThemeBehaviors
 
     public init(bundle: Bundle?, traitCollection: UITraitCollection?) {
         colors = ThemeColors(bundle: bundle ?? Bundle(for: Theme.self), traitCollection: traitCollection)
         metrics = ThemeMetrics()
-        behaviors = ThemeBehaviors()
     }
 }
 
@@ -153,16 +151,4 @@ public class ThemeColors: NSObject {
             stopAnnotationStrokeColor = .black
         }
     }
-}
-
-public class ThemeBehaviors: NSObject {
-    /// When true, the app will use floating panels in lieu of a tabbed UI.
-    public let useFloatingPanelNavigation = false
-
-    /// When true, tapping on a map annotation will show a callout.
-    ///
-    /// - Note: This behavior may be overriden by other features, like VoiceOver.
-    ///         Because of how annotation selection works when VoiceOver is on,
-    ///         it doesn't make any sense to display map callouts in that mode.
-    public let mapShowsCallouts = true
 }

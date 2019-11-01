@@ -162,7 +162,8 @@ public class StopViewController: UIViewController,
 
         super.init(nibName: nil, bundle: nil)
 
-        configureCurrentThemeBehaviors()
+        stackView.showsVerticalScrollIndicator = true
+        stackView.alwaysBounceVertical = true
 
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
 
@@ -174,20 +175,6 @@ public class StopViewController: UIViewController,
     deinit {
         reloadTimer.invalidate()
         operation?.cancel()
-    }
-
-    // MARK: - Private Init Helpers
-
-    /// Configures the UI of this view controller based on whether we're using floating panel navigation or regular navigation.
-    private func configureCurrentThemeBehaviors() {
-        if application.theme.behaviors.useFloatingPanelNavigation {
-            stackView.showsVerticalScrollIndicator = false
-            stackView.alwaysBounceVertical = false
-        }
-        else {
-            stackView.showsVerticalScrollIndicator = true
-            stackView.alwaysBounceVertical = true
-        }
     }
 
     // MARK: - UIViewController Overrides
@@ -208,6 +195,8 @@ public class StopViewController: UIViewController,
         view.addSubview(stackView)
         view.addSubview(fakeToolbar)
 
+        let toolbarHeight: CGFloat = 44.0
+
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -216,12 +205,13 @@ public class StopViewController: UIViewController,
             fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0)
+            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
+            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         var inset = stackView.contentInset
 
-        inset.bottom = 44.0 + ThemeMetrics.controllerMargin + view.safeAreaInsets.bottom
+        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
         stackView.contentInset = inset
         stackView.scrollIndicatorInsets = inset
     }
@@ -246,53 +236,25 @@ public class StopViewController: UIViewController,
 
     // MARK: - Bottom Toolbar
 
-    private lazy var refreshButton: UIControl = {
+    private lazy var refreshButton = buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
+
+    private lazy var bookmarkButton = buildToolbarButton(title: Strings.bookmark, image: Icons.favorited, target: self, action: #selector(addBookmark(sender:)))
+
+    private lazy var filterButton = buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
+
+    private func buildToolbarButton(title: String, image: UIImage, target: Any, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        button.setTitle(Strings.refresh, for: .normal)
-        button.setImage(Icons.refresh, for: .normal)
-        button.addTarget(self, action: #selector(refresh), for: .touchUpInside)
+        button.setTitle(title, for: .normal)
+        button.setImage(image, for: .normal)
+        button.addTarget(target, action: action, for: .touchUpInside)
+        NSLayoutConstraint.activate([button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)])
         return button
-    }()
+    }
 
-    private lazy var bookmarkButton: UIControl = {
-        let button = UIButton(type: .system)
-        button.setTitle(Strings.bookmark, for: .normal)
-        button.setImage(Icons.favorited, for: .normal)
-        button.addTarget(self, action: #selector(addBookmark(sender:)), for: .touchUpInside)
-        return button
-    }()
-
-    private lazy var filterButton: UIControl = {
-        let button = UIButton(type: .system)
-        button.setTitle(Strings.filter, for: .normal)
-        button.setImage(Icons.filter, for: .normal)
-        button.addTarget(self, action: #selector(filter), for: .touchUpInside)
-        return button
-    }()
-
-    private lazy var toolbarStack: UIStackView = {
-        let stackView = UIStackView.horizontalStack(arrangedSubviews: [refreshButton, bookmarkButton, filterButton])
-        stackView.spacing = ThemeMetrics.padding
-        stackView.alignment = .center
-        stackView.distribution = .fillEqually
-        return stackView
-    }()
-
-    private lazy var fakeToolbar: UIView = {
-        let wrapper = toolbarStack.embedInWrapperView()
-
-        let blurContainerView = VisualEffectContainerView(blurEffect: UIBlurEffect(style: .light))
-        blurContainerView.translatesAutoresizingMaskIntoConstraints = false
-        blurContainerView.contentView.addSubview(wrapper)
-
-        NSLayoutConstraint.activate([
-            wrapper.leadingAnchor.constraint(equalTo: blurContainerView.contentView.leadingAnchor),
-            wrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
-            wrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor),
-            wrapper.bottomAnchor.constraint(equalTo: blurContainerView.contentView.bottomAnchor)
-        ])
-
-        return blurContainerView as UIView
+    private lazy var fakeToolbar: FakeToolbar = {
+        let toolbar = FakeToolbar(toolbarItems: [refreshButton, bookmarkButton, filterButton])
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        return toolbar
     }()
 
     // MARK: - NSUserActivity
