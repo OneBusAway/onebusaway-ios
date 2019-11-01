@@ -195,6 +195,8 @@ public class StopViewController: UIViewController,
         view.addSubview(stackView)
         view.addSubview(fakeToolbar)
 
+        let toolbarHeight: CGFloat = 44.0
+
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -203,13 +205,13 @@ public class StopViewController: UIViewController,
             fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0),
+            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
             fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         var inset = stackView.contentInset
 
-        inset.bottom = 44.0 + ThemeMetrics.controllerMargin + view.safeAreaInsets.bottom
+        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
         stackView.contentInset = inset
         stackView.scrollIndicatorInsets = inset
     }
