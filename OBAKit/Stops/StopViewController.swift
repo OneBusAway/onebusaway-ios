@@ -216,7 +216,8 @@ public class StopViewController: UIViewController,
             fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0)
+            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: 44.0),
+            toolbarWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
         var inset = stackView.contentInset
@@ -246,29 +247,20 @@ public class StopViewController: UIViewController,
 
     // MARK: - Bottom Toolbar
 
-    private lazy var refreshButton: UIControl = {
-        let button = UIButton(type: .system)
-        button.setTitle(Strings.refresh, for: .normal)
-        button.setImage(Icons.refresh, for: .normal)
-        button.addTarget(self, action: #selector(refresh), for: .touchUpInside)
-        return button
-    }()
+    private lazy var refreshButton = buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
 
-    private lazy var bookmarkButton: UIControl = {
-        let button = UIButton(type: .system)
-        button.setTitle(Strings.bookmark, for: .normal)
-        button.setImage(Icons.favorited, for: .normal)
-        button.addTarget(self, action: #selector(addBookmark(sender:)), for: .touchUpInside)
-        return button
-    }()
+    private lazy var bookmarkButton = buildToolbarButton(title: Strings.bookmark, image: Icons.favorited, target: self, action: #selector(addBookmark(sender:)))
 
-    private lazy var filterButton: UIControl = {
+    private lazy var filterButton = buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
+
+    private func buildToolbarButton(title: String, image: UIImage, target: Any, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        button.setTitle(Strings.filter, for: .normal)
-        button.setImage(Icons.filter, for: .normal)
-        button.addTarget(self, action: #selector(filter), for: .touchUpInside)
+        button.setTitle(title, for: .normal)
+        button.setImage(image, for: .normal)
+        button.addTarget(target, action: action, for: .touchUpInside)
+        NSLayoutConstraint.activate([button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)])
         return button
-    }()
+    }
 
     private lazy var toolbarStack: UIStackView = {
         let stackView = UIStackView.horizontalStack(arrangedSubviews: [refreshButton, bookmarkButton, filterButton])
@@ -278,18 +270,17 @@ public class StopViewController: UIViewController,
         return stackView
     }()
 
-    private lazy var fakeToolbar: UIView = {
-        let wrapper = toolbarStack.embedInWrapperView()
+    private lazy var toolbarWrapper = toolbarStack.embedInWrapperView()
 
+    private lazy var fakeToolbar: UIView = {
         let blurContainerView = VisualEffectContainerView(blurEffect: UIBlurEffect(style: .light))
         blurContainerView.translatesAutoresizingMaskIntoConstraints = false
-        blurContainerView.contentView.addSubview(wrapper)
+        blurContainerView.contentView.addSubview(toolbarWrapper)
 
         NSLayoutConstraint.activate([
-            wrapper.leadingAnchor.constraint(equalTo: blurContainerView.contentView.leadingAnchor),
-            wrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
-            wrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor),
-            wrapper.bottomAnchor.constraint(equalTo: blurContainerView.contentView.bottomAnchor)
+            toolbarWrapper.leadingAnchor.constraint(equalTo: blurContainerView.contentView.leadingAnchor),
+            toolbarWrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
+            toolbarWrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor)
         ])
 
         return blurContainerView as UIView
