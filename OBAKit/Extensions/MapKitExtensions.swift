@@ -9,6 +9,15 @@
 import Foundation
 import MapKit
 
+extension MKUserLocation {
+
+    /// Returns `false` if `location` is `nil` or equal to `(0,0)`, and `true` otherwise.
+    public var isValid: Bool {
+        guard let location = location else { return false }
+        return location.coordinate.latitude != 0 && location.coordinate.longitude != 0
+    }
+}
+
 // MARK: - Directions
 
 extension MKDirections {

@@ -136,8 +136,10 @@ public class MapViewController: UIViewController,
     @objc public func centerMapOnUserLocation() {
         guard isLoadedAndOnScreen else { return }
 
-        let userLocation = mapRegionManager.mapView.userLocation.coordinate
-        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation, zoomLevel: 17, animated: true)
+        let userLocation = mapRegionManager.mapView.userLocation
+        guard userLocation.isValid else { return }
+
+        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: 17, animated: true)
     }
 
     private let locationButton: UIButton = {
