@@ -12,13 +12,14 @@ import OBAKitCore
 
 public protocol StopArrivalDelegate: NSObjectProtocol {
     func actionsButtonTapped(arrivalDeparture: ArrivalDeparture)
+    func stopArrivalTapped(arrivalDeparture: ArrivalDeparture)
 }
 
 /// This view displays the route, headsign, and predicted arrival/departure time for an `ArrivalDeparture`.
 ///
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
-public class StopArrivalView: UIView, Highlightable {
+public class StopArrivalView: UIView, Highlightable, Tappable {
 
     public weak var delegate: StopArrivalDelegate?
 
@@ -244,6 +245,12 @@ public class StopArrivalView: UIView, Highlightable {
     public func setIsHighlighted(_ isHighlighted: Bool) {
       guard let cell = superview as? StackViewCell else { return }
         cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
+    }
+
+    // MARK: - Tappable
+
+    public func didTapView() {
+        delegate?.stopArrivalTapped(arrivalDeparture: arrivalDeparture)
     }
 
     // MARK: - UI Builders
