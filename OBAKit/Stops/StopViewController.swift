@@ -243,7 +243,7 @@ public class StopViewController: UIViewController,
     private lazy var filterButton = buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
 
     private func buildToolbarButton(title: String, image: UIImage, target: Any, action: Selector) -> UIButton {
-        let button = UIButton(type: .system)
+        let button = ProminentButton(type: .system)
         button.setTitle(title, for: .normal)
         button.setImage(image, for: .normal)
         button.addTarget(target, action: action, for: .touchUpInside)

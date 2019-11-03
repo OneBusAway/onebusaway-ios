@@ -32,6 +32,8 @@ public class ThemeMetrics: NSObject {
 
     public static let cornerRadius: CGFloat = 8.0
 
+    public static let compactCornerRadius: CGFloat = 4.0
+
     public static let tableHeaderTopPadding: CGFloat = 20.0
 
     public static let floatingPanelTopInset: CGFloat = 7.0
