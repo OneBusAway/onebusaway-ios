@@ -22,9 +22,9 @@ public class StopViewController: UIViewController,
     AloeStackTableBuilder,
     BookmarkEditorDelegate,
     ModalDelegate,
+    Idleable,
     StopArrivalDelegate,
-    StopPreferencesDelegate {
-
+StopPreferencesDelegate {
     private let kUseDebugColors = false
 
     lazy var stackView: AloeStackView = {
@@ -39,7 +39,7 @@ public class StopViewController: UIViewController,
 
     private let refreshControl = UIRefreshControl()
 
-    let application: Application
+    public let application: Application
 
     let stopID: String
 
@@ -174,6 +174,7 @@ public class StopViewController: UIViewController,
 
     deinit {
         reloadTimer.invalidate()
+        enableIdleTimer()
         operation?.cancel()
     }
 
@@ -219,7 +220,7 @@ public class StopViewController: UIViewController,
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        application.isIdleTimerDisabled = true
+        disableIdleTimer()
 
         if stopArrivals != nil {
             beginUserActivity()
@@ -231,8 +232,12 @@ public class StopViewController: UIViewController,
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        application.isIdleTimerDisabled = false
+        enableIdleTimer()
     }
+
+    // MARK: - Idle Timer
+
+    public var idleTimerFailsafe: Timer?
 
     // MARK: - Bottom Toolbar
 
