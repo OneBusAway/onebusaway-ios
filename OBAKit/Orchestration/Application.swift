@@ -352,7 +352,7 @@ public class Application: NSObject,
 
         WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
         WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.primary
-        WalkTimeView.appearance().textColor = ThemeColors.shared.label
+        WalkTimeView.appearance().textColor = ThemeColors.shared.lightText
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
 

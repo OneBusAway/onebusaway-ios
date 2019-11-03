@@ -99,11 +99,6 @@ public class Icons: NSObject {
         imageNamed("favorited")
     }
 
-    /// A not-filled-in star icon
-    public class var unfavorited: UIImage {
-        imageNamed("unfavorited")
-    }
-
     // MARK: - Heading
 
     /// A gradient arc image that can be used to show the user's heading.
