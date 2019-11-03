@@ -41,6 +41,8 @@ public class ThemeMetrics: NSObject {
     public static let compactTopBottomEdgeInsets = NSDirectionalEdgeInsets(top: 4.0, leading: 0, bottom: -4.0, trailing: 0)
 
     public static let collectionViewLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: padding, bottom: 0, trailing: padding)
+
+    public static let groupedRowLayoutMargins = UIEdgeInsets(top: ThemeMetrics.padding, left: ThemeMetrics.controllerMargin, bottom: ThemeMetrics.padding, right: ThemeMetrics.controllerMargin)
 }
 
 public class ThemeColors: NSObject {
