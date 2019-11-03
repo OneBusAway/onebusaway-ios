@@ -490,13 +490,6 @@ public class StopViewController: UIViewController,
         }
 
         stackView.addRow(arrivalView, hideSeparator: hideSeparator)
-        stackView.setTapHandler(forRow: arrivalView) { [weak self] _ in
-            guard let self = self else { return }
-
-            let tripController = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
-            self.application.viewRouter.navigate(to: tripController, from: self)
-        }
-
         arrivalView.arrivalDeparture = arrivalDeparture
     }
 
@@ -511,6 +504,11 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Stop Arrival Actions
+
+    public func stopArrivalTapped(arrivalDeparture: ArrivalDeparture) {
+        let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
+        application.viewRouter.navigate(to: tripController, from: self)
+    }
 
     public func actionsButtonTapped(arrivalDeparture: ArrivalDeparture) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
