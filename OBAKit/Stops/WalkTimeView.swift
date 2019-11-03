@@ -26,7 +26,7 @@ class WalkTimeView: UIView {
     private lazy var triangleHeight = ThemeMetrics.padding
     private lazy var triangleVertexWidth = 1.5 * triangleHeight
 
-    private let walkerImageInset: CGFloat = 26.0
+    private let walkerImageInset: CGFloat = 32.0
 
     private let walkerImageView: UIImageView = {
         let imageView = UIImageView.autolayoutNew()
@@ -84,7 +84,7 @@ class WalkTimeView: UIView {
             label.topAnchor.constraint(equalTo: topAnchor),
             label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -triangleHeight),
             label.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            label.trailingAnchor.constraint(equalTo: walkerImageView.leadingAnchor, constant: -ThemeMetrics.compactPadding)
+            label.trailingAnchor.constraint(equalTo: walkerImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
     }
 

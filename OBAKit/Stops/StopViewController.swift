@@ -413,11 +413,8 @@ public class StopViewController: UIViewController,
 
     private func addNearbyStopsTableRow(stop: Stop) {
         let row = DefaultTableRowView(title: NSLocalizedString("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(row, isLastRow: false) { [weak self] _ in
-            guard
-                let self = self
-            else { return }
-
+        stackView.addRow(row)
+        stackView.setTapHandler(forRow: row) { _ in
             let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
@@ -451,6 +448,8 @@ public class StopViewController: UIViewController,
     }
 
     private func addMoreOptionsTableRows() {
+        addTableHeaderToStack(headerText: NSLocalizedString("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.primary, textColor: ThemeColors.shared.lightText)
+
         if let stop = stop {
             addNearbyStopsTableRow(stop: stop)
 
@@ -508,7 +507,7 @@ public class StopViewController: UIViewController,
         let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-        stackView.addRow(timeframeLabel, hideSeparator: false)
+        stackView.addRow(timeframeLabel, hideSeparator: true)
     }
 
     // MARK: - Stop Arrival Actions
