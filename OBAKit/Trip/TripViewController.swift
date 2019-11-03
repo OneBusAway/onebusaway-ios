@@ -10,9 +10,12 @@ import MapKit
 import FloatingPanel
 import OBAKitCore
 
-class TripViewController: UIViewController, MKMapViewDelegate, FloatingPanelControllerDelegate {
+class TripViewController: UIViewController,
+    FloatingPanelControllerDelegate,
+    Idleable,
+    MKMapViewDelegate {
 
-    private let application: Application
+    public let application: Application
 
     private let arrivalDeparture: ArrivalDeparture
 
@@ -29,6 +32,7 @@ class TripViewController: UIViewController, MKMapViewDelegate, FloatingPanelCont
 
     deinit {
         shapeOperation?.cancel()
+        enableIdleTimer()
     }
 
     // MARK: - UIViewController
@@ -52,6 +56,20 @@ class TripViewController: UIViewController, MKMapViewDelegate, FloatingPanelCont
 
         floatingPanel.addPanel(toParent: self)
     }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        disableIdleTimer()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        enableIdleTimer()
+    }
+
+    // MARK: - Idle Timer
+
+    public var idleTimerFailsafe: Timer?
 
     // MARK: - Title View
 
@@ -192,5 +210,4 @@ class TripViewController: UIViewController, MKMapViewDelegate, FloatingPanelCont
         default: return nil
         }
     }
-
 }
