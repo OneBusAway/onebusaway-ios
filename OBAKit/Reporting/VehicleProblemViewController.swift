@@ -28,7 +28,7 @@ class VehicleProblemViewController: FormViewController {
 
     private lazy var problemCodePicker: PickerInputRow<TripProblemCode> = {
         return PickerInputRow<TripProblemCode> {
-            $0.title = NSLocalizedString("vehicle_problem_controller.problem_section.row_label", value: "Pick one:", comment: "Title label for the 'choose a problem type' row.")
+            $0.title = NSLocalizedString("vehicle_problem_controller.problem_section.row_label", value: "Pick one", comment: "Title label for the 'choose a problem type' row.")
             $0.options = TripProblemCode.allCases
             $0.value = $0.options.first
             $0.displayValueFor = { code -> String? in
@@ -48,6 +48,19 @@ class VehicleProblemViewController: FormViewController {
         $0.value = arrivalDeparture.vehicleID
     }
 
+    private lazy var shareLocationSwitch = SwitchRow {
+        $0.title = NSLocalizedString("vehicle_problem_controller.location_section.switch_title", value: "Share location", comment: "Title of the Share Location switch")
+        $0.value = self.isLocationSharingPermitted
+        $0.onChange { [weak self] (r2) in
+            guard
+                let self = self,
+                let value = r2.value
+            else { return }
+
+            self.isLocationSharingPermitted = value
+        }
+    }
+
     private lazy var commentsField = TextAreaRow()
 
     // MARK: - Init
@@ -59,10 +72,33 @@ class VehicleProblemViewController: FormViewController {
         super.init(nibName: nil, bundle: nil)
 
         title = NSLocalizedString("vehicle_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Vehicle Problem controller")
+
+        registerDefaults()
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - User Defaults
+
+    private func registerDefaults() {
+        application.userDefaults.register(defaults: [
+            UserDefaultKeys.shareLocation: true
+        ])
+    }
+
+    private struct UserDefaultKeys {
+        static let shareLocation = "shareLocationForVehicleProblemReporting"
+    }
+
+    private var isLocationSharingPermitted: Bool {
+        get {
+            application.userDefaults.bool(forKey: UserDefaultKeys.shareLocation)
+        }
+        set {
+            application.userDefaults.set(newValue, forKey: UserDefaultKeys.shareLocation)
+        }
     }
 
     // MARK: - UIViewController
@@ -83,6 +119,12 @@ class VehicleProblemViewController: FormViewController {
         <<< onVehicleSwitch
         <<< vehicleIDField
 
+        // Share Location
+        +++ Section(
+            header: NSLocalizedString("vehicle_problem_controller.location_section.section_title", value: "Share your location?", comment: "Title of the Share Location section in the Vehicle Problem Controller."),
+            footer: NSLocalizedString("vehicle_problem_controller.location_section.section_footer", value: "Sharing your location can help your transit agency fix this problem.", comment: "Footer text of the Share Location section in the Vehicle Problem Controller"))
+        <<< shareLocationSwitch
+
         // Comments Section
         +++ Section(NSLocalizedString("vehicle_problem_controller.comments_section.section_title", value: "Additional comments (optional)", comment: "The section header to a free-form comments field that the user does not have to add text to in order to submit this form."))
         <<< commentsRow
@@ -101,11 +143,11 @@ class VehicleProblemViewController: FormViewController {
     private func submitForm() {
         guard
             let modelService = application.restAPIModelService,
-            let tripProblemCode = problemCodePicker.value,
-            let onVehicle = onVehicleSwitch.value
+            let tripProblemCode = problemCodePicker.value
         else { return }
 
-        let location = application.locationService.currentLocation
+        let onVehicle = onVehicleSwitch.value ?? false
+        let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
         let op = modelService.getTripProblem(
             tripID: arrivalDeparture.tripID,

@@ -31,7 +31,7 @@ public class StopViewController: UIViewController,
         let stack = AloeStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.addSubview(refreshControl)
-        stack.rowInset = UIEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
+        stack.rowInset = .zero
         stack.alwaysBounceVertical = true
         stack.backgroundColor = ThemeColors.shared.systemBackground
         return stack

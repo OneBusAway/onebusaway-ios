@@ -103,18 +103,9 @@ import OBAKitCore
 
     // MARK: - UI Builders
 
-    private let rowLayoutMargins = UIEdgeInsets(top: 0, left: ThemeMetrics.controllerMargin, bottom: 0, right: ThemeMetrics.controllerMargin)
-
-    private func buildTableRow(title: String, accessoryType: UITableViewCell.AccessoryType) -> DefaultTableRowView {
-        let row = DefaultTableRowView(title: title, accessoryType: accessoryType)
-        row.backgroundColor = ThemeColors.shared.groupedTableRowBackground
-        row.layoutMargins = rowLayoutMargins
-        return row
-    }
-
     // MARK: - Regional Alerts Section
 
-    private lazy var alertsForRegionRow = buildTableRow(title: "Alerts", accessoryType: .disclosureIndicator)
+    private lazy var alertsForRegionRow = DefaultTableRowView(title: NSLocalizedString("more_controller.alerts_for_region", value: "Alerts", comment: "Alerts for region row in the More controller"), accessoryType: .disclosureIndicator)
 
     private func addUpdatesAndAlerts() {
         addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
@@ -150,7 +141,7 @@ import OBAKitCore
     private lazy var regionPickerRow: ValueTableRowView = {
         let regionRowTitle = NSLocalizedString("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region.")
         let row = ValueTableRowView(title: regionRowTitle, subtitle: "", accessoryType: .disclosureIndicator)
-        row.layoutMargins = rowLayoutMargins
+        row.layoutMargins = ThemeMetrics.groupedRowLayoutMargins
         row.backgroundColor = ThemeColors.shared.groupedTableRowBackground
 
         return row
@@ -164,7 +155,7 @@ import OBAKitCore
 
     private func addPayMyFareRowToStackView() {
         let rowTitle = NSLocalizedString("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row")
-        let payMyFareRow = buildTableRow(title: rowTitle, accessoryType: .none)
+        let payMyFareRow = DefaultTableRowView(title: rowTitle, accessoryType: .none)
         addGroupedTableRowToStack(payMyFareRow) { [weak self] _ in
             guard let self = self else { return }
             self.logRowTapAnalyticsEvent(name: "Pay Fare")
@@ -174,7 +165,7 @@ import OBAKitCore
 
     private func addAgenciesRowToStackView() {
         let rowTitle = NSLocalizedString("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section")
-        let row = buildTableRow(title: rowTitle, accessoryType: .disclosureIndicator)
+        let row = DefaultTableRowView(title: rowTitle, accessoryType: .disclosureIndicator)
         addGroupedTableRowToStack(row, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
             self.logRowTapAnalyticsEvent(name: "Show Agencies")
@@ -233,7 +224,7 @@ import OBAKitCore
         addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."))
 
         // Credits
-        let credits = buildTableRow(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
+        let credits = DefaultTableRowView(title: NSLocalizedString("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
         addGroupedTableRowToStack(credits) { [weak self] _ in
             guard let self = self else { return }
             let credits = CreditsViewController(application: self.application)
@@ -241,7 +232,7 @@ import OBAKitCore
         }
 
         // Privacy
-        let privacy = buildTableRow(title: NSLocalizedString("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator)
+        let privacy = DefaultTableRowView(title: NSLocalizedString("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator)
         addGroupedTableRowToStack(privacy) { [weak self] _ in
             guard
                 let self = self,
@@ -253,7 +244,7 @@ import OBAKitCore
         }
 
         // Weather
-        let weather = buildTableRow(title: NSLocalizedString("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator)
+        let weather = DefaultTableRowView(title: NSLocalizedString("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator)
         addGroupedTableRowToStack(weather, isLastRow: true) { [weak self] _ in
             guard let self = self else { return }
             self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
@@ -264,7 +255,7 @@ import OBAKitCore
         addGroupedTableHeaderToStack(headerText: NSLocalizedString("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
 
         if application.shouldShowCrashButton {
-            let crashRow = buildTableRow(title: NSLocalizedString("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
+            let crashRow = DefaultTableRowView(title: NSLocalizedString("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
             addGroupedTableRowToStack(crashRow) { [weak self] _ in
                 guard let self = self else { return }
                 self.application.performTestCrash()

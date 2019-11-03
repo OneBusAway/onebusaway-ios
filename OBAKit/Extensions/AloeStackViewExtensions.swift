@@ -74,6 +74,9 @@ extension AloeStackTableBuilder where Self: UIViewController {
     }
 
     func addGroupedTableRowToStack<T>(_ row: T, isLastRow: Bool = false, tapHandler: ((T) -> Void)? = nil) where T: UIView {
+        row.backgroundColor = ThemeColors.shared.groupedTableRowBackground
+        row.layoutMargins = ThemeMetrics.groupedRowLayoutMargins
+
         stackView.addRow(row, hideSeparator: false)
 
         stackView.setInset(forRow: row, inset: .zero)

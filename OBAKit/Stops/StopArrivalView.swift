@@ -225,7 +225,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         super.init(frame: frame)
 
         addSubview(outerStackView)
-        outerStackView.pinToSuperview(.edges)
+        outerStackView.pinToSuperview(.layoutMargins)
 
         if kUseDebugColors {
             routeHeadsignLabel.backgroundColor = .red
