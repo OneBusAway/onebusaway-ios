@@ -275,12 +275,6 @@ public class MapViewController: UIViewController,
 
     // MARK: - MapRegionDelegate
 
-    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard let stop = view.annotation as? Stop else { return }
-
-        show(stop: stop)
-    }
-
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stop = view.annotation as? Stop else {
             return
