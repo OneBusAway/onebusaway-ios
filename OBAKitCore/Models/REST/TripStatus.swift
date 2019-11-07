@@ -51,7 +51,7 @@ public class TripStatus: NSObject, Decodable {
     public let lastKnownLocation: CLLocation?
 
     /// The last known orientation value received in real-time from the transit vehicle.
-    public let lastKnownOrientation: Double
+    public let lastKnownOrientation: CLLocationDirection
 
     /// The last known real-time location update from the transit vehicle. This is different
     /// from lastUpdateTime in that it reflects the last know location update. An update from
@@ -77,7 +77,7 @@ public class TripStatus: NSObject, Decodable {
     /// The orientation of the transit vehicle, as an angle in degrees.
     /// Here, 0º is east, 90º is north, 180º is west, and 270º is south.
     /// This is an optional value that may be extrapolated from other data.
-    public let orientation: Double
+    public let orientation: CLLocationDirection
 
     /// The current journey phase of the trip
     public let phase: String
@@ -89,7 +89,7 @@ public class TripStatus: NSObject, Decodable {
     public let position: CLLocation?
 
     /// True if we have real-time arrival info available for this trip
-    public let predicted: Bool
+    public let isRealTime: Bool
 
     /// If real-time arrival info is available, this lists the deviation from the schedule in seconds, where positive number indicates the trip is running late and negative indicates the trips is running early. If not real-time arrival info is available, this will be zero.
     public let scheduleDeviation: TimeInterval
@@ -122,7 +122,9 @@ public class TripStatus: NSObject, Decodable {
         case closestStopTimeOffset, distanceAlongTrip, lastKnownDistanceAlongTrip, lastKnownLocation, lastKnownOrientation, lastLocationUpdateTime
         case lastUpdate = "lastUpdateTime"
         case nextStopID = "nextStop"
-        case nextStopTimeOffset, orientation, phase, position, predicted, scheduleDeviation, scheduledDistanceAlongTrip, serviceDate
+        case nextStopTimeOffset, orientation, phase, position
+        case isRealTime = "predicted"
+        case scheduleDeviation, scheduledDistanceAlongTrip, serviceDate
         case situationIDs = "situationIds"
         case status, totalDistanceAlongTrip
         case vehicleID = "vehicleId"
@@ -146,7 +148,7 @@ public class TripStatus: NSObject, Decodable {
         frequency = try? container.decode(Frequency.self, forKey: .frequency)
         lastKnownDistanceAlongTrip = try container.decode(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
-        lastKnownOrientation = try container.decode(Double.self, forKey: .lastKnownOrientation)
+        lastKnownOrientation = try container.decode(CLLocationDirection.self, forKey: .lastKnownOrientation)
         lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
 
         let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
@@ -161,10 +163,10 @@ public class TripStatus: NSObject, Decodable {
         nextStop = references.stopWithID(nextStopID)
 
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
-        orientation = try container.decode(Double.self, forKey: .orientation)
+        orientation = try container.decode(CLLocationDirection.self, forKey: .orientation)
         phase = try container.decode(String.self, forKey: .phase)
         position = try? CLLocation(container: container, key: .position)
-        predicted = try container.decode(Bool.self, forKey: .predicted)
+        isRealTime = try container.decode(Bool.self, forKey: .isRealTime)
         scheduleDeviation = try container.decode(TimeInterval.self, forKey: .scheduleDeviation)
         scheduledDistanceAlongTrip = try container.decode(Double.self, forKey: .scheduledDistanceAlongTrip)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)

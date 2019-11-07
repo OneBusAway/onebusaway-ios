@@ -38,7 +38,7 @@ public extension CLLocationDirection {
         return CGAffineTransform(rotationAngle: CGFloat(radians)).rotated(by: rotation)
     }
 
-    /// Converts this value to radians.
+    /// Converts this `CLLocationDirection` value from degrees to radians.
     var radians: Double {
         return Measurement(value: self, unit: UnitAngle.degrees).converted(to: UnitAngle.radians).value
     }
@@ -54,6 +54,13 @@ public extension CLLocationCoordinate2D {
         let start = CLLocation(latitude: latitude, longitude: longitude)
         let end = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         return start.distance(from: end)
+    }
+
+    /// Returns `true` if the coordinate represents (0,0), where the equator and prime meridian intersect.
+    /// A coordinate value of (0,0) is a pretty good indication that you've gotten some bogus data somewhere
+    /// along the way.
+    var isNullIsland: Bool {
+        latitude == 0.0 && longitude == 0.0
     }
 }
 

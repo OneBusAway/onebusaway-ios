@@ -300,6 +300,8 @@ public class Application: NSObject,
 
     // MARK: - Appearance and Themes
 
+    // swiftlint:disable function_body_length
+
     /// Sets default styles for several UIAppearance proxies in order to customize the app's look and feel
     ///
     /// To override the values that are set in here, either customize the theme that this object is
@@ -333,12 +335,21 @@ public class Application: NSObject,
         StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
         StatusOverlayView.appearance().textColor = ThemeColors.shared.lightText
 
+        MinimalStopAnnotationView.appearance().annotationSize = 10.0
+        MinimalStopAnnotationView.appearance().fillColor = .white
+        MinimalStopAnnotationView.appearance().strokeColor = .gray
+        MinimalStopAnnotationView.appearance().highlightedStrokeColor = .blue
+
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
         StopAnnotationView.appearance().bookmarkedStrokeColor = ThemeColors.shared.primary
         StopAnnotationView.appearance().fillColor = UIColor.white
         StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
         StopAnnotationView.appearance().showsCallout = true
         StopAnnotationView.appearance().strokeColor = ThemeColors.shared.stopAnnotationStrokeColor
+
+        PulsingVehicleAnnotationView.appearance().tintColor = .white
+        PulsingVehicleAnnotationView.appearance().realTimeAnnotationColor = ThemeColors.shared.primary
+        PulsingVehicleAnnotationView.appearance().scheduledAnnotationColor = ThemeColors.shared.gray
 
         SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
 
@@ -359,6 +370,8 @@ public class Application: NSObject,
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false
     }
+
+    // swiftlint:enable function_body_length
 
     // MARK: - UUID
 

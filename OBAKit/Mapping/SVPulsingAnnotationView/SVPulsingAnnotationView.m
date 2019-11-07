@@ -26,6 +26,8 @@
 @synthesize annotation = _annotation;
 @synthesize image = _image;
 
+#define kAnnotationSize CGSizeMake(22, 22)
+
 + (NSMutableDictionary*)cachedRingImages {
     static NSMutableDictionary *cachedRingLayers = nil;
     static dispatch_once_t oncePredicate;
@@ -33,11 +35,11 @@
     return cachedRingLayers;
 }
 
-- (id)initWithAnnotation:(id<MKAnnotation>)annotation reuseIdentifier:(NSString *)reuseIdentifier size:(CGSize)size {
-    if(self = [super initWithAnnotation:annotation reuseIdentifier:reuseIdentifier]) {
+- (id)initWithAnnotation:(id<MKAnnotation>)annotation reuseIdentifier:(NSString *)reuseIdentifier {
+    if (self = [super initWithAnnotation:annotation reuseIdentifier:reuseIdentifier]) {
         self.layer.anchorPoint = CGPointMake(0.5, 0.5);
         self.calloutOffset = CGPointMake(0, 4);
-        self.bounds = CGRectMake(0, 0, size.width, size.height);
+        self.bounds = CGRectMake(0, 0, kAnnotationSize.width, kAnnotationSize.height);
         self.pulseScaleFactor = 5.3f;
         self.pulseAnimationDuration = 1.5;
         self.outerPulseAnimationDuration = 3;
@@ -57,10 +59,6 @@
         };
     }
     return self;
-}
-
-- (id)initWithAnnotation:(id<MKAnnotation>)annotation reuseIdentifier:(NSString *)reuseIdentifier {
-    return [self initWithAnnotation:annotation reuseIdentifier:reuseIdentifier size:CGSizeMake(22, 22)];
 }
 
 - (void)rebuildLayers {
@@ -100,6 +98,15 @@
     }
 }
 
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+
+    if (self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle) {
+        [[SVPulsingAnnotationView cachedRingImages] removeAllObjects];
+        [self rebuildLayers];
+    }
+}
+
 - (void)willMoveToSuperview:(UIView *)superview {
     if (superview) {
         [self rebuildLayers];
@@ -130,8 +137,9 @@
     }
     
     _annotationColor = [annotationColor copy];
-    _imageView.tintColor = _annotationColor;
-    _headingImageView.tintColor = _annotationColor;
+    // A.B. November 2019: this seems like a mistake...
+    //    _imageView.tintColor = _annotationColor;
+    //    _headingImageView.tintColor = _annotationColor;
     
     if(self.superview)
         [self rebuildLayers];

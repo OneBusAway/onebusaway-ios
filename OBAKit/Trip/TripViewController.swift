@@ -138,6 +138,10 @@ class TripViewController: UIViewController,
             self.mapView.removeAllAnnotations()
             let stops = tripDetails.stopTimes.map { $0.stop }
             self.mapView.addAnnotations(stops)
+
+            if let tripStatus = tripDetails.status {
+                self.mapView.addAnnotation(tripStatus)
+            }
         }
         tripDetailsOperation = op
     }
@@ -188,6 +192,7 @@ class TripViewController: UIViewController,
     }
 
     private var userLocationAnnotationView: PulsingAnnotationView?
+    private var vehicleAnnotationView: PulsingAnnotationView?
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
@@ -196,8 +201,16 @@ class TripViewController: UIViewController,
 
         let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseIdentifier, for: annotation)
 
-        if self.userLocationAnnotationView == nil, let userLocation = annotationView as? PulsingAnnotationView {
-            self.userLocationAnnotationView = userLocation
+        if let annotationView = annotationView as? PulsingVehicleAnnotationView {
+            vehicleAnnotationView = annotationView
+        }
+
+        if let annotationView = annotationView as? PulsingAnnotationView {
+            userLocationAnnotationView = annotationView
+        }
+
+        if let view = annotationView as? MinimalStopAnnotationView {
+            view.selectedArrivalDeparture = arrivalDeparture
         }
 
         return annotationView
@@ -206,7 +219,8 @@ class TripViewController: UIViewController,
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
-        case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
+        case is Stop: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
+        case is TripStatus: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         default: return nil
         }
     }

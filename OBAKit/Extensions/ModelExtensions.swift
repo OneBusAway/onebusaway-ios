@@ -36,3 +36,18 @@ extension Stop: MKAnnotation {
         return Formatters.adjectiveFormOfCardinalDirection(direction)
     }
 }
+
+// MARK: - TripStatus/MKAnnotation
+
+/// Adds conformance to `MKAnnotation` to `TripStatus`.
+/// Includes additional methods for rendering extra data directly onto the map.
+extension TripStatus: MKAnnotation {
+
+    public var coordinate: CLLocationCoordinate2D {
+        lastKnownLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
+    }
+
+    public var title: String? {
+        activeTrip.routeShortName
+    }
+}

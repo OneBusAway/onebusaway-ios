@@ -110,8 +110,11 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     // MARK: - Global Map Helpers
 
     public func registerAnnotationViews(mapView: MKMapView) {
+        mapView.registerAnnotationView(MinimalStopAnnotationView.self)
+        mapView.registerAnnotationView(MKMarkerAnnotationView.self)
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
+        mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
     }
 
     // MARK: - Map Information
