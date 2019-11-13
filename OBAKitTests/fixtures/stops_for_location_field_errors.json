@@ -1,0 +1,10 @@
+{
+	"fieldErrors": {
+		"lon": [
+			"Invalid field value for field \"lon\"."
+		],
+		"lat": [
+			"Invalid field value for field \"lat\"."
+		]
+	}
+}
