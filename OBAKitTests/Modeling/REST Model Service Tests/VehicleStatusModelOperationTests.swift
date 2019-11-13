@@ -123,7 +123,7 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.phase) == "in_progress"
                 expect(tripStatus.position!.coordinate.latitude).to(beCloseTo(47.60339847, within: 0.01))
                 expect(tripStatus.position!.coordinate.longitude).to(beCloseTo(-122.33187637, within: 0.01))
-                expect(tripStatus.predicted).to(beTrue())
+                expect(tripStatus.isRealTime).to(beTrue())
                 expect(tripStatus.scheduleDeviation) == 219
                 expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
                 expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 07, minute: 00, second: 00)
