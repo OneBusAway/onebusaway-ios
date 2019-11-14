@@ -16,7 +16,8 @@ public class StopProblemModelOperation: RESTModelOperation {
 
         guard
             let apiOperation = apiOperation,
-            let response = apiOperation.response
+            let response = apiOperation.response,
+            !hasError
         else {
             return
         }

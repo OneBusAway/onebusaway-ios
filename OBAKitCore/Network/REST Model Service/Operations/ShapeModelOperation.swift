@@ -14,6 +14,11 @@ public class ShapeModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         polyline = decodeModels(type: PolylineEntity.self).first?.polyline
     }
 }

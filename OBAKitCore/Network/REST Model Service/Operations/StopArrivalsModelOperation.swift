@@ -13,6 +13,11 @@ public class StopArrivalsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         stopArrivals = decodeModels(type: StopArrivals.self).first
     }
 }

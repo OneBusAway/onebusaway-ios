@@ -16,6 +16,11 @@ public class AgenciesWithCoverageModelOperation: RESTModelOperation {
     /// - Note: Do not call this method directly. It will be invoked by the `OperationQueue` that manages this operation.
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         agenciesWithCoverage = decodeModels(type: AgencyWithCoverage.self)
     }
 }

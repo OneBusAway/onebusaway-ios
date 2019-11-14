@@ -13,6 +13,11 @@ public class TripArrivalsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         arrivalDeparture = decodeModels(type: ArrivalDeparture.self).first
     }
 }

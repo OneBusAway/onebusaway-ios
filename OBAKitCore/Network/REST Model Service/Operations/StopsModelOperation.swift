@@ -13,6 +13,11 @@ public class StopsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         stops = decodeModels(type: Stop.self)
         stops.loadReferences(references!)
     }

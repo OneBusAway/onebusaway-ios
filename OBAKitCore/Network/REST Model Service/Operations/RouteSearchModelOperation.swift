@@ -13,6 +13,11 @@ public class RouteSearchModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         routes = decodeModels(type: Route.self)
         routes.loadReferences(references!)
     }

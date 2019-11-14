@@ -25,7 +25,7 @@ public class RESTAPIOperation: NetworkOperation {
     }
 
     /// `"fieldErrors"` API data
-    public var fieldErrors: [Error]? {
+    public var fieldErrors: [LocalizedError]? {
         restDecoder?.fieldErrors
     }
 

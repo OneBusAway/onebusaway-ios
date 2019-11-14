@@ -78,18 +78,21 @@ class StopsModelOperationTests: OBATestCase {
             }
         }
     }
-    
+
     func testLoading_invalidCoordinate() {
-        // http://api.pugetsound.onebusaway.org/api/where/stops-for-location.json?lat=nan&lon=nan&latSpan=0.0&lonSpan=0.0&key=test&app_uid=0C816EC3-753B-4D17-A837-DF624E2F12F4&app_ver=1.0&version=2
-        
         stub(condition: isHost(self.host) && isPath(StopsOperation.apiPath)) { _ in
             return OHHTTPStubsResponse.JSONFile(named: "stops_for_location_field_errors.json")
         }
-        
+
         waitUntil { done in
             let op = self.restModelService.getStops(region: MKCoordinateRegion(center: kCLLocationCoordinate2DInvalid, span: MKCoordinateSpan(latitudeDelta: 0, longitudeDelta: 0)))
             op.completionBlock = {
-                self.checkExpectations(op)
+                expect(op.hasError).to(beTrue())
+
+                let errors = op.fieldErrors!
+                expect(errors.count) == 2
+                expect(errors[0].errorDescription) == "Invalid field value for field \"lon\"."
+                expect(errors[1].errorDescription) == "Invalid field value for field \"lat\"."
                 done()
             }
         }

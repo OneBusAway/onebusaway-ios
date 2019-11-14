@@ -19,6 +19,11 @@ public class RegionsModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         responseData = apiOperation?.data
         regions = decodeModels(type: Region.self)
     }

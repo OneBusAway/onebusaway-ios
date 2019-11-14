@@ -13,6 +13,11 @@ public class StopsForRouteModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         stopsForRoute = decodeModels(type: StopsForRoute.self).first
     }
 }

@@ -16,7 +16,8 @@ public class CurrentTimeModelOperation: RESTModelOperation {
 
         guard
             let apiOperation = apiOperation as? CurrentTimeOperation,
-            let time = apiOperation.currentTime
+            let time = apiOperation.currentTime,
+            !hasError
         else {
             return
         }

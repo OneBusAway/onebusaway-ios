@@ -15,14 +15,13 @@ public class TripProblemModelOperation: RESTModelOperation {
         super.main()
 
         guard
-            let apiOperation = apiOperation,
-            let response = apiOperation.response
-            else {
-                return
+            !hasError,
+            let response = apiOperation?.response
+        else {
+            success = false
+            return
         }
 
-        let statusCode = response.statusCode
-
-        success = (statusCode == 200)
+        success = response.statusCode == 200
     }
 }

@@ -7,8 +7,13 @@
 
 import Foundation
 
-enum FieldError: Error {
-    case invalid(String)
+struct FieldError: LocalizedError {
+    let message: String
+
+    var errorDescription: String? { message }
+    var failureReason: String? { nil }
+    var recoverySuggestion: String? { nil }
+    var helpAnchor: String? { nil }
 }
 
 /// Decodes raw `Data` from the REST API into a list of API `entries` and `references`.
@@ -20,7 +25,7 @@ public class RESTDataDecoder: NSObject {
     /// Deserialized JSON version of `data`.
     public let decodedJSONBody: Any?
 
-    public let fieldErrors: [Error]?
+    public let fieldErrors: [LocalizedError]?
 
     /// A list of entries from the `decodedJSONBody`.
     ///
@@ -68,7 +73,7 @@ public class RESTDataDecoder: NSObject {
     ///   }
     /// }
     /// ```
-    private class func decodeFieldErrors(from decodedJSONBody: Any?) -> [Error]? {
+    private class func decodeFieldErrors(from decodedJSONBody: Any?) -> [FieldError]? {
         guard
             let dict = decodedJSONBody as? NSDictionary,
             let dataField = dict["fieldErrors"] as? NSDictionary
@@ -76,14 +81,14 @@ public class RESTDataDecoder: NSObject {
             return nil
         }
 
-        var allErrors = [Error]()
+        var allErrors = [FieldError]()
 
         for (_, v) in dataField {
             if let rawErrors = v as? [String] {
-                allErrors.append(contentsOf: rawErrors.compactMap({ FieldError.invalid($0) }))
+                allErrors.append(contentsOf: rawErrors.compactMap({ FieldError(message: $0) }))
             }
             else if let rawError = v as? String {
-                allErrors.append(FieldError.invalid(rawError))
+                allErrors.append(FieldError(message: rawError))
             }
         }
 

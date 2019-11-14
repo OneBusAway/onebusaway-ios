@@ -13,6 +13,11 @@ public class VehicleStatusModelOperation: RESTModelOperation {
 
     override public func main() {
         super.main()
+
+        guard !hasError else {
+            return
+        }
+
         vehicles = decodeModels(type: VehicleStatus.self)
     }
 }
