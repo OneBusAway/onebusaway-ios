@@ -9,6 +9,7 @@
 import Foundation
 import CocoaLumberjackSwift
 
+/// Base class for model operations that deal with the OBA REST API.
 public class RESTModelOperation: Operation {
     public var apiOperation: RESTAPIOperation?
     public private(set) var references: References?
@@ -47,7 +48,7 @@ public class RESTModelOperation: Operation {
         apiOperation?.error
     }
 
-    public var fieldErrors: [Error]? {
+    public var fieldErrors: [LocalizedError]? {
         apiOperation?.fieldErrors
     }
 

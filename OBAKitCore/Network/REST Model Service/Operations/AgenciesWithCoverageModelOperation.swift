@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `[AgencyWithCoverage]` model response to an API request to the `/api/where/agencies-with-coverage.json` endpoint.
 public class AgenciesWithCoverageModelOperation: RESTModelOperation {
     public private(set) var agenciesWithCoverage = [AgencyWithCoverage]()
 

@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `StopArrivals` model response to an API request to the `/api/where/arrivals-and-departures-for-stop/{id}.json` endpoint.
 public class StopArrivalsModelOperation: RESTModelOperation {
     public private(set) var stopArrivals: StopArrivals?
 

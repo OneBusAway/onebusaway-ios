@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `StopsForRoute` model response to an API request to the `/api/where/stops-for-route/{id}.json` endpoint.
 public class StopsForRouteModelOperation: RESTModelOperation {
     public private(set) var stopsForRoute: StopsForRoute?
 

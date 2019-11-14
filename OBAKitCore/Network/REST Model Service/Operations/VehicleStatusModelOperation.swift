@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `[VehicleStatus]` model response from a request to `/api/where/vehicle/{id}.json`.
 public class VehicleStatusModelOperation: RESTModelOperation {
     public private(set) var vehicles: [VehicleStatus] = []
 

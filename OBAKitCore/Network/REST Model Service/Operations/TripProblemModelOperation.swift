@@ -8,6 +8,8 @@
 
 import Foundation
 
+/// Wraps the server response for submitting a trip problem report to the
+/// `/api/where/report-problem-with-trip/{stopID}.json` endpoint.
 public class TripProblemModelOperation: RESTModelOperation {
     public private(set) var success: Bool?
 

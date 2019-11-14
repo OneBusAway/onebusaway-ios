@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `TripDetails` model response to a request to the  `/api/where/trip-details/{id}.json` endpoint.
 public class TripDetailsModelOperation: RESTModelOperation {
     public private(set) var tripDetails: TripDetails?
 

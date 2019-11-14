@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `[Route]` model response to an API request to the `/api/where/routes-for-location.json` endpoint.
 public class RouteSearchModelOperation: RESTModelOperation {
     public private(set) var routes = [Route]()
 

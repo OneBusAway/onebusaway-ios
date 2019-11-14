@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `Date` model response to an API request to the `/api/where/current-time.json` endpoint.
 public class CurrentTimeModelOperation: RESTModelOperation {
     public private(set) var currentTime: Date?
 

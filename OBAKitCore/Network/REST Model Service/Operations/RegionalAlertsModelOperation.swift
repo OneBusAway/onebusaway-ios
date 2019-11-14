@@ -8,10 +8,11 @@
 
 import Foundation
 
-protocol HasAgencyAlerts: NSObjectProtocol {
-    var agencyAlerts: [AgencyAlert] { get }
-}
-
+/// Creates a `[AgencyAlertsModelOperation]` model response to several API requests
+/// to the `/api/gtfs_realtime/alerts-for-agency/{ID}.pb` endpoint.
+///
+/// This class accumulates responses to requests to individual agencies operating in the current region, and provides a flattened list
+/// of all `AgencyAlert`s for the region.
 public class RegionalAlertsModelOperation: Operation, HasAgencyAlerts {
     public var agencyAlertsOperations = [AgencyAlertsModelOperation]()
     public private(set) var agencyAlerts = [AgencyAlert]()
@@ -33,6 +34,10 @@ public class RegionalAlertsModelOperation: Operation, HasAgencyAlerts {
     }
 }
 
+/// Creates a `[AgencyAlert]` GTFS-RT model response to an API request to
+/// `/api/gtfs_realtime/alerts-for-agency/{ID}.pb`.
+///
+/// - Note: Normally you will not interact directly with this class, but use `RegionalAlertsModelOperation` instead.
 public class AgencyAlertsModelOperation: Operation, HasAgencyAlerts, APIAssignee {
     public private(set) var agencyAlerts = [AgencyAlert]()
 
@@ -78,4 +83,9 @@ public class AgencyAlertsModelOperation: Operation, HasAgencyAlerts, APIAssignee
 
         self.agencyAlerts = agencyAlerts
     }
+}
+
+/// Describes a class that can return a list of `AgencyAlert`s.
+protocol HasAgencyAlerts: NSObjectProtocol {
+    var agencyAlerts: [AgencyAlert] { get }
 }

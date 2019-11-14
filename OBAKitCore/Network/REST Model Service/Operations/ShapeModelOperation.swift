@@ -9,6 +9,7 @@
 import Foundation
 import MapKit
 
+/// Creates a `MKPolyline` model response to an API request to the `/api/where/shape/{id}.json` endpoint.
 public class ShapeModelOperation: RESTModelOperation {
     public private(set) var polyline: MKPolyline?
 

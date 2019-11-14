@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Creates a `[Stop]` model response to an API request to the `/api/where/stops-for-location.json` endpoint.
 public class StopsModelOperation: RESTModelOperation {
     public private(set) var stops: [Stop] = []
 
