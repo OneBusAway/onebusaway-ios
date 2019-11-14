@@ -7,6 +7,10 @@
 
 import Foundation
 
+enum FieldError: Error {
+    case invalid(String)
+}
+
 /// Decodes raw `Data` from the REST API into a list of API `entries` and `references`.
 public class RESTDataDecoder: NSObject {
 
@@ -15,6 +19,8 @@ public class RESTDataDecoder: NSObject {
 
     /// Deserialized JSON version of `data`.
     public let decodedJSONBody: Any?
+
+    public let fieldErrors: [Error]?
 
     /// A list of entries from the `decodedJSONBody`.
     ///
@@ -32,12 +38,56 @@ public class RESTDataDecoder: NSObject {
     public init(data: Data) throws {
         self.data = data
 
-        self.decodedJSONBody = try JSONSerialization.jsonObject(with: self.data, options: [])// as! NSObject
+        self.decodedJSONBody = try JSONSerialization.jsonObject(with: self.data, options: [])
 
-        if let (entries, references) = RESTDataDecoder.decodeEntriesAndReferences(from: self.decodedJSONBody) {
+        if let fieldErrors = RESTDataDecoder.decodeFieldErrors(from: decodedJSONBody) {
+            self.fieldErrors = fieldErrors
+        }
+        else {
+            self.fieldErrors = nil
+        }
+
+        if let (entries, references) = RESTDataDecoder.decodeEntriesAndReferences(from: decodedJSONBody) {
             self.entries = entries
             self.references = references
         }
+        else {
+            self.entries = nil
+            self.references = nil
+        }
+    }
+
+    /// Decodes `"fieldErrors"` data in the response body, if it exists.
+    /// - Parameter decodedJSONBody: The decoded JSON body of the REST API response.
+    ///
+    /// Example body:
+    ///
+    /// ```
+    /// { "fieldErrors": {
+    ///     "lon": [ "Invalid field value for field \"lon\"." ]
+    ///   }
+    /// }
+    /// ```
+    private class func decodeFieldErrors(from decodedJSONBody: Any?) -> [Error]? {
+        guard
+            let dict = decodedJSONBody as? NSDictionary,
+            let dataField = dict["fieldErrors"] as? NSDictionary
+        else {
+            return nil
+        }
+
+        var allErrors = [Error]()
+
+        for (_, v) in dataField {
+            if let rawErrors = v as? [String] {
+                allErrors.append(contentsOf: rawErrors.compactMap({ FieldError.invalid($0) }))
+            }
+            else if let rawError = v as? String {
+                allErrors.append(FieldError.invalid(rawError))
+            }
+        }
+
+        return allErrors
     }
 
     private class func decodeEntriesAndReferences(from decodedJSONBody: Any?) -> (entries: [[String: Any]]?, references: [String: Any]?)? {

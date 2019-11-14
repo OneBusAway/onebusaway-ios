@@ -28,8 +28,27 @@ public class RESTModelOperation: Operation {
         }
     }
 
+    // MARK: - Errors
+
+    /// Returns `true` if this operation has returned an error on data retrieval or decode.
+    public var hasError: Bool {
+        if error != nil {
+            return true
+        }
+        else if let fieldErrors = fieldErrors {
+            return fieldErrors.count > 0
+        }
+        else {
+            return false
+        }
+    }
+
     public var error: Error? {
-        return apiOperation?.error
+        apiOperation?.error
+    }
+
+    public var fieldErrors: [Error]? {
+        apiOperation?.fieldErrors
     }
 
     // MARK: - Decoder Helpers

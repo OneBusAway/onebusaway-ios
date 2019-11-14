@@ -13,24 +13,32 @@ import Foundation
 /// - Note: An `error` with Domain=NSCocoaErrorDomain, Code=3840 usually means that you're hitting a captive portal.
 ///
 public class RESTAPIOperation: NetworkOperation {
+
+    /// `"entries"` API data
     public var entries: [[String: Any]]? {
         return restDecoder?.entries
     }
 
+    /// `"references"` API data
     public var references: [String: Any]? {
         return restDecoder?.references
     }
 
+    /// `"fieldErrors"` API data
+    public var fieldErrors: [Error]? {
+        restDecoder?.fieldErrors
+    }
+
     /// Only available after `-setData:response:error:` is called.
-    internal var restDecoder: RESTDataDecoder?
+    var restDecoder: RESTDataDecoder?
 
     /// The full JSON body decoded from `data`. Only available after `-setData:response:error:` is called.
-    internal var decodedJSONBody: Any? {
+    var decodedJSONBody: Any? {
         return restDecoder?.decodedJSONBody
     }
 
     /// Override this method in order to perform data-shaping after the raw data has been loaded.
-    internal func dataFieldsDidSet() {
+    func dataFieldsDidSet() {
         // nop
     }
 
