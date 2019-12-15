@@ -62,7 +62,7 @@ public class NetworkOperation: AsyncOperation {
 
     class func buildURL(fromBaseURL baseURL: URL, path: String, queryItems: [URLQueryItem]) -> URL {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = path
+        components.appendPath(path)
         components.queryItems = queryItems
 
         return components.url!

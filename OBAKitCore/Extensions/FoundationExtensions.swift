@@ -227,6 +227,25 @@ public extension URL {
     }
 }
 
+// MARK: - URLComponents
+
+extension URLComponents {
+    /// Adds `appendedPath` to the `path` property.
+    /// For example, if you have path `/api/`, calling `appendPath("foo")` will result in the `path`
+    /// equaling `/api/foo`.
+    /// - Parameter appendedPath: The path value to append to the receiver.
+    mutating func appendPath(_ appendedPath: String) {
+        if path.hasSuffix("/") && appendedPath.hasPrefix("/") {
+            path = [path, appendedPath].joined(separator: "")
+        }
+        else {
+            path = [path, appendedPath].joined(separator: "/")
+        }
+
+        path = path.replacingOccurrences(of: "//", with: "/")
+    }
+}
+
 // MARK: - UUID
 
 public extension UUID {
