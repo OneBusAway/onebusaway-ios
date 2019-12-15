@@ -9,6 +9,7 @@
 import Foundation
 import CoreLocation
 import MapKit
+import CocoaLumberjackSwift
 
 public class RESTAPIService: APIService {
 
@@ -324,6 +325,9 @@ public class RESTAPIService: APIService {
     private func buildAndEnqueueOperation<T>(type: T.Type, url: URL) -> T where T: RESTAPIOperation {
         let request = type.buildRequest(for: url)
         let operation = type.init(request: request)
+
+        DDLogVerbose("Enqueuing URL: \(url.absoluteString)")
+
         networkQueue.addOperation(operation)
 
         return operation
