@@ -8,6 +8,7 @@
 
 import Foundation
 import CoreLocation
+import MapKit
 
 public class TestData: NSObject {
 
@@ -25,4 +26,8 @@ public class TestData: NSObject {
     }()
 
     public static let mockHeading = OBAMockHeading(heading: 45.0)
+
+    public static let seattleMapRect = MKMapRect(x: 43013871.99811534, y: 93728205.2278356, width: 1984.0073646754026, height: 3397.6126077622175)
+    public static let seattleMapRectCenter = CLLocationCoordinate2D(latitude: 47.62365100, longitude: -122.31257200)
+    public static let seattleMapRectRadius = 197.86
 }

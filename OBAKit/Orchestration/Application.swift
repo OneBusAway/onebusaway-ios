@@ -163,9 +163,9 @@ public class Application: NSObject,
 
         super.init()
 
-        configureAppearanceProxies()
-
         configureLogging()
+
+        configureAppearanceProxies()
 
         locationService.addDelegate(self)
         regionsService.addDelegate(self)

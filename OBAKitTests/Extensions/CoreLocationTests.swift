@@ -18,12 +18,11 @@ class CoreLocationTests: XCTestCase {
     // MARK: - CLCircularRegion
 
     func test_creation_fromMapRect() {
-        let mapRect = MKMapRect(x: 43013871.99811534, y: 93728205.2278356, width: 1984.0073646754026, height: 3397.6126077622175)
-        let region = CLCircularRegion(mapRect: mapRect)
+        let region = CLCircularRegion(mapRect: TestData.seattleMapRect)
 
-        expect(region.center.latitude).to(beCloseTo(47.62365100))
-        expect(region.center.longitude).to(beCloseTo(-122.31257200))
-        expect(region.radius).to(beCloseTo(197.86, within: 0.1))
+        expect(region.center.latitude).to(beCloseTo(TestData.seattleMapRectCenter.latitude))
+        expect(region.center.longitude).to(beCloseTo(TestData.seattleMapRectCenter.longitude))
+        expect(region.radius).to(beCloseTo(TestData.seattleMapRectRadius, within: 0.1))
     }
 
     // MARK: - Distance
