@@ -8,6 +8,11 @@ github "apple/swift-protobuf" ~>1.6.0
 # https://github.com/CocoaLumberjack/CocoaLumberjack/releases
 git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.5.3
 
+## Data and Networking
+
+# https://github.com/rwbutler/Connectivity/releases
+github "rwbutler/Connectivity" ~>3.3.3
+
 ## UI
 
 # https://github.com/Instagram/IGListKit/releases

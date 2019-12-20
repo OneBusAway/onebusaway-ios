@@ -116,6 +116,7 @@ targets:
       - carthage: BLTNBoard
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
+      - carthage: Connectivity
       - carthage: Eureka
       - carthage: FloatingPanel
       - carthage: IGListKit
