@@ -60,7 +60,7 @@ public class SearchManager: NSObject {
     public func search(request: SearchRequest) {
         guard
             let modelService = application.restAPIModelService,
-            let mapRect = application.mapRegionManager.visibleMapRect
+            let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }

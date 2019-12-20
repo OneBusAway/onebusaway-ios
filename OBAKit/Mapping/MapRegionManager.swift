@@ -10,6 +10,7 @@ import UIKit
 import CoreLocation
 import MapKit
 import OBAKitCore
+import CocoaLumberjackSwift
 
 // MARK: - MapRegionDelegate
 
@@ -32,7 +33,7 @@ public protocol MapRegionDelegate {
 
 // MARK: - MapRegionManager
 
-public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelegate {
+public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelegate, RegionsServiceDelegate {
 
     private let application: Application
 
@@ -78,6 +79,37 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     }
     private let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
 
+    /// Provides storage for the last visible map rect of the map view.
+    /// 
+    /// In the event that this value is unavailable, the getter will try to offer up an alternative,
+    /// such as the current region's service rect.
+    public var lastVisibleMapRect: MKMapRect? {
+        get {
+            var lastRect = application.regionsService.currentRegion?.serviceRect
+
+            guard let rawValue = application.userDefaults.value(forKey: lastVisibleMapRectKey) as? Data else {
+                return lastRect
+            }
+
+            do {
+                lastRect = try PropertyListDecoder().decode(MKMapRect.self, from: rawValue)
+            } catch let error {
+                DDLogError("Unable to decode last visible map rect: \(error)")
+            }
+
+            return lastRect
+        }
+        set {
+            do {
+                let encodedValue = try PropertyListEncoder().encode(newValue)
+                application.userDefaults.set(encodedValue, forKey: lastVisibleMapRectKey)
+            } catch let error {
+                DDLogError("Unable to encode last visible map rect: \(error)")
+            }
+        }
+    }
+    private let lastVisibleMapRectKey = "mapRegionManager.lastVisibleMapRect"
+
     // MARK: - Init
 
     public init(application: Application) {
@@ -97,7 +129,10 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         mapView.showsTraffic = mapViewShowsTraffic
 
         registerAnnotationViews(mapView: mapView)
+
         mapView.delegate = self
+
+        renderRegionsOnMap()
     }
 
     deinit {
@@ -115,27 +150,6 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
-    }
-
-    // MARK: - Map Information
-
-    public var visibleMapRect: MKMapRect? {
-        get {
-            guard let currentRegion = application.regionsService.currentRegion else {
-                return nil
-            }
-
-            if currentRegion.serviceRect.contains(mapView.visibleMapRect) {
-                return mapView.visibleMapRect
-            }
-            else {
-                return currentRegion.serviceRect
-            }
-        }
-        set {
-            guard let newValue = newValue else { return }
-            mapView.visibleMapRect = newValue
-        }
     }
 
     // MARK: - Data Loading
@@ -257,29 +271,13 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
     // MARK: - Map Status Overlay
 
-    private lazy var statusOverlay = StatusOverlayView.autolayoutNew()
-
-    /// This method will add `statusOverlay` as a subview of `mapView`, and set up necessary constraints.
-    /// Call it in `viewDidAppear` of the view controller that hosts `mapView`.
-    ///
-    /// - Note: This method can be called repeatedly, and will not have any effect after the first invocation.
-    ///
-    public func addStatusOverlayToMap() {
-        guard statusOverlay.superview == nil else {
-            return
-        }
-
-        mapView.addSubview(statusOverlay)
-
-        NSLayoutConstraint.activate([
-            statusOverlay.centerXAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.centerXAnchor),
-            statusOverlay.topAnchor.constraint(equalTo: mapView.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding)
-        ])
-    }
+    public weak var statusOverlay: StatusOverlayView?
 
     private static let requiredHeightToShowStops = 75000.0
 
     private func updateZoomWarningOverlay(mapHeight: Double) {
+        guard let statusOverlay = statusOverlay else { return }
+
         let animated = statusOverlay.superview != nil
 
         if mapHeight > MapRegionManager.requiredHeightToShowStops {
@@ -383,6 +381,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         updateZoomWarningOverlay(mapHeight: mapView.visibleMapRect.height)
 
         guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
+            mapView.removeAnnotations(type: Stop.self)
             return
         }
 
@@ -391,7 +390,25 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
 
+    private var isHidingRegions: Bool? {
+        didSet {
+            if oldValue != isHidingRegions {
+                let val = isHidingRegions ?? true
+                application.regionsService.regions
+                    .compactMap { mapView.view(for: $0) }
+                    .forEach { $0.isHidden = val }
+            }
+        }
+    }
+
+    private func reloadRegionAnnotations() {
+        isHidingRegions = mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops
+    }
+
     public func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+        lastVisibleMapRect = mapView.visibleMapRect
+
+        reloadRegionAnnotations()
         reloadStopAnnotations()
     }
 
@@ -434,18 +451,33 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
+        case is Region: return MKMapView.reuseIdentifier(for: MKMarkerAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         default: return nil
         }
     }
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-        let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
-        renderer.strokeColor = ThemeColors.shared.primary.withAlphaComponent(0.75)
-        renderer.lineWidth = 3.0
-        renderer.lineCap = .round
+        if let overlay = overlay as? MKPolyline {
+            let renderer = MKPolylineRenderer(polyline: overlay)
+            renderer.strokeColor = ThemeColors.shared.primary.withAlphaComponent(0.75)
+            renderer.lineWidth = 3.0
+            renderer.lineCap = .round
 
-        return renderer
+            return renderer
+        }
+
+        fatalError() // :(
+    }
+
+    // MARK: - Regions
+
+    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        renderRegionsOnMap()
+    }
+
+    private func renderRegionsOnMap() {
+        mapView.updateAnnotations(with: application.regionsService.regions)
     }
 }
 

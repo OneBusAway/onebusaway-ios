@@ -17,7 +17,15 @@ public protocol NearbyDelegate: NSObjectProtocol {
     func nearbyController(_ nearbyController: NearbyViewController, moveTo position: FloatingPanelPosition, animated: Bool)
 }
 
-public class NearbyViewController: VisualEffectViewController, ListProvider, SearchDelegate, ListAdapterDataSource, ModelViewModelConverters, UISearchBarDelegate {
+/// This is the view controller that powers the drawer on the `MapViewController`.
+public class NearbyViewController: VisualEffectViewController,
+    ListAdapterDataSource,
+    ListProvider,
+    ModelViewModelConverters,
+    SearchDelegate,
+    RegionsServiceDelegate,
+    UISearchBarDelegate {
+
     let mapRegionManager: MapRegionManager
 
     public weak var nearbyDelegate: NearbyDelegate?
@@ -40,10 +48,13 @@ public class NearbyViewController: VisualEffectViewController, ListProvider, Sea
         super.init(nibName: nil, bundle: nil)
 
         self.mapRegionManager.addDelegate(self)
+
+        self.application.regionsService.addDelegate(self)
     }
 
     deinit {
         mapRegionManager.removeDelegate(self)
+        application.regionsService.removeDelegate(self)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -73,10 +84,6 @@ public class NearbyViewController: VisualEffectViewController, ListProvider, Sea
         let searchBar = UISearchBar.autolayoutNew()
         searchBar.searchBarStyle = .minimal
         searchBar.delegate = self
-
-        if let region = application.regionsService.currentRegion {
-            searchBar.placeholder = Formatters.searchPlaceholderText(region: region)
-        }
         return searchBar
     }()
 
@@ -84,6 +91,9 @@ public class NearbyViewController: VisualEffectViewController, ListProvider, Sea
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        updateSearchBarPlaceholderText()
+
         prepareChildController(collectionController) {
             visualEffectView.contentView.addSubview(stackView)
             stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset, leading: 0, bottom: 0, trailing: 0))
@@ -91,6 +101,12 @@ public class NearbyViewController: VisualEffectViewController, ListProvider, Sea
     }
 
     // MARK: - Search UI and Data
+
+    private func updateSearchBarPlaceholderText() {
+        if let region = application.regionsService.currentRegion {
+            searchBar.placeholder = Formatters.searchPlaceholderText(region: region)
+        }
+    }
 
     func performSearch(request: SearchRequest) {
         searchBar.resignFirstResponder()
@@ -204,5 +220,11 @@ extension NearbyViewController: MapRegionDelegate {
 
     public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
 //        surfaceView()?.hideProgressBar()
+    }
+
+    // MARK: - RegionsServiceDelegate
+
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        updateSearchBarPlaceholderText()
     }
 }

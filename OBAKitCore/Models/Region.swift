@@ -370,6 +370,19 @@ public class Region: NSObject, Codable {
         let lon: Double
         let latSpan: Double
         let lonSpan: Double
+
+        /// The center coordinate of this `RegionBound`
+        var coordinate: CLLocationCoordinate2D {
+            CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        }
+
+        var latSpanMeters: CLLocationDistance {
+            111320.0 * latSpan
+        }
+
+        var lonSpanMeters: CLLocationDistance {
+            40075000.0 * cos(lat) / 360.0
+        }
     }
 
     /// An internal array of region boundaries. Use `serviceRect` instead.

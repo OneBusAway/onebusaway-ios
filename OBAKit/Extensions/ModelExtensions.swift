@@ -9,6 +9,18 @@ import Foundation
 import MapKit
 import OBAKitCore
 
+// MARK: - Region/MKAnnotation
+
+extension Region: MKAnnotation {
+    public var coordinate: CLLocationCoordinate2D {
+        centerCoordinate
+    }
+
+    public var title: String? {
+        name
+    }
+}
+
 // MARK: - Stop/MKAnnotation
 
 /// Adds conformance to `MKAnnotation` to `Stop`.

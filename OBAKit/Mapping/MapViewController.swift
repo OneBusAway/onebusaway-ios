@@ -24,7 +24,7 @@ public class MapViewController: UIViewController,
 
     // MARK: - Hoverbar
 
-    lazy var floatingToolbar: HoverBar = {
+    lazy var toolbar: HoverBar = {
         let hover = HoverBar.autolayoutNew()
         hover.tintColor = ThemeColors.shared.label
         hover.stackView.addArrangedSubview(locationButton)
@@ -63,15 +63,6 @@ public class MapViewController: UIViewController,
         weatherOperation?.cancel()
     }
 
-    // MARK: - Map Compass
-
-    private lazy var compassButton: MKCompassButton = {
-        let compassBtn = MKCompassButton(mapView: mapRegionManager.mapView)
-        compassBtn.translatesAutoresizingMaskIntoConstraints = false
-        compassBtn.compassVisibility = .adaptive
-        return compassBtn
-    }()
-
     // MARK: - UIViewController
 
     public override func viewDidLoad() {
@@ -84,17 +75,26 @@ public class MapViewController: UIViewController,
 
         floatingPanel.addPanel(toParent: self)
 
-        view.insertSubview(floatingToolbar, aboveSubview: mapView)
+        view.insertSubview(toolbar, aboveSubview: mapView)
         view.addSubview(compassButton)
 
         NSLayoutConstraint.activate([
-            floatingToolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            floatingToolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
-            floatingToolbar.widthAnchor.constraint(equalToConstant: 40.0),
+            toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
+            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.widthAnchor.constraint(equalToConstant: 40.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             compassButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            compassButton.topAnchor.constraint(equalTo: floatingToolbar.bottomAnchor, constant: ThemeMetrics.padding)
+            compassButton.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: ThemeMetrics.padding)
+        ])
+
+        mapRegionManager.statusOverlay = statusOverlay
+        view.addSubview(statusOverlay)
+
+        NSLayoutConstraint.activate([
+            statusOverlay.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -8.0),
+            statusOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8.0),
+            statusOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8.0)
         ])
     }
 
@@ -106,6 +106,9 @@ public class MapViewController: UIViewController,
         if let currentRegion = application.regionsService.currentRegion {
             if let location = application.locationService.currentLocation {
                 programmaticallyUpdateVisibleMapRegion(location: location)
+            }
+            else if let lastVisibleRegion = mapRegionManager.lastVisibleMapRect {
+                mapRegionManager.mapView.visibleMapRect = lastVisibleRegion
             }
             else {
                 mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
@@ -120,9 +123,6 @@ public class MapViewController: UIViewController,
         super.viewDidAppear(animated)
 
         loadWeather()
-
-        // Start showing the status overlay on the map once this controller has appeared.
-        mapRegionManager.addStatusOverlayToMap()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -148,6 +148,15 @@ public class MapViewController: UIViewController,
         button.addTarget(self, action: #selector(centerMapOnUserLocation), for: .touchUpInside)
         button.accessibilityLabel = NSLocalizedString("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
+    }()
+
+    // MARK: - Map Compass
+
+    private lazy var compassButton: MKCompassButton = {
+        let compassBtn = MKCompassButton(mapView: mapRegionManager.mapView)
+        compassBtn.translatesAutoresizingMaskIntoConstraints = false
+        compassBtn.compassVisibility = .adaptive
+        return compassBtn
     }()
 
     // MARK: - Weather
@@ -203,6 +212,10 @@ public class MapViewController: UIViewController,
     func show(stop: Stop) {
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
+
+    // MARK: - Status Overlay
+
+    private let statusOverlay = StatusOverlayView.autolayoutNew()
 
     // MARK: - Floating Panel Controller
 
@@ -274,6 +287,22 @@ public class MapViewController: UIViewController,
     }
 
     // MARK: - MapRegionDelegate
+
+    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        if let region = view.annotation as? Region {
+            let title = NSLocalizedString("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
+            let messageFmt = NSLocalizedString("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
+            let alert = UIAlertController(title: title, message: String(format: messageFmt, region.name), preferredStyle: .alert)
+            alert.addAction(UIAlertAction.cancelAction)
+            alert.addAction(UIAlertAction(title: NSLocalizedString("map_controller.change_region_alert.button", value: "Change Region", comment: "Change Region button on the alert that appears when the user is updating their current region manually."), style: .default, handler: { _ in
+                self.application.regionsService.currentRegion = region
+            }))
+
+            present(alert, animated: true) {
+                mapView.deselectAnnotation(view.annotation, animated: true)
+            }
+        }
+    }
 
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stop = view.annotation as? Stop else {
