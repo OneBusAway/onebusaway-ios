@@ -56,6 +56,14 @@
     return YES;
 }
 
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    [self.app applicationDidBecomeActive:application];
+}
+
+- (void)applicationWillResignActive:(UIApplication *)application {
+    [self.app applicationWillResignActive:application];
+}
+
 #pragma mark - OBAApplicationDelegate
 
 - (UIApplication*)uiApplication {

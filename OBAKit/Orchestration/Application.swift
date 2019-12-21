@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Connectivity
 import CoreLocation
 import OBAKitCore
 import CocoaLumberjackSwift
@@ -64,6 +65,7 @@ public class Application: NSObject,
     ObacoServiceDelegate,
     PushServiceDelegate,
     RegionsServiceDelegate {
+
     // MARK: - Private Properties
 
     /// App configuration parameters: API keys, region server, user UUID, and other
@@ -178,6 +180,8 @@ public class Application: NSObject,
         refreshObacoService()
 
         alertsStore.checkForUpdates()
+
+        configureConnectivity()
     }
 
     // MARK: - App State Management
@@ -233,6 +237,36 @@ public class Application: NSObject,
         delegate?.performTestCrash?()
     }
 
+    // MARK: - Reachability
+
+    /// Provides information on the current status of the app's network connection
+    ///
+    /// In other words, it answers the following questions:
+    /// 1. Is the network (WiFi or Cellular) currently working?
+    /// 2. Is the server working?
+    public let connectivity = Connectivity()
+
+    private var reachabilityBulletin: ReachabilityBulletin?
+
+    /// This method must only be called once when the `Application` object is first created.
+    private func configureConnectivity() {
+        connectivity.framework = .network
+
+        connectivity.whenConnected = { [weak self] connectivity in
+            self?.reachabilityBulletin?.dismiss()
+        }
+
+        connectivity.whenDisconnected = { [weak self] connectivity in
+            guard let app = self?.delegate?.uiApplication else { return }
+
+            if self?.reachabilityBulletin == nil {
+                self?.reachabilityBulletin = ReachabilityBulletin()
+            }
+
+            self?.reachabilityBulletin?.showStatus(connectivity.status, in: app)
+        }
+    }
+
     // MARK: - Push Notifications
 
     public private(set) var pushService: PushService?
@@ -275,6 +309,14 @@ public class Application: NSObject,
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
         configurePushNotifications(launchOptions: options)
+    }
+
+    @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+        connectivity.startNotifier()
+    }
+
+    @objc public func applicationWillResignActive(_ application: UIApplication) {
+        connectivity.stopNotifier()
     }
 
     public var isIdleTimerDisabled: Bool {

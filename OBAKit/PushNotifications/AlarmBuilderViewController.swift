@@ -42,8 +42,7 @@ class AlarmBuilder: NSObject {
 
     // MARK: - BLTNBoard Components
 
-    public private(set) lazy var bulletinManager: BLTNItemManager = {
-
+    public lazy var bulletinManager: BLTNItemManager = {
         let manager = BLTNItemManager(rootItem: timePickerPage)
         manager.edgeSpacing = .compact
         return manager

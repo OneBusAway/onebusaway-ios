@@ -118,6 +118,13 @@ public class Icons: NSObject {
         imageNamed("header")
     }
 
+    // MARK: - Miscellaneous
+
+    /// An image used to represent an offline internet connection.
+    public class var noInternet: UIImage {
+        imageNamed("no_internet")
+    }
+
     // MARK: - Transport Icons
 
     /// Generates an appropriate icon from the specified route type.

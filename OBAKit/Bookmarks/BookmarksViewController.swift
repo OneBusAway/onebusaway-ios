@@ -62,8 +62,6 @@ public class BookmarksViewController: UIViewController,
 
         reloadTable()
 
-        application.notificationCenter.addObserver(self, selector: #selector(reachabilityChanged), name: Reachability.statusChangedNotification, object: nil)
-
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
 
         application.locationService.addDelegate(self)
@@ -73,17 +71,12 @@ public class BookmarksViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
-        application.notificationCenter.removeObserver(self, name: Reachability.statusChangedNotification, object: nil)
         application.locationService.removeDelegate(self)
 
         timer?.invalidate()
     }
 
     // MARK: - Notifications
-
-    @objc private func reachabilityChanged(note: Notification) {
-        // abxoxo - todo
-    }
 
     @objc private func applicationEnteredBackground(note: Notification) {
         cancelUpdates()
