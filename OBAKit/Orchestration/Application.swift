@@ -151,6 +151,8 @@ public class Application: NSObject,
 
     @objc public let locale = Locale.autoupdatingCurrent
 
+    private var locationPermissionBulletin: LocationPermissionBulletin?
+
     // MARK: - Init
 
     @objc public init(config: AppConfig) {
@@ -190,7 +192,7 @@ public class Application: NSObject,
     /// request user interface. Meant to be called on app launch to determine
     /// which piece of UI should be shown initially.
     @objc public var showPermissionPromptUI: Bool {
-        return locationService.canRequestAuthorization
+        return locationService.canRequestAuthorization && locationService.canPromptUserForPermission
     }
 
     /// Requests that the delegate reloads the application user interface in
@@ -309,6 +311,12 @@ public class Application: NSObject,
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
         configurePushNotifications(launchOptions: options)
+        reloadRootUserInterface()
+
+        if showPermissionPromptUI, let app = delegate?.uiApplication {
+            self.locationPermissionBulletin = LocationPermissionBulletin(locationService: locationService)
+            self.locationPermissionBulletin?.show(in: app)
+        }
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {
@@ -490,6 +498,6 @@ public class Application: NSObject,
     // MARK: - LocationServiceDelegate
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        reloadRootUserInterface()
+        // nop?
     }
 }

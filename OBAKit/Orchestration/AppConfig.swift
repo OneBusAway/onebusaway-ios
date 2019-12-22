@@ -41,7 +41,7 @@ public class AppConfig: NSObject {
             userDefaults: userDefaults,
             analytics: analytics,
             queue: OperationQueue(),
-            locationService: LocationService(locationManager: CLLocationManager())
+            locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager())
         )
     }
 

@@ -45,11 +45,11 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
-
-    [self.app application:application didFinishLaunching:launchOptions];
-
-    [self applicationReloadRootInterface:self.app];
     [self.window makeKeyAndVisible];
+
+    // This method will call -applicationReloadRootInterface:, which creates the
+    // application's UI and attaches it to the window, so no need to do that here.
+    [self.app application:application didFinishLaunching:launchOptions];
 
     [FIRApp configure];
 
@@ -87,17 +87,10 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    if (application.showPermissionPromptUI) {
-        OBAPermissionPromptViewController *promptViewController = [[OBAPermissionPromptViewController alloc] initWithApplication:application];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:promptViewController];
-        self.window.rootViewController = nav;
-    }
-    else {
-        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
-        self.rootController.selectedIndex = self.app.userDataStore.lastSelectedView;
-        self.rootController.delegate = self;
-        self.window.rootViewController = self.rootController;
-    }
+    self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+    self.rootController.selectedIndex = self.app.userDataStore.lastSelectedView;
+    self.rootController.delegate = self;
+    self.window.rootViewController = self.rootController;
 }
 
 - (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {

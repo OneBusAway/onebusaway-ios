@@ -21,6 +21,38 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 @objc(OBALocationService) public class LocationService: NSObject, CLLocationManagerDelegate {
     private var locationManager: LocationManager
 
+    public convenience override init() {
+        self.init(userDefaults: UserDefaults.standard, locationManager: CLLocationManager())
+    }
+
+    public init(userDefaults: UserDefaults, locationManager: LocationManager) {
+        self.locationManager = locationManager
+        authorizationStatus = locationManager.authorizationStatus
+        currentLocation = locationManager.location
+
+        self.userDefaults = userDefaults
+
+        super.init()
+
+        registerDefaults()
+
+        self.locationManager.delegate = self
+    }
+
+    // MARK: - User Defaults
+
+    private let userDefaults: UserDefaults
+
+    private struct UserDefaultsKeys {
+        static let promptUserForLocationPermission = "promptUserForLocationPermission"
+    }
+
+    private func registerDefaults() {
+        userDefaults.register(defaults: [UserDefaultsKeys.promptUserForLocationPermission: true])
+    }
+
+    // MARK: - Location Properties
+
     public private(set) var currentLocation: CLLocation? {
         didSet {
             if let currentLocation = currentLocation {
@@ -33,20 +65,6 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         didSet {
             notifyDelegatesHeadingChanged(currentHeading)
         }
-    }
-
-    public convenience override init() {
-        self.init(locationManager: CLLocationManager())
-    }
-
-    public init(locationManager: LocationManager) {
-        self.locationManager = locationManager
-        authorizationStatus = locationManager.authorizationStatus
-        currentLocation = locationManager.location
-
-        super.init()
-
-        self.locationManager.delegate = self
     }
 
     // MARK: - Delegates
@@ -108,6 +126,20 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// access to location services.
     public var canRequestAuthorization: Bool {
         return authorizationStatus == .notDetermined
+    }
+
+    /// True if the app is allowed to prompt the user for permission and false otherwise.
+    ///
+    /// We have this extra check in place in order to make sure that we only use our
+    /// one chance to request location permissions in a case where the user will
+    /// actually agree to it.
+    public var canPromptUserForPermission: Bool {
+        get {
+            userDefaults.bool(forKey: UserDefaultsKeys.promptUserForLocationPermission)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.promptUserForLocationPermission)
+        }
     }
 
     /// Prompts the user for permission to access location services. (e.g. GPS.)

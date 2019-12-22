@@ -125,6 +125,13 @@ public class Icons: NSObject {
         imageNamed("no_internet")
     }
 
+    /// A larger version of the navigation arrow icon used for the map tab.
+    ///
+    /// The apparent size of this image is 48x48pt.
+    public class var nearMe: UIImage {
+        imageNamed("near_me")
+    }
+
     // MARK: - Transport Icons
 
     /// Generates an appropriate icon from the specified route type.
