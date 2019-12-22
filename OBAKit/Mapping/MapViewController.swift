@@ -114,9 +114,6 @@ public class MapViewController: UIViewController,
                 mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
             }
         }
-        else {
-            application.manuallySelectRegion()
-        }
     }
 
     public override func viewDidAppear(_ animated: Bool) {

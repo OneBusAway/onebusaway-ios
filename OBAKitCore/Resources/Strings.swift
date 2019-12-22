@@ -32,6 +32,8 @@ public class Strings: NSObject {
 
     public static let map = NSLocalizedString("common.map", value: "Map", comment: "The noun for a map.")
 
+    public static let ok = NSLocalizedString("common.ok", value: "OK", comment: "OK")
+
     public static let refresh = NSLocalizedString("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 
     public static let save = NSLocalizedString("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")

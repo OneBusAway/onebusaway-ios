@@ -313,9 +313,13 @@ public class Application: NSObject,
         configurePushNotifications(launchOptions: options)
         reloadRootUserInterface()
 
-        if showPermissionPromptUI, let app = delegate?.uiApplication {
-            self.locationPermissionBulletin = LocationPermissionBulletin(locationService: locationService)
-            self.locationPermissionBulletin?.show(in: app)
+        if showPermissionPromptUI {
+            self.locationPermissionBulletin = LocationPermissionBulletin(locationService: locationService, regionsService: regionsService)
+            self.locationPermissionBulletin?.show(in: application)
+        }
+        else if regionsService.currentRegion == nil {
+            regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
+            regionPickerBulletin?.show(in: application)
         }
     }
 
@@ -450,11 +454,15 @@ public class Application: NSObject,
 
     // MARK: - Regions Management
 
+    private var regionPickerBulletin: RegionPickerBulletin?
+
     @objc public func manuallySelectRegion() {
+        guard let app = delegate?.uiApplication else { return }
+
         regionsService.automaticallySelectRegion = false
 
-        let regionPickerController = RegionPickerViewController(application: self, message: .manualSelectionMessage)
-        delegate?.application(self, displayRegionPicker: regionPickerController)
+        self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
+        self.regionPickerBulletin?.show(in: app)
     }
 
     public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {

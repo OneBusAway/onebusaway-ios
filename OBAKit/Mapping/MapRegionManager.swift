@@ -123,6 +123,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         super.init()
 
         application.locationService.addDelegate(self)
+        application.regionsService.addDelegate(self)
 
         mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
         mapView.showsScale = mapViewShowsScale
@@ -138,6 +139,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     deinit {
         delegates.removeAllObjects()
         application.locationService.removeDelegate(self)
+        application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
         requestStopsOperation?.cancel()
     }
@@ -474,6 +476,10 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
         renderRegionsOnMap()
+    }
+
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        mapView.setVisibleMapRect(region.serviceRect, animated: true)
     }
 
     private func renderRegionsOnMap() {

@@ -9,41 +9,176 @@ import Foundation
 import BLTNBoard
 import OBAKitCore
 
-/// Displays a modal 'card' UI that prompts the user for access to their location.
+/// Displays a modal card UI that prompts the user for access to their location.
+///
+/// This class is responsible for the initial location permission prompt that gets
+/// displayed when the user first launches the application.
 class LocationPermissionBulletin: NSObject {
-    private let bulletinManager: BLTNItemManager
+    private lazy var bulletinManager = BLTNItemManager(rootItem: introPage)
 
-    private let introPage: BLTNPageItem
+    private lazy var introPage: LocationPermissionItem = {
+        let introPage = LocationPermissionItem()
 
-    private let locationService: LocationService
-
-    init(locationService: LocationService) {
-        introPage = BLTNPageItem(title: NSLocalizedString("location_permission_bulletin.title", value: "Welcome!", comment: "Title of the alert that appears to request your location."))
-        bulletinManager = BLTNItemManager(rootItem: introPage)
-
-        self.locationService = locationService
-
-        super.init()
-
-        introPage.isDismissable = false
-        introPage.image = Icons.nearMe
-
-        introPage.descriptionText = NSLocalizedString("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
-
-        introPage.actionButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.give_permission", value: "Allow Access", comment: "This button signals the user is willing to grant location access to the app.")
         introPage.actionHandler = { [weak self] _ in
             self?.bulletinManager.dismissBulletin()
             self?.locationService.requestInUseAuthorization()
         }
 
-        introPage.alternativeButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
         introPage.alternativeHandler = { [weak self] _ in
-            self?.locationService.canPromptUserForPermission = false
-            self?.bulletinManager.dismissBulletin()
+            guard let self = self else { return }
+            self.locationService.canPromptUserForPermission = false
+            self.bulletinManager.push(item: self.regionPickerItem)
         }
+        return introPage
+    }()
+
+    private lazy var regionPickerItem: RegionPickerItem = {
+        let picker = RegionPickerItem(regionsService: regionsService)
+        return picker
+    }()
+
+    private let locationService: LocationService
+    private let regionsService: RegionsService
+
+    init(locationService: LocationService, regionsService: RegionsService) {
+        self.locationService = locationService
+        self.regionsService = regionsService
+
+        super.init()
     }
 
     func show(in application: UIApplication) {
         bulletinManager.showBulletin(in: application)
+    }
+}
+
+// MARK: - LocationPermissionItem
+
+class LocationPermissionItem: BLTNPageItem {
+    override init() {
+        super.init(title: NSLocalizedString("location_permission_bulletin.title", value: "Welcome!", comment: "Title of the alert that appears to request your location."))
+
+        isDismissable = false
+
+        image = Icons.nearMe
+
+        descriptionText = NSLocalizedString("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
+
+        actionButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.give_permission", value: "Allow Access", comment: "This button signals the user is willing to grant location access to the app.")
+
+        alternativeButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
+    }
+}
+
+// MARK: - RegionPickerItem
+
+class RegionPickerBulletin: NSObject {
+    private lazy var bulletinManager = BLTNItemManager(rootItem: regionPickerItem)
+
+    private lazy var regionPickerItem: RegionPickerItem = {
+        let picker = RegionPickerItem(regionsService: regionsService)
+        return picker
+    }()
+
+    private let regionsService: RegionsService
+
+    init(regionsService: RegionsService) {
+        self.regionsService = regionsService
+
+        super.init()
+    }
+
+    func show(in application: UIApplication) {
+        bulletinManager.showBulletin(in: application)
+    }
+}
+
+class RegionPickerItem: BLTNPageItem {
+    private let regionPicker: RegionPicker
+    private let regionsService: RegionsService
+
+    init(regionsService: RegionsService) {
+        self.regionsService = regionsService
+        self.regionPicker = RegionPicker(regionsService: regionsService)
+
+        super.init(title: NSLocalizedString("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
+
+        descriptionText = NSLocalizedString("region_picker.description_text", value: "Choose your transit region to use the app.", comment: "Descriptive text for the region picker card.")
+        isDismissable = regionsService.currentRegion != nil
+        actionButtonTitle = Strings.ok
+
+        actionHandler = { [weak self] _ in
+            guard
+                let self = self,
+                let region = self.regionPicker.selectedRegion
+            else { return }
+
+            self.regionsService.currentRegion = region
+            self.manager?.dismissBulletin()
+        }
+    }
+
+    override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
+        regionPicker.prepareForDisplay()
+        return [regionPicker.pickerView]
+    }
+}
+
+fileprivate class RegionPicker: NSObject, UIPickerViewDataSource, UIPickerViewDelegate, RegionsServiceDelegate {
+
+    init(regionsService: RegionsService) {
+        self.regionsService = regionsService
+
+        super.init()
+
+        pickerItems = self.regionsService.regions
+
+        self.regionsService.addDelegate(self)
+    }
+
+    deinit {
+        regionsService.removeDelegate(self)
+    }
+
+    var selectedRegion: Region? {
+        pickerItems[pickerView.selectedRow(inComponent: 0)]
+    }
+
+    // MARK: - Regions Service
+
+    private let regionsService: RegionsService
+
+    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        pickerItems = regions
+        pickerView.reloadAllComponents()
+    }
+
+    // MARK: - Picker View
+
+    private var pickerItems = [Region]()
+
+    lazy var pickerView: UIPickerView = {
+        let picker = UIPickerView(frame: .zero)
+        picker.translatesAutoresizingMaskIntoConstraints = false
+        picker.delegate = self
+        picker.dataSource = self
+        return picker
+    }()
+
+    func numberOfComponents(in pickerView: UIPickerView) -> Int { 1 }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        pickerItems.count
+    }
+
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        pickerItems[row].name
+    }
+
+    /// Configures the picker view's default value
+    func prepareForDisplay() {
+        if let currentRegion = regionsService.currentRegion, let index = pickerItems.firstIndex(of: currentRegion) {
+            pickerView.selectRow(index, inComponent: 0, animated: false)
+        }
     }
 }
