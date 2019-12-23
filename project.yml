@@ -80,6 +80,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+    preBuildScripts:
+      - { name: Versioning, script: "${PROJECT_DIR}/scripts/version" }
     postBuildScripts:
       - { name: Crashlytics, script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run", inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"], runOnlyWhenInstalling: true }
     scheme:
