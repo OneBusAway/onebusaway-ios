@@ -94,11 +94,11 @@ public class FarePayments: NSObject, SKStoreProductViewControllerDelegate {
         guard let deepLinkURL = region.paymentAppDeepLinkURL else { return }
 
         if application.canOpenURL(deepLinkURL) {
-            application.analytics?.reportEvent(category: .UIAction, action: "button_press", label: "Clicked Pay Fare Open App", value: nil)
+            application.analytics?.reportEvent(.userAction, label: "Clicked Pay Fare Open App", value: nil)
             application.open(deepLinkURL, options: [:], completionHandler: nil)
         }
         else {
-            application.analytics?.reportEvent(category: .UIAction, action: "button_press", label: "Clicked Pay Fare Download App", value: nil)
+            application.analytics?.reportEvent(.userAction, label: "Clicked Pay Fare Download App", value: nil)
             if let identifier = region.paymentiOSAppStoreIdentifier {
                 displayAppStorePage(appIdentifier: identifier)
             }

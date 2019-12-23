@@ -12,6 +12,9 @@
 #import "Firebase.h"
 @import Crashlytics;
 @import OneSignal;
+@import CocoaLumberjack;
+
+static const int ddLogLevel = DDLogLevelWarning;
 
 @interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
@@ -52,6 +55,7 @@
     [self.app application:application didFinishLaunching:launchOptions];
 
     [FIRApp configure];
+    [FIRAnalytics setUserID:self.app.userUUID];
 
     return YES;
 }
@@ -93,12 +97,6 @@
     self.window.rootViewController = self.rootController;
 }
 
-- (void)application:(OBAApplication *)app displayRegionPicker:(OBARegionPickerViewController *)picker {
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:picker];
-    nav.navigationBar.prefersLargeTitles = NO;
-    self.window.rootViewController = nav;
-}
-
 - (BOOL)canOpenURL:(NSURL*)url {
     return [UIApplication.sharedApplication canOpenURL:url];
 }
@@ -129,11 +127,28 @@
 #pragma mark - OBAAnalytics
 
 - (void)logEventWithName:(NSString *)name parameters:(NSDictionary<NSString *,id> *)parameters {
-    // abxoxo - TODO!
+    [FIRAnalytics logEventWithName:name parameters:parameters];
 }
 
-- (void)reportEventWithCategory:(enum OBAAnalyticsCategory)category action:(NSString *)action label:(NSString *)label value:(id)value {
-    // abxoxo - TODO!
+- (void)reportEvent:(enum OBAAnalyticsEvent)event label:(NSString *)label value:(id)value {
+    NSString *eventName = nil;
+
+    if (event == OBAAnalyticsEventUserAction) {
+        eventName = kFIRParameterContentType;
+    }
+    else {
+        DDLogError(@"Invalid call to -reportEventWithCategory: %@ label: %@ value: %@", @(event), label, value);
+        return;
+    }
+
+    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
+    parameters[kFIRParameterItemID] = label;
+
+    if (value) {
+        parameters[kFIRParameterItemVariant] = value;
+    }
+
+    [self logEventWithName:eventName parameters:parameters];
 }
 
 #pragma mark - Push Notifications
@@ -141,6 +156,5 @@
 - (BOOL)isRegisteredForRemoteNotifications {
     return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
 }
-
 
 @end

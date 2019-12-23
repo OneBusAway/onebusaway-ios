@@ -24,15 +24,6 @@ public protocol ApplicationDelegate {
     /// of the app's window. This is typically done in response to permissions changes.
     @objc func applicationReloadRootInterface(_ app: Application)
 
-    /// This method is called when the application cannot automatically select a `Region`
-    /// for the user. It provides a region picker that must be displayed to the user so
-    /// that the user can pick a `Region`, thereby allowing the app to continue functioning.
-    ///
-    /// - Parameters:
-    ///   - app: The application object.
-    ///   - picker: The region picker view controller to display to the user.
-    @objc func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController)
-
     /// This proxies the `isIdleTimerDisabled` property on `UIApplication`, which prevents
     /// the screen from turning off when it is set to `true`.
     @objc(idleTimerDisabled) var isIdleTimerDisabled: Bool { get set }
@@ -221,14 +212,10 @@ public class Application: NSObject,
     /// crash reporter libraries, like Crashlytics.
     /// - Note: This method always returns `false` when running on a device. It will only ever return `true` on the Simulator.
     var shouldShowCrashButton: Bool {
-        #if targetEnvironment(simulator)
         guard let delegate = delegate as? NSObject & ApplicationDelegate else {
             return false
         }
         return delegate.performTestCrash != nil
-        #else
-        return false
-        #endif
     }
 
     /// Crashes the app by calling the appropriate delegate method.
@@ -438,13 +425,24 @@ public class Application: NSObject,
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false
     }
-
     // swiftlint:enable function_body_length
 
     // MARK: - UUID
 
-    // abxoxo todo: store and reuse this value.
-    public lazy var userUUID: String = UUID().uuidString
+    private let userUUIDDefaultsKey = "userUUIDDefaultsKey"
+
+    /// A unique (but not personally-identifying) identifier for the current user that is used
+    /// to correlate crash logs and other events to a single person.
+    @objc public var userUUID: String {
+        if let uuid = userDefaults.object(forKey: userUUIDDefaultsKey) as? String {
+            return uuid
+        }
+        else {
+            let uuid = UUID().uuidString
+            userDefaults.set(uuid, forKey: userUUIDDefaultsKey)
+            return uuid
+        }
+    }
 
     // MARK: - Regions Service Internals
 

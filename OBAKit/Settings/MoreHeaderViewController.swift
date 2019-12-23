@@ -85,5 +85,18 @@ class MoreHeaderViewController: UIViewController {
 
         view.addSubview(stackView)
         stackView.pinToSuperview(.layoutMargins)
+
+        let debugTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(enableDebugMode))
+        debugTapRecognizer.numberOfTapsRequired = 8
+        headerImageView.isUserInteractionEnabled = true
+        headerImageView.addGestureRecognizer(debugTapRecognizer)
+    }
+
+    @objc private func enableDebugMode() {
+        application.userDataStore.debugMode = true
+        let alert = UIAlertController(title: NSLocalizedString("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction.dismissAction)
+
+        present(alert, animated: true, completion: nil)
     }
 }

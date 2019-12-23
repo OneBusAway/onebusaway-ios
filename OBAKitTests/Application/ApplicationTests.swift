@@ -29,11 +29,6 @@ class TestAppDelegate: ApplicationDelegate {
         //
     }
 
-    var called_applicationDisplayRegionPicker = false
-    func application(_ app: Application, displayRegionPicker picker: RegionPickerViewController) {
-        called_applicationDisplayRegionPicker = true
-    }
-
     var called_applicationReloadRootInterface = false
     func applicationReloadRootInterface(_ app: Application) {
         called_applicationReloadRootInterface = true
