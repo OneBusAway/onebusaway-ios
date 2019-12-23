@@ -6,6 +6,8 @@ DerivedData/
 OBAKit.xcodeproj
 Apps/**/Info.plist
 Apps/**/*.entitlements
+OBAKit/Info.plist
+OBAKitCore/Info.plist
 
 ## Various settings
 *.pbxuser

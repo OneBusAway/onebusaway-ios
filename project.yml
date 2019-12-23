@@ -89,6 +89,7 @@ targets:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
         OTHER_LDFLAGS: -ObjC
+        MARKETING_VERSION: "20.1.0"
   OBAKitCore:
     type: framework
     platform: iOS
@@ -102,6 +103,10 @@ targets:
       - { path: "scripts/swiftlint.sh", name: Swiftlint }
     scheme:
       gatherCoverageData: true
+    info:
+      path: OBAKitCore/Info.plist
+      properties:
+        CFBundleShortVersionString: "20.1.0"
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
@@ -129,6 +134,10 @@ targets:
       - { path: "scripts/swiftlint.sh", name: Swiftlint }
     scheme:
       gatherCoverageData: true
+    info:
+      path: OBAKit/Info.plist
+      properties:
+        CFBundleShortVersionString: "20.1.0"
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
