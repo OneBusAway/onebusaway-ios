@@ -47,5 +47,4 @@ github "OneSignal/OneSignal-iOS-SDK" ~>2.10.2
 # -----------------------
 
 # Cool stuff to consider using:
-# https://github.com/rwbutler/Connectivity
 # https://github.com/malcommac/SwiftLocation
