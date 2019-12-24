@@ -326,7 +326,7 @@ public class RESTAPIService: APIService {
         let request = type.buildRequest(for: url)
         let operation = type.init(request: request)
 
-        DDLogVerbose("Enqueuing URL: \(url.absoluteString)")
+        DDLogInfo("Enqueuing URL: \(url.absoluteString)")
 
         networkQueue.addOperation(operation)
 

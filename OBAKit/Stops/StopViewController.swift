@@ -346,11 +346,13 @@ StopPreferencesDelegate {
         let rows = stackView.getAllRows()
         stackView.removeRows(Array(rows[1...]))
 
+        // If we have hidden routes, then show the hide/show filter toggle.
         if stopPreferences.hasHiddenRoutes {
             stackView.addRow(filterToggleControl)
             stackView.hideSeparator(forRow: filterToggleControl)
         }
 
+        // Show arrivals and departures
         if stopPreferences.sortType == .time {
             if isListFiltered {
                 addToStack(arrivalDepartures: stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences))

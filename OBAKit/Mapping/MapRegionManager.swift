@@ -275,7 +275,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
     public weak var statusOverlay: StatusOverlayView?
 
-    private static let requiredHeightToShowStops = 75000.0
+    private static let requiredHeightToShowStops = 40000.0
 
     private func updateZoomWarningOverlay(mapHeight: Double) {
         guard let statusOverlay = statusOverlay else { return }
