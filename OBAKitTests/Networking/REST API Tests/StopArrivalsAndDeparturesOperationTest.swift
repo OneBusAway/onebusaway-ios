@@ -19,6 +19,18 @@ class StopArrivalsAndDeparturesOperationTest: OBATestCase {
         expect(StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: "Hello/World")) == "/api/where/arrivals-and-departures-for-stop/Hello%2FWorld.json"
     }
 
+    func testURLConstruction_tampa() {
+        var queryItems = [URLQueryItem]()
+        queryItems.append(URLQueryItem(name: "key", value: "org.onebusaway.iphone"))
+        queryItems.append(URLQueryItem(name: "app_uid", value: "F89DB514-24C2-4C33-A25D-876F96C5A59D"))
+        queryItems.append(URLQueryItem(name: "app_ver", value: "1.0"))
+        queryItems.append(URLQueryItem(name: "version", value: "2"))
+
+        let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: "Hillsborough Area Regional Transit_4543", minutesBefore: 5, minutesAfter: 35, baseURL: URL(string: "http://api.tampa.onebusaway.org/api/")!, queryItems: queryItems)
+
+        expect(url.absoluteString) == "http://api.tampa.onebusaway.org/api/api/where/arrivals-and-departures-for-stop/Hillsborough%20Area%20Regional%20Transit_4543.json?minutesAfter=35&minutesBefore=5&key=org.onebusaway.iphone&app_uid=F89DB514-24C2-4C33-A25D-876F96C5A59D&app_ver=1.0&version=2"
+    }
+
     func testSuccessfulStopsForRouteRequest() {
         // http://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_75414.json?key=TEST&minutesBefore=5&minutesAfter=10
         let stopID = "1_75414"

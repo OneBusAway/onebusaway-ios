@@ -26,7 +26,7 @@ class MapRegionManagerTests: OBATestCase {
         super.setUp()
 
         let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let locationService = LocationService(locationManager: locManager)
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
         let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService)
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
@@ -51,6 +51,6 @@ class MapRegionManagerTests: OBATestCase {
     func test_visibleMapRect_nilRegion() {
         let mgr = MapRegionManager(application: application)
         expect(self.application.currentRegion).to(beNil())
-        expect(mgr.visibleMapRect).to(beNil())
+        expect(mgr.lastVisibleMapRect).to(beNil())
     }
 }

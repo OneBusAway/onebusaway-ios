@@ -17,7 +17,7 @@ class LocationServiceTests: XCTestCase {
     // MARK: - Authorization
 
     func test_authorization_defaultValueIsNotDetermined() {
-        let service = LocationService(locationManager: LocationManagerMock())
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: LocationManagerMock())
 
         expect(service.authorizationStatus) == .notDetermined
         expect(service.currentLocation).to(beNil())
@@ -26,7 +26,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_authorization_granted() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let delegate = LocDelegate()
 
         service.addDelegate(delegate)
@@ -46,7 +46,7 @@ class LocationServiceTests: XCTestCase {
     func test_updateLocation_successiveUpdates_succeed() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         locationManagerMock.requestWhenInUseAuthorization()
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         expect(service.currentLocation).to(beNil())
 
@@ -61,7 +61,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_updateLocation_withNoLocation_doesNotTriggerUpdates() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         let del = LocDelegate()
         del.location = TestData.mockSeattleLocation
@@ -74,7 +74,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let locManager = CLLocationManager()
 
         expect(service.currentLocation).to(beNil())
@@ -90,7 +90,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_stopUpdates_disablesUpdates() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         service.stopUpdates()
         expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
@@ -99,7 +99,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_startUpdates_withoutAuthorization_doesNothing() {
         let locationManagerMock = LocationManagerMock()
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
 
         expect(service.isLocationUseAuthorized).to(beFalse())
         expect(locationManagerMock.locationUpdatesStarted).to(beFalse())
@@ -114,7 +114,7 @@ class LocationServiceTests: XCTestCase {
 
     func test_receiveErrors() {
         let locationManagerMock = LocationManagerMock()
-        let service = LocationService(locationManager: locationManagerMock)
+        let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         let del = LocDelegate()
         service.addDelegate(del)
 

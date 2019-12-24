@@ -13,7 +13,8 @@ import OHHTTPStubs
 
 class NetworkOperationTest: OBATestCase {
 
-    func testBuildURL_pathConstruction() {
+    // Validate that URLs for San Diego should work.
+    func testBuildURL_pathConstruction_SDMTS() {
         let baseURL = URL(string: "http://www.example.com/api/")!
         let path = "/api/where/example.json"
 

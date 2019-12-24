@@ -14,7 +14,7 @@ struct LoggedEvent {
 }
 
 struct ReportedEvent {
-    public let category: AnalyticsEvent
+    public let event: AnalyticsEvent
     public let label: String
     public let value: Any?
 }
@@ -27,7 +27,7 @@ class AnalyticsMock: NSObject, Analytics {
         loggedEvents.append(LoggedEvent(name: name, parameters: parameters))
     }
 
-    func reportEvent(category: AnalyticsEvent, label: String, value: Any?) {
-        reportedEvents.append(ReportedEvent(category: category, label: label, value: value))
+    func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?) {
+        reportedEvents.append(ReportedEvent(event: event, label: label, value: value))
     }
 }

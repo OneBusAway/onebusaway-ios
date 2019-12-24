@@ -65,7 +65,7 @@ class RegionsServiceTests: OBATestCase {
 
         testDelegate = RegionsServiceTestDelegate()
         locationManagerMock = LocationManagerMock()
-        locationService = LocationService(locationManager: locationManagerMock)
+        locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
     }
 
     override func tearDown() {
