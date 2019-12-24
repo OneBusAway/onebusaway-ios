@@ -69,6 +69,9 @@ public class NetworkOperation: AsyncOperation {
     }
 
     class func buildRequest(for url: URL) -> URLRequest {
-        return URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+
+        return request
     }
 }
