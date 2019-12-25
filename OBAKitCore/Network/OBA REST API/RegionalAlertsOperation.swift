@@ -31,7 +31,7 @@ public class RegionalAlertsOperation: NetworkOperation {
     }
 
     public class func buildObacoURL(regionID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        let apiPath = buildObacoAPIPath(regionID: regionID)
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems)
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: buildObacoAPIPath(regionID: regionID))
     }
 }

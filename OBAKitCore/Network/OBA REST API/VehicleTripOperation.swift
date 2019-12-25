@@ -11,12 +11,13 @@ import Foundation
 public class VehicleTripOperation: RESTAPIOperation {
 
     private static let apiPath = "/api/where/trip-for-vehicle/%@.json"
+
     public class func buildAPIPath(vehicleID: String) -> String {
         return String(format: apiPath, NetworkHelpers.escapePathVariable(vehicleID))
     }
 
     public class func buildURL(vehicleID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        let path = buildAPIPath(vehicleID: vehicleID)
-        return buildURL(fromBaseURL: baseURL, path: path, queryItems: queryItems)
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: buildAPIPath(vehicleID: vehicleID))
     }
 }

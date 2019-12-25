@@ -33,17 +33,21 @@ public class StopsOperation: RESTAPIOperation {
         baseURL: URL,
         defaultQueryItems: [URLQueryItem]
     ) -> URL {
-        // swiftlint:disable:next line_length
-        let queryItems = NetworkHelpers.dictionary(toQueryItems: ["lat": coordinate.latitude, "lon": coordinate.longitude])
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: apiPath, params: [
+            "lat": coordinate.latitude,
+            "lon": coordinate.longitude
+        ])
     }
 
     public class func buildURL(region: MKCoordinateRegion, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-        let queryItems = NetworkHelpers.dictionary(toQueryItems: [
-            "lat": region.center.latitude, "lon": region.center.longitude,
-            "latSpan": region.span.latitudeDelta, "lonSpan": region.span.longitudeDelta
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: apiPath, params: [
+            "lat": region.center.latitude,
+            "lon": region.center.longitude,
+            "latSpan": region.span.latitudeDelta,
+            "lonSpan": region.span.longitudeDelta
         ])
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }
 
     public class func buildURL(
@@ -54,10 +58,13 @@ public class StopsOperation: RESTAPIOperation {
     ) -> URL {
         // make sure radius is greater than zero and less than 15000
         let radius = max(min(15000.0, circularRegion.radius), 1.0)
-        let queryItems = NetworkHelpers.dictionary(toQueryItems: [
-            "lat": circularRegion.center.latitude, "lon": circularRegion.center.longitude,
-            "query": query, "radius": Int(radius)
+
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: apiPath, params: [
+            "lat": circularRegion.center.latitude,
+            "lon": circularRegion.center.longitude,
+            "query": query,
+            "radius": Int(radius)
         ])
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems + defaultQueryItems)
     }
 }

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 public class StopArrivalsAndDeparturesOperation: RESTAPIOperation {
 
@@ -17,11 +18,10 @@ public class StopArrivalsAndDeparturesOperation: RESTAPIOperation {
     }
 
     public class func buildURL(stopID: String, minutesBefore: UInt, minutesAfter: UInt, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        let args: [String: Any] = [
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: buildAPIPath(stopID: stopID), params: [
             "minutesBefore": minutesBefore,
             "minutesAfter": minutesAfter
-        ]
-
-        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(stopID: stopID), queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
+        ])
     }
 }

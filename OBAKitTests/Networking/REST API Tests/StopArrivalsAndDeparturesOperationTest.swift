@@ -19,16 +19,16 @@ class StopArrivalsAndDeparturesOperationTest: OBATestCase {
         expect(StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: "Hello/World")) == "/api/where/arrivals-and-departures-for-stop/Hello%2FWorld.json"
     }
 
+    func testURLConstruction_absurd() {
+        let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: "Here is a ridiculous string!/But not impossible to see in OBA's data :-\\", minutesBefore: 5, minutesAfter: 35, baseURL: URL(string: "http://api.tampa.onebusaway.org/api/")!, queryItems: [URLQueryItem]())
+
+        expect(url.absoluteString.components(separatedBy: "?").first!) == "http://api.tampa.onebusaway.org/api/api/where/arrivals-and-departures-for-stop/Here%20is%20a%20ridiculous%20string!%2FBut%20not%20impossible%20to%20see%20in%20OBA's%20data%20:-%5C.json"
+    }
+
     func testURLConstruction_tampa() {
-        var queryItems = [URLQueryItem]()
-        queryItems.append(URLQueryItem(name: "key", value: "org.onebusaway.iphone"))
-        queryItems.append(URLQueryItem(name: "app_uid", value: "F89DB514-24C2-4C33-A25D-876F96C5A59D"))
-        queryItems.append(URLQueryItem(name: "app_ver", value: "1.0"))
-        queryItems.append(URLQueryItem(name: "version", value: "2"))
+        let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: "Hillsborough Area Regional Transit_4543", minutesBefore: 5, minutesAfter: 35, baseURL: URL(string: "http://api.tampa.onebusaway.org/api/")!, queryItems: [URLQueryItem]())
 
-        let url = StopArrivalsAndDeparturesOperation.buildURL(stopID: "Hillsborough Area Regional Transit_4543", minutesBefore: 5, minutesAfter: 35, baseURL: URL(string: "http://api.tampa.onebusaway.org/api/")!, queryItems: queryItems)
-
-        expect(url.absoluteString) == "http://api.tampa.onebusaway.org/api/api/where/arrivals-and-departures-for-stop/Hillsborough%20Area%20Regional%20Transit_4543.json?minutesAfter=35&minutesBefore=5&key=org.onebusaway.iphone&app_uid=F89DB514-24C2-4C33-A25D-876F96C5A59D&app_ver=1.0&version=2"
+        expect(url.absoluteString.components(separatedBy: "?").first!) == "http://api.tampa.onebusaway.org/api/api/where/arrivals-and-departures-for-stop/Hillsborough%20Area%20Regional%20Transit_4543.json"
     }
 
     func testSuccessfulStopsForRouteRequest() {

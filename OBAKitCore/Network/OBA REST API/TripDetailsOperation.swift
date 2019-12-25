@@ -33,10 +33,7 @@ public class TripDetailsOperation: RESTAPIOperation {
             args["vehicleId"] = vehicleID
         }
 
-        return buildURL(
-            fromBaseURL: baseURL,
-            path: buildAPIPath(tripID: tripID),
-            queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems
-        )
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: buildAPIPath(tripID: tripID), params: args)
     }
 }

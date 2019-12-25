@@ -41,10 +41,7 @@ public class TripArrivalDepartureOperation: RESTAPIOperation {
             args["stopSequence"] = stopSequence
         }
 
-        return buildURL(
-            fromBaseURL: baseURL,
-            path: buildAPIPath(stopID: stopID),
-            queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems
-        )
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: buildAPIPath(stopID: stopID), params: args)
     }
 }

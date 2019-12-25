@@ -19,6 +19,7 @@ public class RequestVehicleOperation: RESTAPIOperation {
     }
 
     public class func buildURL(vehicleID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-        return buildURL(fromBaseURL: baseURL, path: buildAPIPath(vehicleID: vehicleID), queryItems: queryItems)
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: buildAPIPath(vehicleID: vehicleID))
     }
 }

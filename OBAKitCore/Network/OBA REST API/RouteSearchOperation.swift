@@ -35,15 +35,18 @@ public class RouteSearchOperation: RESTAPIOperation {
      */
     private static let regionalRadius: CLLocationDistance = 40000.0
 
-    public class func buildURL(searchQuery: String, region: CLCircularRegion, baseURL: URL, defaultQueryItems: [URLQueryItem]) -> URL {
-        let radius = max(region.radius, regionalRadius)
-        let args: [String: Any] = [
+    public class func buildURL(
+        searchQuery: String,
+        region: CLCircularRegion,
+        baseURL: URL,
+        defaultQueryItems: [URLQueryItem]
+    ) -> URL {
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: apiPath, params: [
             "lat": region.center.latitude,
             "lon": region.center.longitude,
             "query": searchQuery,
-            "radius": String(radius)
-        ]
-
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + defaultQueryItems)
+            "radius": String(max(region.radius, regionalRadius))
+        ])
     }
 }

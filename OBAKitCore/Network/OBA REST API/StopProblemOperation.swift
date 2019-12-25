@@ -62,6 +62,7 @@ public class StopProblemOperation: RESTAPIOperation {
             args["userLocationAccuracy"] = location.horizontalAccuracy
         }
 
-        return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: NetworkHelpers.dictionary(toQueryItems: args) + queryItems)
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: apiPath, params: args)
     }
 }

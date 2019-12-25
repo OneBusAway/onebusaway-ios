@@ -43,8 +43,18 @@ public func tripProblemCodeToUserFacingString(_ code: TripProblemCode) -> String
 public class TripProblemOperation: RESTAPIOperation {
     public static let apiPath = "/api/where/report-problem-with-trip.json"
 
-    public static func buildURL(tripID: String, serviceDate: Date, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
-
+    public static func buildURL(
+        tripID: String,
+        serviceDate: Date,
+        vehicleID: String?,
+        stopID: String?,
+        code: TripProblemCode,
+        comment: String?,
+        userOnVehicle: Bool,
+        location: CLLocation?,
+        baseURL: URL,
+        queryItems: [URLQueryItem]
+    ) -> URL {
         var args: [String: Any] = [
             "tripId": tripID,
             "serviceDate": Int64(serviceDate.timeIntervalSince1970 * 1000),
@@ -70,10 +80,7 @@ public class TripProblemOperation: RESTAPIOperation {
             args["userLocationAccuracy"] = location.horizontalAccuracy
         }
 
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = apiPath
-
-        components.queryItems = NetworkHelpers.dictionary(toQueryItems: args) + queryItems
-        return components.url!
+        let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
+        return builder.generateURL(path: apiPath, params: args)
     }
 }
