@@ -84,7 +84,8 @@ public class StatusOverlayView: UIView {
 
     // MARK: - Animations
 
-    private let lock = NSLock()
+    private var showAnimator: UIViewPropertyAnimator?
+    private var hideAnimator: UIViewPropertyAnimator?
 
     /// Displays the overlay, by default animating in the display of it.
     ///
@@ -103,18 +104,22 @@ public class StatusOverlayView: UIView {
             return
         }
 
-        guard lock.try() else {
+        // Bail out if we already have a 'show' animation running.
+        guard showAnimator == nil else {
             return
         }
+
+        hideAnimator?.stopAnimation(true)
+        hideAnimator = nil
 
         statusOverlay.alpha = 0.0
         statusOverlay.isHidden = false
 
-        UIView.animate(withDuration: UIView.inheritedAnimationDuration, animations: { [weak self] in
+        let animator = UIViewPropertyAnimator(duration: UIView.inheritedAnimationDuration, curve: .easeInOut) { [weak self] in
             self?.statusOverlay.alpha = 1.0
-        }, completion: { [weak self] _ in
-            self?.lock.unlock()
-        })
+        }
+        animator.startAnimation()
+        showAnimator = animator
     }
 
     /// Hides the overlay, by default animating it out.
@@ -130,15 +135,21 @@ public class StatusOverlayView: UIView {
             return
         }
 
-        guard lock.try() else {
+        // Bail out if we already have a 'hide' animation running.
+        guard hideAnimator == nil else {
             return
         }
 
-        UIView.animate(withDuration: UIView.inheritedAnimationDuration, animations: { [weak self] in
+        showAnimator?.stopAnimation(true)
+        showAnimator = nil
+
+        let animator = UIViewPropertyAnimator(duration: UIView.inheritedAnimationDuration, curve: .easeInOut) { [weak self] in
             self?.statusOverlay.alpha = 0.0
-        }, completion: { [weak self] _ in
+        }
+        animator.addCompletion { [weak self] _ in
             self?.statusOverlay.isHidden = true
-            self?.lock.unlock()
-        })
+        }
+        animator.startAnimation()
+        hideAnimator = animator
     }
 }
