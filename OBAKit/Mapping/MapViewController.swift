@@ -255,6 +255,12 @@ public class MapViewController: UIViewController,
         return MapPanelLayout(initialPosition: .tip)
     }
 
+    public func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
+        // Don't allow the status overlay to be shown when the
+        // Floating Panel is fully open because it looks weird.
+        statusOverlay.isHidden = vc.position == .full
+    }
+
     // MARK: - Modal Delegate
 
     public func dismissModalController(_ controller: UIViewController) {
