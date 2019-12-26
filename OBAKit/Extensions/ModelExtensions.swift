@@ -29,23 +29,23 @@ extension Region: MKAnnotation {
 /// - Note: See `StopAnnotationView`for more details.
 extension Stop: MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
-        return location.coordinate
+        location.coordinate
     }
 
     public var title: String? {
-        return Formatters.formattedTitle(stop: self)
+        Formatters.formattedTitle(stop: self)
     }
 
     public var subtitle: String? {
-        return Formatters.formattedRoutes(routes)
+        Formatters.formattedRoutes(routes)
     }
 
     public var mapTitle: String? {
-        return routes.map { $0.shortName }.localizedCaseInsensitiveSort().prefix(3).joined(separator: ", ")
+        routes.map { $0.shortName }.prefix(3).joined(separator: ", ")
     }
 
     public var mapSubtitle: String? {
-        return Formatters.adjectiveFormOfCardinalDirection(direction)
+        Formatters.adjectiveFormOfCardinalDirection(direction)
     }
 }
 
