@@ -372,6 +372,12 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         application.stopIconFactory
     }
 
+    private let requiredHeightToShowExtraStopData = 7000.0
+
+    var shouldHideExtraStopAnnotationData: Bool {
+        mapView.visibleMapRect.height > requiredHeightToShowExtraStopData
+    }
+
     // MARK: - Map View Delegate
 
     private func reloadStopAnnotations() {
@@ -384,6 +390,13 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         guard mapView.visibleMapRect.height <= MapRegionManager.requiredHeightToShowStops else {
             mapView.removeAnnotations(type: Stop.self)
             return
+        }
+
+        let visibleStops = mapView.annotations(in: mapView.visibleMapRect).filter(type: Stop.self)
+        for s in visibleStops {
+            if let stopView = mapView.view(for: s) as? StopAnnotationView {
+                stopView.isHidingExtraStopAnnotationData = shouldHideExtraStopAnnotationData
+            }
         }
 
         regionChangeRequestTimer?.invalidate()

@@ -13,6 +13,7 @@ import OBAKitCore
 protocol StopAnnotationDelegate: NSObjectProtocol {
     func isStopBookmarked(_ stop: Stop) -> Bool
     var iconFactory: StopIconFactory { get }
+    var shouldHideExtraStopAnnotationData: Bool { get }
 }
 
 class StopAnnotationView: MKAnnotationView {
@@ -41,6 +42,15 @@ class StopAnnotationView: MKAnnotationView {
     private lazy var labelStack: UIStackView = {
         return UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
     }()
+
+    public var isHidingExtraStopAnnotationData: Bool {
+        get {
+            labelStack.isHidden
+        }
+        set {
+            labelStack.isHidden = newValue
+        }
+    }
 
     // MARK: - Init
 
@@ -74,6 +84,8 @@ class StopAnnotationView: MKAnnotationView {
     public override func prepareForReuse() {
         super.prepareForReuse()
 
+        labelStack.isHidden = true
+
         titleLabel.text = nil
         subtitleLabel.text = nil
     }
@@ -85,6 +97,8 @@ class StopAnnotationView: MKAnnotationView {
             let stop = annotation as? Stop,
             let delegate = delegate
         else { return }
+
+        labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
 
         let iconFactory = delegate.iconFactory
         let iconStrokeColor: UIColor = delegate.isStopBookmarked(stop) ? bookmarkedStrokeColor : strokeColor
