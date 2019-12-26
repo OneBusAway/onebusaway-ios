@@ -324,39 +324,63 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
                 return
             }
 
-            if searchResponse.results.count == 0 {
+            guard searchResponse.results.count > 0 else {
                 notifyDelegatesNoSearchResults(response: searchResponse)
+                return
             }
-            else if searchResponse.results.count == 1, let result = searchResponse.results.first {
-                if let result = result as? MKMapItem {
-                    mapView.setCenter(result.placemark.coordinate, animated: true)
-                    mapView.addAnnotation(result.placemark)
-                    notifyDelegatesShowSearchResult(response: searchResponse)
-                }
-                else if let result = result as? Route {
-                    loadSearchResponse(searchResponse, route: result)
-                }
-                else if let result = result as? StopsForRoute {
-                    mapView.removeAllAnnotations()
 
-                    mapView.addOverlays(result.polylines)
-                    mapView.addAnnotations(result.stops)
-
-                    let inset: CGFloat = 40.0
-                    mapView.visibleMapRect = self.mapView.mapRectThatFits(result.mapRect, edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset))
-                    notifyDelegatesShowSearchResult(response: searchResponse)
-                }
-                else if let result = result as? Stop {
-                    mapView.addAnnotation(result)
-                    mapView.setCenterCoordinate(centerCoordinate: result.coordinate, zoomLevel: 18, animated: true)
-                    mapView.selectAnnotation(result, animated: false)
-                    notifyDelegatesDismissSearch()
-                }
-            }
+            guard
+                searchResponse.results.count == 1,
+                let result = searchResponse.results.first
             else {
                 notifyDelegatesDisambiguationRequired(response: searchResponse)
+                return
+            }
+
+            switch result {
+            case let result as MKMapItem:
+                displaySearchResult(mapItem: result)
+                notifyDelegatesShowSearchResult(response: searchResponse)
+            case let result as Route:
+                loadSearchResponse(searchResponse, route: result)
+            case let result as StopsForRoute:
+                displaySearchResult(stopsForRoute: result)
+                notifyDelegatesShowSearchResult(response: searchResponse)
+            case let result as Stop:
+                displaySearchResult(stop: result)
+                notifyDelegatesDismissSearch()
+            case let result as VehicleStatus:
+                displaySearchResult(vehicleStatus: result)
+                notifyDelegatesDismissSearch()
+            default:
+                DDLogError("Unhandled search result object! \(result)")
             }
         }
+    }
+
+    private func displaySearchResult(mapItem: MKMapItem) {
+        mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+        mapView.addAnnotation(mapItem.placemark)
+    }
+
+    private func displaySearchResult(stopsForRoute: StopsForRoute) {
+        mapView.removeAllAnnotations()
+
+        mapView.addOverlays(stopsForRoute.polylines)
+        mapView.addAnnotations(stopsForRoute.stops)
+
+        let inset: CGFloat = 40.0
+        mapView.visibleMapRect = self.mapView.mapRectThatFits(stopsForRoute.mapRect, edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset))
+    }
+
+    private func displaySearchResult(stop: Stop) {
+        mapView.addAnnotation(stop)
+        mapView.setCenterCoordinate(centerCoordinate: stop.coordinate, zoomLevel: 18, animated: true)
+        mapView.selectAnnotation(stop, animated: false)
+    }
+
+    private func displaySearchResult(vehicleStatus: VehicleStatus) {
+        print("bonk: \(vehicleStatus)")
     }
 
     // MARK: - Search/Route

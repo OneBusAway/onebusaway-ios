@@ -9,10 +9,12 @@
 import Foundation
 import MapKit
 
+/// Describes what kind of search the user is performing.
 public enum SearchType: Int {
     case address, route, stopNumber, vehicleID
 }
 
+/// Create a `SearchRequest` to define what the user is searching for.
 public class SearchRequest: NSObject {
     public let query: String
     public let searchType: SearchType
@@ -23,6 +25,7 @@ public class SearchRequest: NSObject {
     }
 }
 
+/// This class manages the results of a user search.
 public class SearchResponse: NSObject {
     public let request: SearchRequest
     public let results: [Any]
