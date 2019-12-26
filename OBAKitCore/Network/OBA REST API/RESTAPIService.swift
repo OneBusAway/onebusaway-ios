@@ -19,10 +19,9 @@ public class RESTAPIService: APIService {
     ///
     /// API Endpoint: `/api/where/vehicle/{id}.json`
     ///
-    /// - Important: Vehicle IDs are seldom not identical to the IDs that
-    /// are physically printed on buses. For example, in Puget Sound, a
-    /// KC Metro bus that has the number `1234` printed on its side will
-    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// - Important: Vehicle IDs are seldom identical to the IDs that are physically printed
+    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
+    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
     /// is unique across the Puget Sound region with all of its agencies.
     ///
     /// - Parameters:
@@ -38,10 +37,9 @@ public class RESTAPIService: APIService {
     /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
     /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
     ///
-    /// - Important: Vehicle IDs are seldom not identical to the IDs that
-    /// are physically printed on buses. For example, in Puget Sound, a
-    /// KC Metro bus that has the number `1234` printed on its side will
-    /// likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// - Important: Vehicle IDs are seldom identical to the IDs that are physically printed
+    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
+    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
     /// is unique across the Puget Sound region with all of its agencies.
     ///
     /// - Parameters:
