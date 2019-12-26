@@ -97,7 +97,7 @@ public class TripStatus: NSObject, Decodable {
     /// The distance, in meters, the transit vehicle is scheduled to have progress along the active trip. This is an optional value, and will only be present if the trip is in progress.
     public let scheduledDistanceAlongTrip: Double
 
-    /// Time of midnight for start of the service date for the trip.s
+    /// Time of midnight for start of the service date for the trip.
     public let serviceDate: Date
 
     /// References to `Situation`s for active service alerts applicable to this trip.
