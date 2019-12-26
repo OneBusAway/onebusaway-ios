@@ -114,6 +114,10 @@ public class NearbyViewController: VisualEffectViewController,
         application.searchManager.search(request: request)
     }
 
+    func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
+        nearbyDelegate?.nearbyController(self, didSelectStop: stop)
+    }
+
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         collectionController.reload(animated: false)
     }

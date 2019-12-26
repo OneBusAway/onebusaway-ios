@@ -11,6 +11,7 @@ import OBAKitCore
 
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
+    func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
 }
 
 /// This class is responsible for building all of the data objects that power the search experience without actually creating the UI.
@@ -41,9 +42,9 @@ class SearchInteractor: NSObject {
 
         sections.append(quickSearchSection(searchText: searchText))
 
-        let recentStops = userDataStore.findRecentStops(matching: searchText).map {
-            TableRowData(title: $0.name, accessoryType: .disclosureIndicator) { _ in
-                //
+        let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
+            TableRowData(title: stop.name, accessoryType: .disclosureIndicator) { _ in
+                self.delegate?.searchInteractor(self, showStop: stop)
             }
         }
         if recentStops.count > 0 {
