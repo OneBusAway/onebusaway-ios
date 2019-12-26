@@ -22,7 +22,7 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         }
     }
 
-    var arrivalDeparture: ArrivalDeparture? {
+    var tripConvertible: TripConvertible? {
         didSet {
             if isLoadedAndOnScreen {
                 collectionController.reload(animated: false)
@@ -36,13 +36,13 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
 
     /// Initializes the `TripDetailsController` with an OBA application object.
     /// - Parameter application: The application object
-    /// - Parameter arrivalDeparture: Optional `ArrivalDeparture` object.
+    /// - Parameter tripConvertible: Optional `TripConvertible` object.
     ///
     /// It is assumed that the creator of this controller will pass in a `TripDetails` object via
     /// the `tripDetails` property later on in order to finish configuring this controller.
-    init(application: Application, arrivalDeparture: ArrivalDeparture? = nil) {
+    init(application: Application, tripConvertible: TripConvertible? = nil) {
         self.application = application
-        self.arrivalDeparture = arrivalDeparture
+        self.tripConvertible = tripConvertible
         self.operation = nil
 
         super.init(nibName: nil, bundle: nil)
@@ -91,6 +91,8 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         }
 
         var sections = [ListDiffable]()
+
+        let arrivalDeparture = tripConvertible?.arrivalDeparture
 
         // Section: ArrivalDeparture Header
 
@@ -151,5 +153,4 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         }
         return TableSectionData(row: row)
     }
-
 }

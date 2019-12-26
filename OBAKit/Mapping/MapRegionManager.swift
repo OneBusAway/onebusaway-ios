@@ -349,9 +349,8 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
             case let result as Stop:
                 displaySearchResult(stop: result)
                 notifyDelegatesDismissSearch()
-            case let result as VehicleStatus:
-                displaySearchResult(vehicleStatus: result)
-                notifyDelegatesDismissSearch()
+            case is VehicleStatus:
+                notifyDelegatesShowSearchResult(response: searchResponse)
             default:
                 DDLogError("Unhandled search result object! \(result)")
             }
@@ -377,10 +376,6 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         mapView.addAnnotation(stop)
         mapView.setCenterCoordinate(centerCoordinate: stop.coordinate, zoomLevel: 18, animated: true)
         mapView.selectAnnotation(stop, animated: false)
-    }
-
-    private func displaySearchResult(vehicleStatus: VehicleStatus) {
-        print("bonk: \(vehicleStatus)")
     }
 
     // MARK: - Search/Route

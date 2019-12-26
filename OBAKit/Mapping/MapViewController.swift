@@ -345,8 +345,8 @@ public class MapViewController: UIViewController,
         case let result as Stop:
             show(stop: result)
         case let result as VehicleStatus:
-            AlertPresenter.show(errorMessage: "abxoxo - Add ability to show vehicle status!", presentingController: self)
-            print("Show vehicle status: \(result)")
+            let tripController = TripViewController(application: application, tripConvertible: TripConvertible(vehicleStatus: result))
+            application.viewRouter.navigate(to: tripController, from: self)
         default:
             fatalError()
         }

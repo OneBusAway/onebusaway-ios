@@ -90,10 +90,28 @@ public class SearchManager: NSObject {
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
             }
         case .vehicleID:
-            let op = modelService.getVehicleStatus(request.query)
+            guard let obacoService = application.obacoService else { return }
+            let op = obacoService.getVehicles(matching: request.query)
             op.then { [weak self] in
                 guard let self = self else { return }
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.vehicles, boundingRegion: nil, error: op.error)
+
+                let matchingVehicles = op.matchingVehicles
+
+                if matchingVehicles.count > 1 {
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
+                }
+                else if matchingVehicles.count == 1, let vehicleID = matchingVehicles[0].vehicleID {
+                    // show result
+                    let vehicleOp = modelService.getVehicleStatus(vehicleID)
+                    vehicleOp.then { [weak self] in
+                        guard let self = self else { return }
+                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: vehicleOp.vehicles, boundingRegion: nil, error: vehicleOp.error)
+                    }
+                }
+                else {
+                    // abxoxo - show an error
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+                }
             }
         }
     }

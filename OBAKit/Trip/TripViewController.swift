@@ -17,11 +17,18 @@ class TripViewController: UIViewController,
 
     public let application: Application
 
-    private let arrivalDeparture: ArrivalDeparture
+    private let tripConvertible: TripConvertible
+
+    init(application: Application, tripConvertible: TripConvertible) {
+        self.application = application
+        self.tripConvertible = tripConvertible
+
+        super.init(nibName: nil, bundle: nil)
+    }
 
     init(application: Application, arrivalDeparture: ArrivalDeparture) {
         self.application = application
-        self.arrivalDeparture = arrivalDeparture
+        self.tripConvertible = TripConvertible(arrivalDeparture: arrivalDeparture)
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -76,14 +83,17 @@ class TripViewController: UIViewController,
     private let titleView = StackedMarqueeTitleView(width: 178.0)
 
     private func updateTitleView() {
-        if let vehicleID = arrivalDeparture.tripStatus?.vehicleID {
-            titleView.topLabel.text = vehicleID
-        }
-        else {
+        guard let tripStatus = tripConvertible.tripStatus else {
             titleView.topLabel.text = ""
+            titleView.bottomLabel.text = ""
+            return
         }
 
-        if let tripStatus = arrivalDeparture.tripStatus, let lastUpdate = tripStatus.lastUpdate {
+        if let vehicleID = tripStatus.vehicleID {
+            titleView.topLabel.text = vehicleID
+        }
+
+        if let lastUpdate = tripStatus.lastUpdate {
             let format = NSLocalizedString("trip_details_controller.last_report_fmt", value: "Last report: %@", comment: "Last report: <TIME>")
             let time = application.formatters.timeFormatter.string(from: lastUpdate)
             titleView.bottomLabel.text = String(format: format, time)
@@ -92,10 +102,10 @@ class TripViewController: UIViewController,
 
     // MARK: - Drawer/Trip Details UI
 
-    private lazy var tripDetailsController: TripDetailsController = {
-        let controller = TripDetailsController(application: application, arrivalDeparture: arrivalDeparture)
-        return controller
-    }()
+    private lazy var tripDetailsController = TripDetailsController(
+        application: application,
+        tripConvertible: tripConvertible
+    )
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: FloatingPanelController = {
@@ -127,7 +137,7 @@ class TripViewController: UIViewController,
 
         tripDetailsOperation?.cancel()
 
-        let op = apiService.getTripDetails(tripID: arrivalDeparture.tripID, vehicleID: arrivalDeparture.vehicleID, serviceDate: arrivalDeparture.serviceDate)
+        let op = apiService.getTripDetails(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate)
         op.then { [weak self] in
             guard
                 let self = self,
@@ -157,7 +167,7 @@ class TripViewController: UIViewController,
 
         shapeOperation?.cancel()
 
-        let op = apiService.getShape(id: arrivalDeparture.trip.shapeID)
+        let op = apiService.getShape(id: tripConvertible.trip.shapeID)
         op.then { [weak self] in
             guard
                 let self = self,
@@ -209,7 +219,7 @@ class TripViewController: UIViewController,
             userLocationAnnotationView = annotationView
         }
 
-        if let view = annotationView as? MinimalStopAnnotationView {
+        if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
         }
 
