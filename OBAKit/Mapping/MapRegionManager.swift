@@ -303,11 +303,10 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     private func searchResponseOverridesStopLoading() -> Bool {
         guard
             let searchResponse = searchResponse,
-            searchResponse.results.count == 1,
-            let result = searchResponse.results.first
+            searchResponse.results.count == 1
         else { return false }
 
-        return result is Route
+        return true
     }
 
     public var searchResponse: SearchResponse? {

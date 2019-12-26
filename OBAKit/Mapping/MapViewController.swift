@@ -265,6 +265,10 @@ public class MapViewController: UIViewController,
 
     public func dismissModalController(_ controller: UIViewController) {
         if controller == semiModalPanel?.contentViewController {
+            if statusOverlay.isHidden {
+                statusOverlay.isHidden = floatingPanel.position != .full
+            }
+
             mapRegionManager.cancelSearch()
             semiModalPanel?.removePanelFromParent(animated: true)
         }
@@ -328,6 +332,8 @@ public class MapViewController: UIViewController,
     // abxoxo - todo!
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
         guard let result = response.results.first else { return }
+
+        statusOverlay.isHidden = true
 
         switch result {
         case let result as MKMapItem:
