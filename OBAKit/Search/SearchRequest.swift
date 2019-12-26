@@ -83,13 +83,13 @@ public class SearchManager: NSObject {
             let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
             let op = modelService.getStops(circularRegion: region, query: request.query)
             op.then { [weak self] in
-               guard let self = self else { return }
+                guard let self = self else { return }
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
             }
         case .vehicleID:
             let op = modelService.getVehicleStatus(request.query)
             op.then { [weak self] in
-               guard let self = self else { return }
+                guard let self = self else { return }
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.vehicles, boundingRegion: nil, error: op.error)
             }
         }

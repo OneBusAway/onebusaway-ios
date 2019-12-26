@@ -22,6 +22,8 @@ public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse)
     @objc optional func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse)
 
+    @objc optional func mapRegionManagerDismissSearch(_ manager: MapRegionManager)
+
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
     @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
 
@@ -242,6 +244,13 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         }
     }
 
+    /// Instructs delegates to close/dismiss their search UIs.
+    private func notifyDelegatesDismissSearch() {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManagerDismissSearch?(self)
+        }
+    }
+
     // MARK: - Operations
 
     private var requestStopsOperation: StopsModelOperation?
@@ -336,6 +345,12 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
                     let inset: CGFloat = 40.0
                     mapView.visibleMapRect = self.mapView.mapRectThatFits(result.mapRect, edgePadding: UIEdgeInsets(top: inset, left: inset, bottom: 200, right: inset))
                     notifyDelegatesShowSearchResult(response: searchResponse)
+                }
+                else if let result = result as? Stop {
+                    mapView.addAnnotation(result)
+                    mapView.setCenterCoordinate(centerCoordinate: result.coordinate, zoomLevel: 18, animated: true)
+                    mapView.selectAnnotation(result, animated: false)
+                    notifyDelegatesDismissSearch()
                 }
             }
             else {

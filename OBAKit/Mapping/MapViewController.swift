@@ -352,6 +352,10 @@ public class MapViewController: UIViewController,
         }
     }
 
+    public func mapRegionManagerDismissSearch(_ manager: MapRegionManager) {
+        nearbyController.exitSearchMode()
+    }
+
     // MARK: - LocationServiceDelegate
 
     private static let programmaticRadiusInMeters = 200.0

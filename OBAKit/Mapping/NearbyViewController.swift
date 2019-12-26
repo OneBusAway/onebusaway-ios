@@ -131,7 +131,8 @@ public class NearbyViewController: VisualEffectViewController,
         exitSearchMode()
     }
 
-    private func exitSearchMode() {
+    /// Cancels searching and exits search mode
+    public func exitSearchMode() {
         searchBar.text = nil
         searchBar.resignFirstResponder()
         searchBar.showsCancelButton = false
