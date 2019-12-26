@@ -56,9 +56,13 @@ class SearchInteractor: NSObject {
 
     // MARK: - Private/Quick Search
 
-    private func quickSearchLabel(prefix: String, searchText: String) -> String {
-        // todo: generate an attributed string from here, not a plain string.
-        return "\(prefix) \(searchText)"
+    private func quickSearchLabel(prefix: String, searchText: String) -> NSAttributedString {
+        let string = NSMutableAttributedString(string: "\(prefix) ")
+        let boldFont = UIFont.preferredFont(forTextStyle: .body).bold
+        let boldSearchText = NSAttributedString(string: searchText, attributes: [NSAttributedString.Key.font: boldFont])
+        string.append(boldSearchText)
+
+        return string
     }
 
     /// Creates a Quick Search section
@@ -74,7 +78,7 @@ class SearchInteractor: NSObject {
         var rows = [TableRowData]()
 
         for (searchType, title) in quickSearchTypes {
-            let row = TableRowData(title: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let row = TableRowData(attributedTitle: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
                 let request = SearchRequest(query: searchText, type: searchType)
                 self.delegate?.performSearch(request: request)
