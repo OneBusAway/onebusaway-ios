@@ -61,6 +61,17 @@ public class SearchManager: NSObject {
     }
 
     public func search(request: SearchRequest) {
+        switch request.searchType {
+        case .address:    searchAddress(request: request)
+        case .route:      searchRoute(request: request)
+        case .stopNumber: searchStopNumber(request: request)
+        case .vehicleID:  searchVehicleID(request: request)
+        }
+    }
+
+    // MARK: - Private Helpers
+
+    private func searchAddress(request: SearchRequest) {
         guard
             let modelService = application.restAPIModelService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
@@ -68,48 +79,68 @@ public class SearchManager: NSObject {
             return
         }
 
-        switch request.searchType {
-        case .address:
-            let op = modelService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-            op.then { [weak self] in
-                guard let self = self else { return }
+        let op = modelService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
+        op.then { [weak self] in
+            guard let self = self else { return }
 
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
-            }
-        case .route:
-            let op = modelService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-            op.then { [weak self] in
-                guard let self = self else { return }
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.routes, boundingRegion: nil, error: op.error)
-            }
-        case .stopNumber:
-            let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
-            let op = modelService.getStops(circularRegion: region, query: request.query)
-            op.then { [weak self] in
-                guard let self = self else { return }
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
-            }
-        case .vehicleID:
-            guard let obacoService = application.obacoService else { return }
-            let op = obacoService.getVehicles(matching: request.query)
-            op.then { [weak self] in
-                guard let self = self else { return }
+            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
+        }
+    }
 
-                let matchingVehicles = op.matchingVehicles
+    private func searchRoute(request: SearchRequest) {
+        guard
+            let modelService = application.restAPIModelService,
+            let mapRect = application.mapRegionManager.lastVisibleMapRect
+        else {
+            return
+        }
 
-                if matchingVehicles.count > 1 {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
+        let op = modelService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
+        op.then { [weak self] in
+            guard let self = self else { return }
+            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.routes, boundingRegion: nil, error: op.error)
+        }
+    }
+
+    private func searchStopNumber(request: SearchRequest) {
+        guard let modelService = application.restAPIModelService else {
+            return
+        }
+
+        let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
+        let op = modelService.getStops(circularRegion: region, query: request.query)
+        op.then { [weak self] in
+            guard let self = self else { return }
+            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
+        }
+    }
+
+    private func searchVehicleID(request: SearchRequest) {
+        guard
+            let modelService = application.restAPIModelService,
+            let obacoService = application.obacoService
+        else {
+            return
+        }
+
+        let op = obacoService.getVehicles(matching: request.query)
+        op.then { [weak self] in
+            guard let self = self else { return }
+
+            let matchingVehicles = op.matchingVehicles
+
+            if matchingVehicles.count > 1 {
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
+            }
+            else if matchingVehicles.count == 1, let vehicleID = matchingVehicles[0].vehicleID {
+                let vehicleOp = modelService.getVehicleStatus(vehicleID)
+                vehicleOp.then { [weak self] in
+                    guard let self = self else { return }
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: vehicleOp.vehicles, boundingRegion: nil, error: vehicleOp.error)
                 }
-                else if matchingVehicles.count == 1, let vehicleID = matchingVehicles[0].vehicleID {
-                    let vehicleOp = modelService.getVehicleStatus(vehicleID)
-                    vehicleOp.then { [weak self] in
-                        guard let self = self else { return }
-                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: vehicleOp.vehicles, boundingRegion: nil, error: vehicleOp.error)
-                    }
-                }
-                else {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
-                }
+            }
+            else {
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
             }
         }
     }
