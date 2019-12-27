@@ -346,6 +346,16 @@ StopPreferencesDelegate {
         let rows = stackView.getAllRows()
         stackView.removeRows(Array(rows[1...]))
 
+        // Service Alerts
+        if stopArrivals.situations.count > 0 {
+            // abxoxo
+            addGroupedTableHeaderToStack(headerText: "Service Alerts")
+
+            for serviceAlert in stopArrivals.situations {
+                addGroupedTableRowToStack(DefaultTableRowView(title: serviceAlert.summary.value, accessoryType: .none), isLastRow: false)
+            }
+        }
+
         // If we have hidden routes, then show the hide/show filter toggle.
         if stopPreferences.hasHiddenRoutes {
             stackView.addRow(filterToggleControl)

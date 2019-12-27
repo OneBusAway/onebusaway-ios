@@ -100,6 +100,11 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
             sections.append(arrivalDeparture)
         }
 
+        // Section: Service Alerts
+        if tripDetails.situations.count > 0 {
+            sections.append(buildServiceAlertsSection(situations: tripDetails.situations))
+        }
+
         // Section: Previous Trip
 
         if let previousTrip = tripDetails.previousTrip {
@@ -152,5 +157,10 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
             self.application.viewRouter.navigate(to: controller, from: self)
         }
         return TableSectionData(row: row)
+    }
+
+    private func buildServiceAlertsSection(situations: [Situation]) -> TableSectionData {
+        let rowData = situations.map { TableRowData(title: $0.summary.value, accessoryType: .disclosureIndicator, tapped: nil) }
+        return TableSectionData(title: "Service Alerts", rows: rowData)
     }
 }
