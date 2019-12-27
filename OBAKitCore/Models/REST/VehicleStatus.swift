@@ -24,10 +24,10 @@ public class VehicleStatus: NSObject, Decodable {
     public let location: CLLocation?
 
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
-    let tripID: String
+    let tripID: TripIdentifier?
 
     /// The vehicle's current trip
-    public let trip: Trip
+    public let trip: Trip?
 
     /// the current journey phase of the vehicle
     public let phase: String
@@ -63,8 +63,8 @@ public class VehicleStatus: NSObject, Decodable {
             lastLocationUpdateTime = updateTime
         }
 
-        tripID = try container.decode(String.self, forKey: .tripID)
-        trip = references.tripWithID(tripID)!
+        tripID = ModelHelpers.nilifyBlankValue(try container.decode(TripIdentifier.self, forKey: .tripID))
+        trip = references.tripWithID(tripID)
 
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)

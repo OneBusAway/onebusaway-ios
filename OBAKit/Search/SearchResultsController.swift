@@ -79,23 +79,47 @@ extension SearchResultsController: ListAdapterDataSource {
     private func tableRowData(from item: Any) -> TableRowData? {
         let row: TableRowData
 
-        switch item {
-        case let item as MKMapItem:
-            row = TableRowData(title: item.name ?? "???", accessoryType: .none, tapped: nil)
-        case let item as Route:
-            row = TableRowData(title: item.shortName, subtitle: item.agency.name, accessoryType: .none, tapped: nil)
-        case let item as Stop:
-            row = TableRowData(title: item.name, accessoryType: .none, tapped: nil)
-        case let item as VehicleStatus:
-            row = TableRowData(title: item.vehicleID, accessoryType: .none, tapped: nil)
-        default:
-            return nil
+        let tapHandler: ListRowActionHandler = { [weak self] _ in
+            guard let self = self else { return }
+            let mgr = self.application.mapRegionManager
+            mgr.searchResponse = SearchResponse(response: self.searchResponse, substituteResult: item)
+            self.delegate?.dismissModalController(self)
         }
 
-        row.tapped = { [weak self] _ in
-            guard let self = self else { return }
-            self.application.mapRegionManager.searchResponse = SearchResponse(response: self.searchResponse, substituteResult: item)
-            self.delegate?.dismissModalController(self)
+        switch item {
+        case let item as MKMapItem:
+            if let name = item.name {
+                row = TableRowData(title: name, accessoryType: .none, tapped: tapHandler)
+            }
+            else {
+                return nil
+            }
+        case let item as Route:
+            row = TableRowData(title: item.shortName, subtitle: item.agency.name, accessoryType: .none, tapped: tapHandler)
+        case let item as Stop:
+            row = TableRowData(title: item.name, accessoryType: .none, tapped: tapHandler)
+        case let item as AgencyVehicle:
+            guard
+                let vehicleID = item.vehicleID,
+                let modelService = application.restAPIModelService
+            else {
+                return nil
+            }
+            row = TableRowData(title: vehicleID, subtitle: item.agencyName, accessoryType: .none) { [weak self] _ in
+                let vehicleOp = modelService.getVehicleStatus(vehicleID)
+                vehicleOp.then { [weak self] in
+                    guard
+                        let self = self,
+                        let vehicle = vehicleOp.vehicles.first
+                    else { return }
+                    let response = SearchResponse(response: self.searchResponse, substituteResult: vehicle)
+                    self.application.mapRegionManager.searchResponse = response
+                    self.delegate?.dismissModalController(self)
+                }
+            }
+
+        default:
+            return nil
         }
 
         return row

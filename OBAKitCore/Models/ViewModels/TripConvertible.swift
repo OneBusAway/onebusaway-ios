@@ -17,7 +17,10 @@ public class TripConvertible: NSObject {
         self.arrivalDeparture = arrivalDeparture
     }
 
-    public init(vehicleStatus: VehicleStatus) {
+    public init?(vehicleStatus: VehicleStatus) {
+        guard vehicleStatus.trip != nil else {
+            return nil
+        }
         self.vehicleStatus = vehicleStatus
     }
 
@@ -30,7 +33,7 @@ public class TripConvertible: NSObject {
     }
 
     public var trip: Trip {
-        return arrivalDeparture?.trip ?? vehicleStatus!.trip
+        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
     }
 
     public var serviceDate: Date {

@@ -345,8 +345,14 @@ public class MapViewController: UIViewController,
         case let result as Stop:
             show(stop: result)
         case let result as VehicleStatus:
-            let tripController = TripViewController(application: application, tripConvertible: TripConvertible(vehicleStatus: result))
-            application.viewRouter.navigate(to: tripController, from: self)
+            if let convertible = TripConvertible(vehicleStatus: result) {
+                let tripController = TripViewController(application: application, tripConvertible: convertible)
+                application.viewRouter.navigate(to: tripController, from: self)
+            }
+            else {
+                let msg = NSLocalizedString("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
+                AlertPresenter.show(errorMessage: msg, presentingController: self)
+            }
         default:
             fatalError()
         }
