@@ -28,7 +28,11 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
     /// First line in the view; contains route and headsign information.
     ///
     /// For example, this might contain the text `10 - Downtown Seattle`.
-    public let routeHeadsignLabel = buildLabel()
+    public let routeHeadsignLabel: UILabel = {
+        let label = buildLabel()
+        label.numberOfLines = 0
+        return label
+    }()
 
     /// Second line in the view; contains the arrival/departure time and status relative to schedule.
     ///
