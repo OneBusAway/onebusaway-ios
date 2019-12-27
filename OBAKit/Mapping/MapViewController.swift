@@ -320,7 +320,7 @@ public class MapViewController: UIViewController,
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
-        // abxoxo todo!
+        AlertPresenter.show(errorMessage: NSLocalizedString("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse) {

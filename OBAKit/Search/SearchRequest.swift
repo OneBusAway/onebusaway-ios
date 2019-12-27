@@ -101,7 +101,6 @@ public class SearchManager: NSObject {
                     self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
                 }
                 else if matchingVehicles.count == 1, let vehicleID = matchingVehicles[0].vehicleID {
-                    // show result
                     let vehicleOp = modelService.getVehicleStatus(vehicleID)
                     vehicleOp.then { [weak self] in
                         guard let self = self else { return }
@@ -109,7 +108,6 @@ public class SearchManager: NSObject {
                     }
                 }
                 else {
-                    // abxoxo - show an error
                     self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
                 }
             }
