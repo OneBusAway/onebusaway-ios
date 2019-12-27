@@ -160,7 +160,16 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
     }
 
     private func buildServiceAlertsSection(situations: [Situation]) -> TableSectionData {
-        let rowData = situations.map { TableRowData(title: $0.summary.value, accessoryType: .disclosureIndicator, tapped: nil) }
-        return TableSectionData(title: "Service Alerts", rows: rowData)
+        var rows = [TableRowData]()
+        for serviceAlert in situations.sorted(by: { $0.createdAt > $1.createdAt }) {
+            let row = TableRowData(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
+                self.application.viewRouter.present(alert, from: self)
+            }
+            rows.append(row)
+        }
+
+        return TableSectionData(title: NSLocalizedString("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
     }
 }

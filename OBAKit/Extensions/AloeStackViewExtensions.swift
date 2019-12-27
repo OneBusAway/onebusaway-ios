@@ -38,6 +38,16 @@ public extension AloeStackView {
             self.setInset(forRow: view, inset: insets)
         }
     }
+
+    /// Hides the separator after the last row added to the receiver. Does nothing if the stack view doesn't have any rows in it.
+    func hideLastRowSeparator() {
+        guard let lastRow = lastRow else {
+            return
+        }
+
+        removeRow(lastRow)
+        addRow(lastRow, hideSeparator: true)
+    }
 }
 
 protocol AloeStackTableBuilder {

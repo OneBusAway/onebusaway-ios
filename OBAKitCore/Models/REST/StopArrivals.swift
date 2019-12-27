@@ -20,10 +20,20 @@ public class StopArrivals: NSObject, Decodable {
     public let nearbyStops: [Stop]
 
     /// A list of active service alert IDs.
-    let situationIDs: [String]
+    private let situationIDs: [String]
 
-    /// Active service alerts.
-    public let situations: [Situation]
+    /// Active service alerts tied to the `StopArrivals` model.
+    private let _situations: [Situation]
+
+    /// Returns this model's list of service alerts, if any exist. If this model does not have any, then it returns a flattened list of its `ArrivalDepartures` objects' service alerts.
+    public var situations: [Situation] {
+        if _situations.count > 0 {
+            return _situations
+        }
+        else {
+            return arrivalsAndDepartures.flatMap { $0.situations }
+        }
+    }
 
     /// The stop ID for the stop this represents.
     let stopID: String
@@ -48,7 +58,7 @@ public class StopArrivals: NSObject, Decodable {
         nearbyStops = references.stopsWithIDs(nearbyStopIDs)
 
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
-        situations = references.situationsWithIDs(situationIDs)
+        _situations = references.situationsWithIDs(situationIDs)
 
         stopID = try container.decode(String.self, forKey: .stopID)
         stop = references.stopWithID(stopID)!

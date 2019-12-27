@@ -348,18 +348,29 @@ StopPreferencesDelegate {
 
         // Service Alerts
         if stopArrivals.situations.count > 0 {
-            // abxoxo
-            addGroupedTableHeaderToStack(headerText: "Service Alerts")
+            addTableHeaderToStack(headerText: NSLocalizedString("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller."))
 
-            for serviceAlert in stopArrivals.situations {
-                addGroupedTableRowToStack(DefaultTableRowView(title: serviceAlert.summary.value, accessoryType: .none), isLastRow: false)
+            for serviceAlert in Set(stopArrivals.situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
+                let row = DefaultTableRowView(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator)
+                stackView.addRow(row)
+                stackView.setTapHandler(forRow: row) { [weak self] _ in
+                    guard let self = self else { return }
+                    let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
+                    self.application.viewRouter.present(alert, from: self)
+                }
             }
+
+            stackView.hideLastRowSeparator()
         }
 
         // If we have hidden routes, then show the hide/show filter toggle.
         if stopPreferences.hasHiddenRoutes {
             stackView.addRow(filterToggleControl)
             stackView.hideSeparator(forRow: filterToggleControl)
+        }
+        else if stopArrivals.situations.count > 0 {
+            // When we are displaying service alerts, we should also show a header for the section.
+            addTableHeaderToStack(headerText: NSLocalizedString("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller."))
         }
 
         // Show arrivals and departures

@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// Also known as a 'Service Alert'
 public class Situation: NSObject, Decodable {
     public let activeWindows: [TimeWindow]
     public let affectedEntities: [AffectedEntity]
@@ -50,6 +51,38 @@ public class Situation: NSObject, Decodable {
         summary = try container.decode(TranslatedString.self, forKey: .summary)
         url = try? container.decode(URL.self, forKey: .url)
     }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Situation else { return false }
+        return
+            activeWindows == rhs.activeWindows &&
+            affectedEntities == rhs.affectedEntities &&
+            consequences == rhs.consequences &&
+            createdAt == rhs.createdAt &&
+            situationDescription == rhs.situationDescription &&
+            id == rhs.id &&
+            publicationWindows == rhs.publicationWindows &&
+            reason == rhs.reason &&
+            severity == rhs.severity &&
+            summary == rhs.summary &&
+            url == rhs.url
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(activeWindows)
+        hasher.combine(affectedEntities)
+        hasher.combine(consequences)
+        hasher.combine(createdAt)
+        hasher.combine(situationDescription)
+        hasher.combine(id)
+        hasher.combine(publicationWindows)
+        hasher.combine(reason)
+        hasher.combine(severity)
+        hasher.combine(summary)
+        hasher.combine(url)
+        return hasher.finalize()
+    }
 }
 
 public class TimeWindow: NSObject, Decodable {
@@ -64,6 +97,18 @@ public class TimeWindow: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         from = try container.decode(Int.self, forKey: .from)
         to = try container.decode(Int.self, forKey: .to)
+    }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? TimeWindow else { return false }
+        return from == rhs.from && to == rhs.to
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(from)
+        hasher.combine(to)
+        return hasher.finalize()
     }
 }
 
@@ -93,9 +138,31 @@ public class AffectedEntity: NSObject, Codable {
         stopID = try container.decode(String.self, forKey: .stopID)
         tripID = try container.decode(String.self, forKey: .tripID)
     }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? AffectedEntity else { return false }
+        return
+            agencyID == rhs.agencyID &&
+            applicationID == rhs.applicationID &&
+            directionID == rhs.directionID &&
+            routeID == rhs.routeID &&
+            stopID == rhs.stopID &&
+            tripID == rhs.tripID
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(agencyID)
+        hasher.combine(applicationID)
+        hasher.combine(directionID)
+        hasher.combine(routeID)
+        hasher.combine(stopID)
+        hasher.combine(tripID)
+        return hasher.finalize()
+    }
 }
 
-public class Consequence: Decodable {
+public class Consequence: NSObject, Decodable {
     public let condition: String
     public let conditionDetails: ConditionDetails?
 
@@ -107,6 +174,18 @@ public class Consequence: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         condition = try container.decode(String.self, forKey: .condition)
         conditionDetails = try container.decode(ConditionDetails.self, forKey: .conditionDetails)
+    }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Consequence else { return false }
+        return condition == rhs.condition && conditionDetails == rhs.conditionDetails
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(condition)
+        hasher.combine(conditionDetails)
+        return hasher.finalize()
     }
 }
 
@@ -127,6 +206,18 @@ public class ConditionDetails: NSObject, Decodable {
         diversionPath = try diversionPathWrapper.decode(String.self, forKey: .points)
         stopIDs = try container.decode([String].self, forKey: .stopIDs)
     }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? ConditionDetails else { return false }
+        return diversionPath == rhs.diversionPath && stopIDs == rhs.stopIDs
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(diversionPath)
+        hasher.combine(stopIDs)
+        return hasher.finalize()
+    }
 }
 
 public class TranslatedString: NSObject, Decodable {
@@ -134,12 +225,23 @@ public class TranslatedString: NSObject, Decodable {
     public let value: String
 
     enum CodingKeys: String, CodingKey {
-        case lang
-        case value
+        case lang, value
     }
 
     init(lang: String, value: String) {
         self.lang = lang
         self.value = value
+    }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? TranslatedString else { return false }
+        return lang == rhs.lang && value == rhs.value
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(lang)
+        hasher.combine(value)
+        return hasher.finalize()
     }
 }
