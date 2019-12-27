@@ -42,17 +42,45 @@ class SearchInteractor: NSObject {
 
         sections.append(quickSearchSection(searchText: searchText))
 
+        if let recentStopsSection = buildRecentStopsSection(searchText: searchText) {
+            sections.append(recentStopsSection)
+        }
+
+        if let bookmarksSection = buildBookmarksSection(searchText: searchText) {
+            sections.append(bookmarksSection)
+        }
+
+        return sections
+    }
+
+    // MARK: - Private
+
+    private func buildRecentStopsSection(searchText: String) -> TableSectionData? {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
             TableRowData(title: stop.name, accessoryType: .disclosureIndicator) { _ in
                 self.delegate?.searchInteractor(self, showStop: stop)
             }
         }
-        if recentStops.count > 0 {
-            let recentStopsSection = TableSectionData(title: NSLocalizedString("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the recent Stops search header"), rows: recentStops)
-            sections.append(recentStopsSection)
+
+        guard recentStops.count > 0 else {
+            return nil
         }
 
-        return sections
+        return TableSectionData(title: NSLocalizedString("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the Recent Stops search header"), rows: recentStops)
+    }
+
+    private func buildBookmarksSection(searchText: String) -> TableSectionData? {
+        let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
+            TableRowData(title: bookmark.name, accessoryType: .disclosureIndicator) { _ in
+                self.delegate?.searchInteractor(self, showStop: bookmark.stop)
+            }
+        }
+
+        guard bookmarks.count > 0 else {
+            return nil
+        }
+
+        return TableSectionData(title: NSLocalizedString("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), rows: bookmarks)
     }
 
     // MARK: - Private/Quick Search

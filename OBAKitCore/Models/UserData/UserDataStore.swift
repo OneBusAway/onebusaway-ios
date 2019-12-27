@@ -80,6 +80,10 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter stopID: The Stop ID for which to search in existing bookmarks.
     func findBookmark(stopID: String) -> Bookmark?
 
+    /// Finds `Bookmark`s that match the provided search text.
+    /// - Parameter searchText: The text to search `Bookmark`s for.
+    func findBookmarks(matching searchText: String) -> [Bookmark]
+
     // MARK: - Recent Stops
 
     /// Find recent stops that match `searchText`
@@ -292,6 +296,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func findBookmark(stopID: String) -> Bookmark? {
         bookmarks.first { $0.stopID == stopID }
+    }
+
+    public func findBookmarks(matching searchText: String) -> [Bookmark] {
+        let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return bookmarks.filter { $0.matchesQuery(cleanedText) }
     }
 
     private func updateBookmarksWithStop(_ stop: Stop, region: Region) {

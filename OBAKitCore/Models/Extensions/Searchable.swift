@@ -15,6 +15,24 @@ public protocol Searchable {
 
 // MARK: - Models
 
+extension Bookmark: Searchable {
+    public func matchesQuery(_ query: String?) -> Bool {
+        guard let query = query else {
+            return true
+        }
+
+        if let routeShortName = routeShortName, routeShortName.localizedCaseInsensitiveContains(query) {
+            return true
+        }
+
+        if let tripHeadsign = tripHeadsign, tripHeadsign.localizedCaseInsensitiveContains(query) {
+            return true
+        }
+
+        return stop.matchesQuery(query)
+    }
+}
+
 extension Route: Searchable {
     public func matchesQuery(_ query: String?) -> Bool {
         guard let query = query else {
