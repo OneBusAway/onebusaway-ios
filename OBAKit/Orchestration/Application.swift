@@ -165,10 +165,6 @@ public class Application: NSObject,
         locationService.addDelegate(self)
         regionsService.addDelegate(self)
 
-        if locationService.isLocationUseAuthorized {
-            locationService.startUpdates()
-        }
-
         refreshRESTAPIModelService()
         refreshObacoService()
 
@@ -311,10 +307,18 @@ public class Application: NSObject,
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {
+        if locationService.isLocationUseAuthorized {
+            locationService.startUpdates()
+        }
+
         connectivity.startNotifier()
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
+        if locationService.isLocationUseAuthorized {
+            locationService.stopUpdates()
+        }
+
         connectivity.stopNotifier()
     }
 
