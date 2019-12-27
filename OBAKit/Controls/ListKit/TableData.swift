@@ -119,6 +119,7 @@ public class TableRowData: ListViewModel {
 /// Models a section in a table. Contains many `TableRowData` objects.
 public class TableSectionData: NSObject, ListDiffable {
     var title: String?
+    var footer: String?
     let rows: [TableRowData]
     let backgroundColor: UIColor?
 
@@ -131,7 +132,7 @@ public class TableSectionData: NSObject, ListDiffable {
             return false
         }
 
-        return title == rhs.title && rows == rhs.rows && backgroundColor == rhs.backgroundColor
+        return title == rhs.title && footer == rhs.footer && rows == rhs.rows && backgroundColor == rhs.backgroundColor
     }
 
     /// Creates a `TableSectionData`

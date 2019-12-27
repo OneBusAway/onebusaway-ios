@@ -69,18 +69,25 @@ final public class TableSectionController: ListSectionController, ListSupplement
     // MARK: ListSupplementaryViewSource
 
     public func supportedElementKinds() -> [String] {
-        if data?.title == nil {
-            return []
+        var supported = [String]()
+
+        if data?.title != nil {
+            supported.append(UICollectionView.elementKindSectionHeader)
         }
-        else {
-            return [UICollectionView.elementKindSectionHeader]
+
+        if data?.footer != nil {
+            supported.append(UICollectionView.elementKindSectionFooter)
         }
+
+        return supported
     }
 
     public func viewForSupplementaryElement(ofKind elementKind: String, at index: Int) -> UICollectionReusableView {
         switch elementKind {
         case UICollectionView.elementKindSectionHeader:
             return userHeaderView(atIndex: index)
+        case UICollectionView.elementKindSectionFooter:
+            return userFooterView(atIndex: index)
         default:
             fatalError()
         }
@@ -117,6 +124,18 @@ final public class TableSectionController: ListSectionController, ListSupplement
         }
 
         view.textLabel.text = data?.title ?? ""
+        if let bgColor = data?.backgroundColor {
+            view.backgroundColor = bgColor
+        }
+        return view
+    }
+
+    private func userFooterView(atIndex index: Int) -> UICollectionReusableView {
+        guard let view = collectionContext?.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, for: self, class: TableSectionHeaderView.self, at: index) as? TableSectionHeaderView else {
+            fatalError()
+        }
+
+        view.textLabel.text = data?.footer ?? ""
         if let bgColor = data?.backgroundColor {
             view.backgroundColor = bgColor
         }

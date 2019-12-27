@@ -170,6 +170,9 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
             rows.append(row)
         }
 
-        return TableSectionData(title: NSLocalizedString("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
+        let section = TableSectionData(title: NSLocalizedString("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
+        section.footer = NSLocalizedString("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")
+
+        return section
     }
 }
