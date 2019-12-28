@@ -19,6 +19,8 @@ public protocol NearbyDelegate: NSObjectProtocol {
 
 /// This is the view controller that powers the drawer on the `MapViewController`.
 public class NearbyViewController: VisualEffectViewController,
+    AgencyAlertsDelegate,
+    AgencyAlertListKitConverters,
     ListAdapterDataSource,
     ListProvider,
     ListKitStopConverters,
@@ -30,7 +32,7 @@ public class NearbyViewController: VisualEffectViewController,
 
     public weak var nearbyDelegate: NearbyDelegate?
 
-    private let application: Application
+    public let application: Application
 
     private var stops = [Stop]() {
         didSet {
@@ -50,11 +52,14 @@ public class NearbyViewController: VisualEffectViewController,
         self.mapRegionManager.addDelegate(self)
 
         self.application.regionsService.addDelegate(self)
+
+        self.application.alertsStore.addDelegate(self)
     }
 
     deinit {
         mapRegionManager.removeDelegate(self)
         application.regionsService.removeDelegate(self)
+        application.alertsStore.removeDelegate(self)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -98,6 +103,12 @@ public class NearbyViewController: VisualEffectViewController,
             visualEffectView.contentView.addSubview(stackView)
             stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset, leading: 0, bottom: 0, trailing: 0))
         }
+    }
+
+    // MARK: - Agency Alerts
+
+    public func agencyAlertsUpdated() {
+        collectionController.reload(animated: false)
     }
 
     // MARK: - Search UI and Data
@@ -166,6 +177,18 @@ public class NearbyViewController: VisualEffectViewController,
 
     private func nearbyModeObjects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
+
+        if application.alertsStore.recentHighSeverityAlerts.count > 0 {
+            let section = tableSection(agencyAlerts: application.alertsStore.recentHighSeverityAlerts) { [weak self] model in
+                guard
+                    let self = self,
+                    let alert = model.object as? AgencyAlert
+                else { return }
+
+                self.presentAlert(alert)
+            }
+            sections.append(section)
+        }
 
         if stops.count > 0 {
             let section = tableSection(stops: Array(stops.prefix(5))) { [weak self] vm in
