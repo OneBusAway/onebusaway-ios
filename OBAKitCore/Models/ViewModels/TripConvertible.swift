@@ -25,7 +25,7 @@ public class TripConvertible: NSObject {
     }
 
     public var vehicleID: String? {
-        return arrivalDeparture?.vehicleID ?? vehicleStatus!.vehicleID
+        arrivalDeparture?.vehicleID ?? vehicleStatus?.vehicleID
     }
 
     public var tripStatus: TripStatus? {
