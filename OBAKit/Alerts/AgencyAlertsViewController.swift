@@ -101,7 +101,7 @@ class AgencyAlertsViewController: UIViewController, ModelViewModelConverters, Li
 
         if let url = localizedAlertURL(alert) {
             let safari = SFSafariViewController(url: url)
-            application.viewRouter.present(safari, from: self)
+            application.viewRouter.present(safari, from: self, isModalInPresentation: true)
         }
         else {
             let title = localizedAlertTitle(alert)
