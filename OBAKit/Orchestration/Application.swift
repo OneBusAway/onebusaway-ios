@@ -168,8 +168,6 @@ public class Application: NSObject,
         refreshRESTAPIModelService()
         refreshObacoService()
 
-        alertsStore.checkForUpdates()
-
         configureConnectivity()
     }
 
@@ -312,6 +310,7 @@ public class Application: NSObject,
         }
 
         connectivity.startNotifier()
+        alertsStore.checkForUpdates()
     }
 
     @objc public func applicationWillResignActive(_ application: UIApplication) {
