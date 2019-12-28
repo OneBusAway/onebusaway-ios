@@ -21,9 +21,9 @@ public protocol NearbyDelegate: NSObjectProtocol {
 public class NearbyViewController: VisualEffectViewController,
     ListAdapterDataSource,
     ListProvider,
-    ModelViewModelConverters,
-    SearchDelegate,
+    ListKitStopConverters,
     RegionsServiceDelegate,
+    SearchDelegate,
     UISearchBarDelegate {
 
     let mapRegionManager: MapRegionManager
@@ -168,7 +168,7 @@ public class NearbyViewController: VisualEffectViewController,
         var sections: [ListDiffable] = []
 
         if stops.count > 0 {
-            let section = tableSection(from: Array(stops.prefix(5))) { [weak self] vm in
+            let section = tableSection(stops: Array(stops.prefix(5))) { [weak self] vm in
                 guard
                     let self = self,
                     let stop = vm.object as? Stop

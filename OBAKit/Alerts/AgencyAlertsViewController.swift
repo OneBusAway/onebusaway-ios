@@ -7,12 +7,14 @@
 
 import UIKit
 import IGListKit
-import SafariServices
 import OBAKitCore
 
-/// Displays `AgencyAlert` objects loaded from a ProtoBuf feed.
-class AgencyAlertsViewController: UIViewController, ModelViewModelConverters, ListAdapterDataSource, AgencyAlertsDelegate {
-    private let application: Application
+/// Displays `AgencyAlert` objects loaded from a Protobuf feed.
+class AgencyAlertsViewController: UIViewController,
+    AgencyAlertListKitConverters,
+    ListAdapterDataSource,
+    AgencyAlertsDelegate {
+    public let application: Application
     private let alertsStore: AgencyAlertsStore
 
     // MARK: - Init
@@ -88,30 +90,6 @@ class AgencyAlertsViewController: UIViewController, ModelViewModelConverters, Li
         refreshControl.endRefreshing()
     }
 
-    // MARK: - Actions
-
-    @objc private func markAllAsRead() {
-        // abxoxo - todo data stuff
-        collectionController.reload(animated: false)
-    }
-
-    private func presentAlert(_ alert: AgencyAlert) {
-        // abxoxo todo
-        //        application.modelDao.markAlert(asRead: alert)
-
-        if let url = localizedAlertURL(alert) {
-            let safari = SFSafariViewController(url: url)
-            application.viewRouter.present(safari, from: self, isModalInPresentation: true)
-        }
-        else {
-            let title = localizedAlertTitle(alert)
-            let body = localizedAlertBody(alert)
-            AlertPresenter.showDismissableAlert(title: title, message: body, presentingController: self)
-        }
-
-        self.collectionController.reload(animated: false)
-    }
-
     // MARK: - Data Loading
 
     @objc private func reloadServerData() {
@@ -123,25 +101,14 @@ class AgencyAlertsViewController: UIViewController, ModelViewModelConverters, Li
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
 
-        let items = alertsStore.agencyAlerts.compactMap { alert -> TableRowData? in
-            guard let title = localizedAlertTitle(alert) else { return nil }
+        let section = tableSection(agencyAlerts: alertsStore.agencyAlerts) { [weak self] model in
+            guard
+                let self = self,
+                let alert = model.object as? AgencyAlert
+            else { return }
 
-            let formattedDateTime: String?
-            if let startDate = alert.startDate {
-                formattedDateTime = application.formatters.contextualDateTimeString(startDate)
-            }
-            else {
-                formattedDateTime = nil
-            }
-
-            let data = TableRowData(title: title, subtitle: formattedDateTime ?? "", accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                self.presentAlert(alert)
-            }
-            return data
+            self.presentAlert(alert)
         }
-
-        let section = TableSectionData(title: nil, rows: items)
 
         return [section]
     }

@@ -11,7 +11,7 @@ import SVProgressHUD
 import CoreLocation
 import OBAKitCore
 
-class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ModelViewModelConverters, ListAdapterDataSource, UISearchResultsUpdating {
+class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ListKitStopConverters, ListAdapterDataSource, UISearchResultsUpdating {
 
     private let coordinate: CLLocationCoordinate2D
 
@@ -125,7 +125,7 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
         var sections: [ListDiffable] = []
         for dir in directions.keys {
             let stops = directions[dir] ?? []
-            let section = tableSection(from: stops, tapped: tapHandler, deleted: nil)
+            let section = tableSection(stops: stops, tapped: tapHandler, deleted: nil)
             section.title = Formatters.adjectiveFormOfCardinalDirection(dir)
             sections.append(section)
         }
