@@ -14,6 +14,14 @@ public class AgencyAlert: NSObject {
     private let alert: TransitRealtime_Alert
     public let id: String
 
+    public var isHighSeverity: Bool {
+        guard alert.hasSeverityLevel else {
+            return false
+        }
+
+        return alert.severityLevel == .severe || alert.severityLevel == .warning
+    }
+
     // MARK: - Agency
 
     public let agencyID: String

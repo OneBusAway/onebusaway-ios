@@ -103,11 +103,17 @@ public class AgencyAlertsStore: NSObject {
     /// This property returns all `AgencyAlert`s from the last eight hours that
     /// have a GTFS-RT `SeverityLevel` of `WARNING` or `SEVERE`.
     public var recentHighSeverityAlerts: [AgencyAlert] {
-        guard let first = agencyAlerts.first else {
-            return []
-        }
+        return agencyAlerts.filter { alert in
+            guard
+                alert.isHighSeverity,
+                let startDate = alert.startDate
+            else {
+                return false
+            }
 
-        return [first]
+            // Did this start less than 8 hours ago?
+            return abs(startDate.timeIntervalSinceNow) < 60 * 60 * 8
+        }
     }
 
     private var alerts = Set<AgencyAlert>() {
