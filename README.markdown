@@ -75,6 +75,17 @@ Please log bugs with the label `Documentation` on any issues with the documentat
 
 ## Functional Areas
 
+### Protobuf
+
+To make modifications to the local copy of `gtfs-realtime.proto`, you will need to install some new tools via the `brew` command:
+
+```bash
+brew install protobuf
+brew install swift-protobuf
+```
+
+Now, `cd OBAKitCore/Models/Protobuf`, update `gtfs-realtime.proto` to the appropriate version, and run `./proto-gen.sh`.
+
 ### Networking
 
 This framework consists of a Network Service layer and a Model Service layer, each of which have three service classes designed to work with the three data sources that OneBusAway for iOS depends on:
