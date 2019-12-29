@@ -179,7 +179,7 @@ public class NearbyViewController: VisualEffectViewController,
         var sections: [ListDiffable] = []
 
         if application.alertsStore.recentHighSeverityAlerts.count > 0 {
-            let section = tableSection(agencyAlerts: application.alertsStore.recentHighSeverityAlerts) { [weak self] model in
+            let alertSections = tableSections(agencyAlerts: application.alertsStore.recentHighSeverityAlerts) { [weak self] model in
                 guard
                     let self = self,
                     let alert = model.object as? AgencyAlert
@@ -187,7 +187,7 @@ public class NearbyViewController: VisualEffectViewController,
 
                 self.presentAlert(alert)
             }
-            sections.append(section)
+            sections.append(contentsOf: alertSections)
         }
 
         if stops.count > 0 {

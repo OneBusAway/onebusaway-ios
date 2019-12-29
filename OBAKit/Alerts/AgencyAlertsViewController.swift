@@ -100,8 +100,7 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - IGListKit
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-
-        let section = tableSection(agencyAlerts: alertsStore.agencyAlerts) { [weak self] model in
+        return tableSections(agencyAlerts: alertsStore.agencyAlerts) { [weak self] model in
             guard
                 let self = self,
                 let alert = model.object as? AgencyAlert
@@ -109,8 +108,6 @@ class AgencyAlertsViewController: UIViewController,
 
             self.presentAlert(alert)
         }
-
-        return [section]
     }
 
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {

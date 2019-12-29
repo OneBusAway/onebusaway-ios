@@ -17,6 +17,8 @@ public extension ListAdapterDataSource where Self: UIViewController {
     /// - Returns: The `ListSectionController`
     func defaultSectionController(for object: Any) -> ListSectionController {
         switch object {
+        case is MessageSectionData:
+            return MessageSectionController()
         case is TableSectionData:
             return TableSectionController()
         case is TripStopListItem:
