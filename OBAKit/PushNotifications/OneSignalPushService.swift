@@ -41,6 +41,10 @@ public class OneSignalPushService: NSObject, PushServiceProvider {
         OneSignal.getPermissionSubscriptionState()?.permissionStatus.status == .authorized
     }
 
+    public var pushUserID: PushManagerUserID? {
+        OneSignal.getPermissionSubscriptionState()?.subscriptionStatus?.userId
+    }
+
     public func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
         OneSignal.promptForPushNotifications { [weak self] accepted in
             guard let self = self else { return }

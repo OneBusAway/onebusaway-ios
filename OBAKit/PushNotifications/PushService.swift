@@ -33,6 +33,8 @@ public protocol PushServiceProvider: NSObjectProtocol {
 
     var notificationReceivedHandler: PushServiceNotificationReceivedHandler! { get set }
     var errorHandler: PushServiceErrorHandler! { get set }
+
+    var pushUserID: PushManagerUserID? { get }
 }
 
 // MARK: - PushServiceDelegate
@@ -93,7 +95,7 @@ public class PushService: NSObject {
     }
 
     private func errorHandler(error: Error) {
-        //
+        // abxoxo todo?
     }
 
     // MARK: - Public Methods
@@ -108,5 +110,9 @@ public class PushService: NSObject {
 
     public var isRegisteredForRemoteNotifications: Bool {
         serviceProvider.isRegisteredForRemoteNotifications
+    }
+
+    public var pushUserID: PushManagerUserID? {
+        serviceProvider.pushUserID
     }
 }

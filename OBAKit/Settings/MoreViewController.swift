@@ -260,44 +260,15 @@ import OBAKitCore
                 guard let self = self else { return }
                 self.application.performTestCrash()
             }
+
+            let pushID = application.pushService?.pushUserID ?? NSLocalizedString("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+            let pushIDRow = ValueTableRowView(title: NSLocalizedString("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), subtitle: pushID, accessoryType: .none)
+            addGroupedTableRowToStack(pushIDRow) { [weak self] _ in
+                if let pushID = self?.application.pushService?.pushUserID {
+                    UIPasteboard.general.string = pushID
+                }
+            }
         }
-//        - (OBATableSection*)debugTableSection {
-//            OBATableSection *section = [[OBATableSection alloc] initWithTitle:NSLocalizedString(@"info_controller.debug_section_title", @"The table section title for the debugging tools.")];
-//
-//            OBATableRow *pushIDRow = [[OBATableRow alloc] initWithTitle:@"Push User ID" action:^(OBABaseRow *row) {
-//                [UIPasteboard generalPasteboard].string = OBAPushManager.pushManager.pushNotificationUserID;
-//                }];
-//            pushIDRow.style = UITableViewCellStyleSubtitle;
-//            pushIDRow.subtitle = OBAPushManager.pushManager.pushNotificationUserID;
-//            [section addRow:pushIDRow];
-//
-//            OBATableRow *pushTokenRow = [[OBATableRow alloc] initWithTitle:@"Push Token" action:^(OBABaseRow *row) {
-//                [UIPasteboard generalPasteboard].string = OBAPushManager.pushManager.pushNotificationToken;
-//                }];
-//            pushTokenRow.style = UITableViewCellStyleSubtitle;
-//            pushTokenRow.subtitle = OBAPushManager.pushManager.pushNotificationToken;
-//            [section addRow:pushTokenRow];
-//
-//            OBATableRow *row = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"info_controller.browse_user_defaults_row", @"Row title for the Browse User Defaults action") action:^(OBABaseRow *r2) {
-//                [self logRowTapAnalyticsEvent:@"User Defaults Browser"];
-//                UserDefaultsBrowserViewController *browser = [[UserDefaultsBrowserViewController alloc] init];
-//                [self.navigationController pushViewController:browser animated:YES];
-//                }];
-//            row.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-//            [section addRow:row];
-//
-//            row = [[OBATableRow alloc] initWithTitle:NSLocalizedString(@"info_controller.export_user_defaults_row", @"Row title for Export Defaults action") action:^(OBABaseRow *r2) {
-//                [self logRowTapAnalyticsEvent:@"Export Defaults"];
-//                NSData *archivedData = [[OBAApplication sharedApplication] exportUserDefaultsAsXML];
-//                NSURL *URL = [FileHelpers urlToFileName:@"userdefaults.xml" inDirectory:NSDocumentDirectory];
-//                [archivedData writeToURL:URL atomically:YES];
-//
-//                [self displayDocumentInteractionControllerForURL:URL];
-//                }];
-//            [section addRow:row];
-//
-//            return section;
-//        }
     }
 
     // MARK: - Fare Payments
