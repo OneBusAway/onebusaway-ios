@@ -28,6 +28,8 @@ public class Strings: NSObject {
 
     public static let filter = NSLocalizedString("common.filter", value: "Filter", comment: "The verb 'to filter'.")
 
+    public static let learnMore = NSLocalizedString("common.learn_more", value: "Learn More", comment: "This is button text that tells the user they can tap on it to learn more about the topic at hand.")
+
     public static let loading = NSLocalizedString("common.loading", value: "Loading…", comment: "Used to indicate that content is loading.")
 
     public static let map = NSLocalizedString("common.map", value: "Map", comment: "The noun for a map.")
