@@ -11,6 +11,7 @@ import Connectivity
 import CoreLocation
 import OBAKitCore
 import CocoaLumberjackSwift
+import SafariServices
 
 // MARK: - Protocols
 
@@ -52,6 +53,7 @@ public protocol ApplicationDelegate {
 
 @objc(OBAApplication)
 public class Application: NSObject,
+    AgencyAlertsDelegate,
     LocationServiceDelegate,
     ObacoServiceDelegate,
     PushServiceDelegate,
@@ -164,6 +166,7 @@ public class Application: NSObject,
 
         locationService.addDelegate(self)
         regionsService.addDelegate(self)
+        alertsStore.addDelegate(self)
 
         refreshRESTAPIModelService()
         refreshObacoService()
@@ -267,7 +270,7 @@ public class Application: NSObject,
     }
 
     public func pushServicePresentingController(_ pushService: PushService) -> UIViewController? {
-        return delegate?.uiApplication?.keyWindow?.topViewController
+        topViewController
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
@@ -288,7 +291,39 @@ public class Application: NSObject,
         }
     }
 
+    // MARK: - Alerts Store
+
+    private var alertBulletin: AgencyAlertBulletin?
+
+    public func agencyAlertsUpdated() {
+        guard
+            let alert = alertsStore.recentUnreadHighSeverityAlerts.first,
+            let app = self.delegate?.uiApplication
+        else {
+            return
+        }
+
+        alertsStore.markAlertRead(alert)
+
+        alertBulletin = AgencyAlertBulletin(agencyAlert: alert, locale: locale)
+        alertBulletin?.showMoreInformationHandler = { url in
+            if let topViewController = self.topViewController {
+                let safari = SFSafariViewController(url: url)
+                self.viewRouter.present(safari, from: topViewController, isModalInPresentation: true)
+            }
+            else {
+                self.open(url, options: [:], completionHandler: nil)
+            }
+        }
+        alertBulletin?.show(in: app)
+    }
+
     // MARK: - UIApplication Hooks
+
+    /// Provides access the topmost view controller in the app, if one exists.
+    private var topViewController: UIViewController? {
+        delegate?.uiApplication?.keyWindow?.topViewController
+    }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
         configurePushNotifications(launchOptions: options)
