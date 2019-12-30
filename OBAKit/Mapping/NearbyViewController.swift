@@ -178,8 +178,9 @@ public class NearbyViewController: VisualEffectViewController,
     private func nearbyModeObjects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
-        if application.alertsStore.recentHighSeverityAlerts.count > 0 {
-            let alertSections = tableSections(agencyAlerts: application.alertsStore.recentHighSeverityAlerts) { [weak self] model in
+        let highSeverityAlerts = application.alertsStore.recentHighSeverityAlerts
+        if highSeverityAlerts.count > 0 {
+            let alertSections = tableSections(agencyAlerts: Array(highSeverityAlerts.prefix(2))) { [weak self] model in
                 guard
                     let self = self,
                     let alert = model.object as? AgencyAlert
