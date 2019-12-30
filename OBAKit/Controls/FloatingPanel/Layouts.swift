@@ -7,6 +7,7 @@
 
 import FloatingPanel
 
+/// A layout object used with `FloatingPanel` on `MapViewController`.
 class MapPanelLayout: NSObject, FloatingPanelLayout {
     init(initialPosition: FloatingPanelPosition) {
         self.initialPosition = initialPosition

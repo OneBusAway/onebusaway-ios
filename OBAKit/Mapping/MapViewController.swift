@@ -61,6 +61,8 @@ public class MapViewController: UIViewController,
 
     deinit {
         weatherOperation?.cancel()
+        application.mapRegionManager.removeDelegate(self)
+        application.locationService.removeDelegate(self)
     }
 
     // MARK: - UIViewController
