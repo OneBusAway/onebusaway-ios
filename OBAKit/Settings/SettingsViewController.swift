@@ -98,7 +98,7 @@ class SettingsViewController: FormViewController {
     // MARK: - Alerts
 
     private lazy var alertsSection: Section = {
-        let section = Section(NSLocalizedString("settings_controller.alerts_section.title", value: "Alerts", comment: "Settings > Alerts section title"))
+        let section = Section(NSLocalizedString("settings_controller.alerts_section.title", value: "Agency Alerts", comment: "Settings > Alerts section title"))
 
         section <<< SwitchRow {
             $0.tag = AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts
