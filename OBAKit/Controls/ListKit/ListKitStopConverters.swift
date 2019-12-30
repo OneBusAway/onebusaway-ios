@@ -1,5 +1,5 @@
 //
-//  ModelViewModelConverters.swift
+//  ListKitStopConverters.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 5/26/19.
@@ -13,12 +13,12 @@ import OBAKitCore
 ///
 /// - Note: The data produced by methods in this protocol are specifically
 ///         designed to work with `objects(for listAdapter:)`.
-public protocol ModelViewModelConverters {
-    func tableSection(from stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
-    func tableSection(from stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
+public protocol ListKitStopConverters {
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
 }
 
-public extension ModelViewModelConverters where Self: UIViewController {
+public extension ListKitStopConverters where Self: UIViewController {
 
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
     ///
@@ -28,7 +28,7 @@ public extension ModelViewModelConverters where Self: UIViewController {
     ///   - stops: An array of `Stop`s.
     ///   - tapped: A tap handler, invoked when any of the `Stop`s are tapped.
     /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
-    func tableSection(from stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData {
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData {
         let rows = stops.map { TableRowData(stop: $0, tapped: tapped) }
         return TableSectionData(title: nil, rows: rows)
     }
@@ -42,7 +42,7 @@ public extension ModelViewModelConverters where Self: UIViewController {
     ///   - tapped: A tap handler, invoked when any of the `Stop`s are tapped.
     ///   - deleted: Optional handler called when swipe-to-delete is invoked on a row.
     /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
-    func tableSection(from stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler? = nil) -> TableSectionData {
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler? = nil) -> TableSectionData {
         let rows = stops.map { (stop: Stop) -> TableRowData in
             let row = TableRowData(stop: stop, tapped: tapped)
             row.deleted = deleted

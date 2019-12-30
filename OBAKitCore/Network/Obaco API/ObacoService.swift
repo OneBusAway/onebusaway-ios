@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 public protocol ObacoServiceDelegate: NSObjectProtocol {
     var shouldDisplayRegionalTestAlerts: Bool { get }
@@ -43,7 +44,7 @@ public class ObacoService: APIService {
         let url = WeatherOperation.buildURL(regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = WeatherOperation.buildRequest(for: url)
         let operation = WeatherOperation(request: request)
-        networkQueue.addOperation(operation)
+        enqueueOperation(operation)
 
         return operation
     }
@@ -73,7 +74,7 @@ public class ObacoService: APIService {
         )
 
         let operation = CreateAlarmOperation(request: request)
-        networkQueue.addOperation(operation)
+        enqueueOperation(operation)
 
         return operation
     }
@@ -83,7 +84,7 @@ public class ObacoService: APIService {
         request.httpMethod = "DELETE"
 
         let op = NetworkOperation(request: request as URLRequest)
-        networkQueue.addOperation(op)
+        enqueueOperation(op)
 
         return op
     }
@@ -94,7 +95,7 @@ public class ObacoService: APIService {
         let url = MatchingVehiclesOperation.buildURL(query: query, regionID: regionID, baseURL: baseURL, queryItems: defaultQueryItems)
         let request = MatchingVehiclesOperation.buildRequest(for: url)
         let operation = MatchingVehiclesOperation(request: request)
-        networkQueue.addOperation(operation)
+        enqueueOperation(operation)
 
         return operation
     }
@@ -111,8 +112,13 @@ public class ObacoService: APIService {
         let url = RegionalAlertsOperation.buildObacoURL(regionID: regionID, baseURL: baseURL, queryItems: queryItems)
         let request = RegionalAlertsOperation.buildRequest(for: url)
         let operation = RegionalAlertsOperation(request: request)
-        networkQueue.addOperation(operation)
+        enqueueOperation(operation)
 
         return operation
+    }
+
+    private func enqueueOperation(_ operation: NetworkOperation) {
+        networkQueue.addOperation(operation)
+        DDLogInfo("Enqueuing URL: \(operation.request.url!.absoluteString)")
     }
 }

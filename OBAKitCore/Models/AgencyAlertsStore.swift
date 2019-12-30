@@ -19,6 +19,7 @@ public class AgencyAlertsStore: NSObject {
 
     public struct UserDefaultKeys {
         public static let displayRegionalTestAlerts = "displayRegionalTestAlerts"
+        static let readAgencyAlertIDs = "readAgencyAlertIDs"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -92,6 +93,47 @@ public class AgencyAlertsStore: NSObject {
             guard let self = self else { return }
             self.storeAgencyAlerts(op.agencyAlerts)
         }
+    }
+
+    // MARK: - High Severity Alerts
+
+    /// Filters the contents of `recentHighSeverityAlerts` to just the items that are unread.
+    public var recentUnreadHighSeverityAlerts: [AgencyAlert] {
+        recentHighSeverityAlerts.filter { isAlertUnread($0) }
+    }
+
+    /// This property returns all `AgencyAlert`s from the last eight hours that have a
+    /// GTFS-RT `SeverityLevel` of `WARNING` or `SEVERE`.
+    public var recentHighSeverityAlerts: [AgencyAlert] {
+        return agencyAlerts.filter { alert in
+            guard
+                alert.isHighSeverity,
+                let startDate = alert.startDate,
+                // Did this start less than 8 hours ago?
+                abs(startDate.timeIntervalSinceNow) < 60 * 60 * 8
+            else {
+                return false
+            }
+
+            return true
+        }
+    }
+
+    // MARK: - Read State
+
+    private lazy var readAlertIDs: Set<String> = {
+        let vals = userDefaults.array(forKey: UserDefaultKeys.readAgencyAlertIDs) as? [String]
+        var set = Set(vals ?? [String]())
+        return set
+    }()
+
+    public func markAlertRead(_ alert: AgencyAlert) {
+        readAlertIDs.insert(alert.id)
+        userDefaults.set(readAlertIDs.allObjects, forKey: UserDefaultKeys.readAgencyAlertIDs)
+    }
+
+    public func isAlertUnread(_ alert: AgencyAlert) -> Bool {
+        !readAlertIDs.contains(alert.id)
     }
 
     // MARK: - Data Storage

@@ -10,7 +10,7 @@ import IGListKit
 import OBAKitCore
 
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
-public class RecentStopsViewController: UIViewController, ModelViewModelConverters, ListAdapterDataSource {
+public class RecentStopsViewController: UIViewController, ListKitStopConverters, ListAdapterDataSource {
 
     let application: Application
 
@@ -84,7 +84,7 @@ public class RecentStopsViewController: UIViewController, ModelViewModelConverte
                 self.collectionController.reload(animated: true)
             }
 
-            let section = tableSection(from: stops, tapped: tapHandler, deleted: deleteHandler)
+            let section = tableSection(stops: stops, tapped: tapHandler, deleted: deleteHandler)
             sections.append(section)
         }
 
