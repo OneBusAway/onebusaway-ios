@@ -81,6 +81,18 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     }
     private let mapViewShowsScaleKey = "mapRegionManager.mapViewShowsScale"
 
+    /// Whether the map view shows the direction the user is currently facing in.
+    ///
+    /// Defaults to `true`.
+    public var mapViewShowsHeading: Bool {
+        get { application.userDefaults.bool(forKey: mapViewShowsHeadingKey) }
+        set {
+            application.userDefaults.set(newValue, forKey: mapViewShowsHeadingKey)
+            userLocationAnnotationView?.headingImageView.isHidden = !newValue
+        }
+    }
+    private let mapViewShowsHeadingKey = "mapRegionManager.mapViewShowsHeadingKey"
+
     /// Provides storage for the last visible map rect of the map view.
     /// 
     /// In the event that this value is unavailable, the getter will try to offer up an alternative,
@@ -119,7 +131,8 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
         application.userDefaults.register(defaults: [
             mapViewShowsTrafficKey: true,
-            mapViewShowsScaleKey: true
+            mapViewShowsScaleKey: true,
+            mapViewShowsHeadingKey: true
         ])
 
         super.init()
@@ -486,6 +499,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseIdentifier, for: annotation)
 
         if self.userLocationAnnotationView == nil, let userLocation = annotationView as? PulsingAnnotationView {
+            userLocation.headingImageView.isHidden = !mapViewShowsHeading
             self.userLocationAnnotationView = userLocation
         }
 

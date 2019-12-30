@@ -35,6 +35,7 @@ class SettingsViewController: FormViewController {
         form.setValues([
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
+            mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
         ])
     }
@@ -58,6 +59,10 @@ class SettingsViewController: FormViewController {
             application.mapRegionManager.mapViewShowsTraffic = traffic
         }
 
+        if let heading = values[mapSectionShowsHeading] as? Bool {
+            application.mapRegionManager.mapViewShowsHeading = heading
+        }
+
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
             application.userDefaults.set(testAlerts, forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
         }
@@ -67,6 +72,7 @@ class SettingsViewController: FormViewController {
 
     private let mapSectionShowsScale = "mapSectionShowsScale"
     private let mapSectionShowsTraffic = "mapSectionShowsTraffic"
+    private let mapSectionShowsHeading = "mapSectionShowsHeading"
 
     private lazy var mapSection: Section = {
         let section = Section(NSLocalizedString("settings_controller.map_section.title", value: "Map", comment: "Settings > Map section title"))
@@ -79,6 +85,11 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = mapSectionShowsTraffic
             $0.title = NSLocalizedString("settings_controller.map_section.shows_traffic", value: "Shows traffic", comment: "Settings > Map section > Shows traffic")
+        }
+
+        section <<< SwitchRow {
+            $0.tag = mapSectionShowsHeading
+            $0.title = NSLocalizedString("settings_controller.map_section.shows_heading", value: "Show my current heading", comment: "Settings > Map section > Show my current heading")
         }
 
         return section
