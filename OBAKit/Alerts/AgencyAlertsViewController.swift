@@ -11,9 +11,9 @@ import OBAKitCore
 
 /// Displays `AgencyAlert` objects loaded from a Protobuf feed.
 class AgencyAlertsViewController: UIViewController,
+    AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
-    ListAdapterDataSource,
-    AgencyAlertsDelegate {
+    ListAdapterDataSource {
     public let application: Application
     private let alertsStore: AgencyAlertsStore
 
@@ -21,8 +21,6 @@ class AgencyAlertsViewController: UIViewController,
 
     public init(application: Application) {
         self.application = application
-
-        self.language = application.locale.languageCode ?? AgencyAlertsViewController.defaultLanguageCode
 
         self.alertsStore = application.alertsStore
 
@@ -52,25 +50,6 @@ class AgencyAlertsViewController: UIViewController,
         super.viewWillAppear(animated)
 
         collectionController.reload(animated: false)
-    }
-
-    // MARK: - Locale
-
-    private static let defaultLanguageCode = "en"
-
-    /// A two-letter language code. Defaults to `"en"` if the system locale does not offer a language code.
-    private let language: String
-
-    private func localizedAlertTitle(_ alert: AgencyAlert) -> String? {
-        alert.title(language: language) ?? alert.title(language: AgencyAlertsViewController.defaultLanguageCode)
-    }
-
-    private func localizedAlertBody(_ alert: AgencyAlert) -> String? {
-        alert.body(language: language) ?? alert.body(language: AgencyAlertsViewController.defaultLanguageCode)
-    }
-
-    private func localizedAlertURL(_ alert: AgencyAlert) -> URL? {
-        alert.url(language: language) ?? alert.url(language: AgencyAlertsViewController.defaultLanguageCode)
     }
 
     // MARK: - Data and Collection Controller

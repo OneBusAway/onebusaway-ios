@@ -40,13 +40,13 @@ public extension AgencyAlertListKitConverters where Self: UIViewController {
     }
 
     func presentAlert(_ alert: AgencyAlert) {
-        if let url = localizedAlertURL(alert) {
+        if let url = alert.URLForLocale(application.locale) {
             let safari = SFSafariViewController(url: url)
             application.viewRouter.present(safari, from: self, isModalInPresentation: true)
         }
         else {
-            let title = localizedAlertTitle(alert)
-            let body = localizedAlertBody(alert)
+            let title = alert.titleForLocale(application.locale)
+            let body = alert.bodyForLocale(application.locale)
             AlertPresenter.showDismissableAlert(title: title, message: body, presentingController: self)
         }
     }
@@ -54,30 +54,13 @@ public extension AgencyAlertListKitConverters where Self: UIViewController {
     // MARK: - Locale
 
     private var languageCode: String {
-        application.locale.languageCode ?? defaultLanguageCode()
-    }
-
-    private func defaultLanguageCode() -> String { "en" }
-
-    private func localizedAlertTitle(_ alert: AgencyAlert) -> String? {
-        let language = languageCode
-        return alert.title(language: language) ?? alert.title(language: defaultLanguageCode())
-    }
-
-    private func localizedAlertBody(_ alert: AgencyAlert) -> String? {
-        let language = languageCode
-        return alert.body(language: language) ?? alert.body(language: defaultLanguageCode())
-    }
-
-    private func localizedAlertURL(_ alert: AgencyAlert) -> URL? {
-        let language = languageCode
-        return alert.url(language: language) ?? alert.url(language: defaultLanguageCode())
+        application.locale.languageCode ?? "en"
     }
 
     // MARK: - TableRowData
 
     private func buildTableRowData(agencyAlert: AgencyAlert, tapped: ListRowActionHandler?) -> MessageSectionData? {
-        guard let title = localizedAlertTitle(agencyAlert) else { return nil }
+        guard let title = agencyAlert.titleForLocale(application.locale) else { return nil }
 
         let formattedDateTime: String?
         if let startDate = agencyAlert.startDate {
@@ -87,7 +70,7 @@ public extension AgencyAlertListKitConverters where Self: UIViewController {
             formattedDateTime = nil
         }
 
-        let rowData = MessageSectionData(author: agencyAlert.agency?.agency.name, date: formattedDateTime, subject: title, summary: localizedAlertBody(agencyAlert), tapped: tapped)
+        let rowData = MessageSectionData(author: agencyAlert.agency?.agency.name, date: formattedDateTime, subject: title, summary: agencyAlert.bodyForLocale(application.locale), tapped: tapped)
 
         rowData.object = agencyAlert
 

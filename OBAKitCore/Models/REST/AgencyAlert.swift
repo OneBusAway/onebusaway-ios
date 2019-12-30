@@ -35,6 +35,26 @@ public class AgencyAlert: NSObject {
 
     public let agency: AgencyWithCoverage?
 
+    // MARK: - Localized Content Accessors
+
+    public func titleForLocale(_ locale: Locale) -> String? {
+        return title(language: selectLanguageCode(locale: locale)) ?? title(language: defaultLanguageCode)
+    }
+
+    public func bodyForLocale(_ locale: Locale) -> String? {
+        return body(language: selectLanguageCode(locale: locale)) ?? body(language: defaultLanguageCode)
+    }
+
+    public func URLForLocale(_ locale: Locale) -> URL? {
+        return url(language: selectLanguageCode(locale: locale)) ?? url(language: defaultLanguageCode)
+    }
+
+    private func selectLanguageCode(locale: Locale) -> String {
+        locale.languageCode ?? defaultLanguageCode
+    }
+
+    private let defaultLanguageCode = "en"
+
     // MARK: - Translation Properties
 
     private lazy var urlTranslations: [String: String] = {
@@ -149,8 +169,9 @@ extension AgencyAlert {
 }
 
 // MARK: - Translated Text
+
 extension AgencyAlert {
-    public func url(language: String) -> URL? {
+    fileprivate func url(language: String) -> URL? {
         guard
             alert.hasURL,
             let urlString = translation(key: language, from: urlTranslations)
@@ -161,7 +182,7 @@ extension AgencyAlert {
         return URL(string: urlString)
     }
 
-    public func title(language: String) -> String? {
+    fileprivate func title(language: String) -> String? {
         guard alert.hasHeaderText else {
             return nil
         }
@@ -169,7 +190,7 @@ extension AgencyAlert {
         return translation(key: language, from: titleTranslations)
     }
 
-    public func body(language: String) -> String? {
+    fileprivate func body(language: String) -> String? {
         guard alert.hasDescriptionText else {
             return nil
         }
@@ -185,7 +206,7 @@ extension AgencyAlert {
         // If we don't have the desired translation, first check
         // to see if we have a default translation language value
         // present. For now this is English.
-        if let translation = map["en"] {
+        if let translation = map[defaultLanguageCode] {
             return translation
         }
 
