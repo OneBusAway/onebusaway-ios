@@ -7,6 +7,11 @@
 
 import Foundation
 
+@objc(OBAAnalyticsKeys)
+public class AnalyticsKeys: NSObject {
+    @objc public static let reportingEnabledUserDefaultsKey = "reportingEnabledUserDefaultsKey"
+}
+
 @objc(OBAAnalyticsEvent)
 public enum AnalyticsEvent: Int {
     case userAction
@@ -16,4 +21,7 @@ public enum AnalyticsEvent: Int {
 public protocol Analytics: NSObjectProtocol {
     func logEvent(name: String, parameters: [String: Any])
     func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
+
+    func setReportingEnabled(_ enabled: Bool)
+    func reportingEnabled() -> Bool
 }

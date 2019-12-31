@@ -32,6 +32,9 @@ static const int ddLogLevel = DDLogLevelWarning;
         [NSURLCache setSharedURLCache:urlCache];
 
         _userDefaults = [NSUserDefaults standardUserDefaults];
+        [_userDefaults registerDefaults:@{
+            OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
+        }];
 
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self];
 
@@ -125,6 +128,15 @@ static const int ddLogLevel = DDLogLevelWarning;
 }
 
 #pragma mark - OBAAnalytics
+
+- (BOOL)reportingEnabled {
+    return [self.userDefaults boolForKey:OBAAnalyticsKeys.reportingEnabledUserDefaultsKey];
+}
+
+- (void)setReportingEnabled:(BOOL)enabled {
+    [self.userDefaults setBool:enabled forKey:OBAAnalyticsKeys.reportingEnabledUserDefaultsKey];
+    [FIRAnalytics setAnalyticsCollectionEnabled:enabled];
+}
 
 - (void)logEventWithName:(NSString *)name parameters:(NSDictionary<NSString *,id> *)parameters {
     [FIRAnalytics logEventWithName:name parameters:parameters];
