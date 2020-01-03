@@ -60,25 +60,13 @@ To generate new `.strings` files, run this command from the root of the project:
     
 ## Diagnosing Problems
 
-### Things Not Working Right?
+### Command Line Errors?
 
 If the `xcode-select --install` command results in an error message that the command line tools are already installed, you can verify that you have the latest version by typing the command `softwareupdate --list` to check whether any software should be updated; then if need be use `softwareupdate --install <project>` to  update it.
 
 If the `carthage build --platform iOS` command gives an error claiming that it is unable to find utility "xcodebuild" because it is not a developer tool or in PATH, this should fix it:
 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
 Or see this github issue for other potential solutions: https://github.com/nodejs/node-gyp/issues/569
-
-### Unit Tests Not Running?
-
-After running `xcodegen` and opening `OBAKit.xcodeproj`, select the "App" scheme. You should then be able to run the OneBusAway app by pressing (Command+R) and run unit tests (Command+U). If either of these commands do not work, try recreating the OneBusAway scheme:
-
-1. `Product` Menu > `Scheme` > `Manage Schemes`
-2. Delete the `App` scheme (if it exists).
-3. Click on the `Autocreate Schemes Now` button.
-4. Click on the `Close` button.
-5. Change the active scheme to `App`.
-
-I'm sure there's a bug in the `project.yml` file that I have written that is causing this issue. Pull Requests to address this issue are welcome!
 
 ## Code and Structure
 
