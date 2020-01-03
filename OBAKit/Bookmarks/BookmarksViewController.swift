@@ -34,10 +34,10 @@ public class BookmarksViewController: UIViewController,
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
+        title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
         tabBarItem.image = Icons.bookmarksTabIcon
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: NSLocalizedString("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }

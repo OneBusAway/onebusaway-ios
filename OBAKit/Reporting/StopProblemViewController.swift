@@ -28,7 +28,7 @@ class StopProblemViewController: FormViewController {
         self.stop = stop
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("stop_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Stop Problem controller")
+        title = OBALoc("stop_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Stop Problem controller")
 
         registerDefaults()
     }
@@ -65,9 +65,9 @@ class StopProblemViewController: FormViewController {
 
         form
         // Problem Section
-        +++ Section(NSLocalizedString("stop_problem_controller.problem_section.section_title", value: "What seems to be the problem?", comment: "Title of the first section in the Stop Problem Controller."))
+        +++ Section(OBALoc("stop_problem_controller.problem_section.section_title", value: "What seems to be the problem?", comment: "Title of the first section in the Stop Problem Controller."))
         <<< PickerInputRow<StopProblemCode>("stopProblemCode") {
-            $0.title = NSLocalizedString("stop_problem_controller.problem_section.row_label", value: "Pick one:", comment: "Title label for the 'choose a problem type' row.")
+            $0.title = OBALoc("stop_problem_controller.problem_section.row_label", value: "Pick one:", comment: "Title label for the 'choose a problem type' row.")
 
             $0.options = StopProblemCode.allCases
             $0.value = $0.options.first
@@ -78,19 +78,19 @@ class StopProblemViewController: FormViewController {
         }
 
         // Comments Section
-        +++ Section(NSLocalizedString("stop_problem_controller.comments_section.section_title", value: "Additional comments (optional)", comment: "The section header to a free-form comments field that the user does not have to add text to in order to submit this form."))
+        +++ Section(OBALoc("stop_problem_controller.comments_section.section_title", value: "Additional comments (optional)", comment: "The section header to a free-form comments field that the user does not have to add text to in order to submit this form."))
         <<< TextAreaRow(tag: "comments")
 
         // Share Location
         +++ Section(
-            header: NSLocalizedString("stop_problem_controller.location_section.section_title", value: "Share your location?", comment: "Title of the Share Location section in the Stop Problem Controller."),
-            footer: NSLocalizedString("stop_problem_controller.location_section.section_footer", value: "Sharing your location can help your transit agency fix this problem.", comment: "Footer text of the Share Location section in the Stop Problem Controller"))
+            header: OBALoc("stop_problem_controller.location_section.section_title", value: "Share your location?", comment: "Title of the Share Location section in the Stop Problem Controller."),
+            footer: OBALoc("stop_problem_controller.location_section.section_footer", value: "Sharing your location can help your transit agency fix this problem.", comment: "Footer text of the Share Location section in the Stop Problem Controller"))
         <<< shareLocationSwitch
 
         // Button Section
         +++ Section()
         <<< ButtonRow {
-            $0.title = NSLocalizedString("stop_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report.")
+            $0.title = OBALoc("stop_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report.")
             $0.onCellSelection { [weak self] (_, _) in
                 guard let self = self else { return }
                 self.submitForm()
@@ -99,7 +99,7 @@ class StopProblemViewController: FormViewController {
     }
 
     private lazy var shareLocationSwitch = SwitchRow {
-        $0.title = NSLocalizedString("stop_problem_controller.location_section.switch_title", value: "Share location", comment: "Title of the Share Location switch on stop problem controller")
+        $0.title = OBALoc("stop_problem_controller.location_section.switch_title", value: "Share location", comment: "Title of the Share Location switch on stop problem controller")
         $0.value = self.isLocationSharingPermitted
         $0.onChange { [weak self] (r2) in
             guard

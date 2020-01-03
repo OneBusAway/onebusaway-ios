@@ -20,7 +20,7 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
     override init(application: Application) {
         super.init(application: application)
 
-        title = NSLocalizedString("agencies_controller.title", value: "Agencies", comment: "Title of the Agencies controller")
+        title = OBALoc("agencies_controller.title", value: "Agencies", comment: "Title of the Agencies controller")
     }
 
     required init?(coder: NSCoder) {

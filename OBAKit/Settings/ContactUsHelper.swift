@@ -38,12 +38,12 @@ class ContactUsHelper: NSObject {
 
         if target == .appDevelopers {
             mailComposer.setToRecipients([appDevelopersEmail])
-            mailComposer.setSubject(NSLocalizedString("contact_use_helper.feedback_subject.app", value: "OneBusAway Feedback", comment: "Feedback email template subject for the app developers"))
+            mailComposer.setSubject(OBALoc("contact_use_helper.feedback_subject.app", value: "OneBusAway Feedback", comment: "Feedback email template subject for the app developers"))
             mailComposer.setMessageBody(appDevelopersMessageTemplate, isHTML: true)
         }
         else {
             mailComposer.setToRecipients([application.currentRegion?.contactEmail ?? "contact@onebusaway.org"])
-            mailComposer.setSubject(NSLocalizedString("contact_use_helper.feedback_subject.transit_agency", value: "Transit Rider Feedback", comment: "Feedback email template subject for the transit agency"))
+            mailComposer.setSubject(OBALoc("contact_use_helper.feedback_subject.transit_agency", value: "Transit Rider Feedback", comment: "Feedback email template subject for the transit agency"))
             mailComposer.setMessageBody(transitAgencyMessageTemplate, isHTML: true)
         }
 
@@ -54,16 +54,16 @@ class ContactUsHelper: NSObject {
     /// - Parameter target: The target of the message—app developers or transit agency.
     func buildCantSendEmailAlert(target: EmailTarget) -> UIAlertController {
         let email = emailAddress(for: target)
-        let title = NSLocalizedString("contact_us_helper.cant_send_email.title", value: "Can't Send Email via Mail.app", comment: "Title of the alert that appears when the user's device isn't configured to send email.")
-        let bodyFormat = NSLocalizedString("contact_us_helper.cant_send_email.body_fmt", value: "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.", comment: "Body of the the alert that appears when you try sending an email without Mail.app set up")
+        let title = OBALoc("contact_us_helper.cant_send_email.title", value: "Can't Send Email via Mail.app", comment: "Title of the alert that appears when the user's device isn't configured to send email.")
+        let bodyFormat = OBALoc("contact_us_helper.cant_send_email.body_fmt", value: "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.", comment: "Body of the the alert that appears when you try sending an email without Mail.app set up")
 
         let alert = UIAlertController(title: title, message: String(format: bodyFormat, email), preferredStyle: .alert)
 
-        alert.addAction(title: NSLocalizedString("contact_us_helper.cant_send_email.copy_email_button", value: "Copy Email Address", comment: "A button that lets the user copy an email address to the clipboard.")) { _ in
+        alert.addAction(title: OBALoc("contact_us_helper.cant_send_email.copy_email_button", value: "Copy Email Address", comment: "A button that lets the user copy an email address to the clipboard.")) { _ in
             UIPasteboard.general.string = email
         }
 
-        alert.addAction(title: NSLocalizedString("contact_us_helper.cant_send_email.copy_message_button", value: "Copy Debug Info", comment: "A button that lets the user copy a default message, including debug info, to the clipboard.")) { [weak self] _ in
+        alert.addAction(title: OBALoc("contact_us_helper.cant_send_email.copy_message_button", value: "Copy Debug Info", comment: "A button that lets the user copy a default message, including debug info, to the clipboard.")) { [weak self] _ in
             guard
                 let self = self,
                 let data = self.messageTemplate(for: target).data(using: .utf8),

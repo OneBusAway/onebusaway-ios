@@ -17,7 +17,7 @@ class ReachabilityBulletin: NSObject {
     private let connectivityPage: BLTNPageItem
 
     override init() {
-        connectivityPage = BLTNPageItem(title: NSLocalizedString("reachability_bulletin.title", value: "No Internet", comment: "Title of the alert that appears when the app can't connect to the server."))
+        connectivityPage = BLTNPageItem(title: OBALoc("reachability_bulletin.title", value: "No Internet", comment: "Title of the alert that appears when the app can't connect to the server."))
         bulletinManager = BLTNItemManager(rootItem: connectivityPage)
 
         super.init()
@@ -41,11 +41,11 @@ class ReachabilityBulletin: NSObject {
 
         switch status {
         case .connectedViaWiFiWithoutInternet:
-            connectivityPage.descriptionText = NSLocalizedString("reachability_bulletin.description.wifi_no_internet", value: "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.", comment: "Reachability bulletin for a WiFi network that can't access the Internet.")
+            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.wifi_no_internet", value: "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.", comment: "Reachability bulletin for a WiFi network that can't access the Internet.")
         case .connectedViaCellularWithoutInternet:
-            connectivityPage.descriptionText = NSLocalizedString("reachability_bulletin.description.cellular_no_internet", value: "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.", comment: "Reachability bulletin for a cellular connection that can't access the Internet.")
+            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.cellular_no_internet", value: "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.", comment: "Reachability bulletin for a cellular connection that can't access the Internet.")
         case .notConnected:
-            connectivityPage.descriptionText = NSLocalizedString("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
+            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
         default:
             connectivityPage.descriptionText = nil
         }

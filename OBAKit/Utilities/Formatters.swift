@@ -74,7 +74,7 @@ public class Formatters: NSObject {
     public func formattedDateRange(from: Date, to: Date) -> String {
         let fromString = timeFormatter.string(from: from)
         let toString = timeFormatter.string(from: to)
-        let format = NSLocalizedString("formatters.date_range_fmt", value: "%@ — %@", comment: "Represents a timeframe. e.g. 9:00 AM — 11:00 AM.")
+        let format = OBALoc("formatters.date_range_fmt", value: "%@ — %@", comment: "Represents a timeframe. e.g. 9:00 AM — 11:00 AM.")
 
         return String(format: format, fromString, toString)
     }
@@ -103,17 +103,17 @@ public class Formatters: NSObject {
 
         switch (temporalState, arrivalDepartureStatus) {
         case (.past, .arriving):
-            return apply(NSLocalizedString("formatters.arrived_x_min_ago_fmt", value: "Arrived %d min ago", comment: "Use for vehicles that arrived X minutes ago."))
+            return apply(OBALoc("formatters.arrived_x_min_ago_fmt", value: "Arrived %d min ago", comment: "Use for vehicles that arrived X minutes ago."))
         case (.past, .departing):
-            return apply(NSLocalizedString("formatters.departed_x_min_ago_fmt", value: "Departed %d min ago", comment: "Use for vehicles that departed X minutes ago."))
+            return apply(OBALoc("formatters.departed_x_min_ago_fmt", value: "Departed %d min ago", comment: "Use for vehicles that departed X minutes ago."))
         case (.present, .arriving):
-            return NSLocalizedString("formatters.arriving_now", value: "Arriving now", comment: "Use for vehicles arriving now.")
+            return OBALoc("formatters.arriving_now", value: "Arriving now", comment: "Use for vehicles arriving now.")
         case (.present, .departing):
-            return NSLocalizedString("formatters.departing_now", value: "Departing now", comment: "Use for vehicles departing now.")
+            return OBALoc("formatters.departing_now", value: "Departing now", comment: "Use for vehicles departing now.")
         case (.future, .arriving):
-            return apply(NSLocalizedString("formatters.arrives_in_x_min_fmt", value: "Arrives in %d min", comment: "Use for vehicles arriving in X minutes."))
+            return apply(OBALoc("formatters.arrives_in_x_min_fmt", value: "Arrives in %d min", comment: "Use for vehicles arriving in X minutes."))
         case (.future, .departing):
-            return apply(NSLocalizedString("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
+            return apply(OBALoc("formatters.departs_in_x_min_fmt", value: "Departs in %d min", comment: "Use for vehicles departing in X minutes."))
         }
     }
 
@@ -143,57 +143,57 @@ public class Formatters: NSObject {
 
     private func explanationOfDeviationForPastArrival(minutes: Int) -> String {
         if minutes > 0 {
-            let str = NSLocalizedString("formatters.deviation.arrival_past_late_fmt", value: "arrived %d min late", comment: "Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.arrival_past_late_fmt", value: "arrived %d min late", comment: "Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else if minutes < 0 {
-            let str = NSLocalizedString("formatters.deviation.arrival_past_early_fmt", value: "arrived %d min early", comment: "Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.arrival_past_early_fmt", value: "arrived %d min early", comment: "Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else {
-            return NSLocalizedString("formatters.deviation.arrival_past_on_time", value: "arrived on time", comment: "Describes an on-time arrival. e.g. arrived on time.")
+            return OBALoc("formatters.deviation.arrival_past_on_time", value: "arrived on time", comment: "Describes an on-time arrival. e.g. arrived on time.")
         }
     }
 
     private func explanationOfDeviationForPastDeparture(minutes: Int) -> String {
         if minutes > 0 {
-            let str = NSLocalizedString("formatters.deviation.departure_past_late_fmt", value: "departed %d min late", comment: "Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.departure_past_late_fmt", value: "departed %d min late", comment: "Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else if minutes < 0 {
-            let str = NSLocalizedString("formatters.deviation.departure_past_early_fmt", value: "departed %d min early", comment: "Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.departure_past_early_fmt", value: "departed %d min early", comment: "Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else {
-            return NSLocalizedString("formatters.deviation.departure_past_on_time", value: "departed on time", comment: "Describes an on-time departure. e.g. departed on time.")
+            return OBALoc("formatters.deviation.departure_past_on_time", value: "departed on time", comment: "Describes an on-time departure. e.g. departed on time.")
         }
     }
 
     private func explanationOfDeviationForFutureArrival(minutes: Int) -> String {
         if minutes > 0 {
-            let str = NSLocalizedString("formatters.deviation.arrival_future_late_fmt", value: "arrives %d min late", comment: "Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.arrival_future_late_fmt", value: "arrives %d min late", comment: "Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else if minutes < 0 {
-            let str = NSLocalizedString("formatters.deviation.arrival_future_early_fmt", value: "arrives %d min early", comment: "Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.arrival_future_early_fmt", value: "arrives %d min early", comment: "Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, -minutes)
         }
         else {
-            return NSLocalizedString("formatters.deviation.arrival_future_on_time", value: "arrives on time", comment: "Describes an on-time arrival. e.g. arrives on time.")
+            return OBALoc("formatters.deviation.arrival_future_on_time", value: "arrives on time", comment: "Describes an on-time arrival. e.g. arrives on time.")
         }
     }
 
     private func explanationOfDeviationForFutureDeparture(minutes: Int) -> String {
         if minutes > 0 {
-            let str = NSLocalizedString("formatters.deviation.departure_future_late_fmt", value: "departs %d min late", comment: "Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.departure_future_late_fmt", value: "departs %d min late", comment: "Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, minutes)
         }
         else if minutes < 0 {
-            let str = NSLocalizedString("formatters.deviation.departure_future_early_fmt", value: "departs %d min early", comment: "Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
+            let str = OBALoc("formatters.deviation.departure_future_early_fmt", value: "departs %d min early", comment: "Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
             return String(format: str, abs(minutes))
         }
         else {
-            return NSLocalizedString("formatters.deviation.departs_future_on_time", value: "departs on time", comment: "Describes an on-time departure. e.g. departs on time.")
+            return OBALoc("formatters.deviation.departs_future_on_time", value: "departs on time", comment: "Describes an on-time departure. e.g. departs on time.")
         }
     }
 
@@ -206,9 +206,9 @@ public class Formatters: NSObject {
     /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
     public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
         switch arrivalDeparture.temporalState {
-        case .present: return NSLocalizedString("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
+        case .present: return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         default:
-            let formatString = NSLocalizedString("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
+            let formatString = OBALoc("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
             return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
         }
     }
@@ -242,14 +242,14 @@ public class Formatters: NSObject {
 
     public class func directionAbbreviation(_ direction: Direction) -> String? {
         switch direction {
-        case .n: return NSLocalizedString("formatters.cardinal_direction_abbrev.north", value: "N", comment: "Abbreviation for North")
-        case .ne: return NSLocalizedString("formatters.cardinal_direction_abbrev.northeast", value: "NE", comment: "Abbreviation for Northeast")
-        case .e: return NSLocalizedString("formatters.cardinal_direction_abbrev.east", value: "E", comment: "Abbreviation for East")
-        case .se: return NSLocalizedString("formatters.cardinal_direction_abbrev.southeast", value: "SE", comment: "Abbreviation for Southeast")
-        case .s: return NSLocalizedString("formatters.cardinal_direction_abbrev.south", value: "S", comment: "Abbreviation for South")
-        case .sw: return NSLocalizedString("formatters.cardinal_direction_abbrev.southwest", value: "SW", comment: "Abbreviation for Southwest")
-        case .w: return NSLocalizedString("formatters.cardinal_direction_abbrev.west", value: "W", comment: "Abbreviation for West")
-        case .nw: return NSLocalizedString("formatters.cardinal_direction_abbrev.northwest", value: "NW", comment: "Abbreviation for Northwest")
+        case .n: return OBALoc("formatters.cardinal_direction_abbrev.north", value: "N", comment: "Abbreviation for North")
+        case .ne: return OBALoc("formatters.cardinal_direction_abbrev.northeast", value: "NE", comment: "Abbreviation for Northeast")
+        case .e: return OBALoc("formatters.cardinal_direction_abbrev.east", value: "E", comment: "Abbreviation for East")
+        case .se: return OBALoc("formatters.cardinal_direction_abbrev.southeast", value: "SE", comment: "Abbreviation for Southeast")
+        case .s: return OBALoc("formatters.cardinal_direction_abbrev.south", value: "S", comment: "Abbreviation for South")
+        case .sw: return OBALoc("formatters.cardinal_direction_abbrev.southwest", value: "SW", comment: "Abbreviation for Southwest")
+        case .w: return OBALoc("formatters.cardinal_direction_abbrev.west", value: "W", comment: "Abbreviation for West")
+        case .nw: return OBALoc("formatters.cardinal_direction_abbrev.northwest", value: "NW", comment: "Abbreviation for Northwest")
         case .unknown: return nil
         }
     }
@@ -276,10 +276,10 @@ public class Formatters: NSObject {
     public class func formattedStopCode(stop: Stop) -> String {
         let stopNumberFormat: String
         if stop.code.isNumeric {
-            stopNumberFormat = NSLocalizedString("formatters.stop.stop_code_numeric", value: "Stop #%@", comment: "Format string representing a numeric stop number. e.g. Stop #1234")
+            stopNumberFormat = OBALoc("formatters.stop.stop_code_numeric", value: "Stop #%@", comment: "Format string representing a numeric stop number. e.g. Stop #1234")
         }
         else {
-            stopNumberFormat = NSLocalizedString("formatters.stop.stop_code_non_numeric", value: "Stop: '%@'", comment: "Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'")
+            stopNumberFormat = OBALoc("formatters.stop.stop_code_non_numeric", value: "Stop: '%@'", comment: "Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'")
         }
 
         return String(format: stopNumberFormat, stop.code)
@@ -295,7 +295,7 @@ public class Formatters: NSObject {
     /// - Returns: A human-readable list of the passed-in `Route`s.s
     public class func formattedRoutes(_ routes: [Route]) -> String {
         let routeNames = routes.map { $0.shortName }
-        let fmt = NSLocalizedString("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
+        let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
         return String(format: fmt, routeNames.joined(separator: ", "))
     }
 
@@ -305,14 +305,14 @@ public class Formatters: NSObject {
     /// - Returns: An adjective form of that direction
     public class func adjectiveFormOfCardinalDirection(_ direction: Direction) -> String? {
         switch direction {
-        case .n: return NSLocalizedString("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
-        case .ne: return NSLocalizedString("formatters.cardinal_adjective.northeast", value: "NE bound", comment: "Headed in a northeastern direction")
-        case .e: return NSLocalizedString("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
-        case .se: return NSLocalizedString("formatters.cardinal_adjective.southeast", value: "SE bound", comment: "Headed in an southeastern direction")
-        case .s: return NSLocalizedString("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
-        case .sw: return NSLocalizedString("formatters.cardinal_adjective.southwest", value: "SW bound", comment: "Headed in a southwestern direction")
-        case .w: return NSLocalizedString("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
-        case .nw: return NSLocalizedString("formatters.cardinal_adjective.northwest", value: "NW bound", comment: "Headed in a northwestern direction")
+        case .n: return OBALoc("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
+        case .ne: return OBALoc("formatters.cardinal_adjective.northeast", value: "NE bound", comment: "Headed in a northeastern direction")
+        case .e: return OBALoc("formatters.cardinal_adjective.east", value: "Eastbound", comment: "Headed in an eastern direction")
+        case .se: return OBALoc("formatters.cardinal_adjective.southeast", value: "SE bound", comment: "Headed in an southeastern direction")
+        case .s: return OBALoc("formatters.cardinal_adjective.south", value: "Southbound", comment: "Headed in a southern direction")
+        case .sw: return OBALoc("formatters.cardinal_adjective.southwest", value: "SW bound", comment: "Headed in a southwestern direction")
+        case .w: return OBALoc("formatters.cardinal_adjective.west", value: "Westbound", comment: "Headed in a western direction")
+        case .nw: return OBALoc("formatters.cardinal_adjective.northwest", value: "NW bound", comment: "Headed in a northwestern direction")
         case .unknown: return nil
         }
     }
@@ -322,7 +322,7 @@ public class Formatters: NSObject {
     /// Creates search bar placeholder text for the specified region. e.g. 'Search in Puget Sound'.
     /// - Parameter region: The region that will be specified in the placeholder text.
     public class func searchPlaceholderText(region: Region) -> String {
-        let fmt = NSLocalizedString("formatters.search_bar_placeholder_fmt", value: "Search in %@", comment: "Placeholder text for the search bar: 'Search in {REGION NAME}'")
+        let fmt = OBALoc("formatters.search_bar_placeholder_fmt", value: "Search in %@", comment: "Placeholder text for the search bar: 'Search in {REGION NAME}'")
         return String(format: fmt, region.name)
     }
 }

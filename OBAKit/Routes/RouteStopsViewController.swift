@@ -55,7 +55,7 @@ class RouteStopsViewController: UIViewController, AloeStackTableBuilder, Scrolla
         stackView.addRow(titleView)
         stackView.hideSeparator(forRow: titleView)
 
-        addGroupedTableHeaderToStack(headerText: NSLocalizedString("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."))
+        addGroupedTableHeaderToStack(headerText: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."))
 
         for stop in stopsForRoute.stops {
             let row = SubtitleTableRowView(title: stop.name, subtitle: Formatters.adjectiveFormOfCardinalDirection(stop.direction) ?? "", accessoryType: .disclosureIndicator)

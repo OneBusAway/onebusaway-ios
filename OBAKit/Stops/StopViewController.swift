@@ -82,7 +82,7 @@ StopPreferencesDelegate {
     /// - Note: See `loadMore()` for more details.
     private lazy var loadMoreButton: UIButton = {
         let loadMoreButton = UIButton(type: .system)
-        loadMoreButton.setTitle(NSLocalizedString("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
+        loadMoreButton.setTitle(OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
         loadMoreButton.addTarget(self, action: #selector(loadMoreDepartures), for: .touchUpInside)
         return loadMoreButton
     }()
@@ -348,7 +348,7 @@ StopPreferencesDelegate {
 
         // Service Alerts
         if stopArrivals.situations.count > 0 {
-            addTableHeaderToStack(headerText: NSLocalizedString("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller."))
+            addTableHeaderToStack(headerText: OBALoc("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller."))
 
             for serviceAlert in Set(stopArrivals.situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
                 let row = DefaultTableRowView(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator)
@@ -370,7 +370,7 @@ StopPreferencesDelegate {
         }
         else if stopArrivals.situations.count > 0 {
             // When we are displaying service alerts, we should also show a header for the section.
-            addTableHeaderToStack(headerText: NSLocalizedString("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller."))
+            addTableHeaderToStack(headerText: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller."))
         }
 
         // Show arrivals and departures
@@ -440,7 +440,7 @@ StopPreferencesDelegate {
     }
 
     private func addNearbyStopsTableRow(stop: Stop) {
-        let row = DefaultTableRowView(title: NSLocalizedString("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator)
+        let row = DefaultTableRowView(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator)
         stackView.addRow(row)
         stackView.setTapHandler(forRow: row) { _ in
             let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
@@ -449,7 +449,7 @@ StopPreferencesDelegate {
     }
 
     private func addAppleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
-        let appleMaps = DefaultTableRowView(title: NSLocalizedString("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator)
+        let appleMaps = DefaultTableRowView(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator)
         stackView.addRow(appleMaps)
         stackView.setTapHandler(forRow: appleMaps) { [weak self] _ in
             guard
@@ -467,7 +467,7 @@ StopPreferencesDelegate {
             application.canOpenURL(url)
         else { return }
 
-        let row = DefaultTableRowView(title: NSLocalizedString("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator)
+        let row = DefaultTableRowView(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator)
         stackView.addRow(row, hideSeparator: false)
         stackView.setTapHandler(forRow: row) { [weak self] _ in
             guard let self = self else { return }
@@ -476,7 +476,7 @@ StopPreferencesDelegate {
     }
 
     private func addMoreOptionsTableRows() {
-        addTableHeaderToStack(headerText: NSLocalizedString("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.primary, textColor: ThemeColors.shared.lightText)
+        addTableHeaderToStack(headerText: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.primary, textColor: ThemeColors.shared.lightText)
 
         if let stop = stop {
             addNearbyStopsTableRow(stop: stop)
@@ -489,7 +489,7 @@ StopPreferencesDelegate {
         }
 
         // Report Problem
-        let reportProblem = DefaultTableRowView(title: NSLocalizedString("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator)
+        let reportProblem = DefaultTableRowView(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator)
         stackView.addRow(reportProblem)
         stackView.setTapHandler(forRow: reportProblem) { [weak self] _ in
             guard let self = self else { return }
@@ -542,13 +542,13 @@ StopPreferencesDelegate {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         if canCreateAlarm(for: arrivalDeparture) {
-            actionSheet.addAction(title: NSLocalizedString("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")) { [weak self] _ in
+            actionSheet.addAction(title: OBALoc("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")) { [weak self] _ in
                 guard let self = self else { return }
                 self.addAlarm(arrivalDeparture: arrivalDeparture)
             }
         }
 
-        actionSheet.addAction(title: NSLocalizedString("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
+        actionSheet.addAction(title: OBALoc("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
             guard let self = self else { return }
             self.addBookmark(arrivalDeparture: arrivalDeparture)
         }
@@ -585,7 +585,7 @@ StopPreferencesDelegate {
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
-        let message = NSLocalizedString("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
+        let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         SVProgressHUD.showSuccessAndDismiss(message: message)
     }
 
@@ -696,8 +696,8 @@ StopPreferencesDelegate {
     private let filterToggleControl: UISegmentedControl = {
         let segment = UISegmentedControl.autolayoutNew()
 
-        segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"), at: 0, animated: false)
-        segment.insertSegment(withTitle: NSLocalizedString("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures"), at: 1, animated: false)
+        segment.insertSegment(withTitle: OBALoc("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"), at: 0, animated: false)
+        segment.insertSegment(withTitle: OBALoc("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures"), at: 1, animated: false)
 
         segment.selectedSegmentIndex = 1
 

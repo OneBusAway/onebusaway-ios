@@ -35,10 +35,10 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         super.init(nibName: nil, bundle: nil)
 
         if self.bookmark == nil {
-            title = NSLocalizedString("edit_bookmark_controller.title_add", value: "Add Bookmark", comment: "Title for the Edit Bookmark controller in add mode")
+            title = OBALoc("edit_bookmark_controller.title_add", value: "Add Bookmark", comment: "Title for the Edit Bookmark controller in add mode")
         }
         else {
-            title = NSLocalizedString("edit_bookmark_controller.title_edit", value: "Edit Bookmark", comment: "Title for the Edit Bookmark controller in edit mode")
+            title = OBALoc("edit_bookmark_controller.title_edit", value: "Edit Bookmark", comment: "Title for the Edit Bookmark controller in edit mode")
         }
 
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(save))
@@ -94,7 +94,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     /// The `Form` section that contains the Bookmark Name `TextRow`.
     private lazy var bookmarkNameSection: Section = {
-        let title = NSLocalizedString("edit_bookmark_controller.name_section.header_title", value: "Bookmark Name", comment: "Title of the Bookmark Name header.")
+        let title = OBALoc("edit_bookmark_controller.name_section.header_title", value: "Bookmark Name", comment: "Title of the Bookmark Name header.")
         let section = Section(title)
         section <<< TextRow {
             $0.tag = bookmarkNameTag
@@ -107,7 +107,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     private lazy var addGroupSection: Section = {
         let section = Section()
         section <<< ButtonRow {
-            $0.title = NSLocalizedString("edit_bookmark_controller.add_group_button_title", value: "Add Bookmark Group", comment: "Title of the button that lets the user add a new Bookmark Group.")
+            $0.title = OBALoc("edit_bookmark_controller.add_group_button_title", value: "Add Bookmark Group", comment: "Title of the button that lets the user add a new Bookmark Group.")
             $0.onCellSelection { [weak self] (_, _) in
                 guard let self = self else { return }
 
@@ -120,7 +120,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     /// The `Form` section that contains the list of `BookmarkGroup`s.
     private lazy var selectedBookmarkGroupSection: SelectableSection<ListCheckRow<String>> = {
         let section = SelectableSection<ListCheckRow<String>>(
-            NSLocalizedString("edit_bookmark_controller.group_section.header_title", value: "Bookmark Group", comment: "Title of the Bookmark Group header."),
+            OBALoc("edit_bookmark_controller.group_section.header_title", value: "Bookmark Group", comment: "Title of the Bookmark Group header."),
             selectionType: .singleSelection(enableDeselection: false)
         )
 
@@ -130,7 +130,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
         section <<< ListCheckRow<String>("") {
             $0.tag = selectedGroupTag
-            $0.title = NSLocalizedString("edit_bookmark_controller.no_group_row", value: "(No Group)", comment: "Don't add this bookmark to a group.")
+            $0.title = OBALoc("edit_bookmark_controller.no_group_row", value: "(No Group)", comment: "Don't add this bookmark to a group.")
             $0.selectableValue = ""
         }
 

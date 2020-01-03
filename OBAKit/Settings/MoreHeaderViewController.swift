@@ -81,7 +81,7 @@ class MoreHeaderViewController: UIViewController {
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion
         copyrightLabel.text = Bundle.main.copyright
-        supportUsLabel.text = NSLocalizedString("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
+        supportUsLabel.text = OBALoc("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
 
         view.addSubview(stackView)
         stackView.pinToSuperview(.layoutMargins)
@@ -94,7 +94,7 @@ class MoreHeaderViewController: UIViewController {
 
     @objc private func enableDebugMode() {
         application.userDataStore.debugMode = true
-        let alert = UIAlertController(title: NSLocalizedString("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
+        let alert = UIAlertController(title: OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction.dismissAction)
 
         present(alert, animated: true, completion: nil)

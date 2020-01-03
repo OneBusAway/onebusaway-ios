@@ -47,7 +47,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
 
-        title = NSLocalizedString("report_problem.title", value: "Report a Problem", comment: "Title of the Report Problem view controller.")
+        title = OBALoc("report_problem.title", value: "Report a Problem", comment: "Title of the Report Problem view controller.")
     }
 
     deinit {
@@ -105,11 +105,11 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     }
 
     private func addProblemWithTheStopRow(_ stop: Stop) {
-        addGroupedTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
+        addGroupedTableHeaderToStack(headerText: OBALoc("report_problem_controller.stop_problem.header",
                                                             value: "Problem with the Stop",
                                                             comment: "A table header in the 'Report Problem' view controller."))
 
-        let fmt = NSLocalizedString(
+        let fmt = OBALoc(
             "report_problem_controller.report_stop_problem_fmt",
             value: "Report a problem with the stop at %@",
             comment: "Report a problem with the stop at {Stop Name}"
@@ -131,7 +131,7 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     }
 
     fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
-        addGroupedTableHeaderToStack(headerText: NSLocalizedString("report_problem_controller.stop_problem.header",
+        addGroupedTableHeaderToStack(headerText: OBALoc("report_problem_controller.vehicle_problem.header",
                                                       value: "Problem with a Vehicle at the Stop",
                                                       comment: "A table header in the 'Report Problem' view controller."))
 

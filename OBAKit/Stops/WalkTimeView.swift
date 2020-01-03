@@ -103,7 +103,7 @@ class WalkTimeView: UIView {
 
         if let timeString = formatters.positionalTimeFormatter.string(from: timeToWalk) {
             let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
-            let fmt = NSLocalizedString("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
+            let fmt = OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
             label.text = String(format: fmt, distanceString, timeString, arrivalTime)
         }
         else {

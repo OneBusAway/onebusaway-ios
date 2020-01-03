@@ -35,7 +35,7 @@ public class UserActivityBuilder: NSObject {
 
         if #available(iOS 12.0, *) {
             activity.isEligibleForPrediction = true
-            activity.suggestedInvocationPhrase = NSLocalizedString("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
+            activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
             activity.persistentIdentifier = "region_\(region.regionIdentifier)_stop_\(stop.id)"
         }
 

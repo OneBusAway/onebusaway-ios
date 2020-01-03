@@ -19,7 +19,7 @@ class ManageBookmarksViewController: FormViewController {
 
         resetBookmarksSections()
 
-        title = NSLocalizedString("manage_groups_controller.title", value: "Edit Bookmarks", comment: "Manage Groups controller title")
+        title = OBALoc("manage_groups_controller.title", value: "Edit Bookmarks", comment: "Manage Groups controller title")
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -133,7 +133,7 @@ class ManageBookmarksViewController: FormViewController {
     private let ungroupedSectionTag = "ungrouped"
 
     private func buildUngroupedBookmarkSection() -> MultivaluedSection {
-        let footer = NSLocalizedString("manage_bookmarks.controller_footer", value: "You can rearrange and delete Bookmarks from this screen.", comment: "Explains the purpose of the Manage Bookmarks controller")
+        let footer = OBALoc("manage_bookmarks.controller_footer", value: "You can rearrange and delete Bookmarks from this screen.", comment: "Explains the purpose of the Manage Bookmarks controller")
         return MultivaluedSection(multivaluedOptions: [.Reorder, .Delete], header: Strings.bookmark, footer: footer) {
             $0.tag = ungroupedSectionTag
             for bm in application.userDataStore.bookmarksInGroup(nil) {

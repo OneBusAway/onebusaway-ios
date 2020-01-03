@@ -26,7 +26,7 @@ class StopPreferencesViewController: FormViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("stop_preferences_controller.title", value: "Sort & Filter Routes", comment: "Title of the Edit Stop preferences controller")
+        title = OBALoc("stop_preferences_controller.title", value: "Sort & Filter Routes", comment: "Title of the Edit Stop preferences controller")
 
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(close))
     }
@@ -85,20 +85,20 @@ class StopPreferencesViewController: FormViewController {
         form.setValues([selectedSortTag: sortType])
 
         let section = SelectableSection<ListCheckRow<String>>(
-            NSLocalizedString("stop_preferences_controller.sorting_section.header_title", value: "Sorting", comment: "Title of the Sorting section"),
+            OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sorting", comment: "Title of the Sorting section"),
             selectionType: .singleSelection(enableDeselection: false)
         )
 
         section <<< ListCheckRow<String>(StopSort.time.rawValue) {
             $0.tag = selectedSortTag
-            $0.title = NSLocalizedString("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
+            $0.title = OBALoc("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
             $0.selectableValue = StopSort.time.rawValue
             $0.value = preferences.sortType == .time ? StopSort.time.rawValue : nil
         }
 
         section <<< ListCheckRow<String>(StopSort.route.rawValue) {
             $0.tag = selectedSortTag
-            $0.title = NSLocalizedString("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
+            $0.title = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
             $0.selectableValue = StopSort.route.rawValue
             $0.value = preferences.sortType == .route ? StopSort.route.rawValue : nil
         }
@@ -112,7 +112,7 @@ class StopPreferencesViewController: FormViewController {
         let stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stop.id, region: region)
 
         let section = SelectableSection<ListCheckRow<String>>(
-            NSLocalizedString("stop_preferences_controller.routes_section.header_title", value: "Routes", comment: "Title of the Routes section"),
+            OBALoc("stop_preferences_controller.routes_section.header_title", value: "Routes", comment: "Title of the Routes section"),
             selectionType: .multipleSelection
         ) {
             $0.tag = self.routesTag

@@ -21,7 +21,7 @@ public class RecentStopsViewController: UIViewController, ListKitStopConverters,
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
+        title = OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
         tabBarItem.image = Icons.recentTabIcon
     }
 
@@ -34,7 +34,7 @@ public class RecentStopsViewController: UIViewController, ListKitStopConverters,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."), style: .plain, target: self, action: #selector(deleteAll))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: OBALoc("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."), style: .plain, target: self, action: #selector(deleteAll))
 
         view.backgroundColor = ThemeColors.shared.systemBackground
         addChildController(collectionController)
@@ -54,7 +54,7 @@ public class RecentStopsViewController: UIViewController, ListKitStopConverters,
     // MARK: - Actions
 
     @objc func deleteAll() {
-        let title = NSLocalizedString("recent_stops.confirmation_alert.title", value: "Are you sure you want to delete all of your recent stops?", comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops.")
+        let title = OBALoc("recent_stops.confirmation_alert.title", value: "Are you sure you want to delete all of your recent stops?", comment: "Title for a confirmation alert displayed before the user deletes all of their recent stops.")
 
         let alertController = UIAlertController.deletionAlert(title: title) { [weak self] _ in
             guard let self = self else { return }
@@ -99,8 +99,8 @@ public class RecentStopsViewController: UIViewController, ListKitStopConverters,
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
         let emptyView = EmptyDataSetView(frame: view.bounds)
-        emptyView.titleLabel.text = NSLocalizedString("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
-        emptyView.bodyLabel.text = NSLocalizedString("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
+        emptyView.titleLabel.text = OBALoc("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
+        emptyView.bodyLabel.text = OBALoc("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
 
         return emptyView
     }

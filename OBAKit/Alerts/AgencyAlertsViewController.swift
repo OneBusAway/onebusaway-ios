@@ -28,7 +28,7 @@ class AgencyAlertsViewController: UIViewController,
 
         self.alertsStore.addDelegate(self)
 
-        title = NSLocalizedString("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
+        title = OBALoc("agency_alerts_controller.title", value: "Alerts", comment: "The title of the Agency Alerts controller.")
     }
 
     required init?(coder aDecoder: NSCoder) {

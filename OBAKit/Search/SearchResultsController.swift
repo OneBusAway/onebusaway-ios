@@ -29,7 +29,7 @@ public class SearchResultsController: UIViewController, ListProvider {
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
+        title = OBALoc("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
         titleView.titleLabel.text = title
         titleView.subtitleLabel.text = subtitleText(from: searchResponse)
     }
@@ -62,13 +62,13 @@ public class SearchResultsController: UIViewController, ListProvider {
         let subtitleFormat: String
         switch searchResponse.request.searchType {
         case .address:
-            subtitleFormat = NSLocalizedString("search_results_controller.subtitle.address_fmt", value: "%@", comment: "A format string for address searches. In English, this is just the address itself without any adornment.")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.address_fmt", value: "%@", comment: "A format string for address searches. In English, this is just the address itself without any adornment.")
         case .route:
-            subtitleFormat = NSLocalizedString("search_results_controller.subtitle.route_fmt", value: "Route %@", comment: "A format string for address searches. e.g. in english: Route search: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.route_fmt", value: "Route %@", comment: "A format string for address searches. e.g. in english: Route search: \"{SEARCH TEXT}\"")
         case .stopNumber:
-            subtitleFormat = NSLocalizedString("search_results_controller.subtitle.stop_number_fmt", value: "Stop number %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.stop_number_fmt", value: "Stop number %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
         case .vehicleID:
-            subtitleFormat = NSLocalizedString("search_results_controller.subtitle.vehicle_id_fmt", value: "Vehicle ID %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.vehicle_id_fmt", value: "Vehicle ID %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
         }
         return String(format: subtitleFormat, searchResponse.request.query)
     }

@@ -58,6 +58,7 @@ targets:
           RESTServerAPIKey: org.onebusaway.iphone
           RegionsServerBaseAddress: http://regions.onebusaway.org
         CFBundleDisplayName: OneBusAway
+        CFBundleLocalizations: [en, pl]
         LSApplicationQueriesSchemes: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSHumanReadableCopyright: "© Open Transit Software Foundation"
@@ -116,7 +117,7 @@ targets:
     type: framework
     platform: iOS
     deploymentTarget: "12.4"
-    sources: [OBAKit, TripPlanning]
+    sources: [OBAKit]
     dependencies:
       - target: OBAKitCore
       - carthage: AloeStackView

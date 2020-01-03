@@ -29,7 +29,7 @@ class CreditsViewController: UIViewController, AloeStackTableBuilder {
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("credits_controller.title", value: "Credits", comment: "Title of the Credits controller")
+        title = OBALoc("credits_controller.title", value: "Credits", comment: "Title of the Credits controller")
     }
 
     required init?(coder aDecoder: NSCoder) {

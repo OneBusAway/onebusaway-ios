@@ -156,8 +156,8 @@ public class NearbyViewController: VisualEffectViewController,
 
     private lazy var searchModeEmptyView: EmptyDataSetView = {
         let emptyView = EmptyDataSetView(frame: view.bounds)
-        emptyView.titleLabel.text = NSLocalizedString("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
-        emptyView.bodyLabel.text = NSLocalizedString("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
+        emptyView.titleLabel.text = OBALoc("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
+        emptyView.bodyLabel.text = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
 
         return emptyView
     }()

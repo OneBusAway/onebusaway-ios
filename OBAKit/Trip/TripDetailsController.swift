@@ -108,7 +108,7 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         // Section: Previous Trip
 
         if let previousTrip = tripDetails.previousTrip {
-            let titleFmt = NSLocalizedString("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
+            let titleFmt = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
             sections.append(buildAdjacentTripSection(trip: previousTrip, rowTitleFormat: titleFmt))
         }
 
@@ -121,7 +121,7 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         // Section: Next Trip
 
         if let nextTrip = tripDetails.nextTrip {
-            let titleFmt = NSLocalizedString("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
+            let titleFmt = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
             sections.append(buildAdjacentTripSection(trip: nextTrip, rowTitleFormat: titleFmt))
         }
 
@@ -170,8 +170,8 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
             rows.append(row)
         }
 
-        let section = TableSectionData(title: NSLocalizedString("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
-        section.footer = NSLocalizedString("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")
+        let section = TableSectionData(title: OBALoc("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
+        section.footer = OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")
 
         return section
     }

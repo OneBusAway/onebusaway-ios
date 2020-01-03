@@ -17,7 +17,7 @@ class ManageGroupsViewController: FormViewController {
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("manage_groups_controller.title", value: "Edit Bookmarks", comment: "Manage Groups controller title")
+        title = OBALoc("manage_groups_controller.title", value: "Edit Bookmarks", comment: "Manage Groups controller title")
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -46,13 +46,13 @@ class ManageGroupsViewController: FormViewController {
 
     // MARK: - Groups Section
 
-    private lazy var groupsSection = MultivaluedSection(multivaluedOptions: [.Reorder, .Insert, .Delete], header: "", footer: NSLocalizedString("manage_groups_controller.groups.footer_text", value: "You can rename, add, delete, and rearrange bookmark groups. Bookmarks in deleted groups are not deleted.", comment: "Footer explanation on the Groups section of the Manage Groups controller.")) {
+    private lazy var groupsSection = MultivaluedSection(multivaluedOptions: [.Reorder, .Insert, .Delete], header: "", footer: OBALoc("manage_groups_controller.groups.footer_text", value: "You can rename, add, delete, and rearrange bookmark groups. Bookmarks in deleted groups are not deleted.", comment: "Footer explanation on the Groups section of the Manage Groups controller.")) {
         $0.header = HeaderFooterView<UIView>(HeaderFooterProvider.class)
         $0.header?.height = { CGFloat.leastNormalMagnitude }
         $0.tag = "group_tag"
         $0.addButtonProvider = { _ in
             ButtonRow {
-                $0.title = NSLocalizedString("manage_groups_controller.add_group_button", value: "Add Bookmark Group", comment: "'Add Bookmark Group' button text")
+                $0.title = OBALoc("manage_groups_controller.add_group_button", value: "Add Bookmark Group", comment: "'Add Bookmark Group' button text")
             }
         }
         $0.multivaluedRowToInsertAt = { _ in
@@ -73,7 +73,7 @@ class ManageGroupsViewController: FormViewController {
         NameRow {
             $0.tag = tag
             $0.value = value
-            $0.placeholder = NSLocalizedString("manage_groups_controller.text_field_placeholder", value: "Group name", comment: "Placeholder text for Bookmark Group.")
+            $0.placeholder = OBALoc("manage_groups_controller.text_field_placeholder", value: "Group name", comment: "Placeholder text for Bookmark Group.")
         }
     }
 

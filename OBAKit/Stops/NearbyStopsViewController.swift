@@ -30,7 +30,7 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
         super.init(application: application)
 
-        title = NSLocalizedString("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller.")
+        title = OBALoc("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller.")
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -141,8 +141,8 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
         let emptyView = EmptyDataSetView(frame: view.bounds)
-        emptyView.titleLabel.text = NSLocalizedString("nearby_stops_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby Stops controller.")
-        emptyView.bodyLabel.text = NSLocalizedString("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
+        emptyView.titleLabel.text = OBALoc("nearby_stops_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby Stops controller.")
+        emptyView.bodyLabel.text = OBALoc("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
 
         return emptyView
     }

@@ -145,7 +145,7 @@ public class MapViewController: UIViewController,
         let button = UIButton(type: .system)
         button.setImage(Icons.mapTabIcon, for: .normal)
         button.addTarget(self, action: #selector(centerMapOnUserLocation), for: .touchUpInside)
-        button.accessibilityLabel = NSLocalizedString("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
+        button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
     }()
 
@@ -166,7 +166,7 @@ public class MapViewController: UIViewController,
         button.titleLabel?.adjustsFontSizeToFitWidth = true
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body).bold
-        button.accessibilityLabel = NSLocalizedString("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
+        button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
         return button
     }()
 
@@ -299,11 +299,11 @@ public class MapViewController: UIViewController,
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if let region = view.annotation as? Region {
-            let title = NSLocalizedString("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
-            let messageFmt = NSLocalizedString("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
+            let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
+            let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
             let alert = UIAlertController(title: title, message: String(format: messageFmt, region.name), preferredStyle: .alert)
             alert.addAction(UIAlertAction.cancelAction)
-            alert.addAction(UIAlertAction(title: NSLocalizedString("map_controller.change_region_alert.button", value: "Change Region", comment: "Change Region button on the alert that appears when the user is updating their current region manually."), style: .default, handler: { _ in
+            alert.addAction(UIAlertAction(title: OBALoc("map_controller.change_region_alert.button", value: "Change Region", comment: "Change Region button on the alert that appears when the user is updating their current region manually."), style: .default, handler: { _ in
                 self.application.regionsService.currentRegion = region
             }))
 
@@ -322,7 +322,7 @@ public class MapViewController: UIViewController,
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
-        AlertPresenter.show(errorMessage: NSLocalizedString("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
+        AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse) {
@@ -352,7 +352,7 @@ public class MapViewController: UIViewController,
                 application.viewRouter.navigate(to: tripController, from: self)
             }
             else {
-                let msg = NSLocalizedString("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
+                let msg = OBALoc("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
                 AlertPresenter.show(errorMessage: msg, presentingController: self)
             }
         default:

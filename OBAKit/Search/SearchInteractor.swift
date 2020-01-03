@@ -66,7 +66,7 @@ class SearchInteractor: NSObject {
             return nil
         }
 
-        return TableSectionData(title: NSLocalizedString("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the Recent Stops search header"), rows: recentStops)
+        return TableSectionData(title: OBALoc("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the Recent Stops search header"), rows: recentStops)
     }
 
     private func buildBookmarksSection(searchText: String) -> TableSectionData? {
@@ -80,7 +80,7 @@ class SearchInteractor: NSObject {
             return nil
         }
 
-        return TableSectionData(title: NSLocalizedString("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), rows: bookmarks)
+        return TableSectionData(title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), rows: bookmarks)
     }
 
     // MARK: - Private/Quick Search
@@ -98,10 +98,10 @@ class SearchInteractor: NSObject {
     /// - Parameter searchText: The text that the user is searching for
     private func quickSearchSection(searchText: String) -> ListDiffable {
         let quickSearchTypes: [(SearchType, String)] = [
-            (.route, NSLocalizedString("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route.")),
-            (.address, NSLocalizedString("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address.")),
-            (.stopNumber, NSLocalizedString("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop.")),
-            (.vehicleID, NSLocalizedString("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."))
+            (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route.")),
+            (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address.")),
+            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop.")),
+            (.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."))
         ]
 
         var rows = [TableRowData]()
@@ -115,7 +115,7 @@ class SearchInteractor: NSObject {
             rows.append(row)
         }
 
-        let quickSearchSection = TableSectionData(title: NSLocalizedString("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"), rows: rows)
+        let quickSearchSection = TableSectionData(title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"), rows: rows)
 
         return quickSearchSection
     }

@@ -94,7 +94,7 @@ class TripViewController: UIViewController,
         }
 
         if let lastUpdate = tripStatus.lastUpdate {
-            let format = NSLocalizedString("trip_details_controller.last_report_fmt", value: "Last report: %@", comment: "Last report: <TIME>")
+            let format = OBALoc("trip_details_controller.last_report_fmt", value: "Last report: %@", comment: "Last report: <TIME>")
             let time = application.formatters.timeFormatter.string(from: lastUpdate)
             titleView.bottomLabel.text = String(format: format, time)
         }

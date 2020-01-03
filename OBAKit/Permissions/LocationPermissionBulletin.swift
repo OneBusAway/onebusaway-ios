@@ -56,17 +56,17 @@ class LocationPermissionBulletin: NSObject {
 
 class LocationPermissionItem: BLTNPageItem {
     override init() {
-        super.init(title: NSLocalizedString("location_permission_bulletin.title", value: "Welcome!", comment: "Title of the alert that appears to request your location."))
+        super.init(title: OBALoc("location_permission_bulletin.title", value: "Welcome!", comment: "Title of the alert that appears to request your location."))
 
         isDismissable = false
 
         image = Icons.nearMe
 
-        descriptionText = NSLocalizedString("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
+        descriptionText = OBALoc("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
 
-        actionButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.give_permission", value: "Allow Access", comment: "This button signals the user is willing to grant location access to the app.")
+        actionButtonTitle = OBALoc("location_permission_bulletin.buttons.give_permission", value: "Allow Access", comment: "This button signals the user is willing to grant location access to the app.")
 
-        alternativeButtonTitle = NSLocalizedString("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
+        alternativeButtonTitle = OBALoc("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
     }
 }
 
@@ -101,9 +101,9 @@ class RegionPickerItem: BLTNPageItem {
         self.regionsService = regionsService
         self.regionPicker = RegionPicker(regionsService: regionsService)
 
-        super.init(title: NSLocalizedString("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
+        super.init(title: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
 
-        descriptionText = NSLocalizedString("region_picker.description_text", value: "Choose your transit region to use the app.", comment: "Descriptive text for the region picker card.")
+        descriptionText = OBALoc("region_picker.description_text", value: "Choose your transit region to use the app.", comment: "Descriptive text for the region picker card.")
         isDismissable = regionsService.currentRegion != nil
         actionButtonTitle = Strings.ok
 

@@ -70,8 +70,8 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
     private lazy var controllerToggle: UISegmentedControl = {
         let segment = UISegmentedControl.autolayoutNew()
 
-        segment.insertSegment(withTitle: NSLocalizedString("manage_bookmarks_groups.toggle.groups", value: "Groups", comment: "Segmented control item for Groups"), at: 0, animated: false)
-        segment.insertSegment(withTitle: NSLocalizedString("manage_bookmarks_groups.toggle.bookmarks", value: "Bookmarks", comment: "Segmented control item for bookmarks"), at: 1, animated: false)
+        segment.insertSegment(withTitle: OBALoc("manage_bookmarks_groups.toggle.groups", value: "Groups", comment: "Segmented control item for Groups"), at: 0, animated: false)
+        segment.insertSegment(withTitle: OBALoc("manage_bookmarks_groups.toggle.bookmarks", value: "Bookmarks", comment: "Segmented control item for bookmarks"), at: 1, animated: false)
 
         segment.selectedSegmentIndex = 0
 

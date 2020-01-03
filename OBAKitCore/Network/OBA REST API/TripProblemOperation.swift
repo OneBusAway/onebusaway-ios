@@ -31,12 +31,12 @@ public func tripProblemCodeToString(_ code: TripProblemCode) -> String {
 
 public func tripProblemCodeToUserFacingString(_ code: TripProblemCode) -> String {
     switch code {
-    case .neverCame: return NSLocalizedString("trip_problem_code.user_description.never_came", value: "Never came", comment: "User-facing string that means the vehicle never came.")
-    case .cameEarly: return NSLocalizedString("trip_problem_code.user_description.came_early", value: "Came early", comment: "User-facing string that means the vehicle came early.")
-    case .cameLate: return NSLocalizedString("trip_problem_code.user_description.came_late", value: "Came late", comment: "User-facing string that means the vehicle came late.")
-    case .wrongHeadsign: return NSLocalizedString("trip_problem_code.user_description.wrong_headsign", value: "Wrong headsign", comment: "User-facing string that means the vehicle headsign was wrong.")
-    case .doesNotStopHere: return NSLocalizedString("trip_problem_code.user_description.does_not_stop_here", value: "Does not stop here", comment: "User-facing string that means the vehicle does not stop here.")
-    case .other: return NSLocalizedString("trip_problem_code.user_description.other", value: "Other", comment: "User-facing string that means that something else is wrong")
+    case .neverCame: return OBALoc("trip_problem_code.user_description.never_came", value: "Never came", comment: "User-facing string that means the vehicle never came.")
+    case .cameEarly: return OBALoc("trip_problem_code.user_description.came_early", value: "Came early", comment: "User-facing string that means the vehicle came early.")
+    case .cameLate: return OBALoc("trip_problem_code.user_description.came_late", value: "Came late", comment: "User-facing string that means the vehicle came late.")
+    case .wrongHeadsign: return OBALoc("trip_problem_code.user_description.wrong_headsign", value: "Wrong headsign", comment: "User-facing string that means the vehicle headsign was wrong.")
+    case .doesNotStopHere: return OBALoc("trip_problem_code.user_description.does_not_stop_here", value: "Does not stop here", comment: "User-facing string that means the vehicle does not stop here.")
+    case .other: return OBALoc("trip_problem_code.user_description.other", value: "Other", comment: "User-facing string that means that something else is wrong")
     }
 }
 

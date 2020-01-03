@@ -24,14 +24,14 @@ class AddGroupAlertController: NSObject {
         self.dataStore = dataStore
         self.delegate = delegate
 
-        let title = NSLocalizedString("add_group_alert.title", value: "Add Group", comment: "Title of the Add Bookmark Group controller")
+        let title = OBALoc("add_group_alert.title", value: "Add Group", comment: "Title of the Add Bookmark Group controller")
 
         self.alertController = UIAlertController(title: title, message: nil, preferredStyle: .alert)
 
         super.init()
 
         self.alertController.addTextField { textField in
-            textField.placeholder = NSLocalizedString("add_group_alert.placeholder", value: "Bookmark Group Title", comment: "Text field placeholder on the Add Group Alert.")
+            textField.placeholder = OBALoc("add_group_alert.placeholder", value: "Bookmark Group Title", comment: "Text field placeholder on the Add Group Alert.")
             textField.text = group?.name
         }
 

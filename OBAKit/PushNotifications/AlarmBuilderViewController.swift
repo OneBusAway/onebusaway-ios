@@ -133,9 +133,9 @@ class AlarmTimePickerItem: BLTNPageItem {
 
         super.init()
 
-        descriptionText = NSLocalizedString("alarm_time_picker.description", value: "Remind me when this vehicle will depart in:", comment: "Explains what the Alarm Time Picker page does.")
+        descriptionText = OBALoc("alarm_time_picker.description", value: "Remind me when this vehicle will depart in:", comment: "Explains what the Alarm Time Picker page does.")
         isDismissable = true
-        actionButtonTitle = NSLocalizedString("alarm_time_picker.action_button_title", value: "Add Alarm", comment: "Title of the button on the alarm time picker page.")
+        actionButtonTitle = OBALoc("alarm_time_picker.action_button_title", value: "Add Alarm", comment: "Title of the button on the alarm time picker page.")
     }
 
     override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {
@@ -213,10 +213,10 @@ class AlarmTimePickerManager: NSObject, UIPickerViewDelegate, UIPickerViewDataSo
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
         let minutes = pickerItems[row]
         if minutes == 1 {
-            return NSLocalizedString("alarm_builder_controller.one_minute", value: "1 minute", comment: "One minute/1 minute")
+            return OBALoc("alarm_builder_controller.one_minute", value: "1 minute", comment: "One minute/1 minute")
         }
         else {
-            let fmt = NSLocalizedString("alarm_builder_controller.minutes_fmt", value: "%d minutes", comment: "{X} minutes. always plural.")
+            let fmt = OBALoc("alarm_builder_controller.minutes_fmt", value: "%d minutes", comment: "{X} minutes. always plural.")
             return String(format: fmt, minutes)
         }
     }

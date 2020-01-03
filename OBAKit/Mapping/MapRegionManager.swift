@@ -305,7 +305,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
         let animated = statusOverlay.superview != nil
 
         if mapHeight > MapRegionManager.requiredHeightToShowStops {
-            let message = NSLocalizedString("map_region_manager.status_overlay.zoom_to_see_stops", value: "Zoom in to look for stops", comment: "Map region manager message to the user when they need to zoom in more to view stops")
+            let message = OBALoc("map_region_manager.status_overlay.zoom_to_see_stops", value: "Zoom in to look for stops", comment: "Map region manager message to the user when they need to zoom in more to view stops")
             statusOverlay.showOverlay(message: message, animated: animated)
         }
         else {

@@ -32,7 +32,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
 
         super.init(nibName: nil, bundle: nil)
 
-        title = NSLocalizedString("region_picker_controller.title", value: "Select a Region", comment: "Region Picker view controller title")
+        title = OBALoc("region_picker_controller.title", value: "Select a Region", comment: "Region Picker view controller title")
 
         doneButton.isEnabled = (application.regionsService.currentRegion != nil)
         navigationItem.rightBarButtonItem = doneButton
@@ -83,7 +83,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
         switch message {
         case .manualSelectionMessage:
             section = Section(
-                footer: NSLocalizedString("region_picker.manual_selection_message",
+                footer: OBALoc("region_picker.manual_selection_message",
                                           value: "We can't automatically select a region for you. Please choose a region below and then tap on the Done button.",
                                           comment: "Explanation for why the user is seeing this screen."))
         case .none:
@@ -94,7 +94,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
 
         section <<< SwitchRow(autoSelectTag) {
             $0.tag = autoSelectTag
-            $0.title = NSLocalizedString("region_picker_controller.automatically_select_region_switch_title", value: "Automatically select region", comment: "Title next to the switch that toggles whether the user can manually pick their region.")
+            $0.title = OBALoc("region_picker_controller.automatically_select_region_switch_title", value: "Automatically select region", comment: "Title next to the switch that toggles whether the user can manually pick their region.")
             $0.onChange { [weak self] (row) in
                 guard
                     skipFirst,
@@ -115,7 +115,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
     // MARK: - Region List Section
 
     private lazy var selectedRegionSection: SelectableSection<ListCheckRow<String>> = {
-        let title = NSLocalizedString("region_picker.region_section.title", value: "Regions", comment: "Title of the Regions section.")
+        let title = OBALoc("region_picker.region_section.title", value: "Regions", comment: "Title of the Regions section.")
         let section = SelectableSection<ListCheckRow<String>>(title, selectionType: .singleSelection(enableDeselection: false)) {
             $0.onSelectSelectableRow = { [weak self] _, row in
                 guard
