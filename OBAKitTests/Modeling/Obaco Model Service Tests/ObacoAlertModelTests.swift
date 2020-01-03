@@ -22,6 +22,8 @@ class ObacoAlertModelTests: OBATestCase {
             return foo
         }
 
+        let locale = Locale.current
+
         let agencies = try! AgencyWithCoverage.decodeFromFile(named: "agencies_with_coverage.json", in: Bundle(for: type(of: self)))
         expect(agencies.count) == 11
 
@@ -33,9 +35,10 @@ class ObacoAlertModelTests: OBATestCase {
                 let first = alerts.first!
                 expect(first.startDate) == Date.fromComponents(year: 2018, month: 10, day: 09, hour: 15, minute: 01, second: 00)
                 expect(first.endDate) == Date.fromComponents(year: 2018, month: 10, day: 09, hour: 23, minute: 01, second: 00)
-                expect(first.url(language: "en")!.absoluteString) == "https://m.soundtransit.org/node/19133"
-                expect(first.title(language: "en")) == "Sounder Lakewood-Seattle - Delay - #1514 (7:20 am TAC dep)  20 minutes at Auburn Station due to a medical emergency"
-                expect(first.body(language: "en")!.starts(with: "Sounder south line train #1514 (7:20 a.m. Tacoma departure)")).to(beTrue())
+
+                expect(first.URLForLocale(locale)!.absoluteString) == "https://m.soundtransit.org/node/19133"
+                expect(first.titleForLocale(locale)!) == "Sounder Lakewood-Seattle - Delay - #1514 (7:20 am TAC dep)  20 minutes at Auburn Station due to a medical emergency"
+                expect(first.bodyForLocale(locale)!.starts(with: "Sounder south line train #1514 (7:20 a.m. Tacoma departure)")).to(beTrue())
                 done()
             }
         }

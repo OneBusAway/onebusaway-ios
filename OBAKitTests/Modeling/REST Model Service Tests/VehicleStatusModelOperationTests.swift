@@ -87,9 +87,9 @@ extension VehicleStatusModelOperationTests {
                 expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6082))
                 expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3362))
 
-                expect(vehicle.trip.id) == "40_40804394"
-                expect(vehicle.trip.routeShortName).to(beNil())
-                expect(vehicle.trip.shortName) == "LOCAL"
+                expect(vehicle.trip!.id) == "40_40804394"
+                expect(vehicle.trip!.routeShortName).to(beNil())
+                expect(vehicle.trip!.shortName) == "LOCAL"
 
                 expect(vehicle.phase) == "in_progress"
                 expect(vehicle.status) == "SCHEDULED"

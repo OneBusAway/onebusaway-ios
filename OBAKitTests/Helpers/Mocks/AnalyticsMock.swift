@@ -20,6 +20,17 @@ struct ReportedEvent {
 }
 
 class AnalyticsMock: NSObject, Analytics {
+
+    private var isReportingEnabled = true
+
+    func setReportingEnabled(_ enabled: Bool) {
+        isReportingEnabled = enabled
+    }
+
+    func reportingEnabled() -> Bool {
+        return isReportingEnabled
+    }
+
     public private(set) var loggedEvents = [LoggedEvent]()
     public private(set) var reportedEvents = [ReportedEvent]()
 

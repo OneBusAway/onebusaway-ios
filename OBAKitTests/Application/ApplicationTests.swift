@@ -80,9 +80,15 @@ class ApplicationTests: OBATestCase {
         expect(locManager.updatingLocation).to(beFalse())
         expect(locManager.updatingHeading).to(beFalse())
 
-        _ = Application(config: config)
+        let app = Application(config: config)
 
-        // Creating the Application object causes location updates to begin if the app is authorized.
+        // Location Manager does not initially start updating location.
+        expect(locManager.updatingLocation).to(beFalse())
+        expect(locManager.updatingHeading).to(beFalse())
+
+        // The application becoming active causes the location manager to begin updates.
+        app.applicationDidBecomeActive(UIApplication.shared)
+
         expect(locManager.updatingLocation).to(beTrue())
         expect(locManager.updatingHeading).to(beTrue())
     }
