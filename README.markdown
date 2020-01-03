@@ -57,6 +57,8 @@ If you need to add a new string to one of the frameworks, please do the followin
 To generate new `.strings` files, run this command from the root of the project:
 
     scripts/localize
+    
+## Diagnosing Problems
 
 ### Things Not Working Right?
 
@@ -80,7 +82,7 @@ I'm sure there's a bug in the `project.yml` file that I have written that is cau
 
 ## Code and Structure
 
-OBAKit is written almost entirely in Swift 5, with the exception of a few small, ancillary pieces of code.
+OBAKit is written almost entirely in Swift, with the exception of a few small, ancillary pieces of code.
 
 ### Objective-C Compatibility
 
@@ -90,14 +92,14 @@ This project is designed to be usable within both Swift and Objective-C projects
 
 This project uses [Jazzy](https://github.com/realm/jazzy), which is written in Ruby, to generate its documentation. To install Jazzy, we recommend following these steps:
 
-```bash
+```
 gem install bundler
 bundle install
 ```
 
 Once Jazzy is installed, you can generate the project's documentation by running the command
 
-```bash
+```
 jazzy
 ```
 
@@ -115,12 +117,12 @@ The app is essentially a thin shell around two frameworks, `OBAKitCore` and `OBA
 
 To make modifications to the local copy of `gtfs-realtime.proto`, you will need to install some new tools via the `brew` command:
 
-```bash
+```
 brew install protobuf
 brew install swift-protobuf
 ```
 
-Now, `cd OBAKitCore/Models/Protobuf`, update `gtfs-realtime.proto` to the appropriate version, and run `./proto-gen.sh`.
+Now, `cd OBAKitCore/Models/Protobuf`, replace the `gtfs-realtime.proto` file with the modified version, and run `./proto-gen.sh`.
 
 ### Networking
 
