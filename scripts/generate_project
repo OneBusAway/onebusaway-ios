@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'erb'
+require 'yaml'
+
+project = File.open('Apps/Shared/project.yml.erb').read
+variables = YAML.load(File.open('Apps/Shared/variables.yml'))
+output = ERB.new(project).result_with_hash(variables)
+
+File.open('project.yml', 'w') do |f|
+  f.write(output)
+end
+
+puts `xcodegen`

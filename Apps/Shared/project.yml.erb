@@ -1,12 +1,12 @@
 name: OBAKit
-settings:
-  base:
-    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
-
 
 ############
 # Options
 ############
+
+settings:
+  base:
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
 
 options:
   minimumXcodeGenVersion: 2.10
@@ -71,7 +71,7 @@ targets:
           RegionsServerBaseAddress: http://regions.onebusaway.org
         CFBundleDisplayName: OneBusAway
         CFBundleLocalizations: [en, pl]
-        CFBundleShortVersionString: "20.1.0"
+        CFBundleShortVersionString: <%= product_version %>
         LSApplicationQueriesSchemes: [fb, twitter, comgooglemaps, fb313213768708402HART, org.sdmts.riderapp.compassmobile.payments, co.bytemark.tgt]
         LSRequiresIPhoneOS: true
         NSHumanReadableCopyright: "© Open Transit Software Foundation"
@@ -109,7 +109,7 @@ targets:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
         OTHER_LDFLAGS: -ObjC
-        MARKETING_VERSION: "20.1.0"
+        MARKETING_VERSION: <%= product_version %>
         
   OBAKitCore:
     type: framework
@@ -126,10 +126,11 @@ targets:
     info:
       path: OBAKitCore/Info.plist
       properties:
-        CFBundleShortVersionString: "20.1.0"
+        CFBundleShortVersionString: <%= product_version %>
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+  
   OBAKit:
     type: framework
     platform: iOS
@@ -156,10 +157,11 @@ targets:
     info:
       path: OBAKit/Info.plist
       properties:
-        CFBundleShortVersionString: "20.1.0"
+        CFBundleShortVersionString: <%= product_version %>
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
+  
   OBAKitTests:
     type: bundle.unit-test
     platform: iOS

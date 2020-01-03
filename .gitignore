@@ -8,6 +8,7 @@ Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAKit/Info.plist
 OBAKitCore/Info.plist
+project.yml
 
 ## Various settings
 *.pbxuser

@@ -8,7 +8,7 @@ To get started, you will need the following pieces of software installed on your
 
 1. [Xcode 11.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software it may prompt you to install.
 2. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen and Carthage.
-3. [Xcodegen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
+3. [XcodeGen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
 4. [Carthage](https://github.com/Carthage/Carthage) - Manages third-party dependencies.
 5. [SwiftLint](https://github.com/realm/SwiftLint) - A tool to enforce Swift style and conventions.
 6. [Ruby](https://www.ruby-lang.org/) - _This should already be installed on your Mac_. A dynamic, open source programming language with a focus on simplicity and productivity.
@@ -27,8 +27,16 @@ Once you have these pieces of software installed, clone the OneBusAway app repos
     gem install bundler
     bundle install
     carthage build --platform iOS
-    xcodegen
+    scripts/generate_project
     open OBAKit.xcodeproj
+
+## Project Files
+
+tl;dr: run `scripts/generate_project` to create the `xcodeproj` project file.
+
+OBAKit uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to create the `xcodeproj` file that you open in Xcode. XcodeGen takes a simple YAML file (`project.yml`) and turns it into a full-fledged `xcodeproj`. This makes it much easier to support whitelabeling and managing multiple project targets.
+
+However, YAML does not support variables, which we need, so we actually generate the `project.yml` file that is fed to `xcodegen` via a Ruby script, `scripts/generate_project`. `scripts/generate_project` injects the variables in `Apps/Shared/variables.yml` into a 'template' version of the `project.yml` file, which is located at `Apps/Shared/project.yml.erb`, outputs the resulting YAML file to `project.yml`, and then invokes `xcodegen`.
 
 ## Internationalization and Localization
 
