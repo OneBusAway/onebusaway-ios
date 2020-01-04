@@ -39,10 +39,7 @@ class RegionalAlertsModelOperationTests: OBATestCase {
         waitUntil { (done) in
             let op = self.restModelService.getRegionalAlerts(agencies: agencies)
             op.completionBlock = {
-                let alerts = op.agencyAlerts
-
-                // abxoxo - is this right and expected?
-                expect(alerts.count) == 2
+                expect(op.agencyAlerts.count) == 2
                 done()
             }
         }

@@ -138,10 +138,14 @@ public class TableSectionData: NSObject, ListDiffable {
     /// Creates a `TableSectionData`
     /// - Parameter title: Optional title of the section
     /// - Parameter rows: The table rows
-    /// - Parameter backgroundColor: The background color for the section. TODO - remove this property :-\
+    /// - Parameter backgroundColor: The background color for the section.
     public init(title: String?, rows: [TableRowData], backgroundColor: UIColor? = nil) {
         self.title = title
         self.rows = rows
+
+        // TODO: figure out how to remove backgroundColor from this class.
+        // It really shouldn't be here.
+        // https://github.com/aaronbrethorst/OBAKit/issues/117
         self.backgroundColor = backgroundColor
         super.init()
     }

@@ -170,7 +170,6 @@ class ContactUsHelper: NSObject {
         }
 
         // Region
-        values.append(AppDebugValue(label: "Automatically Set Region", value: "abxoxo - todo"))
         if let region = application.currentRegion {
             values.append(AppDebugValue(label: "Region", value: region.name))
             values.append(AppDebugValue(label: "Region ID", value: String(region.regionIdentifier)))

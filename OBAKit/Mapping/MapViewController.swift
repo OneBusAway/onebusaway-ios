@@ -331,7 +331,6 @@ public class MapViewController: UIViewController,
         application.viewRouter.present(nav, from: self, isModalInPresentation: true)
     }
 
-    // abxoxo - todo!
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
         guard let result = response.results.first else { return }
 

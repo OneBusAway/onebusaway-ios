@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import OBAKitCore
+import CocoaLumberjackSwift
 
 // MARK: - Types
 
@@ -95,7 +96,7 @@ public class PushService: NSObject {
     }
 
     private func errorHandler(error: Error) {
-        // abxoxo todo?
+        DDLogError("Error received from push service: \(error)")
     }
 
     // MARK: - Public Methods

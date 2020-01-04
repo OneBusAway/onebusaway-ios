@@ -85,7 +85,7 @@ public class BookmarksViewController: UIViewController,
     // MARK: - Location Service Delegate
 
     @objc public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
-        // abxoxo - todo
+        // rearrange based on distance perhaps?
     }
 
     // MARK: - UI Loading

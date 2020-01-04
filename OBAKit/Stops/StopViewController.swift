@@ -561,8 +561,6 @@ StopPreferencesDelegate {
     // MARK: - Alarms
 
     private func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
-        // abxoxo - there are other constraints on creating alarms. What are they?
-        // express them here!
         guard
             application.obacoService != nil,
             application.pushService != nil
@@ -610,8 +608,9 @@ StopPreferencesDelegate {
     }
 
     func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark) {
-        // abxoxo todo - show some sort of status message when a bookmark is added or changed.
-        viewController.dismiss(animated: true, completion: nil)
+        viewController.dismiss(animated: true) {
+            SVProgressHUD.showSuccessAndDismiss(message: nil, dismissAfter: 1.0)
+        }
     }
 
     // MARK: - Actions

@@ -93,8 +93,6 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
-        // TODO - can i extend my Operation helpers a bit to remove this
-        // Pyramid of Doom effect that I'm seeing here?
         pushService.requestPushID { [weak self] userPushID in
             guard let self = self else { return }
 

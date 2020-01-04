@@ -132,9 +132,6 @@ final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
 
             timeLabel.text = tripStopListItem.formattedDate
 
-            // abxoxo - todo: figure out a way to depict the
-            // vehicle and the user on the same segment view.
-
             if tripStopListItem.isUserDestination {
                 segmentView.image = Icons.walkTransport
             }

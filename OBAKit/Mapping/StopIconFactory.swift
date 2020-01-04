@@ -14,7 +14,7 @@ public class StopIconFactory: NSObject {
 
     private let iconSize: CGFloat
 
-    private var chevronFillColor: UIColor = .red // abxoxo dark mode
+    private lazy var chevronFillColor: UIColor = ThemeColors.shared.stopArrowFillColor
     private let iconCache = NSCache<NSString, UIImage>()
 
     /// Initializes a `StopIconFactory`.

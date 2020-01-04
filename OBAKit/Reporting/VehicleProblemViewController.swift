@@ -10,7 +10,7 @@ import Eureka
 import SVProgressHUD
 import OBAKitCore
 
-// TODO: this seems...busted. I can't figure out when this
+// This seems...busted. I can't figure out when this
 // initializer will actually be called, though. Do I even
 // really need it?
 extension TripProblemCode: InputTypeInitiable {

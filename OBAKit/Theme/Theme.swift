@@ -68,6 +68,9 @@ public class ThemeColors: NSObject {
     /// Map annotation view fill color
     public let stopAnnotationFillColor: UIColor
 
+    /// The fill color for a directional arrow on a map annotation.
+    public let stopArrowFillColor: UIColor
+
     /// The color used to represent early departures.
     public let departureEarly: UIColor
 
@@ -133,6 +136,7 @@ public class ThemeColors: NSObject {
 
             stopAnnotationFillColor = .systemBackground
             stopAnnotationStrokeColor = .label
+            stopArrowFillColor = .systemRed
         }
         else {
             departureEarly = UIColor(hex: "fc3f3b")!
@@ -153,6 +157,7 @@ public class ThemeColors: NSObject {
 
             stopAnnotationFillColor = .white
             stopAnnotationStrokeColor = .black
+            stopAnnotationFillColor = .red
         }
     }
 }

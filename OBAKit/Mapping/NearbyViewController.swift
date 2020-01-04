@@ -235,20 +235,11 @@ extension NearbyViewController: MapRegionDelegate {
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
-        // abxoxo
         exitSearchMode()
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, stopsUpdated stops: [Stop]) {
         self.stops = stops
-    }
-
-    public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
-//        surfaceView()?.showProgressBar()
-    }
-
-    public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
-//        surfaceView()?.hideProgressBar()
     }
 
     // MARK: - RegionsServiceDelegate

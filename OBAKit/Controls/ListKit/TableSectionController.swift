@@ -94,7 +94,6 @@ final public class TableSectionController: ListSectionController, ListSupplement
     }
 
     public func sizeForSupplementaryView(ofKind elementKind: String, at index: Int) -> CGSize {
-        // TODO: make this respond to font size changes.
         return CGSize(width: collectionContext!.containerSize.width, height: 20)
     }
 

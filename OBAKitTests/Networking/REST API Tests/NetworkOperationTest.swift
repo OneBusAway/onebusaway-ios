@@ -21,12 +21,4 @@ class NetworkOperationTest: OBATestCase {
         let constructedURL = NetworkOperation.buildURL(fromBaseURL: baseURL, path: path, queryItems: [])
         expect(constructedURL.absoluteString) == "http://www.example.com/api/api/where/example.json?"
     }
-
-//    // abxoxo
-//    func testEscapePathVariable() {
-//        let pathVar = "Here is a ridiculous string!/But not impossible to see in OBA's data :-\\"
-//        let escaped = NetworkHelpers.escapePathVariable(pathVar)
-//
-//        expect(escaped) == "Here%20is%20a%20ridiculous%20string!%2FBut%20not%20impossible%20to%20see%20in%20OBA's%20data%20:-%5C"
-//    }
 }

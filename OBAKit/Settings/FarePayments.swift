@@ -99,11 +99,9 @@ public class FarePayments: NSObject, SKStoreProductViewControllerDelegate {
         }
         else {
             application.analytics?.reportEvent(.userAction, label: "Clicked Pay Fare Download App", value: nil)
+
             if let identifier = region.paymentiOSAppStoreIdentifier {
                 displayAppStorePage(appIdentifier: identifier)
-            }
-            else {
-                // abxoxo - TODO show an error.
             }
         }
     }

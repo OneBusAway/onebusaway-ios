@@ -196,7 +196,6 @@ import OBAKitCore
     }
 
     @objc func showContactUsDialog() {
-        // TODO
         let sheetTitle = OBALoc("more_controller.contact_us_alert_title", value: "Contact Us", comment: "Contact Us alert title.")
         let sheet = UIAlertController(title: sheetTitle, message: nil, preferredStyle: .actionSheet)
 

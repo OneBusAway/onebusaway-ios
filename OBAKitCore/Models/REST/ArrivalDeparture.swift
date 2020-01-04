@@ -293,8 +293,9 @@ public class ArrivalDeparture: NSObject, Decodable {
 
     // MARK: - Equality and Hashing
 
-    // TODO: Implement isEqual and hash on Route, Situation, Trip, and TripStatus,
-    //  and add those members back in to the methods below.
+    // TODO: Implement isEqual and hash on Trip and TripStatus,
+    // and add those members back in to the methods below.
+    // https://github.com/aaronbrethorst/OBAKit/issues/116
 
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? ArrivalDeparture else { return false }
@@ -310,12 +311,14 @@ public class ArrivalDeparture: NSObject, Decodable {
             predictedArrival == rhs.predictedArrival &&
             predictedDeparture == rhs.predictedDeparture &&
             routeID == rhs.routeID &&
+            route == rhs.route &&
             _routeLongName == rhs._routeLongName &&
             _routeShortName == rhs._routeShortName &&
             scheduledArrival == rhs.scheduledArrival &&
             scheduledDeparture == rhs.scheduledDeparture &&
             serviceDate == rhs.serviceDate &&
             situationIDs == rhs.situationIDs &&
+            situations == rhs.situations &&
             status == rhs.status &&
             stopID == rhs.stopID &&
             stop == rhs.stop &&
@@ -328,19 +331,32 @@ public class ArrivalDeparture: NSObject, Decodable {
 
     override public var hash: Int {
         var hasher = Hasher()
-        hasher.combine(arrivalEnabled);  hasher.combine(blockTripSequence)
-        hasher.combine(departureEnabled); hasher.combine(distanceFromStop)
-        hasher.combine(frequency); hasher.combine(lastUpdated)
-        hasher.combine(numberOfStopsAway); hasher.combine(predicted)
-        hasher.combine(predictedArrival); hasher.combine(predictedDeparture)
+        hasher.combine(arrivalEnabled)
+        hasher.combine(blockTripSequence)
+        hasher.combine(departureEnabled)
+        hasher.combine(distanceFromStop)
+        hasher.combine(frequency)
+        hasher.combine(lastUpdated)
+        hasher.combine(numberOfStopsAway)
+        hasher.combine(predicted)
+        hasher.combine(predictedArrival)
+        hasher.combine(predictedDeparture)
         hasher.combine(routeID)
-        hasher.combine(_routeLongName); hasher.combine(_routeShortName)
-        hasher.combine(scheduledArrival); hasher.combine(scheduledDeparture)
-        hasher.combine(serviceDate); hasher.combine(situationIDs)
+        hasher.combine(route)
+        hasher.combine(_routeLongName)
+        hasher.combine(_routeShortName)
+        hasher.combine(scheduledArrival)
+        hasher.combine(scheduledDeparture)
+        hasher.combine(serviceDate)
+        hasher.combine(situationIDs)
+        hasher.combine(situations)
         hasher.combine(status)
-        hasher.combine(stopID); hasher.combine(stop)
-        hasher.combine(stopSequence); hasher.combine(totalStopsInTrip)
-        hasher.combine(_tripHeadsign); hasher.combine(tripID)
+        hasher.combine(stopID)
+        hasher.combine(stop)
+        hasher.combine(stopSequence)
+        hasher.combine(totalStopsInTrip)
+        hasher.combine(_tripHeadsign)
+        hasher.combine(tripID)
         hasher.combine(vehicleID)
         return hasher.finalize()
     }
