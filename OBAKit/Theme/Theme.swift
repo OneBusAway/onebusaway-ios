@@ -8,6 +8,8 @@
 
 import UIKit
 
+// swiftlint:disable function_body_length
+
 public class Theme: NSObject {
     public let colors: ThemeColors
     public let metrics: ThemeMetrics
@@ -157,7 +159,7 @@ public class ThemeColors: NSObject {
 
             stopAnnotationFillColor = .white
             stopAnnotationStrokeColor = .black
-            stopAnnotationFillColor = .red
+            stopArrowFillColor = .red
         }
     }
 }

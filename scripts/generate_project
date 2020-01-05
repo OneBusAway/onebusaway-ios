@@ -1,14 +1,39 @@
 #!/usr/bin/env ruby
 
-require 'erb'
-require 'yaml'
+app = ARGV[0]
 
-project = File.open('Apps/Shared/project.yml.erb').read
-variables = YAML.load(File.open('Apps/Shared/variables.yml'))
-output = ERB.new(project).result_with_hash(variables)
-
-File.open('project.yml', 'w') do |f|
-  f.write(output)
+if app.nil?
+  display_usage_information()
+  exit
 end
 
-puts `xcodegen`
+check_for_project_file(app)
+
+generate_project(app)
+
+BEGIN {
+  def display_usage_information()
+    puts "Usage: scripts/generate_project <APP NAME>"
+    puts "Available Apps:"
+    (Dir.glob("Apps/*") - ["Apps/Shared"]).each do |app|
+      puts "    #{app.split("/").last}"
+    end
+  end
+  
+  def check_for_project_file(app)
+    path = project_yml_path(app)
+    if !File.exist?(path)
+      puts "#{path} does not exist! Create the file and try again!"
+      exit
+    end
+  end
+  
+  def generate_project(app)
+    `cp #{project_yml_path(app)} .`
+    puts `xcodegen`
+  end
+  
+  def project_yml_path(app)
+    "Apps/#{app}/project.yml"
+  end
+}

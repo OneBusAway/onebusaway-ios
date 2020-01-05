@@ -30,13 +30,31 @@ Once you have these pieces of software installed, clone the OneBusAway app repos
     scripts/generate_project
     open OBAKit.xcodeproj
 
-## Project Files
+## Project Files (.xcodeproj)
 
 tl;dr: run `scripts/generate_project` to create the `xcodeproj` project file.
 
-OBAKit uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to create the `xcodeproj` file that you open in Xcode. XcodeGen takes a simple YAML file (`project.yml`) and turns it into a full-fledged `xcodeproj`. This makes it much easier to support whitelabeling and managing multiple project targets.
+OBAKit uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to create the `xcodeproj` file that makes Xcode function. XcodeGen takes a simple YAML file (`project.yml`) and turns it into a full-fledged `xcodeproj`. This makes it much easier to support white-labeling and managing multiple project targets.
 
-However, YAML does not support variables, which we need, so we actually generate the `project.yml` file that is fed to `xcodegen` via a Ruby script, `scripts/generate_project`. `scripts/generate_project` injects the variables in `Apps/Shared/variables.yml` into a 'template' version of the `project.yml` file, which is located at `Apps/Shared/project.yml.erb`, outputs the resulting YAML file to `project.yml`, and then invokes `xcodegen`.
+Call `scripts/generate_project` from the project root directory with the name of a directory in `Apps`. For instance, to generate the OneBusAway app, you'd run the command:
+
+```
+scripts/generate_project OneBusAway
+```
+
+Run `scripts/generate_project` on its own to see a list of available app targets.
+
+## White Label Support
+
+_This feature is a work in progress._
+
+To create your own app target, duplicate the `Apps/OneBusAway` directory and update all of the available variables with the ones that are relevant to your project. Here's an incomplete list of everything you will need to update:
+
+* App Icon
+* `Info.plist`
+* Entitlements file
+* `project.yml`
+* `GoogleService-Info.plist`
 
 ## Internationalization and Localization
 
