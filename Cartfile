@@ -16,7 +16,7 @@ github "rwbutler/Connectivity" ~>3.3.3
 ## UI
 
 # https://github.com/Instagram/IGListKit/releases
-github "Instagram/IGListKit" ~>3.4.0
+github "Instagram/IGListKit" ~>4.0.0
 
 # https://github.com/airbnb/AloeStackView/releases
 github "airbnb/AloeStackView" ~>1.2.0
