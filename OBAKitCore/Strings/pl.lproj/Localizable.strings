@@ -7,91 +7,91 @@
 /********** OBAKitCore **********/
 
 /* Back, as in 'back to the previous screen.' */
-"common.back" = "Back";
+"common.back" = "Powrót";
 
 /* The verb 'to bookmark'. */
-"common.bookmark" = "Bookmark";
+"common.bookmark" = "Dodaj do zakładek";
 
 /* The verb 'to cancel', i.e. to stop an action. */
-"common.cancel" = "Cancel";
+"common.cancel" = "Anuluj";
 
 /* The verb 'to close'. */
-"common.close" = "Close";
+"common.close" = "Zamknij";
 
 /* The verb 'to continue'. */
-"common.continue" = "Continue";
+"common.continue" = "Kontynuuj";
 
 /* The verb 'to delete', as in to destroy something. */
-"common.delete" = "Delete";
+"common.delete" = "Usuń";
 
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
-"common.dismiss" = "Dismiss";
+"common.dismiss" = "Odwołaj";
 
 /* The noun 'error', as in 'something went wrong'. */
-"common.error" = "Error";
+"common.error" = "Błąd";
 
 /* The verb 'to filter'. */
-"common.filter" = "Filter";
+"common.filter" = "Filtruj";
 
 /* This is button text that tells the user they can tap on it to learn more about the topic at hand. */
-"common.learn_more" = "Learn More";
+"common.learn_more" = "Dowiedz się więcej";
 
 /* Used to indicate that content is loading. */
-"common.loading" = "Loading…";
+"common.loading" = "Ładowanie…";
 
 /* The noun for a map. */
-"common.map" = "Map";
+"common.map" = "Mapa";
 
 /* OK */
 "common.ok" = "OK";
 
 /* The verb 'refresh', as in 'reload'. */
-"common.refresh" = "Refresh";
+"common.refresh" = "Odśwież";
 
 /* The verb 'save', as in 'save data'. */
-"common.save" = "Save";
+"common.save" = "Zapisz";
 
 /* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
-"common.scheduled_not_real_time" = "Scheduled/not real-time";
+"common.scheduled_not_real_time" = "Planowo/bez GPS";
 
 /* A noun referring to a collection of options for adjusting app behavior. */
-"common.settings" = "Settings";
+"common.settings" = "Ustawienia";
 
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
-"common.updated_at_fmt" = "Updated: %@";
+"common.updated_at_fmt" = "Aktualizowano: %@";
 
 /* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
-"common.updating" = "Updating…";
+"common.updating" = "Aktualizacja…";
 
 /* User-facing string that means the location of the stop on the map is wrong. */
-"stop_problem_code.user_description.location_wrong" = "Location is wrong";
+"stop_problem_code.user_description.location_wrong" = "Lokalizacja jest niewłaściwa";
 
 /* User-facing string that means the name of the stop is wrong. */
-"stop_problem_code.user_description.name_wrong" = "Name is wrong";
+"stop_problem_code.user_description.name_wrong" = "Nazwa jest niewłaściwa";
 
 /* User-facing string that means the number/ID of the stop is wrong. */
-"stop_problem_code.user_description.number_wrong" = "Number is wrong";
+"stop_problem_code.user_description.number_wrong" = "Symbol nie niewłaściwy";
 
 /* User-facing string that means that something else is wrong */
-"stop_problem_code.user_description.other" = "Other";
+"stop_problem_code.user_description.other" = "Inne";
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
-"stop_problem_code.user_description.route_or_trip_missing" = "Route or scheduled trip is missing";
+"stop_problem_code.user_description.route_or_trip_missing" = "Brak linii lub planowanego kursu";
 
 /* User-facing string that means the vehicle came early. */
-"trip_problem_code.user_description.came_early" = "Came early";
+"trip_problem_code.user_description.came_early" = "Przyjechał wcześniej";
 
 /* User-facing string that means the vehicle came late. */
-"trip_problem_code.user_description.came_late" = "Came late";
+"trip_problem_code.user_description.came_late" = "Przyjechał później";
 
 /* User-facing string that means the vehicle does not stop here. */
-"trip_problem_code.user_description.does_not_stop_here" = "Does not stop here";
+"trip_problem_code.user_description.does_not_stop_here" = "Nie zatrzymuje się tutaj";
 
 /* User-facing string that means the vehicle never came. */
-"trip_problem_code.user_description.never_came" = "Never came";
+"trip_problem_code.user_description.never_came" = "Nie przyjechał";
 
 /* User-facing string that means that something else is wrong */
-"trip_problem_code.user_description.other" = "Other";
+"trip_problem_code.user_description.other" = "Inny";
 
 /* User-facing string that means the vehicle headsign was wrong. */
-"trip_problem_code.user_description.wrong_headsign" = "Wrong headsign";
+"trip_problem_code.user_description.wrong_headsign" = "Zły kierunek kursu";

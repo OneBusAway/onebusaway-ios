@@ -7,601 +7,601 @@
 /********** OBAKit **********/
 
 /* Text for the table header for bookmarking an entire stop. */
-"add_bookmark_controller.bookmark_stop_header" = "Bookmark the Stop";
+"add_bookmark_controller.bookmark_stop_header" = "Dodaj przystanek do ulubionych";
 
 /* Title for the Add Bookmark view controller. */
-"add_bookmark_controller.title" = "Add Bookmark";
+"add_bookmark_controller.title" = "Dodaj zakładkę";
 
 /* Text field placeholder on the Add Group Alert. */
 "add_group_alert.placeholder" = "Bookmark Group Title";
 
 /* Title of the Add Bookmark Group controller */
-"add_group_alert.title" = "Add Group";
+"add_group_alert.title" = "Dodaj grupę";
 
 /* Title of the Agencies controller */
-"agencies_controller.title" = "Agencies";
+"agencies_controller.title" = "Przewoźnicy";
 
 /* The title of the Agency Alerts controller. */
-"agency_alerts_controller.title" = "Alerts";
+"agency_alerts_controller.title" = "Alerty";
 
 /* {X} minutes. always plural. */
-"alarm_builder_controller.minutes_fmt" = "%d minutes";
+"alarm_builder_controller.minutes_fmt" = "%d minut";
 
 /* One minute/1 minute */
-"alarm_builder_controller.one_minute" = "1 minute";
+"alarm_builder_controller.one_minute" = "1 minuta";
 
 /* Title of the button on the alarm time picker page. */
-"alarm_time_picker.action_button_title" = "Add Alarm";
+"alarm_time_picker.action_button_title" = "Dodaj alarm";
 
 /* Explains what the Alarm Time Picker page does. */
-"alarm_time_picker.description" = "Remind me when this vehicle will depart in:";
+"alarm_time_picker.description" = "Przypomnij mi kiedy ten pojazd odjeżdża za:";
 
 /* Groups button title in Bookmarks controller */
-"bookmarks_controller.groups_button_title" = "Edit";
+"bookmarks_controller.groups_button_title" = "Edytuj";
 
 /* Title of the Bookmarks tab */
-"bookmarks_controller.title" = "Bookmarks";
+"bookmarks_controller.title" = "Zakładki";
 
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
-"contact_us_helper.cant_send_email.body_fmt" = "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.";
+"contact_us_helper.cant_send_email.body_fmt" = "Aby skontaktować się z nami, napisz do nas na adres %@. Kliknij proszę w 'Copy Debug Info', aby skopiować informację do schowka, co pomoże nam rozwiązać problem. Uwzględnij tą informację w wiadomości E-mail.";
 
 /* A button that lets the user copy an email address to the clipboard. */
-"contact_us_helper.cant_send_email.copy_email_button" = "Copy Email Address";
+"contact_us_helper.cant_send_email.copy_email_button" = "Skopiuj adres E-mail";
 
 /* A button that lets the user copy a default message, including debug info, to the clipboard. */
-"contact_us_helper.cant_send_email.copy_message_button" = "Copy Debug Info";
+"contact_us_helper.cant_send_email.copy_message_button" = "Kopiuj informację błędu";
 
 /* Title of the alert that appears when the user's device isn't configured to send email. */
-"contact_us_helper.cant_send_email.title" = "Can't Send Email via Mail.app";
+"contact_us_helper.cant_send_email.title" = "Nie można było wysłać E-mail przez Mail.app";
 
 /* Feedback email template subject for the app developers */
-"contact_use_helper.feedback_subject.app" = "OneBusAway Feedback";
+"contact_use_helper.feedback_subject.app" = "Informacja zwrotna OneBusAway";
 
 /* Feedback email template subject for the transit agency */
-"contact_use_helper.feedback_subject.transit_agency" = "Transit Rider Feedback";
+"contact_use_helper.feedback_subject.transit_agency" = "Informacja zwrotna pasażera";
 
 /* Title of the Credits controller */
-"credits_controller.title" = "Credits";
+"credits_controller.title" = "Podziękowania";
 
 /* Title of the button that lets the user add a new Bookmark Group. */
-"edit_bookmark_controller.add_group_button_title" = "Add Bookmark Group";
+"edit_bookmark_controller.add_group_button_title" = "Dodaj grupę zakładek";
 
 /* Title of the Bookmark Group header. */
-"edit_bookmark_controller.group_section.header_title" = "Bookmark Group";
+"edit_bookmark_controller.group_section.header_title" = "Grupa zakładek";
 
 /* Title of the Bookmark Name header. */
-"edit_bookmark_controller.name_section.header_title" = "Bookmark Name";
+"edit_bookmark_controller.name_section.header_title" = "Nazwa zakładki";
 
 /* Don't add this bookmark to a group. */
-"edit_bookmark_controller.no_group_row" = "(No Group)";
+"edit_bookmark_controller.no_group_row" = "(Bez grupy)";
 
 /* Title for the Edit Bookmark controller in add mode */
-"edit_bookmark_controller.title_add" = "Add Bookmark";
+"edit_bookmark_controller.title_add" = "Dodaj zakładkę";
 
 /* Title for the Edit Bookmark controller in edit mode */
-"edit_bookmark_controller.title_edit" = "Edit Bookmark";
+"edit_bookmark_controller.title_edit" = "Edytuj zakładkę";
 
 /* A button that says continue and don't show again. */
-"fare_payments.dont_show_again" = "Continue and Don't Show Again";
+"fare_payments.dont_show_again" = "Kontynuuj i nie pokazuj więcej";
 
 /* Use for vehicles that arrived X minutes ago. */
-"formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
+"formatters.arrived_x_min_ago_fmt" = "Przyejchał %d min temu";
 
 /* Use for vehicles arriving in X minutes. */
-"formatters.arrives_in_x_min_fmt" = "Arrives in %d min";
+"formatters.arrives_in_x_min_fmt" = "Przyjeżdża za %d min";
 
 /* Use for vehicles arriving now. */
-"formatters.arriving_now" = "Arriving now";
+"formatters.arriving_now" = "Przyjeżdża teraz";
 
 /* Headed in an eastern direction */
-"formatters.cardinal_adjective.east" = "Eastbound";
+"formatters.cardinal_adjective.east" = "w kier. wschodnim";
 
 /* Headed in a northern direction */
-"formatters.cardinal_adjective.north" = "Northbound";
+"formatters.cardinal_adjective.north" = "w kier. północnym";
 
 /* Headed in a northeastern direction */
-"formatters.cardinal_adjective.northeast" = "NE bound";
+"formatters.cardinal_adjective.northeast" = "w kier. północno-wschodnim";
 
 /* Headed in a northwestern direction */
-"formatters.cardinal_adjective.northwest" = "NW bound";
+"formatters.cardinal_adjective.northwest" = "w kier. północno-zachodnim";
 
 /* Headed in a southern direction */
-"formatters.cardinal_adjective.south" = "Southbound";
+"formatters.cardinal_adjective.south" = "w kier. południowym";
 
 /* Headed in an southeastern direction */
-"formatters.cardinal_adjective.southeast" = "SE bound";
+"formatters.cardinal_adjective.southeast" = "w kier. południowo-wschodnim";
 
 /* Headed in a southwestern direction */
-"formatters.cardinal_adjective.southwest" = "SW bound";
+"formatters.cardinal_adjective.southwest" = "w kier. południowo-zachodnim";
 
 /* Headed in a western direction */
-"formatters.cardinal_adjective.west" = "Westbound";
+"formatters.cardinal_adjective.west" = "w kier. zachodnim";
 
 /* Abbreviation for East */
-"formatters.cardinal_direction_abbrev.east" = "E";
+"formatters.cardinal_direction_abbrev.east" = "wsch.";
 
 /* Abbreviation for North */
-"formatters.cardinal_direction_abbrev.north" = "N";
+"formatters.cardinal_direction_abbrev.north" = "półn.";
 
 /* Abbreviation for Northeast */
-"formatters.cardinal_direction_abbrev.northeast" = "NE";
+"formatters.cardinal_direction_abbrev.northeast" = "półn.-wsch.";
 
 /* Abbreviation for Northwest */
-"formatters.cardinal_direction_abbrev.northwest" = "NW";
+"formatters.cardinal_direction_abbrev.northwest" = "półn.-zach.";
 
 /* Abbreviation for South */
-"formatters.cardinal_direction_abbrev.south" = "S";
+"formatters.cardinal_direction_abbrev.south" = "połud.";
 
 /* Abbreviation for Southeast */
-"formatters.cardinal_direction_abbrev.southeast" = "SE";
+"formatters.cardinal_direction_abbrev.southeast" = "połud.-wsch.";
 
 /* Abbreviation for Southwest */
-"formatters.cardinal_direction_abbrev.southwest" = "SW";
+"formatters.cardinal_direction_abbrev.southwest" = "połud.-zach.";
 
 /* Abbreviation for West */
-"formatters.cardinal_direction_abbrev.west" = "W";
+"formatters.cardinal_direction_abbrev.west" = "zach.";
 
 /* Represents a timeframe. e.g. 9:00 AM — 11:00 AM. */
 "formatters.date_range_fmt" = "%1$@ — %2$@";
 
 /* Use for vehicles that departed X minutes ago. */
-"formatters.departed_x_min_ago_fmt" = "Departed %d min ago";
+"formatters.departed_x_min_ago_fmt" = "Odjechał %d min temu";
 
 /* Use for vehicles departing now. */
-"formatters.departing_now" = "Departing now";
+"formatters.departing_now" = "Odjeżdża teraz";
 
 /* Use for vehicles departing in X minutes. */
-"formatters.departs_in_x_min_fmt" = "Departs in %d min";
+"formatters.departs_in_x_min_fmt" = "Odjeżdża za %d min";
 
 /* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_early_fmt" = "arrives %d min early";
+"formatters.deviation.arrival_future_early_fmt" = "przyjedzie %d min wcześniej";
 
 /* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_late_fmt" = "arrives %d min late";
+"formatters.deviation.arrival_future_late_fmt" = "przyjedzie %d min później";
 
 /* Describes an on-time arrival. e.g. arrives on time. */
-"formatters.deviation.arrival_future_on_time" = "arrives on time";
+"formatters.deviation.arrival_future_on_time" = "przyjedzie na czas";
 
 /* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_early_fmt" = "arrived %d min early";
+"formatters.deviation.arrival_past_early_fmt" = "przyjechał %d min wcześniej";
 
 /* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_late_fmt" = "arrived %d min late";
+"formatters.deviation.arrival_past_late_fmt" = "przyjechał %d min później";
 
 /* Describes an on-time arrival. e.g. arrived on time. */
-"formatters.deviation.arrival_past_on_time" = "arrived on time";
+"formatters.deviation.arrival_past_on_time" = "przyjechał na czas";
 
 /* Describes an on-time departure. e.g. departs on time. */
-"formatters.deviation.departs_future_on_time" = "departs on time";
+"formatters.deviation.departs_future_on_time" = "odjedzie na czas";
 
 /* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_early_fmt" = "departs %d min early";
+"formatters.deviation.departure_future_early_fmt" = "odjedzie %d min wcześniej";
 
 /* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_late_fmt" = "departs %d min late";
+"formatters.deviation.departure_future_late_fmt" = "odjedzie %d min później";
 
 /* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_early_fmt" = "departed %d min early";
+"formatters.deviation.departure_past_early_fmt" = "odjechał %d min wcześniej";
 
 /* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_late_fmt" = "departed %d min late";
+"formatters.deviation.departure_past_late_fmt" = "odjechał %d min później";
 
 /* Describes an on-time departure. e.g. departed on time. */
-"formatters.deviation.departure_past_on_time" = "departed on time";
+"formatters.deviation.departure_past_on_time" = "odjechał na czas";
 
 /* Short formatted time text for arrivals/departures occurring now. */
-"formatters.now" = "NOW";
+"formatters.now" = "TERAZ";
 
 /* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
-"formatters.routes_label_fmt" = "Routes: %@";
+"formatters.routes_label_fmt" = "Linie: %@";
 
 /* Placeholder text for the search bar: 'Search in {REGION NAME}' */
-"formatters.search_bar_placeholder_fmt" = "Search in %@";
+"formatters.search_bar_placeholder_fmt" = "Szukaj w %@";
 
 /* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
 "formatters.short_time_fmt" = "%dm";
 
 /* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
-"formatters.stop.stop_code_non_numeric" = "Stop: '%@'";
+"formatters.stop.stop_code_non_numeric" = "Przystanek: '%@'";
 
 /* Format string representing a numeric stop number. e.g. Stop #1234 */
-"formatters.stop.stop_code_numeric" = "Stop #%@";
+"formatters.stop.stop_code_numeric" = "Przystanek #%@";
 
 /* This button rejects the application's request to see the user's location. */
-"location_permission_bulletin.buttons.deny_permission" = "Maybe Later";
+"location_permission_bulletin.buttons.deny_permission" = "Może później";
 
 /* This button signals the user is willing to grant location access to the app. */
-"location_permission_bulletin.buttons.give_permission" = "Allow Access";
+"location_permission_bulletin.buttons.give_permission" = "Zezwól na dostęp";
 
 /* Description of why we need location services */
-"location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
+"location_permission_bulletin.description_text" = "Zezwól aplikacji na dostęp do Twojej lokalizacji, aby ułatwić wyszukiwanie Twoich najbliższych przystanków.";
 
 /* Title of the alert that appears to request your location. */
-"location_permission_bulletin.title" = "Welcome!";
+"location_permission_bulletin.title" = "Witaj!";
 
 /* Explains the purpose of the Manage Bookmarks controller */
-"manage_bookmarks.controller_footer" = "You can rearrange and delete Bookmarks from this screen.";
+"manage_bookmarks.controller_footer" = "Możesz zmieniać kolejność i usuwać zakładki z tego ekranu.";
 
 /* Segmented control item for bookmarks */
-"manage_bookmarks_groups.toggle.bookmarks" = "Bookmarks";
+"manage_bookmarks_groups.toggle.bookmarks" = "Zakładki";
 
 /* Segmented control item for Groups */
-"manage_bookmarks_groups.toggle.groups" = "Groups";
+"manage_bookmarks_groups.toggle.groups" = "Grupy";
 
 /* 'Add Bookmark Group' button text */
-"manage_groups_controller.add_group_button" = "Add Bookmark Group";
+"manage_groups_controller.add_group_button" = "Dodaj grupę zakładek";
 
 /* Footer explanation on the Groups section of the Manage Groups controller. */
-"manage_groups_controller.groups.footer_text" = "You can rename, add, delete, and rearrange bookmark groups. Bookmarks in deleted groups are not deleted.";
+"manage_groups_controller.groups.footer_text" = "Możesz zmieniać nazwy, dodawać, usuwać i zmieniać kolejność grup zakładek. Zakładki w usuniętej grupie nie są usuwane.";
 
 /* Placeholder text for Bookmark Group. */
-"manage_groups_controller.text_field_placeholder" = "Group name";
+"manage_groups_controller.text_field_placeholder" = "Nazwa grupy";
 
 /* Manage Groups controller title */
-"manage_groups_controller.title" = "Edit Bookmarks";
+"manage_groups_controller.title" = "Edytuj zakładki";
 
 /* Map controller for centering the map on the user's current location. */
-"map_controller.center_user_location" = "Center map on current location";
+"map_controller.center_user_location" = "Centruj mapę na bieżącej lokalizacji";
 
 /* Change Region button on the alert that appears when the user is updating their current region manually. */
-"map_controller.change_region_alert.button" = "Change Region";
+"map_controller.change_region_alert.button" = "Zmień region";
 
 /* Body of the alert that appears when the user is updating their current region manually. */
-"map_controller.change_region_alert.message_fmt" = "Would you like to change your region to %@?";
+"map_controller.change_region_alert.message_fmt" = "Czy chcesz zmienić swój region na %@?";
 
 /* Title of the alert that appears when the user is updating their current region manually. */
-"map_controller.change_region_alert.title" = "Change Region?";
+"map_controller.change_region_alert.title" = "Zmienić region?";
 
 /* A generic message shown when the user's search query produces no search results. */
-"map_controller.no_search_results_found" = "No search results were found.";
+"map_controller.no_search_results_found" = "Brak wyników";
 
 /* Accessibility label for a button that provides the current forecast */
-"map_controller.show_weather_button" = "Show Weather Forecast";
+"map_controller.show_weather_button" = "Pokaż prognozę pogody";
 
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
-"map_controller.vehicle_not_on_trip_error" = "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.";
+"map_controller.vehicle_not_on_trip_error" = "Pojazd, który wybrałeś, nie wykonuje żadnego kursu, więc nie mamy co pokazać.";
 
 /* about section header */
-"map_item_controller.about_header" = "About";
+"map_item_controller.about_header" = "O nas";
 
 /* More options header */
-"map_item_controller.more_header" = "More";
+"map_item_controller.more_header" = "Więcej";
 
 /* A table row that shows stops nearby. */
-"map_item_controller.nearby_stops_row" = "Nearby Stops";
+"map_item_controller.nearby_stops_row" = "Przystanki w pobliżu";
 
 /* Map region manager message to the user when they need to zoom in more to view stops */
-"map_region_manager.status_overlay.zoom_to_see_stops" = "Zoom in to look for stops";
+"map_region_manager.status_overlay.zoom_to_see_stops" = "Przybliż, aby zobaczyć przystanki";
 
 /* Header for a section that shows the user information about this app. */
-"more_controller.about_app" = "About this App";
+"more_controller.about_app" = "O tej aplikacji";
 
 /* Alerts for region row in the More controller */
-"more_controller.alerts_for_region" = "Alerts";
+"more_controller.alerts_for_region" = "Alerty";
 
 /* Title of the action sheet option for contacting the developers of the app. */
-"more_controller.contact_developers" = "Feature Request/Bug Report";
+"more_controller.contact_developers" = "Zgłoszenie nowej funkcji/błędu";
 
 /* Title of the action sheet option for contacting a user's transit agency. */
-"more_controller.contact_transit" = "Vehicle/Schedule Problem";
+"more_controller.contact_transit" = "Problem z pojazdem/rozkładem";
 
 /* A button to contact transit agency/developers. */
-"more_controller.contact_us" = "Contact Us";
+"more_controller.contact_us" = "Kontakt";
 
 /* Contact Us alert title. */
-"more_controller.contact_us_alert_title" = "Contact Us";
+"more_controller.contact_us_alert_title" = "Kontakt z nami";
 
 /* Credits - like who should get credit for creating this. */
-"more_controller.credits_row_title" = "Credits";
+"more_controller.credits_row_title" = "Podziękowania";
 
 /* Title for a button that will crash the app. */
 "more_controller.debug_section.crash_row" = "Crash the App";
 
 /* Section title for debugging helpers */
-"more_controller.debug_section.header" = "Debug";
+"more_controller.debug_section.header" = "Debugowanie";
 
 /* This is displayed instead of the user's push ID if the value is not available. */
-"more_controller.debug_section.push_id.not_available" = "Not available";
+"more_controller.debug_section.push_id.not_available" = "Niedostępne";
 
 /* Title for the Push Notification ID row in the More Controller */
 "more_controller.debug_section.push_id.title" = "Push ID";
 
 /* Title of the Agencies row in the My Location section */
-"more_controller.my_location.agencies" = "Agencies";
+"more_controller.my_location.agencies" = "Przewoźnicy";
 
 /* 'My Location' section header on the 'More' controller. */
-"more_controller.my_location.header" = "My Location";
+"more_controller.my_location.header" = "Moja lokalizacja";
 
 /* Title of the mobile fare payment row */
-"more_controller.my_location.pay_fare" = "Pay My Fare";
+"more_controller.my_location.pay_fare" = "Płatność za przejazd";
 
 /* Title of the row that lets the user choose their current region. */
 "more_controller.my_location.region_row_title" = "Region";
 
 /* A link to the app's Privacy Policy */
-"more_controller.privacy_row_title" = "Privacy Policy";
+"more_controller.privacy_row_title" = "Polityka prywatności";
 
 /* Title of the More tab */
-"more_controller.title" = "More";
+"more_controller.title" = "Więcej";
 
 /* Updates and Alerts header text */
-"more_controller.updates_and_alerts.header" = "Updates and Alerts";
+"more_controller.updates_and_alerts.header" = "Komunikaty i alerty";
 
 /* Alerts for {Region Name} */
-"more_controller.updates_and_alerts.row_fmt" = "Alerts for %@";
+"more_controller.updates_and_alerts.row_fmt" = "Alerty dla %@";
 
 /* Weather forecast attribution */
-"more_controller.weather_credits_row" = "Weather forecasts powered by Dark Sky";
+"more_controller.weather_credits_row" = "Prognoza pogody dostarczana przez Dark Sky";
 
 /* Title of the alert that tells the user they've enabled debug mode. */
-"more_header.debug_enabled.title" = "Debug Mode Enabled";
+"more_header.debug_enabled.title" = "Tryb debugowania włączony";
 
 /* Explanation about how this app is built and maintained by volunteers. */
-"more_header.support_us_label_text" = "This app is made and supported by volunteers.";
+"more_header.support_us_label_text" = "Ta aplikacja jest stworzona i utrzymywania przez woluntariuszy.";
 
 /* Body for the empty set indicator on the Nearby Stops controller. */
-"nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
+"nearby_stops_controller.empty_set.body" = "Nie ma więcej przystanków w okolicy.";
 
 /* Title for the empty set indicator on the Nearby Stops controller. */
-"nearby_stops_controller.empty_set.title" = "No Nearby Stops";
+"nearby_stops_controller.empty_set.title" = "Brak przystanków w pobliżu";
 
 /* The title of the Nearby Stops controller. */
-"nearby_stops_controller.title" = "Nearby Stops";
+"nearby_stops_controller.title" = "Przystanki w pobliżu";
 
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
-"reachability_bulletin.description.cellular_no_internet" = "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.";
+"reachability_bulletin.description.cellular_no_internet" = "Brak dostępu do internetu przy podłączeniu GSM.\r\n\r\nSpróbuj skorzystać z Wi-Fi lub zmień położenie.";
 
 /* Reachability bulletin for a phone with no connection. */
-"reachability_bulletin.description.not_connected" = "We can't access the Internet. Try connecting via WiFi or cellular data.";
+"reachability_bulletin.description.not_connected" = "Brak połączenia z internetem. Skorzystaj z Wi-Fi lub z danych komórkowych.";
 
 /* Reachability bulletin for a WiFi network that can't access the Internet. */
-"reachability_bulletin.description.wifi_no_internet" = "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.";
+"reachability_bulletin.description.wifi_no_internet" = "Brak dostępu do internetu przy podłączeniu Wi-Fi.\r\n\r\nSpróbuj wyłaczyć Wi-Fi lub podłączyć się do innej sieci.";
 
 /* Title of the alert that appears when the app can't connect to the server. */
-"reachability_bulletin.title" = "No Internet";
+"reachability_bulletin.title" = "Brak połączenia z internetem.";
 
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
-"recent_stops.confirmation_alert.title" = "Are you sure you want to delete all of your recent stops?";
+"recent_stops.confirmation_alert.title" = "Czy jesteś pewien, że chcesz usunąć wszystkie swoje ostatnie przystanki?";
 
 /* A button that deletes all of the recent stops in the app. */
-"recent_stops.delete_all" = "Delete All";
+"recent_stops.delete_all" = "Usuń wszystkie";
 
 /* Body for the empty set indicator on the Recent Stops controller. */
-"recent_stops.empty_set.body" = "Transit stops that you view in the app will appear here.";
+"recent_stops.empty_set.body" = "Tutaj pojawią się przystanki, z których korzystasz w aplikacji.";
 
 /* Title for the empty set indicator on the Recent Stops controller. */
-"recent_stops.empty_set.title" = "No Recent Stops";
+"recent_stops.empty_set.title" = "Brak ostatnich przystanków";
 
 /* The title of the Recent Stops controller. */
-"recent_stops_controller.title" = "Recent";
+"recent_stops_controller.title" = "Ostatnie";
 
 /* Descriptive text for the region picker card. */
-"region_picker.description_text" = "Choose your transit region to use the app.";
+"region_picker.description_text" = "Wybierz swój region, aby korzystać z aplikacji.";
 
 /* Explanation for why the user is seeing this screen. */
-"region_picker.manual_selection_message" = "We can't automatically select a region for you. Please choose a region below and then tap on the Done button.";
+"region_picker.manual_selection_message" = "Nie mogliśmy wybrać automatycznie regionu dla Ciebie. Wybierz region poniżej i kliknij w przycisk Gotowe.";
 
 /* Title of the Regions section. */
-"region_picker.region_section.title" = "Regions";
+"region_picker.region_section.title" = "Regiony";
 
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
-"region_picker.title" = "Choose Region";
+"region_picker.title" = "Wybierz region";
 
 /* Title next to the switch that toggles whether the user can manually pick their region. */
-"region_picker_controller.automatically_select_region_switch_title" = "Automatically select region";
+"region_picker_controller.automatically_select_region_switch_title" = "Wybierz region automatycznie";
 
 /* Region Picker view controller title */
-"region_picker_controller.title" = "Select a Region";
+"region_picker_controller.title" = "Wybierz region";
 
 /* Title of the Report Problem view controller. */
-"report_problem.title" = "Report a Problem";
+"report_problem.title" = "Zgłoś problem";
 
 /* Report a problem with the stop at {Stop Name} */
-"report_problem_controller.report_stop_problem_fmt" = "Report a problem with the stop at %@";
+"report_problem_controller.report_stop_problem_fmt" = "Zgłoś problem z przystankiem przy %@";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.stop_problem.header" = "Problem with the Stop";
+"report_problem_controller.stop_problem.header" = "Problem z przystankiem";
 
 /* A table header in the 'Report Problem' view controller. */
-"report_problem_controller.vehicle_problem.header" = "Problem with a Vehicle at the Stop";
+"report_problem_controller.vehicle_problem.header" = "Problem z pojazdem na przystanku";
 
 /* A transit vehicle stop. */
-"route_stops_controller.stops_header" = "Stops";
+"route_stops_controller.stops_header" = "Przystanki";
 
 /* Title of the Bookmarks search header */
-"search_controller.bookmarks.header" = "Bookmarks";
+"search_controller.bookmarks.header" = "Zakładki";
 
 /* Body for the empty set indicator on the Search controller. */
-"search_controller.empty_set.body" = "Type in an address, route name, stop number, or vehicle here to search.";
+"search_controller.empty_set.body" = "Wpisz tutaj adres, numer linii, symbol przystanku lub numer pojazdu, aby wyszukać.";
 
 /* Title for the empty set indicator on the Search controller. */
-"search_controller.empty_set.title" = "Search";
+"search_controller.empty_set.title" = "Wyszukiwanie";
 
 /* Quick Search section header in search */
-"search_controller.quick_search.header" = "Quick Search";
+"search_controller.quick_search.header" = "Szybkie wyszukiwanie";
 
 /* Title of the Recent Stops search header */
-"search_controller.recent_stops.header" = "Recent Stops";
+"search_controller.recent_stops.header" = "Ostatnie przystanki";
 
 /* Quick search prefix for Address. */
-"search_interactor.quick_search.address_prefix" = "Address:";
+"search_interactor.quick_search.address_prefix" = "Adres:";
 
 /* Quick search prefix for Route. */
-"search_interactor.quick_search.route_prefix" = "Route:";
+"search_interactor.quick_search.route_prefix" = "Linia:";
 
 /* Quick search prefix for Stop. */
-"search_interactor.quick_search.stop_prefix" = "Stop:";
+"search_interactor.quick_search.stop_prefix" = "Przystanek:";
 
 /* Quick search prefix for Vehicle. */
-"search_interactor.quick_search.vehicle_prefix" = "Vehicle:";
+"search_interactor.quick_search.vehicle_prefix" = "Pojazd:";
 
 /* A format string for address searches. In English, this is just the address itself without any adornment. */
 "search_results_controller.subtitle.address_fmt" = "%@";
 
 /* A format string for address searches. e.g. in english: Route search: \"{SEARCH TEXT}\" */
-"search_results_controller.subtitle.route_fmt" = "Route %@";
+"search_results_controller.subtitle.route_fmt" = "Linia %@";
 
 /* A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\" */
-"search_results_controller.subtitle.stop_number_fmt" = "Stop number %@";
+"search_results_controller.subtitle.stop_number_fmt" = "Symbol przystanku %@";
 
 /* A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\" */
-"search_results_controller.subtitle.vehicle_id_fmt" = "Vehicle ID %@";
+"search_results_controller.subtitle.vehicle_id_fmt" = "Numer boczny pojazdu %@";
 
 /* The title of the Search Results controller. */
-"search_results_controller.title" = "Search Results";
+"search_results_controller.title" = "Wyniki wyszukiwania";
 
 /* Settings > Alerts section > Display test alerts */
-"settings_controller.alerts_section.display_test_alerts" = "Display test alerts";
+"settings_controller.alerts_section.display_test_alerts" = "Wyświetl testowe alerty";
 
 /* Settings > Alerts section title */
-"settings_controller.alerts_section.title" = "Agency Alerts";
+"settings_controller.alerts_section.title" = "Alerty przewoźnika";
 
 /* Settings > Map section > Show my current heading */
-"settings_controller.map_section.shows_heading" = "Show my current heading";
+"settings_controller.map_section.shows_heading" = "Pokaż mój obecny kurs";
 
 /* Settings > Map section > Shows scale */
-"settings_controller.map_section.shows_scale" = "Shows scale";
+"settings_controller.map_section.shows_scale" = "Pokaż skalę";
 
 /* Settings > Map section > Shows traffic */
-"settings_controller.map_section.shows_traffic" = "Shows traffic";
+"settings_controller.map_section.shows_traffic" = "Pokaż korki drogowe";
 
 /* Settings > Map section title */
-"settings_controller.map_section.title" = "Map";
+"settings_controller.map_section.title" = "Mapa";
 
 /* Settings > Privacy section title */
-"settings_controller.privacy_section.title" = "Privacy";
+"settings_controller.privacy_section.title" = "Prywatność";
 
 /* Settings > Privacy section > Send usage data */
-"settings_controller.prviacy_section.reporting_enabled" = "Send usage data to developer";
+"settings_controller.prviacy_section.reporting_enabled" = "Wyślij dane użycia do dewelopera";
 
 /* Action sheet button title for adding an alarm. */
-"stop_controller.add_alarm" = "Add Alarm";
+"stop_controller.add_alarm" = "Dodaj alarm";
 
 /* Action sheet button title for adding a bookmark */
-"stop_controller.add_bookmark" = "Add Bookmark";
+"stop_controller.add_bookmark" = "Dodaj zakładkę";
 
 /* A message that appears when a user's alarm is created. */
-"stop_controller.alarm_created_message" = "Alarm created";
+"stop_controller.alarm_created_message" = "Utworzono alarm";
 
 /* A header for the arrivals and departures section of the stop controller. */
-"stop_controller.arrival_departure_header" = "Arrivals and Departures";
+"stop_controller.arrival_departure_header" = "Przyjazdy i odjazdy";
 
 /* Segmented control item: show all departures */
-"stop_controller.filter_toggle.all_departures" = "All Departures";
+"stop_controller.filter_toggle.all_departures" = "Wszystkie odjazdy";
 
 /* Segmented control item: show filtered departures */
-"stop_controller.filter_toggle.filtered_departures" = "Filtered Departures";
+"stop_controller.filter_toggle.filtered_departures" = "Filtrowane odjazdy";
 
 /* Load More button */
-"stop_controller.load_more_button" = "Load More";
+"stop_controller.load_more_button" = "Załaduj więcej";
 
 /* The header for the Service Alerts section of the stops controller. */
-"stop_controller.service_alerts_header" = "Service Alerts";
+"stop_controller.service_alerts_header" = "Komunikaty o stanie sieci";
 
 /* Title of the Routes section */
-"stop_preferences_controller.routes_section.header_title" = "Routes";
+"stop_preferences_controller.routes_section.header_title" = "Linie";
 
 /* Title of the Sorting section */
-"stop_preferences_controller.sorting_section.header_title" = "Sorting";
+"stop_preferences_controller.sorting_section.header_title" = "Sortowanie";
 
 /* Sort by route option */
-"stop_preferences_controller.sorting_section.sort_by_route" = "Sort by route";
+"stop_preferences_controller.sorting_section.sort_by_route" = "Sortuj po linii";
 
 /* Sort by time option */
-"stop_preferences_controller.sorting_section.sort_by_time" = "Sort by time";
+"stop_preferences_controller.sorting_section.sort_by_time" = "Sortuj po czasie";
 
 /* Title of the Edit Stop preferences controller */
-"stop_preferences_controller.title" = "Sort & Filter Routes";
+"stop_preferences_controller.title" = "Sortowanie & filtrowanie linii";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
-"stop_problem_controller.comments_section.section_title" = "Additional comments (optional)";
+"stop_problem_controller.comments_section.section_title" = "Dodatkowe komentarze (opcjonalne)";
 
 /* Footer text of the Share Location section in the Stop Problem Controller */
-"stop_problem_controller.location_section.section_footer" = "Sharing your location can help your transit agency fix this problem.";
+"stop_problem_controller.location_section.section_footer" = "Udostępnienie swojego położenia może pomóc deweloperom aplikacji w naprawieniu tego problemu.";
 
 /* Title of the Share Location section in the Stop Problem Controller. */
-"stop_problem_controller.location_section.section_title" = "Share your location?";
+"stop_problem_controller.location_section.section_title" = "Udostępnić swoją lokalizację?";
 
 /* Title of the Share Location switch on stop problem controller */
-"stop_problem_controller.location_section.switch_title" = "Share location";
+"stop_problem_controller.location_section.switch_title" = "Udostępnianie lokalizacji";
 
 /* Title label for the 'choose a problem type' row. */
-"stop_problem_controller.problem_section.row_label" = "Pick one:";
+"stop_problem_controller.problem_section.row_label" = "Wybierz:";
 
 /* Title of the first section in the Stop Problem Controller. */
-"stop_problem_controller.problem_section.section_title" = "What seems to be the problem?";
+"stop_problem_controller.problem_section.section_title" = "Na czym polega problem?";
 
 /* The 'send' button that actually sends along the problem report. */
-"stop_problem_controller.send_button" = "Send Message";
+"stop_problem_controller.send_button" = "Wyślij wiadomość";
 
 /* Title for the Report Stop Problem controller */
-"stop_problem_controller.title" = "Report a Problem";
+"stop_problem_controller.title" = "Raportuj problem";
 
 /* More Options section header on the Stops controller */
-"stops_controller.more_options" = "More Options";
+"stops_controller.more_options" = "Więcej opcji";
 
 /* Title of the row that will show stops that are near this one. */
-"stops_controller.nearby_stops" = "Nearby Stops";
+"stops_controller.nearby_stops" = "Przystanki w pobliżu";
 
 /* Button that launches the 'Report Problem' UI. */
-"stops_controller.report_problem" = "Report a Problem";
+"stops_controller.report_problem" = "Raportowanie problemu";
 
 /* Button that launches Apple's maps.app with walking directions to this stop */
-"stops_controller.walking_directions_apple" = "Walking Directions (Apple Maps)";
+"stops_controller.walking_directions_apple" = "Idź do przystanku (Mapy Apple)";
 
 /* Button that launches Google Maps with walking directions to this stop */
-"stops_controller.walking_directions_google" = "Walking Directions (Google Maps)";
+"stops_controller.walking_directions_google" = "Idź do przystanku (Mapy Google)";
 
 /* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
-"trip_details_controller.continues_as_fmt" = "Continues as %@";
+"trip_details_controller.continues_as_fmt" = "Kontynuuje jako %@";
 
 /* Last report: <TIME> */
-"trip_details_controller.last_report_fmt" = "Last report: %@";
+"trip_details_controller.last_report_fmt" = "Ostatni raport: %@";
 
 /* Service alerts header in the trip details controller. */
-"trip_details_controller.service_alerts.header" = "Service Alerts";
+"trip_details_controller.service_alerts.header" = "Komunikaty o stanie sieci";
 
 /* Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section. */
-"trip_details_controller.service_alerts_footer" = "Trip Details";
+"trip_details_controller.service_alerts_footer" = "Szczegóły kursu";
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
-"trip_details_controller.starts_as_fmt" = "Starts as %@";
+"trip_details_controller.starts_as_fmt" = "Rozpoczyna jako %@";
 
 /* Suggested invocation phrase for Siri Shortcut */
-"user_activity_builder.show_me_my_bus" = "Show me my bus";
+"user_activity_builder.show_me_my_bus" = "Pokaż mój autobus";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
-"vehicle_problem_controller.comments_section.section_title" = "Additional comments (optional)";
+"vehicle_problem_controller.comments_section.section_title" = "Dodatkowe komentarze (opcjonalne)";
 
 /* Footer text of the Share Location section in the Vehicle Problem Controller */
-"vehicle_problem_controller.location_section.section_footer" = "Sharing your location can help your transit agency fix this problem.";
+"vehicle_problem_controller.location_section.section_footer" = "Udostępnienie swojej lokalizacji pozwoli Twojemu przewoźnikowi poprawić ten problem.";
 
 /* Title of the Share Location section in the Vehicle Problem Controller. */
-"vehicle_problem_controller.location_section.section_title" = "Share your location?";
+"vehicle_problem_controller.location_section.section_title" = "Udostępnić swoją lokalizację?";
 
 /* Title of the Share Location switch */
-"vehicle_problem_controller.location_section.switch_title" = "Share location";
+"vehicle_problem_controller.location_section.switch_title" = "Udostępnianie lokalizacji";
 
 /* Title of the 'on the vehicle' section in the Vehicle Problem Controller. */
-"vehicle_problem_controller.on_vehicle_section.section_title" = "Are you on this vehicle?";
+"vehicle_problem_controller.on_vehicle_section.section_title" = "Jesteś w tym pojeździe?";
 
 /* Title of the 'on the vehicle' switch in the Vehicle Problem Controller. */
-"vehicle_problem_controller.on_vehicle_section.switch_title" = "On the vehicle";
+"vehicle_problem_controller.on_vehicle_section.switch_title" = "W pojeździe";
 
 /* Title of the vehicle ID text field in the Vehicle Problem Controller. */
-"vehicle_problem_controller.on_vehicle_section.vehicle_id_title" = "Vehicle ID";
+"vehicle_problem_controller.on_vehicle_section.vehicle_id_title" = "Numer boczny pojazdu";
 
 /* Title label for the 'choose a problem type' row. */
-"vehicle_problem_controller.problem_section.row_label" = "Pick one";
+"vehicle_problem_controller.problem_section.row_label" = "Wybierz";
 
 /* Title of the first section in the Vehicle Problem Controller. */
-"vehicle_problem_controller.problem_section.section_title" = "What seems to be the problem?";
+"vehicle_problem_controller.problem_section.section_title" = "Na czym polega problem?";
 
 /* The 'send' button that actually sends along the problem report. */
-"vehicle_problem_controller.send_button" = "Send Message";
+"vehicle_problem_controller.send_button" = "Wyślij wiadomość";
 
 /* Title for the Report Vehicle Problem controller */
-"vehicle_problem_controller.title" = "Report a Problem";
+"vehicle_problem_controller.title" = "Zgłaszanie problemu";
 
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
-"walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
+"walk_time_view.distance_time_fmt" = "%1$@, %2$@: przyjedzie %3$@";

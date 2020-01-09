@@ -2,51 +2,51 @@
 	[common.back]
 		en = Back
 		comment = Back, as in 'back to the previous screen.'
-		pl = Back
+		pl = Powrót
 	[common.bookmark]
 		en = Bookmark
 		comment = The verb 'to bookmark'.
-		pl = Bookmark
+		pl = Dodaj do zakładek
 	[common.cancel]
 		en = Cancel
 		comment = The verb 'to cancel', i.e. to stop an action.
-		pl = Cancel
+		pl = Anuluj
 	[common.close]
 		en = Close
 		comment = The verb 'to close'.
-		pl = Close
+		pl = Zamknij
 	[common.continue]
 		en = Continue
 		comment = The verb 'to continue'.
-		pl = Continue
+		pl = Kontynuuj
 	[common.delete]
 		en = Delete
 		comment = The verb 'to delete', as in to destroy something.
-		pl = Delete
+		pl = Usuń
 	[common.dismiss]
 		en = Dismiss
 		comment = The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.
-		pl = Dismiss
+		pl = Odwołaj
 	[common.error]
 		en = Error
 		comment = The noun 'error', as in 'something went wrong'.
-		pl = Error
+		pl = Błąd
 	[common.filter]
 		en = Filter
 		comment = The verb 'to filter'.
-		pl = Filter
+		pl = Filtruj
 	[common.learn_more]
 		en = Learn More
 		comment = This is button text that tells the user they can tap on it to learn more about the topic at hand.
-		pl = Learn More
+		pl = Dowiedz się więcej
 	[common.loading]
 		en = Loading…
 		comment = Used to indicate that content is loading.
-		pl = Loading…
+		pl = Ładowanie…
 	[common.map]
 		en = Map
 		comment = The noun for a map.
-		pl = Map
+		pl = Mapa
 	[common.ok]
 		en = OK
 		comment = OK
@@ -54,68 +54,68 @@
 	[common.refresh]
 		en = Refresh
 		comment = The verb 'refresh', as in 'reload'.
-		pl = Refresh
+		pl = Odśwież
 	[common.save]
 		en = Save
 		comment = The verb 'save', as in 'save data'.
-		pl = Save
+		pl = Zapisz
 	[common.scheduled_not_real_time]
 		en = Scheduled/not real-time
 		comment = Explains that this is departure comes from schedule data, not from a real-time vehicle location.
-		pl = Scheduled/not real-time
+		pl = Planowo/bez GPS
 	[common.settings]
 		en = Settings
 		comment = A noun referring to a collection of options for adjusting app behavior.
-		pl = Settings
+		pl = Ustawienia
 	[common.updated_at_fmt]
 		en = Updated: %@
 		comment = A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.
-		pl = Updated: %@
+		pl = Aktualizowano: %@
 	[common.updating]
 		en = Updating…
 		comment = Used to tell the user that the UI they are looking at is actively being updated with new data from the server.
-		pl = Updating…
+		pl = Aktualizacja…
 	[stop_problem_code.user_description.location_wrong]
 		en = Location is wrong
 		comment = User-facing string that means the location of the stop on the map is wrong.
-		pl = Location is wrong
+		pl = Lokalizacja jest niewłaściwa
 	[stop_problem_code.user_description.name_wrong]
 		en = Name is wrong
 		comment = User-facing string that means the name of the stop is wrong.
-		pl = Name is wrong
+		pl = Nazwa jest niewłaściwa
 	[stop_problem_code.user_description.number_wrong]
 		en = Number is wrong
 		comment = User-facing string that means the number/ID of the stop is wrong.
-		pl = Number is wrong
+		pl = Symbol nie niewłaściwy
 	[stop_problem_code.user_description.other]
 		en = Other
 		comment = User-facing string that means that something else is wrong
-		pl = Other
+		pl = Inne
 	[stop_problem_code.user_description.route_or_trip_missing]
 		en = Route or scheduled trip is missing
 		comment = User-facing string that means our data is wrong about a route or a scheduled trip
-		pl = Route or scheduled trip is missing
+		pl = Brak linii lub planowanego kursu
 	[trip_problem_code.user_description.came_early]
 		en = Came early
 		comment = User-facing string that means the vehicle came early.
-		pl = Came early
+		pl = Przyjechał wcześniej
 	[trip_problem_code.user_description.came_late]
 		en = Came late
 		comment = User-facing string that means the vehicle came late.
-		pl = Came late
+		pl = Przyjechał później
 	[trip_problem_code.user_description.does_not_stop_here]
 		en = Does not stop here
 		comment = User-facing string that means the vehicle does not stop here.
-		pl = Does not stop here
+		pl = Nie zatrzymuje się tutaj
 	[trip_problem_code.user_description.never_came]
 		en = Never came
 		comment = User-facing string that means the vehicle never came.
-		pl = Never came
+		pl = Nie przyjechał
 	[trip_problem_code.user_description.other]
 		en = Other
 		comment = User-facing string that means that something else is wrong
-		pl = Other
+		pl = Inny
 	[trip_problem_code.user_description.wrong_headsign]
 		en = Wrong headsign
 		comment = User-facing string that means the vehicle headsign was wrong.
-		pl = Wrong headsign
+		pl = Zły kierunek kursu
