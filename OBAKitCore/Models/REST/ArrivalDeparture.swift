@@ -326,6 +326,8 @@ public class ArrivalDeparture: NSObject, Decodable {
             totalStopsInTrip == rhs.totalStopsInTrip &&
             _tripHeadsign == rhs._tripHeadsign &&
             tripID == rhs.tripID &&
+            trip == rhs.trip &&
+            tripStatus == rhs.tripStatus &&
             vehicleID == rhs.vehicleID
     }
 
@@ -357,10 +359,11 @@ public class ArrivalDeparture: NSObject, Decodable {
         hasher.combine(totalStopsInTrip)
         hasher.combine(_tripHeadsign)
         hasher.combine(tripID)
+        hasher.combine(trip)
+        hasher.combine(tripStatus)
         hasher.combine(vehicleID)
         return hasher.finalize()
     }
-
 }
 
 public enum ArrivalDepartureStatus: Int {

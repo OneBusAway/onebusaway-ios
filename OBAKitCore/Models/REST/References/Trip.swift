@@ -100,4 +100,36 @@ public class Trip: NSObject, Decodable, HasReferences {
 
         return "\(bestShortName) - \(headsign)"
     }
+
+    // MARK: - Equality
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Trip else { return false }
+        return
+            blockID == rhs.blockID &&
+            direction == rhs.direction &&
+            headsign == rhs.headsign &&
+            id == rhs.id &&
+            routeID == rhs.routeID &&
+            routeShortName == rhs.routeShortName &&
+            serviceID == rhs.serviceID &&
+            shapeID == rhs.shapeID &&
+            shortName == rhs.shortName &&
+            timeZone == rhs.timeZone
+    }
+
+    override public var hash: Int {
+        var hasher = Hasher()
+        hasher.combine(blockID)
+        hasher.combine(direction)
+        hasher.combine(headsign)
+        hasher.combine(id)
+        hasher.combine(routeID)
+        hasher.combine(routeShortName)
+        hasher.combine(serviceID)
+        hasher.combine(shapeID)
+        hasher.combine(shortName)
+        hasher.combine(timeZone)
+        return hasher.finalize()
+    }
 }
