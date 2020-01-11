@@ -24,7 +24,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>20200109.00</string>
+	<string>20200111.09</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fb</string>
