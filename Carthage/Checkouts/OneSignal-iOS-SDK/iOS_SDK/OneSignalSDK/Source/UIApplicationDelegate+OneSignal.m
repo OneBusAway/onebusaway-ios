@@ -29,7 +29,9 @@
 #import <UIKit/UIKit.h>
 
 #import "UIApplicationDelegate+OneSignal.h"
+#import "OSNotificationPayload+Internal.h"
 #import "OneSignal.h"
+#import "OneSignalCommonDefines.h"
 #import "OneSignalTracker.h"
 #import "OneSignalLocation.h"
 #import "OneSignalSelectorHelpers.h"
@@ -40,13 +42,11 @@
 + (void) handleDidFailRegisterForRemoteNotification:(NSError*)error;
 + (void) updateNotificationTypes:(int)notificationTypes;
 + (NSString*) app_id;
-+ (void)notificationReceived:(NSDictionary*)messageDict isActive:(BOOL)isActive wasOpened:(BOOL)opened;
++ (void)notificationReceived:(NSDictionary*)messageDict foreground:(BOOL)foreground isActive:(BOOL)isActive wasOpened:(BOOL)opened;
 + (BOOL) remoteSilentNotification:(UIApplication*)application UserInfo:(NSDictionary*)userInfo completionHandler:(void (^)(UIBackgroundFetchResult))completionHandler;
 + (void) processLocalActionBasedNotification:(UILocalNotification*) notification identifier:(NSString*)identifier;
 + (void) onesignal_Log:(ONE_S_LOG_LEVEL)logLevel message:(NSString*) message;
 @end
-
-
 
 // This class hooks into the UIApplicationDelegate selectors to receive iOS 9 and older events.
 //   - UNUserNotificationCenter is used for iOS 10
@@ -65,9 +65,6 @@ static NSArray* delegateSubclasses = nil;
 +(Class)delegateClass {
     return delegateClass;
 }
-
-
-
 
 - (void) setOneSignalDelegate:(id<UIApplicationDelegate>)delegate {
     [OneSignal onesignal_Log:ONE_S_LL_VERBOSE message:[NSString stringWithFormat:@"ONESIGNAL setOneSignalDelegate CALLED: %@", delegate]];
@@ -121,7 +118,7 @@ static NSArray* delegateSubclasses = nil;
 }
 
 + (void)sizzlePreiOS10MethodsPhase1 {
-    if ([OneSignalHelper isIOSVersionGreaterOrEqual:10])
+    if ([OneSignalHelper isIOSVersionGreaterThanOrEqual:@"10.0"])
         return;
     
     injectToProperClass(@selector(oneSignalLocalNotificationOpened:handleActionWithIdentifier:forLocalNotification:completionHandler:),
@@ -135,7 +132,7 @@ static NSArray* delegateSubclasses = nil;
 }
 
 + (void)sizzlePreiOS10MethodsPhase2 {
-    if ([OneSignalHelper isIOSVersionGreaterOrEqual:10])
+    if ([OneSignalHelper isIOSVersionGreaterThanOrEqual:@"10.0"])
         return;
     
     injectToProperClass(@selector(oneSignalReceivedRemoteNotification:userInfo:),
@@ -180,9 +177,11 @@ static NSArray* delegateSubclasses = nil;
 // Fallback method - Normally this would not fire as oneSignalRemoteSilentNotification below will fire instead. Was needed for iOS 6 support in the past.
 - (void)oneSignalReceivedRemoteNotification:(UIApplication*)application userInfo:(NSDictionary*)userInfo {
     [OneSignal onesignal_Log:ONE_S_LL_VERBOSE message:@"oneSignalReceivedRemoteNotification:userInfo:"];
-    
-    if ([OneSignal app_id])
-        [OneSignal notificationReceived:userInfo isActive:[application applicationState] == UIApplicationStateActive wasOpened:true];
+
+    if ([OneSignal app_id]) {
+        let isActive = [application applicationState] == UIApplicationStateActive;
+        [OneSignal notificationReceived:userInfo foreground:isActive isActive:isActive wasOpened:true];
+    }
     
     if ([self respondsToSelector:@selector(oneSignalReceivedRemoteNotification:userInfo:)])
         [self oneSignalReceivedRemoteNotification:application userInfo:userInfo];
@@ -201,7 +200,7 @@ static NSArray* delegateSubclasses = nil;
     
     if ([OneSignal app_id]) {
         if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive && userInfo[@"aps"][@"alert"])
-            [OneSignal notificationReceived:userInfo isActive:YES wasOpened:NO];
+            [OneSignal notificationReceived:userInfo foreground:YES isActive:YES wasOpened:NO];
         else
             startedBackgroundJob = [OneSignal remoteSilentNotification:application UserInfo:userInfo completionHandler:callExistingSelector ? nil : completionHandler];
     }

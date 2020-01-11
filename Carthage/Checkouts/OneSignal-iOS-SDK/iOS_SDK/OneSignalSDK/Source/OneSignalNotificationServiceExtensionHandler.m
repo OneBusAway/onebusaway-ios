@@ -28,24 +28,36 @@
 #import "OneSignalNotificationServiceExtensionHandler.h"
 #import "OneSignalExtensionBadgeHandler.h"
 #import "OneSignalHelper.h"
+#import "OSOutcomesUtils.h"
 #import "OneSignalTrackFirebaseAnalytics.h"
 #import "OSNotificationPayload+Internal.h"
+#import "OSSubscription.h"
+#import "OneSignalInternal.h"
+#import "OneSignalReceiveReceiptsController.h"
 
 @implementation OneSignalNotificationServiceExtensionHandler
 
-+(UNMutableNotificationContent*)didReceiveNotificationExtensionRequest:(UNNotificationRequest*)request
-                                        withMutableNotificationContent:(UNMutableNotificationContent*)replacementContent {
++ (UNMutableNotificationContent*)didReceiveNotificationExtensionRequest:(UNNotificationRequest*)request
+                                         withMutableNotificationContent:(UNMutableNotificationContent*)replacementContent {
     if (!replacementContent)
         replacementContent = [request.content mutableCopy];
     
     let payload = [OSNotificationPayload parseWithApns:request.content.userInfo];
-    
-    //handle badge count
+
+    // Handle badge count
     [OneSignalExtensionBadgeHandler handleBadgeCountWithNotificationRequest:request withNotificationPayload:payload withMutableNotificationContent:replacementContent];
     
     // Track receieved
     [OneSignalTrackFirebaseAnalytics trackReceivedEvent:payload];
     
+    let receivedNotificationId = payload.notificationID;
+    if (receivedNotificationId && ![receivedNotificationId isEqualToString:@""]) {
+        // Track confirmed delivery
+        [OneSignal.receiveReceiptsController sendReceiveReceiptWithNotificationId:receivedNotificationId];
+        // Save received notification id
+        [OSOutcomesUtils saveReceivedNotificationFromBackground:receivedNotificationId];
+    }
+
     // Action Buttons
     [self addActionButtonsToExtentionRequest:request
                                  withPayload:payload
@@ -57,8 +69,8 @@
     return replacementContent;
 }
 
-+(UNMutableNotificationContent*)serviceExtensionTimeWillExpireRequest:(UNNotificationRequest*)request
-                                       withMutableNotificationContent:(UNMutableNotificationContent*)replacementContent {
++ (UNMutableNotificationContent*)serviceExtensionTimeWillExpireRequest:(UNNotificationRequest*)request
+                                        withMutableNotificationContent:(UNMutableNotificationContent*)replacementContent {
     if (!replacementContent)
         replacementContent = [request.content mutableCopy];
     
@@ -71,9 +83,10 @@
     return replacementContent;
 }
 
-+(void)addActionButtonsToExtentionRequest:(UNNotificationRequest*)request
++ (void)addActionButtonsToExtentionRequest:(UNNotificationRequest*)request
                                withPayload:(OSNotificationPayload*)payload
             withMutableNotificationContent:(UNMutableNotificationContent*)replacementContent {
+    
     // If the developer already set a category don't replace it with our generated one.
     if (request.content.categoryIdentifier && ![request.content.categoryIdentifier isEqualToString:@""])
         return;

@@ -43,8 +43,7 @@
 
 @implementation OneSignalDialogController
 
-+ (instancetype _Nonnull)sharedInstance
-{
++ (instancetype _Nonnull)sharedInstance {
     static OneSignalDialogController *sharedInstance = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -75,7 +74,7 @@
 
 - (void)displayDialog:(OSDialogRequest * _Nonnull)request {
     //iOS 7
-    if (![OneSignalHelper isIOSVersionGreaterOrEqual:8]) {
+    if ([OneSignalHelper isIOSVersionLessThan:@"8.0"]) {
         
         let alertView = [[UIAlertView alloc] initWithTitle:request.title message:request.message delegate:self cancelButtonTitle:request.cancelTitle otherButtonTitles:request.actionTitle, nil];
         
@@ -121,7 +120,7 @@
     });
 }
 
--(void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
     [self delayResult:buttonIndex > 0];
 }
 

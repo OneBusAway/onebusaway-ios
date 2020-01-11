@@ -42,9 +42,4 @@ github "alexaubry/BulletinBoard" ~> 4.1.0
 ## Third Party Integrations
 
 # https://github.com/OneSignal/OneSignal-iOS-SDK/releases
-github "OneSignal/OneSignal-iOS-SDK" ~>2.10.2
-
-# -----------------------
-
-# Cool stuff to consider using:
-# https://github.com/malcommac/SwiftLocation
+github "OneSignal/OneSignal-iOS-SDK" ~>2.12.4
