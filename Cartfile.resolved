@@ -1,4 +1,4 @@
-github "AliSoftware/OHHTTPStubs" "7.0.0"
+github "AliSoftware/OHHTTPStubs" "8.0.0"
 github "CocoaLumberjack/CocoaLumberjack" "3.6.0"
 github "Instagram/IGListKit" "4.0.0"
 github "OneSignal/OneSignal-iOS-SDK" "2.12.4"
