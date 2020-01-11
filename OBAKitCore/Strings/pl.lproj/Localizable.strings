@@ -10,7 +10,7 @@
 "common.back" = "Powrót";
 
 /* The verb 'to bookmark'. */
-"common.bookmark" = "Dodaj do zakładek";
+"common.bookmark" = "Zakładka";
 
 /* The verb 'to cancel', i.e. to stop an action. */
 "common.cancel" = "Anuluj";

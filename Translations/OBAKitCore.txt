@@ -6,7 +6,7 @@
 	[common.bookmark]
 		en = Bookmark
 		comment = The verb 'to bookmark'.
-		pl = Dodaj do zakładek
+		pl = Zakładka
 	[common.cancel]
 		en = Cancel
 		comment = The verb 'to cancel', i.e. to stop an action.
