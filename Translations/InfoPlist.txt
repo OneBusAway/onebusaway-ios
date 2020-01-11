@@ -1,0 +1,7 @@
+ [[Uncategorized]]
+	[NSHumanReadableCopyright]
+		pl = © Open Transit Software Foundation
+	[NSLocationAlwaysAndWhenInUseUsageDescription]
+		pl = Show your location on the map
+	[NSLocationWhenInUseUsageDescription]
+		pl = Show your location on the map
