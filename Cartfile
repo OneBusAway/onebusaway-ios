@@ -34,7 +34,7 @@ github "xmartlabs/Eureka" ~>5.1.0
 github "SVProgressHUD/SVProgressHUD" ~> 2.2.5
 
 # https://github.com/cbpowell/MarqueeLabel/releases
-github "cbpowell/MarqueeLabel" ~>4.0.0
+github "cbpowell/MarqueeLabel" ~>4.0.1
 
 # https://github.com/alexaubry/BulletinBoard/releases
 github "alexaubry/BulletinBoard" ~> 4.1.0
