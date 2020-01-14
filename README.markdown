@@ -27,16 +27,16 @@ Once you have these pieces of software installed, clone the OneBusAway app repos
     gem install bundler
     bundle install
     carthage build --platform iOS
-    scripts/generate_project
+    scripts/generate_project OneBusAway
     open OBAKit.xcodeproj
 
 ## Project Files (.xcodeproj)
 
-tl;dr: run `scripts/generate_project` to create the `xcodeproj` project file.
+The directions above include a command `scripts/generate_project OneBusAway` to create the `xcodeproj` project file.  If you just want to build the OneBusAway app, that's all you need.  Here is some additional information in case you want to generate a different app.
 
 OBAKit uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to create the `xcodeproj` file that makes Xcode function. XcodeGen takes a simple YAML file (`project.yml`) and turns it into a full-fledged `xcodeproj`. This makes it much easier to support white-labeling and managing multiple project targets.
 
-Call `scripts/generate_project` from the project root directory with the name of a directory in `Apps`. For instance, to generate the OneBusAway app, you'd run the command:
+Call `scripts/generate_project` from the project root directory with the name of a directory in `Apps`. So to generate the OneBusAway app, you run the command:
 
 ```
 scripts/generate_project OneBusAway
