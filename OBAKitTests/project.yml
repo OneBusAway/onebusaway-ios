@@ -1,0 +1,9 @@
+targets:
+  OBAKitTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: App
+      - carthage: Nimble
+      - carthage: OHHTTPStubs

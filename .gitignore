@@ -7,7 +7,7 @@ OBAKit.xcodeproj
 Apps/**/*.entitlements
 OBAKit/Info.plist
 OBAKitCore/Info.plist
-project.yml
+/project.yml
 
 ## Various settings
 *.pbxuser

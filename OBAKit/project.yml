@@ -1,0 +1,33 @@
+targets:
+  OBAKit:
+    type: framework
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: OBAKitCore
+      - carthage: AloeStackView
+      - carthage: BLTNBoard
+      - carthage: CocoaLumberjack
+      - carthage: CocoaLumberjackSwift
+      - carthage: Connectivity
+      - carthage: Eureka
+      - carthage: FloatingPanel
+      - carthage: IGListDiffKit
+      - carthage: IGListKit
+      - carthage: MarqueeLabel
+      - carthage: OneSignal
+      - carthage: SVProgressHUD
+      - carthage: SwiftProtobuf
+      - carthage: SwipeCellKit
+    postBuildScripts:
+      - path: "../scripts/swiftlint.sh"
+        name: Swiftlint
+    scheme:
+      gatherCoverageData: true
+    info:
+      path: "Info.plist"
+      properties:
+        CFBundleShortVersionString: 20.2.0
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: false

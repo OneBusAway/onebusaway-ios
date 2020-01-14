@@ -1,0 +1,21 @@
+targets:
+  OBAKitCore:
+    type: framework
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - carthage: CocoaLumberjack
+      - carthage: CocoaLumberjackSwift
+      - carthage: SwiftProtobuf
+    postBuildScripts:
+      - path: "../scripts/swiftlint.sh"
+        name: Swiftlint
+    scheme:
+      gatherCoverageData: true
+    info:
+      path: "Info.plist"
+      properties:
+        CFBundleShortVersionString: 20.2.0
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
