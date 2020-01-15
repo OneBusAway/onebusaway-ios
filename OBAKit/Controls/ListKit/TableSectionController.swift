@@ -123,9 +123,6 @@ final public class TableSectionController: ListSectionController, ListSupplement
         }
 
         view.textLabel.text = data?.title ?? ""
-        if let bgColor = data?.backgroundColor {
-            view.backgroundColor = bgColor
-        }
         return view
     }
 
@@ -135,9 +132,6 @@ final public class TableSectionController: ListSectionController, ListSupplement
         }
 
         view.textLabel.text = data?.footer ?? ""
-        if let bgColor = data?.backgroundColor {
-            view.backgroundColor = bgColor
-        }
         return view
     }
 }

@@ -121,7 +121,6 @@ public class TableSectionData: NSObject, ListDiffable {
     var title: String?
     var footer: String?
     let rows: [TableRowData]
-    let backgroundColor: UIColor?
 
     public func diffIdentifier() -> NSObjectProtocol {
         return self
@@ -132,27 +131,22 @@ public class TableSectionData: NSObject, ListDiffable {
             return false
         }
 
-        return title == rhs.title && footer == rhs.footer && rows == rhs.rows && backgroundColor == rhs.backgroundColor
+        return title == rhs.title && footer == rhs.footer && rows == rhs.rows /*&& backgroundColor == rhs.backgroundColor */
     }
 
     /// Creates a `TableSectionData`
     /// - Parameter title: Optional title of the section
     /// - Parameter rows: The table rows
-    /// - Parameter backgroundColor: The background color for the section.
-    public init(title: String?, rows: [TableRowData], backgroundColor: UIColor? = nil) {
+    public init(title: String?, rows: [TableRowData]) {
         self.title = title
         self.rows = rows
 
-        // TODO: figure out how to remove backgroundColor from this class.
-        // It really shouldn't be here.
-        // https://github.com/aaronbrethorst/OBAKit/issues/117
-        self.backgroundColor = backgroundColor
         super.init()
     }
 
     /// Convenience initializer for creating a `TableSectionData` from a single row.
     /// - Parameter row: The row that will comprise this section.
     public convenience init(row: TableRowData) {
-        self.init(title: nil, rows: [row], backgroundColor: nil)
+        self.init(title: nil, rows: [row])
     }
 }
