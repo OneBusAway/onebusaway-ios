@@ -131,7 +131,7 @@ public class TableSectionData: NSObject, ListDiffable {
             return false
         }
 
-        return title == rhs.title && footer == rhs.footer && rows == rhs.rows /*&& backgroundColor == rhs.backgroundColor */
+        return title == rhs.title && footer == rhs.footer && rows == rhs.rows
     }
 
     /// Creates a `TableSectionData`
