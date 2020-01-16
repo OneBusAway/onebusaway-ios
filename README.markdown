@@ -91,8 +91,28 @@ To generate new `.strings` files, run this command from the root of the project:
 If the `xcode-select --install` command results in an error message that the command line tools are already installed, you can verify that you have the latest version by typing the command `softwareupdate --list` to check whether any software should be updated; then if need be use `softwareupdate --install <project>` to  update it.
 
 If the `carthage build --platform iOS` command gives an error claiming that it is unable to find utility "xcodebuild" because it is not a developer tool or in PATH, this should fix it:
-`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`
+
+```
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+  ```
+
 Or see this github issue for other potential solutions: https://github.com/nodejs/node-gyp/issues/569
+
+### Swift Compiler Errors?
+
+If you see errors that look like this when you compile:
+
+```
+error: module compiled with Swift 4.0 cannot be imported in Swift 4.0.3: /onebusaway/OBAKit/../Carthage/Build/iOS/PromiseKit.framework/Modules/PromiseKit.swiftmodule/x86_64.swiftmodule
+  ```
+
+this is happening because the project's Carthage frameworks were compiled with an older version of the Swift compiler than the one you have on your computer. To fix, recompile the Carthage dependencies with this command from the command line:
+
+```
+carthage build --platform iOS --no-use-binaries
+```
+
+After Carthage finishes, we recommend cleaning your project and possibly deleting all of your build artifacts.
 
 ## Code and Structure
 
