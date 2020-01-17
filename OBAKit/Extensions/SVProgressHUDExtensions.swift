@@ -5,7 +5,7 @@
 //  Created by Aaron Brethorst on 6/16/19.
 //
 
-import SVProgressHUD
+import UIKit
 
 extension SVProgressHUD {
     /// Displays the 'success' indicator with an optional message, and then dismisses the HUD `dismissAfter` seconds later.

@@ -7,7 +7,6 @@
 
 import UIKit
 import Eureka
-import SVProgressHUD
 import OBAKitCore
 
 // This seems...busted. I can't figure out when this

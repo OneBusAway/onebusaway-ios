@@ -16,7 +16,6 @@ targets:
       - carthage: IGListKit
       - carthage: MarqueeLabel
       - carthage: OneSignal
-      - carthage: SVProgressHUD
       - carthage: SwiftProtobuf
       - carthage: SwipeCellKit
     postBuildScripts:

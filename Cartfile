@@ -30,9 +30,6 @@ github "SwipeCellKit/SwipeCellKit" ~>2.5.4
 # https://github.com/xmartlabs/Eureka/releases
 github "xmartlabs/Eureka" ~>5.1.0
 
-# https://github.com/SVProgressHUD/SVProgressHUD/releases
-github "SVProgressHUD/SVProgressHUD" ~> 2.2.5
-
 # https://github.com/cbpowell/MarqueeLabel/releases
 github "cbpowell/MarqueeLabel" ~>4.0.1
 
