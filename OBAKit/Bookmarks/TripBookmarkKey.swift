@@ -35,6 +35,11 @@ struct TripBookmarkKey: Hashable, Equatable {
         self.routeID = arrivalDeparture.routeID
         self.tripHeadsign = arrivalDeparture.tripHeadsign
     }
+
+    /// A composite of the route name and headsign.
+    public var routeAndHeadsign: String {
+        return "\(routeShortName) - \(tripHeadsign)"
+    }
 }
 
 extension Sequence where Element == ArrivalDeparture {
@@ -53,5 +58,10 @@ extension Sequence where Element == ArrivalDeparture {
         }
 
         return keysAndDeps
+    }
+
+    /// Returns the unique set of `TripBookmarkKey`s contained by this list of `ArrivalDeparture`s.
+    var uniqueTripKeys: [TripBookmarkKey] {
+        Set(self.map { TripBookmarkKey(arrivalDeparture: $0) }).allObjects
     }
 }

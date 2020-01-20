@@ -17,7 +17,7 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
 /// The entry-point view controller for creating a new bookmark.
 ///
 /// - Note: This controller expects to be presented modally.
-class AddBookmarkViewController: OperationController<StopArrivalsModelOperation, StopArrivals>, AloeStackTableBuilder {
+class AddBookmarkViewController: OperationController<StopArrivalsModelOperation, [ArrivalDeparture]>, AloeStackTableBuilder {
     private let stop: Stop
     private weak var delegate: BookmarkEditorDelegate?
 
@@ -59,14 +59,20 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
         let op = modelService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
         op.then { [weak self] in
             guard let self = self else { return }
-            self.data = op.stopArrivals
+            self.data = op.stopArrivals?.arrivalsAndDepartures
         }
 
         return op
     }
 
     override func updateUI() {
-        // Bookmark the Whole Stop
+        addWholeStopBookmarkSection()
+        addTripBookmarkSection()
+    }
+
+    // MARK: - UI Builders
+
+    private func addWholeStopBookmarkSection() {
         addGroupedTableHeaderToStack(headerText: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."))
         let stopRow = DefaultTableRowView(title: Formatters.formattedTitle(stop: stop), accessoryType: .disclosureIndicator)
         addGroupedTableRowToStack(stopRow, isLastRow: true) { [weak self] _ in
@@ -74,6 +80,30 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
 
             let editStopController = EditBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
             self.navigationController?.pushViewController(editStopController, animated: true)
+        }
+    }
+
+    private func addTripBookmarkSection() {
+        guard
+            let groupedElts = data?.tripKeyGroupedElements,
+            let tripKeys = data?.uniqueTripKeys,
+            tripKeys.count > 0
+        else { return }
+
+        addGroupedTableHeaderToStack(headerText: OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip."))
+
+        for key in tripKeys {
+            let arrDep = groupedElts[key]?.first
+            let tripRow = DefaultTableRowView(title: key.routeAndHeadsign, accessoryType: .disclosureIndicator)
+            addGroupedTableRowToStack(tripRow, isLastRow: false) { [weak self] _ in
+                guard let self = self else { return }
+                let editController = EditBookmarkViewController(application: self.application, arrivalDeparture: arrDep!, bookmark: nil, delegate: self.delegate)
+                self.navigationController?.pushViewController(editController, animated: true)
+            }
+        }
+
+        if let lastRow = stackView.lastRow {
+            stackView.setSeparatorInset(forRow: lastRow, inset: .zero)
         }
     }
 
