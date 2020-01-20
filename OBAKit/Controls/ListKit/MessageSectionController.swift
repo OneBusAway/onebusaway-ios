@@ -42,7 +42,7 @@ final public class MessageSectionData: ListViewModel, ListDiffable {
 
 // MARK: - MessageCell
 
-final class MessageCell: SelfSizingCollectionCell, ListKitCell {
+final class MessageCell: SelfSizingCollectionCell, Separated {
 
     // MARK: - UI
 
@@ -103,15 +103,11 @@ final class MessageCell: SelfSizingCollectionCell, ListKitCell {
         }
     }
 
-    private lazy var leftSeparatorInset: CGFloat = layoutMargins.left
-
-    let separator: CALayer = MessageCell.separatorLayer()
+    let separator = tableCellSeparatorLayer()
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let bounds = contentView.bounds
-        let height: CGFloat = 0.5
-        separator.frame = CGRect(x: leftSeparatorInset, y: bounds.height - height, width: bounds.width - leftSeparatorInset, height: height)
+        layoutSeparator()
     }
 
     override init(frame: CGRect) {

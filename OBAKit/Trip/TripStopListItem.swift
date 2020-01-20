@@ -115,7 +115,7 @@ final class TripStopSectionController: ListSectionController {
 
 // MARK: - Cell
 
-final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
+final class TripStopCell: SelfSizingCollectionCell, Separated {
 
     /*
      [ |                             ]
@@ -123,7 +123,7 @@ final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
      [ |                             ]
      */
 
-    let separator: CALayer = TripStopCell.separatorLayer()
+    let separator = tableCellSeparatorLayer()
 
     var tripStopListItem: TripStopListItem? {
         didSet {
@@ -202,13 +202,9 @@ final class TripStopCell: SelfSizingCollectionCell, ListKitCell {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    private lazy var leftSeparatorInset: CGFloat = segmentView.intrinsicContentSize.width + 10.0
-
     override func layoutSubviews() {
         super.layoutSubviews()
-        let bounds = contentView.bounds
-        let height: CGFloat = 0.5
-        separator.frame = CGRect(x: leftSeparatorInset, y: bounds.height - height, width: bounds.width - leftSeparatorInset, height: height)
+        layoutSeparator(leftSeparatorInset: segmentView.intrinsicContentSize.width + 10.0)
     }
 
     override var isHighlighted: Bool {

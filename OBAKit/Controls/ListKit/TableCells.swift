@@ -10,19 +10,51 @@ import UIKit
 import IGListKit
 import SwipeCellKit
 
-protocol ListKitCell: NSObjectProtocol {
-    static func separatorLayer() -> CALayer
+// MARK: -
+
+protocol SelfSizing: NSObjectProtocol {
+    func calculateLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
 }
 
-extension ListKitCell where Self: UICollectionViewCell {
-    static func separatorLayer() -> CALayer {
-        let layer = CALayer()
-        layer.backgroundColor = ThemeColors.shared.separator.cgColor
-        return layer
+extension SelfSizing where Self: UICollectionViewCell {
+    func calculateLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        setNeedsLayout()
+        layoutIfNeeded()
+        let size = contentView.systemLayoutSizeFitting(layoutAttributes.size)
+        var newFrame = layoutAttributes.frame
+        // note: don't change the width
+        newFrame.size.height = ceil(size.height)
+        layoutAttributes.frame = newFrame
+        return layoutAttributes
     }
 }
 
-class TableRowCell: SwipeCollectionViewCell, ListKitCell {
+// MARK: - SeparatedCell
+
+func tableCellSeparatorLayer() -> CALayer {
+    let layer = CALayer()
+    layer.backgroundColor = ThemeColors.shared.separator.cgColor
+    return layer
+}
+
+protocol Separated: NSObjectProtocol {
+    var separator: CALayer { get }
+    func layoutSeparator(leftSeparatorInset: CGFloat?)
+}
+
+extension Separated where Self: UICollectionViewCell {
+    func layoutSeparator(leftSeparatorInset: CGFloat? = nil) {
+        let bounds = contentView.bounds
+        let height: CGFloat = 0.5
+        let inset = leftSeparatorInset ?? layoutMargins.left
+
+        separator.frame = CGRect(x: inset, y: bounds.height - height, width: bounds.width - inset, height: height)
+    }
+}
+
+// MARK: - TableRowCell
+
+class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
     fileprivate let kUseDebugColors = false
 
     fileprivate var tableRowView: TableRowView! {
@@ -89,26 +121,15 @@ class TableRowCell: SwipeCollectionViewCell, ListKitCell {
         }
     }
 
-    private lazy var leftSeparatorInset: CGFloat = layoutMargins.left
-
-    let separator: CALayer = TableRowCell.separatorLayer()
+    let separator = tableCellSeparatorLayer()
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        let bounds = contentView.bounds
-        let height: CGFloat = 0.5
-        separator.frame = CGRect(x: leftSeparatorInset, y: bounds.height - height, width: bounds.width - leftSeparatorInset, height: height)
+        layoutSeparator()
     }
 
     override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        setNeedsLayout()
-        layoutIfNeeded()
-        let size = contentView.systemLayoutSizeFitting(layoutAttributes.size)
-        var newFrame = layoutAttributes.frame
-        // note: don't change the width
-        newFrame.size.height = ceil(size.height)
-        layoutAttributes.frame = newFrame
-        return layoutAttributes
+        return calculateLayoutAttributesFitting(layoutAttributes)
     }
 }
 
