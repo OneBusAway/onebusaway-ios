@@ -75,6 +75,8 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
+        fixiOS13AutoLayoutBug()
+
         contentView.layer.addSublayer(separator)
 
         if kUseDebugColors {
