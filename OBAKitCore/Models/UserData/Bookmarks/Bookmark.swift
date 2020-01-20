@@ -137,9 +137,18 @@ import Foundation
     }
 
     public override var debugDescription: String {
-        let desc = super.debugDescription
-        let props: [String: Any] = ["id": id as Any, "groupID": groupID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any, "routeShortName": routeShortName as Any, "routeID": routeID as Any, "tripHeadsign": tripHeadsign as Any]
-        return "\(desc) \(props)"
+        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        descriptionBuilder.add(key: "id", value: id)
+        descriptionBuilder.add(key: "groupID", value: groupID)
+        descriptionBuilder.add(key: "name", value: name)
+        descriptionBuilder.add(key: "regionIdentifier", value: regionIdentifier)
+        descriptionBuilder.add(key: "stopID", value: stopID)
+
+        descriptionBuilder.add(key: "isFavorite", value: isFavorite)
+        descriptionBuilder.add(key: "routeShortName", value: routeShortName)
+        descriptionBuilder.add(key: "routeID", value: routeID)
+        descriptionBuilder.add(key: "tripHeadsign", value: tripHeadsign)
+        return descriptionBuilder.description
     }
 
     public var isTripBookmark: Bool {
