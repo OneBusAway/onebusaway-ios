@@ -169,17 +169,27 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             let region = application.currentRegion
         else { return }
 
+        let addMode = self.bookmark == nil
+
         let bookmark: Bookmark
 
-        if let stop = stop {
-            bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, stop: stop)
+        if addMode {
+            if let stop = stop {
+                bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, stop: stop)
+            }
+            else if let arrivalDeparture = arrivalDeparture {
+                bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
+            }
+            else {
+                fatalError()
+            }
         }
         else {
-            bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, arrivalDeparture: arrivalDeparture!, stop: arrivalDeparture!.stop)
+            bookmark = self.bookmark!
+            bookmark.name = name
         }
 
         application.userDataStore.add(bookmark, to: selectedBookmarkGroup)
-
         delegate?.bookmarkEditor(self, editedBookmark: bookmark)
     }
 }
