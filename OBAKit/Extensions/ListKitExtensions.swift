@@ -19,6 +19,8 @@ extension ListAdapterDataSource where Self: AppContext {
     /// - Returns: The `ListSectionController`
     func defaultSectionController(for object: Any) -> ListSectionController {
         switch object {
+        case is BookmarkSectionData:
+            return BookmarkSectionController(formatters: application.formatters)
         case is MessageSectionData:
             return MessageSectionController()
         case is TableSectionData:
