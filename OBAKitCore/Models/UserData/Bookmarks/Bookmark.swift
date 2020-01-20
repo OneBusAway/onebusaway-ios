@@ -33,6 +33,9 @@ import Foundation
     /// Whether or not this `Bookmark` should be displayed in the Today widget, for example. `false` by default.
     public var isFavorite: Bool
 
+    /// The order in which this `Bookmark` is sorted in. By default, this value is set to be `Int.max`
+    public var sortOrder: Int
+
     /// This object stores a complete copy of its underlying `Stop` in order to be able to show additional information
     /// to the user.
     ///
@@ -80,10 +83,11 @@ import Foundation
         self.name = name
         self.regionIdentifier = regionIdentifier
         self.id = UUID()
+        self.sortOrder = .max
     }
 
     private enum CodingKeys: String, CodingKey {
-        case groupID, isFavorite, name, regionIdentifier, stop, stopID, id
+        case groupID, isFavorite, name, regionIdentifier, stop, stopID, id, sortOrder
 
         // Trip bookmark keys
         case routeShortName, tripHeadsign, routeID
@@ -96,6 +100,7 @@ import Foundation
         isFavorite = try container.decode(Bool.self, forKey: .isFavorite)
         name = try container.decode(String.self, forKey: .name)
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
+        sortOrder = try container.decode(Int.self, forKey: .sortOrder)
         stop = try container.decode(Stop.self, forKey: .stop)
         stopID = try container.decode(String.self, forKey: .stopID)
         id = try container.decode(UUID.self, forKey: .id)
@@ -113,6 +118,7 @@ import Foundation
             groupID == rhs.groupID &&
             name == rhs.name &&
             regionIdentifier == rhs.regionIdentifier &&
+            sortOrder == rhs.sortOrder &&
             stopID == rhs.stopID &&
             stop == rhs.stop &&
             isFavorite == rhs.isFavorite &&
@@ -132,14 +138,25 @@ import Foundation
         hasher.combine(isFavorite)
         hasher.combine(routeShortName)
         hasher.combine(routeID)
+        hasher.combine(sortOrder)
         hasher.combine(tripHeadsign)
         return hasher.finalize()
     }
 
     public override var debugDescription: String {
-        let desc = super.debugDescription
-        let props: [String: Any] = ["id": id as Any, "groupID": groupID as Any, "name": name as Any, "regionIdentifier": regionIdentifier as Any, "stopID": stopID as Any, "isFavorite": isFavorite as Any, "routeShortName": routeShortName as Any, "routeID": routeID as Any, "tripHeadsign": tripHeadsign as Any]
-        return "\(desc) \(props)"
+        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        descriptionBuilder.add(key: "id", value: id)
+        descriptionBuilder.add(key: "groupID", value: groupID)
+        descriptionBuilder.add(key: "name", value: name)
+        descriptionBuilder.add(key: "regionIdentifier", value: regionIdentifier)
+        descriptionBuilder.add(key: "stopID", value: stopID)
+
+        descriptionBuilder.add(key: "isFavorite", value: isFavorite)
+        descriptionBuilder.add(key: "routeShortName", value: routeShortName)
+        descriptionBuilder.add(key: "routeID", value: routeID)
+        descriptionBuilder.add(key: "sortOrder", value: sortOrder)
+        descriptionBuilder.add(key: "tripHeadsign", value: tripHeadsign)
+        return descriptionBuilder.description
     }
 
     public var isTripBookmark: Bool {

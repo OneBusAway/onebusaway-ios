@@ -364,6 +364,35 @@ public class ArrivalDeparture: NSObject, Decodable {
         hasher.combine(vehicleID)
         return hasher.finalize()
     }
+
+    public override var debugDescription: String {
+        var builder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        builder.add(key: "routeAndHeadsign", value: routeAndHeadsign)
+        builder.add(key: "arrivalEnabled", value: arrivalEnabled)
+        builder.add(key: "blockTripSequence", value: blockTripSequence)
+        builder.add(key: "departureEnabled", value: departureEnabled)
+        builder.add(key: "distanceFromStop", value: distanceFromStop)
+        builder.add(key: "frequency", value: frequency)
+        builder.add(key: "lastUpdated", value: lastUpdated)
+        builder.add(key: "numberOfStopsAway", value: numberOfStopsAway)
+        builder.add(key: "predicted", value: predicted)
+        builder.add(key: "predictedArrival", value: predictedArrival)
+        builder.add(key: "predictedDeparture", value: predictedDeparture)
+        builder.add(key: "routeID", value: routeID)
+        builder.add(key: "scheduledArrival", value: scheduledArrival)
+        builder.add(key: "scheduledDeparture", value: scheduledDeparture)
+        builder.add(key: "serviceDate", value: serviceDate)
+        builder.add(key: "situationIDs", value: situationIDs)
+        builder.add(key: "status", value: status)
+        builder.add(key: "stopID", value: stopID)
+        builder.add(key: "stopSequence", value: stopSequence)
+        builder.add(key: "totalStopsInTrip", value: totalStopsInTrip)
+        builder.add(key: "_tripHeadsign", value: _tripHeadsign)
+        builder.add(key: "tripID", value: tripID)
+        builder.add(key: "tripStatus", value: tripStatus)
+        builder.add(key: "vehicleID", value: vehicleID)
+        return builder.description
+    }
 }
 
 public enum ArrivalDepartureStatus: Int {

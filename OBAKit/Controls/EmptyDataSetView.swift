@@ -65,9 +65,9 @@ public class EmptyDataSetView: UIView {
         leading.priority = .defaultHigh
         trailing.priority = .defaultHigh
 
-        let top = stack.topAnchor.constraint(equalTo: self.layoutMarginsGuide.topAnchor)
+        let vertical = stack.centerYAnchor.constraint(equalTo: self.layoutMarginsGuide.centerYAnchor)
 
-        NSLayoutConstraint.activate([top, leading, trailing])
+        NSLayoutConstraint.activate([vertical, leading, trailing])
     }
 
     required init?(coder: NSCoder) {

@@ -53,11 +53,7 @@ final class LabelCell: UICollectionViewCell {
         return label
     }()
 
-    let separator: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = ThemeColors.shared.separator.cgColor
-        return layer
-    }()
+    let separator = tableCellSeparatorLayer()
 
     var text: String? {
         get {
@@ -93,5 +89,4 @@ final class LabelCell: UICollectionViewCell {
             contentView.backgroundColor = ThemeColors.shared.highlightedBackgroundColor
         }
     }
-
 }

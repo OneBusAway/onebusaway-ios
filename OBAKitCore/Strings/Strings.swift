@@ -24,6 +24,8 @@ public class Strings: NSObject {
 
     public static let dismiss = OBALoc("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")
 
+    public static let edit = OBALoc("common.edit", value: "Edit", comment: "The verb 'to edit', as in to change or modify something. Used as a button title.")
+
     public static let error = OBALoc("common.error", value: "Error", comment: "The noun 'error', as in 'something went wrong'.")
 
     public static let filter = OBALoc("common.filter", value: "Filter", comment: "The verb 'to filter'.")

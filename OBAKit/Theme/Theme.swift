@@ -108,6 +108,8 @@ public class ThemeColors: NSObject {
 
     public let secondaryBackgroundColor: UIColor
 
+    public let systemFill: UIColor
+
     public static let shared = ThemeColors()
 
     public override convenience init() {
@@ -116,7 +118,6 @@ public class ThemeColors: NSObject {
 
     public init(bundle: Bundle, traitCollection: UITraitCollection?) {
         primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
-        lightText = UIColor(named: "lightText", in: bundle, compatibleWith: traitCollection)!
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
         if #available(iOS 13, *) {
@@ -139,6 +140,8 @@ public class ThemeColors: NSObject {
             stopAnnotationFillColor = .systemBackground
             stopAnnotationStrokeColor = .label
             stopArrowFillColor = .systemRed
+            systemFill = .systemFill
+            lightText = .lightText
         }
         else {
             departureEarly = UIColor(hex: "fc3f3b")!
@@ -160,6 +163,8 @@ public class ThemeColors: NSObject {
             stopAnnotationFillColor = .white
             stopAnnotationStrokeColor = .black
             stopArrowFillColor = .red
+            systemFill = UIColor(white: 0.9, alpha: 1)
+            lightText = .white
         }
     }
 }

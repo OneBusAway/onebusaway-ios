@@ -76,7 +76,19 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
 
     private lazy var minutesStack = UIStackView.verticalStack(arangedSubviews: [])
 
-    private lazy var minutesWrappers = minutesStack.embedInWrapperView()
+    private lazy var minutesWrappers: UIView = {
+        let wrapper = minutesStack.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            minutesStack.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            minutesStack.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+            minutesStack.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
+            wrapper.heightAnchor.constraint(greaterThanOrEqualTo: minutesStack.heightAnchor)
+        ])
+
+        return wrapper
+    }()
+
+    private lazy var minutesSpacer = UIView.autolayoutNew()
 
     // MARK: - Disclosure Indicator
 
@@ -120,6 +132,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         let button = UIButton(type: .system)
         button.setImage(Icons.showMore, for: .normal)
         button.addTarget(self, action: #selector(actionsButtonTapped), for: .touchUpInside)
+        button.setContentHuggingPriority(.required, for: .horizontal)
         return button
     }()
 
@@ -136,6 +149,19 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
 
     // MARK: - Data Setters
 
+    public func prepareForReuse() {
+        title = nil
+        routeHeadsignLabel.text = nil
+        timeExplanationLabel.text = nil
+        topMinutesLabel.text = ""
+        centerMinutesLabel.text = ""
+        bottomMinutesLabel.text = ""
+    }
+
+    /// If set, this is displayed in the top label in the view.
+    /// If it is not set, then the `routeAndHeadsign` property of the `ArrivalDeparture` is displayed.
+    public var title: String?
+
     /// Set this to display data in this view.
     /// - Note: You can also display up to three `ArrivalDeparture`s by using the
     /// `arrivalDepartures` setter instead.
@@ -146,14 +172,14 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
                 alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
             }
 
-            routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
+            routeHeadsignLabel.text = title ?? arrivalDeparture.routeAndHeadsign
 
             configureExplanationText()
 
             topMinutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
             topMinutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
 
-            minutesStack.addArrangedSubview(topMinutesWrapper)
+            minutesStack.insertArrangedSubview(topMinutesWrapper, at: 0)
         }
     }
 
@@ -185,6 +211,8 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         didSet {
             guard let arrivalDepartures = arrivalDepartures else { return }
 
+            minutesStack.addArrangedSubview(minutesSpacer)
+
             if let first = arrivalDepartures.first {
                 arrivalDeparture = first
             }
@@ -194,10 +222,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
                     let dep = arrivalDepartures[index]
                     label.text = self.formatters.shortFormattedTime(until: dep)
                     label.textColor = self.formatters.colorForScheduleStatus(dep.scheduleStatus)
-
-                    if wrapper.superview == nil {
-                        self.minutesStack.addArrangedSubview(wrapper)
-                    }
+                    self.minutesStack.insertArrangedSubview(wrapper, at: index)
                 }
                 else {
                     wrapper.removeFromSuperview()
@@ -237,6 +262,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
             disclosureIndicator.backgroundColor = .blue
             topMinutesLabel.backgroundColor = .purple
             topMinutesWrapper.backgroundColor = .green
+            minutesWrappers.backgroundColor = .brown
         }
     }
 
@@ -264,7 +290,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         label.setContentHuggingPriority(.required, for: .vertical)
 
         return label
@@ -273,17 +299,18 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()
         label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentHuggingPriority(.defaultLow, for: .vertical)
+
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
         return label
     }
 
     private func buildMinutesLabelWrapper(label: UILabel) -> UIView {
-        let wrapper = label.embedInWrapperView(setConstraints: false)
-        NSLayoutConstraint.activate([
-            label.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
-            label.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
-            wrapper.widthAnchor.constraint(greaterThanOrEqualTo: label.widthAnchor),
-            wrapper.heightAnchor.constraint(greaterThanOrEqualTo: label.heightAnchor)
-        ])
+        let wrapper = label.embedInWrapperView()
+        wrapper.setContentCompressionResistancePriority(.required, for: .vertical)
+        wrapper.setContentCompressionResistancePriority(.required, for: .horizontal)
         return wrapper
     }
 }

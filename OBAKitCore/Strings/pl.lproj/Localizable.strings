@@ -27,6 +27,9 @@
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
 "common.dismiss" = "Odwołaj";
 
+/* The verb 'to edit', as in to change or modify something. Used as a button title. */
+"common.edit" = "Edytować";
+
 /* The noun 'error', as in 'something went wrong'. */
 "common.error" = "Błąd";
 
