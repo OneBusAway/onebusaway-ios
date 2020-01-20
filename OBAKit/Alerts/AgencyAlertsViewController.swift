@@ -13,6 +13,7 @@ import OBAKitCore
 class AgencyAlertsViewController: UIViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
+    AppContext,
     ListAdapterDataSource {
     public let application: Application
     private let alertsStore: AgencyAlertsStore
@@ -57,7 +58,7 @@ class AgencyAlertsViewController: UIViewController,
     private lazy var collectionController = CollectionController(application: application, dataSource: self)
 
     private lazy var refreshControl: UIRefreshControl = {
-        let refresh = UIRefreshControl.init()
+        let refresh = UIRefreshControl()
         refresh.addTarget(self, action: #selector(reloadServerData), for: .valueChanged)
         return refresh
     }()

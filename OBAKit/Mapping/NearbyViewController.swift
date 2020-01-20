@@ -21,6 +21,7 @@ public protocol NearbyDelegate: NSObjectProtocol {
 public class NearbyViewController: VisualEffectViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
+    AppContext,
     ListAdapterDataSource,
     ListProvider,
     ListKitStopConverters,

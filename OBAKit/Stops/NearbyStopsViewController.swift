@@ -10,7 +10,11 @@ import IGListKit
 import CoreLocation
 import OBAKitCore
 
-class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>, ListKitStopConverters, ListAdapterDataSource, UISearchResultsUpdating {
+class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>,
+    AppContext,
+    ListAdapterDataSource,
+    ListKitStopConverters,
+    UISearchResultsUpdating {
 
     private let coordinate: CLLocationCoordinate2D
 

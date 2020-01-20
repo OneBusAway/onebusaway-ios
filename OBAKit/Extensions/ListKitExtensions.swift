@@ -8,8 +8,10 @@
 
 import UIKit
 import IGListKit
+import OBAKitCore
+import CocoaLumberjackSwift
 
-public extension ListAdapterDataSource where Self: UIViewController {
+extension ListAdapterDataSource where Self: AppContext {
 
     /// Provides a default way to map objects to `ListSectionController` objects.
     ///
@@ -24,6 +26,7 @@ public extension ListAdapterDataSource where Self: UIViewController {
         case is TripStopListItem:
             return TripStopSectionController()
         default:
+            DDLogWarn("You are trying to render \(object), which doesn't have a SectionController mapped to it. Is this a mistake?")
             return LabelSectionController()
         }
     }
