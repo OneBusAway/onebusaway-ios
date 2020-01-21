@@ -387,6 +387,18 @@
 /* The title of the Recent Stops controller. */
 "recent_stops_controller.title" = "Recent";
 
+/* Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.' */
+"region_mismatch_bulletin.body_fmt" = "Your region is set to %1$@, but you appear to be in %2$@.";
+
+/* A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego' */
+"region_mismatch_bulletin.change_region_button_fmt" = "Change to %@";
+
+/* Alert title shown when there is a mismatch between the user location and selected region. */
+"region_mismatch_bulletin.title" = "Change Region?";
+
+/* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
+"region_mismatch_bulletin.update_map_button_fmt" = "Show %@ on the map";
+
 /* Descriptive text for the region picker card. */
 "region_picker.description_text" = "Choose your transit region to use the app.";
 

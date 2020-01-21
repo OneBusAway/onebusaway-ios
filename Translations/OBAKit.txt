@@ -503,6 +503,18 @@
 		en = Recent
 		comment = The title of the Recent Stops controller.
 		pl = Ostatnie
+	[region_mismatch_bulletin.body_fmt]
+		en = Your region is set to %1$@, but you appear to be in %2$@.
+		comment = Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.'
+	[region_mismatch_bulletin.change_region_button_fmt]
+		en = Change to %@
+		comment = A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego'
+	[region_mismatch_bulletin.title]
+		en = Change Region?
+		comment = Alert title shown when there is a mismatch between the user location and selected region.
+	[region_mismatch_bulletin.update_map_button_fmt]
+		en = Show %@ on the map
+		comment = A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map'
 	[region_picker.description_text]
 		en = Choose your transit region to use the app.
 		comment = Descriptive text for the region picker card.

@@ -108,6 +108,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
+    /// The app's currently-selected `Region`. Note that this may be different from `physicallyLocatedRegion`.
     public var currentRegion: Region? {
         get {
             do {
@@ -134,6 +135,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
                 DDLogError("Unable to write currentRegion to user defaults: \(error)")
             }
         }
+    }
+
+    /// The `Region`, if one exists, that the user is physically located in. Note that this may be different from `currentRegion`.
+    public var physicallyLocatedRegion: Region? {
+        guard let location = locationService.currentLocation else {
+            return nil
+        }
+
+        return RegionsService.firstRegion(in: regions, containing: location)
     }
 
     public var automaticallySelectRegion: Bool {
@@ -230,17 +240,16 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// - Note: If `locationService.currentLocation` returns `nil`, then this method will do nothing.
     private func updateCurrentRegionFromLocation() {
         // We can't do anything here if we can't get the user's current location.
-        guard let location = locationService.currentLocation else {
-            return
-        }
-
-        // Don't set the user's region if they've specifically told us not to.
-        guard automaticallySelectRegion else {
+        // Also, don't set the user's region if they've specifically told us not to.
+        guard
+            locationService.currentLocation != nil,
+            automaticallySelectRegion
+        else {
             return
         }
 
         // Prompt the user if their current location doesn't match a region.
-        guard let newRegion = RegionsService.firstRegion(in: regions, containing: location) else {
+        guard let newRegion = physicallyLocatedRegion else {
             notifyDelegatesUnableToSelectRegion()
             return
         }

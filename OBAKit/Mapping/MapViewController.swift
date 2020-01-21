@@ -40,8 +40,6 @@ public class MapViewController: UIViewController,
         return application.mapRegionManager
     }
 
-    private var initialMapChangeMade = false
-
     // MARK: - Init
 
     public init(application: Application) {
@@ -105,17 +103,7 @@ public class MapViewController: UIViewController,
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
-        if let currentRegion = application.regionsService.currentRegion {
-            if let location = application.locationService.currentLocation {
-                programmaticallyUpdateVisibleMapRegion(location: location)
-            }
-            else if let lastVisibleRegion = mapRegionManager.lastVisibleMapRect {
-                mapRegionManager.mapView.visibleMapRect = lastVisibleRegion
-            }
-            else {
-                mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
-            }
-        }
+        updateVisibleMapRect()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -366,7 +354,40 @@ public class MapViewController: UIViewController,
 
     // MARK: - LocationServiceDelegate
 
+    private var initialMapChangeMade = false
+
+    private var promptUserOnRegionMismatch = true
+
     private static let programmaticRadiusInMeters = 200.0
+
+    private var regionMismatchBulletin: RegionMismatchBulletin?
+
+    /// Updates the visible area on the map view based on the user's selected `Region` and current location.
+    private func updateVisibleMapRect() {
+        guard let currentRegion = application.regionsService.currentRegion else { return }
+
+        if let location = application.locationService.currentLocation, promptUserOnRegionMismatch {
+            if currentRegion.contains(location: location) {
+                programmaticallyUpdateVisibleMapRegion(location: location)
+            }
+            else {
+                promptUserOnRegionMismatch = false
+                if
+                    let regionMismatchBulletin = RegionMismatchBulletin(application: application),
+                    let uiApp = application.delegate?.uiApplication
+                {
+                    self.regionMismatchBulletin = regionMismatchBulletin
+                    self.regionMismatchBulletin?.show(in: uiApp)
+                }
+            }
+        }
+        else if let lastVisibleRegion = mapRegionManager.lastVisibleMapRect {
+            mapRegionManager.mapView.visibleMapRect = lastVisibleRegion
+        }
+        else {
+            mapRegionManager.mapView.visibleMapRect = currentRegion.serviceRect
+        }
+    }
 
     func programmaticallyUpdateVisibleMapRegion(location: CLLocation) {
         guard !initialMapChangeMade else {
