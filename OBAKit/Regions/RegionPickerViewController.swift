@@ -98,18 +98,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
 
     private lazy var selectedRegionSection: SelectableSection<ListCheckRow<String>> = {
         let title = OBALoc("region_picker.region_section.title", value: "Regions", comment: "Title of the Regions section.")
-        let section = SelectableSection<ListCheckRow<String>>(title, selectionType: .singleSelection(enableDeselection: false)) {
-            $0.onSelectSelectableRow = { [weak self] _, row in
-                guard
-                    let self = self,
-                    let regionIDString = row.selectableValue,
-                    let regionID = Int(regionIDString),
-                    let region = self.application.regionsService.find(id: regionID)
-                else { return }
-
-                self.application.regionsService.currentRegion = region
-            }
-        }
+        let section = SelectableSection<ListCheckRow<String>>(title, selectionType: .singleSelection(enableDeselection: false))
 
         let selectedRegionID: String?
         if let region = application.regionsService.currentRegion {

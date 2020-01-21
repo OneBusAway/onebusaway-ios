@@ -229,10 +229,17 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// Refreshes the `currentRegion` based upon the user's current location.
     /// - Note: If `locationService.currentLocation` returns `nil`, then this method will do nothing.
     private func updateCurrentRegionFromLocation() {
+        // We can't do anything here if we can't get the user's current location.
         guard let location = locationService.currentLocation else {
             return
         }
 
+        // Don't set the user's region if they've specifically told us not to.
+        guard automaticallySelectRegion else {
+            return
+        }
+
+        // Prompt the user if their current location doesn't match a region.
         guard let newRegion = RegionsService.firstRegion(in: regions, containing: location) else {
             notifyDelegatesUnableToSelectRegion()
             return

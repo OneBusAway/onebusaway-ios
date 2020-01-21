@@ -304,6 +304,7 @@ public class MapViewController: UIViewController,
             let alert = UIAlertController(title: title, message: String(format: messageFmt, region.name), preferredStyle: .alert)
             alert.addAction(UIAlertAction.cancelAction)
             alert.addAction(UIAlertAction(title: OBALoc("map_controller.change_region_alert.button", value: "Change Region", comment: "Change Region button on the alert that appears when the user is updating their current region manually."), style: .default, handler: { _ in
+                self.application.regionsService.automaticallySelectRegion = false
                 self.application.regionsService.currentRegion = region
             }))
 
