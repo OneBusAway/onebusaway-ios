@@ -27,6 +27,9 @@
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
 "common.dismiss" = "Dismiss";
 
+/* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
+"common.done" = "Done";
+
 /* The verb 'to edit', as in to change or modify something. Used as a button title. */
 "common.edit" = "Edit";
 
@@ -59,6 +62,9 @@
 
 /* A noun referring to a collection of options for adjusting app behavior. */
 "common.settings" = "Settings";
+
+/* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
+"common.skip" = "Skip";
 
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Updated: %@";

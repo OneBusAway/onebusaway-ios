@@ -3,6 +3,9 @@
 		en = Bookmark the Stop
 		comment = Text for the table header for bookmarking an entire stop.
 		pl = Dodaj przystanek do ulubionych
+	[add_bookmark_controller.bookmark_trip_header]
+		en = Bookmark a Trip
+		comment = Text for the table header for bookmarking an individual trip.
 	[add_bookmark_controller.title]
 		en = Add Bookmark
 		comment = Title for the Add Bookmark view controller.
@@ -39,6 +42,12 @@
 		en = Remind me when this vehicle will depart in:
 		comment = Explains what the Alarm Time Picker page does.
 		pl = Przypomnij mi kiedy ten pojazd odjeżdża za:
+	[bookmarks_controller.empty_set.body]
+		en = Add a bookmark for a stop or trip to easily access it here.
+		comment = Body for the empty set indicator on the Bookmarks view controller.
+	[bookmarks_controller.empty_set.title]
+		en = No Bookmarks
+		comment = Title for the empty set indicator on the Bookmarks view controller.
 	[bookmarks_controller.groups_button_title]
 		en = Edit
 		comment = Groups button title in Bookmarks controller
@@ -47,6 +56,9 @@
 		en = Bookmarks
 		comment = Title of the Bookmarks tab
 		pl = Zakładki
+	[bookmarks_controller.ungrouped_bookmarks_section.title]
+		en = Bookmarks
+		comment = The title for the bookmarks controller section that shows bookmarks that aren't in a group.
 	[contact_us_helper.cant_send_email.body_fmt]
 		en = In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.
 		comment = Body of the the alert that appears when you try sending an email without Mail.app set up
@@ -138,7 +150,7 @@
 	[formatters.cardinal_adjective.southeast]
 		en = SE bound
 		comment = Headed in an southeastern direction
-		pl = w kier. południowo-wschodnim 
+		pl = w kier. południowo-wschodnim
 	[formatters.cardinal_adjective.southwest]
 		en = SW bound
 		comment = Headed in a southwestern direction
@@ -453,8 +465,8 @@
 		pl = Brak przystanków w pobliżu
 	[nearby_stops_controller.title]
 		en = Nearby Stops
-		pl = Przystanki w pobliżu
 		comment = The title of the Nearby Stops controller.
+		pl = Przystanki w pobliżu
 	[reachability_bulletin.description.cellular_no_internet]
 		en = We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.
 		comment = Reachability bulletin for a cellular connection that can't access the Internet.
