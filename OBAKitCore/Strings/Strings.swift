@@ -24,6 +24,8 @@ public class Strings: NSObject {
 
     public static let dismiss = OBALoc("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")
 
+    public static let done = OBALoc("common.done", value: "Done", comment: "Past participle of 'do'. As in 'I am done' or 'I am finished.'")
+
     public static let edit = OBALoc("common.edit", value: "Edit", comment: "The verb 'to edit', as in to change or modify something. Used as a button title.")
 
     public static let error = OBALoc("common.error", value: "Error", comment: "The noun 'error', as in 'something went wrong'.")
@@ -45,6 +47,8 @@ public class Strings: NSObject {
     public static let scheduledNotRealTime = OBALoc("common.scheduled_not_real_time", value: "Scheduled/not real-time", comment: "Explains that this is departure comes from schedule data, not from a real-time vehicle location.")
 
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
+
+    public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")
 
     public static let updatedAtFormat = OBALoc("common.updated_at_fmt", value: "Updated: %@", comment: "A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.")
 

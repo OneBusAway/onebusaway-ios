@@ -9,6 +9,9 @@
 /* Text for the table header for bookmarking an entire stop. */
 "add_bookmark_controller.bookmark_stop_header" = "Bookmark the Stop";
 
+/* Text for the table header for bookmarking an individual trip. */
+"add_bookmark_controller.bookmark_trip_header" = "Bookmark a Trip";
+
 /* Title for the Add Bookmark view controller. */
 "add_bookmark_controller.title" = "Add Bookmark";
 
@@ -36,11 +39,20 @@
 /* Explains what the Alarm Time Picker page does. */
 "alarm_time_picker.description" = "Remind me when this vehicle will depart in:";
 
+/* Body for the empty set indicator on the Bookmarks view controller. */
+"bookmarks_controller.empty_set.body" = "Add a bookmark for a stop or trip to easily access it here.";
+
+/* Title for the empty set indicator on the Bookmarks view controller. */
+"bookmarks_controller.empty_set.title" = "No Bookmarks";
+
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Edit";
 
 /* Title of the Bookmarks tab */
 "bookmarks_controller.title" = "Bookmarks";
+
+/* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
+"bookmarks_controller.ungrouped_bookmarks_section.title" = "Bookmarks";
 
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
 "contact_us_helper.cant_send_email.body_fmt" = "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.";

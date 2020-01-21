@@ -1,0 +1,9 @@
+find OBAKitCore -name "*.swift" -print0 | xargs -0 genstrings -s OBALoc -o OBAKitCore/Strings/en.lproj
+iconv -f UTF-16 -t UTF-8 OBAKitCore/Strings/en.lproj/Localizable.strings > OBAKitCore/Strings/en.lproj/Localizable.strings.new
+mv -f OBAKitCore/Strings/en.lproj/Localizable.strings.new OBAKitCore/Strings/en.lproj/Localizable.strings
+twine consume-all-localization-files Translations/OBAKitCore.txt OBAKitCore/Strings --developer-language en --consume-all --consume-comments --format apple
+
+find OBAKit -name "*.swift" -print0 | xargs -0 genstrings -s OBALoc -o OBAKit/Strings/en.lproj
+iconv -f UTF-16 -t UTF-8 OBAKit/Strings/en.lproj/Localizable.strings > OBAKit/Strings/en.lproj/Localizable.strings.new
+mv -f OBAKit/Strings/en.lproj/Localizable.strings.new OBAKit/Strings/en.lproj/Localizable.strings
+twine consume-all-localization-files Translations/OBAKit.txt OBAKit/Strings --developer-language en --consume-all --consume-comments --format apple
