@@ -10,25 +10,18 @@ import UIKit
 import Eureka
 import OBAKitCore
 
-public enum RegionPickerMessage: Int {
-    case none, manualSelectionMessage
-}
-
 /// Entrypoint for manual management of `Region`s in the app. Includes affordances for creating custom `Region`s.
-@objc(OBARegionPickerViewController)
 public class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     // MARK: - Properties
 
     private let application: Application
-    private let message: RegionPickerMessage
     private lazy var doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(dismissRegionPicker))
 
     // MARK: - Init
 
-    public init(application: Application, message: RegionPickerMessage) {
+    public init(application: Application) {
         self.application = application
-        self.message = message
 
         super.init(nibName: nil, bundle: nil)
 
@@ -78,18 +71,7 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
     // MARK: - Auto-Select Switch
 
     private lazy var autoSelectSwitchSection: Section = {
-        let section: Section
-
-        switch message {
-        case .manualSelectionMessage:
-            section = Section(
-                footer: OBALoc("region_picker.manual_selection_message",
-                                          value: "We can't automatically select a region for you. Please choose a region below and then tap on the Done button.",
-                                          comment: "Explanation for why the user is seeing this screen."))
-        case .none:
-            section = Section()
-        }
-
+        let section = Section()
         var skipFirst = false
 
         section <<< SwitchRow(autoSelectTag) {
@@ -120,10 +102,12 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
             $0.onSelectSelectableRow = { [weak self] _, row in
                 guard
                     let self = self,
-                    row.selectableValue != nil
+                    let regionIDString = row.selectableValue,
+                    let regionID = Int(regionIDString),
+                    let region = self.application.regionsService.find(id: regionID)
                 else { return }
 
-                self.doneButton.isEnabled = true
+                self.application.regionsService.currentRegion = region
             }
         }
 
@@ -174,15 +158,6 @@ public class RegionPickerViewController: FormViewController, RegionsServiceDeleg
     // MARK: - Actions
 
     @objc private func dismissRegionPicker() {
-        // This is sort of a hacky test for determining whether we
-        // should be reloading the root interface or simply dismissing
-        // this controller, but it's good enough for now. Nice thing to
-        // revisit later though.
-        if message == .manualSelectionMessage {
-            application.reloadRootUserInterface()
-        }
-        else {
-            dismiss(animated: true, completion: nil)
-        }
+        dismiss(animated: true, completion: nil)
     }
 }

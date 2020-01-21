@@ -507,10 +507,6 @@
 		en = Choose your transit region to use the app.
 		comment = Descriptive text for the region picker card.
 		pl = Wybierz swój region, aby korzystać z aplikacji.
-	[region_picker.manual_selection_message]
-		en = We can't automatically select a region for you. Please choose a region below and then tap on the Done button.
-		comment = Explanation for why the user is seeing this screen.
-		pl = Nie mogliśmy wybrać automatycznie regionu dla Ciebie. Wybierz region poniżej i kliknij w przycisk Gotowe.
 	[region_picker.region_section.title]
 		en = Regions
 		comment = Title of the Regions section.

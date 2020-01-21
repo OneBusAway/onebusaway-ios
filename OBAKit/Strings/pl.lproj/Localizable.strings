@@ -390,9 +390,6 @@
 /* Descriptive text for the region picker card. */
 "region_picker.description_text" = "Wybierz swój region, aby korzystać z aplikacji.";
 
-/* Explanation for why the user is seeing this screen. */
-"region_picker.manual_selection_message" = "Nie mogliśmy wybrać automatycznie regionu dla Ciebie. Wybierz region poniżej i kliknij w przycisk Gotowe.";
-
 /* Title of the Regions section. */
 "region_picker.region_section.title" = "Regiony";
 

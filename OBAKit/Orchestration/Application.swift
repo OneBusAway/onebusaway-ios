@@ -492,17 +492,11 @@ public class Application: NSObject,
 
     private var regionPickerBulletin: RegionPickerBulletin?
 
-    @objc public func manuallySelectRegion() {
+    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         guard let app = delegate?.uiApplication else { return }
-
-        regionsService.automaticallySelectRegion = false
 
         self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
         self.regionPickerBulletin?.show(in: app)
-    }
-
-    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
-        manuallySelectRegion()
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {

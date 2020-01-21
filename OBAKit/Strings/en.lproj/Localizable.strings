@@ -390,9 +390,6 @@
 /* Descriptive text for the region picker card. */
 "region_picker.description_text" = "Choose your transit region to use the app.";
 
-/* Explanation for why the user is seeing this screen. */
-"region_picker.manual_selection_message" = "We can't automatically select a region for you. Please choose a region below and then tap on the Done button.";
-
 /* Title of the Regions section. */
 "region_picker.region_section.title" = "Regions";
 

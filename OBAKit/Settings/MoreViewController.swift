@@ -148,7 +148,7 @@ import OBAKitCore
     }()
 
     private func showRegionPicker() {
-        let regionPicker = RegionPickerViewController(application: application, message: .none)
+        let regionPicker = RegionPickerViewController(application: application)
         let nav = application.viewRouter.buildNavigation(controller: regionPicker)
         application.viewRouter.present(nav, from: self)
     }
