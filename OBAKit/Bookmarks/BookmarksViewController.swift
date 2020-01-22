@@ -9,6 +9,7 @@ import UIKit
 import IGListKit
 import CoreLocation
 import OBAKitCore
+import CocoaLumberjackSwift
 
 /// The view controller that powers the Bookmarks tab of the app.
 @objc(OBABookmarksViewController)
@@ -183,8 +184,25 @@ public class BookmarksViewController: UIViewController,
         return toggledSections[key] ?? .open
     }
 
-    /// An ephemeral store of toggled sections.
-    private var toggledSections = [String: BookmarkSectionState]()
+    /// A store of toggled sections.
+    private var toggledSections: [String: BookmarkSectionState] {
+        get {
+            var sections = [String: BookmarkSectionState]()
+            do {
+                try sections = application.userDefaults.decodeUserDefaultsObjects(type: [String: BookmarkSectionState].self, key: "toggledBookmarkSections") ?? [:]
+            } catch let error {
+                DDLogError("Unable to decode toggledSections: \(error)")
+            }
+            return sections
+        }
+        set {
+            do {
+                try application.userDefaults.encodeUserDefaultsObjects(newValue, key: "toggledBookmarkSections")
+            } catch let error {
+                DDLogError("Unable to write toggledSections: \(error)")
+            }
+        }
+    }
 
     // MARK: - BookmarkEditorDelegate
 

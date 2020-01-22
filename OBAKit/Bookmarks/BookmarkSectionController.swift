@@ -10,7 +10,7 @@ import IGListKit
 import OBAKitCore
 import SwipeCellKit
 
-enum BookmarkSectionState: String {
+enum BookmarkSectionState: String, Codable {
     case open, closed
 
     func toggledValue() -> BookmarkSectionState {
