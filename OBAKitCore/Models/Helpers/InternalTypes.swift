@@ -24,8 +24,11 @@ extension CLLocation {
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
     }
 
-    convenience init<K>(container: KeyedDecodingContainer<K>, key: K) throws where K: CodingKey {
-        let locationModel = try container.decode(LocationModel.self, forKey: key)
+    convenience init?<K>(container: KeyedDecodingContainer<K>, key: K) throws where K: CodingKey {
+        guard let locationModel = try container.decodeIfPresent(LocationModel.self, forKey: key) else {
+            return nil
+        }
+
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
     }
 }

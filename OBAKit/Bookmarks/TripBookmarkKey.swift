@@ -33,7 +33,7 @@ struct TripBookmarkKey: Hashable, Equatable {
         self.stopID = arrivalDeparture.stopID
         self.routeShortName = arrivalDeparture.routeShortName
         self.routeID = arrivalDeparture.routeID
-        self.tripHeadsign = arrivalDeparture.tripHeadsign
+        self.tripHeadsign = arrivalDeparture.tripHeadsign ?? ""
     }
 
     /// A composite of the route name and headsign.

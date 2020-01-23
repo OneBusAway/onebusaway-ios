@@ -145,7 +145,7 @@ public class TripStatus: NSObject, Decodable {
 
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
-        frequency = try? container.decode(Frequency.self, forKey: .frequency)
+        frequency = try? container.decodeIfPresent(Frequency.self, forKey: .frequency)
         lastKnownDistanceAlongTrip = try container.decode(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decode(CLLocationDirection.self, forKey: .lastKnownOrientation)
@@ -159,7 +159,7 @@ public class TripStatus: NSObject, Decodable {
             lastUpdate = Date(timeIntervalSince1970: (lastUpdateTime / 1000.0))
         }
 
-        nextStopID = try? container.decode(String.self, forKey: .nextStopID)
+        nextStopID = try? container.decodeIfPresent(String.self, forKey: .nextStopID)
         nextStop = references.stopWithID(nextStopID)
 
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
@@ -176,7 +176,7 @@ public class TripStatus: NSObject, Decodable {
 
         status = try container.decode(String.self, forKey: .status)
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
-        vehicleID = try? container.decode(String.self, forKey: .vehicleID)
+        vehicleID = try? container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
 
     // MARK: - Equality

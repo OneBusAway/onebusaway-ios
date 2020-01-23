@@ -82,7 +82,7 @@ public class Route: NSObject, Codable, HasReferences {
         // However, if we are decoding data from the REST API, then it will not
         // have routes at this time. Instead, the agency will be loaded via the
         // `loadReferences()` method call, which is part of the HasReferences protocol.
-        agency = try? container.decode(Agency.self, forKey: .agency)
+        agency = try? container.decodeIfPresent(Agency.self, forKey: .agency)
 
         color = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
 

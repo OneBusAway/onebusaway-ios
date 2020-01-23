@@ -56,7 +56,7 @@ public class Trip: NSObject, Decodable, HasReferences {
     /// Contains the text that appears on a sign that identifies the trip's destination to passengers.
     ///
     /// Use this field to distinguish between different patterns of service in the same route.
-    public let headsign: String
+    public let headsign: String?
 
     private enum CodingKeys: String, CodingKey {
         case blockID = "blockId"
@@ -74,8 +74,8 @@ public class Trip: NSObject, Decodable, HasReferences {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         blockID = try container.decode(String.self, forKey: .blockID)
-        direction = try? container.decode(String.self, forKey: .direction)
-        headsign = try container.decode(String.self, forKey: .headsign)
+        direction = try? container.decodeIfPresent(String.self, forKey: .direction)
+        headsign = try? container.decodeIfPresent(String.self, forKey: .headsign)
         id = try container.decode(String.self, forKey: .id)
         routeID = try container.decode(String.self, forKey: .routeID)
         routeShortName = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .routeShortName))
@@ -98,7 +98,7 @@ public class Trip: NSObject, Decodable, HasReferences {
         let bestShortName = routeShortName ?? route.shortName
         let headsign = self.headsign
 
-        return "\(bestShortName) - \(headsign)"
+        return [bestShortName, headsign].compactMap { $0 }.joined(separator: " - ")
     }
 
     // MARK: - Equality

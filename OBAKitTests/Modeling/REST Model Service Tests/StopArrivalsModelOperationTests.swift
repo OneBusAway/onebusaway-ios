@@ -23,6 +23,9 @@ class StopArrivalsModelOperationTests: OBATestCase {
     let galerStopID = "1_11370"
     lazy var galerAPIPath: String = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: galerStopID)
 
+    let rvtdStopID = "1739_d1e8e68e-83f8-487f-baf5-f465fe70fc84.json"
+    lazy var rvtdAPIPath = StopArrivalsAndDeparturesOperation.buildAPIPath(stopID: rvtdStopID)
+
     override func setUp() {
         super.setUp()
         stub(condition: isHost(self.host) && isPath(self.campusParkwayAPIPath)) { _ in
@@ -30,6 +33,9 @@ class StopArrivalsModelOperationTests: OBATestCase {
         }
         stub(condition: isHost(self.host) && isPath(self.galerAPIPath)) { _ in
             return OHHTTPStubsResponse.JSONFile(named: "arrivals_and_departures_for_stop_15th-galer.json")
+        }
+        stub(condition: isHost(self.host) && isPath(self.rvtdAPIPath)) { _ in
+            return OHHTTPStubsResponse.JSONFile(named: "arrivals-and-departures-for-stop-1739-rvtd.json")
         }
     }
 
@@ -118,6 +124,35 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 expect(tripStatus.activeTrip.id) == "1_40984840"
 
                 expect(arrDep.vehicleID) == "1_4559"
+
+                done()
+            }
+        }
+    }
+
+    func testLoading_rogueValley() {
+        // There are some indications that the data shape from RVTD is different from some other regions.
+        // This test is meant to ensure that these different data sources work equally well.
+
+        waitUntil { (done) in
+            let op = self.restModelService.getArrivalsAndDeparturesForStop(id: self.rvtdStopID, minutesBefore: 5, minutesAfter: 30)
+            op.completionBlock = {
+                let arrivals = op.stopArrivals!
+
+                expect(arrivals.nearbyStops.count) == 3
+                expect(arrivals.situations.count) == 0
+
+                expect(arrivals.stop.id) == "1739_d1e8e68e-83f8-487f-baf5-f465fe70fc84"
+                expect(arrivals.stop.name) == "E Main St - West of Myrtle St"
+
+                expect(arrivals.arrivalsAndDepartures.count) == 1
+
+                let arrDep = arrivals.arrivalsAndDepartures.first!
+                expect(arrDep.arrivalEnabled).to(beTrue())
+                expect(arrDep.blockTripSequence) == 2
+                expect(arrDep.departureEnabled).to(beTrue())
+                expect(arrDep.distanceFromStop).to(beCloseTo(63293.0860))
+                expect(arrDep.frequency).to(beNil())
 
                 done()
             }

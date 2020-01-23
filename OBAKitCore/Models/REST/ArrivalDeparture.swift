@@ -135,7 +135,7 @@ public class ArrivalDeparture: NSObject, Decodable {
         blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
         departureEnabled = try container.decode(Bool.self, forKey: .departureEnabled)
         distanceFromStop = try container.decode(Double.self, forKey: .distanceFromStop)
-        frequency = try? container.decode(Frequency.self, forKey: .frequency)
+        frequency = try? container.decodeIfPresent(Frequency.self, forKey: .frequency)
         lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
         numberOfStopsAway = try container.decode(Int.self, forKey: .numberOfStopsAway)
         predicted = try container.decode(Bool.self, forKey: .predicted)
@@ -162,20 +162,20 @@ public class ArrivalDeparture: NSObject, Decodable {
         stop = references.stopWithID(stopID)!
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
-        totalStopsInTrip = try? container.decode(Int.self, forKey: .totalStopsInTrip)
+        totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
         _tripHeadsign = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .tripHeadsign))
 
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
         trip = references.tripWithID(tripID)!
 
-        tripStatus = try? container.decode(TripStatus.self, forKey: .tripStatus)
+        tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
         vehicleID = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
     }
 
     // MARK: - Helpers/Names
 
     /// Provides the best available trip headsign.
-    public var tripHeadsign: String {
+    public var tripHeadsign: String? {
         return _tripHeadsign ?? trip.headsign
     }
 
@@ -197,7 +197,7 @@ public class ArrivalDeparture: NSObject, Decodable {
 
     /// A composite of the route name and headsign.
     public var routeAndHeadsign: String {
-        return "\(routeName) - \(tripHeadsign)"
+        return [routeName, tripHeadsign].compactMap { $0 }.joined(separator: " - ")
     }
 
     // MARK: - Helpers/Statuses+Times
