@@ -45,9 +45,11 @@
 	[bookmarks_controller.empty_set.body]
 		en = Add a bookmark for a stop or trip to easily access it here.
 		comment = Body for the empty set indicator on the Bookmarks view controller.
+		pl = Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.
 	[bookmarks_controller.empty_set.title]
 		en = No Bookmarks
 		comment = Title for the empty set indicator on the Bookmarks view controller.
+		pl = Brak zakładek
 	[bookmarks_controller.groups_button_title]
 		en = Edit
 		comment = Groups button title in Bookmarks controller
@@ -59,6 +61,7 @@
 	[bookmarks_controller.ungrouped_bookmarks_section.title]
 		en = Bookmarks
 		comment = The title for the bookmarks controller section that shows bookmarks that aren't in a group.
+		pl = Zakładki
 	[contact_us_helper.cant_send_email.body_fmt]
 		en = In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.
 		comment = Body of the the alert that appears when you try sending an email without Mail.app set up
@@ -506,15 +509,19 @@
 	[region_mismatch_bulletin.body_fmt]
 		en = Your region is set to %1$@, but you appear to be in %2$@.
 		comment = Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.'
+		pl = Wybrany region to %1$@ ale wygląda na to że jesteś w %2$@.
 	[region_mismatch_bulletin.change_region_button_fmt]
 		en = Change to %@
 		comment = A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego'
+		pl = Zmień na %@
 	[region_mismatch_bulletin.title]
 		en = Change Region?
 		comment = Alert title shown when there is a mismatch between the user location and selected region.
+		pl = Zmienić region?
 	[region_mismatch_bulletin.update_map_button_fmt]
 		en = Show %@ on the map
 		comment = A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map'
+		pl = Pokaż %@ na mapie
 	[region_picker.description_text]
 		en = Choose your transit region to use the app.
 		comment = Descriptive text for the region picker card.

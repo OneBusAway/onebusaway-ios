@@ -4,4 +4,4 @@
 	[NSLocationAlwaysAndWhenInUseUsageDescription]
 		pl = Show your location on the map
 	[NSLocationWhenInUseUsageDescription]
-		pl = Show your location on the map
+		pl = Pokaż swoją lokalizację na mapie
