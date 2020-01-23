@@ -64,7 +64,7 @@
 "common.settings" = "Ustawienia";
 
 /* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
-"common.skip" = "Skip";
+"common.skip" = "Pomiń";
 
 /* A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime. */
 "common.updated_at_fmt" = "Aktualizowano: %@";

@@ -40,10 +40,10 @@
 "alarm_time_picker.description" = "Przypomnij mi kiedy ten pojazd odjeżdża za:";
 
 /* Body for the empty set indicator on the Bookmarks view controller. */
-"bookmarks_controller.empty_set.body" = "Add a bookmark for a stop or trip to easily access it here.";
+"bookmarks_controller.empty_set.body" = "Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.";
 
 /* Title for the empty set indicator on the Bookmarks view controller. */
-"bookmarks_controller.empty_set.title" = "No Bookmarks";
+"bookmarks_controller.empty_set.title" = "Brak zakładek";
 
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Edytuj";
@@ -52,7 +52,7 @@
 "bookmarks_controller.title" = "Zakładki";
 
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
-"bookmarks_controller.ungrouped_bookmarks_section.title" = "Bookmarks";
+"bookmarks_controller.ungrouped_bookmarks_section.title" = "Zakładki";
 
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
 "contact_us_helper.cant_send_email.body_fmt" = "Aby skontaktować się z nami, napisz do nas na adres %@. Kliknij proszę w 'Copy Debug Info', aby skopiować informację do schowka, co pomoże nam rozwiązać problem. Uwzględnij tą informację w wiadomości E-mail.";
@@ -388,16 +388,16 @@
 "recent_stops_controller.title" = "Ostatnie";
 
 /* Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.' */
-"region_mismatch_bulletin.body_fmt" = "Your region is set to %1$@, but you appear to be in %2$@.";
+"region_mismatch_bulletin.body_fmt" = "Wybrany region to %1$@ ale wygląda na to że jesteś w %2$@.";
 
 /* A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego' */
-"region_mismatch_bulletin.change_region_button_fmt" = "Change to %@";
+"region_mismatch_bulletin.change_region_button_fmt" = "Zmień na %@";
 
 /* Alert title shown when there is a mismatch between the user location and selected region. */
-"region_mismatch_bulletin.title" = "Change Region?";
+"region_mismatch_bulletin.title" = "Zmienić region?";
 
 /* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
-"region_mismatch_bulletin.update_map_button_fmt" = "Show %@ on the map";
+"region_mismatch_bulletin.update_map_button_fmt" = "Pokaż %@ na mapie";
 
 /* Descriptive text for the region picker card. */
 "region_picker.description_text" = "Wybierz swój region, aby korzystać z aplikacji.";
