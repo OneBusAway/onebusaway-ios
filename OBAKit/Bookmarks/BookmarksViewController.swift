@@ -49,7 +49,6 @@ public class BookmarksViewController: UIViewController,
         view.backgroundColor = ThemeColors.shared.systemBackground
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
-        collectionController.collectionView.addSubview(refreshControl)
 
         loadData()
     }
@@ -58,6 +57,13 @@ public class BookmarksViewController: UIViewController,
         super.viewWillAppear(animated)
 
         application.notificationCenter.addObserver(self, selector: #selector(applicationEnteredBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        if application.userDataStore.bookmarks.count == 0 {
+            refreshControl.removeFromSuperview()
+        }
+        else {
+            collectionController.collectionView.addSubview(refreshControl)
+        }
 
         collectionController.reload(animated: false)
     }
