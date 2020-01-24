@@ -6,6 +6,7 @@
 	[add_bookmark_controller.bookmark_trip_header]
 		en = Bookmark a Trip
 		comment = Text for the table header for bookmarking an individual trip.
+		pl = Dodaj kurs do zakładek
 	[add_bookmark_controller.title]
 		en = Add Bookmark
 		comment = Title for the Add Bookmark view controller.

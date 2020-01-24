@@ -30,6 +30,7 @@
 	[common.done]
 		en = Done
 		comment = Past participle of 'do'. As in 'I am done' or 'I am finished.'
+		pl = Gotowe
 	[common.edit]
 		en = Edit
 		comment = The verb 'to edit', as in to change or modify something. Used as a button title.
