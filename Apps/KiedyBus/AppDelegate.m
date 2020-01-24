@@ -36,7 +36,8 @@ static const int ddLogLevel = DDLogLevelWarning;
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
 
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self];
+        NSString *bundledRegions = [NSBundle.mainBundle pathForResource:@"regions" ofType:@"json"];
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self bundledRegionsFilePath:bundledRegions];
 
         // Add a PushNotificationAPIKey to the Info.plist and then uncomment this to re-enable push.
         // NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"OBAKitConfig"][@"PushNotificationAPIKey"];

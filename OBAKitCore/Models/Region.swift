@@ -57,7 +57,7 @@ public class Region: NSObject, Codable {
     public let stopInfoURL: URL?
 
     /// A list of Open 311 servers for this region.
-    public let open311Servers: [Open311Server]
+    public let open311Servers: [Open311Server]?
 
     /// Does this region support Microsoft Research's Embedded Social SDK?
     ///
@@ -237,12 +237,12 @@ public class Region: NSObject, Codable {
 
         regionBounds = try container.decode([RegionBound].self, forKey: .regionBounds)
 
-        open311Servers = try container.decode([Open311Server].self, forKey: .open311Servers)
+        open311Servers = try container.decodeIfPresent([Open311Server].self, forKey: .open311Servers)
 
         supportsEmbeddedSocial = try container.decode(Bool.self, forKey: .supportsEmbeddedSocial)
         supportsOBARealtimeAPIs = try container.decode(Bool.self, forKey: .supportsOBARealtimeAPIs)
         supportsOBADiscoveryAPIs = try container.decode(Bool.self, forKey: .supportsOBADiscoveryAPIs)
-        supportsOTPBikeshare = try container.decode(Bool.self, forKey: .supportsOTPBikeshare)
+        supportsOTPBikeshare = try (container.decodeIfPresent(Bool.self, forKey: .supportsOTPBikeshare) ?? false)
         supportsSiriRealtimeAPIs = try container.decode(Bool.self, forKey: .supportsSiriRealtimeAPIs)
 
         contactEmail = try container.decode(String.self, forKey: .contactEmail)
@@ -274,7 +274,7 @@ public class Region: NSObject, Codable {
         try? container.encode(openTripPlannerURL, forKey: .openTripPlannerURL)
         try? container.encode(stopInfoURL, forKey: .stopInfoURL)
         try container.encode(regionBounds, forKey: .regionBounds)
-        try container.encode(open311Servers, forKey: .open311Servers)
+        try container.encodeIfPresent(open311Servers, forKey: .open311Servers)
         try container.encode(supportsEmbeddedSocial, forKey: .supportsEmbeddedSocial)
         try container.encode(supportsOBARealtimeAPIs, forKey: .supportsOBARealtimeAPIs)
         try container.encode(supportsOBADiscoveryAPIs, forKey: .supportsOBADiscoveryAPIs)

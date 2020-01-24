@@ -21,6 +21,8 @@ public class AppConfig: NSObject {
     let userDefaults: UserDefaults
     let locationService: LocationService
     let analytics: Analytics?
+    let bundledRegionsFilePath: String
+    let regionsAPIPath: String
 
     @objc public var pushServiceProvider: PushServiceProvider?
 
@@ -28,10 +30,12 @@ public class AppConfig: NSObject {
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
+    /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     @objc public convenience init(
         appBundle: Bundle,
         userDefaults: UserDefaults,
-        analytics: Analytics?
+        analytics: Analytics?,
+        bundledRegionsFilePath: String
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress!,
@@ -41,7 +45,9 @@ public class AppConfig: NSObject {
             userDefaults: userDefaults,
             analytics: analytics,
             queue: OperationQueue(),
-            locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager())
+            locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
+            bundledRegionsFilePath: bundledRegionsFilePath,
+            regionsAPIPath: appBundle.regionsServerAPIPath!
         )
     }
 
@@ -54,6 +60,8 @@ public class AppConfig: NSObject {
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
     /// - Parameter queue: An operation queue.
     /// - Parameter locationService: The location service object.
+    /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
+    /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     @objc public init(
         regionsBaseURL: URL,
         obacoBaseURL: URL?,
@@ -62,7 +70,9 @@ public class AppConfig: NSObject {
         userDefaults: UserDefaults,
         analytics: Analytics?,
         queue: OperationQueue,
-        locationService: LocationService
+        locationService: LocationService,
+        bundledRegionsFilePath: String,
+        regionsAPIPath: String
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.obacoBaseURL = obacoBaseURL
@@ -72,6 +82,8 @@ public class AppConfig: NSObject {
         self.queue = queue
         self.locationService = locationService
         self.analytics = analytics
+        self.bundledRegionsFilePath = bundledRegionsFilePath
+        self.regionsAPIPath = regionsAPIPath
     }
 
     // MARK: - Theme

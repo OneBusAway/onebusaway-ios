@@ -10,8 +10,8 @@ import Foundation
 
 public class RegionsAPIService: APIService {
 
-    public func getRegions() -> RegionsOperation {
-        let url = RegionsOperation.buildURL(baseURL: baseURL, queryItems: defaultQueryItems)
+    public func getRegions(apiPath: String) -> RegionsOperation {
+        let url = RegionsOperation.buildURL(baseURL: baseURL, apiPath: apiPath, queryItems: defaultQueryItems)
         let request = RegionsOperation.buildRequest(for: url)
         let operation = RegionsOperation(request: request)
         networkQueue.addOperation(operation)

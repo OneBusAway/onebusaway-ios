@@ -60,6 +60,16 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// A helper method for accessing the bundle's `RegionsServerAPIPath`
+    var regionsServerAPIPath: String? {
+        guard
+            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let str = dict["RegionsServerAPIPath"] as? String
+        else { return nil }
+
+        return str
+    }
+
     /// A helper method for accessing the bundle's `OBARESTAPIKey`
     var restServerAPIKey: String? {
         guard let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self) else { return nil }

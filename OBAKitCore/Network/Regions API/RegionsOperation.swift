@@ -12,9 +12,7 @@ public class RegionsOperation: RESTAPIOperation {
 
     // MARK: - API Call and URL Construction
 
-    public static let apiPath = "/regions-v3.json"
-
-    public class func buildURL(baseURL: URL, queryItems: [URLQueryItem]) -> URL {
+    public class func buildURL(baseURL: URL, apiPath: String, queryItems: [URLQueryItem]) -> URL {
         return buildURL(fromBaseURL: baseURL, path: apiPath, queryItems: queryItems)
     }
 }
