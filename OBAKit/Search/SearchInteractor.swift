@@ -12,6 +12,7 @@ import OBAKitCore
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
+    var vehicleSearchAvailable: Bool { get }
 }
 
 /// This class is responsible for building all of the data objects that power the search experience without actually creating the UI.
@@ -97,12 +98,15 @@ class SearchInteractor: NSObject {
     /// Creates a Quick Search section
     /// - Parameter searchText: The text that the user is searching for
     private func quickSearchSection(searchText: String) -> ListDiffable {
-        let quickSearchTypes: [(SearchType, String)] = [
+        var quickSearchTypes: [(SearchType, String)] = [
             (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route.")),
             (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address.")),
-            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop.")),
-            (.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."))
+            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."))
         ]
+
+        if let delegate = delegate, delegate.vehicleSearchAvailable {
+            quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle.")))
+        }
 
         var rows = [TableRowData]()
 

@@ -130,6 +130,10 @@ public class NearbyViewController: VisualEffectViewController,
         nearbyDelegate?.nearbyController(self, didSelectStop: stop)
     }
 
+    var vehicleSearchAvailable: Bool {
+        application.features.obaco == .running
+    }
+
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         collectionController.reload(animated: false)
     }

@@ -113,15 +113,6 @@ public class Application: NSObject,
         }
     }
 
-    @objc public private(set) var obacoService: ObacoModelService? {
-        didSet {
-            notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
-            alertsStore.obacoModelService = obacoService
-        }
-    }
-
-    private var obacoNetworkQueue = OperationQueue()
-
     @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
 
     @objc public private(set) lazy var searchManager = SearchManager(application: self)
@@ -139,8 +130,6 @@ public class Application: NSObject,
     @objc public let notificationCenter: NotificationCenter
 
     @objc public let reachability = Reachability()
-
-    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
 
     @objc public let locale = Locale.autoupdatingCurrent
 
@@ -513,6 +502,68 @@ public class Application: NSObject,
         restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
 
+    // MARK: - Feature Availability
+
+    public enum FeatureStatus {
+
+        /// This feature is not available in this app.
+        case off
+
+        /// This feature is available, but is not fully configured for use.
+        ///
+        /// This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
+        case notRunning
+
+        /// This feature is available for use.
+        case running
+    }
+
+    public struct FeatureAvailability {
+        private let config: AppConfig
+        private weak var application: Application?
+
+        init(config: AppConfig, application: Application) {
+            self.config = config
+            self.application = application
+        }
+
+        /// Feature status of the Obaco service.
+        public var obaco: FeatureStatus {
+            switch (config.obacoBaseURL, application?.obacoService) {
+            case (nil, nil): return .off
+            case (_, nil): return .notRunning
+            default: return .running
+            }
+        }
+
+        /// Feature status of push notifications.
+        public var push: FeatureStatus {
+            switch (config.pushServiceProvider, application?.pushService) {
+            case (nil, nil): return .off
+            case (_, nil): return .notRunning
+            default: return .running
+            }
+        }
+    }
+
+    /// Documents availability of features in whitelabel clients, so that features like alarms, weather, and trip status can be hidden or shown.
+    ///
+    /// `.off` means that a feature is simply unavailable in this app.
+    /// `.notRunning` means that a feature is available, but not fully configured. This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
+    /// `.running` means that the feature is ready to use.
+    public lazy var features = FeatureAvailability(config: self.config, application: self)
+
+    // MARK: - Obaco
+
+    @objc public private(set) var obacoService: ObacoModelService? {
+        didSet {
+            notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
+            alertsStore.obacoModelService = obacoService
+        }
+    }
+
+    private var obacoNetworkQueue = OperationQueue()
+
     public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
 
     /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
@@ -529,9 +580,13 @@ public class Application: NSObject,
         obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
     }
 
+    // MARK: - Agency Alerts
+
     public var shouldDisplayRegionalTestAlerts: Bool {
         return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
     }
+
+    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
 
     // MARK: - LocationServiceDelegate
 

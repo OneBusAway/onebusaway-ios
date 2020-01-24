@@ -28,7 +28,11 @@ public class MapViewController: UIViewController,
         let hover = HoverBar.autolayoutNew()
         hover.tintColor = ThemeColors.shared.label
         hover.stackView.addArrangedSubview(locationButton)
-        hover.stackView.addArrangedSubview(weatherButton)
+
+        if application.features.obaco == .running {
+            hover.stackView.addArrangedSubview(weatherButton)
+        }
+
         return hover
     }()
 

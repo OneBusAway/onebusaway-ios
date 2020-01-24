@@ -35,7 +35,7 @@ public class AppConfig: NSObject {
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress!,
-            obacoBaseURL: appBundle.deepLinkServerBaseAddress!,
+            obacoBaseURL: appBundle.deepLinkServerBaseAddress,
             apiKey: appBundle.restServerAPIKey!,
             appVersion: appBundle.appVersion,
             userDefaults: userDefaults,
