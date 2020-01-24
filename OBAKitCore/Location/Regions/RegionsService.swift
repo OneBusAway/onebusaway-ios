@@ -28,11 +28,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private let modelService: RegionsModelService
     private let locationService: LocationService
     private let userDefaults: UserDefaults
+    private let bundledRegionsFilePath: String
+    private let apiPath: String
 
-    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults, delegate: RegionsServiceDelegate? = nil) {
+    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String, delegate: RegionsServiceDelegate? = nil) {
         self.modelService = modelService
         self.locationService = locationService
         self.userDefaults = userDefaults
+        self.bundledRegionsFilePath = bundledRegionsFilePath
+        self.apiPath = apiPath
 
         self.userDefaults.register(defaults: [
             RegionsService.automaticallySelectRegionUserDefaultsKey: true
@@ -42,7 +46,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             self.regions = regions
         }
         else {
-            self.regions = RegionsService.bundledRegions
+            self.regions = RegionsService.bundledRegions(path: bundledRegionsFilePath)
         }
 
         super.init()
@@ -197,9 +201,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Bundled Regions
 
-    private class var bundledRegions: [Region] {
-        let bundledRegionsFilePath = Bundle(for: self).path(forResource: "regions-v3", ofType: "json")!
-        let data = try! NSData(contentsOfFile: bundledRegionsFilePath) as Data // swiftlint:disable:this force_try
+    private static func bundledRegions(path: String) -> [Region] {
+        let data = try! NSData(contentsOfFile: path) as Data // swiftlint:disable:this force_try
         return DictionaryDecoder.decodeRegionsFileData(data)
     }
 
@@ -215,7 +218,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
-        let op = modelService.getRegions()
+        let op = modelService.getRegions(apiPath: apiPath)
         op.then { [weak self] in
             guard let self = self else {
                 return

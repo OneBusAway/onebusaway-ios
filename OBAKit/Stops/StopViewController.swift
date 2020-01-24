@@ -561,13 +561,13 @@ StopPreferencesDelegate {
 
     private func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {
         guard
-            application.obacoService != nil,
-            application.pushService != nil
+            application.features.obaco == .running,
+            application.features.push == .running
         else {
             return false
         }
 
-        return true
+        return arrivalDeparture.temporalState == .future
     }
 
     private var alarmBuilder: AlarmBuilder?

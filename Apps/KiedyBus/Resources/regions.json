@@ -1,0 +1,122 @@
+{
+  "code": 200,
+  "text": "OK",
+  "version": 3,
+  "data": {
+    "list": [
+	{
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 52.406755,
+            "latSpan": 0.5424609999999994,
+            "lon": 17.083954,
+            "lonSpan": 0.576357999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
+        "id": 0,
+        "experimental": false,
+        "regionName": "Swarzędz"
+      },
+      {
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 52.229030,
+            "latSpan": 0.5424099999999994,
+            "lon": 17.276135,
+            "lonSpan": 0.5763579999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
+        "id": 1,
+        "experimental": false,
+        "regionName": "Środa Wlkp."
+      },
+        {
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 52.253154,
+            "latSpan": 0.5424609999999994,
+            "lon": 17.090688,
+            "lonSpan": 0.576357999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
+        "id": 2,
+        "experimental": false,
+        "regionName": "Kórnik"
+      },
+{
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 52.407014,
+            "latSpan": 0.5424609999999994,
+            "lon": 16.926709,
+            "lonSpan": 0.576357999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-ztm?key=web",
+        "id": 3,
+        "experimental": false,
+        "regionName": "ZTM Poznań"
+      }
+    ]
+  }
+}
+

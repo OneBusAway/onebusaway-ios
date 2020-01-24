@@ -15,7 +15,11 @@ public class DeepLinkRouter: NSObject {
     /// Initializes the `DeepLinkRouter`
     ///
     /// - Parameter baseURL: The deep link server host. Usually this is `http://alerts.onebusaway.org`.
-    public init(baseURL: URL) {
+    public init?(baseURL: URL?) {
+        guard let baseURL = baseURL else {
+            return nil
+        }
+
         self.baseURL = baseURL
     }
 

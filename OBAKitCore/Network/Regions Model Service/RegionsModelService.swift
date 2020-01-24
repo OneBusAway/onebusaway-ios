@@ -25,8 +25,8 @@ public class RegionsModelService: ModelService {
     /// Creates the API request and model transformation operations necessary to retrieve `Region`s.
     ///
     /// - Returns: An operation from which regions can be retrieved after the operation completes.
-    public func getRegions() -> RegionsModelOperation {
-        let serviceOperation = apiService.getRegions()
+    public func getRegions(apiPath: String) -> RegionsModelOperation {
+        let serviceOperation = apiService.getRegions(apiPath: apiPath)
         let dataOperation = RegionsModelOperation()
 
         // Transfer

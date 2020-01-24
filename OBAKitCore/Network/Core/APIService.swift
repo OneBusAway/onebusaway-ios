@@ -19,14 +19,27 @@ public class APIService: NSObject {
     let defaultQueryItems: [URLQueryItem]
 
     public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue) {
-        self.baseURL = baseURL
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
 
-        var queryItems = [URLQueryItem]()
-        queryItems.append(URLQueryItem(name: "key", value: apiKey))
-        queryItems.append(URLQueryItem(name: "app_uid", value: uuid))
-        queryItems.append(URLQueryItem(name: "app_ver", value: appVersion))
-        queryItems.append(URLQueryItem(name: "version", value: "2"))
-        self.defaultQueryItems = queryItems
+        var queryItemsDict = [String: URLQueryItem]()
+        queryItemsDict["key"] = URLQueryItem(name: "key", value: apiKey)
+        queryItemsDict["app_uid"] = URLQueryItem(name: "app_uid", value: uuid)
+        queryItemsDict["app_ver"] = URLQueryItem(name: "app_ver", value: appVersion)
+        queryItemsDict["version"] = URLQueryItem(name: "version", value: "2")
+
+        if let items = components.queryItems, items.count > 0 {
+            for qi in items {
+                queryItemsDict[qi.name] = qi
+            }
+        }
+        self.defaultQueryItems = Array(queryItemsDict.values)
+
+        // We've successfully saved off any query items that were a part of the baseURL.
+        // So we nil out the query here so that we can safely append path components to
+        // the baseURL elsewhere.
+        components.query = nil
+
+        self.baseURL = components.url!
 
         self.networkQueue = networkQueue
     }
