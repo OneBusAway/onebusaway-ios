@@ -41,7 +41,10 @@ public class UserActivityBuilder: NSObject {
 
         activity.requiredUserInfoKeys = [stopIDUserInfoKey, regionIDUserInfoKey]
         activity.userInfo = [stopIDUserInfoKey: stop.id, regionIDUserInfoKey: region.regionIdentifier]
-        activity.webpageURL = application.deepLinkRouter.url(for: stop, region: region)
+
+        if let router = application.deepLinkRouter {
+            activity.webpageURL = router.url(for: stop, region: region)
+        }
 
         return activity
     }

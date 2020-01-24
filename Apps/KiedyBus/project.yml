@@ -49,7 +49,7 @@ targets:
       path: Apps/KiedyBus/KiedyBus.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.pl.goeuropa.kiedybus
+          - group.eu.goeuropa.kiedybus
     preBuildScripts:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"
@@ -67,7 +67,7 @@ targets:
     settings:
       base:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
-        PRODUCT_BUNDLE_IDENTIFIER: pl.goeuropa.kiedybus
+        PRODUCT_BUNDLE_IDENTIFIER: eu.goeuropa.kiedybus
         OTHER_LDFLAGS: -ObjC
         MARKETING_VERSION: 20.2.0
         

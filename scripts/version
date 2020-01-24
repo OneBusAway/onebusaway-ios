@@ -4,9 +4,7 @@ require 'date'
 
 PLISTBUDDY_PATH = "/usr/libexec/PlistBuddy"
 
-def update_build_version(label, plist_path, build_version)
-  # puts "    #{label} (#{plist_path}) [#{build_version}]"
-  
+def update_build_version(label, plist_path, build_version)  
   puts `#{PLISTBUDDY_PATH} -c "Set :CFBundleVersion #{build_version}" #{plist_path}`
 end
 

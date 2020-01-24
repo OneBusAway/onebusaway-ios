@@ -121,7 +121,7 @@ public class Application: NSObject,
 
     @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
-    @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress!)
+    @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress)
 
     @objc public private(set) var analytics: Analytics?
 
