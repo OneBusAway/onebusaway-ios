@@ -1,30 +1,10 @@
-name: OBAKit
-
-############
-# Options
-############
-
-settings:
-  base:
-    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
-
 options:
-  minimumXcodeGenVersion: 2.10
   bundleIdPrefix: eu.goeuropa
-  generateEmptyDirectories: true
-  groupSortPosition: top
-  deploymentTarget: 
-    iOS: "12.4"
 
 targets:
   App:
-    type: application
-    platform: iOS
     sources: ["Apps/KiedyBus"]
     dependencies:
-      - target: OBAKitCore
-      - target: OBAKit
-      - carthage: SwiftProtobuf
       - framework: FIRAnalyticsConnector.framework
         embed: false
       - framework: FirebaseAnalytics.framework
@@ -50,28 +30,44 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.eu.goeuropa.kiedybus
-    preBuildScripts:
-      - name: Versioning
-        script: "${PROJECT_DIR}/scripts/version"
+    info:
+      path: Apps/KiedyBus/Info.plist
+      properties:
+        CFBundleDisplayName: KiedyBus
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+          NSExceptionDomains:
+            goeuropa.eu:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            kiedybus.pl:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+        NSHumanReadableCopyright: © goEuropa
+        NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
+        NSLocationWhenInUseUsageDescription: Show your location on the map
+        NSUserActivityTypes:
+          - eu.goeuropa.kiedybus.user_activity.stop
+          - eu.goeuropa.kiedybus.user_activity.trip
+        OBAKitConfig:
+          AppDevelopersEmailAddress: info@goeuropa.eu
+          PrivacyPolicyURL: https://www.goeuropa.eu
+          RESTServerAPIKey: web
+          RegionsServerBaseAddress: https://kiedybus.pl
+          RegionsServerAPIPath: /regions-v4.json
     postBuildScripts:
       - name: Crashlytics
         script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run"
         inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"]
         runOnlyWhenInstalling: true
-    scheme:
-      gatherCoverageData: true
-      testTargets:
-        - name: OBAKitTests
-          parallelizable: true
-          randomExecutionOrder: true
     settings:
       base:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: eu.goeuropa.kiedybus
-        OTHER_LDFLAGS: -ObjC
         MARKETING_VERSION: 20.2.0
         
 include:
+  - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

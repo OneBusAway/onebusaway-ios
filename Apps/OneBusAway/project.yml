@@ -1,30 +1,10 @@
-name: OBAKit
-
-############
-# Options
-############
-
-settings:
-  base:
-    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
-
 options:
-  minimumXcodeGenVersion: 2.10
   bundleIdPrefix: org.onebusaway
-  generateEmptyDirectories: true
-  groupSortPosition: top
-  deploymentTarget: 
-    iOS: "12.4"
 
 targets:
   App:
-    type: application
-    platform: iOS
     sources: ["Apps/OneBusAway"]
     dependencies:
-      - target: OBAKitCore
-      - target: OBAKit
-      - carthage: SwiftProtobuf
       - framework: FIRAnalyticsConnector.framework
         embed: false
       - framework: FirebaseAnalytics.framework
@@ -59,28 +39,83 @@ targets:
           - applinks:onebusaway.co
           - applinks:www.onebusaway.co
           - applinks:alerts.onebusaway.org
-    preBuildScripts:
-      - name: Versioning,
-        script: "${PROJECT_DIR}/scripts/version"
+    info:
+      path: Apps/OneBusAway/Info.plist
+      properties:
+        CFBundleDisplayName: OneBusAway
+        LSApplicationQueriesSchemes:
+          - fb
+          - twitter
+          - comgooglemaps
+          - fb313213768708402HART
+          - org.sdmts.riderapp.compassmobile.payments
+          - co.bytemark.tgt
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+          NSExceptionDomains:
+            yrt.ca:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            obartd.com:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            sdmts.com:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            v-a.io:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            rvtd.org:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            ngrok.io:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            onebusaway.co:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            194.89.230.196:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            wmata.com:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            camsys-apps.com:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            onebusaway.org:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+            mta.info:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
+        NSHumanReadableCopyright: © Open Transit Software Foundation
+        NSUserActivityTypes:
+          - org.onebusaway.iphone.user_activity.stop
+          - org.onebusaway.iphone.user_activity.trip
+        OBAKitConfig:
+          AppDevelopersEmailAddress: iphone-app@onebusaway.org
+          DeepLinkServerBaseAddress: http://alerts.onebusaway.org
+          PrivacyPolicyURL: http://onebusaway.org/privacy/
+          PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
+          RESTServerAPIKey: org.onebusaway.iphone
+          RegionsServerBaseAddress: http://regions.onebusaway.org
+          RegionsServerAPIPath: /regions-v3.json
+        UIBackgroundModes:
+          - remote-notification
     postBuildScripts:
       - name: Crashlytics
         script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run"
         inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"]
         runOnlyWhenInstalling: true
-    scheme:
-      gatherCoverageData: true
-      testTargets:
-        - name: OBAKitTests
-          parallelizable: true
-          randomExecutionOrder: true
     settings:
       base:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
-        OTHER_LDFLAGS: -ObjC
         MARKETING_VERSION: 20.2.0
         
 include:
+  - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

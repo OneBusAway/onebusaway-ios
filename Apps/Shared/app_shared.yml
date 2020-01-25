@@ -1,0 +1,65 @@
+name: OBAKit
+
+############
+# Options
+############
+
+settings:
+  base:
+    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+
+options:
+  minimumXcodeGenVersion: 2.10
+  generateEmptyDirectories: true
+  groupSortPosition: top
+  deploymentTarget: 
+    iOS: "12.4"
+
+############
+# App
+############
+
+targets:
+  App:
+    type: application
+    platform: iOS
+    dependencies:
+      - target: OBAKitCore
+      - target: OBAKit
+      - carthage: SwiftProtobuf
+    info:
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleLocalizations:
+          - en
+          - pl
+        LSApplicationQueriesSchemes:
+          - fb
+          - twitter
+          - comgooglemaps
+        NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
+        NSLocationWhenInUseUsageDescription: Show your location on the map
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiredDeviceCapabilities:
+          - armv7
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    preBuildScripts:
+      - name: Versioning
+        script: "${PROJECT_DIR}/scripts/version"
+    scheme:
+      gatherCoverageData: true
+      testTargets:
+        - name: OBAKitTests
+          parallelizable: true
+          randomExecutionOrder: true
+    settings:
+      base:
+        OTHER_LDFLAGS: -ObjC
