@@ -4,6 +4,7 @@ DerivedData/
 
 ## Xcodegen
 OBAKit.xcodeproj
+Apps/**/Info.plist
 Apps/**/*.entitlements
 OBAKit/Info.plist
 OBAKitCore/Info.plist
