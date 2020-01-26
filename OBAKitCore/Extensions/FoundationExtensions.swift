@@ -182,6 +182,43 @@ public extension String {
     }
 }
 
+// MARK: - String/Regex
+
+extension String {
+    /// Perform a case-insensitive match for the specified named capture groups with the specified `pattern`.
+    /// - Parameters:
+    ///   - pattern: The regex pattern that will be matched.
+    ///   - namedGroups: The named capture groups in the regex to extract.
+    public func caseInsensitiveMatch(pattern: String, namedGroups: [String]) -> [String: String]? {
+        let regex = try! NSRegularExpression(pattern: pattern, options: NSRegularExpression.Options.caseInsensitive)  //swiftlint:disable:this force_try
+
+        return match(regex: regex, namedGroups: namedGroups)
+    }
+
+    /// Perform a match for the specified named capture groups with the specified `regex`.
+    /// - Parameters:
+    ///   - regex: The regular expression against which the receiver will be matched.
+    ///   - namedGroups: The named capture groups for which data will be extracted.
+    public func match(regex: NSRegularExpression, namedGroups: [String]) -> [String: String]? {
+        let range = NSRange(self.startIndex..<self.endIndex, in: self)
+
+        guard let match = regex.firstMatch(in: self, options: [], range: range) else {
+            return nil
+        }
+
+        var groupsAndValues = [String: String]()
+
+        for component in namedGroups {
+            let nsrange = match.range(withName: component)
+            if nsrange.location != NSNotFound, let range = Range(nsrange, in: self) {
+                groupsAndValues[component] = String(self[range])
+            }
+        }
+
+        return groupsAndValues
+    }
+}
+
 // MARK: - User Defaults
 
 public extension UserDefaults {
@@ -266,6 +303,18 @@ extension URLComponents {
         }
 
         path = path.replacingOccurrences(of: "//", with: "/")
+    }
+}
+
+public extension URLComponents {
+    /// Returns the first `URLQueryItem` with a name matching `name`.
+    /// - Parameter name: The query item name to match.
+    func queryItem(named name: String) -> URLQueryItem? {
+        guard let queryItems = queryItems else {
+            return nil
+        }
+
+        return queryItems.filter { $0.name == name }.first
     }
 }
 

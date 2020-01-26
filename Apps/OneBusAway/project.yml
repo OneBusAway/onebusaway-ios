@@ -95,7 +95,7 @@ targets:
           - org.onebusaway.iphone.user_activity.trip
         OBAKitConfig:
           AppDevelopersEmailAddress: iphone-app@onebusaway.org
-          DeepLinkServerBaseAddress: http://alerts.onebusaway.org
+          DeepLinkServerBaseAddress: https://onebusaway.co
           PrivacyPolicyURL: http://onebusaway.org/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
           RESTServerAPIKey: org.onebusaway.iphone

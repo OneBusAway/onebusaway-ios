@@ -20,8 +20,10 @@ public class UserActivityBuilder: NSObject {
         validateInfoPlistUserActivityTypes()
     }
 
-    public let stopIDUserInfoKey = "stopID"
-    public let regionIDUserInfoKey = "regionID"
+    public struct UserInfoKeys {
+        public static let stopID = "stopID"
+        public static let regionID = "regionID"
+    }
 
     public func userActivity(for stop: Stop, region: Region) -> NSUserActivity {
         let activity = NSUserActivity(activityType: stopActivityType)
@@ -33,14 +35,12 @@ public class UserActivityBuilder: NSObject {
         // for `isEligibleForPrediction` to have any effect. Timecode: 8:30
         activity.isEligibleForSearch = true
 
-        if #available(iOS 12.0, *) {
-            activity.isEligibleForPrediction = true
-            activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
-            activity.persistentIdentifier = "region_\(region.regionIdentifier)_stop_\(stop.id)"
-        }
+        activity.isEligibleForPrediction = true
+        activity.suggestedInvocationPhrase = OBALoc("user_activity_builder.show_me_my_bus", value: "Show me my bus", comment: "Suggested invocation phrase for Siri Shortcut")
+        activity.persistentIdentifier = "region_\(region.regionIdentifier)_stop_\(stop.id)"
 
-        activity.requiredUserInfoKeys = [stopIDUserInfoKey, regionIDUserInfoKey]
-        activity.userInfo = [stopIDUserInfoKey: stop.id, regionIDUserInfoKey: region.regionIdentifier]
+        activity.requiredUserInfoKeys = [UserInfoKeys.stopID, UserInfoKeys.regionID]
+        activity.userInfo = [UserInfoKeys.stopID: stop.id, UserInfoKeys.regionID: region.regionIdentifier]
 
         if let router = application.deepLinkRouter {
             activity.webpageURL = router.url(for: stop, region: region)
@@ -49,15 +49,15 @@ public class UserActivityBuilder: NSObject {
         return activity
     }
 
-    // MARK: - Private Helpers
-
-    private var stopActivityType: String {
+    public var stopActivityType: String {
         return "\(application.applicationBundle.bundleIdentifier).user_activity.stop"
     }
 
-    private var tripActivityType: String {
+    public var tripActivityType: String {
         return "\(application.applicationBundle.bundleIdentifier).user_activity.trip"
     }
+
+    // MARK: - Private Helpers
 
     /// Checks to see if the application's Info.plist file contains `NSUserActivityTypes` data
     /// that matches what this class expects it to have.

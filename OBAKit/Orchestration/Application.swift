@@ -74,7 +74,40 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
-    @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress)
+    @objc public private(set) lazy var deepLinkRouter: DeepLinkRouter? = {
+        let router = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
+        router?.showStopHandler = { [weak self] stop in
+            guard let self = self else { return }
+
+            print("Bonk! Show stop: \(stop)")
+        }
+
+        router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
+            guard
+                let self = self,
+                let modelService = self.restAPIModelService
+            else { return }
+
+            SVProgressHUD.show()
+
+            let op = modelService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
+            op.then { [weak self] in
+                guard
+                    let self = self,
+                    let topVC = self.topViewController,
+                    let arrDep = op.arrivalDeparture
+                else {
+                    return
+                }
+
+                SVProgressHUD.dismiss()
+
+                self.viewRouter.navigateTo(arrivalDeparture: arrDep, from: topVC)
+            }
+        }
+
+        return router
+    }()
 
     @objc public private(set) var analytics: Analytics?
 
@@ -317,6 +350,14 @@ public class Application: CoreApplication, PushServiceDelegate {
         delegate?.credits ?? [:]
     }
 
+    @objc public func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        guard let deepLinkRouter = deepLinkRouter else {
+            return false
+        }
+
+        return deepLinkRouter.route(userActivity: userActivity)
+    }
+
     // MARK: - Appearance and Themes
 
     // swiftlint:disable function_body_length
@@ -439,6 +480,15 @@ public class Application: CoreApplication, PushServiceDelegate {
         /// Feature status of push notifications.
         public var push: FeatureStatus {
             switch (config.pushServiceProvider, application?.pushService) {
+            case (nil, nil): return .off
+            case (_, nil): return .notRunning
+            default: return .running
+            }
+        }
+
+        /// Feature status of Deep Linking.
+        public var deepLinking: FeatureStatus {
+            switch (config.obacoBaseURL, application?.deepLinkRouter) {
             case (nil, nil): return .off
             case (_, nil): return .notRunning
             default: return .running
