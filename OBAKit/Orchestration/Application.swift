@@ -117,8 +117,6 @@ public class Application: NSObject,
 
     @objc public private(set) lazy var searchManager = SearchManager(application: self)
 
-    @objc public private(set) var theme: Theme
-
     @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     @objc public private(set) lazy var deepLinkRouter = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress)
@@ -144,8 +142,6 @@ public class Application: NSObject,
         locationService = config.locationService
         analytics = config.analytics
         notificationCenter = NotificationCenter.default
-
-        theme = Theme(bundle: config.themeBundle, traitCollection: nil)
 
         super.init()
 
@@ -390,7 +386,7 @@ public class Application: NSObject,
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
     private func configureAppearanceProxies() {
-        let tintColor = ThemeColors.shared.primary
+        let tintColor = ThemeColors.shared.brand
         let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
 
         for t in tintColorTypes {
@@ -398,7 +394,7 @@ public class Application: NSObject,
         }
 
         BorderedButton.appearance().setTitleColor(ThemeColors.shared.lightText, for: .normal)
-        BorderedButton.appearance().tintColor = ThemeColors.shared.primary
+        BorderedButton.appearance().tintColor = ThemeColors.shared.brand
 
         EmptyDataSetView.appearance().bodyLabelFont = UIFont.preferredFont(forTextStyle: .body)
         EmptyDataSetView.appearance().textColor = ThemeColors.shared.secondaryLabel
@@ -409,7 +405,7 @@ public class Application: NSObject,
 
         HighlightChangeLabel.appearance().highlightedBackgroundColor = ThemeColors.shared.propertyChanged
 
-        IndeterminateProgressView.appearance().progressColor = ThemeColors.shared.primary
+        IndeterminateProgressView.appearance().progressColor = ThemeColors.shared.brand
 
         StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
         StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
@@ -423,14 +419,14 @@ public class Application: NSObject,
         MinimalStopAnnotationView.appearance().highlightedStrokeColor = .blue
 
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        StopAnnotationView.appearance().bookmarkedStrokeColor = ThemeColors.shared.primary
+        StopAnnotationView.appearance().bookmarkedStrokeColor = ThemeColors.shared.brand
         StopAnnotationView.appearance().fillColor = UIColor.white
         StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
         StopAnnotationView.appearance().showsCallout = true
         StopAnnotationView.appearance().strokeColor = ThemeColors.shared.stopAnnotationStrokeColor
 
         PulsingVehicleAnnotationView.appearance().tintColor = .white
-        PulsingVehicleAnnotationView.appearance().realTimeAnnotationColor = ThemeColors.shared.primary
+        PulsingVehicleAnnotationView.appearance().realTimeAnnotationColor = ThemeColors.shared.brand
         PulsingVehicleAnnotationView.appearance().scheduledAnnotationColor = ThemeColors.shared.gray
 
         SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
@@ -440,11 +436,11 @@ public class Application: NSObject,
 
         TableSectionHeaderView.appearance().backgroundColor = ThemeColors.shared.secondaryBackgroundColor
 
-        TripSegmentView.appearance().imageColor = ThemeColors.shared.primary
+        TripSegmentView.appearance().imageColor = ThemeColors.shared.brand
         TripSegmentView.appearance().lineColor = ThemeColors.shared.gray
 
         WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-        WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.primary
+        WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.brand
         WalkTimeView.appearance().textColor = ThemeColors.shared.lightText
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)

@@ -76,7 +76,7 @@ class MoreHeaderViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = ThemeColors.shared.primary
+        view.backgroundColor = ThemeColors.shared.brand
 
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion

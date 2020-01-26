@@ -475,7 +475,7 @@ StopPreferencesDelegate {
     }
 
     private func addMoreOptionsTableRows() {
-        addTableHeaderToStack(headerText: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.primary, textColor: ThemeColors.shared.lightText)
+        addTableHeaderToStack(headerText: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.brand, textColor: ThemeColors.shared.lightText)
 
         if let stop = stop {
             addNearbyStopsTableRow(stop: stop)

@@ -10,16 +10,6 @@ import UIKit
 
 // swiftlint:disable function_body_length
 
-public class Theme: NSObject {
-    public let colors: ThemeColors
-    public let metrics: ThemeMetrics
-
-    public init(bundle: Bundle?, traitCollection: UITraitCollection?) {
-        colors = ThemeColors(bundle: bundle ?? Bundle(for: Theme.self), traitCollection: traitCollection)
-        metrics = ThemeMetrics()
-    }
-}
-
 public class ThemeMetrics: NSObject {
 
     public static let padding: CGFloat = 8.0
@@ -49,8 +39,8 @@ public class ThemeMetrics: NSObject {
 
 public class ThemeColors: NSObject {
 
-    /// Primary theme color.
-    public let primary: UIColor
+    /// Primary theme color/brand color.
+    public let brand: UIColor
 
     /// Light text color, used on dark backgrounds.
     public let lightText: UIColor
@@ -113,11 +103,11 @@ public class ThemeColors: NSObject {
     public static let shared = ThemeColors()
 
     public override convenience init() {
-        self.init(bundle: Bundle(for: type(of: self)), traitCollection: nil)
+        self.init(bundle: Bundle.main, traitCollection: nil)
     }
 
     public init(bundle: Bundle, traitCollection: UITraitCollection?) {
-        primary = UIColor(named: "primary", in: bundle, compatibleWith: traitCollection)!
+        brand = UIColor(named: "brand", in: bundle, compatibleWith: traitCollection)!
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
         if #available(iOS 13, *) {
