@@ -321,7 +321,7 @@ public class MapViewController: UIViewController,
     public func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse) {
         let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
         let nav = UINavigationController(rootViewController: searchResults)
-        application.viewRouter.present(nav, from: self, isModalInPresentation: true)
+        application.viewRouter.present(nav, from: self, isModal: true)
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {

@@ -275,7 +275,7 @@ import OBAKitCore
     private lazy var farePayments = FarePayments(application: application, delegate: self)
 
     public func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
-        application.viewRouter.present(viewController, from: self, isModalInPresentation: true)
+        application.viewRouter.present(viewController, from: self, isModal: true)
     }
 
     public func farePayments(_ farePayments: FarePayments, present error: Error) {

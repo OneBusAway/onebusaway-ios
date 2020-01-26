@@ -631,7 +631,7 @@ StopPreferencesDelegate {
         let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
 
         let navigation = application.viewRouter.buildNavigation(controller: bookmarkController)
-        application.viewRouter.present(navigation, from: self, isModalInPresentation: true)
+        application.viewRouter.present(navigation, from: self, isModal: true)
     }
 
     /// Initiates the Route Filter workflow.
@@ -659,7 +659,7 @@ StopPreferencesDelegate {
 
         let reportProblemController = ReportProblemViewController(application: application, stop: stop)
         let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
-        application.viewRouter.present(navigation, from: self, isModalInPresentation: true)
+        application.viewRouter.present(navigation, from: self, isModal: true)
     }
 
     // MARK: - Modal Delegate

@@ -25,17 +25,17 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// Modally presents the specified view controller.
     /// - Parameter presentedController: The modally-presented controller.
     /// - Parameter fromController: The controller that presents `presentedController`.
-    /// - Parameter isModalInPresentation: When running on iOS 13 and above, this is the value that will be set for
+    /// - Parameter isModal: When running on iOS 13 and above, this is the value that will be set for
     ///                                    `presentedController.isModalInPresentation`, which controls whether
     ///                                    a modal view controller can be interactively dismissed by the user. Defaults
     ///                                    to `false`, mirroring iOS's behavior.
     public func present(
         _ presentedController: UIViewController,
         from fromController: UIViewController,
-        isModalInPresentation: Bool = false
+        isModal: Bool = false
     ) {
         if #available(iOS 13.0, *) {
-            presentedController.isModalInPresentation = isModalInPresentation
+            presentedController.isModalInPresentation = isModal
         }
 
         fromController.present(presentedController, animated: true, completion: nil)

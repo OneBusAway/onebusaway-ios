@@ -42,7 +42,7 @@ public extension AgencyAlertListKitConverters where Self: UIViewController {
     func presentAlert(_ alert: AgencyAlert) {
         if let url = alert.URLForLocale(application.locale) {
             let safari = SFSafariViewController(url: url)
-            application.viewRouter.present(safari, from: self, isModalInPresentation: true)
+            application.viewRouter.present(safari, from: self, isModal: true)
         }
         else {
             let title = alert.titleForLocale(application.locale)

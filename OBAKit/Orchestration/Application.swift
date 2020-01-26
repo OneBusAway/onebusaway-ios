@@ -294,7 +294,7 @@ public class Application: NSObject,
         alertBulletin?.showMoreInformationHandler = { url in
             if let topViewController = self.topViewController {
                 let safari = SFSafariViewController(url: url)
-                self.viewRouter.present(safari, from: topViewController, isModalInPresentation: true)
+                self.viewRouter.present(safari, from: topViewController, isModal: true)
             }
             else {
                 self.open(url, options: [:], completionHandler: nil)
