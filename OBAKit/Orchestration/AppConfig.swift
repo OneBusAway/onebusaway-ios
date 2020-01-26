@@ -11,19 +11,9 @@ import CoreLocation
 import OBAKitCore
 
 @objc(OBAAppConfig)
-public class AppConfig: NSObject {
+public class AppConfig: CoreAppConfig {
 
-    let regionsBaseURL: URL
-    let obacoBaseURL: URL?
-    let apiKey: String
-    let appVersion: String
-    let queue: OperationQueue
-    let userDefaults: UserDefaults
-    let locationService: LocationService
     let analytics: Analytics?
-    let bundledRegionsFilePath: String
-    let regionsAPIPath: String
-
     @objc public var pushServiceProvider: PushServiceProvider?
 
     /// Convenience initializer that pulls from the host application's main `Bundle`.
@@ -74,21 +64,17 @@ public class AppConfig: NSObject {
         bundledRegionsFilePath: String,
         regionsAPIPath: String
     ) {
-        self.regionsBaseURL = regionsBaseURL
-        self.obacoBaseURL = obacoBaseURL
-        self.apiKey = apiKey
-        self.appVersion = appVersion
-        self.userDefaults = userDefaults
-        self.queue = queue
-        self.locationService = locationService
         self.analytics = analytics
-        self.bundledRegionsFilePath = bundledRegionsFilePath
-        self.regionsAPIPath = regionsAPIPath
-    }
-
-    // MARK: - Theme
-
-    public var themeBundle: Bundle {
-        return Bundle(for: AppConfig.self)
+        super.init(
+            regionsBaseURL: regionsBaseURL,
+            obacoBaseURL: obacoBaseURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            queue: queue,
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsFilePath,
+            regionsAPIPath: regionsAPIPath
+        )
     }
 }

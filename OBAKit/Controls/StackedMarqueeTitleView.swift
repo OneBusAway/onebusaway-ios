@@ -7,6 +7,7 @@
 
 import UIKit
 import MarqueeLabel
+import OBAKitCore
 
 class StackedMarqueeTitleView: UIView {
     public let topLabel: MarqueeLabel

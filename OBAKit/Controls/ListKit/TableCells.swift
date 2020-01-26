@@ -9,8 +9,9 @@
 import UIKit
 import IGListKit
 import SwipeCellKit
+import OBAKitCore
 
-// MARK: -
+// MARK: - SelfSizing
 
 protocol SelfSizing: NSObjectProtocol {
     func calculateLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes

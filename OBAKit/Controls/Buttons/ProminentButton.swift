@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A button with a background color, designed to give the button more of a tappable affordance.
 class ProminentButton: UIButton {

@@ -52,12 +52,7 @@ public protocol ApplicationDelegate {
 // MARK: - Application Class
 
 @objc(OBAApplication)
-public class Application: NSObject,
-    AgencyAlertsDelegate,
-    LocationServiceDelegate,
-    ObacoServiceDelegate,
-    PushServiceDelegate,
-    RegionsServiceDelegate {
+public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Private Properties
 
@@ -67,51 +62,11 @@ public class Application: NSObject,
 
     // MARK: - Public Properties
 
-    /// Shared user defaults
-    @objc public let userDefaults: UserDefaults
-
-    /// The underlying implementation of our data stores.
-    private let userDefaultsStore: UserDefaultsStore
-
-    /// The data store for information like bookmarks, groups, and recent stops.
-    @objc public var userDataStore: UserDataStore {
-        return userDefaultsStore
-    }
-
-    /// The data store for `StopPreference` data.
-    public var stopPreferencesDataStore: StopPreferencesStore {
-        return userDefaultsStore
-    }
-
-    /// Commonly used formatters configured with the user's current, auto-updating locale and calendar, and the app's theme colors.
-    @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, calendar: Calendar.autoupdatingCurrent, themeColors: ThemeColors.shared)
-
-    /// Provides access to the user's location and heading.
-    @objc public let locationService: LocationService
-
     /// Responsible for figuring out how to navigate between view controllers.
     @objc public lazy var viewRouter = ViewRouter(application: self)
 
-    /// Responsible for managing `Region`s and determining the correct `Region` for the user.
-    @objc public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
-
-    /// Helper property that returns `regionsService.currentRegion`.
-    @objc public var currentRegion: Region? {
-        return regionsService.currentRegion
-    }
-
     /// Responsible for creating stop 'badges' for the map.
     public lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize)
-
-    /// Provides access to the OneBusAway REST API
-    ///
-    /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
-    ///         for more information on the REST API.
-    @objc public private(set) var restAPIModelService: RESTAPIModelService? {
-        didSet {
-            alertsStore.restModelService = restAPIModelService
-        }
-    }
 
     @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
 
@@ -125,11 +80,7 @@ public class Application: NSObject,
 
     @objc public weak var delegate: ApplicationDelegate?
 
-    @objc public let notificationCenter: NotificationCenter
-
     @objc public let reachability = Reachability()
-
-    @objc public let locale = Locale.autoupdatingCurrent
 
     private var locationPermissionBulletin: LocationPermissionBulletin?
 
@@ -137,24 +88,14 @@ public class Application: NSObject,
 
     @objc public init(config: AppConfig) {
         self.config = config
-        userDefaults = config.userDefaults
-        userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
-        locationService = config.locationService
-        analytics = config.analytics
-        notificationCenter = NotificationCenter.default
 
-        super.init()
+        analytics = config.analytics
+
+        super.init(config: config)
 
         configureLogging()
 
         configureAppearanceProxies()
-
-        locationService.addDelegate(self)
-        regionsService.addDelegate(self)
-        alertsStore.addDelegate(self)
-
-        refreshRESTAPIModelService()
-        refreshObacoService()
 
         configureConnectivity()
     }
@@ -450,29 +391,6 @@ public class Application: NSObject,
     }
     // swiftlint:enable function_body_length
 
-    // MARK: - UUID
-
-    private let userUUIDDefaultsKey = "userUUIDDefaultsKey"
-
-    /// A unique (but not personally-identifying) identifier for the current user that is used
-    /// to correlate crash logs and other events to a single person.
-    @objc public var userUUID: String {
-        if let uuid = userDefaults.object(forKey: userUUIDDefaultsKey) as? String {
-            return uuid
-        }
-        else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: userUUIDDefaultsKey)
-            return uuid
-        }
-    }
-
-    // MARK: - Regions Service Internals
-
-    private lazy var regionsAPIService = RegionsAPIService(baseURL: config.regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
-
-    private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
-
     // MARK: - Regions Management
 
     private var regionPickerBulletin: RegionPickerBulletin?
@@ -482,20 +400,6 @@ public class Application: NSObject,
 
         self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
         self.regionPickerBulletin?.show(in: app)
-    }
-
-    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        refreshRESTAPIModelService()
-        refreshObacoService()
-    }
-
-    /// Recreates the `restAPIModelService` from the current region. This is
-    /// called when the app launches and when the current region changes.
-    private func refreshRESTAPIModelService() {
-        guard let region = regionsService.currentRegion else { return }
-
-        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
-        restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
     }
 
     // MARK: - Feature Availability
@@ -548,45 +452,4 @@ public class Application: NSObject,
     /// `.notRunning` means that a feature is available, but not fully configured. This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
     /// `.running` means that the feature is ready to use.
     public lazy var features = FeatureAvailability(config: self.config, application: self)
-
-    // MARK: - Obaco
-
-    @objc public private(set) var obacoService: ObacoModelService? {
-        didSet {
-            notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
-            alertsStore.obacoModelService = obacoService
-        }
-    }
-
-    private var obacoNetworkQueue = OperationQueue()
-
-    public let obacoServiceUpdatedNotification = NSNotification.Name("ObacoServiceUpdatedNotification")
-
-    /// Reloads the Obaco Service stack, including the network queue, api service manager, and model service manager.
-    /// This must be called when the region changes.
-    private func refreshObacoService() {
-        guard
-            let region = regionsService.currentRegion,
-            let baseURL = config.obacoBaseURL
-        else { return }
-
-        obacoNetworkQueue.cancelAllOperations()
-
-        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue, delegate: self)
-        obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
-    }
-
-    // MARK: - Agency Alerts
-
-    public var shouldDisplayRegionalTestAlerts: Bool {
-        return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
-    }
-
-    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
-
-    // MARK: - LocationServiceDelegate
-
-    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        // nop?
-    }
 }

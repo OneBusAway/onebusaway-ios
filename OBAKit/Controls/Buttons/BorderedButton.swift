@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A subclass of `UIButton` that has a rounded, shadowed border.
 public class BorderedButton: UIButton {
