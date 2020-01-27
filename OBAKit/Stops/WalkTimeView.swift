@@ -7,6 +7,7 @@
 
 import UIKit
 import CoreLocation
+import OBAKitCore
 
 /// Designed to slot into an `AloeStackView`, `UITableView`, or `UICollectionView` to give the user
 /// an indication of which vehicles they will be able to catch from the stop they are viewing.

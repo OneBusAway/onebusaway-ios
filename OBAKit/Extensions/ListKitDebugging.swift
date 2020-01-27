@@ -8,6 +8,7 @@
 
 import UIKit
 import IGListKit
+import OBAKitCore
 
 final class LabelSectionController: ListSectionController {
     private var object: String?

@@ -8,6 +8,7 @@
 import Eureka
 import AloeStackView
 import WebKit
+import OBAKitCore
 
 /// Displays the app's third party credits.
 class CreditsViewController: UIViewController, AloeStackTableBuilder {

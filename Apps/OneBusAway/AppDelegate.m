@@ -31,7 +31,7 @@ static const int ddLogLevel = DDLogLevelWarning;
         NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
         [NSURLCache setSharedURLCache:urlCache];
 
-        _userDefaults = [NSUserDefaults standardUserDefaults];
+        _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:NSBundle.mainBundle.appGroup];
         [_userDefaults registerDefaults:@{
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];

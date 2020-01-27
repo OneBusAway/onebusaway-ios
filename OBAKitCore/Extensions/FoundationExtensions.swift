@@ -12,17 +12,11 @@ import Foundation
 
 public extension Bundle {
 
-    private func url(for key: String) -> URL? {
-        guard let address = optionalValue(for: key, type: String.self) else { return nil }
-        return URL(string: address)
-    }
-
-    private func value<T>(for key: String, type: T.Type) -> T {
-        optionalValue(for: key, type: type)!
-    }
-
-    private func optionalValue<T>(for key: String, type: T.Type) -> T? {
-        object(forInfoDictionaryKey: key) as? T
+    /// Returns the App Group value from the OBAKitConfig dictionary in the Info.plist. This value
+    /// is used for sharing data between the main app and its extensions, like the Today View widget.
+    @objc var appGroup: String? {
+        guard let dict = OBAKitConfig else { return nil }
+        return dict["AppGroup"] as? String
     }
 
     /// The display name of the app. e.g. "OneBusAway".
@@ -43,7 +37,7 @@ public extension Bundle {
     /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
     var deepLinkServerBaseAddress: URL? {
         guard
-            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let dict = OBAKitConfig,
             let str = dict["DeepLinkServerBaseAddress"] as? String
         else { return nil }
 
@@ -53,7 +47,7 @@ public extension Bundle {
     /// A helper method for accessing the bundle's `RegionsServerBaseAddress`
     var regionsServerBaseAddress: URL? {
         guard
-            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let dict = OBAKitConfig,
             let str = dict["RegionsServerBaseAddress"] as? String
         else { return nil }
 
@@ -63,7 +57,7 @@ public extension Bundle {
     /// A helper method for accessing the bundle's `RegionsServerAPIPath`
     var regionsServerAPIPath: String? {
         guard
-            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let dict = OBAKitConfig,
             let str = dict["RegionsServerAPIPath"] as? String
         else { return nil }
 
@@ -72,14 +66,14 @@ public extension Bundle {
 
     /// A helper method for accessing the bundle's `OBARESTAPIKey`
     var restServerAPIKey: String? {
-        guard let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self) else { return nil }
+        guard let dict = OBAKitConfig else { return nil }
         return dict["RESTServerAPIKey"] as? String
     }
 
     /// A helper method for accessing the bundle's privacy policy URL
     var privacyPolicyURL: URL? {
         guard
-            let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self),
+            let dict = OBAKitConfig,
             let str = dict["PrivacyPolicyURL"] as? String
         else { return nil }
 
@@ -87,8 +81,27 @@ public extension Bundle {
     }
 
     var appDevelopersEmailAddress: String? {
-        guard let dict = optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self) else { return nil }
+        guard let dict = OBAKitConfig else { return nil }
         return dict["AppDevelopersEmailAddress"] as? String
+    }
+
+    // MARK: - Bundle/Private
+
+    private var OBAKitConfig: [AnyHashable: Any]? {
+        optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self)
+    }
+
+    private func url(for key: String) -> URL? {
+        guard let address = optionalValue(for: key, type: String.self) else { return nil }
+        return URL(string: address)
+    }
+
+    private func value<T>(for key: String, type: T.Type) -> T {
+        optionalValue(for: key, type: type)!
+    }
+
+    private func optionalValue<T>(for key: String, type: T.Type) -> T? {
+        object(forInfoDictionaryKey: key) as? T
     }
 }
 

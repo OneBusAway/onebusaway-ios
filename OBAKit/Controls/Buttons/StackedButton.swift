@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A subclass of `UIControl` that looks like a two row button with an icon on top and a text label below.
 public class StackedButton: UIControl {

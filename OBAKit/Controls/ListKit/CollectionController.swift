@@ -9,6 +9,7 @@
 import UIKit
 import FloatingPanel
 import IGListKit
+import OBAKitCore
 
 public class CollectionController: UIViewController {
     private let application: Application

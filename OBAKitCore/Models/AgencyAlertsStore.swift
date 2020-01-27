@@ -8,7 +8,7 @@
 import Foundation
 
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
-    func agencyAlertsUpdated()
+    @objc optional func agencyAlertsUpdated()
 }
 
 public class AgencyAlertsStore: NSObject {
@@ -180,7 +180,7 @@ public class AgencyAlertsStore: NSObject {
         let delegates = self.delegates.allObjects
         DispatchQueue.main.async {
             for d in delegates {
-                d.agencyAlertsUpdated()
+                d.agencyAlertsUpdated?()
             }
         }
     }
