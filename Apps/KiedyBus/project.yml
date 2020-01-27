@@ -1,5 +1,5 @@
 options:
-  bundleIdPrefix: eu.goeuropa
+  bundleIdPrefix: pl.kiedybus
 
 targets:
   App:
@@ -29,7 +29,7 @@ targets:
       path: Apps/KiedyBus/KiedyBus.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.eu.goeuropa.kiedybus
+          - group.pl.kiedybus.iphone
     info:
       path: Apps/KiedyBus/Info.plist
       properties:
@@ -47,8 +47,8 @@ targets:
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
         NSLocationWhenInUseUsageDescription: Show your location on the map
         NSUserActivityTypes:
-          - eu.goeuropa.kiedybus.user_activity.stop
-          - eu.goeuropa.kiedybus.user_activity.trip
+          - pl.kiedybus.iphone.user_activity.stop
+          - pl.kiedybus.iphone.user_activity.trip
         OBAKitConfig:
           AppDevelopersEmailAddress: info@goeuropa.eu
           PrivacyPolicyURL: https://www.goeuropa.eu
@@ -63,7 +63,7 @@ targets:
     settings:
       base:
         FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
-        PRODUCT_BUNDLE_IDENTIFIER: eu.goeuropa.kiedybus
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
         MARKETING_VERSION: 20.2.0
         
 include:
