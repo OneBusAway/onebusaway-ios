@@ -14,17 +14,19 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
     public let tripID: TripIdentifier
     public let serviceDate: Date
     public let stopSequence: Int
+    public let vehicleID: String?
 
     public convenience init(arrivalDeparture: ArrivalDeparture) {
-        self.init(title: arrivalDeparture.routeAndHeadsign, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence)
+        self.init(title: arrivalDeparture.routeAndHeadsign, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
     }
 
-    public init(title: String, stopID: String, tripID: String, serviceDate: Date, stopSequence: Int) {
+    public init(title: String, stopID: String, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
         self.title = title
         self.stopID = stopID
         self.tripID = tripID
         self.serviceDate = serviceDate
         self.stopSequence = stopSequence
+        self.vehicleID = vehicleID
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -34,7 +36,8 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
             stopID == rhs.stopID &&
             tripID == rhs.tripID &&
             serviceDate == rhs.serviceDate &&
-            stopSequence == rhs.stopSequence
+            stopSequence == rhs.stopSequence &&
+            vehicleID == rhs.vehicleID
     }
 
     override public var hash: Int {
@@ -44,6 +47,7 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
         hasher.combine(tripID)
         hasher.combine(serviceDate)
         hasher.combine(stopSequence)
+        hasher.combine(vehicleID)
         return hasher.finalize()
     }
 }

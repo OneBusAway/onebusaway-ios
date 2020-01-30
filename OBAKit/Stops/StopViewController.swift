@@ -582,6 +582,8 @@ StopPreferencesDelegate {
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
+        application.userDataStore.add(alarm: alarm)
+
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
         SVProgressHUD.showSuccessAndDismiss(message: message)
     }

@@ -73,6 +73,30 @@ public class RecentStopsViewController: UIViewController,
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
+        let alarms = application.userDataStore.alarms
+        if alarms.count > 0 {
+            let rows = alarms.compactMap { [weak self] a -> TableRowData? in
+                guard let deepLink = a.deepLink else { return nil }
+                return TableRowData(title: deepLink.title, accessoryType: .disclosureIndicator) { _ in
+                    guard
+                        let self = self,
+                        let modelService = self.application.restAPIModelService
+                    else { return }
+
+                    SVProgressHUD.show()
+
+                    let op = modelService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
+                    op.then {
+                        SVProgressHUD.dismiss()
+                        guard let arrDep = op.arrivalDeparture else { return }
+                        self.application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
+                    }
+                }
+            }
+            let section = TableSectionData(title: OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller"), rows: rows)
+            sections.append(section)
+        }
+
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
@@ -88,6 +112,7 @@ public class RecentStopsViewController: UIViewController,
             }
 
             let section = tableSection(stops: stops, tapped: tapHandler, deleted: deleteHandler)
+            section.title = alarms.count == 0 ? nil : Strings.recentStops
             sections.append(section)
         }
 
