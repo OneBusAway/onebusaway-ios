@@ -59,6 +59,10 @@
 		en = OK
 		comment = OK
 		pl = OK
+	[common.recent_stops]
+		en = Recent Stops
+		comment = i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station.
+		pl = Ostatnie przystanki
 	[common.refresh]
 		en = Refresh
 		comment = The verb 'refresh', as in 'reload'.

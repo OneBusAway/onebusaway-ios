@@ -10,7 +10,7 @@
 "add_bookmark_controller.bookmark_stop_header" = "Dodaj przystanek do ulubionych";
 
 /* Text for the table header for bookmarking an individual trip. */
-"add_bookmark_controller.bookmark_trip_header" = "Bookmark a Trip";
+"add_bookmark_controller.bookmark_trip_header" = "Dodaj kurs do zakładek";
 
 /* Title for the Add Bookmark view controller. */
 "add_bookmark_controller.title" = "Dodaj zakładkę";
@@ -440,9 +440,6 @@
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Szybkie wyszukiwanie";
-
-/* Title of the Recent Stops search header */
-"search_controller.recent_stops.header" = "Ostatnie przystanki";
 
 /* Quick search prefix for Address. */
 "search_interactor.quick_search.address_prefix" = "Adres:";

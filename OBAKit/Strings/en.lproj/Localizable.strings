@@ -441,9 +441,6 @@
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Quick Search";
 
-/* Title of the Recent Stops search header */
-"search_controller.recent_stops.header" = "Recent Stops";
-
 /* Quick search prefix for Address. */
 "search_interactor.quick_search.address_prefix" = "Address:";
 

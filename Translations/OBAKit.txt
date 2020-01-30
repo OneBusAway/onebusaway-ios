@@ -579,10 +579,6 @@
 		en = Quick Search
 		comment = Quick Search section header in search
 		pl = Szybkie wyszukiwanie
-	[search_controller.recent_stops.header]
-		en = Recent Stops
-		comment = Title of the Recent Stops search header
-		pl = Ostatnie przystanki
 	[search_interactor.quick_search.address_prefix]
 		en = Address:
 		comment = Quick search prefix for Address.
