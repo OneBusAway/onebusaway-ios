@@ -93,6 +93,8 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
+        SVProgressHUD.show()
+
         pushService.requestPushID { [weak self] userPushID in
             guard let self = self else { return }
 
@@ -101,7 +103,10 @@ class AlarmBuilder: NSObject {
                 guard
                     let self = self,
                     let delegate = self.delegate
-                else { return }
+                else {
+                    SVProgressHUD.dismiss()
+                    return
+                }
 
                 if let alarm = op.alarm {
                     delegate.alarmBuilder(self, alarmCreated: alarm)
