@@ -109,6 +109,21 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The maximum number of recent stops that will be stored.
     var maximumRecentStopsCount: Int { get }
 
+    // MARK: - Alarms
+
+    /// All currently-known and registered `Alarm`s.
+    var alarms: [Alarm] { get }
+
+    /// Store a new alarm.
+    /// - Note: Calling this method does not register your `Alarm`.
+    /// - Parameter alarm: The alarm object to store.
+    func add(alarm: Alarm)
+
+    /// Delete an alarm.
+    /// - Note: Calling this method does not deregister your `Alarm`.
+    /// - Parameter alarm: The alarm object to delete.
+    func delete(alarm: Alarm)
+
     // MARK: - View State/Last Selected Tab
 
     /// Stores the last selected tab that the user viewed.
@@ -140,12 +155,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     let userDefaults: UserDefaults
 
     enum UserDefaultsKeys: String {
-        case debugMode
+        case alarms
         case bookmarks
         case bookmarkGroups
+        case debugMode
+        case lastSelectedView
         case recentStops
         case stopPreferences
-        case lastSelectedView
     }
 
     public init(userDefaults: UserDefaults) {
@@ -357,6 +373,25 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func findRecentStops(matching searchText: String) -> [Stop] {
         let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return recentStops.filter { $0.matchesQuery(cleanedText) }
+    }
+
+    // MARK: - Alarms
+
+    public var alarms: [Alarm] {
+        get {
+            return decodeUserDefaultsObjects(type: [Alarm].self, key: .alarms) ?? []
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: .alarms) // swiftlint:disable:this force_try
+        }
+    }
+
+    public func add(alarm: Alarm) {
+        alarms.append(alarm)
+    }
+
+    public func delete(alarm: Alarm) {
+        alarms.removeAll { $0 == alarm }
     }
 
     // MARK: - Stop Preferences
