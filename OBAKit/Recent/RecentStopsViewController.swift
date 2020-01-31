@@ -47,6 +47,8 @@ public class RecentStopsViewController: UIViewController,
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        application.userDataStore.deleteExpiredAlarms()
+
         collectionController.reload(animated: false)
     }
 
@@ -73,6 +75,39 @@ public class RecentStopsViewController: UIViewController,
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
+        let alarms = application.userDataStore.alarms
+        if alarms.count > 0 {
+            let rows = alarms.compactMap { [weak self] a -> TableRowData? in
+                guard let deepLink = a.deepLink else { return nil }
+                let rowData = TableRowData(title: deepLink.title, accessoryType: .disclosureIndicator) { _ in
+                    guard
+                        let self = self,
+                        let modelService = self.application.restAPIModelService
+                    else { return }
+
+                    SVProgressHUD.show()
+
+                    let op = modelService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
+                    op.then {
+                        SVProgressHUD.dismiss()
+                        guard let arrDep = op.arrivalDeparture else { return }
+                        self.application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
+                    }
+                }
+
+                rowData.deleted = { [weak self] _ in
+                    guard let self = self else { return }
+                    _ = self.application.obacoService?.deleteAlarm(alarm: a)
+                    self.application.userDataStore.delete(alarm: a)
+                    self.collectionController.reload(animated: true)
+                }
+
+                return rowData
+            }
+            let section = TableSectionData(title: OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller"), rows: rows)
+            sections.append(section)
+        }
+
         let stops = application.userDataStore.recentStops
 
         if stops.count > 0 {
@@ -88,6 +123,7 @@ public class RecentStopsViewController: UIViewController,
             }
 
             let section = tableSection(stops: stops, tapped: tapHandler, deleted: deleteHandler)
+            section.title = alarms.count == 0 ? nil : Strings.recentStops
             sections.append(section)
         }
 

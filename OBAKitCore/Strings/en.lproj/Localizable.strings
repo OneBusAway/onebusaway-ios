@@ -51,6 +51,9 @@
 /* OK */
 "common.ok" = "OK";
 
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Recent Stops";
+
 /* The verb 'refresh', as in 'reload'. */
 "common.refresh" = "Refresh";
 

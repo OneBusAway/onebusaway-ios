@@ -67,7 +67,7 @@ class SearchInteractor: NSObject {
             return nil
         }
 
-        return TableSectionData(title: OBALoc("search_controller.recent_stops.header", value: "Recent Stops", comment: "Title of the Recent Stops search header"), rows: recentStops)
+        return TableSectionData(title: Strings.recentStops, rows: recentStops)
     }
 
     private func buildBookmarksSection(searchText: String) -> TableSectionData? {

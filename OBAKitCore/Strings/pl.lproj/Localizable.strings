@@ -28,7 +28,7 @@
 "common.dismiss" = "Odwołaj";
 
 /* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
-"common.done" = "Done";
+"common.done" = "Gotowe";
 
 /* The verb 'to edit', as in to change or modify something. Used as a button title. */
 "common.edit" = "Edytować";
@@ -50,6 +50,9 @@
 
 /* OK */
 "common.ok" = "OK";
+
+/* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
+"common.recent_stops" = "Ostatnie przystanki";
 
 /* The verb 'refresh', as in 'reload'. */
 "common.refresh" = "Odśwież";

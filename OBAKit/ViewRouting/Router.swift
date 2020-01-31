@@ -63,6 +63,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: stopController, from: fromController)
     }
 
+    public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
+        let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
+        navigate(to: tripController, from: fromController)
+    }
+
     // MARK: - Helpers
 
     /// Creates and configures a `UINavigationController` for the specified controller, setting some preferred options along the way.

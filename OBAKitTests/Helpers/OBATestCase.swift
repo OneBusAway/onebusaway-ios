@@ -170,6 +170,12 @@ public extension OBATestCase {
 // MARK: - Fixture Loading
 
 public extension OBATestCase {
+
+    func loadAlarm(id: String = "1234567890", region: String = "1") throws -> Alarm {
+        let dict = ["url": String(format: "http://alerts.example.com/regions/%@/alarms/%@", region, id)]
+        return try DictionaryDecoder().decode(Alarm.self, from: dict)
+    }
+
     func loadSomeStops() throws -> [Stop] {
         return try Stop.decodeFromFile(named: "stops_for_location_seattle.json", in: Bundle(for: type(of: self)))
     }
