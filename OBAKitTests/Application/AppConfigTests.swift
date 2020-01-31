@@ -36,7 +36,7 @@ class AppConfigTests: OBATestCase {
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
         let analytics = AnalyticsMock()
-        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService)
+        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath)
 
         expect(appConfig.regionsBaseURL) == regionsBaseURL
         expect(appConfig.obacoBaseURL) == obacoBaseURL

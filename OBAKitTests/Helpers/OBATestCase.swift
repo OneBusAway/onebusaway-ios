@@ -104,6 +104,10 @@ public extension OBATestCase {
         return "regions.example.com"
     }
 
+    var regionsPath: String {
+        return "/regions-v3.json"
+    }
+
     var regionsURLString: String {
         return "https://\(regionsHost)"
     }
@@ -118,6 +122,16 @@ public extension OBATestCase {
 
     var regionsAPIService: RegionsAPIService {
         return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+
+    var bundledRegionsPath: String {
+        let bundle = Bundle.main
+        let path = bundle.path(forResource: "regions", ofType: "json")
+        return path!
+    }
+
+    var regionsAPIPath: String {
+        "/regions-v3.json"
     }
 }
 

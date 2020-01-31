@@ -77,13 +77,13 @@ class RegionsServiceTests: OBATestCase {
     // MARK: - OHHTTPStubs
 
     private func stubRegionsJustPugetSound() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+        stub(condition: isHost(self.regionsHost) && isPath(self.regionsPath)) { _ in
             return OHHTTPStubsResponse.JSONFile(named: "regions-just-puget-sound.json")
         }
     }
 
     private func stubRegions() {
-        stub(condition: isHost(self.regionsHost) && isPath(RegionsOperation.apiPath)) { _ in
+        stub(condition: isHost(self.regionsHost) && isPath(self.regionsPath)) { _ in
             return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
         }
     }
@@ -92,9 +92,9 @@ class RegionsServiceTests: OBATestCase {
 
     // It loads bundled regions from its framework when no other data exists
     func test_init_loadsBundledRegions() {
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
-        expect(regionsService.regions.count) == 12
+        expect(regionsService.regions.count) == 13
     }
 
     // It loads regions saved to the user defaults when they exist
@@ -103,7 +103,7 @@ class RegionsServiceTests: OBATestCase {
         let plistData = try! PropertyListEncoder().encode([customRegion])
         userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
 
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
         expect(regionsService.regions.first!.name) == "Custom Region"
         expect(regionsService.regions.count) == 1
@@ -119,7 +119,7 @@ class RegionsServiceTests: OBATestCase {
         let plistData = try! PropertyListEncoder().encode(customRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
 
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
         expect(regionsService.currentRegion) == customRegion
     }
@@ -129,7 +129,7 @@ class RegionsServiceTests: OBATestCase {
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
         locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
 
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
         expect(regionsService.currentRegion!.name) == "Puget Sound"
     }
@@ -147,7 +147,7 @@ class RegionsServiceTests: OBATestCase {
             }
             self.testDelegate.updatedRegionsListCallbacks.append(callback)
 
-            regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+            regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, bundledRegionsFilePath: self.bundledRegionsPath, apiPath: self.regionsAPIPath, delegate: self.testDelegate)
         }
     }
 
@@ -156,11 +156,11 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound()
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
         waitUntil { done in
             self.testDelegate.regionUpdateCancelledCallbacks.append {
-                expect(regionsService.regions.count) == 12
+                expect(regionsService.regions.count) == 13
                 done()
             }
             regionsService.updateRegionsList()
@@ -172,7 +172,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound()
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
         waitUntil { done in
             self.testDelegate.updatedRegionsListCallbacks.append {
@@ -190,7 +190,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound()
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
         waitUntil { done in
             self.testDelegate.updatedRegionsListCallbacks.append {
@@ -206,14 +206,14 @@ class RegionsServiceTests: OBATestCase {
     /// It loads the bundled regions when the data in the user defaults is corrupted.
     func test_corruptedDefaults() {
         self.userDefaults.set(["hello world!"], forKey: RegionsService.storedRegionsUserDefaultsKey)
-        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
-        expect(regionsService.regions.count) == 12
+        expect(regionsService.regions.count) == 13
     }
 
     /// It calls delegates to tell them that the current region is updated when that property is written.
     func test_regionUpdated_notifications() {
-        let regionsService = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
         let newRegion = customMinneapolisRegion
 
@@ -243,7 +243,7 @@ class RegionsServiceTests: OBATestCase {
                 expect(service.regions.first!.name) == "Puget Sound"
                 done()
             }
-            service = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, delegate: self.testDelegate)
+            service = RegionsService(modelService: self.regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, bundledRegionsFilePath: self.bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
         }
     }
 

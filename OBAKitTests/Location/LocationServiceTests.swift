@@ -75,6 +75,7 @@ class LocationServiceTests: XCTestCase {
     func test_updateLocation_withLowAccuracy_doesNotTriggerUpdates() {
         let locationManagerMock = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let service = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
+        service.successiveLocationComparisonWindow = 60.0
         let locManager = CLLocationManager()
 
         expect(service.currentLocation).to(beNil())

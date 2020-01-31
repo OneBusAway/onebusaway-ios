@@ -31,6 +31,14 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private let bundledRegionsFilePath: String
     private let apiPath: String
 
+    /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
+    /// - Parameters:
+    ///   - modelService: Retrieves new data from the region server and turns it into models.
+    ///   - locationService: A location service object.
+    ///   - userDefaults: The user defaults object.
+    ///   - bundledRegionsFilePath: The path to the bundled regions file. It is probably named "regions.json" or something similar.
+    ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
+    ///   - delegate: A delegate object for callbacks.
     public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String, delegate: RegionsServiceDelegate? = nil) {
         self.modelService = modelService
         self.locationService = locationService
