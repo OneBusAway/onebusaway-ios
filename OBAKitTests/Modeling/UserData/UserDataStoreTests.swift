@@ -107,6 +107,46 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.recentStops.count) == (stops.count - 1)
     }
 
+    // MARK: - Alarms
+
+    func test_alarms_deleteMissingTripDate() {
+        let missingDataAlarm = try! loadAlarm(id: "1")
+
+        let futureAlarm = try! loadAlarm(id: "2")
+        futureAlarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+
+        userDefaultsStore.add(alarm: missingDataAlarm)
+        userDefaultsStore.add(alarm: futureAlarm)
+
+        let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
+        expect(IDs1) == ["1", "2"]
+
+        userDefaultsStore.deleteExpiredAlarms()
+
+        let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
+        expect(IDs2) == ["2"]
+
+    }
+
+    func test_alarms_deleteExpired() {
+        let expiredAlarm = try! loadAlarm(id: "1")
+        expiredAlarm.set(tripDate: Date(timeIntervalSinceReferenceDate: 0), alarmOffset: 5)
+
+        let futureAlarm = try! loadAlarm(id: "2")
+        futureAlarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
+
+        userDefaultsStore.add(alarm: expiredAlarm)
+        userDefaultsStore.add(alarm: futureAlarm)
+
+        let IDs1 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
+        expect(IDs1) == ["1", "2"]
+
+        userDefaultsStore.deleteExpiredAlarms()
+
+        let IDs2 = userDefaultsStore.alarms.map({ String($0.url.absoluteString.split(separator: "/").last!) }).sorted()
+        expect(IDs2) == ["2"]
+    }
+
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {

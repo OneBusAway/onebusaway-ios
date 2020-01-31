@@ -66,6 +66,6 @@ public class Alarm: NSObject, Codable {
 
     public func set(tripDate: Date, alarmOffset minutes: Int) {
         self.tripDate = tripDate
-        self.alarmDate = tripDate.addingTimeInterval(TimeInterval(minutes * -60))
+        self.alarmDate = tripDate.addingTimeInterval(TimeInterval(abs(minutes) * -60))
     }
 }

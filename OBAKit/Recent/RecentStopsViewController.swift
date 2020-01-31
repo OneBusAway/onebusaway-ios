@@ -75,13 +75,6 @@ public class RecentStopsViewController: UIViewController,
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
 
-        /* abxoxo - next up:
-            X. Show Alarms
-            X. Ability to tap to view their trip
-            3. Swipe to delete an alarm, including deregistration.
-            4. Remove the alarm from the user data store if its scheduled time has elapsed. (viewwillappear)
-        */
-
         let alarms = application.userDataStore.alarms
         if alarms.count > 0 {
             let rows = alarms.compactMap { [weak self] a -> TableRowData? in
