@@ -4,7 +4,10 @@ app = ARGV[0]
 
 if app.nil?
   display_usage_information()
-  exit
+  puts ""
+  puts "Defaulting to OneBusAway."
+  app = "OneBusAway"
+  puts ""
 end
 
 check_for_project_file(app)
