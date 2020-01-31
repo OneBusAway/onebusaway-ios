@@ -62,7 +62,7 @@ class RegionsEncodingTests: OBATestCase {
         expect(tampaRT.paymentiOSAppStoreIdentifier) == "1140553099"
         expect(tampaRT.paymentiOSAppURLScheme) == "fb313213768708402HART"
 
-        let open311 = tampaRT.open311Servers.first!
+        let open311 = tampaRT.open311Servers!.first!
         expect(open311.jurisdictionID).to(beNil())
         expect(open311.apiKey) == "937033cad3054ec58a1a8156dcdd6ad8a416af2f"
         expect(open311.baseURL) == URL(string: "https://seeclickfix.com/open311/v2/")!

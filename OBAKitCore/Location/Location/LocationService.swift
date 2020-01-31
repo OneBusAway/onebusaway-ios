@@ -206,7 +206,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         authorizationStatus = status
     }
 
-    private let kSuccessiveLocationComparisonWindow = 3.0
+    public var successiveLocationComparisonWindow: TimeInterval = 60.0
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else {
@@ -223,7 +223,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         // completed before cell-tower-localization.  We want to ignore the low-accuracy
         // reading.
         let interval = newLocation.timestamp.timeIntervalSince(currentLocation.timestamp)
-        if interval < kSuccessiveLocationComparisonWindow && currentLocation.horizontalAccuracy < newLocation.horizontalAccuracy {
+        if interval < successiveLocationComparisonWindow && currentLocation.horizontalAccuracy < newLocation.horizontalAccuracy {
             DDLogInfo("Pruning location reading with low accuracy.")
             return
         }
