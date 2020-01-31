@@ -111,6 +111,9 @@ public protocol UserDataStore: NSObjectProtocol {
 
     // MARK: - Alarms
 
+    /// Deletes (but does not deregister) all `Alarm`s that have arrived/departed.
+    func deleteExpiredAlarms()
+
     /// All currently-known and registered `Alarm`s.
     var alarms: [Alarm] { get }
 
@@ -376,6 +379,19 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     // MARK: - Alarms
+
+    public func deleteExpiredAlarms() {
+        let now = Date()
+
+        for a in alarms {
+            if a.tripDate == nil {
+                delete(alarm: a)
+            }
+            else if let tripDate = a.tripDate, tripDate < now {
+                delete(alarm: a)
+            }
+        }
+    }
 
     public var alarms: [Alarm] {
         get {

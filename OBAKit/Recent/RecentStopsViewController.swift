@@ -47,6 +47,8 @@ public class RecentStopsViewController: UIViewController,
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        application.userDataStore.deleteExpiredAlarms()
+
         collectionController.reload(animated: false)
     }
 
@@ -72,6 +74,13 @@ public class RecentStopsViewController: UIViewController,
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
+
+        /* abxoxo - next up:
+            X. Show Alarms
+            X. Ability to tap to view their trip
+            3. Swipe to delete an alarm, including deregistration.
+            4. Remove the alarm from the user data store if its scheduled time has elapsed. (viewwillappear)
+        */
 
         let alarms = application.userDataStore.alarms
         if alarms.count > 0 {

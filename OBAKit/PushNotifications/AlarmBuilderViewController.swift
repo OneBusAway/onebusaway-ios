@@ -110,6 +110,7 @@ class AlarmBuilder: NSObject {
 
                 if let alarm = op.alarm {
                     alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture)
+                    alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
                     delegate.alarmBuilder(self, alarmCreated: alarm)
                 }
                 else {
