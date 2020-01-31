@@ -7,3 +7,7 @@ targets:
       - target: App
       - carthage: Nimble
       - carthage: OHHTTPStubs
+    info:
+      path: "Info.plist"
+      properties:
+        NSPrincipalClass: OBAKitTests.OBAKitTestsSetup
