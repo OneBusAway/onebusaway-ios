@@ -101,7 +101,7 @@ public class DeepLinkRouter: NSObject {
     public var showArrivalDepartureDeepLink: ((ArrivalDepartureDeepLink) -> Void)?
 
     public func route(userActivity: NSUserActivity) -> Bool {
-        DDLogInfo("DeepLinkRouter.route: \(String(describing: userActivity.webpageURL))")
+        DDLogInfo("DeepLinkRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
 
         switch userActivity.activityType {
         case NSUserActivityTypeBrowsingWeb:
@@ -110,7 +110,7 @@ public class DeepLinkRouter: NSObject {
             }
             return route(url: url)
         case application.userActivityBuilder.stopActivityType:
-            return routeTrip(userActivity: userActivity)
+            return routeStop(userActivity: userActivity)
         case application.userActivityBuilder.tripActivityType:
             return routeTrip(userActivity: userActivity)
         default:
@@ -156,7 +156,7 @@ public class DeepLinkRouter: NSObject {
         guard let userInfo = userActivity.userInfo else {
             return false
         }
-        print("🎉 trip activity: \(userInfo)")
+        print("🎉 abxoxo - trip activity: \(userInfo)")
         return true
     }
 }

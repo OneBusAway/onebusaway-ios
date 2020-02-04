@@ -77,9 +77,12 @@ public class Application: CoreApplication, PushServiceDelegate {
     @objc public private(set) lazy var deepLinkRouter: DeepLinkRouter? = {
         let router = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
         router?.showStopHandler = { [weak self] stop in
-            guard let self = self else { return }
+            guard
+                let self = self,
+                let topVC = self.topViewController
+            else { return }
 
-            print("Bonk! Show stop: \(stop)")
+            self.viewRouter.navigateTo(stop: stop, from: topVC)
         }
 
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
