@@ -679,6 +679,9 @@
 		en = Service Alerts
 		comment = The header for the Service Alerts section of the stops controller.
 		pl = Komunikaty o stanie sieci
+	[stop_controller.share_trip]
+		en = Share Trip
+		comment = Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.)
 	[stop_preferences_controller.routes_section.header_title]
 		en = Routes
 		comment = Title of the Routes section

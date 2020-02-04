@@ -552,6 +552,13 @@ StopPreferencesDelegate {
             self.addBookmark(arrivalDeparture: arrivalDeparture)
         }
 
+        if application.features.deepLinking == .running {
+            actionSheet.addAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.)")) { [weak self] _ in
+                guard let self = self else { return }
+                self.shareTripStatus(arrivalDeparture: arrivalDeparture)
+            }
+        }
+
         actionSheet.addAction(UIAlertAction.cancelAction)
 
         application.viewRouter.present(actionSheet, from: self)
@@ -612,6 +619,22 @@ StopPreferencesDelegate {
         viewController.dismiss(animated: true) {
             SVProgressHUD.showSuccessAndDismiss(message: nil, dismissAfter: 1.0)
         }
+    }
+
+    // MARK: - Share Trip Status
+
+    func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
+        guard
+            let region = application.currentRegion,
+            let deepLinkRouter = application.deepLinkRouter
+        else {
+            return
+        }
+
+        let url = deepLinkRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
+
+        let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
+        application.viewRouter.present(activityController, from: self, isModal: true)
     }
 
     // MARK: - Actions

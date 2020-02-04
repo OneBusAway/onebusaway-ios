@@ -10,18 +10,20 @@ import Foundation
 @objc(OBAArrivalDepartureDeepLink)
 public class ArrivalDepartureDeepLink: NSObject, Codable {
     public let title: String
+    public let regionID: Int
     public let stopID: String
     public let tripID: TripIdentifier
     public let serviceDate: Date
     public let stopSequence: Int
     public let vehicleID: String?
 
-    public convenience init(arrivalDeparture: ArrivalDeparture) {
-        self.init(title: arrivalDeparture.routeAndHeadsign, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
+    public convenience init(arrivalDeparture: ArrivalDeparture, regionID: Int) {
+        self.init(title: arrivalDeparture.routeAndHeadsign, regionID: regionID, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
     }
 
-    public init(title: String, stopID: String, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
+    public init(title: String, regionID: Int, stopID: String, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
         self.title = title
+        self.regionID = regionID
         self.stopID = stopID
         self.tripID = tripID
         self.serviceDate = serviceDate
@@ -37,7 +39,8 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
             tripID == rhs.tripID &&
             serviceDate == rhs.serviceDate &&
             stopSequence == rhs.stopSequence &&
-            vehicleID == rhs.vehicleID
+            vehicleID == rhs.vehicleID &&
+            regionID == rhs.regionID
     }
 
     override public var hash: Int {
@@ -48,6 +51,7 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
         hasher.combine(serviceDate)
         hasher.combine(stopSequence)
         hasher.combine(vehicleID)
+        hasher.combine(regionID)
         return hasher.finalize()
     }
 }

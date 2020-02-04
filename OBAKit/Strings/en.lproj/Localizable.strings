@@ -516,6 +516,9 @@
 /* The header for the Service Alerts section of the stops controller. */
 "stop_controller.service_alerts_header" = "Service Alerts";
 
+/* Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
+"stop_controller.share_trip" = "Share Trip";
+
 /* Title of the Routes section */
 "stop_preferences_controller.routes_section.header_title" = "Routes";
 

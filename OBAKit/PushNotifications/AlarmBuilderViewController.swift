@@ -88,7 +88,8 @@ class AlarmBuilder: NSObject {
     private func createAlarm(minutes: Int) {
         guard
             let modelService = application.obacoService,
-            let pushService = application.pushService
+            let pushService = application.pushService,
+            let currentRegion = application.currentRegion
         else { return }
 
         let arrivalDeparture = self.arrivalDeparture
@@ -109,7 +110,7 @@ class AlarmBuilder: NSObject {
                 }
 
                 if let alarm = op.alarm {
-                    alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture)
+                    alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
                     alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
                     delegate.alarmBuilder(self, alarmCreated: alarm)
                 }
