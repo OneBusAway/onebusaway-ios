@@ -66,12 +66,28 @@ class TripViewController: UIViewController,
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
         disableIdleTimer()
+        beginUserActivity()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+    }
+
+    // MARK: - NSUserActivity
+
+    /// Creates and assigns an `NSUserActivity` object corresponding to this trip.
+    private func beginUserActivity() {
+        guard
+            let region = application.regionsService.currentRegion,
+            let activity = application.userActivityBuilder.userActivity(for: tripConvertible, region: region)
+        else {
+            return
+        }
+
+        self.userActivity = activity
     }
 
     // MARK: - Idle Timer

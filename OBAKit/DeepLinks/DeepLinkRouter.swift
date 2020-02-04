@@ -86,7 +86,7 @@ public class DeepLinkRouter: NSObject {
             return nil
         }
 
-        let title = components.queryItem(named: "title")?.value ?? "ABXOXO TODO TITLE FOR TRIP DEEP LINK"
+        let title = components.queryItem(named: "title")?.value ?? "???"
         let serviceDate = Date(timeIntervalSince1970: serviceDateScalar)
         let vehicleID = components.queryItem(named: "vehicle_id")?.value
 
@@ -153,10 +153,10 @@ public class DeepLinkRouter: NSObject {
     }
 
     private func routeTrip(userActivity: NSUserActivity) -> Bool {
-        guard let userInfo = userActivity.userInfo else {
+        guard let url = userActivity.webpageURL else {
             return false
         }
-        print("🎉 abxoxo - trip activity: \(userInfo)")
-        return true
+
+        return route(url: url)
     }
 }
