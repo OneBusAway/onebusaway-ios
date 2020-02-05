@@ -136,9 +136,7 @@ public extension MeasurementFormatter {
         let temp = Measurement(value: temperature, unit: unit)
         let formatter = MeasurementFormatter()
         formatter.locale = locale
-        formatter.unitStyle = .short
-        formatter.numberFormatter.usesSignificantDigits = false
-        formatter.numberFormatter.maximumSignificantDigits = 0
+        formatter.numberFormatter.maximumFractionDigits = 0
 
         var formattedTemp = formatter.string(from: temp)
 
