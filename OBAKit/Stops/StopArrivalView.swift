@@ -133,6 +133,9 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         button.setImage(Icons.showMore, for: .normal)
         button.addTarget(self, action: #selector(actionsButtonTapped), for: .touchUpInside)
         button.setContentHuggingPriority(.required, for: .horizontal)
+        NSLayoutConstraint.activate([
+            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+        ])
         return button
     }()
 
