@@ -53,13 +53,9 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         fromController.navigationController?.pushViewController(viewController, animated: true)
     }
 
-    public func navigateTo(stopID: String, from fromController: UIViewController) {
-        let stopController = StopViewController(application: application, stopID: stopID)
-        navigate(to: stopController, from: fromController)
-    }
-
-    public func navigateTo(stop: Stop, from fromController: UIViewController) {
+    public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
         let stopController = StopViewController(application: application, stop: stop)
+        stopController.bookmarkContext = bookmark
         navigate(to: stopController, from: fromController)
     }
 

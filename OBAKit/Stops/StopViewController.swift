@@ -42,6 +42,8 @@ StopPreferencesDelegate {
 
     let stopID: String
 
+    public var bookmarkContext: Bookmark?
+
     let minutesBefore: UInt = 5
     static let defaultMinutesAfter: UInt = 35
     var minutesAfter: UInt = StopViewController.defaultMinutesAfter
@@ -273,6 +275,8 @@ StopPreferencesDelegate {
 
     // MARK: - Data Loading
 
+    private var errorBulletin: ErrorBulletin?
+
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {
         operation?.cancel()
@@ -284,6 +288,16 @@ StopPreferencesDelegate {
         let op = modelService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         op.then { [weak self] in
             guard let self = self else { return }
+
+            if op.apiOperation?.isEffective404 ?? false, self.bookmarkContext != nil, let uiApp = self.application.delegate?.uiApplication {
+
+                let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+                self.errorBulletin = ErrorBulletin(application: self.application, message: message)
+                self.errorBulletin?.show(in: uiApp)
+            }
+            else if let error = op.error {
+                print("TODO! Handle me better: \(error)")
+            }
 
             self.lastUpdated = Date()
             self.stopArrivals = op.stopArrivals
