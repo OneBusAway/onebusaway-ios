@@ -60,7 +60,8 @@ class LocationPermissionItem: BLTNPageItem {
 
         isDismissable = false
 
-        image = Icons.nearMe
+        let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.brand)
+        image = squircleRenderer.drawImageOnRoundedRect(Icons.nearMe)
 
         descriptionText = OBALoc("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
 

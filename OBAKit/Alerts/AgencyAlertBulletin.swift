@@ -25,6 +25,9 @@ class AgencyAlertBulletin: NSObject {
         alertPage = BLTNPageItem(title: title)
         alertPage.descriptionText = agencyAlert.bodyForLocale(locale)
 
+        let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)
+        alertPage.image = squircleRenderer.drawImageOnRoundedRect(Icons.errorOutline)
+
         bulletinManager = BLTNItemManager(rootItem: alertPage)
 
         super.init()

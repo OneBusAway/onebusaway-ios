@@ -23,7 +23,8 @@ class ReachabilityBulletin: NSObject {
         super.init()
 
         connectivityPage.isDismissable = true
-        connectivityPage.image = Icons.noInternet
+        let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)
+        connectivityPage.image = squircleRenderer.drawImageOnRoundedRect(Icons.noInternet)
         connectivityPage.actionButtonTitle = Strings.dismiss
         connectivityPage.actionHandler = { [weak self] _ in
             self?.dismiss()

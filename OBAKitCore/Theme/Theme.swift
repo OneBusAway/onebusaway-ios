@@ -100,6 +100,8 @@ public class ThemeColors: NSObject {
 
     public let systemFill: UIColor
 
+    public let errorColor: UIColor
+
     public static let shared = ThemeColors()
 
     public override convenience init() {
@@ -132,6 +134,7 @@ public class ThemeColors: NSObject {
             stopArrowFillColor = .systemRed
             systemFill = .systemFill
             lightText = .lightText
+            errorColor = .systemRed
         }
         else {
             departureEarly = UIColor(hex: "fc3f3b")!
@@ -155,6 +158,7 @@ public class ThemeColors: NSObject {
             stopArrowFillColor = .red
             systemFill = UIColor(white: 0.9, alpha: 1)
             lightText = .white
+            errorColor = .red
         }
     }
 }

@@ -23,7 +23,9 @@ class ErrorBulletin: NSObject {
         page.descriptionText = message
 
         page.isDismissable = false
-        page.image = image ?? Icons.errorOutline
+
+        let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)
+        page.image = squircleRenderer.drawImageOnRoundedRect(image ?? Icons.errorOutline)
 
         bulletinManager = BLTNItemManager(rootItem: page)
 
