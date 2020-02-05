@@ -119,170 +119,6 @@
 		en = Continue and Don't Show Again
 		comment = A button that says continue and don't show again.
 		pl = Kontynuuj i nie pokazuj więcej
-	[formatters.arrived_x_min_ago_fmt]
-		en = Arrived %d min ago
-		comment = Use for vehicles that arrived X minutes ago.
-		pl = Przyejchał %d min temu
-	[formatters.arrives_in_x_min_fmt]
-		en = Arrives in %d min
-		comment = Use for vehicles arriving in X minutes.
-		pl = Przyjeżdża za %d min
-	[formatters.arriving_now]
-		en = Arriving now
-		comment = Use for vehicles arriving now.
-		pl = Przyjeżdża teraz
-	[formatters.cardinal_adjective.east]
-		en = Eastbound
-		comment = Headed in an eastern direction
-		pl = w kier. wschodnim
-	[formatters.cardinal_adjective.north]
-		en = Northbound
-		comment = Headed in a northern direction
-		pl = w kier. północnym
-	[formatters.cardinal_adjective.northeast]
-		en = NE bound
-		comment = Headed in a northeastern direction
-		pl = w kier. północno-wschodnim
-	[formatters.cardinal_adjective.northwest]
-		en = NW bound
-		comment = Headed in a northwestern direction
-		pl = w kier. północno-zachodnim
-	[formatters.cardinal_adjective.south]
-		en = Southbound
-		comment = Headed in a southern direction
-		pl = w kier. południowym
-	[formatters.cardinal_adjective.southeast]
-		en = SE bound
-		comment = Headed in an southeastern direction
-		pl = w kier. południowo-wschodnim
-	[formatters.cardinal_adjective.southwest]
-		en = SW bound
-		comment = Headed in a southwestern direction
-		pl = w kier. południowo-zachodnim
-	[formatters.cardinal_adjective.west]
-		en = Westbound
-		comment = Headed in a western direction
-		pl = w kier. zachodnim
-	[formatters.cardinal_direction_abbrev.east]
-		en = E
-		comment = Abbreviation for East
-		pl = wsch.
-	[formatters.cardinal_direction_abbrev.north]
-		en = N
-		comment = Abbreviation for North
-		pl = półn.
-	[formatters.cardinal_direction_abbrev.northeast]
-		en = NE
-		comment = Abbreviation for Northeast
-		pl = półn.-wsch.
-	[formatters.cardinal_direction_abbrev.northwest]
-		en = NW
-		comment = Abbreviation for Northwest
-		pl = półn.-zach.
-	[formatters.cardinal_direction_abbrev.south]
-		en = S
-		comment = Abbreviation for South
-		pl = połud.
-	[formatters.cardinal_direction_abbrev.southeast]
-		en = SE
-		comment = Abbreviation for Southeast
-		pl = połud.-wsch.
-	[formatters.cardinal_direction_abbrev.southwest]
-		en = SW
-		comment = Abbreviation for Southwest
-		pl = połud.-zach.
-	[formatters.cardinal_direction_abbrev.west]
-		en = W
-		comment = Abbreviation for West
-		pl = zach.
-	[formatters.date_range_fmt]
-		en = %1$@ — %2$@
-		comment = Represents a timeframe. e.g. 9:00 AM — 11:00 AM.
-		pl = %1$@ — %2$@
-	[formatters.departed_x_min_ago_fmt]
-		en = Departed %d min ago
-		comment = Use for vehicles that departed X minutes ago.
-		pl = Odjechał %d min temu
-	[formatters.departing_now]
-		en = Departing now
-		comment = Use for vehicles departing now.
-		pl = Odjeżdża teraz
-	[formatters.departs_in_x_min_fmt]
-		en = Departs in %d min
-		comment = Use for vehicles departing in X minutes.
-		pl = Odjeżdża za %d min
-	[formatters.deviation.arrival_future_early_fmt]
-		en = arrives %d min early
-		comment = Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = przyjedzie %d min wcześniej
-	[formatters.deviation.arrival_future_late_fmt]
-		en = arrives %d min late
-		comment = Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = przyjedzie %d min później
-	[formatters.deviation.arrival_future_on_time]
-		en = arrives on time
-		comment = Describes an on-time arrival. e.g. arrives on time.
-		pl = przyjedzie na czas
-	[formatters.deviation.arrival_past_early_fmt]
-		en = arrived %d min early
-		comment = Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = przyjechał %d min wcześniej
-	[formatters.deviation.arrival_past_late_fmt]
-		en = arrived %d min late
-		comment = Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = przyjechał %d min później
-	[formatters.deviation.arrival_past_on_time]
-		en = arrived on time
-		comment = Describes an on-time arrival. e.g. arrived on time.
-		pl = przyjechał na czas
-	[formatters.deviation.departs_future_on_time]
-		en = departs on time
-		comment = Describes an on-time departure. e.g. departs on time.
-		pl = odjedzie na czas
-	[formatters.deviation.departure_future_early_fmt]
-		en = departs %d min early
-		comment = Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = odjedzie %d min wcześniej
-	[formatters.deviation.departure_future_late_fmt]
-		en = departs %d min late
-		comment = Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = odjedzie %d min później
-	[formatters.deviation.departure_past_early_fmt]
-		en = departed %d min early
-		comment = Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = odjechał %d min wcześniej
-	[formatters.deviation.departure_past_late_fmt]
-		en = departed %d min late
-		comment = Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
-		pl = odjechał %d min później
-	[formatters.deviation.departure_past_on_time]
-		en = departed on time
-		comment = Describes an on-time departure. e.g. departed on time.
-		pl = odjechał na czas
-	[formatters.now]
-		en = NOW
-		comment = Short formatted time text for arrivals/departures occurring now.
-		pl = TERAZ
-	[formatters.routes_label_fmt]
-		en = Routes: %@
-		comment = A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'
-		pl = Linie: %@
-	[formatters.search_bar_placeholder_fmt]
-		en = Search in %@
-		comment = Placeholder text for the search bar: 'Search in {REGION NAME}'
-		pl = Szukaj w %@
-	[formatters.short_time_fmt]
-		en = %dm
-		comment = Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.
-		pl = %dm
-	[formatters.stop.stop_code_non_numeric]
-		en = Stop: '%@'
-		comment = Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'
-		pl = Przystanek: '%@'
-	[formatters.stop.stop_code_numeric]
-		en = Stop #%@
-		comment = Format string representing a numeric stop number. e.g. Stop #1234
-		pl = Przystanek #%@
 	[location_permission_bulletin.buttons.deny_permission]
 		en = Maybe Later
 		comment = This button rejects the application's request to see the user's location.
@@ -487,7 +323,10 @@
 		en = No Internet
 		comment = Title of the alert that appears when the app can't connect to the server.
 		pl = Brak połączenia z internetem.
-	[recent_stops.confirmation_alert.title]
+	[recent_stops_controller.alarms_section.title]
+		en = Alarms
+		comment = Title of the Alarms section of the Recents controller
+  [recent_stops.confirmation_alert.title]
 		en = Are you sure you want to delete all of your recent stops?
 		comment = Title for a confirmation alert displayed before the user deletes all of their recent stops.
 		pl = Czy jesteś pewien, że chcesz usunąć wszystkie swoje ostatnie przystanki?
@@ -663,7 +502,10 @@
 		en = Arrivals and Departures
 		comment = A header for the arrivals and departures section of the stop controller.
 		pl = Przyjazdy i odjazdy
-	[stop_controller.filter_toggle.all_departures]
+	[stop_controller.bad_bookmark_error_message]
+		en = This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.
+		comment = An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.
+  [stop_controller.filter_toggle.all_departures]
 		en = All Departures
 		comment = Segmented control item: show all departures
 		pl = Wszystkie odjazdy

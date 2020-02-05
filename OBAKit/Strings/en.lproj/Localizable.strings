@@ -96,129 +96,6 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "Continue and Don't Show Again";
 
-/* Use for vehicles that arrived X minutes ago. */
-"formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
-
-/* Use for vehicles arriving in X minutes. */
-"formatters.arrives_in_x_min_fmt" = "Arrives in %d min";
-
-/* Use for vehicles arriving now. */
-"formatters.arriving_now" = "Arriving now";
-
-/* Headed in an eastern direction */
-"formatters.cardinal_adjective.east" = "Eastbound";
-
-/* Headed in a northern direction */
-"formatters.cardinal_adjective.north" = "Northbound";
-
-/* Headed in a northeastern direction */
-"formatters.cardinal_adjective.northeast" = "NE bound";
-
-/* Headed in a northwestern direction */
-"formatters.cardinal_adjective.northwest" = "NW bound";
-
-/* Headed in a southern direction */
-"formatters.cardinal_adjective.south" = "Southbound";
-
-/* Headed in an southeastern direction */
-"formatters.cardinal_adjective.southeast" = "SE bound";
-
-/* Headed in a southwestern direction */
-"formatters.cardinal_adjective.southwest" = "SW bound";
-
-/* Headed in a western direction */
-"formatters.cardinal_adjective.west" = "Westbound";
-
-/* Abbreviation for East */
-"formatters.cardinal_direction_abbrev.east" = "E";
-
-/* Abbreviation for North */
-"formatters.cardinal_direction_abbrev.north" = "N";
-
-/* Abbreviation for Northeast */
-"formatters.cardinal_direction_abbrev.northeast" = "NE";
-
-/* Abbreviation for Northwest */
-"formatters.cardinal_direction_abbrev.northwest" = "NW";
-
-/* Abbreviation for South */
-"formatters.cardinal_direction_abbrev.south" = "S";
-
-/* Abbreviation for Southeast */
-"formatters.cardinal_direction_abbrev.southeast" = "SE";
-
-/* Abbreviation for Southwest */
-"formatters.cardinal_direction_abbrev.southwest" = "SW";
-
-/* Abbreviation for West */
-"formatters.cardinal_direction_abbrev.west" = "W";
-
-/* Represents a timeframe. e.g. 9:00 AM — 11:00 AM. */
-"formatters.date_range_fmt" = "%1$@ — %2$@";
-
-/* Use for vehicles that departed X minutes ago. */
-"formatters.departed_x_min_ago_fmt" = "Departed %d min ago";
-
-/* Use for vehicles departing now. */
-"formatters.departing_now" = "Departing now";
-
-/* Use for vehicles departing in X minutes. */
-"formatters.departs_in_x_min_fmt" = "Departs in %d min";
-
-/* Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_early_fmt" = "arrives %d min early";
-
-/* Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_future_late_fmt" = "arrives %d min late";
-
-/* Describes an on-time arrival. e.g. arrives on time. */
-"formatters.deviation.arrival_future_on_time" = "arrives on time";
-
-/* Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_early_fmt" = "arrived %d min early";
-
-/* Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.arrival_past_late_fmt" = "arrived %d min late";
-
-/* Describes an on-time arrival. e.g. arrived on time. */
-"formatters.deviation.arrival_past_on_time" = "arrived on time";
-
-/* Describes an on-time departure. e.g. departs on time. */
-"formatters.deviation.departs_future_on_time" = "departs on time";
-
-/* Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_early_fmt" = "departs %d min early";
-
-/* Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_future_late_fmt" = "departs %d min late";
-
-/* Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_early_fmt" = "departed %d min early";
-
-/* Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms. */
-"formatters.deviation.departure_past_late_fmt" = "departed %d min late";
-
-/* Describes an on-time departure. e.g. departed on time. */
-"formatters.deviation.departure_past_on_time" = "departed on time";
-
-/* Short formatted time text for arrivals/departures occurring now. */
-"formatters.now" = "NOW";
-
-/* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
-"formatters.routes_label_fmt" = "Routes: %@";
-
-/* Placeholder text for the search bar: 'Search in {REGION NAME}' */
-"formatters.search_bar_placeholder_fmt" = "Search in %@";
-
-/* Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past. */
-"formatters.short_time_fmt" = "%dm";
-
-/* Format string representing a non-numeric stop number. e.g. Stop: 'Old Library' */
-"formatters.stop.stop_code_non_numeric" = "Stop: '%@'";
-
-/* Format string representing a numeric stop number. e.g. Stop #1234 */
-"formatters.stop.stop_code_numeric" = "Stop #%@";
-
 /* This button rejects the application's request to see the user's location. */
 "location_permission_bulletin.buttons.deny_permission" = "Maybe Later";
 
@@ -372,6 +249,9 @@
 /* Title of the alert that appears when the app can't connect to the server. */
 "reachability_bulletin.title" = "No Internet";
 
+/* Title of the Alarms section of the Recents controller */
+"recent_stops_controller.alarms_section.title" = "Alarms";
+
 /* Title for a confirmation alert displayed before the user deletes all of their recent stops. */
 "recent_stops.confirmation_alert.title" = "Are you sure you want to delete all of your recent stops?";
 
@@ -503,6 +383,9 @@
 
 /* A header for the arrivals and departures section of the stop controller. */
 "stop_controller.arrival_departure_header" = "Arrivals and Departures";
+
+/* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
+"stop_controller.bad_bookmark_error_message" = "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.";
 
 /* Segmented control item: show all departures */
 "stop_controller.filter_toggle.all_departures" = "All Departures";
