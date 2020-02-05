@@ -12,7 +12,7 @@ import OBAKitCore
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
-    var vehicleSearchAvailable: Bool { get }
+    var isVehicleSearchAvailable: Bool { get }
 }
 
 /// This class is responsible for building all of the data objects that power the search experience without actually creating the UI.
@@ -104,7 +104,7 @@ class SearchInteractor: NSObject {
             (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."))
         ]
 
-        if let delegate = delegate, delegate.vehicleSearchAvailable {
+        if let delegate = delegate, delegate.isVehicleSearchAvailable {
             quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle.")))
         }
 
