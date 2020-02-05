@@ -122,6 +122,10 @@ public class NearbyViewController: VisualEffectViewController,
     }
 
     func performSearch(request: SearchRequest) {
+        if let searchText = searchBar.searchTextField.text {
+            application.analytics?.reportSearchQuery(searchText)
+        }
+
         searchBar.resignFirstResponder()
         nearbyDelegate?.nearbyController(self, moveTo: .half, animated: true)
         application.searchManager.search(request: request)

@@ -59,6 +59,7 @@ public enum AnalyticsEvent: Int {
 public protocol Analytics: NSObjectProtocol {
     func logEvent(name: String, parameters: [String: Any])
     func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
+    func reportSearchQuery(_ query: String)
 
     func setReportingEnabled(_ enabled: Bool)
     func reportingEnabled() -> Bool

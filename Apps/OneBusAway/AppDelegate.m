@@ -168,6 +168,10 @@ static const int ddLogLevel = DDLogLevelWarning;
     [self logEventWithName:eventName parameters:parameters];
 }
 
+- (void)reportSearchQuery:(NSString*)searchQuery {
+    [FIRAnalytics logEventWithName:kFIREventSearch parameters:@{kFIRParameterSearchTerm: searchQuery}];
+}
+
 - (void)setUserPropertyWithKey:(NSString *)key value:(NSString *)value {
     [FIRAnalytics setUserPropertyString:value forName:key];
 }
