@@ -168,6 +168,10 @@ static const int ddLogLevel = DDLogLevelWarning;
     [self logEventWithName:eventName parameters:parameters];
 }
 
+- (void)setUserPropertyKey:(NSString*)key value:(nullable NSString*)value {
+    [FIRAnalytics setUserPropertyString:value forName:key];
+}
+
 #pragma mark - Push Notifications
 
 - (BOOL)isRegisteredForRemoteNotifications {

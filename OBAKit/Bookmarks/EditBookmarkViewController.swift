@@ -179,6 +179,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             }
             else if let arrivalDeparture = arrivalDeparture {
                 bookmark = Bookmark(name: name, regionIdentifier: region.regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
+
+                let analyticsValue = AnalyticsLabels.addRemoveBookmarkValue(routeID: arrivalDeparture.routeID, headsign: arrivalDeparture.tripHeadsign, stopID: arrivalDeparture.stopID)
+                application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.addBookmark, value: analyticsValue)
             }
             else {
                 fatalError()

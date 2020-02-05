@@ -77,6 +77,7 @@ public class NearbyViewController: VisualEffectViewController,
     public private(set) var inSearchMode = false {
         didSet {
             if inSearchMode {
+                application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.searchSelected, value: nil)
                 nearbyDelegate?.nearbyControllerDisplaySearch(self)
             }
             else {

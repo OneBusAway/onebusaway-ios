@@ -15,6 +15,7 @@ public protocol RegionsServiceDelegate: NSObjectProtocol {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
     @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
+    @objc optional func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool)
 
     /// This delegate method is called when the region list update is cancelled before retrieving data.
     ///
@@ -110,6 +111,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
     }
 
+    private func notifyDelegatesAutomaticallySelectRegionChanged(value: Bool) {
+        for delegate in delegates.allObjects {
+            delegate.regionsService?(self, changedAutomaticRegionSelection: value)
+        }
+    }
+
     // MARK: - Regions Data
 
     public private(set) var regions: [Region] {
@@ -168,6 +175,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
                 // When this value toggles to true, we should refresh the current region.
                 updateCurrentRegionFromLocation()
             }
+            notifyDelegatesAutomaticallySelectRegionChanged(value: newValue)
         }
     }
 

@@ -165,6 +165,10 @@ public class BookmarksViewController: UIViewController,
     }
 
     private func didDeleteBookmark(_ bookmark: Bookmark) {
+        if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
+            application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
+        }
+
         _ = application.userDataStore.delete(bookmark: bookmark)
         collectionController.reload(animated: true)
     }

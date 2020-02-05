@@ -12,6 +12,44 @@ public class AnalyticsKeys: NSObject {
     @objc public static let reportingEnabledUserDefaultsKey = "reportingEnabledUserDefaultsKey"
 }
 
+@objc(OBAAnalyticsLabels)
+public class AnalyticsLabels: NSObject {
+
+    /// Report a stop/trip problem, or contact transit agency/app developers.
+    @objc public static let reportProblem = "report_problem"
+
+    /// Label used when Automatically Selection Region is enabled.
+    @objc public static let setRegionAutomatically = "Set region automatically"
+
+    /// Label used when Automatically Selection Region is disabled.
+    @objc public static let setRegionManually = "Set region manually"
+
+    /// Label used when the region is selected manually, and its value changes.
+    @objc public static let manuallySelectedRegionChanged = "selected manually"
+
+    /// Label used for fare payment options.
+    @objc public static let farePayment = "fare_payment"
+
+    /// Label used for adding bookmarks.
+    @objc public static let addBookmark = "Starred route"
+
+    /// Label used for removing bookmarks.
+    @objc public static let removeBookmark = "Unstarred route"
+
+    public class func addRemoveBookmarkValue(routeID: String, headsign: String?, stopID: String) -> String {
+        return "\(routeID)_\(headsign ?? "") for \(stopID)"
+    }
+
+    /// Label used when search mode is entered in the app.
+    @objc public static let searchSelected = "Search box selected"
+
+    /// Label used when a map annotation view is chosen.
+    @objc public static let mapStopAnnotationTapped = "Clicked MapStopIcon"
+
+    /// Label used when 'show my location' button is tapped.'
+    @objc public static let mapShowUserLocationButtonTapped = "Clicked My Location Button"
+}
+
 @objc(OBAAnalyticsEvent)
 public enum AnalyticsEvent: Int {
     case userAction
@@ -24,4 +62,6 @@ public protocol Analytics: NSObjectProtocol {
 
     func setReportingEnabled(_ enabled: Bool)
     func reportingEnabled() -> Bool
+
+    func setUserProperty(key: String, value: String?)
 }
