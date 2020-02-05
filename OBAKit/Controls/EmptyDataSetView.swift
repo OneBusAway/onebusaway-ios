@@ -7,6 +7,10 @@
 
 import UIKit
 
+public enum EmptyDataSetAlignment {
+    case top, center
+}
+
 /// Provides a simple implementation of the 'empty data set' UI pattern.
 public class EmptyDataSetView: UIView {
 
@@ -51,8 +55,8 @@ public class EmptyDataSetView: UIView {
         return label
     }()
 
-    public override init(frame: CGRect) {
-        super.init(frame: frame)
+    public init(alignment: EmptyDataSetAlignment = .center) {
+        super.init(frame: .zero)
 
         let stack = UIStackView.verticalStack(arangedSubviews: [titleLabel, bodyLabel])
         addSubview(stack)
@@ -65,7 +69,14 @@ public class EmptyDataSetView: UIView {
         leading.priority = .defaultHigh
         trailing.priority = .defaultHigh
 
-        let vertical = stack.centerYAnchor.constraint(equalTo: self.layoutMarginsGuide.centerYAnchor)
+        let vertical: NSLayoutConstraint
+
+        if alignment == .center {
+            vertical = stack.centerYAnchor.constraint(equalTo: self.layoutMarginsGuide.centerYAnchor)
+        }
+        else {
+            vertical = stack.topAnchor.constraint(equalTo: self.layoutMarginsGuide.topAnchor)
+        }
 
         NSLayoutConstraint.activate([vertical, leading, trailing])
     }

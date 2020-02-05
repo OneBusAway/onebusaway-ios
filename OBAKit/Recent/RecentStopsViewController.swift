@@ -137,7 +137,7 @@ public class RecentStopsViewController: UIViewController,
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        let emptyView = EmptyDataSetView(frame: view.bounds)
+        let emptyView = EmptyDataSetView()
         emptyView.titleLabel.text = OBALoc("recent_stops.empty_set.title", value: "No Recent Stops", comment: "Title for the empty set indicator on the Recent Stops controller.")
         emptyView.bodyLabel.text = OBALoc("recent_stops.empty_set.body", value: "Transit stops that you view in the app will appear here.", comment: "Body for the empty set indicator on the Recent Stops controller.")
 

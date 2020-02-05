@@ -161,7 +161,7 @@ public class NearbyViewController: VisualEffectViewController,
     }
 
     private lazy var searchModeEmptyView: EmptyDataSetView = {
-        let emptyView = EmptyDataSetView(frame: view.bounds)
+        let emptyView = EmptyDataSetView()
         emptyView.titleLabel.text = OBALoc("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
         emptyView.bodyLabel.text = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
 
@@ -180,6 +180,16 @@ public class NearbyViewController: VisualEffectViewController,
             return nearbyModeObjects(for: listAdapter)
         }
     }
+
+    // MARK: - Nearby Mode
+
+    private lazy var nearbyModeEmptyView: EmptyDataSetView = {
+        let emptyView = EmptyDataSetView(alignment: .top)
+        emptyView.titleLabel.text = OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller")
+        emptyView.bodyLabel.text = OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller.")
+
+        return emptyView
+    }()
 
     private func nearbyModeObjects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections: [ListDiffable] = []
@@ -222,7 +232,7 @@ public class NearbyViewController: VisualEffectViewController,
             return searchModeEmptyView
         }
         else {
-            return nil
+            return nearbyModeEmptyView
         }
     }
 }

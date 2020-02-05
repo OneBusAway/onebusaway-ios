@@ -295,7 +295,13 @@
 		en = This app is made and supported by volunteers.
 		comment = Explanation about how this app is built and maintained by volunteers.
 		pl = Ta aplikacja jest stworzona i utrzymywania przez woluntariuszy.
-	[nearby_stops_controller.empty_set.body]
+	[nearby_controller.empty_set.body]
+		en = Zoom out or pan around to find some stops.
+		comment = Body for the empty set indicator on the Nearby controller.
+	[nearby_controller.empty_set.title]
+		en = No Nearby Stops
+		comment = Title for the empty set indicator on the Nearby controller
+  [nearby_stops_controller.empty_set.body]
 		en = There are no other stops in the vicinity.
 		comment = Body for the empty set indicator on the Nearby Stops controller.
 		pl = Nie ma więcej przystanków w okolicy.

@@ -151,7 +151,7 @@ public class BookmarksViewController: UIViewController,
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        let emptyView = EmptyDataSetView(frame: view.bounds)
+        let emptyView = EmptyDataSetView()
         emptyView.titleLabel.text = OBALoc("bookmarks_controller.empty_set.title", value: "No Bookmarks", comment: "Title for the empty set indicator on the Bookmarks view controller.")
         emptyView.bodyLabel.text = OBALoc("bookmarks_controller.empty_set.body", value: "Add a bookmark for a stop or trip to easily access it here.", comment: "Body for the empty set indicator on the Bookmarks view controller.")
 

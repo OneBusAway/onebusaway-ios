@@ -228,6 +228,12 @@
 /* Explanation about how this app is built and maintained by volunteers. */
 "more_header.support_us_label_text" = "This app is made and supported by volunteers.";
 
+/* Body for the empty set indicator on the Nearby controller. */
+"nearby_controller.empty_set.body" = "Zoom out or pan around to find some stops.";
+
+/* Title for the empty set indicator on the Nearby controller */
+"nearby_controller.empty_set.title" = "No Nearby Stops";
+
 /* Body for the empty set indicator on the Nearby Stops controller. */
 "nearby_stops_controller.empty_set.body" = "There are no other stops in the vicinity.";
 
