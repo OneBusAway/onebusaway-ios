@@ -131,7 +131,7 @@ public class NearbyViewController: VisualEffectViewController,
         nearbyDelegate?.nearbyController(self, didSelectStop: stop)
     }
 
-    var vehicleSearchAvailable: Bool {
+    var isVehicleSearchAvailable: Bool {
         application.features.obaco == .running
     }
 

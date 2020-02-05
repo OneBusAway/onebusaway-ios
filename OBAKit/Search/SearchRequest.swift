@@ -123,9 +123,12 @@ public class SearchManager: NSObject {
             return
         }
 
+        SVProgressHUD.show()
+
         let op = obacoService.getVehicles(matching: request.query)
         op.then { [weak self] in
             guard let self = self else { return }
+            SVProgressHUD.dismiss()
 
             let matchingVehicles = op.matchingVehicles
 
