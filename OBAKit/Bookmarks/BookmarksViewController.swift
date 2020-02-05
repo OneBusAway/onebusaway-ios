@@ -161,7 +161,7 @@ public class BookmarksViewController: UIViewController,
     // MARK: - Bookmark Actions
 
     private func didSelectBookmark(_ bookmark: Bookmark) {
-        application.viewRouter.navigateTo(stop: bookmark.stop, from: self)
+        application.viewRouter.navigateTo(stop: bookmark.stop, from: self, bookmark: bookmark)
     }
 
     private func didDeleteBookmark(_ bookmark: Bookmark) {

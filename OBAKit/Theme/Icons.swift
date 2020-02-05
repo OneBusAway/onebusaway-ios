@@ -125,6 +125,11 @@ public class Icons: NSObject {
         imageNamed("no_internet")
     }
 
+    /// An image used to represent an error condition.
+    public class var errorOutline: UIImage {
+        imageNamed("error_outline")
+    }
+
     /// A larger version of the navigation arrow icon used for the map tab.
     ///
     /// The apparent size of this image is 48x48pt.

@@ -29,6 +29,22 @@ public class RESTAPIOperation: NetworkOperation {
         restDecoder?.fieldErrors
     }
 
+    /// Tries to tell you if you're effectively seeing a 404 'Not Found' error.
+    ///
+    /// The REST API doesn't do a good job of surfacing what should be 404 errors. If you request a
+    /// valid endpoint, but provide it with a bogus piece of data (e.g. a non-existent Stop ID), it should
+    /// return a 404 error to you. Instead, it gives a 200 and a blank body. This method tries to tell you
+    /// if you're seeing an 'effective' 404.
+    ///
+    /// - Note: Other errors, including a missing response, will cause this to return `false`.
+    public var isEffective404: Bool {
+        guard let response = response else {
+            return false
+        }
+
+        return response.expectedContentLength == 0 && response.statusCode == 200
+    }
+
     /// Only available after `-setData:response:error:` is called.
     var restDecoder: RESTDataDecoder?
 
