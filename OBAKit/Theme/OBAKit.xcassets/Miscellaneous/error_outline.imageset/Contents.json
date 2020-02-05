@@ -1,24 +1,26 @@
 {
-    "images": [
-        {
-            "filename": "baseline_error_outline_black_48pt_1x.png",
-            "idiom": "universal",
-            "scale": "1x"
-        },
-        {
-            "filename": "baseline_error_outline_black_48pt_2x.png",
-            "idiom": "universal",
-            "scale": "2x"
-        },
-        {
-            "filename": "baseline_error_outline_black_48pt_3x.png",
-            "idiom": "universal",
-            "scale": "3x"
-        }
-    ],
-    "info": {
-        "author": "xcode",
-        "template-rendering-intent": "template",
-        "version": 1
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "icon-128px.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "icon-256px.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "icon-384px.png",
+      "scale" : "3x"
     }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  },
+  "properties" : {
+    "template-rendering-intent" : "template"
+  }
 }
