@@ -112,8 +112,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         return router
     }()
 
-    @objc public private(set) var analytics: Analytics?
-
     @objc public weak var delegate: ApplicationDelegate?
 
     @objc public let reachability = Reachability()
@@ -299,6 +297,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
             regionPickerBulletin?.show(in: application)
         }
+
+        reportAnalyticsUserProperties()
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {
@@ -444,6 +444,26 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
         self.regionPickerBulletin?.show(in: app)
+    }
+
+    public func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool) {
+        let label = value ? AnalyticsLabels.setRegionAutomatically : AnalyticsLabels.setRegionManually
+        analytics?.reportEvent(.userAction, label: label, value: nil)
+    }
+
+    public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        super.regionsService(service, updatedRegion: region)
+
+        analytics?.reportEvent(.userAction, label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
+    }
+
+    // MARK: - Analytics
+
+    @objc public private(set) var analytics: Analytics?
+
+    private func reportAnalyticsUserProperties() {
+        let val = UIAccessibility.isVoiceOverRunning ? "YES" : "NO"
+        analytics?.setUserProperty(key: "accessibility", value: val)
     }
 
     // MARK: - Feature Availability

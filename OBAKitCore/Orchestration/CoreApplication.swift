@@ -157,7 +157,7 @@ open class CoreApplication: NSObject,
 
     private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
 
-    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+    open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         refreshRESTAPIModelService()
         refreshObacoService()
     }

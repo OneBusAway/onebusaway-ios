@@ -105,6 +105,8 @@ class VehicleProblemViewController: FormViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
+
         let commentsRow = TextAreaRow()
 
         form
@@ -169,6 +171,7 @@ class VehicleProblemViewController: FormViewController {
                 SVProgressHUD.dismiss()
             }
             else {
+                self.application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
                 SVProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
             }
