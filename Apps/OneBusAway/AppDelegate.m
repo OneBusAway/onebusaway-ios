@@ -168,7 +168,7 @@ static const int ddLogLevel = DDLogLevelWarning;
     [self logEventWithName:eventName parameters:parameters];
 }
 
-- (void)setUserPropertyKey:(NSString*)key value:(nullable NSString*)value {
+- (void)setUserPropertyWithKey:(NSString *)key value:(NSString *)value {
     [FIRAnalytics setUserPropertyString:value forName:key];
 }
 
