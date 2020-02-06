@@ -137,6 +137,20 @@ public class Icons: NSObject {
         imageNamed("near_me")
     }
 
+    // MARK: - Search Icons
+
+    public class var route: UIImage {
+        imageNamed("route")
+    }
+
+    public class var place: UIImage {
+        imageNamed("place")
+    }
+
+    public class var stop: UIImage {
+        imageNamed("stop")
+    }
+
     // MARK: - Transport Icons
 
     /// Generates an appropriate icon from the specified route type.

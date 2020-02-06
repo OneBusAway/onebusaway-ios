@@ -67,7 +67,6 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
                 tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
                 tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
             ])
-            tableRowView.useDebugColors = kUseDebugColors
         }
     }
 

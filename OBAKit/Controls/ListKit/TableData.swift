@@ -21,6 +21,10 @@ public class TableRowData: ListViewModel {
     let accessoryType: UITableViewCell.AccessoryType
     let style: UITableViewCell.CellStyle
 
+    public var image: UIImage?
+
+    public var imageSize: CGFloat?
+
     // MARK: - Initialization
 
     /// Default Initializer. Lets you set everything.
@@ -100,7 +104,8 @@ public class TableRowData: ListViewModel {
             attributedTitle == rhs.attributedTitle &&
             subtitle == rhs.subtitle &&
             accessoryType == rhs.accessoryType &&
-            style == rhs.style
+            style == rhs.style &&
+            image == rhs.image
     }
 
     public override var hash: Int {
@@ -110,6 +115,7 @@ public class TableRowData: ListViewModel {
         hasher.combine(subtitle)
         hasher.combine(accessoryType)
         hasher.combine(style)
+        hasher.combine(image)
         return hasher.finalize()
     }
 }

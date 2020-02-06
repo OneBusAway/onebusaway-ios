@@ -14,7 +14,7 @@ public class ImageBadgeRenderer: NSObject {
 
     private let fillColor: UIColor
     private let backgroundColor: UIColor
-    private let badgeSize: CGFloat
+    public let badgeSize: CGFloat
 
     public init(fillColor: UIColor, backgroundColor: UIColor, badgeSize: CGFloat = 128.0) {
         self.fillColor = fillColor

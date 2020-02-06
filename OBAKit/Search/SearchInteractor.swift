@@ -98,24 +98,29 @@ class SearchInteractor: NSObject {
     /// Creates a Quick Search section
     /// - Parameter searchText: The text that the user is searching for
     private func quickSearchSection(searchText: String) -> ListDiffable {
-        var quickSearchTypes: [(SearchType, String)] = [
-            (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route.")),
-            (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address.")),
-            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."))
+        var quickSearchTypes: [(SearchType, String, UIImage)] = [
+            (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route."), Icons.route),
+            (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address."), Icons.place),
+            (.stopNumber, OBALoc("search_interactor.quick_search.stop_prefix", value: "Stop:", comment: "Quick search prefix for Stop."), Icons.stop)
         ]
 
         if let delegate = delegate, delegate.isVehicleSearchAvailable {
-            quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle.")))
+            quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."), Icons.busTransport))
         }
 
         var rows = [TableRowData]()
 
-        for (searchType, title) in quickSearchTypes {
+        let badgeRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.brand, badgeSize: 20.0)
+
+        for (searchType, title, image) in quickSearchTypes {
             let row = TableRowData(attributedTitle: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
                 let request = SearchRequest(query: searchText, type: searchType)
                 self.delegate?.performSearch(request: request)
             }
+
+            row.image = badgeRenderer.drawImageOnRoundedRect(image)
+            row.imageSize = badgeRenderer.badgeSize
             rows.append(row)
         }
 
