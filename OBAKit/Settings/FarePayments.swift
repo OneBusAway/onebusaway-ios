@@ -94,11 +94,11 @@ public class FarePayments: NSObject, SKStoreProductViewControllerDelegate {
         guard let deepLinkURL = region.paymentAppDeepLinkURL else { return }
 
         if application.canOpenURL(deepLinkURL) {
-            application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.farePayment, value: "open_app")
+            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.farePayment, value: "open_app")
             application.open(deepLinkURL, options: [:], completionHandler: nil)
         }
         else {
-            application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.farePayment, value: "download_app")
+            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.farePayment, value: "download_app")
 
             if let identifier = region.paymentiOSAppStoreIdentifier {
                 displayAppStorePage(appIdentifier: identifier)

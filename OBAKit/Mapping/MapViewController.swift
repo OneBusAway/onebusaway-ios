@@ -127,7 +127,7 @@ public class MapViewController: UIViewController,
     @objc public func centerMapOnUserLocation() {
         guard isLoadedAndOnScreen else { return }
 
-        application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.mapShowUserLocationButtonTapped, value: nil)
+        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapShowUserLocationButtonTapped, value: nil)
 
         let userLocation = mapRegionManager.mapView.userLocation
         guard userLocation.isValid else { return }
@@ -313,7 +313,7 @@ public class MapViewController: UIViewController,
             return
         }
 
-        application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
 
         show(stop: stop)
     }

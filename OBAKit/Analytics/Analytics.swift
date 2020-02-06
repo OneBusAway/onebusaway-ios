@@ -57,12 +57,13 @@ public enum AnalyticsEvent: Int {
 
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {
-    func logEvent(name: String, parameters: [String: Any])
-    func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
-    func reportSearchQuery(_ query: String)
+    @objc optional func logEvent(name: String, parameters: [String: Any])
+    @objc optional func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
 
-    func setReportingEnabled(_ enabled: Bool)
-    func reportingEnabled() -> Bool
+    @objc optional func reportSearchQuery(_ query: String)
 
-    func setUserProperty(key: String, value: String?)
+    @objc optional func setReportingEnabled(_ enabled: Bool)
+    @objc optional func reportingEnabled() -> Bool
+
+    @objc optional func setUserProperty(key: String, value: String?)
 }

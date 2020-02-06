@@ -77,7 +77,7 @@ public class NearbyViewController: VisualEffectViewController,
     public private(set) var inSearchMode = false {
         didSet {
             if inSearchMode {
-                application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.searchSelected, value: nil)
+                application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.searchSelected, value: nil)
                 nearbyDelegate?.nearbyControllerDisplaySearch(self)
             }
             else {
@@ -123,7 +123,7 @@ public class NearbyViewController: VisualEffectViewController,
 
     func performSearch(request: SearchRequest) {
         if let searchText = searchBar.searchTextField.text {
-            application.analytics?.reportSearchQuery(searchText)
+            application.analytics?.reportSearchQuery?(searchText)
         }
 
         searchBar.resignFirstResponder()

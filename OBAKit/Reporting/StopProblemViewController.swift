@@ -62,7 +62,7 @@ class StopProblemViewController: FormViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_stop_problem")
+        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_stop_problem")
 
         form
         // Problem Section
@@ -132,7 +132,7 @@ class StopProblemViewController: FormViewController {
                 SVProgressHUD.dismiss()
             }
             else {
-                self.application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
+                self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
                 SVProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
             }

@@ -202,14 +202,14 @@ import OBAKitCore
         // Contact Developers
         sheet.addAction(title: OBALoc("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")) { [weak self] _ in
             guard let self = self else { return }
-            self.application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_app_feedback_email")
+            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_app_feedback_email")
             self.presentEmailFeedbackForm(target: .appDevelopers)
         }
 
         // Contact Transit Agency
         sheet.addAction(title: OBALoc("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")) { [weak self] _ in
             guard let self = self else { return }
-            self.application.analytics?.reportEvent(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_customer_service")
+            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_customer_service")
             self.presentEmailFeedbackForm(target: .transitAgency)
         }
 
@@ -293,6 +293,6 @@ import OBAKitCore
     // MARK: - Private Helpers
 
     private func logRowTapAnalyticsEvent(name: String) {
-        application.analytics?.logEvent(name: "infoRowTapped", parameters: ["row": name])
+        application.analytics?.logEvent?(name: "infoRowTapped", parameters: ["row": name])
     }
 }

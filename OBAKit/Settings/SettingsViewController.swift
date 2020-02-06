@@ -40,7 +40,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
-            privacySectionReportingEnabled: application.analytics?.reportingEnabled(),
+            privacySectionReportingEnabled: application.analytics?.reportingEnabled?() ?? false,
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
         ])
     }
@@ -73,7 +73,7 @@ class SettingsViewController: FormViewController {
         }
 
         if let reportingEnabled = values[privacySectionReportingEnabled] as? Bool {
-            application.analytics?.setReportingEnabled(reportingEnabled)
+            application.analytics?.setReportingEnabled?(reportingEnabled)
         }
     }
 
