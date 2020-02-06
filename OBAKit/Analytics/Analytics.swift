@@ -61,6 +61,7 @@ public protocol Analytics: NSObjectProtocol {
     @objc optional func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
 
     @objc optional func reportSearchQuery(_ query: String)
+    @objc optional func reportStopViewed(name: String, id: String, stopDistance: String)
 
     @objc optional func setReportingEnabled(_ enabled: Bool)
     @objc optional func reportingEnabled() -> Bool

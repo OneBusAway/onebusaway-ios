@@ -108,6 +108,7 @@ StopPreferencesDelegate {
         didSet {
             guard let stop = stop else { return }
             performStopConfiguration(stop)
+            application.analytics?.reportStopViewed?(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
         }
     }
 
@@ -742,4 +743,42 @@ StopPreferencesDelegate {
 
         return segment
     }()
+
+    // MARK: - Analytics
+
+    private var analyticsDistanceToStop: String {
+        guard
+            let userLocation = application.locationService.currentLocation,
+            let stopLocation = stop?.location
+        else {
+            return "User Distance: 03200-INFINITY"
+        }
+
+        let distance = userLocation.distance(from: stopLocation)
+
+        if distance < 50 {
+            return "User Distance: 00000-00050m"
+        }
+        else if distance < 100 {
+            return "User Distance: 00050-00100m"
+        }
+        else if distance < 200 {
+            return "User Distance: 00100-00200m"
+        }
+        else if distance < 400 {
+            return "User Distance: 00200-00400m"
+        }
+        else if distance < 800 {
+            return "User Distance: 00400-00800m"
+        }
+        else if distance < 1600 {
+            return "User Distance: 00800-01600m"
+        }
+        else if distance < 3200 {
+            return "User Distance: 01600-03200m"
+        }
+        else {
+            return "User Distance: 03200-INFINITY"
+        }
+    }
 }

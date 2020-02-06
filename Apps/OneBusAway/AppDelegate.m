@@ -172,6 +172,15 @@ static const int ddLogLevel = DDLogLevelWarning;
     [FIRAnalytics logEventWithName:kFIREventSearch parameters:@{kFIRParameterSearchTerm: searchQuery}];
 }
 
+- (void)reportStopViewedWithName:(NSString *)name id:(NSString *)id stopDistance:(NSString *)stopDistance {
+    [self logEventWithName:kFIREventViewItem parameters:@{
+        kFIRParameterItemID: id,
+        kFIRParameterItemName: name,
+        kFIRParameterItemCategory: @"stops",
+        kFIRParameterItemLocationID: stopDistance
+    }];
+}
+
 - (void)setUserPropertyWithKey:(NSString *)key value:(NSString *)value {
     [FIRAnalytics setUserPropertyString:value forName:key];
 }
