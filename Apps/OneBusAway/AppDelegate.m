@@ -181,6 +181,10 @@ static const int ddLogLevel = DDLogLevelWarning;
     }];
 }
 
+- (void)reportSetRegion:(NSString *)name {
+    [self setUserPropertyWithKey:@"RegionName" value:name];
+}
+
 - (void)setUserPropertyWithKey:(NSString *)key value:(NSString *)value {
     [FIRAnalytics setUserPropertyString:value forName:key];
 }

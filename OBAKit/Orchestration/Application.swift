@@ -454,7 +454,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         super.regionsService(service, updatedRegion: region)
 
-        analytics?.reportEvent?(.userAction, label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
+        analytics?.reportSetRegion?(region.name)
+
+        if !regionsService.automaticallySelectRegion {
+            analytics?.reportEvent?(.userAction, label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
+        }
     }
 
     // MARK: - Analytics

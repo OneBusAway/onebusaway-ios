@@ -62,6 +62,7 @@ public protocol Analytics: NSObjectProtocol {
 
     @objc optional func reportSearchQuery(_ query: String)
     @objc optional func reportStopViewed(name: String, id: String, stopDistance: String)
+    @objc optional func reportSetRegion(_ name: String)
 
     @objc optional func setReportingEnabled(_ enabled: Bool)
     @objc optional func reportingEnabled() -> Bool
