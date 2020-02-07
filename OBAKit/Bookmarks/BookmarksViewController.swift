@@ -16,6 +16,7 @@ import CocoaLumberjackSwift
 public class BookmarksViewController: UIViewController,
     AppContext,
     BookmarkEditorDelegate,
+    BookmarkDataDelegate,
     ListAdapterDataSource,
     ListProvider,
     ManageBookmarksDelegate,
@@ -38,7 +39,7 @@ public class BookmarksViewController: UIViewController,
     }
 
     deinit {
-        cancelUpdates()
+        dataLoader.cancelUpdates()
     }
 
     // MARK: - UIViewController
@@ -50,7 +51,7 @@ public class BookmarksViewController: UIViewController,
         addChildController(collectionController)
         collectionController.view.pinToSuperview(.edges)
 
-        loadData()
+        dataLoader.loadData()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -73,13 +74,13 @@ public class BookmarksViewController: UIViewController,
 
         application.notificationCenter.removeObserver(self, name: UIApplication.didEnterBackgroundNotification, object: nil)
 
-        timer?.invalidate()
+        dataLoader.cancelUpdates()
     }
 
     // MARK: - Refresh Control
 
     @objc private func refreshControlPulled() {
-        loadData()
+        dataLoader.loadData()
         refreshControl.beginRefreshing()
 
         Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
@@ -123,7 +124,7 @@ public class BookmarksViewController: UIViewController,
             var arrDeps = [ArrivalDeparture]()
 
             if let key = TripBookmarkKey(bookmark: bm) {
-                arrDeps = self.tripBookmarkKeys[key, default: []]
+                arrDeps = dataLoader.dataForKey(key)
             }
 
             return BookmarkArrivalData(bookmark: bm, arrivalDepartures: arrDeps, selected: didSelectBookmark(_:), deleted: didDeleteBookmark(_:), edited: didEditBookmark(_:))
@@ -227,70 +228,16 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Data Loading
 
-    private var operations = [Operation]()
+    private lazy var dataLoader = BookmarkDataLoader(application: application, delegate: self)
 
-    private func loadData() {
-        cancelUpdates()
-        for bookmark in application.userDataStore.bookmarks {
-            loadData(bookmark: bookmark)
-        }
-        startRefreshTimer()
-    }
-
-    private func loadData(bookmark: Bookmark) {
-        guard let modelService = application.restAPIModelService else { return }
-
-        let op = modelService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60)
-        op.then { [weak self] in
-            guard
-                let self = self,
-                let keysAndDeps = op.stopArrivals?.arrivalsAndDepartures.tripKeyGroupedElements
-            else {
-                return
-            }
-
-            for (key, deps) in keysAndDeps {
-                self.tripBookmarkKeys[key] = deps
-            }
-
-            self.collectionController.reload(animated: false)
-        }
-        operations.append(op)
-    }
-
-    private func cancelUpdates() {
-        timer?.invalidate()
-
-        for op in operations {
-            op.cancel()
-        }
-    }
-
-    // MARK: - Trip Bookmark Data
-
-    /// A dictionary that maps each bookmark to `ArrivalDeparture`s.
-    /// This is used to update the UI when new `ArrivalDeparture` objects are loaded.
-    private var tripBookmarkKeys = [TripBookmarkKey: [ArrivalDeparture]]()
-
-    // MARK: - Refreshing
-
-    private let refreshInterval = 30.0
-
-    private var timer: Timer?
-
-    private func startRefreshTimer() {
-        timer?.invalidate()
-
-        timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            self.loadData()
-        }
+    public func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
+        self.collectionController.reload(animated: false)
     }
 
     // MARK: - Notifications
 
     @objc private func applicationEnteredBackground(note: Notification) {
-        cancelUpdates()
+        dataLoader.cancelUpdates()
     }
 
     // MARK: - Bookmark Groups

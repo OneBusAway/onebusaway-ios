@@ -6,16 +6,15 @@
 //
 
 import Foundation
-import OBAKitCore
 
 /// Provides a way to group `ArrivalDeparture`s by the data elements used in trip bookmarks.
-struct TripBookmarkKey: Hashable, Equatable {
+public struct TripBookmarkKey: Hashable, Equatable {
     let stopID: String
     let routeShortName: String
     let routeID: RouteID
     let tripHeadsign: String
 
-    init?(bookmark: Bookmark) {
+    public init?(bookmark: Bookmark) {
         guard
             let routeShortName = bookmark.routeShortName,
             let routeID = bookmark.routeID,
@@ -29,7 +28,7 @@ struct TripBookmarkKey: Hashable, Equatable {
         self.tripHeadsign = tripHeadsign
     }
 
-    init(arrivalDeparture: ArrivalDeparture) {
+    public init(arrivalDeparture: ArrivalDeparture) {
         self.stopID = arrivalDeparture.stopID
         self.routeShortName = arrivalDeparture.routeShortName
         self.routeID = arrivalDeparture.routeID
@@ -46,7 +45,7 @@ extension Sequence where Element == ArrivalDeparture {
     /// Creates a mapping of `TripBookmarkKey`s to `ArrivalDeparture`s so that
     /// it is easier to load data and inject `ArrivalDeparture` objects into `StopArrivalView`s.
     /// - Note: Also sorts the list of `ArrivalDeparture`s.
-    var tripKeyGroupedElements: [TripBookmarkKey: [ArrivalDeparture]] {
+    public var tripKeyGroupedElements: [TripBookmarkKey: [ArrivalDeparture]] {
         var keysAndDeps = [TripBookmarkKey: [ArrivalDeparture]]()
 
         for arrDep in self {
@@ -61,7 +60,7 @@ extension Sequence where Element == ArrivalDeparture {
     }
 
     /// Returns the unique set of `TripBookmarkKey`s contained by this list of `ArrivalDeparture`s.
-    var uniqueTripKeys: [TripBookmarkKey] {
+    public var uniqueTripKeys: [TripBookmarkKey] {
         Set(self.map { TripBookmarkKey(arrivalDeparture: $0) }).allObjects
     }
 }
