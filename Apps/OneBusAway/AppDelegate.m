@@ -14,7 +14,7 @@
 @import Crashlytics;
 #import "OBAFirebaseAnalytics.h"
 
-@interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate>
+@interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;

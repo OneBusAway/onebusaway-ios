@@ -9,17 +9,15 @@
 #import "AppDelegate.h"
 @import OBAKitCore;
 @import OBAKit;
-#import "Firebase.h"
-@import Crashlytics;
-@import OneSignal;
 @import CocoaLumberjack;
+@import Crashlytics;
+#import "OBAFirebaseAnalytics.h"
 
-static const int ddLogLevel = DDLogLevelWarning;
-
-@interface AppDelegate ()<OBAApplicationDelegate, UITabBarControllerDelegate, OBAAnalytics>
+@interface AppDelegate ()<OBAApplicationDelegate, OBAAnalytics>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
+@property(nonatomic,strong) OBAFirebaseAnalytics *analyticsClient;
 @end
 
 @implementation AppDelegate
@@ -36,8 +34,9 @@ static const int ddLogLevel = DDLogLevelWarning;
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
 
-        NSString *bundledRegions = [NSBundle.mainBundle pathForResource:@"regions" ofType:@"json"];
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:self bundledRegionsFilePath:bundledRegions];
+        _analyticsClient = [[OBAFirebaseAnalytics alloc] initWithUserDefaults:_userDefaults];
+
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:_analyticsClient];
 
         // Add a PushNotificationAPIKey to the Info.plist and then uncomment this to re-enable push.
         // NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"OBAKitConfig"][@"PushNotificationAPIKey"];
@@ -59,8 +58,7 @@ static const int ddLogLevel = DDLogLevelWarning;
     // application's UI and attaches it to the window, so no need to do that here.
     [self.app application:application didFinishLaunching:launchOptions];
 
-    [FIRApp configure];
-    [FIRAnalytics setUserID:self.app.userUUID];
+    [self.analyticsClient configureWithUserID:self.app.userUUID];
 
     return YES;
 }
@@ -97,8 +95,6 @@ static const int ddLogLevel = DDLogLevelWarning;
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
-    self.rootController.selectedIndex = self.app.userDataStore.lastSelectedView;
-    self.rootController.delegate = self;
     self.window.rootViewController = self.rootController;
 }
 
@@ -111,64 +107,14 @@ static const int ddLogLevel = DDLogLevelWarning;
 }
 
 - (NSDictionary<NSString*, NSString*>*)credits {
-    return @{@"Firebase": @"Contains the Google Firebase SDK, whose license can be found here: https://raw.githubusercontent.com/firebase/firebase-ios-sdk/master/LICENSE"};
-}
-
-#pragma mark - UITabBarControllerDelegate
-
-- (BOOL)tabBarController:(UITabBarController *)tabBarController shouldSelectViewController:(UIViewController *)viewController {
-    // If the user is already on the map tab and they tap on the map tab item again, then zoom to their location.
-    if (tabBarController.selectedViewController == viewController && tabBarController.selectedIndex == OBASelectedTabMap) {
-        [self.rootController.mapController centerMapOnUserLocation];
-    }
-
-    return YES;
-}
-
-- (void)tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController {
-    self.app.userDataStore.lastSelectedView = (OBASelectedTab)tabBarController.selectedIndex;
-}
-
-#pragma mark - OBAAnalytics
-
-- (BOOL)reportingEnabled {
-    return [self.userDefaults boolForKey:OBAAnalyticsKeys.reportingEnabledUserDefaultsKey];
-}
-
-- (void)setReportingEnabled:(BOOL)enabled {
-    [self.userDefaults setBool:enabled forKey:OBAAnalyticsKeys.reportingEnabledUserDefaultsKey];
-    [FIRAnalytics setAnalyticsCollectionEnabled:enabled];
-}
-
-- (void)logEventWithName:(NSString *)name parameters:(NSDictionary<NSString *,id> *)parameters {
-    [FIRAnalytics logEventWithName:name parameters:parameters];
-}
-
-- (void)reportEvent:(enum OBAAnalyticsEvent)event label:(NSString *)label value:(id)value {
-    NSString *eventName = nil;
-
-    if (event == OBAAnalyticsEventUserAction) {
-        eventName = kFIRParameterContentType;
-    }
-    else {
-        DDLogError(@"Invalid call to -reportEventWithCategory: %@ label: %@ value: %@", @(event), label, value);
-        return;
-    }
-
-    NSMutableDictionary *parameters = [[NSMutableDictionary alloc] init];
-    parameters[kFIRParameterItemID] = label;
-
-    if (value) {
-        parameters[kFIRParameterItemVariant] = value;
-    }
-
-    [self logEventWithName:eventName parameters:parameters];
+    return @{@"Firebase": @"https://raw.githubusercontent.com/firebase/firebase-ios-sdk/master/LICENSE"};
 }
 
 #pragma mark - Push Notifications
 
 - (BOOL)isRegisteredForRemoteNotifications {
-    return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
+    // return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
+    return NO;
 }
 
 @end

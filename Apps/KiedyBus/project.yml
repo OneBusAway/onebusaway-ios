@@ -3,7 +3,7 @@ options:
 
 targets:
   App:
-    sources: ["Apps/KiedyBus"]
+    sources: ["Apps/KiedyBus", "Apps/Shared/CommonClient"]
     dependencies:
       - framework: FIRAnalyticsConnector.framework
         embed: false
