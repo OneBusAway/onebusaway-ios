@@ -26,11 +26,11 @@ public protocol RegionsServiceDelegate: NSObjectProtocol {
 
 /// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
 public class RegionsService: NSObject, LocationServiceDelegate {
-    private let modelService: RegionsModelService
+    private let modelService: RegionsModelService?
     private let locationService: LocationService
     private let userDefaults: UserDefaults
     private let bundledRegionsFilePath: String
-    private let apiPath: String
+    private let apiPath: String?
 
     /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
     /// - Parameters:
@@ -40,7 +40,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///   - bundledRegionsFilePath: The path to the bundled regions file. It is probably named "regions.json" or something similar.
     ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
     ///   - delegate: A delegate object for callbacks.
-    public init(modelService: RegionsModelService, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String, delegate: RegionsServiceDelegate? = nil) {
+    public init(modelService: RegionsModelService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil) {
         self.modelService = modelService
         self.locationService = locationService
         self.userDefaults = userDefaults
@@ -231,6 +231,13 @@ public class RegionsService: NSObject, LocationServiceDelegate {
            !forceUpdate
         { // swiftlint:disable:this opening_brace
             notifyDelegatesRegionListUpdateCancelled()
+            return
+        }
+
+        guard
+            let modelService = modelService,
+            let apiPath = apiPath
+        else {
             return
         }
 

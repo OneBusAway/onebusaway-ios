@@ -153,9 +153,19 @@ open class CoreApplication: NSObject,
 
     // MARK: - Regions Service
 
-    private lazy var regionsAPIService = RegionsAPIService(baseURL: config.regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
+    private lazy var regionsAPIService: RegionsAPIService? = {
+        guard let regionsBaseURL = config.regionsBaseURL else {
+            return nil
+        }
 
-    private lazy var regionsModelService = RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
+        return RegionsAPIService(baseURL: regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
+    }()
+
+    private lazy var regionsModelService: RegionsModelService? = {
+        guard let regionsAPIService = regionsAPIService else { return nil }
+
+        return RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
+    }()
 
     open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         refreshRESTAPIModelService()

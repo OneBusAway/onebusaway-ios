@@ -1,0 +1,45 @@
+{
+  "code": 200,
+  "text": "OK",
+  "version": 3,
+  "data": {
+    "list": [
+      {
+        "supportsEmbeddedSocial": false, 
+        "supportsObaRealtimeApis": true, 
+        "contactEmail": "transitinfo@yrt.ca", 
+        "enrollParticipantsInStudy": false, 
+        "obaBaseUrl": "https://oba.yrt.ca/", 
+        "id": 0, 
+        "regionName": "York", 
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9", 
+        "travelBehaviorDataCollectionEnabled": false, 
+        "supportsObaDiscoveryApis": true, 
+        "supportsOtpBikeshare": false, 
+        "otpContactEmail": "transitinfo@yrt.ca", 
+        "otpBaseUrl": "https://otp.yrt.ca/otp", 
+        "paymentWarningBody": null, 
+        "supportsSiriRealtimeApis": false, 
+        "twitterUrl": "https://twitter.com/YRTViva", 
+        "paymentAndroidAppId": null, 
+        "paymentiOSAppStoreIdentifier": null, 
+        "paymentiOSAppUrlScheme": null, 
+        "active": true, 
+        "open311Servers": [], 
+        "paymentWarningTitle": null, 
+        "language": "en_CA", 
+        "bounds": [
+          {
+            "lat": 44.011386,
+            "latSpan": 0.5424609999999994,
+            "lon": -79.4764248,
+            "lonSpan": 0.576357999999999
+          }
+        ], 
+        "facebookUrl": "", 
+        "stopInfoUrl": null, 
+        "experimental": false
+      }
+    ]
+  }
+}

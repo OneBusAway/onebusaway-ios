@@ -17,7 +17,8 @@ import CoreLocation
 ///         likely want to use in your app.
 @objc(OBACoreAppConfig)
 open class CoreAppConfig: NSObject {
-    public let regionsBaseURL: URL
+    public let regionsBaseURL: URL?
+    public let regionsAPIPath: String?
     public let obacoBaseURL: URL?
     public let apiKey: String
     public let appVersion: String
@@ -25,7 +26,6 @@ open class CoreAppConfig: NSObject {
     public let userDefaults: UserDefaults
     public let locationService: LocationService
     public let bundledRegionsFilePath: String
-    public let regionsAPIPath: String
 
     /// This initializer will let you specify all properties.
     /// - Parameter regionsBaseURL: The base URL for the Regions server.
@@ -38,7 +38,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     @objc public init(
-        regionsBaseURL: URL,
+        regionsBaseURL: URL?,
         obacoBaseURL: URL?,
         apiKey: String,
         appVersion: String,
@@ -46,7 +46,7 @@ open class CoreAppConfig: NSObject {
         queue: OperationQueue,
         locationService: LocationService,
         bundledRegionsFilePath: String,
-        regionsAPIPath: String
+        regionsAPIPath: String?
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.obacoBaseURL = obacoBaseURL

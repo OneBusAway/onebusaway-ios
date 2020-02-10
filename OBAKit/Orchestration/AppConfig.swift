@@ -26,7 +26,7 @@ public class AppConfig: CoreAppConfig {
         analytics: Analytics?
     ) {
         self.init(
-            regionsBaseURL: appBundle.regionsServerBaseAddress!,
+            regionsBaseURL: appBundle.regionsServerBaseAddress,
             obacoBaseURL: appBundle.deepLinkServerBaseAddress,
             apiKey: appBundle.restServerAPIKey!,
             appVersion: appBundle.appVersion,
@@ -35,7 +35,7 @@ public class AppConfig: CoreAppConfig {
             queue: OperationQueue(),
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: appBundle.bundledRegionsFilePath!,
-            regionsAPIPath: appBundle.regionsServerAPIPath!
+            regionsAPIPath: appBundle.regionsServerAPIPath
         )
     }
 
@@ -51,7 +51,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     @objc public init(
-        regionsBaseURL: URL,
+        regionsBaseURL: URL?,
         obacoBaseURL: URL?,
         apiKey: String,
         appVersion: String,
@@ -60,7 +60,7 @@ public class AppConfig: CoreAppConfig {
         queue: OperationQueue,
         locationService: LocationService,
         bundledRegionsFilePath: String,
-        regionsAPIPath: String
+        regionsAPIPath: String?
     ) {
         self.analytics = analytics
         super.init(
