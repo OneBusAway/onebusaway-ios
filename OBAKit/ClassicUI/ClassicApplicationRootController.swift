@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 @objc(OBAClassicApplicationRootController)
 public class ClassicApplicationRootController: UITabBarController {
@@ -26,7 +27,9 @@ public class ClassicApplicationRootController: UITabBarController {
         let bookmarksNav = application.viewRouter.buildNavigation(controller: self.bookmarksController)
         let moreNav = application.viewRouter.buildNavigation(controller: self.moreController)
 
-        self.viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
+        viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
+
+        selectedIndex = application.userDataStore.lastSelectedView.rawValue
     }
 
     @objc public let mapController: MapViewController
@@ -36,5 +39,21 @@ public class ClassicApplicationRootController: UITabBarController {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    public override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+        guard
+            let itemIndex = tabBar.items?.firstIndex(of: item),
+            let selectedTab = SelectedTab(rawValue: itemIndex)
+        else {
+            return
+        }
+
+        // If the user is already on the map tab and they tap on the map tab item again, then zoom to their location.
+        if let root = (selectedViewController as? UINavigationController)?.viewControllers.first, root == mapController, selectedTab == .map {
+            mapController.centerMapOnUserLocation()
+        }
+
+        application.userDataStore.lastSelectedView = selectedTab
     }
 }

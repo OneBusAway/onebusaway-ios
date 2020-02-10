@@ -20,12 +20,10 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
     /// - Parameter userDefaults: The user defaults object.
     /// - Parameter analytics: An object that conforms to the `Analytics` protocol.
-    /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     @objc public convenience init(
         appBundle: Bundle,
         userDefaults: UserDefaults,
-        analytics: Analytics?,
-        bundledRegionsFilePath: String
+        analytics: Analytics?
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress!,
@@ -36,7 +34,7 @@ public class AppConfig: CoreAppConfig {
             analytics: analytics,
             queue: OperationQueue(),
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
-            bundledRegionsFilePath: bundledRegionsFilePath,
+            bundledRegionsFilePath: appBundle.bundledRegionsFilePath!,
             regionsAPIPath: appBundle.regionsServerAPIPath!
         )
     }

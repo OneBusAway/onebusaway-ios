@@ -51,6 +51,7 @@ targets:
           - pl.kiedybus.iphone.user_activity.trip
         OBAKitConfig:
           AppDevelopersEmailAddress: info@goeuropa.eu
+          BundledRegionsFileName: regions.json
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
           RegionsServerBaseAddress: https://kiedybus.pl

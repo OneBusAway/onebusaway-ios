@@ -44,6 +44,16 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// The name of the bundled regions JSON file, specified as `BundledRegionsFileName`.
+    var bundledRegionsFileName: String? {
+        return OBAKitConfig?["BundledRegionsFileName"] as? String
+    }
+
+    /// The path to the bundled regions JSON file.
+    var bundledRegionsFilePath: String? {
+        path(forResource: bundledRegionsFileName, ofType: nil)
+    }
+
     /// A helper method for accessing the bundle's `RegionsServerBaseAddress`
     var regionsServerBaseAddress: URL? {
         guard
