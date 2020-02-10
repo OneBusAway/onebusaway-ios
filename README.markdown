@@ -60,7 +60,7 @@ To create your own app target, duplicate the `Apps/OneBusAway` directory and upd
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
 
-We are using [Twine](https://github.com/scelis/twine) to manage localization. See the `Translations` folder for the two files that need to be updated in order to localize the app: `OBAKit.txt` and `OBAKitCore.txt`.
+We are using [Twine](https://github.com/scelis/twine) to manage localization. See the `Translations` folder for the three files that need to be updated in order to localize the app: `InfoPlist.txt`, `OBAKit.txt` and `OBAKitCore.txt`.
 
 ### How to Add a New Localizable String
 
