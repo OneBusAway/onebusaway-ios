@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -31,7 +31,9 @@ typedef NS_OPTIONS (NSInteger, IGListExperiment) {
     /// Test invalidating layout when cell reloads/updates in IGListBindingSectionController.
     IGListExperimentInvalidateLayoutForUpdates = 1 << 8,
     /// Test using the collection view when asking for layout instead of accessing the data source. Only apply to IGListCollectionViewLayout.
-    IGListExperimentUseCollectionViewInsteadOfDataSourceInLayout = 1 << 9
+    IGListExperimentUseCollectionViewInsteadOfDataSourceInLayout = 1 << 9,
+    /// Test committing CATransactions inline instead of batching potentially unrelated animations
+    IGListExperimentPerformUpdatesWithoutDeferringCATransactionCommit = 1 << 10
 };
 
 /**
