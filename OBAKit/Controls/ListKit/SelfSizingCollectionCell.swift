@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 class SelfSizingCollectionCell: UICollectionViewCell, SelfSizing {
     override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
