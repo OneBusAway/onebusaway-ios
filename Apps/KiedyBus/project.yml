@@ -17,6 +17,7 @@ targets:
       path: Apps/KiedyBus/Info.plist
       properties:
         CFBundleDisplayName: KiedyBus
+        CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "kiedybus", CFBundleURLSchemes: ["kiedybus"]}]
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
           NSExceptionDomains:
@@ -36,6 +37,7 @@ targets:
           AppDevelopersEmailAddress: info@goeuropa.eu
           AppGroup: group.pl.kiedybus.iphone
           BundledRegionsFileName: regions.json
+          ExtensionURLScheme: kiedybus
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
           RegionsServerBaseAddress: https://kiedybus.pl
@@ -44,10 +46,31 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
         MARKETING_VERSION: 20.2.0
-        
+  TodayView:
+    sources: ["Apps/KiedyBus/Assets.xcassets"]
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.pl.kiedybus.iphone
+    info:
+      properties:
+        CFBundleDisplayName: KiedyBus
+        CFBundleShortVersionString: 20.2.0
+        OBAKitConfig:
+          AppGroup: group.pl.kiedybus.iphone
+          BundledRegionsFileName: regions.json
+          ExtensionURLScheme: kiedybus
+          RESTServerAPIKey: web
+          RegionsServerBaseAddress: https://kiedybus.pl
+          RegionsServerAPIPath: /regions-v4.json
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.TodayView
+     
 include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
+  - path: TodayView/project.yml

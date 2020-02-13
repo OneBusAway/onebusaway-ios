@@ -6,8 +6,6 @@
 
 /********** Uncategorized **********/
 
-"NSHumanReadableCopyright" = "© Open Transit Software Foundation";
-
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Show your location on the map";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Pokaż swoją lokalizację na mapie";
 
 "NSLocationWhenInUseUsageDescription" = "Pokaż swoją lokalizację na mapie";

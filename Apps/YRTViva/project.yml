@@ -13,6 +13,7 @@ targets:
       path: Apps/YRTViva/Info.plist
       properties:
         CFBundleDisplayName: YRTViva
+        CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "yrtviva", CFBundleURLSchemes: ["yrtviva"]}]
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
         NSHumanReadableCopyright: © York Region Transit
@@ -25,13 +26,34 @@ targets:
           AppDevelopersEmailAddress: transitinfo@york.ca
           AppGroup: group.ca.yrt.YRTVIVA-iphone
           BundledRegionsFileName: regions.json
+          ExtensionURLScheme: yrtviva
           PrivacyPolicyURL: https://www.yrt.ca
           RESTServerAPIKey: test
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ca.yrt.YRTVIVA-iphone
         MARKETING_VERSION: 20.2.0
-        
+  TodayView:
+    sources: ["Apps/YRTViva/Assets.xcassets"]
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.ca.yrt.YRTVIVA-iphone
+    info:
+      properties:
+        CFBundleDisplayName: YRTViva
+        CFBundleShortVersionString: 20.2.0
+        OBAKitConfig:
+          AppDevelopersEmailAddress: transitinfo@york.ca
+          AppGroup: group.ca.yrt.YRTVIVA-iphone
+          BundledRegionsFileName: regions.json
+          ExtensionURLScheme: yrtviva
+          PrivacyPolicyURL: https://www.yrt.ca
+          RESTServerAPIKey: test
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ca.yrt.YRTVIVA-iphone.TodayView
+
 include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml

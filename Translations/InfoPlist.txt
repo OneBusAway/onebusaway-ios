@@ -1,8 +1,8 @@
 [[Uncategorized]]
 	[NSLocationAlwaysAndWhenInUseUsageDescription]
 		en = Show your location on the map
-		pl =
-    fr-CA = 
+		pl = Pokaż swoją lokalizację na mapie
+		fr-CA = 
 	[NSLocationWhenInUseUsageDescription]
 		en = Show your location on the map
 		pl = Pokaż swoją lokalizację na mapie

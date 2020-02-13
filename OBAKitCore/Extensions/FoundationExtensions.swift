@@ -44,6 +44,13 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// A helper method for accessing the bundle's `ExtensionURLScheme`.
+    ///
+    /// `extensionURLScheme` is used as an `init()` parameter on `URLSchemeRouter`.
+    var extensionURLScheme: String? {
+        OBAKitConfig?["ExtensionURLScheme"] as? String
+    }
+
     /// The name of the bundled regions JSON file, specified as `BundledRegionsFileName`.
     var bundledRegionsFileName: String? {
         return OBAKitConfig?["BundledRegionsFileName"] as? String

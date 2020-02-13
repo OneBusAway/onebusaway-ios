@@ -293,7 +293,16 @@
 		en = NOW
 		comment = Short formatted time text for arrivals/departures occurring now.
 		pl = TERAZ
+	[formatters.one_minute]
+		en = One minute
+		pl = 
 		fr-CA = 
+		comment = Formatted time text for arrivals/departures that occur in one minute.
+	[formatters.one_minute_ago]
+		en = One minute ago
+		pl = 
+		fr-CA = 
+		comment = Formatted time text for arrivals/departures that occurred one minute ago.
 	[formatters.routes_label_fmt]
 		en = Routes: %@
 		comment = A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'
@@ -318,7 +327,11 @@
 		en = Stop #%@
 		comment = Format string representing a numeric stop number. e.g. Stop #1234
 		pl = Przystanek #%@
+	[formatters.time_fmt]
+		en = %d minutes
+		pl = 
 		fr-CA = 
+		comment = Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.
 	[stop_problem_code.user_description.location_wrong]
 		en = Location is wrong
 		comment = User-facing string that means the location of the stop on the map is wrong.

@@ -360,6 +360,22 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         return appLinksRouter.route(userActivity: userActivity)
     }
+
+    @objc public func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        guard let scheme = Bundle.main.extensionURLScheme else {
+            return false
+        }
+
+        let router = URLSchemeRouter(scheme: scheme)
+        guard
+            let stopData = router.decode(url: url),
+            let topViewController = topViewController
+        else {
+            return false
+        }
+
+        viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
+        return true
     }
 
     // MARK: - Appearance and Themes

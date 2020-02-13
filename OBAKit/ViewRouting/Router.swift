@@ -59,6 +59,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: stopController, from: fromController)
     }
 
+    public func navigateTo(stopID: String, from fromController: UIViewController) {
+        let stopController = StopViewController(application: application, stopID: stopID)
+        navigate(to: stopController, from: fromController)
+    }
+
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
         let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
         navigate(to: tripController, from: fromController)

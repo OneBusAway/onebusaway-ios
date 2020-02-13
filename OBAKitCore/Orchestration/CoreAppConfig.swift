@@ -27,6 +27,28 @@ open class CoreAppConfig: NSObject {
     public let locationService: LocationService
     public let bundledRegionsFilePath: String
 
+    /// Convenience initializer that pulls from the host application's main `Bundle`.
+    /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
+    /// - Parameter userDefaults: The user defaults object.
+    /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
+    @objc public convenience init(
+        appBundle: Bundle,
+        userDefaults: UserDefaults,
+        bundledRegionsFilePath: String
+    ) {
+        self.init(
+            regionsBaseURL: appBundle.regionsServerBaseAddress!,
+            obacoBaseURL: appBundle.deepLinkServerBaseAddress,
+            apiKey: appBundle.restServerAPIKey!,
+            appVersion: appBundle.appVersion,
+            userDefaults: userDefaults,
+            queue: OperationQueue(),
+            locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
+            bundledRegionsFilePath: bundledRegionsFilePath,
+            regionsAPIPath: appBundle.regionsServerAPIPath!
+        )
+    }
+
     /// This initializer will let you specify all properties.
     /// - Parameter regionsBaseURL: The base URL for the Regions server.
     /// - Parameter obacoBaseURL: The base URL for the Obaco server.
