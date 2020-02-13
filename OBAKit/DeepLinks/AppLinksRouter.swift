@@ -1,5 +1,5 @@
 //
-//  DeepLinkRouter.swift
+//  AppLinksRouter.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 5/31/19.
@@ -10,11 +10,11 @@ import OBAKitCore
 import CocoaLumberjackSwift
 
 /// Creates deep links (i.e. Universal Links) to OBA-associated web pages.
-public class DeepLinkRouter: NSObject {
+public class AppLinksRouter: NSObject {
     private let baseURL: URL
     private let application: Application
 
-    /// Initializes the `DeepLinkRouter`
+    /// Initializes the `AppLinksRouter`
     ///
     /// - Parameter baseURL: The deep link server host. Usually this is `http://alerts.onebusaway.org`.
     public init?(baseURL: URL?, application: Application) {
@@ -101,7 +101,7 @@ public class DeepLinkRouter: NSObject {
     public var showArrivalDepartureDeepLink: ((ArrivalDepartureDeepLink) -> Void)?
 
     public func route(userActivity: NSUserActivity) -> Bool {
-        DDLogInfo("DeepLinkRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
+        DDLogInfo("AppLinksRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
 
         switch userActivity.activityType {
         case NSUserActivityTypeBrowsingWeb:

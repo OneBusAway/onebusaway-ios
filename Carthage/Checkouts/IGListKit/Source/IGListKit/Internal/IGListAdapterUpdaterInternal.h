@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -15,12 +15,6 @@
 #import "IGListBatchUpdates.h"
 
 NS_ASSUME_NONNULL_BEGIN
-
-FOUNDATION_EXTERN void convertReloadToDeleteInsert(NSMutableIndexSet *reloads,
-                                                   NSMutableIndexSet *deletes,
-                                                   NSMutableIndexSet *inserts,
-                                                   IGListIndexSetResult *result,
-                                                   NSArray<id<IGListDiffable>> *fromObjects);
 
 @interface IGListAdapterUpdater ()
 

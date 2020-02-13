@@ -58,7 +58,7 @@ public class UserActivityBuilder: NSObject {
         activity.requiredUserInfoKeys = [UserInfoKeys.stopID, UserInfoKeys.regionID]
         activity.userInfo = [UserInfoKeys.stopID: stop.id, UserInfoKeys.regionID: region.regionIdentifier]
 
-        if let router = application.deepLinkRouter {
+        if let router = application.appLinksRouter {
             activity.webpageURL = router.url(for: stop, region: region)
         }
 
@@ -105,7 +105,7 @@ public class UserActivityBuilder: NSObject {
             userInfo[UserInfoKeys.vehicleID] = vehicleID
         }
 
-        if let router = application.deepLinkRouter {
+        if let router = application.appLinksRouter {
             activity.webpageURL = router.encode(arrivalDeparture: arrDep, region: region)
         }
 

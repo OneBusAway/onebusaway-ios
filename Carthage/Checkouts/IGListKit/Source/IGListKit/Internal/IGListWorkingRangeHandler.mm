@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -123,8 +123,6 @@ typedef std::unordered_set<_IGListWorkingRangeHandlerIndexPath, _IGListWorkingRa
         IGListSectionController *sectionController = [listAdapter sectionControllerForObject:item];
         workingRangeSectionControllers.insert({sectionController});
     }
-
-    IGAssert(workingRangeSectionControllers.size() < 1000, @"This algorithm is way too slow with so many objects:%lu", workingRangeSectionControllers.size());
 
     // Tell any new section controllers that they have entered the working range
     for (const _IGListWorkingRangeHandlerSectionControllerWrapper &wrapper : workingRangeSectionControllers) {

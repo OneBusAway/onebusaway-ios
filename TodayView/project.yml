@@ -1,0 +1,19 @@
+targets:
+  TodayView:
+    type: app-extension
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: OBAKitCore
+      - carthage: IGListDiffKit
+      - carthage: IGListKit
+      - carthage: SwiftProtobuf
+      - sdk: NotificationCenter.framework
+    entitlements:
+      path: TodayView.entitlements
+    info:
+      path: Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPrincipalClass: TodayView.TodayViewController
+          NSExtensionPointIdentifier: com.apple.widget-extension

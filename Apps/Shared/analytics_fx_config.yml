@@ -1,0 +1,31 @@
+targets:
+  App:
+    dependencies:
+      - framework: FIRAnalyticsConnector.framework
+        embed: false
+      - framework: FirebaseAnalytics.framework
+        embed: false
+      - framework: FirebaseCore.framework
+        embed: false
+      - framework: FirebaseCoreDiagnostics.framework
+        embed: false
+      - framework: FirebaseInstanceID.framework
+        embed: false
+      - framework: GoogleAppMeasurement.framework
+        embed: false
+      - framework: GoogleUtilities.framework
+        embed: false
+      - framework: nanopb.framework
+        embed: false
+      - framework: Fabric.framework
+        embed: false
+      - framework: Crashlytics.framework
+        embed: false
+    postBuildScripts:
+      - name: Crashlytics
+        script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run"
+        inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"]
+        runOnlyWhenInstalling: true
+    settings:
+      base:
+        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"

@@ -2,6 +2,14 @@
 
 The changelog for `IGListKit`. Also see the [releases](https://github.com/instagram/IGListKit/releases) on GitHub.
 
+
+4.1.0 (upcoming release)
+-----
+
+- Introduce `IGListSwiftKit`, with Swift refinements for `dequeueReusableCellOfClass` methods. [Koen Punt](https://github.com/koenpunt) [(#1388)](https://github.com/Instagram/IGListKit/pull/1388).
+
+- Added `APPLICATION_EXTENSION_API_ONLY` support for `IGListDiffKit` [Peter Meyers](https://github.com/pm-dev) [(#1422)](https://github.com/Instagram/IGListKit/pull/1422)
+
 4.0.0
 -----
 ### Breaking Changes
@@ -38,9 +46,9 @@ The changelog for `IGListKit`. Also see the [releases](https://github.com/instag
 
 ### Fixes
 
-- Fixed bug with layouts inconsistency in `updateAnimated:completion` of IGListBindingSectionController. [Qinghua Hong](https://github.com/xohozu) [(#1285)](https://github.com/Instagram/IGListKit/pull/1285)
+- Fixed bug with layouts inconsistency in `updateAnimated:completion` of IGListBindingSectionController. [Qinghua Hong](https://github.com/qhhonx) [(#1285)](https://github.com/Instagram/IGListKit/pull/1285)
 
-- Fixed bug with `-[IGListAdapter scrollToObject:supplementaryKinds:scrollDirection:scrollPosition:animated:]` where the content inset(bottom/right) of the collection view was incorrectly being applied to the final offset and was inconsistent with the content inset(top/left) of the collection view being applied. [Qinghua Hong](https://github.com/xohozu) [(#1284)](https://github.com/Instagram/IGListKit/pull/1284)
+- Fixed bug with `-[IGListAdapter scrollToObject:supplementaryKinds:scrollDirection:scrollPosition:animated:]` where the content inset(bottom/right) of the collection view was incorrectly being applied to the final offset and was inconsistent with the content inset(top/left) of the collection view being applied. [Qinghua Hong](https://github.com/qhhonx) [(#1284)](https://github.com/Instagram/IGListKit/pull/1284)
 
 - Fixed crash when the data source is nil before calling `-[IGListAdapterUpdater performUpdateWithCollectionViewBlock:fromObjects:toObjectsBlock:animated:objectTransitionBlock:completion:]`. [Zhisheng Huang](https://github.com/lorixx) [(6cdd112)](https://github.com/Instagram/IGListKit/commit/6cdd112790f13a683d3e061a7646f2c3549cc4dd)
 

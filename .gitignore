@@ -6,9 +6,11 @@ DerivedData/
 OBAKit.xcodeproj
 Apps/**/Info.plist
 Apps/**/*.entitlements
+TodayView/**/*.entitlements
 OBAKit/Info.plist
 OBAKitCore/Info.plist
 OBAKitTests/Info.plist
+TodayView/Info.plist
 /project.yml
 
 ## Various settings

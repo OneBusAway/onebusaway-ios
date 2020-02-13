@@ -1,40 +1,18 @@
+############
+# OneBusAway
+############
+
 options:
   bundleIdPrefix: org.onebusaway
 
 targets:
   App:
     sources: ["Apps/OneBusAway", "Apps/Shared/CommonClient"]
-    dependencies:
-      - framework: FIRAnalyticsConnector.framework
-        embed: false
-      - framework: FirebaseAnalytics.framework
-        embed: false
-      - framework: FirebaseCore.framework
-        embed: false
-      - framework: FirebaseCoreDiagnostics.framework
-        embed: false
-      - framework: FirebaseInstanceID.framework
-        embed: false
-      - framework: GoogleAppMeasurement.framework
-        embed: false
-      - framework: GoogleUtilities.framework
-        embed: false
-      - framework: nanopb.framework
-        embed: false
-      - framework: Fabric.framework
-        embed: false
-      - framework: Crashlytics.framework
-        embed: false
-    attributes:
-      SystemCapabilities:
-        com.apple.Push:
-          enabled: 1
     entitlements:
       path: Apps/OneBusAway/OneBusAway.entitlements
       properties:
         com.apple.security.application-groups:
           - group.org.onebusaway.iphone
-        aps-environment: development
         com.apple.developer.associated-domains:
           - applinks:onebusaway.co
           - applinks:www.onebusaway.co
@@ -43,6 +21,7 @@ targets:
       path: Apps/OneBusAway/Info.plist
       properties:
         CFBundleDisplayName: OneBusAway
+        CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
         LSApplicationQueriesSchemes:
           - fb
           - twitter
@@ -52,71 +31,52 @@ targets:
           - co.bytemark.tgt
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
-          NSExceptionDomains:
-            yrt.ca:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            obartd.com:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            sdmts.com:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            v-a.io:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            rvtd.org:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            ngrok.io:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            onebusaway.co:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            194.89.230.196:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            wmata.com:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            camsys-apps.com:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            onebusaway.org:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
-            mta.info:
-              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
-              NSIncludesSubdomains: true
         NSHumanReadableCopyright: © Open Transit Software Foundation
         NSUserActivityTypes:
           - org.onebusaway.iphone.user_activity.stop
           - org.onebusaway.iphone.user_activity.trip
         OBAKitConfig:
           AppDevelopersEmailAddress: iphone-app@onebusaway.org
+          AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
           DeepLinkServerBaseAddress: https://onebusaway.co
-          PrivacyPolicyURL: http://onebusaway.org/privacy/
+          ExtensionURLScheme: onebusaway
+          PrivacyPolicyURL: https://onebusaway.org/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
           RESTServerAPIKey: org.onebusaway.iphone
-          RegionsServerBaseAddress: http://regions.onebusaway.org
+          RegionsServerBaseAddress: https://regions.onebusaway.org
           RegionsServerAPIPath: /regions-v3.json
-        UIBackgroundModes:
-          - remote-notification
-    postBuildScripts:
-      - name: Crashlytics
-        script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run"
-        inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"]
-        runOnlyWhenInstalling: true
     settings:
       base:
-        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
         MARKETING_VERSION: 20.2.0
-        
+  TodayView:
+    sources: ["Apps/OneBusAway/Assets.xcassets"]
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.org.onebusaway.iphone
+    info:
+      properties:
+        CFBundleDisplayName: OneBusAway
+        CFBundleShortVersionString: 20.2.0
+        OBAKitConfig:
+          AppGroup: group.org.onebusaway.iphone
+          BundledRegionsFileName: regions.json
+          DeepLinkServerBaseAddress: https://onebusaway.co
+          ExtensionURLScheme: onebusaway
+          RESTServerAPIKey: org.onebusaway.iphone
+          RegionsServerBaseAddress: https://regions.onebusaway.org
+          RegionsServerAPIPath: /regions-v3.json
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.TodayView
+
 include:
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/analytics_fx_config.yml
+  - path: Apps/Shared/push_config.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
+  - path: TodayView/project.yml

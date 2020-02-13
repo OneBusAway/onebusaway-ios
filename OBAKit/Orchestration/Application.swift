@@ -74,8 +74,8 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
-    @objc public private(set) lazy var deepLinkRouter: DeepLinkRouter? = {
-        let router = DeepLinkRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
+    @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
+        let router = AppLinksRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
         router?.showStopHandler = { [weak self] stop in
             guard
                 let self = self,
@@ -354,11 +354,28 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        guard let deepLinkRouter = deepLinkRouter else {
+        guard let appLinksRouter = appLinksRouter else {
             return false
         }
 
-        return deepLinkRouter.route(userActivity: userActivity)
+        return appLinksRouter.route(userActivity: userActivity)
+    }
+
+    @objc public func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        guard let scheme = Bundle.main.extensionURLScheme else {
+            return false
+        }
+
+        let router = URLSchemeRouter(scheme: scheme)
+        guard
+            let stopData = router.decode(url: url),
+            let topViewController = topViewController
+        else {
+            return false
+        }
+
+        viewRouter.navigateTo(stopID: stopData.stopID, from: topViewController)
+        return true
     }
 
     // MARK: - Appearance and Themes
@@ -515,7 +532,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         /// Feature status of Deep Linking.
         public var deepLinking: FeatureStatus {
-            switch (config.obacoBaseURL, application?.deepLinkRouter) {
+            switch (config.obacoBaseURL, application?.appLinksRouter) {
             case (nil, nil): return .off
             case (_, nil): return .notRunning
             default: return .running

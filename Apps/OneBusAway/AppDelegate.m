@@ -30,7 +30,10 @@
         NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
         [NSURLCache setSharedURLCache:urlCache];
 
-        _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:NSBundle.mainBundle.appGroup];
+        NSString *appGroup = NSBundle.mainBundle.appGroup;
+        assert(appGroup);
+
+        _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:appGroup];
         [_userDefaults registerDefaults:@{
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
@@ -72,6 +75,10 @@
 }
 
 #pragma mark - OBAApplicationDelegate
+
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
+    return [self.app application:app open:url options:options];
+}
 
 - (UIApplication*)uiApplication {
     return [UIApplication sharedApplication];

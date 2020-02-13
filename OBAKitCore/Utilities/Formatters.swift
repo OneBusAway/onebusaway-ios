@@ -212,6 +212,30 @@ public class Formatters: NSObject {
         }
     }
 
+    /// Creates a formatted string from the `ArrivalDeparture` object that shows the  formatted time until this event occurs.
+    ///
+    /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7 minutes"`.
+    /// 7 minutes in the past: `"-7 minutes"`. If the `ArrivalDeparture` event occurs now, then this will return `"NOW"`.
+    /// Special casing is applied for times that occur -1/+1 minute from now: "One minute ago" and "One minute".
+    /// This method is meant to be used as the value of `accessibilityLabel` properties, for instance, where the "m" suffix on
+    /// `shortFormattedTime()` will be misinterpreted by VoiceOver.
+    ///
+    /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
+    /// - Returns: The formatted string representing the time until the `arrivalDeparture` event occurs.
+    public func formattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
+        switch (abs(arrivalDeparture.arrivalDepartureMinutes), arrivalDeparture.temporalState) {
+        case (_, .present):
+            return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
+        case (1, .past):
+            return OBALoc("formatters.one_minute_ago", value: "One minute ago", comment: "Formatted time text for arrivals/departures that occurred one minute ago.")
+        case (1, .future):
+            return OBALoc("formatters.one_minute", value: "One minute", comment: "Formatted time text for arrivals/departures that occur in one minute.")
+        default:
+            let formatString = OBALoc("formatters.time_fmt", value: "%d minutes", comment: "Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.")
+            return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
+        }
+    }
+
     /// Retrieves the appropriate color for the passed-in `ScheduleStatus` value.
     /// - Parameter status: The schedule status to map to a color.
     /// - Returns: The color the passed-in status.

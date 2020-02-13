@@ -31,7 +31,9 @@ public class StopHeaderViewController: UIViewController {
 
     public var stop: Stop? {
         didSet {
-            updateUI()
+            if stop != oldValue {
+                updateUI()
+            }
         }
     }
 

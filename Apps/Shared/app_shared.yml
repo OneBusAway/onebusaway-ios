@@ -26,6 +26,7 @@ targets:
     dependencies:
       - target: OBAKitCore
       - target: OBAKit
+      - target: TodayView
       - carthage: SwiftProtobuf
     info:
       properties:

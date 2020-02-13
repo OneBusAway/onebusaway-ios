@@ -183,6 +183,12 @@
 /* Short formatted time text for arrivals/departures occurring now. */
 "formatters.now" = "NOW";
 
+/* Formatted time text for arrivals/departures that occur in one minute. */
+"formatters.one_minute" = "One minute";
+
+/* Formatted time text for arrivals/departures that occurred one minute ago. */
+"formatters.one_minute_ago" = "One minute ago";
+
 /* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
 "formatters.routes_label_fmt" = "Routes: %@";
 
@@ -197,6 +203,9 @@
 
 /* Format string representing a numeric stop number. e.g. Stop #1234 */
 "formatters.stop.stop_code_numeric" = "Stop #%@";
+
+/* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
+"formatters.time_fmt" = "%d minutes";
 
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Location is wrong";

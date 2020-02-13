@@ -1,0 +1,13 @@
+targets:
+  App:
+    attributes:
+      SystemCapabilities:
+        com.apple.Push:
+          enabled: 1
+    entitlements:
+      properties:
+        aps-environment: development
+    info:
+      properties:
+        UIBackgroundModes:
+          - remote-notification
