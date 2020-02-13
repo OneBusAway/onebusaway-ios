@@ -1,30 +1,13 @@
+############
+# KiedyBus
+############
+
 options:
   bundleIdPrefix: pl.kiedybus
 
 targets:
   App:
     sources: ["Apps/KiedyBus", "Apps/Shared/CommonClient"]
-    dependencies:
-      - framework: FIRAnalyticsConnector.framework
-        embed: false
-      - framework: FirebaseAnalytics.framework
-        embed: false
-      - framework: FirebaseCore.framework
-        embed: false
-      - framework: FirebaseCoreDiagnostics.framework
-        embed: false
-      - framework: FirebaseInstanceID.framework
-        embed: false
-      - framework: GoogleAppMeasurement.framework
-        embed: false
-      - framework: GoogleUtilities.framework
-        embed: false
-      - framework: nanopb.framework
-        embed: false
-      - framework: Fabric.framework
-        embed: false
-      - framework: Crashlytics.framework
-        embed: false
     entitlements:
       path: Apps/KiedyBus/KiedyBus.entitlements
       properties:
@@ -51,24 +34,20 @@ targets:
           - pl.kiedybus.iphone.user_activity.trip
         OBAKitConfig:
           AppDevelopersEmailAddress: info@goeuropa.eu
+          AppGroup: group.pl.kiedybus.iphone
           BundledRegionsFileName: regions.json
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
           RegionsServerBaseAddress: https://kiedybus.pl
           RegionsServerAPIPath: /regions-v4.json
-    postBuildScripts:
-      - name: Crashlytics
-        script: "${PROJECT_DIR}/Apps/Shared/Crashlytics/Fabric.framework/run"
-        inputFiles: ["$(SRCROOT)/$(BUILT_PRODUCTS_DIR)/$(INFOPLIST_PATH)"]
-        runOnlyWhenInstalling: true
     settings:
       base:
-        FRAMEWORK_SEARCH_PATHS: "$(inherited) $(PROJECT_DIR)/Apps/Shared/FirebaseAnalytics $(PROJECT_DIR)/Apps/Shared/Crashlytics"
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
         MARKETING_VERSION: 20.2.0
         
 include:
   - path: Apps/Shared/app_shared.yml
+  - path: Apps/Shared/analytics_fx_config.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

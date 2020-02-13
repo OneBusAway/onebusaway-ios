@@ -29,7 +29,10 @@
         NSURLCache *urlCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
         [NSURLCache setSharedURLCache:urlCache];
 
-        _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:NSBundle.mainBundle.appGroup];
+        NSString *appGroup = NSBundle.mainBundle.appGroup;
+        assert(appGroup);
+
+        _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:appGroup];
         [_userDefaults registerDefaults:@{
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
@@ -113,7 +116,6 @@
 #pragma mark - Push Notifications
 
 - (BOOL)isRegisteredForRemoteNotifications {
-    // return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
     return NO;
 }
 
