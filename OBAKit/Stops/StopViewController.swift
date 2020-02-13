@@ -661,12 +661,12 @@ StopPreferencesDelegate {
     func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
         guard
             let region = application.currentRegion,
-            let deepLinkRouter = application.deepLinkRouter
+            let appLinksRouter = application.appLinksRouter
         else {
             return
         }
 
-        let url = deepLinkRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
+        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
 
         let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
         application.viewRouter.present(activityController, from: self, isModal: true)
