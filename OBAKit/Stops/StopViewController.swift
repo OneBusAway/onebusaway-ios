@@ -106,24 +106,27 @@ StopPreferencesDelegate {
     /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
-            guard let stop = stop else { return }
-            performStopConfiguration(stop)
-            application.analytics?.reportStopViewed?(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
+            if stop != oldValue, let stop = stop {
+                stopWasSet(stop)
+            }
         }
     }
 
-    private func performStopConfiguration(_ stop: Stop) {
+    private func stopWasSet(_ stop: Stop) {
         if let region = application.currentRegion {
             application.userDataStore.addRecentStop(stop, region: region)
         }
 
         stopHeader.stop = stop
+
+        application.analytics?.reportStopViewed?(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
     }
 
     /// Arrival/Departure data for this stop.
     var stopArrivals: StopArrivals? {
         didSet {
-            if stopArrivals != nil {
+            if let stopArrivals = stopArrivals {
+                stop = stopArrivals.stop
                 dataDidReload()
                 beginUserActivity()
             }
@@ -144,7 +147,7 @@ StopPreferencesDelegate {
         self.stop = stop
         self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stop.id, region: application.currentRegion!)
 
-        performStopConfiguration(stop)
+        stopWasSet(stop)
     }
 
     /// Creates the view controller with only a `stopID`, which requires
@@ -276,8 +279,6 @@ StopPreferencesDelegate {
 
     // MARK: - Data Loading
 
-    private var errorBulletin: ErrorBulletin?
-
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {
         operation?.cancel()
@@ -290,11 +291,8 @@ StopPreferencesDelegate {
         op.then { [weak self] in
             guard let self = self else { return }
 
-            if op.apiOperation?.isEffective404 ?? false, self.bookmarkContext != nil, let uiApp = self.application.delegate?.uiApplication {
-
-                let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
-                self.errorBulletin = ErrorBulletin(application: self.application, message: message)
-                self.errorBulletin?.show(in: uiApp)
+            if self.isBookmarkBroken(operation: op) {
+                self.displayBrokenBookmarkMessage()
             }
             else if let error = op.error {
                 print("TODO! Handle me better: \(error)")
@@ -411,6 +409,28 @@ StopPreferencesDelegate {
 
         // More Options
         addMoreOptionsTableRows()
+    }
+
+    // MARK: - Broken Bookmarks
+
+    private var errorBulletin: ErrorBulletin?
+
+    /// Displays an alert telling the user their bookmark may be broken and need to be recreated.
+    private func displayBrokenBookmarkMessage() {
+        guard let uiApp = self.application.delegate?.uiApplication else {
+            return
+        }
+
+        let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+        self.errorBulletin = ErrorBulletin(application: self.application, message: message)
+        self.errorBulletin?.show(in: uiApp)
+    }
+
+    /// Attempts to detect if the current `bookmarkContext` is broken, given the server's response.
+    /// - Parameter operation: The model operation returned from loading the stop for the specified bookmark.
+    private func isBookmarkBroken(operation: StopArrivalsModelOperation) -> Bool {
+        let effective404 = operation.apiOperation?.isEffective404 ?? false
+        return bookmarkContext != nil && effective404
     }
 
     // MARK: - UI Builders
