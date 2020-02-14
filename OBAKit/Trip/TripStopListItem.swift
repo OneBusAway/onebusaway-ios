@@ -90,10 +90,24 @@ final class TripStopSectionController: ListSectionController {
     }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell else {
+        guard
+            let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell,
+            let object = object
+        else {
             fatalError()
         }
-        cell.tripStopListItem = object
+
+        cell.titleLabel.text = object.title
+        cell.timeLabel.text = object.formattedDate
+
+        if object.isUserDestination {
+            cell.tripSegmentView.image = Icons.walkTransport
+        }
+
+        if object.isCurrentVehicleLocation {
+            cell.tripSegmentView.image = Icons.transportIcon(from: object.routeType)
+        }
+
         return cell
     }
 
@@ -117,6 +131,8 @@ final class TripStopSectionController: ListSectionController {
 
 final class TripStopCell: SelfSizingCollectionCell, Separated {
 
+    static let tripSegmentImageWidth: CGFloat = 40.0
+
     /*
      [ |                             ]
      [ O  15th & Galer 7:25PM      > ]
@@ -125,29 +141,15 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
 
     let separator = tableCellSeparatorLayer()
 
-    var tripStopListItem: TripStopListItem? {
-        didSet {
-            guard let tripStopListItem = tripStopListItem else { return }
-            titleLabel.text = tripStopListItem.title
-
-            timeLabel.text = tripStopListItem.formattedDate
-
-            if tripStopListItem.isUserDestination {
-                segmentView.image = Icons.walkTransport
-            }
-
-            if tripStopListItem.isCurrentVehicleLocation {
-                segmentView.image = Icons.transportIcon(from: tripStopListItem.routeType)
-            }
-        }
-    }
-
     override func prepareForReuse() {
         super.prepareForReuse()
-        segmentView.image = nil
+        titleLabel.text = nil
+        timeLabel.text = nil
+        tripSegmentView.image = nil
+        tripSegmentView.adjacentTripOrder = nil
     }
 
-    private let titleLabel: UILabel = {
+    let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -155,15 +157,16 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
         return label
     }()
 
-    private let timeLabel: UILabel = {
+    let timeLabel: UILabel = {
         let label = UILabel.autolayoutNew()
+        label.textColor = ThemeColors.shared.secondaryLabel
         label.numberOfLines = 1
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
 
-    private let segmentView = TripSegmentView.autolayoutNew()
+    let tripSegmentView = TripSegmentView.autolayoutNew()
 
     private let accessoryImageView: UIView = {
         let imageView = UIImageView.autolayoutNew()
@@ -185,7 +188,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
         super.init(frame: frame)
         contentView.layer.addSublayer(separator)
 
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [segmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [tripSegmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
         stack.spacing = ThemeMetrics.compactPadding
         let stackWrapper = stack.embedInWrapperView(setConstraints: true)
         contentView.addSubview(stackWrapper)
@@ -196,7 +199,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
             stackWrapper.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
             stackWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             stackWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 48.0),
-            segmentView.widthAnchor.constraint(equalToConstant: 40.0)
+            tripSegmentView.widthAnchor.constraint(equalToConstant: TripStopCell.tripSegmentImageWidth)
         ])
     }
 
@@ -204,7 +207,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layoutSeparator(leftSeparatorInset: segmentView.intrinsicContentSize.width + 10.0)
+        layoutSeparator(leftSeparatorInset: TripStopCell.tripSegmentImageWidth + 10.0)
     }
 
     override var isHighlighted: Bool {

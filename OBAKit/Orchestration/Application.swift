@@ -439,7 +439,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         TableSectionHeaderView.appearance().backgroundColor = ThemeColors.shared.secondaryBackgroundColor
 
         TripSegmentView.appearance().imageColor = ThemeColors.shared.brand
-        TripSegmentView.appearance().lineColor = ThemeColors.shared.gray
+        TripSegmentView.appearance().lineColor = ThemeColors.shared.brand
 
         WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
         WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.brand

@@ -7,13 +7,16 @@
 
 import UIKit
 
-/// The line/circle adornment on the leading side of a cell on the `TripDetailsController`.
+/// The line/circle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
 /// Depicts if the associated stop is the user's destination or the current location of the transit vehicle.
 public class TripSegmentView: UIView {
 
-    private let lineWidth: CGFloat = 2.0
+    private let lineWidth: CGFloat = 1.0
     private let circleRadius: CGFloat = 30.0
+    private var halfRadius: CGFloat {
+        circleRadius / 2.0
+    }
     private let imageInset: CGFloat = 6.0
 
     /// This is the color that is used to highlight a value change in this label.
@@ -45,6 +48,9 @@ public class TripSegmentView: UIView {
         }
     }
 
+    /// If the trip segment being represented is for an adjacent trip (i.e. either the previous or next trip), this should be non-nil.
+    var adjacentTripOrder: AdjacentTripOrder?
+
     override public var intrinsicContentSize: CGSize {
         CGSize(width: circleRadius + (2.0 * lineWidth), height: UIView.noIntrinsicMetric)
     }
@@ -58,8 +64,29 @@ public class TripSegmentView: UIView {
         lineColor.setFill()
         lineColor.setStroke()
 
-        let halfRadius = circleRadius / 2.0
+        switch adjacentTripOrder {
+        case .next:
+            drawNextTripSegment(rect)
+        case .previous:
+            drawPreviousTripSegment(rect)
+        default:
+            drawRegularTripSegment(rect)
+        }
 
+        ctx?.restoreGState()
+    }
+
+    private func drawNextTripSegment(_ rect: CGRect) {
+        let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY)))
+        topLine.fill()
+    }
+
+    private func drawPreviousTripSegment(_ rect: CGRect) {
+        let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY), size: CGSize(width: lineWidth, height: rect.midY)))
+        bottomLine.fill()
+    }
+
+    private func drawRegularTripSegment(_ rect: CGRect) {
         let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         topLine.fill()
 
@@ -77,7 +104,5 @@ public class TripSegmentView: UIView {
 
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY + halfRadius), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         bottomLine.fill()
-
-        ctx?.restoreGState()
     }
 }

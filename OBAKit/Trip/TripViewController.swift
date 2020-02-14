@@ -118,7 +118,7 @@ class TripViewController: UIViewController,
 
     // MARK: - Drawer/Trip Details UI
 
-    private lazy var tripDetailsController = TripDetailsController(
+    private lazy var tripDetailsController = TripFloatingPanelController(
         application: application,
         tripConvertible: tripConvertible
     )
@@ -131,9 +131,6 @@ class TripViewController: UIViewController,
 
         // Set a content view controller.
         panel.set(contentViewController: tripDetailsController)
-
-        // Track a scroll view(or the siblings) in the content view controller.
-        panel.track(scrollView: tripDetailsController.collectionController.collectionView)
 
         return panel
     }()
