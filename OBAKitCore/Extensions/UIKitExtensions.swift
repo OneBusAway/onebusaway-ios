@@ -236,24 +236,42 @@ public extension UIImage {
         return composite!
     }
 
+    /// Darkens the image by 50%.
+    ///
+    /// Adapted from https://gist.github.com/mxcl/61c2b95f85dcfe4a058d25a9047e72e6
+    func darkened() -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        defer { UIGraphicsEndImageContext() }
+
+        guard let ctx = UIGraphicsGetCurrentContext(), let cgImage = cgImage else {
+            return self
+        }
+
+        // flip the image, or result appears flipped
+        ctx.scaleBy(x: 1.0, y: -1.0)
+        ctx.translateBy(x: 0, y: -size.height)
+
+        let rect = CGRect(origin: .zero, size: size)
+        ctx.draw(cgImage, in: rect)
+        UIColor(white: 0, alpha: 0.5).setFill()
+        ctx.fill(rect)
+
+        return UIGraphicsGetImageFromCurrentImageContext()!
+    }
+
     /// Colorize the image with the given tint color.
     /// - Parameter color: The tint color.
-    func tint(color: UIColor) -> UIImage {
-        if #available(iOS 13.0, *) {
-            return withTintColor(color, renderingMode: .alwaysTemplate)
-        }
-        else {
-            UIGraphicsBeginImageContextWithOptions(size, false, 0)
-            color.setFill()
-            let bounds = CGRect(origin: .zero, size: size)
-            UIRectFill(bounds)
-            draw(in: bounds, blendMode: .destinationIn, alpha: 1.0)
+    func tinted(color: UIColor, alpha: CGFloat = 1.0) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0)
+        defer { UIGraphicsEndImageContext() }
 
-            let tintedImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
+        color.setFill()
 
-            return tintedImage!
-        }
+        let bounds = CGRect(origin: .zero, size: size)
+        UIRectFill(bounds)
+        draw(in: bounds, blendMode: .destinationIn, alpha: alpha)
+
+        return UIGraphicsGetImageFromCurrentImageContext()!
     }
 }
 

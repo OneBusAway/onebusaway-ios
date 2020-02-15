@@ -136,14 +136,14 @@ public class TripSegmentView: UIView {
         bezierPath.fill()
         bezierPath.stroke()
 
-        let icon = Icons.walkTransport.tint(color: .white)
+        let icon = Icons.walkTransport.tinted(color: .white)
         icon.draw(in: miniFrame.insetBy(dx: 2.0, dy: 2.0))
 
         context?.restoreGState()
     }
 
     private func drawRouteType(_ routeType: RouteType, frame: CGRect) {
-        let image = Icons.transportIcon(from: routeType).tint(color: imageColor)
+        let image = Icons.transportIcon(from: routeType).tinted(color: imageColor)
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }
 }

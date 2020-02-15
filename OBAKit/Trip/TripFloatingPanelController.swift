@@ -18,8 +18,16 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         didSet {
             if isLoadedAndOnScreen {
                 collectionController.reload(animated: false)
+
+                setCollectionBottomContentInset()
             }
         }
+    }
+
+    private func setCollectionBottomContentInset() {
+        var insets = collectionController.collectionView.contentInset
+        insets.bottom = 300.0
+        collectionController.collectionView.contentInset = insets
     }
 
     var tripConvertible: TripConvertible? {
@@ -105,9 +113,7 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
 
     public lazy var collectionController: CollectionController = {
         let collection = CollectionController(application: application, dataSource: self)
-        var insets = collection.collectionView.contentInset
-        insets.bottom = 300 // abxoxo - come up with a better value for this!
-        collection.collectionView.contentInset = insets
+        collection.collectionView.showsVerticalScrollIndicator = false
 
         return collection
     }()
