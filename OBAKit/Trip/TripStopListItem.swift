@@ -9,6 +9,8 @@ import UIKit
 import IGListKit
 import OBAKitCore
 
+fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
+
 // MARK: - View Model
 
 class TripStopListItem: NSObject, ListDiffable {
@@ -86,7 +88,7 @@ final class TripStopSectionController: ListSectionController {
     private var object: TripStopListItem?
 
     override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40)
+        return CGSize(width: collectionContext!.containerSize.width, height: tripStopCellMinimumHeight)
     }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
@@ -186,6 +188,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+
         contentView.layer.addSublayer(separator)
 
         let stack = UIStackView.horizontalStack(arrangedSubviews: [tripSegmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
@@ -193,12 +196,15 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
         let stackWrapper = stack.embedInWrapperView(setConstraints: true)
         contentView.addSubview(stackWrapper)
 
+        let heightConstraint = stackWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: tripStopCellMinimumHeight)
+        heightConstraint.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             stackWrapper.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
             stackWrapper.topAnchor.constraint(equalTo: contentView.topAnchor),
             stackWrapper.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
             stackWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            stackWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: 48.0),
+            heightConstraint,
             tripSegmentView.widthAnchor.constraint(equalToConstant: TripStopCell.tripSegmentImageWidth)
         ])
     }
