@@ -52,7 +52,6 @@ extension Stop: MKAnnotation {
 // MARK: - TripStatus/MKAnnotation
 
 /// Adds conformance to `MKAnnotation` to `TripStatus`.
-/// Includes additional methods for rendering extra data directly onto the map.
 extension TripStatus: MKAnnotation {
 
     public var coordinate: CLLocationCoordinate2D {
@@ -61,5 +60,24 @@ extension TripStatus: MKAnnotation {
 
     public var title: String? {
         activeTrip.routeShortName
+    }
+}
+
+// MARK: - TripStopTime/MKAnnotation
+
+/// Adds conformance to `MKAnnotation` to `TripStopTime`.
+///
+/// - Note: See `MinimalStopAnnotationView`for more details.
+extension TripStopTime: MKAnnotation {
+    public var coordinate: CLLocationCoordinate2D {
+        stop.location.coordinate
+    }
+
+    public var title: String? {
+        Formatters.formattedTitle(stop: stop)
+    }
+
+    public var subtitle: String? {
+        nil
     }
 }

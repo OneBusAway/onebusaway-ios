@@ -55,11 +55,12 @@ class TripViewController: UIViewController,
         navigationItem.titleView = titleView
         updateTitleView()
 
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh(_:)))
+
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
-        loadTripDetails()
-        loadMapPolyline()
+        loadData()
 
         floatingPanel.addPanel(toParent: self)
     }
@@ -118,7 +119,7 @@ class TripViewController: UIViewController,
 
     // MARK: - Drawer/Trip Details UI
 
-    private lazy var tripDetailsController = TripDetailsController(
+    private lazy var tripDetailsController = TripFloatingPanelController(
         application: application,
         tripConvertible: tripConvertible
     )
@@ -132,9 +133,6 @@ class TripViewController: UIViewController,
         // Set a content view controller.
         panel.set(contentViewController: tripDetailsController)
 
-        // Track a scroll view(or the siblings) in the content view controller.
-        panel.track(scrollView: tripDetailsController.collectionController.collectionView)
-
         return panel
     }()
 
@@ -142,9 +140,20 @@ class TripViewController: UIViewController,
         return MapPanelLayout(initialPosition: .half)
     }
 
+    func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
+        if vc.position == .full {
+            tripDetailsController.removeBottomInsetPadding()
+        }
+        else {
+            tripDetailsController.addBottomInsetPadding()
+        }
+    }
+
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: TripDetailsModelOperation?
+
+    private var currentTripStatus: TripStatus?
 
     private func loadTripDetails() {
         guard let apiService = application.restAPIModelService else {
@@ -161,11 +170,15 @@ class TripViewController: UIViewController,
             else { return }
 
             self.tripDetailsController.tripDetails = tripDetails
-            self.mapView.removeAllAnnotations()
-            let stops = tripDetails.stopTimes.map { $0.stop }
-            self.mapView.addAnnotations(stops)
+            self.mapView.updateAnnotations(with: tripDetails.stopTimes)
+
+            if let currentTripStatus = self.currentTripStatus {
+                self.mapView.removeAnnotation(currentTripStatus)
+                self.currentTripStatus = nil
+            }
 
             if let tripStatus = tripDetails.status {
+                self.currentTripStatus = tripStatus
                 self.mapView.addAnnotation(tripStatus)
             }
         }
@@ -175,9 +188,13 @@ class TripViewController: UIViewController,
     // MARK: - Map Data
 
     private var shapeOperation: ShapeModelOperation?
+    private var routePolyline: MKPolyline?
 
     private func loadMapPolyline() {
-        guard let apiService = application.restAPIModelService else {
+        guard
+            let apiService = application.restAPIModelService,
+            routePolyline == nil // No need to reload the polyline if we already have it
+        else {
             return
         }
 
@@ -190,12 +207,25 @@ class TripViewController: UIViewController,
                 let polyline = op.polyline
             else { return }
 
+            self.routePolyline = polyline
+
             self.mapView.addOverlay(polyline)
 
             self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 220, right: 20))
         }
 
         shapeOperation = op
+    }
+
+    // MARK: - Load Data
+
+    @objc private func refresh(_ sender: Any) {
+        loadData()
+    }
+
+    private func loadData() {
+        loadTripDetails()
+        loadMapPolyline()
     }
 
     // MARK: - Map View
@@ -206,7 +236,15 @@ class TripViewController: UIViewController,
         return map
     }()
 
-    // MARK: - DRY up with MapRegionManager
+    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        guard let stopTime = view.annotation as? TripStopTime else {
+            return
+        }
+
+        tripDetailsController.highlightStopInList(stopTime.stop)
+    }
+
+    // TODO FIXME: DRY up with MapRegionManager
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
@@ -237,6 +275,7 @@ class TripViewController: UIViewController,
 
         if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
+            view.canShowCallout = true
         }
 
         return annotationView
@@ -245,7 +284,7 @@ class TripViewController: UIViewController,
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
-        case is Stop: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
+        case is TripStopTime: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
         case is TripStatus: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         default: return nil
         }

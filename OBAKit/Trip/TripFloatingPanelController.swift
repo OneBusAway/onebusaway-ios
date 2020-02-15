@@ -10,7 +10,7 @@ import IGListKit
 import OBAKitCore
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
-public class TripDetailsController: UIViewController, ListProvider, ListAdapterDataSource, ListKitStopConverters, AppContext {
+public class TripFloatingPanelController: UIViewController, ListProvider, ListAdapterDataSource, ListKitStopConverters, AppContext {
 
     let application: Application
 
@@ -24,8 +24,8 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
 
     var tripConvertible: TripConvertible? {
         didSet {
-            if isLoadedAndOnScreen {
-                collectionController.reload(animated: false)
+            if isLoadedAndOnScreen, let arrivalDeparture = stopArrivalView.arrivalDeparture {
+                stopArrivalView.arrivalDeparture = arrivalDeparture
             }
         }
     }
@@ -69,19 +69,82 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         operation?.cancel()
     }
 
-    // MARK: - Collection Controller
-
-    public lazy var collectionController = CollectionController(application: application, dataSource: self)
-
     // MARK: - UIViewController
 
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+
+        prepareChildController(collectionController) {
+            view.addSubview(outerStack)
+            outerStack.pinToSuperview(.edges)
+        }
     }
+
+    // MARK: - Public Methods
+
+    public func highlightStopInList(_ stop: Stop) {
+        var listItem: TripStopListItem?
+
+        for obj in collectionController.listAdapter.objects() {
+            if let obj = obj as? TripStopListItem {
+                if obj.stop.id == stop.id {
+                    listItem = obj
+                    break
+                }
+            }
+        }
+
+        if let listItem = listItem {
+            collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .centeredVertically, animated: true)
+        }
+    }
+
+    public func removeBottomInsetPadding() {
+        collectionController.collectionView.contentInset.bottom = 0
+    }
+
+    public func addBottomInsetPadding() {
+        collectionController.collectionView.contentInset.bottom = 300.0
+    }
+
+    // MARK: - UI
+
+    public lazy var collectionController: CollectionController = {
+        let collection = CollectionController(application: application, dataSource: self)
+        collection.collectionView.showsVerticalScrollIndicator = false
+
+        return collection
+    }()
+
+    private lazy var stopArrivalView: StopArrivalView = {
+        let view = StopArrivalView.autolayoutNew()
+        view.formatters = application.formatters
+        if let arrDep = tripConvertible?.arrivalDeparture {
+            view.arrivalDeparture = arrDep
+        }
+        return view
+    }()
+
+    private lazy var topPaddingView: UIView = {
+        let view = UIView.autolayoutNew()
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: 8.0)
+        ])
+        return view
+    }()
+
+    private lazy var separatorView: UIView = {
+        let view = UIView.autolayoutNew()
+        view.backgroundColor = ThemeColors.shared.separator
+        NSLayoutConstraint.activate([
+            view.heightAnchor.constraint(equalToConstant: 1.0)
+        ])
+        return view
+    }()
+
+    private lazy var outerStack = UIStackView.verticalStack(arangedSubviews: [topPaddingView, stopArrivalView, separatorView, collectionController.view])
 
     // MARK: - ListAdapterDataSource (Data Loading)
 
@@ -92,37 +155,31 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
 
         var sections = [ListDiffable]()
 
-        let arrivalDeparture = tripConvertible?.arrivalDeparture
-
-        // Section: ArrivalDeparture Header
-
-        if let arrivalDeparture = arrivalDeparture {
-            sections.append(arrivalDeparture)
-        }
-
         // Section: Service Alerts
         if tripDetails.situations.count > 0 {
             sections.append(buildServiceAlertsSection(situations: tripDetails.situations))
         }
 
         // Section: Previous Trip
-
         if let previousTrip = tripDetails.previousTrip {
-            let titleFmt = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
-            sections.append(buildAdjacentTripSection(trip: previousTrip, rowTitleFormat: titleFmt))
+            let section = AdjacentTripSection(trip: previousTrip, order: .previous) { [weak self] in
+                self?.showAdjacentTrip(previousTrip)
+            }
+            sections.append(section)
         }
 
         // Section: Stop Times
-
+        let arrivalDeparture = tripConvertible?.arrivalDeparture
         for stopTime in tripDetails.stopTimes {
             sections.append(TripStopListItem(stopTime: stopTime, arrivalDeparture: arrivalDeparture, formatters: application.formatters))
         }
 
         // Section: Next Trip
-
         if let nextTrip = tripDetails.nextTrip {
-            let titleFmt = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
-            sections.append(buildAdjacentTripSection(trip: nextTrip, rowTitleFormat: titleFmt))
+            let section = AdjacentTripSection(trip: nextTrip, order: .next) { [weak self] in
+                self?.showAdjacentTrip(nextTrip)
+            }
+            sections.append(section)
         }
 
         return sections
@@ -143,20 +200,15 @@ public class TripDetailsController: UIViewController, ListProvider, ListAdapterD
         return nil
     }
 
-    private func buildAdjacentTripSection(trip: Trip, rowTitleFormat: String) -> TableSectionData {
-        let rowTitle = String(format: rowTitleFormat, trip.routeHeadsign)
-        let row = TableRowData(title: rowTitle, accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard
-                let self = self,
-                let apiService = self.application.restAPIModelService,
-                let tripDetails = self.tripDetails
-            else { return }
+    private func showAdjacentTrip(_ trip: Trip) {
+        guard
+            let apiService = self.application.restAPIModelService,
+            let tripDetails = self.tripDetails
+        else { return }
 
-            let op = apiService.getTripDetails(tripID: trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
-            let controller = TripDetailsController(application: self.application, operation: op)
-            self.application.viewRouter.navigate(to: controller, from: self)
-        }
-        return TableSectionData(row: row)
+        let op = apiService.getTripDetails(tripID: trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
+        let controller = TripFloatingPanelController(application: self.application, operation: op)
+        self.application.viewRouter.navigate(to: controller, from: self)
     }
 
     private func buildServiceAlertsSection(situations: [Situation]) -> TableSectionData {
