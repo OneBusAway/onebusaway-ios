@@ -149,6 +149,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
     let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
+        label.textColor = ThemeColors.shared.label
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label

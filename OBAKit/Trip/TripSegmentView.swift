@@ -127,7 +127,7 @@ public class TripSegmentView: UIView {
         let miniFrame = CGRect(x: frame.midX - lineWidth, y: frame.midY - lineWidth, width: halfRadius + lineWidth, height: halfRadius + lineWidth)
 
         lineColor.setFill()
-        UIColor.white.setStroke()
+        ThemeColors.shared.systemBackground.setStroke()
 
         let corners = UIRectCorner.topLeft.union(.bottomRight)
         let cornerRadii = CGSize(width: ThemeMetrics.compactCornerRadius, height: ThemeMetrics.compactCornerRadius)
