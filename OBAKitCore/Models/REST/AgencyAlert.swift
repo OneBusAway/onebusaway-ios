@@ -137,6 +137,7 @@ public class AgencyAlert: NSObject {
 }
 
 // MARK: - Errors
+
 extension AgencyAlert {
     enum AlertError: Error {
         case invalidAlert, unknownAgency
@@ -144,6 +145,7 @@ extension AgencyAlert {
 }
 
 // MARK: - Timeframes
+
 extension AgencyAlert {
     public var startDate: Date? {
         guard
@@ -223,6 +225,7 @@ extension AgencyAlert {
 }
 
 // MARK: - Static Helpers
+
 extension AgencyAlert {
     public static func isAgencyWideAlert(alert: TransitRealtime_Alert) -> Bool {
         for sel in alert.informedEntity where sel.hasAgencyID {
