@@ -72,7 +72,7 @@ public class MapSnapshotter: NSObject {
             var annotatedImage = UIImage.draw(image: stopIcon, onto: snapshot.image, at: point)
 
             if traitCollection.userInterfaceStyle == .light {
-                annotatedImage = annotatedImage.overlay(color: ThemeColors.shared.mapSnapshotOverlayColor)
+                annotatedImage = annotatedImage.tint(color: ThemeColors.shared.mapSnapshotOverlayColor)
             }
 
             completion(annotatedImage)

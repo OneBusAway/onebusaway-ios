@@ -236,66 +236,24 @@ public extension UIImage {
         return composite!
     }
 
-    // colorize image with given tint color
-    // this is similar to Photoshop's "Color" layer blend mode
-    // this is perfect for non-greyscale source images, and images that have both highlights and shadows that should be preserved
-    // white will stay white and black will stay black as the lightness of the image is preserved
-    func tint(tintColor: UIColor) -> UIImage {
-        return modifiedImage { context, rect in
-            // draw black background - workaround to preserve color of partially transparent pixels
-            context.setBlendMode(.normal)
-            UIColor.black.setFill()
-            context.fill(rect)
-
-            // draw original image
-            context.setBlendMode(.normal)
-            context.draw(self.cgImage!, in: rect)
-
-            // tint image (loosing alpha) - the luminosity of the original image is preserved
-            context.setBlendMode(.color)
-            tintColor.setFill()
-            context.fill(rect)
-
-            // mask by alpha values of original image
-            context.setBlendMode(.destinationIn)
-            context.draw(self.cgImage!, in: rect)
+    /// Colorize the image with the given tint color.
+    /// - Parameter color: The tint color.
+    func tint(color: UIColor) -> UIImage {
+        if #available(iOS 13.0, *) {
+            return withTintColor(color, renderingMode: .alwaysTemplate)
         }
-    }
+        else {
+            UIGraphicsBeginImageContextWithOptions(size, false, 0)
+            color.setFill()
+            let bounds = CGRect(origin: .zero, size: size)
+            UIRectFill(bounds)
+            draw(in: bounds, blendMode: .destinationIn, alpha: 1.0)
 
-    func overlay(color: UIColor) -> UIImage {
-        return modifiedImage { (context, rect) in
-            context.setBlendMode(.normal)
-            UIColor.black.setFill()
-            context.fill(rect)
+            let tintedImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
 
-            // draw original image
-            context.setBlendMode(.normal)
-            context.draw(self.cgImage!, in: rect)
-
-            UIColor(white: 0.0, alpha: 0.4).setFill()
-            context.fill(rect)
+            return tintedImage!
         }
-    }
-
-    private func modifiedImage(modifyOrientation: Bool = true, draw: (CGContext, CGRect) -> Void) -> UIImage {
-        // using scale correctly preserves retina images
-        UIGraphicsBeginImageContextWithOptions(size, false, scale)
-        let context: CGContext! = UIGraphicsGetCurrentContext()
-        assert(context != nil)
-
-        // correctly rotate image
-        if modifyOrientation {
-            context.translateBy(x: 0, y: size.height)
-            context.scaleBy(x: 1.0, y: -1.0)
-        }
-
-        let rect = CGRect(x: 0.0, y: 0.0, width: size.width, height: size.height)
-
-        draw(context, rect)
-
-        let image = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        return image!
     }
 }
 

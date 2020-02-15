@@ -101,14 +101,9 @@ final class TripStopSectionController: ListSectionController {
 
         cell.titleLabel.text = object.title
         cell.timeLabel.text = object.formattedDate
+        cell.tripSegmentView.routeType = object.routeType
 
-        if object.isUserDestination {
-            cell.tripSegmentView.image = Icons.walkTransport
-        }
-
-        if object.isCurrentVehicleLocation {
-            cell.tripSegmentView.image = Icons.transportIcon(from: object.routeType)
-        }
+        cell.tripSegmentView.setDestinationStatus(user: object.isUserDestination, vehicle: object.isCurrentVehicleLocation)
 
         return cell
     }

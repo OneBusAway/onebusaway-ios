@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// The line/circle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
@@ -17,7 +18,7 @@ public class TripSegmentView: UIView {
     private var halfRadius: CGFloat {
         circleRadius / 2.0
     }
-    private let imageInset: CGFloat = 6.0
+    private let imageInset: CGFloat = 5.0
 
     /// This is the color that is used to highlight a value change in this label.
     @objc public dynamic var lineColor: UIColor {
@@ -48,6 +49,17 @@ public class TripSegmentView: UIView {
         }
     }
 
+    var routeType: RouteType = .unknown
+
+    private var isUserDestination: Bool = false
+    private var isCurrentVehicleLocation: Bool = false
+
+    public func setDestinationStatus(user: Bool, vehicle: Bool) {
+        isUserDestination = user
+        isCurrentVehicleLocation = vehicle
+        setNeedsDisplay()
+    }
+
     /// If the trip segment being represented is for an adjacent trip (i.e. either the previous or next trip), this should be non-nil.
     var adjacentTripOrder: AdjacentTripOrder?
 
@@ -66,43 +78,72 @@ public class TripSegmentView: UIView {
 
         switch adjacentTripOrder {
         case .next:
-            drawNextTripSegment(rect)
+            drawNextTripSegment(rect, context: ctx)
         case .previous:
-            drawPreviousTripSegment(rect)
+            drawPreviousTripSegment(rect, context: ctx)
         default:
-            drawRegularTripSegment(rect)
+            drawRegularTripSegment(rect, context: ctx)
         }
 
         ctx?.restoreGState()
     }
 
-    private func drawNextTripSegment(_ rect: CGRect) {
+    private func drawNextTripSegment(_ rect: CGRect, context: CGContext?) {
         let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY)))
         topLine.fill()
     }
 
-    private func drawPreviousTripSegment(_ rect: CGRect) {
+    private func drawPreviousTripSegment(_ rect: CGRect, context: CGContext?) {
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY), size: CGSize(width: lineWidth, height: rect.midY)))
         bottomLine.fill()
     }
 
-    private func drawRegularTripSegment(_ rect: CGRect) {
+    private func drawRegularTripSegment(_ rect: CGRect, context: CGContext?) {
         let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         topLine.fill()
 
-        let circleRect = CGRect(origin: CGPoint(x: rect.midX - halfRadius, y: rect.midY - halfRadius), size: CGSize(width: circleRadius, height: circleRadius))
-        let circle = UIBezierPath(ovalIn: circleRect)
-        circle.lineWidth = lineWidth
-        circle.stroke()
+        let bezierFrame = CGRect(origin: CGPoint(x: rect.midX - halfRadius, y: rect.midY - halfRadius), size: CGSize(width: circleRadius, height: circleRadius))
 
-        if var image = image {
-            if #available(iOS 13.0, *) {
-                image = image.withTintColor(imageColor, renderingMode: .alwaysTemplate)
-            }
-            image.draw(in: circleRect.insetBy(dx: imageInset, dy: imageInset))
+        let bezierPath = UIBezierPath(roundedRect: bezierFrame, cornerRadius: ThemeMetrics.compactCornerRadius)
+        bezierPath.lineWidth = lineWidth
+
+        if isCurrentVehicleLocation {
+            drawRouteType(routeType, frame: bezierFrame)
         }
+
+        if isUserDestination {
+            drawUserDestinationBadge(frame: bezierFrame, context: context)
+        }
+
+        bezierPath.stroke()
 
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY + halfRadius), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         bottomLine.fill()
+    }
+
+    private func drawUserDestinationBadge(frame: CGRect, context: CGContext?) {
+        context?.saveGState()
+
+        let miniFrame = CGRect(x: frame.midX - lineWidth, y: frame.midY - lineWidth, width: halfRadius + lineWidth, height: halfRadius + lineWidth)
+
+        lineColor.setFill()
+        UIColor.white.setStroke()
+
+        let corners = UIRectCorner.topLeft.union(.bottomRight)
+        let cornerRadii = CGSize(width: ThemeMetrics.compactCornerRadius, height: ThemeMetrics.compactCornerRadius)
+        let bezierPath = UIBezierPath(roundedRect: miniFrame, byRoundingCorners: corners, cornerRadii: cornerRadii)
+        bezierPath.lineWidth = lineWidth
+        bezierPath.fill()
+        bezierPath.stroke()
+
+        let icon = Icons.walkTransport.tint(color: .white)
+        icon.draw(in: miniFrame.insetBy(dx: 2.0, dy: 2.0))
+
+        context?.restoreGState()
+    }
+
+    private func drawRouteType(_ routeType: RouteType, frame: CGRect) {
+        let image = Icons.transportIcon(from: routeType).tint(color: imageColor)
+        image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }
 }
