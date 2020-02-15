@@ -159,8 +159,7 @@ class TripViewController: UIViewController,
 
             self.tripDetailsController.tripDetails = tripDetails
             self.mapView.removeAllAnnotations()
-            let stops = tripDetails.stopTimes.map { $0.stop }
-            self.mapView.addAnnotations(stops)
+            self.mapView.addAnnotations(tripDetails.stopTimes)
 
             if let tripStatus = tripDetails.status {
                 self.mapView.addAnnotation(tripStatus)
@@ -203,7 +202,15 @@ class TripViewController: UIViewController,
         return map
     }()
 
-    // MARK: - DRY up with MapRegionManager
+    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        guard let stopTime = view.annotation as? TripStopTime else {
+            return
+        }
+
+        tripDetailsController.highlightStopInList(stopTime.stop)
+    }
+
+    // TODO FIXME: DRY up with MapRegionManager
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
@@ -234,6 +241,7 @@ class TripViewController: UIViewController,
 
         if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
+            view.canShowCallout = true
         }
 
         return annotationView
@@ -242,7 +250,7 @@ class TripViewController: UIViewController,
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
-        case is Stop: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
+        case is TripStopTime: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
         case is TripStatus: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         default: return nil
         }

@@ -82,9 +82,35 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         }
     }
 
+    // MARK: - Public Methods
+
+    public func highlightStopInList(_ stop: Stop) {
+        var listItem: TripStopListItem?
+
+        for obj in collectionController.listAdapter.objects() {
+            if let obj = obj as? TripStopListItem {
+                if obj.stop.id == stop.id {
+                    listItem = obj
+                    break
+                }
+            }
+        }
+
+        if let listItem = listItem {
+            collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .centeredVertically, animated: true)
+        }
+    }
+
     // MARK: - UI
 
-    public lazy var collectionController = CollectionController(application: application, dataSource: self)
+    public lazy var collectionController: CollectionController = {
+        let collection = CollectionController(application: application, dataSource: self)
+        var insets = collection.collectionView.contentInset
+        insets.bottom = 300 // abxoxo - come up with a better value for this!
+        collection.collectionView.contentInset = insets
+
+        return collection
+    }()
 
     private lazy var stopArrivalView: StopArrivalView = {
         let view = StopArrivalView.autolayoutNew()
