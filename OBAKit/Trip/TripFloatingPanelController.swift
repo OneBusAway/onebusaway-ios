@@ -18,16 +18,8 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         didSet {
             if isLoadedAndOnScreen {
                 collectionController.reload(animated: false)
-
-                setCollectionBottomContentInset()
             }
         }
-    }
-
-    private func setCollectionBottomContentInset() {
-        var insets = collectionController.collectionView.contentInset
-        insets.bottom = 300.0
-        collectionController.collectionView.contentInset = insets
     }
 
     var tripConvertible: TripConvertible? {
@@ -107,6 +99,14 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         if let listItem = listItem {
             collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .centeredVertically, animated: true)
         }
+    }
+
+    public func removeBottomInsetPadding() {
+        collectionController.collectionView.contentInset.bottom = 0
+    }
+
+    public func addBottomInsetPadding() {
+        collectionController.collectionView.contentInset.bottom = 300.0
     }
 
     // MARK: - UI

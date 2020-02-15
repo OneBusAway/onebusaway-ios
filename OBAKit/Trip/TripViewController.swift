@@ -140,6 +140,15 @@ class TripViewController: UIViewController,
         return MapPanelLayout(initialPosition: .half)
     }
 
+    func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
+        if vc.position == .full {
+            tripDetailsController.removeBottomInsetPadding()
+        }
+        else {
+            tripDetailsController.addBottomInsetPadding()
+        }
+    }
+
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: TripDetailsModelOperation?
