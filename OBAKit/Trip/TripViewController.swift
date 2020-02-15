@@ -55,11 +55,12 @@ class TripViewController: UIViewController,
         navigationItem.titleView = titleView
         updateTitleView()
 
+        navigationItem.rightBarButtonItem = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh(_:)))
+
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
-        loadTripDetails()
-        loadMapPolyline()
+        loadData()
 
         floatingPanel.addPanel(toParent: self)
     }
@@ -143,6 +144,8 @@ class TripViewController: UIViewController,
 
     private var tripDetailsOperation: TripDetailsModelOperation?
 
+    private var currentTripStatus: TripStatus?
+
     private func loadTripDetails() {
         guard let apiService = application.restAPIModelService else {
             return
@@ -158,10 +161,15 @@ class TripViewController: UIViewController,
             else { return }
 
             self.tripDetailsController.tripDetails = tripDetails
-            self.mapView.removeAllAnnotations()
-            self.mapView.addAnnotations(tripDetails.stopTimes)
+            self.mapView.updateAnnotations(with: tripDetails.stopTimes)
+
+            if let currentTripStatus = self.currentTripStatus {
+                self.mapView.removeAnnotation(currentTripStatus)
+                self.currentTripStatus = nil
+            }
 
             if let tripStatus = tripDetails.status {
+                self.currentTripStatus = tripStatus
                 self.mapView.addAnnotation(tripStatus)
             }
         }
@@ -171,9 +179,13 @@ class TripViewController: UIViewController,
     // MARK: - Map Data
 
     private var shapeOperation: ShapeModelOperation?
+    private var routePolyline: MKPolyline?
 
     private func loadMapPolyline() {
-        guard let apiService = application.restAPIModelService else {
+        guard
+            let apiService = application.restAPIModelService,
+            routePolyline == nil // No need to reload the polyline if we already have it
+        else {
             return
         }
 
@@ -186,12 +198,25 @@ class TripViewController: UIViewController,
                 let polyline = op.polyline
             else { return }
 
+            self.routePolyline = polyline
+
             self.mapView.addOverlay(polyline)
 
             self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 220, right: 20))
         }
 
         shapeOperation = op
+    }
+
+    // MARK: - Load Data
+
+    @objc private func refresh(_ sender: Any) {
+        loadData()
+    }
+
+    private func loadData() {
+        loadTripDetails()
+        loadMapPolyline()
     }
 
     // MARK: - Map View
