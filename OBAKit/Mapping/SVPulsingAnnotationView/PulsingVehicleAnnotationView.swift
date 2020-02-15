@@ -57,15 +57,34 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
         didSet {
             guard let annotation = annotation as? TripStatus else { return }
 
-            // n.b. The coordinate system that Core Graphics uses on iOS for transforms is backwards from what
-            // you would normally expect, and backwards from what the OBA API vends. Long story short: instead
-            // of generating *exactly backwards* data at the model layer, we'll just flip it here instead.
-            // Long story short, negate your orientation in order to have it look right.
-            headingImageView.transform = CGAffineTransform(rotationAngle: CGFloat(-annotation.orientation.radians))
+            updateHeading(tripStatus: annotation)
 
             routeType = annotation.activeTrip.route.routeType
             isRealTime = annotation.isRealTime
         }
+    }
+
+    // MARK: - Heading
+
+    private func updateHeading(tripStatus: TripStatus) {
+        guard tripStatus.isRealTime else {
+            headingImageView.isHidden = true
+            return
+        }
+
+        if headingImage == nil {
+            headingImage = Icons.vehicleHeading
+        }
+
+        // n.b. The coordinate system that Core Graphics uses on iOS for transforms is backwards from what
+        // you would normally expect, and backwards from what the OBA API vends. Long story short: instead
+        // of generating *exactly backwards* data at the model layer, we'll just flip it here instead.
+        // Long story short, negate your orientation in order to have it look right.
+
+        let orientation = CGFloat(-tripStatus.orientation.radians)
+        headingImageView.transform = CGAffineTransform(rotationAngle: orientation)
+
+        headingImageView.isHidden = false
     }
 
     // MARK: - UIAppearance
