@@ -89,6 +89,29 @@ public class Formatters: NSObject {
 
     // MARK: - ArrivalDeparture
 
+    public func fullAttributedExplanation(from arrivalDeparture: ArrivalDeparture) -> NSAttributedString {
+        let arrDepTime = timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+
+        let explanationText: String
+        if arrivalDeparture.scheduleStatus == .unknown {
+            explanationText = Strings.scheduledNotRealTime
+        }
+        else {
+            explanationText = formattedScheduleDeviation(for: arrivalDeparture)
+        }
+
+        let scheduleStatusColor = colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+        let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
+
+        let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
+
+        let explanation = NSAttributedString(string: explanationText, attributes: [NSAttributedString.Key.font: timeExplanationFont, NSAttributedString.Key.foregroundColor: scheduleStatusColor])
+        attributedExplanation.append(explanation)
+
+        return attributedExplanation
+    }
+
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
     ///
     /// For example, it might generate a string that says "Arrived 3 min ago", "Departing now", or "Departs in 8 min".

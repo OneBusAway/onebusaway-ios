@@ -214,14 +214,7 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
 
     override var isHighlighted: Bool {
         didSet {
-            let color: UIColor?
-            if isHighlighted {
-                color = ThemeColors.shared.highlightedBackgroundColor
-            }
-            else {
-                color = nil
-            }
-            contentView.backgroundColor = color
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
         }
     }
 }

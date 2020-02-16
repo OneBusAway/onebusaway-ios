@@ -380,8 +380,6 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Appearance and Themes
 
-    // swiftlint:disable function_body_length
-
     /// Sets default styles for several UIAppearance proxies in order to customize the app's look and feel
     ///
     /// To override the values that are set in here, either customize the theme that this object is
@@ -406,8 +404,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         FloatingPanelTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .body)
 
         HighlightChangeLabel.appearance().highlightedBackgroundColor = ThemeColors.shared.propertyChanged
-
-        IndeterminateProgressView.appearance().progressColor = ThemeColors.shared.brand
 
         StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
         StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
@@ -450,7 +446,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false
     }
-    // swiftlint:enable function_body_length
 
     // MARK: - Regions Management
 

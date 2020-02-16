@@ -87,7 +87,7 @@ final class LabelCell: UICollectionViewCell {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = ThemeColors.shared.highlightedBackgroundColor
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
         }
     }
 }

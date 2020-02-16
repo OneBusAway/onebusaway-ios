@@ -10,6 +10,19 @@ import UIKit
 /// Alerts the user when its value changes by temporarily changing its background color.
 public class HighlightChangeLabel: UILabel {
 
+    override public init(frame: CGRect) {
+        super.init(frame: frame)
+        setContentCompressionResistancePriority(.required, for: .vertical)
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        setContentHuggingPriority(.required - 1, for: .horizontal)
+        setContentHuggingPriority(.required, for: .vertical)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     public override var text: String? {
         didSet {
             guard oldValue != text else { return }

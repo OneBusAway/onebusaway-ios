@@ -142,7 +142,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : .clear
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
         }
     }
 

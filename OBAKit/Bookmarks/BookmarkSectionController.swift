@@ -203,8 +203,7 @@ final class BookmarkSectionController: ListSectionController, SwipeCollectionVie
         let klass = cellClass(for: bookmarkArrivalData.bookmark)
         if let cell = collectionContext?.dequeueReusableCell(of: klass, for: self, at: index) as? TripBookmarkTableCell {
             cell.delegate = self
-            cell.formatters = formatters
-            cell.data = bookmarkArrivalData
+            cell.set(data: bookmarkArrivalData, formatters: formatters)
             return cell
         }
         else if let cell = collectionContext?.dequeueReusableCell(of: klass, for: self, at: index) as? StopBookmarkTableCell {
@@ -348,76 +347,6 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-}
-
-final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separated {
-    var data: BookmarkArrivalData? {
-        didSet {
-            guard let data = data else { return }
-
-            stopArrivalView.title = data.bookmark.name
-            stopArrivalView.arrivalDepartures = data.arrivalDepartures
-        }
-    }
-
-    var arrivalDeparture: ArrivalDeparture? {
-        didSet {
-            guard let arrivalDeparture = arrivalDeparture else { return }
-            stopArrivalView.arrivalDeparture = arrivalDeparture
-        }
-    }
-
-    private var stopArrivalView: StopArrivalView!
-
-    public var formatters: Formatters! {
-        didSet {
-            if stopArrivalView == nil {
-                stopArrivalView = StopArrivalView.autolayoutNew()
-                stopArrivalView.formatters = formatters
-                stopArrivalView.showDisclosureIndicator = false
-                contentView.addSubview(stopArrivalView)
-
-                NSLayoutConstraint.activate([
-                    stopArrivalView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                    stopArrivalView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-                    stopArrivalView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                    stopArrivalView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-                ])
-            }
-        }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        fixiOS13AutoLayoutBug()
-
-        contentView.backgroundColor = ThemeColors.shared.systemBackground
-        contentView.layer.addSublayer(separator)
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Separator
-
-    let separator = tableCellSeparatorLayer()
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layoutSeparator()
-    }
-
-    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        return calculateLayoutAttributesFitting(layoutAttributes)
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-
-        stopArrivalView.prepareForReuse()
     }
 }
 

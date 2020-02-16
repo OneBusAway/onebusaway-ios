@@ -33,6 +33,14 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
         adapter.performUpdates(animated: false)
     }
 
+    private var bestAvailableBookmarks: [Bookmark] {
+        var bookmarks = app.userDataStore.favoritedBookmarks
+        if bookmarks.count == 0 {
+            bookmarks = app.userDataStore.bookmarks
+        }
+        return bookmarks
+    }
+
     // MARK: - UIViewController
 
     override func viewDidLoad() {
@@ -85,10 +93,7 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
     // MARK: ListAdapterDataSource
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-
-        let bookmarks = app.userDataStore.bookmarks
-
-        return bookmarks.compactMap { bm -> BookmarkArrivalData? in
+        return bestAvailableBookmarks.compactMap { bm -> BookmarkArrivalData? in
             var arrDeps = [ArrivalDeparture]()
 
             if let key = TripBookmarkKey(bookmark: bm) {

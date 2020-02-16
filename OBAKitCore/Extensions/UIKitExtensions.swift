@@ -299,6 +299,18 @@ public extension UILabel {
     }
 }
 
+// MARK: - UILayoutPriority
+
+extension UILayoutPriority {
+    static func + (lhs: UILayoutPriority, rhs: Float) -> UILayoutPriority {
+        return UILayoutPriority(lhs.rawValue + rhs)
+    }
+
+    static func - (lhs: UILayoutPriority, rhs: Float) -> UILayoutPriority {
+        return UILayoutPriority(lhs.rawValue - rhs)
+    }
+}
+
 // MARK: - UIPasteboard
 
 public extension UIPasteboard {
@@ -351,6 +363,38 @@ public extension UIStackView {
         stack.axis = axis
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
+    }
+}
+
+// MARK: - UIView
+
+public extension UIView {
+    /// Helper method that makes it easier to call `setContentHuggingPriority` for both of the receiver's axes.
+    /// - Parameters:
+    ///   - horizontal: The horizontal content hugging priority. Pass in `nil` to leave it at its default.
+    ///   - vertical: The vertical content hugging priority. Pass in `nil` to leave it at its default.
+    func setHugging(horizontal: UILayoutPriority? = nil, vertical: UILayoutPriority? = nil) {
+        if let horizontal = horizontal {
+            setContentHuggingPriority(horizontal, for: .horizontal)
+        }
+
+        if let vertical = vertical {
+            setContentHuggingPriority(vertical, for: .vertical)
+        }
+    }
+
+    /// Helper method that makes it easier to call `setContentCompressionResistancePriority` for both of the receiver's axes.
+    /// - Parameters:
+    ///   - horizontal: The horizontal content compression resistance priority. Pass in `nil` to leave it at its default.
+    ///   - vertical: The vertical content compression resistance priority. Pass in `nil` to leave it at its default.
+    func setCompressionResistance(horizontal: UILayoutPriority? = nil, vertical: UILayoutPriority? = nil) {
+        if let horizontal = horizontal {
+            setContentCompressionResistancePriority(horizontal, for: .horizontal)
+        }
+
+        if let vertical = vertical {
+            setContentCompressionResistancePriority(vertical, for: .vertical)
+        }
     }
 }
 
