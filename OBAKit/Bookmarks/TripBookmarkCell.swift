@@ -201,4 +201,10 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         centerMinutesLabel.text = ""
         bottomMinutesLabel.text = ""
     }
+
+    override var isHighlighted: Bool {
+        didSet {
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
+        }
+    }
 }

@@ -77,7 +77,7 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = isHighlighted ? highlightedBackgroundColor : .clear
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
         }
     }
 
