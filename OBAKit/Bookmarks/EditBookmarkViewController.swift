@@ -78,18 +78,21 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
 
     private let selectedGroupTag = "groupTag"
     private let bookmarkNameTag = "name"
+    private let showInTodayViewTag = "todayView"
 
     /// Creates, loads, and populates data in the Eureka Form object.
     private func loadForm() {
         form
             +++ bookmarkNameSection
+            +++ showInTodayViewSection
             +++ selectedBookmarkGroupSection
             +++ addGroupSection
 
         let name = bookmark?.name ?? dataObjectName
         let groupID = bookmark?.groupID?.uuidString ?? ""
+        let todayViewSwitch = bookmark?.isFavorite ?? true
 
-        form.setValues([bookmarkNameTag: name, selectedGroupTag: groupID])
+        form.setValues([bookmarkNameTag: name, selectedGroupTag: groupID, showInTodayViewTag: todayViewSwitch])
     }
 
     /// The `Form` section that contains the Bookmark Name `TextRow`.
@@ -98,6 +101,17 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         let section = Section(title)
         section <<< TextRow {
             $0.tag = bookmarkNameTag
+        }
+
+        return section
+    }()
+
+    private lazy var showInTodayViewSection: Section = {
+        let section = Section()
+
+        section <<< SwitchRow(showInTodayViewTag) {
+            $0.tag = showInTodayViewTag
+            $0.title = OBALoc("edit_bookmark_controller.show_in_today_view_switch_title", value: "Show in Today View widget", comment: "Title next to the switch that toggles whether a bookmark will appear in the today view.")
         }
 
         return section
@@ -191,6 +205,9 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
             bookmark = self.bookmark!
             bookmark.name = name
         }
+
+        let faveVal = form.values()[showInTodayViewTag]
+        bookmark.isFavorite = faveVal as! Bool // swiftlint:disable:this force_cast
 
         application.userDataStore.add(bookmark, to: selectedBookmarkGroup)
         delegate?.bookmarkEditor(self, editedBookmark: bookmark)

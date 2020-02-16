@@ -248,7 +248,7 @@ StopPreferencesDelegate {
 
     private lazy var refreshButton = buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
 
-    private lazy var bookmarkButton = buildToolbarButton(title: Strings.bookmark, image: Icons.favorited, target: self, action: #selector(addBookmark(sender:)))
+    private lazy var bookmarkButton = buildToolbarButton(title: Strings.bookmark, image: Icons.bookmark, target: self, action: #selector(addBookmark(sender:)))
 
     private lazy var filterButton = buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
 

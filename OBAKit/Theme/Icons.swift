@@ -92,10 +92,14 @@ public class Icons: NSObject {
         imageNamed("show_more")
     }
 
-    // MARK: - Favorites
+    // MARK: - Bookmarks
 
     /// A filled-in star icon
-    public class var favorited: UIImage {
+    public class var star: UIImage {
+        imageNamed("star")
+    }
+
+    public class var bookmark: UIImage {
         imageNamed("favorited")
     }
 

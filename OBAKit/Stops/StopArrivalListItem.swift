@@ -68,7 +68,6 @@ final class StopArrivalCell: SelfSizingCollectionCell {
             if stopArrivalView == nil {
                 stopArrivalView = StopArrivalView.autolayoutNew()
                 stopArrivalView.formatters = formatters
-                stopArrivalView.showDisclosureIndicator = false
                 contentView.addSubview(stopArrivalView)
 
                 NSLayoutConstraint.activate([
