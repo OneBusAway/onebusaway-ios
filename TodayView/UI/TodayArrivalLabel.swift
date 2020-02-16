@@ -38,6 +38,6 @@ public class TodayArrivalLabel: UILabel {
         text = formatters.shortFormattedTime(until: arrivalDeparture)
 
         let status = arrivalDeparture.scheduleStatus
-        backgroundColor = formatters.colorForScheduleStatus(status)
+        backgroundColor = formatters.backgroundColorForScheduleStatus(status)
     }
 }

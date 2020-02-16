@@ -259,9 +259,21 @@ public class Formatters: NSObject {
         }
     }
 
+    /// Retrieves the appropriate background color for the passed-in `ScheduleStatus` value.
+    /// - Parameter status: The schedule status to map to a color.
+    /// - Returns: The background color corresponding to the passed-in status.
+    public func backgroundColorForScheduleStatus(_ status: ScheduleStatus) -> UIColor {
+        switch status {
+        case .onTime: return themeColors.departureOnTimeBackground
+        case .early: return themeColors.departureEarlyBackground
+        case .delayed: return themeColors.departureLateBackground
+        default: return themeColors.departureUnknownBackground
+        }
+    }
+
     /// Retrieves the appropriate color for the passed-in `ScheduleStatus` value.
     /// - Parameter status: The schedule status to map to a color.
-    /// - Returns: The color the passed-in status.
+    /// - Returns: The color corresponding to the passed-in status.
     public func colorForScheduleStatus(_ status: ScheduleStatus) -> UIColor {
         switch status {
         case .onTime: return themeColors.departureOnTime
