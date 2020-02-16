@@ -43,7 +43,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
     }()
 
     private lazy var labelStackWrapper: UIView = {
-        let stack = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
+        let stack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
         stack.isUserInteractionEnabled = false
         return stack.embedInWrapperView()
     }()

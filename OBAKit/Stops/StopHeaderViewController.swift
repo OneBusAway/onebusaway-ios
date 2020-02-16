@@ -51,7 +51,7 @@ public class StopHeaderViewController: UIViewController {
             backgroundImageView.heightAnchor.constraint(equalToConstant: kHeaderHeight)
         ])
 
-        let stack = UIStackView.verticalStack(arangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
+        let stack = UIStackView.verticalStack(arrangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
         view.addSubview(stack)
 
         NSLayoutConstraint.activate([

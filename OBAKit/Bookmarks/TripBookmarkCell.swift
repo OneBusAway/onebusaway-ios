@@ -48,7 +48,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
     /// For example, this might contain the text `11:20 AM - arriving on time`.
     let timeExplanationLabel = buildLabel()
 
-    lazy var labelStack = UIStackView.verticalStack(arangedSubviews: [routeHeadsignWrapper, timeExplanationLabel, UIView.autolayoutNew()])
+    lazy var labelStack = UIStackView.verticalStack(arrangedSubviews: [routeHeadsignWrapper, timeExplanationLabel, UIView.autolayoutNew()])
 
     // MARK: - Minutes to Departure Labels
 
@@ -67,7 +67,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
     private lazy var bottomMinutesWrapper = buildMinutesLabelWrapper(label: bottomMinutesLabel)
 
-    private lazy var minutesStack = UIStackView.verticalStack(arangedSubviews: [topMinutesWrapper, centerMinutesWrapper, bottomMinutesWrapper])
+    private lazy var minutesStack = UIStackView.verticalStack(arrangedSubviews: [topMinutesWrapper, centerMinutesWrapper, bottomMinutesWrapper])
 
     private lazy var minutesWrappers: UIView = {
         let wrapper = minutesStack.embedInWrapperView(setConstraints: false)

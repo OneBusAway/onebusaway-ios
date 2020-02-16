@@ -38,7 +38,7 @@ class StackedTitleView: UIView {
         get { return subtitleLabel.font }
     }
 
-    private lazy var stackView = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
+    private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()

@@ -58,7 +58,7 @@ public class StackedButton: UIControl {
         isUserInteractionEnabled = true
         backgroundColor = .clear
 
-        let stack = UIStackView.verticalStack(arangedSubviews: [imageView, textLabel])
+        let stack = UIStackView.verticalStack(arrangedSubviews: [imageView, textLabel])
         stack.isUserInteractionEnabled = false
         let wrapper = stack.embedInWrapperView()
         addSubview(wrapper)

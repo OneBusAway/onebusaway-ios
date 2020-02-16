@@ -39,7 +39,7 @@ public class FloatingPanelTitleView: UIView {
     }()
 
     private lazy var labelStackWrapper: UIView = labelStack.embedInWrapperView()
-    private lazy var labelStack: UIStackView = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
+    private lazy var labelStack: UIStackView = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
     // MARK: - Close Button
 

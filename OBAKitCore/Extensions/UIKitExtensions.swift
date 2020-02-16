@@ -354,7 +354,7 @@ public extension UIStackView {
     ///
     /// - Parameter views: The arranged subviews
     /// - Returns: The vertical stack view.
-    class func verticalStack(arangedSubviews views: [UIView]) -> UIStackView {
+    class func verticalStack(arrangedSubviews views: [UIView]) -> UIStackView {
         return stack(axis: .vertical, arrangedSubviews: views)
     }
 

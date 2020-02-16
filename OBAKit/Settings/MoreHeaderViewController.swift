@@ -12,7 +12,7 @@ class MoreHeaderViewController: UIViewController {
 
     private let padding: CGFloat = 16.0
 
-    private lazy var stackView = UIStackView.verticalStack(arangedSubviews: [
+    private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [
         topPaddingView,
         headerImageView,
         interiorPaddingView,

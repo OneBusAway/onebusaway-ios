@@ -161,7 +161,7 @@ public class TableRowView: UIView, Highlightable {
     }()
 
     private lazy var labelWrapper = labelStack.embedInWrapperView()
-    lazy var labelStack = UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
+    lazy var labelStack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
     let titleLabel = TableRowView.buildLabel()
     let subtitleLabel: UILabel = {

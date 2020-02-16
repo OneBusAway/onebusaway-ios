@@ -120,7 +120,7 @@ final class MessageCell: SelfSizingCollectionCell, Separated {
         let topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
         let topWrapper = topStack.embedInWrapperView()
 
-        let outerStack = UIStackView.verticalStack(arangedSubviews: [topWrapper, subjectLabel, summaryLabel])
+        let outerStack = UIStackView.verticalStack(arrangedSubviews: [topWrapper, subjectLabel, summaryLabel])
         contentView.addSubview(outerStack)
 
         outerStack.pinToSuperview(.layoutMargins)

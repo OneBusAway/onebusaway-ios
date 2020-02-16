@@ -40,7 +40,7 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     private lazy var labelStack: UIStackView = {
-        return UIStackView.verticalStack(arangedSubviews: [titleLabel, subtitleLabel])
+        return UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
     }()
 
     public var isHidingExtraStopAnnotationData: Bool {

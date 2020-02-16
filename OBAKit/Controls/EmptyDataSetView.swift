@@ -58,7 +58,7 @@ public class EmptyDataSetView: UIView {
     public init(alignment: EmptyDataSetAlignment = .center) {
         super.init(frame: .zero)
 
-        let stack = UIStackView.verticalStack(arangedSubviews: [titleLabel, bodyLabel])
+        let stack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, bodyLabel])
         addSubview(stack)
 
         let leading = stack.leadingAnchor.constraint(equalTo: self.layoutMarginsGuide.leadingAnchor)

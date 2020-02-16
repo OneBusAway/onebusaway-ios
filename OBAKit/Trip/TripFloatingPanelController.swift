@@ -144,7 +144,7 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arangedSubviews: [topPaddingView, stopArrivalView, separatorView, collectionController.view])
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalView, separatorView, collectionController.view])
 
     // MARK: - ListAdapterDataSource (Data Loading)
 

@@ -67,7 +67,7 @@ public class NearbyViewController: VisualEffectViewController,
 
     // MARK: - UI
 
-    private lazy var stackView = UIStackView.verticalStack(arangedSubviews: [searchBar, collectionController.view])
+    private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [searchBar, collectionController.view])
 
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     var scrollView: UIScrollView { collectionController.collectionView }

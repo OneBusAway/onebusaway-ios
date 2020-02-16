@@ -54,7 +54,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
     /// For example, this might contain the text `11:20 AM - arriving on time`.
     let timeExplanationLabel = buildLabel()
 
-    private lazy var infoStack: UIStackView = UIStackView.verticalStack(arangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
+    private lazy var infoStack: UIStackView = UIStackView.verticalStack(arrangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
 
     private lazy var infoStackWrapper = infoStack.embedInWrapperView()
 
