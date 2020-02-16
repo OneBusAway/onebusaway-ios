@@ -58,6 +58,9 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Retrieves a list of `Bookmark` objects.
     var bookmarks: [Bookmark] { get }
 
+    /// Retrieves `Bookmark`s where `isFavorite == true`.
+    var favoritedBookmarks: [Bookmark] { get }
+
     /// Returns a list of `Bookmark`s in the specified `BookmarkGroup`
     /// - Parameter bookmarkGroup: The `BookmarkGroup` for which `Bookmark`s should be returned.
     func bookmarksInGroup(_ bookmarkGroup: BookmarkGroup?) -> [Bookmark]
@@ -264,6 +267,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         set {
             try! encodeUserDefaultsObjects(newValue, key: .bookmarks) // swiftlint:disable:this force_try
         }
+    }
+
+    public var favoritedBookmarks: [Bookmark] {
+        bookmarks.filter { $0.isFavorite }
     }
 
     public func bookmarksInGroup(_ bookmarkGroup: BookmarkGroup?) -> [Bookmark] {
