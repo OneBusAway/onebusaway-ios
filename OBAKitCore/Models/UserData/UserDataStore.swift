@@ -284,18 +284,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         bookmark.groupID = group?.id ?? nil
 
-        var insertionIndex = NSNotFound
-
         if let existing = findBookmark(id: bookmark.id) {
-            insertionIndex = delete(bookmark: existing)
+            delete(bookmark: existing)
         }
 
-        if insertionIndex == NSNotFound {
-            bookmarks.append(bookmark)
-        }
-        else {
-            bookmarks.insert(bookmark, at: insertionIndex)
-        }
+        bookmarks.append(bookmark)
     }
 
     public func delete(bookmark: Bookmark) {
