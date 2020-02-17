@@ -30,7 +30,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         let label = UILabel.autolayoutNew()
         label.backgroundColor = .clear
         label.numberOfLines = 1
-        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
+        label.font = UIFont.preferredFont(forTextStyle: .body).bold
         return label
     }()
 
@@ -38,7 +38,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         let label = UILabel.autolayoutNew()
         label.backgroundColor = .clear
         label.numberOfLines = 1
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.font = UIFont.preferredFont(forTextStyle: .body)
         return label
     }()
 
