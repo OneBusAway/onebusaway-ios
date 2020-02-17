@@ -72,8 +72,7 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
-    /// - Returns: The index of the bookmark, if found. Otherwise returns `NSNotFound`.
-    func delete(bookmark: Bookmark) -> Int
+    func delete(bookmark: Bookmark)
 
     /// Finds the `Bookmark` with a matching `id` if it exists.
     /// - Parameter id: The `UUID` for which to search in existing bookmarks.
@@ -299,12 +298,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
     }
 
-    @discardableResult public func delete(bookmark: Bookmark) -> Int {
+    public func delete(bookmark: Bookmark) {
         let bookmark = findBookmark(id: bookmark.id, defaultValue: bookmark)
-        guard let index = bookmarks.firstIndex(of: bookmark) else { return NSNotFound }
+        guard let index = bookmarks.firstIndex(of: bookmark) else { return }
 
         bookmarks.remove(at: index)
-        return index
     }
 
     /// Finds the specified `Bookmark` by `id` or returns the `defaultValue`. Useful for upserts and the like.

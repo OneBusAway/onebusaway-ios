@@ -169,7 +169,7 @@ public class BookmarksViewController: UIViewController,
             application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
         }
 
-        _ = application.userDataStore.delete(bookmark: bookmark)
+        application.userDataStore.delete(bookmark: bookmark)
         collectionController.reload(animated: true)
     }
 
