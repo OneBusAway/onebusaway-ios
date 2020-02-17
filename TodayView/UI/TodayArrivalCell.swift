@@ -30,7 +30,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         let label = UILabel.autolayoutNew()
         label.backgroundColor = .clear
         label.numberOfLines = 1
-        label.font = UIFont.preferredFont(forTextStyle: .body).bold
+        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
         return label
     }()
 
@@ -38,7 +38,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         let label = UILabel.autolayoutNew()
         label.backgroundColor = .clear
         label.numberOfLines = 1
-        label.font = UIFont.preferredFont(forTextStyle: .body)
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
         return label
     }()
 
@@ -88,6 +88,9 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         contentView.layer.addSublayer(separator)
         contentView.backgroundColor = .clear
 
+        contentView.addSubview(outerStack)
+        outerStack.pinToSuperview(.layoutMargins)
+
         if kUseDebugColors {
             contentView.backgroundColor = .magenta
             titleLabel.backgroundColor = .red
@@ -103,6 +106,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         if arrivalDepartures.count > index {
             let data = arrivalDepartures[index]
             label.setData(arrivalDeparture: data, formatters: formatters)
+            label.isHidden = false
         }
         else {
             outerStack.removeArrangedSubview(label)
@@ -120,11 +124,6 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         configureArrivalLabel(bookmarkArrivalData: bookmarkArrivalData, index: 0, label: leadingArrival, formatters: formatters)
         configureArrivalLabel(bookmarkArrivalData: bookmarkArrivalData, index: 1, label: centerArrival, formatters: formatters)
         configureArrivalLabel(bookmarkArrivalData: bookmarkArrivalData, index: 2, label: trailingArrival, formatters: formatters)
-
-        if outerStack.superview == nil {
-            contentView.addSubview(outerStack)
-            outerStack.pinToSuperview(.layoutMargins)
-        }
     }
 
     override func prepareForReuse() {
