@@ -7,7 +7,13 @@ options:
 
 targets:
   App:
-    sources: ["Apps/KiedyBus", "Apps/Shared/CommonClient"]
+    sources:
+      - path: Apps/KiedyBus
+        name: App
+        group: KiedyBus
+      - path: Apps/Shared/CommonClient
+        name: Common
+        group: KiedyBus
     entitlements:
       path: Apps/KiedyBus/KiedyBus.entitlements
       properties:

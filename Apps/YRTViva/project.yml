@@ -3,7 +3,13 @@ options:
 
 targets:
   App:
-    sources: ["Apps/YRTViva", "Apps/Shared/CommonClient"]
+    sources:
+      - path: Apps/YRTViva
+        name: App
+        group: YRTViva
+      - path: Apps/Shared/CommonClient
+        name: Common
+        group: YRTViva
     entitlements:
       path: Apps/YRTViva/YRTViva.entitlements
       properties:

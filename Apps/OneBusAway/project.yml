@@ -7,7 +7,16 @@ options:
 
 targets:
   App:
-    sources: ["Apps/OneBusAway", "Apps/Shared/CommonClient", "Apps/Shared/OneSignal"]
+    sources:
+      - path: Apps/OneBusAway
+        name: App
+        group: OneBusAway
+      - path: Apps/Shared/CommonClient
+        name: Common
+        group: OneBusAway
+      - path: Apps/Shared/OneSignal
+        name: OneSignal
+        group: OneBusAway
     dependencies:
       - carthage: OneSignal
     entitlements:
