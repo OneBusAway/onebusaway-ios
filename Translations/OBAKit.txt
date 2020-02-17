@@ -54,16 +54,6 @@
 		comment = Explains what the Alarm Time Picker page does.
 		pl = Przypomnij mi kiedy ten pojazd odjeżdża za:
 		fr-CA = 
-	[bookmarks_controller.empty_set.body]
-		en = Add a bookmark for a stop or trip to easily access it here.
-		comment = Body for the empty set indicator on the Bookmarks view controller.
-		pl = Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.
-		fr-CA = 
-	[bookmarks_controller.empty_set.title]
-		en = No Bookmarks
-		comment = Title for the empty set indicator on the Bookmarks view controller.
-		pl = Brak zakładek
-		fr-CA = 
 	[bookmarks_controller.groups_button_title]
 		en = Edit
 		comment = Groups button title in Bookmarks controller

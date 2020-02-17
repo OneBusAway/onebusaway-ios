@@ -39,12 +39,6 @@
 /* Explains what the Alarm Time Picker page does. */
 "alarm_time_picker.description" = "Przypomnij mi kiedy ten pojazd odjeżdża za:";
 
-/* Body for the empty set indicator on the Bookmarks view controller. */
-"bookmarks_controller.empty_set.body" = "Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.";
-
-/* Title for the empty set indicator on the Bookmarks view controller. */
-"bookmarks_controller.empty_set.title" = "Brak zakładek";
-
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Edytuj";
 

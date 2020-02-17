@@ -39,9 +39,11 @@ public class EmptyDataSetView: UIView {
     public let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.setContentHuggingPriority(.required, for: .vertical)
+        label.font = UIFont.preferredFont(forTextStyle: .title1).bold
         label.numberOfLines = 0
         label.textAlignment = .center
         label.backgroundColor = .clear
+        label.textColor = ThemeColors.shared.secondaryLabel
         return label
     }()
 
@@ -52,6 +54,8 @@ public class EmptyDataSetView: UIView {
         label.numberOfLines = 0
         label.textAlignment = .center
         label.backgroundColor = .clear
+        label.textColor = ThemeColors.shared.secondaryLabel
+        label.font = UIFont.preferredFont(forTextStyle: .body)
         return label
     }()
 

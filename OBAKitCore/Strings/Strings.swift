@@ -55,4 +55,8 @@ public class Strings: NSObject {
     public static let updatedAtFormat = OBALoc("common.updated_at_fmt", value: "Updated: %@", comment: "A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.")
 
     public static let updating = OBALoc("common.updating", value: "Updating…", comment: "Used to tell the user that the UI they are looking at is actively being updated with new data from the server.")
+
+    public static let emptyBookmarkTitle = OBALoc("common.empty_bookmark_set.title", value: "No Bookmarks", comment: "Title for the bookmark empty set indicator.")
+
+    public static let emptyBookmarkBody = OBALoc("common.empty_bookmark_set.body", value: "Add a bookmark for a stop or trip to easily access it here.", comment: "Body for the bookmark empty set indicator.")
 }

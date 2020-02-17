@@ -44,6 +44,16 @@
 		comment = The verb 'to edit', as in to change or modify something. Used as a button title.
 		pl = Edytować
 		fr-CA = 
+	[common.empty_bookmark_set.body]
+		en = Add a bookmark for a stop or trip to easily access it here.
+		comment = Body for the bookmark empty set indicator.
+		pl = Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.
+		fr-CA = 
+	[common.empty_bookmark_set.title]
+		en = No Bookmarks
+		comment = Title for the bookmark empty set indicator.
+		pl = Brak zakładek
+		fr-CA = 
 	[common.error]
 		en = Error
 		comment = The noun 'error', as in 'something went wrong'.

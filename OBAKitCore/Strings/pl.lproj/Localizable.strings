@@ -33,6 +33,12 @@
 /* The verb 'to edit', as in to change or modify something. Used as a button title. */
 "common.edit" = "Edytować";
 
+/* Body for the bookmark empty set indicator. */
+"common.empty_bookmark_set.body" = "Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.";
+
+/* Title for the bookmark empty set indicator. */
+"common.empty_bookmark_set.title" = "Brak zakładek";
+
 /* The noun 'error', as in 'something went wrong'. */
 "common.error" = "Błąd";
 

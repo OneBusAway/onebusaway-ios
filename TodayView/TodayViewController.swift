@@ -109,7 +109,11 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
     }
 
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
+        let emptyView = EmptyDataSetView(alignment: .top)
+        emptyView.titleLabel.text = Strings.emptyBookmarkTitle
+        emptyView.titleLabel.font = UIFont.preferredFont(forTextStyle: .title2).bold
+        emptyView.bodyLabel.text = Strings.emptyBookmarkBody
+        return emptyView
     }
 }
 

@@ -396,10 +396,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         BorderedButton.appearance().setTitleColor(ThemeColors.shared.lightText, for: .normal)
         BorderedButton.appearance().tintColor = ThemeColors.shared.brand
 
-        EmptyDataSetView.appearance().bodyLabelFont = UIFont.preferredFont(forTextStyle: .body)
-        EmptyDataSetView.appearance().textColor = ThemeColors.shared.secondaryLabel
-        EmptyDataSetView.appearance().titleLabelFont = UIFont.preferredFont(forTextStyle: .title1).bold
-
         FloatingPanelTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .title2).bold
         FloatingPanelTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .body)
 
