@@ -10,14 +10,11 @@
 @import OBAKitCore;
 @import OBAKit;
 @import CocoaLumberjack;
-@import Crashlytics;
-#import "OBAFirebaseAnalytics.h"
 
-@interface AppDelegate ()<OBAApplicationDelegate, OBAAnalytics>
+@interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
-@property(nonatomic,strong) OBAFirebaseAnalytics *analyticsClient;
 @end
 
 @implementation AppDelegate
@@ -37,14 +34,7 @@
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
 
-        _analyticsClient = [[OBAFirebaseAnalytics alloc] initWithUserDefaults:_userDefaults];
-
-        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:_analyticsClient];
-
-        // Add a PushNotificationAPIKey to the Info.plist and then uncomment this to re-enable push.
-        // NSString *pushKey = NSBundle.mainBundle.infoDictionary[@"OBAKitConfig"][@"PushNotificationAPIKey"];
-        // OBAOneSignalPushService *pushService = [[OBAOneSignalPushService alloc] initWithAPIKey:pushKey];
-        // appConfig.pushServiceProvider = pushService;
+        OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:nil];
 
         _app = [[OBAApplication alloc] initWithConfig:appConfig];
         _app.delegate = self;
@@ -60,8 +50,6 @@
     // This method will call -applicationReloadRootInterface:, which creates the
     // application's UI and attaches it to the window, so no need to do that here.
     [self.app application:application didFinishLaunching:launchOptions];
-
-    [self.analyticsClient configureWithUserID:self.app.userUUID];
 
     return YES;
 }
@@ -81,7 +69,7 @@
 }
 
 - (void)performTestCrash {
-    [Crashlytics.sharedInstance crash];
+    // nop
 }
 
 - (void)setIdleTimerDisabled:(BOOL)idleTimerDisabled {

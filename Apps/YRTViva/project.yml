@@ -56,7 +56,6 @@ targets:
 
 include:
   - path: Apps/Shared/app_shared.yml
-  - path: Apps/Shared/analytics_fx_config.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
