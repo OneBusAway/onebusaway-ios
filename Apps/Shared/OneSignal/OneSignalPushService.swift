@@ -8,6 +8,7 @@
 import Foundation
 import OneSignal
 import CocoaLumberjackSwift
+import OBAKit
 
 /// Push notification service wrapper for OneSignal, a free push notification service provider.
 @objc(OBAOneSignalPushService)

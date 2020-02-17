@@ -13,6 +13,7 @@
 @import CocoaLumberjack;
 @import Crashlytics;
 #import "OBAFirebaseAnalytics.h"
+#import "App-Swift.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
