@@ -61,7 +61,16 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
     // MARK: - NotificationCenter
 
     func widgetActiveDisplayModeDidChange(_ activeDisplayMode: NCWidgetDisplayMode, withMaximumSize maxSize: CGSize) {
-        preferredContentSize = maxSize
+        switch activeDisplayMode {
+        case .compact:
+            // The compact view is a fixed size.
+            preferredContentSize = maxSize
+        case .expanded:
+            let height = CGFloat(bestAvailableBookmarks.count) * 55.0
+            preferredContentSize = CGSize(width: maxSize.width, height: min(height, maxSize.height))
+        @unknown default:
+            preconditionFailure("Unexpected value for activeDisplayMode.")
+        }
     }
 
     func widgetPerformUpdate(completionHandler: @escaping (NCUpdateResult) -> Void) {
