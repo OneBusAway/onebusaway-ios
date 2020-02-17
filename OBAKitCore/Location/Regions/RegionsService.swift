@@ -121,9 +121,11 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     public private(set) var regions: [Region] {
         didSet {
-            storeRegions()
-            notifyDelegatesRegionsListUpdated()
-            updateCurrentRegionFromLocation()
+            if regions.count > 0 {
+                storeRegions()
+                notifyDelegatesRegionsListUpdated()
+                updateCurrentRegionFromLocation()
+            }
         }
     }
 
@@ -243,7 +245,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         let op = modelService.getRegions(apiPath: apiPath)
         op.then { [weak self] in
-            guard let self = self else {
+            guard
+                let self = self,
+                op.regions.count > 0
+            else {
                 return
             }
 
