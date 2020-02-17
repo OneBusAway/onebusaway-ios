@@ -274,7 +274,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func bookmarksInGroup(_ bookmarkGroup: BookmarkGroup?) -> [Bookmark] {
         let id = bookmarkGroup?.id ?? nil
-        return bookmarks.filter { $0.groupID == id }
+        return bookmarks.filter { $0.groupID == id }.sorted { $0.sortOrder < $1.sortOrder }
     }
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup? = nil) {
