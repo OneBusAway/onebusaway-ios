@@ -210,6 +210,6 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         bookmark.isFavorite = faveVal as! Bool // swiftlint:disable:this force_cast
 
         application.userDataStore.add(bookmark, to: selectedBookmarkGroup)
-        delegate?.bookmarkEditor(self, editedBookmark: bookmark)
+        delegate?.bookmarkEditor(self, editedBookmark: bookmark, isNewBookmark: addMode)
     }
 }

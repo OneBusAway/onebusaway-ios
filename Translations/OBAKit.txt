@@ -722,6 +722,16 @@
 		comment = Title for the Report Stop Problem controller
 		pl = Raportuj problem
 		fr-CA = 
+	[stops_controller.created_new_bookmark]
+		en = Added Bookmark
+		comment = Message displayed when a new bookmark is created.
+		pl =
+		fr-CA =
+	[stops_controller.updated_bookmark]
+		en = Updated Bookmark
+		comment = Message displayed an existing bookmark is updated.
+		pl =
+		fr-CA =
 	[stops_controller.more_options]
 		en = More Options
 		comment = More Options section header on the Stops controller

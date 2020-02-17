@@ -220,7 +220,7 @@ public class BookmarksViewController: UIViewController,
         viewController.dismiss(animated: true, completion: nil)
     }
 
-    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark) {
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
         viewController.dismiss(animated: true, completion: nil)
         collectionController.reload(animated: false)
     }

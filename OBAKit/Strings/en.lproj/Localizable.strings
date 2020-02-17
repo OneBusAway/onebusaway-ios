@@ -441,6 +441,12 @@
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Report a Problem";
 
+/* Message displayed when a new bookmark is created. */
+"stops_controller.created_new_bookmark" = "Added Bookmark";
+
+/* Message displayed an existing bookmark is updated. */
+"stops_controller.updated_bookmark" = "Updated Bookmark";
+
 /* More Options section header on the Stops controller */
 "stops_controller.more_options" = "More Options";
 

@@ -650,9 +650,10 @@ StopPreferencesDelegate {
         viewController.dismiss(animated: true, completion: nil)
     }
 
-    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark) {
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
         viewController.dismiss(animated: true) {
-            SVProgressHUD.showSuccessAndDismiss(message: nil, dismissAfter: 1.0)
+            let msg = isNewBookmark ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.") : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
+            SVProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
         }
     }
 

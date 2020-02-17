@@ -11,7 +11,7 @@ import OBAKitCore
 
 protocol BookmarkEditorDelegate: NSObjectProtocol {
     func bookmarkEditorCancelled(_ viewController: UIViewController)
-    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark)
+    func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool)
 }
 
 /// The entry-point view controller for creating a new bookmark.
