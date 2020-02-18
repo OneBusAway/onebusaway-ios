@@ -52,7 +52,6 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.upsert(bookmarkGroup: group)
         expect(self.userDefaultsStore.bookmarkGroups) == [group]
-
     }
 
     func test_bookmarkGroups_delete() {
@@ -125,7 +124,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let stop = stops[0]
 
         let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
-        userDefaultsStore.add(bookmark, to: group)
+        userDefaultsStore.add(bookmark, to: group, index: .max)
 
         let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark2)
@@ -272,5 +271,111 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         expect(self.userDefaultsStore.bookmarks.count) == 1
         expect(self.userDefaultsStore.bookmarks.first!.name) == "Changed Name"
+    }
+
+    // MARK: - Bookmark Sort Order
+
+    func test_bookmark_sortOrder_noGroup() {
+        let stop = stops[0]
+
+        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(bookmark0)
+
+        bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
+        expect(bookmark0.sortOrder) == 0
+
+        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(bookmark1)
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 1
+
+        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(newBookmark1, to: nil, index: 1)
+
+        newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
+        expect(newBookmark1.sortOrder) == 1
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 2
+
+        let ids = userDefaultsStore.bookmarks.map {$0.id}
+        expect(ids) == [bookmark0.id, newBookmark1.id, bookmark1.id]
+
+        userDefaultsStore.delete(bookmark: bookmark0)
+
+        newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
+        expect(newBookmark1.sortOrder) == 0
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 1
+    }
+
+    func test_bookmark_sortOrder_inGroup() {
+        let stop = stops[0]
+        let group = BookmarkGroup(name: "Group!", sortOrder: 0)
+        userDefaultsStore.upsert(bookmarkGroup: group)
+
+        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(bookmark0, to: group)
+
+        bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
+        expect(bookmark0.sortOrder) == 0
+
+        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(bookmark1, to: group)
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 1
+
+        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(newBookmark1, to: group, index: 1)
+
+        newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
+        expect(newBookmark1.sortOrder) == 1
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 2
+
+        let ids = userDefaultsStore.bookmarksInGroup(group).map {$0.id}
+        expect(ids) == [bookmark0.id, newBookmark1.id, bookmark1.id]
+
+        userDefaultsStore.delete(bookmark: bookmark0)
+
+        newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
+        expect(newBookmark1.sortOrder) == 0
+
+        bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
+        expect(bookmark1.sortOrder) == 1
+    }
+
+    func test_bookmark_sortOrder_acrossGroups() {
+        let stop = stops[0]
+        let group1 = BookmarkGroup(name: "Group 1", sortOrder: 0)
+        userDefaultsStore.upsert(bookmarkGroup: group1)
+
+        let group2 = BookmarkGroup(name: "Group 2", sortOrder: 1)
+        userDefaultsStore.upsert(bookmarkGroup: group2)
+
+        let g1b1 = Bookmark(name: "Group 1/Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(g1b1, to: group1)
+
+        let g1b2 = Bookmark(name: "Group 1/Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(g1b2, to: group1)
+        expect(g1b2.groupID).toNot(beNil())
+        expect(g1b2.groupID) == group1.id
+
+        let g1b3 = Bookmark(name: "Group 1/Bookmark 3", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        userDefaultsStore.add(g1b3, to: group1)
+
+        expect(g1b1.sortOrder) == 0
+        expect(g1b2.sortOrder) == 1
+        expect(g1b3.sortOrder) == 2
+
+        userDefaultsStore.add(g1b2, to: group2)
+
+        expect(self.userDefaultsStore.findBookmark(id: g1b1.id)!.sortOrder) == 0
+        expect(self.userDefaultsStore.findBookmark(id: g1b2.id)!.sortOrder) == 0
+        expect(self.userDefaultsStore.findBookmark(id: g1b3.id)!.sortOrder) == 1
     }
 }

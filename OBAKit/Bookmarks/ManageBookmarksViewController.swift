@@ -32,12 +32,6 @@ class ManageBookmarksViewController: FormViewController {
         tableView.setEditing(true, animated: false)
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-
-        updateModelState()
-    }
-
     // MARK: - Form Builders
 
     /// Creates, loads, and populates data in the Eureka Form object.
@@ -58,7 +52,7 @@ class ManageBookmarksViewController: FormViewController {
 
         let destinationGroup = groupForBookmarkIndexPath(destinationIndexPath)
 
-        application.userDataStore.add(bookmark, to: destinationGroup)
+        application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -144,36 +138,6 @@ class ManageBookmarksViewController: FormViewController {
                     $0.tag = bm.id.uuidString
                     $0.value = bm.name
                 }
-            }
-        }
-    }
-
-    // MARK: - Model State
-
-    func updateModelState() {
-        for section in bookmarksSections {
-            let group: BookmarkGroup?
-            if let id = UUID(optionalUUIDString: section.tag) {
-                group = application.userDataStore.findGroup(id: id)
-            }
-            else {
-                group = nil
-            }
-
-            for row in section.allRows {
-                let row = row as! NameRow // swiftlint:disable:this force_cast
-                guard
-                    let bookmarkID = UUID(optionalUUIDString: row.tag),
-                    let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
-                else {
-                    continue
-                }
-
-                if let name = row.value?.strip(), name.count > 0 {
-                    bookmark.name = name
-                }
-
-                application.userDataStore.add(bookmark, to: group)
             }
         }
     }

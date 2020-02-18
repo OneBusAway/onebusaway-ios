@@ -66,9 +66,17 @@ public protocol UserDataStore: NSObjectProtocol {
     func bookmarksInGroup(_ bookmarkGroup: BookmarkGroup?) -> [Bookmark]
 
     /// Adds the specified `Bookmark` to the `UserDataStore`, optionally adding it to a `BookmarkGroup`.
-    /// - Parameter bookmark: The `Bookmark` to add to the store.
-    /// - Parameter group: Optional. The `BookmarkGroup` to which this `Bookmark` will belong.
+    /// - Parameters:
+    ///   - bookmark: The `Bookmark` to add to the store.
+    ///   - group: Optional. The `BookmarkGroup` to which this `Bookmark` will belong.
     func add(_ bookmark: Bookmark, to group: BookmarkGroup?)
+
+    /// Adds the specified `Bookmark` to the `UserDataStore`, optionally adding it to a `BookmarkGroup` at `index`.
+    /// - Parameters:
+    ///   - bookmark: The `Bookmark` to add to the store.
+    ///   - group: Optional. The `BookmarkGroup` to which this `Bookmark` will belong.
+    ///   - index: The sort order or index of the bookmark in its group. Pass in `Int.max` to append to the end.
+    func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int)
 
     /// Deletes the specified `Bookmark` from the `UserDataStore`.
     /// - Parameter bookmark: The `Bookmark` to delete.
@@ -211,7 +219,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func deleteGroup(_ group: BookmarkGroup) {
         // move the group's bookmarks, if any, out of the group.
         for bm in bookmarksInGroup(group) {
-            add(bm, to: nil)
+            add(bm, to: nil, index: .max)
         }
 
         if let index = findGroupIndex(id: group.id) {
@@ -278,6 +286,12 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup? = nil) {
+        add(bookmark, to: group, index: .max)
+    }
+
+    public func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int) {
+        let oldGroupID = bookmark.groupID
+
         if let group = group {
             upsert(bookmarkGroup: group)
         }
@@ -288,14 +302,53 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             delete(bookmark: existing)
         }
 
-        bookmarks.append(bookmark)
+        var newGroupBookmarks = bookmarksInGroup(group)
+        newGroupBookmarks.insert(bookmark, at: min(index, newGroupBookmarks.count))
+
+        for (idx, elt) in newGroupBookmarks.enumerated() {
+            if let existing = findBookmark(id: elt.id) {
+                delete(bookmark: existing, reorderGroup: false)
+            }
+
+            elt.sortOrder = idx
+
+            bookmarks.append(elt)
+        }
+
+        if oldGroupID != bookmark.groupID {
+            let oldGroupBookmarks = bookmarksInGroup(findGroup(id: oldGroupID))
+            for (idx, elt) in oldGroupBookmarks.enumerated() {
+                if let existing = findBookmark(id: elt.id) {
+                    delete(bookmark: existing, reorderGroup: false)
+                }
+
+                elt.sortOrder = idx
+                bookmarks.append(elt)
+            }
+        }
     }
 
     public func delete(bookmark: Bookmark) {
+        delete(bookmark: bookmark, reorderGroup: true)
+    }
+
+    private func delete(bookmark: Bookmark, reorderGroup: Bool) {
         let bookmark = findBookmark(id: bookmark.id, defaultValue: bookmark)
         guard let index = bookmarks.firstIndex(of: bookmark) else { return }
 
+        let groupID = bookmark.groupID
+
         bookmarks.remove(at: index)
+
+        if reorderGroup {
+            for (idx, elt) in bookmarksInGroup(findGroup(id: groupID)).enumerated() {
+                if let existing = findBookmark(id: elt.id) {
+                    delete(bookmark: existing)
+                }
+                elt.sortOrder = idx
+                bookmarks.append(elt)
+            }
+        }
     }
 
     /// Finds the specified `Bookmark` by `id` or returns the `defaultValue`. Useful for upserts and the like.
