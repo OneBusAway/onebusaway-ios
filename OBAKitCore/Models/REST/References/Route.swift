@@ -92,7 +92,7 @@ public class Route: NSObject, Codable, HasReferences {
         shortName = try container.decode(String.self, forKey: .shortName)
         textColor = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
         routeType = try container.decode(RouteType.self, forKey: .routeType)
-        routeURL = try? container.decodeIfPresent(URL.self, forKey: .routeURL)
+        routeURL = try? container.decodeGarbageURL(forKey: .routeURL)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -106,7 +106,7 @@ public class Route: NSObject, Codable, HasReferences {
         try container.encode(shortName, forKey: .shortName)
         try container.encodeIfPresent(textColor?.toHex, forKey: .textColor)
         try container.encode(routeType, forKey: .routeType)
-        try container.encodeIfPresent(routeURL, forKey: .routeURL)
+        try container.encodeIfPresent(routeURL?.absoluteString, forKey: .routeURL)
     }
 
     // MARK: - HasReferences

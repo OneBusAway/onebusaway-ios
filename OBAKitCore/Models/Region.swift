@@ -228,12 +228,12 @@ public class Region: NSObject, Codable {
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
         isActive = try container.decode(Bool.self, forKey: .isActive)
         isExperimental = try container.decode(Bool.self, forKey: .isExperimental)
-        isCustom = (try? container.decode(Bool.self, forKey: .isCustom)) ?? false
+        isCustom = (try? container.decodeIfPresent(Bool.self, forKey: .isCustom)) ?? false
 
         OBABaseURL = try container.decode(URL.self, forKey: .OBABaseURL)
-        siriBaseURL = try? container.decode(URL.self, forKey: .siriBaseURL)
-        openTripPlannerURL = try? container.decode(URL.self, forKey: .openTripPlannerURL)
-        stopInfoURL = try? container.decode(URL.self, forKey: .stopInfoURL)
+        siriBaseURL = try? container.decodeIfPresent(URL.self, forKey: .siriBaseURL)
+        openTripPlannerURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerURL)
+        stopInfoURL = try? container.decodeIfPresent(URL.self, forKey: .stopInfoURL)
 
         regionBounds = try container.decode([RegionBound].self, forKey: .regionBounds)
 
@@ -247,19 +247,19 @@ public class Region: NSObject, Codable {
 
         contactEmail = try container.decode(String.self, forKey: .contactEmail)
 
-        twitterURL = try? container.decode(URL.self, forKey: .twitterURL)
-        facebookURL = try? container.decode(URL.self, forKey: .facebookURL)
-        openTripPlannerContactEmail = try? container.decode(String.self, forKey: .openTripPlannerContactEmail)
+        twitterURL = try? container.decodeGarbageURL(forKey: .twitterURL)
+        facebookURL = try? container.decodeGarbageURL(forKey: .facebookURL)
+        openTripPlannerContactEmail = try? container.decodeIfPresent(String.self, forKey: .openTripPlannerContactEmail)
 
         language = try container.decode(String.self, forKey: .language)
         versionInfo = try container.decode(String.self, forKey: .versionInfo)
 
-        paymentWarningBody = try? container.decode(String.self, forKey: .paymentWarningBody)
-        paymentWarningTitle = try? container.decode(String.self, forKey: .paymentWarningTitle)
+        paymentWarningBody = try? container.decodeIfPresent(String.self, forKey: .paymentWarningBody)
+        paymentWarningTitle = try? container.decodeIfPresent(String.self, forKey: .paymentWarningTitle)
 
-        paymentAndroidAppID = try? container.decode(String.self, forKey: .paymentAndroidAppID)
-        paymentiOSAppStoreIdentifier = try? container.decode(String.self, forKey: .paymentiOSAppStoreIdentifier)
-        paymentiOSAppURLScheme = try? container.decode(String.self, forKey: .paymentiOSAppURLScheme)
+        paymentAndroidAppID = try? container.decodeIfPresent(String.self, forKey: .paymentAndroidAppID)
+        paymentiOSAppStoreIdentifier = try? container.decodeIfPresent(String.self, forKey: .paymentiOSAppStoreIdentifier)
+        paymentiOSAppURLScheme = try? container.decodeIfPresent(String.self, forKey: .paymentiOSAppURLScheme)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -270,9 +270,9 @@ public class Region: NSObject, Codable {
         try container.encode(isExperimental, forKey: .isExperimental)
         try container.encode(isCustom, forKey: .isCustom)
         try container.encode(OBABaseURL, forKey: .OBABaseURL)
-        try? container.encode(siriBaseURL, forKey: .siriBaseURL)
-        try? container.encode(openTripPlannerURL, forKey: .openTripPlannerURL)
-        try? container.encode(stopInfoURL, forKey: .stopInfoURL)
+        try container.encodeIfPresent(siriBaseURL, forKey: .siriBaseURL)
+        try container.encodeIfPresent(openTripPlannerURL, forKey: .openTripPlannerURL)
+        try container.encodeIfPresent(stopInfoURL, forKey: .stopInfoURL)
         try container.encode(regionBounds, forKey: .regionBounds)
         try container.encodeIfPresent(open311Servers, forKey: .open311Servers)
         try container.encode(supportsEmbeddedSocial, forKey: .supportsEmbeddedSocial)
@@ -281,16 +281,16 @@ public class Region: NSObject, Codable {
         try container.encode(supportsOTPBikeshare, forKey: .supportsOTPBikeshare)
         try container.encode(supportsSiriRealtimeAPIs, forKey: .supportsSiriRealtimeAPIs)
         try container.encode(contactEmail, forKey: .contactEmail)
-        try? container.encode(twitterURL, forKey: .twitterURL)
-        try? container.encode(facebookURL, forKey: .facebookURL)
-        try? container.encode(openTripPlannerContactEmail, forKey: .openTripPlannerContactEmail)
+        try container.encodeIfPresent(twitterURL?.absoluteString, forKey: .twitterURL)
+        try container.encodeIfPresent(facebookURL?.absoluteString, forKey: .facebookURL)
+        try container.encodeIfPresent(openTripPlannerContactEmail, forKey: .openTripPlannerContactEmail)
         try container.encode(language, forKey: .language)
         try container.encode(versionInfo, forKey: .versionInfo)
-        try? container.encode(paymentWarningBody, forKey: .paymentWarningBody)
-        try? container.encode(paymentWarningTitle, forKey: .paymentWarningTitle)
-        try? container.encode(paymentAndroidAppID, forKey: .paymentAndroidAppID)
-        try? container.encode(paymentiOSAppStoreIdentifier, forKey: .paymentiOSAppStoreIdentifier)
-        try? container.encode(paymentiOSAppURLScheme, forKey: .paymentiOSAppURLScheme)
+        try container.encodeIfPresent(paymentWarningBody, forKey: .paymentWarningBody)
+        try container.encodeIfPresent(paymentWarningTitle, forKey: .paymentWarningTitle)
+        try container.encodeIfPresent(paymentAndroidAppID, forKey: .paymentAndroidAppID)
+        try container.encodeIfPresent(paymentiOSAppStoreIdentifier, forKey: .paymentiOSAppStoreIdentifier)
+        try container.encodeIfPresent(paymentiOSAppURLScheme, forKey: .paymentiOSAppURLScheme)
     }
 
     // MARK: - NSObject Overrides
@@ -470,7 +470,7 @@ public class Open311Server: NSObject, Codable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        jurisdictionID = try? container.decode(String.self, forKey: .jurisdictionID)
+        jurisdictionID = try? container.decodeIfPresent(String.self, forKey: .jurisdictionID)
         apiKey = try container.decode(String.self, forKey: .apiKey)
         baseURL = try container.decode(URL.self, forKey: .baseURL)
     }

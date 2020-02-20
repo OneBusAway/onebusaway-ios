@@ -147,8 +147,8 @@ public class ArrivalDeparture: NSObject, Decodable {
         routeID = try container.decode(RouteID.self, forKey: .routeID)
         route = references.routeWithID(routeID)!
 
-        _routeLongName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeLongName))
-        _routeShortName = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .routeShortName))
+        _routeLongName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeLongName))
+        _routeShortName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
         scheduledArrival = try container.decode(Date.self, forKey: .scheduledArrival)
         scheduledDeparture = try container.decode(Date.self, forKey: .scheduledDeparture)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
@@ -163,7 +163,7 @@ public class ArrivalDeparture: NSObject, Decodable {
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
         totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
-        _tripHeadsign = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .tripHeadsign))
+        _tripHeadsign = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
 
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
         trip = references.tripWithID(tripID)!

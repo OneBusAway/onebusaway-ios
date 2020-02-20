@@ -31,7 +31,7 @@ class AlarmTests: OBATestCase {
         expect(tripDate).toNot(beNil())
         expect(alarmDate).toNot(beNil())
 
-        let deepLink = ArrivalDepartureDeepLink(title: "Title", stopID: "1234", tripID: "9876", serviceDate: serviceDate, stopSequence: 7, vehicleID: "3456")
+        let deepLink = ArrivalDepartureDeepLink(title: "Title", regionID: 1, stopID: "1234", tripID: "9876", serviceDate: serviceDate, stopSequence: 7, vehicleID: "3456")
 
         alarm.deepLink = deepLink
 

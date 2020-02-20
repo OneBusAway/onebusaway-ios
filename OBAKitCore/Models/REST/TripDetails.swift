@@ -66,13 +66,13 @@ public class TripDetails: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let references = decoder.references
 
-        frequency = try? container.decode(Frequency.self, forKey: .frequency)
+        frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
 
         tripID = try container.decode(String.self, forKey: .tripID)
         trip = references.tripWithID(tripID)!
 
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
-        status = try? container.decode(TripStatus.self, forKey: .status)
+        status = try container.decodeIfPresent(TripStatus.self, forKey: .status)
 
         let schedule = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .schedule)
         timeZone = try schedule.decode(String.self, forKey: .timeZone)
@@ -81,10 +81,10 @@ public class TripDetails: NSObject, Decodable {
             st.serviceDate = serviceDate
         }
 
-        previousTripID = try? schedule.decode(String.self, forKey: .previousTripID)
+        previousTripID = try schedule.decodeIfPresent(String.self, forKey: .previousTripID)
         previousTrip = references.tripWithID(previousTripID)
 
-        nextTripID = try? schedule.decode(String.self, forKey: .nextTripID)
+        nextTripID = try schedule.decodeIfPresent(String.self, forKey: .nextTripID)
         nextTrip = references.tripWithID(nextTripID)
 
         situationIDs = try container.decode([String].self, forKey: .situationIDs)

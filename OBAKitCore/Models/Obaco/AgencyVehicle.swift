@@ -23,6 +23,6 @@ public class AgencyVehicle: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         agencyID = try container.decode(String.self, forKey: .agencyID)
         agencyName = try container.decode(String.self, forKey: .agencyName)
-        vehicleID = try? container.decode(String.self, forKey: .vehicleID)
+        vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
 }

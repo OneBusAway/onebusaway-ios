@@ -36,9 +36,9 @@ public class Agency: NSObject, Codable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        disclaimer = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .disclaimer))
-        email = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .email))
-        fareURL = try? container.decode(URL.self, forKey: .fareURL)
+        disclaimer = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .disclaimer))
+        email = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .email))
+        fareURL = try container.decodeGarbageURL(forKey: .fareURL)
 
         id = try container.decode(String.self, forKey: .id)
         language = try container.decode(String.self, forKey: .language)
@@ -53,7 +53,7 @@ public class Agency: NSObject, Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(disclaimer, forKey: .disclaimer)
         try container.encodeIfPresent(email, forKey: .email)
-        try container.encodeIfPresent(fareURL, forKey: .fareURL)
+        try container.encodeIfPresent(fareURL?.absoluteString, forKey: .fareURL)
         try container.encode(id, forKey: .id)
         try container.encode(language, forKey: .language)
         try container.encode(name, forKey: .name)

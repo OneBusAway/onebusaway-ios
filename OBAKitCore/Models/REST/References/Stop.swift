@@ -135,7 +135,7 @@ public class Stop: NSObject, Codable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         code = try container.decode(String.self, forKey: .code)
-        _direction = ModelHelpers.nilifyBlankValue(try? container.decode(String.self, forKey: .direction))
+        _direction = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .direction))
         id = try container.decode(String.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
 
@@ -159,7 +159,7 @@ public class Stop: NSObject, Codable, HasReferences {
             routes = encodedRoutes
         }
 
-        wheelchairBoarding = (try? container.decode(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
+        wheelchairBoarding = (try? container.decodeIfPresent(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 
     public func encode(to encoder: Encoder) throws {

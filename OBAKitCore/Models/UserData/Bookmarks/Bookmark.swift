@@ -96,7 +96,7 @@ import Foundation
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        groupID = try? container.decode(UUID.self, forKey: .groupID)
+        groupID = try? container.decodeIfPresent(UUID.self, forKey: .groupID)
         isFavorite = try container.decode(Bool.self, forKey: .isFavorite)
         name = try container.decode(String.self, forKey: .name)
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
@@ -105,9 +105,9 @@ import Foundation
         stopID = try container.decode(String.self, forKey: .stopID)
         id = try container.decode(UUID.self, forKey: .id)
 
-        routeShortName = try? container.decode(String.self, forKey: .routeShortName)
-        tripHeadsign = try? container.decode(String.self, forKey: .tripHeadsign)
-        routeID = try? container.decode(RouteID.self, forKey: .routeID)
+        routeShortName = try container.decodeIfPresent(String.self, forKey: .routeShortName)
+        tripHeadsign = try container.decodeIfPresent(String.self, forKey: .tripHeadsign)
+        routeID = try container.decodeIfPresent(RouteID.self, forKey: .routeID)
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
