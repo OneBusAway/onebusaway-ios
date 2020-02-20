@@ -101,8 +101,7 @@ class StopAnnotationView: MKAnnotationView {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
 
         let iconFactory = delegate.iconFactory
-        let iconStrokeColor: UIColor = delegate.isStopBookmarked(stop) ? bookmarkedStrokeColor : strokeColor
-        image = iconFactory.buildIcon(for: stop, strokeColor: iconStrokeColor, fillColor: fillColor)
+        image = iconFactory.buildIcon(for: stop, strokeColor: strokeColor, fillColor: fillColor)
 
         titleLabel.text = stop.mapTitle
         subtitleLabel.text = stop.mapSubtitle
@@ -123,13 +122,6 @@ class StopAnnotationView: MKAnnotationView {
         set { _strokeColor = newValue }
     }
     private var _strokeColor: UIColor = .white
-
-    /// Stroke color for this annotation view and its directional arrow, when it represents a bookmarked stop.
-    @objc dynamic var bookmarkedStrokeColor: UIColor {
-        get { return _bookmarkedStrokeColor }
-        set { _bookmarkedStrokeColor = newValue }
-    }
-    private var _bookmarkedStrokeColor: UIColor = .red
 
     /// UIAppearance proxy-compatible version of `canShowCallout`.
     @objc dynamic var showsCallout: Bool {

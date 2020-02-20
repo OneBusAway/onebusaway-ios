@@ -22,6 +22,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
         expect(deepLink2) == deepLink1
 
         expect(deepLink2.title) == deepLink1.title
+        expect(deepLink2.regionID) == deepLink1.regionID
         expect(deepLink2.stopID) == deepLink1.stopID
         expect(deepLink2.tripID) == deepLink1.tripID
         expect(deepLink2.serviceDate) == deepLink1.serviceDate

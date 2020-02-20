@@ -53,8 +53,6 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         groupsController.updateModelState()
-        bookmarksController.updateModelState()
-
         delegate?.manageBookmarksReloadData(self)
     }
 
