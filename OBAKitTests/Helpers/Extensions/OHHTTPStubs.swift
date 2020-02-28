@@ -18,8 +18,11 @@ public extension OHHTTPStubsResponse {
     }
 
     class func file(named name: String, contentType: String, statusCode: Int = 200) -> OHHTTPStubsResponse {
+        guard let path = Bundle(for: OBATestCase.self).path(forResource: name, ofType: nil) else {
+            fatalError()
+        }
         return OHHTTPStubsResponse(
-            fileAtPath: OHPathForFile(name, OBATestCase.self)!,
+            fileAtPath: path,
             statusCode: Int32(statusCode),
             headers: ["Content-Type": contentType]
         )

@@ -75,6 +75,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         self.locationService.addDelegate(self)
     }
 
+    deinit {
+        cancelRequests()
+    }
+
     // MARK: - Delegates
 
     private let delegates = NSHashTable<RegionsServiceDelegate>.weakObjects()
@@ -255,7 +259,16 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             self.regions = op.regions
             self.updateCurrentRegionFromLocation()
         }
+
+        self.regionsOperation = op
     }
+
+    /// Cancels active network requests, if any exist.
+    public func cancelRequests() {
+        regionsOperation?.cancel()
+    }
+
+    private var regionsOperation: RegionsModelOperation?
 
     // MARK: - LocationServiceDelegate
 

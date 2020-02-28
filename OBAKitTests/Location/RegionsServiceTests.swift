@@ -55,7 +55,6 @@ class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
 }
 
 class RegionsServiceTests: OBATestCase {
-
     var testDelegate: RegionsServiceTestDelegate!
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
@@ -74,31 +73,29 @@ class RegionsServiceTests: OBATestCase {
         testDelegate = nil
     }
 
-    // MARK: - OHHTTPStubs
-
-    private func stubRegionsJustPugetSound() {
-        stub(condition: isHost(self.regionsHost) && isPath(self.regionsPath)) { _ in
-            return OHHTTPStubsResponse.JSONFile(named: "regions-just-puget-sound.json")
-        }
-    }
-
-    private func stubRegions() {
-        stub(condition: isHost(self.regionsHost) && isPath(self.regionsPath)) { _ in
-            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
-        }
-    }
-
     // MARK: - Upon creating the Regions Service
 
     // It loads bundled regions from its framework when no other data exists
     func test_init_loadsBundledRegions() {
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
+        stubRegions()
+
+        let regionsModelService = self.regionsModelService
+        regionsModelService.dataQueue.isSuspended = true
+
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: self.locationService, userDefaults: self.userDefaults, bundledRegionsFilePath: self.bundledRegionsPath, apiPath: self.regionsPath)
 
         expect(regionsService.regions.count) == 13
+
+        regionsService.cancelRequests()
     }
 
     // It loads regions saved to the user defaults when they exist
     func test_init_loadsSavedRegions() {
+        stubRegions()
+
+        let regionsModelService = self.regionsModelService
+        regionsModelService.dataQueue.isSuspended = true
+
         let customRegion = customMinneapolisRegion
         let plistData = try! PropertyListEncoder().encode([customRegion])
         userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
@@ -107,10 +104,17 @@ class RegionsServiceTests: OBATestCase {
 
         expect(regionsService.regions.first!.name) == "Custom Region"
         expect(regionsService.regions.count) == 1
+
+        regionsService.cancelRequests()
     }
 
     // It loads the current region from user defaults when it exists
     func test_init_loadsCurrentRegion_autoSelectDisabled() {
+        stubRegions()
+
+        let regionsModelService = self.regionsModelService
+        regionsModelService.dataQueue.isSuspended = true
+
         let customRegion = customMinneapolisRegion
         let plistArrayData = try! PropertyListEncoder().encode([customRegion])
         userDefaults.set(plistArrayData, forKey: RegionsService.storedRegionsUserDefaultsKey)
@@ -122,9 +126,16 @@ class RegionsServiceTests: OBATestCase {
         let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
         expect(regionsService.currentRegion) == customRegion
+
+        regionsService.cancelRequests()
     }
 
     func test_init_loadsCurrentRegion_autoSelectEnabled() {
+        stubRegions()
+
+        let regionsModelService = self.regionsModelService
+        regionsModelService.dataQueue.isSuspended = true
+
         let plistData = try! PropertyListEncoder().encode(customMinneapolisRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
         locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
@@ -132,6 +143,8 @@ class RegionsServiceTests: OBATestCase {
         let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json")
 
         expect(regionsService.currentRegion!.name) == "Puget Sound"
+
+        regionsService.cancelRequests()
     }
 
     /// It immediately downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
@@ -205,14 +218,24 @@ class RegionsServiceTests: OBATestCase {
 
     /// It loads the bundled regions when the data in the user defaults is corrupted.
     func test_corruptedDefaults() {
+        stubRegions()
+
+        let regionsModelService = self.regionsModelService
+        regionsModelService.dataQueue.isSuspended = true
+
         self.userDefaults.set(["hello world!"], forKey: RegionsService.storedRegionsUserDefaultsKey)
-        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
+
+        let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath, delegate: self.testDelegate)
 
         expect(regionsService.regions.count) == 13
+
+        regionsService.cancelRequests()
     }
 
     /// It calls delegates to tell them that the current region is updated when that property is written.
     func test_regionUpdated_notifications() {
+        stubRegions()
+
         let regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: "/regions-v3.json", delegate: self.testDelegate)
 
         let newRegion = customMinneapolisRegion

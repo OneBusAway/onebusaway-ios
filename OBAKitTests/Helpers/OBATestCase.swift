@@ -22,6 +22,13 @@ open class OBATestCase: XCTestCase {
         NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
         userDefaults = UserDefaults(suiteName: userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
+
+        let testName = self.name
+
+        OHHTTPStubs.onStubMissing { (request) in
+            let errorMessage = "Missing Stub in \(testName): \(request.url!) — The unit test suite must not make live network requests!"
+            print(errorMessage)
+        }
     }
 
     open override func tearDown() {
@@ -94,6 +101,47 @@ public extension OBATestCase {
     var restService: RESTAPIService {
         let url = URL(string: baseURLString)!
         return RESTAPIService(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
+    }
+}
+
+// MARK: - Network Request Stubbing
+
+public extension OBATestCase {
+
+    func stubAgenciesWithCoverage(host: String) {
+        stub(condition: { (request) -> Bool in
+            guard let url = request.url else { return false }
+            let hostMatches = url.host == host
+            let pathMatches = url.path == "/api/where/agencies-with-coverage.json"
+
+            return hostMatches && pathMatches
+        }, response: { _ -> OHHTTPStubsResponse in
+            return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
+        })
+    }
+
+    func stubRegions() {
+        stub(condition: { (request) -> Bool in
+            guard let url = request.url else { return false }
+            let hostMatches = url.host == self.regionsHost
+            let pathMatches = url.path == self.regionsPath
+
+            return hostMatches && pathMatches
+        }, response: { _ -> OHHTTPStubsResponse in
+            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
+        })
+    }
+
+    func stubRegionsJustPugetSound() {
+        stub(condition: { (request) -> Bool in
+            guard let url = request.url else { return false }
+            let hostMatches = url.host == self.regionsHost
+            let pathMatches = url.path == self.regionsPath
+
+            return hostMatches && pathMatches
+        }, response: { _ -> OHHTTPStubsResponse in
+            return OHHTTPStubsResponse.JSONFile(named: "regions-just-puget-sound.json")
+        })
     }
 }
 

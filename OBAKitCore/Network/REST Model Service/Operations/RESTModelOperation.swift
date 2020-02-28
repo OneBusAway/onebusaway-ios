@@ -18,6 +18,11 @@ public class RESTModelOperation: Operation {
         super.init()
     }
 
+    public override func cancel() {
+        super.cancel()
+        apiOperation?.cancel()
+    }
+
     override public func main() {
         if let references = apiOperation?.references {
             do {

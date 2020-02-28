@@ -21,13 +21,10 @@ class RegionalAlertsModelOperationTests: OBATestCase {
         stub(condition: isHost(host) && isPath(AgenciesWithCoverageOperation.apiPath)) { _ in
             return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
         }
-
-        stub(condition: isHost(host) && isPath(RegionalAlertsOperation.buildRESTAPIPath(agencyID: "1"))) { _ in
-            return OHHTTPStubsResponse.dataFile(named: "puget_sound_alerts.pb")
-        }
-
-        stub(condition: isHost(host) && isPath(RegionalAlertsOperation.buildRESTAPIPath(agencyID: "98"))) { _ in
-            return OHHTTPStubsResponse.dataFile(named: "puget_sound_alerts.pb")
+        for id in ["1", "3", "19", "23", "29", "40", "95", "96", "97", "98", "KMD"] {
+            stub(condition: isHost(host) && isPath(RegionalAlertsOperation.buildRESTAPIPath(agencyID: id))) { _ in
+                return OHHTTPStubsResponse.dataFile(named: "puget_sound_alerts.pb")
+            }
         }
     }
 
@@ -39,7 +36,7 @@ class RegionalAlertsModelOperationTests: OBATestCase {
         waitUntil { (done) in
             let op = self.restModelService.getRegionalAlerts(agencies: agencies)
             op.completionBlock = {
-                expect(op.agencyAlerts.count) == 2
+                expect(op.agencyAlerts.count) == 20
                 done()
             }
         }

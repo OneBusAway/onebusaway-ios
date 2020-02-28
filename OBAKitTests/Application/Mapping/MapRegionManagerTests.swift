@@ -14,13 +14,11 @@ import Nimble
 // swiftlintXdisable force_try
 
 class MapRegionManagerTests: OBATestCase {
-    let regionsBaseURL = URL(string: "http://www.example.com")!
-    let obacoBaseURL = URL(string: "http://www.example.com")!
     let apiKey = "apikey"
     let appVersion = "app-version"
     let queue = OperationQueue()
 
-    var application: Application!
+    var config: AppConfig!
 
     override func setUp() {
         super.setUp()
@@ -30,11 +28,9 @@ class MapRegionManagerTests: OBATestCase {
 
         let bundledRegions = Bundle.main.path(forResource: "regions", ofType: "json")!
 
-        let config = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegions, regionsAPIPath: "/regions-v3.json")
+        config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegions, regionsAPIPath: regionsPath)
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
-
-        application = Application(config: config)
     }
 
     override func tearDown() {
@@ -43,6 +39,9 @@ class MapRegionManagerTests: OBATestCase {
     }
 
     func test_init() {
+        stubRegions()
+
+        let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
 
         expect(mgr.mapView).toNot(beNil())
@@ -52,8 +51,11 @@ class MapRegionManagerTests: OBATestCase {
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
     func test_visibleMapRect_nilRegion() {
+        stubRegions()
+
+        let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
-        expect(self.application.currentRegion).to(beNil())
+        expect(application.currentRegion).to(beNil())
         expect(mgr.lastVisibleMapRect).to(beNil())
     }
 }
