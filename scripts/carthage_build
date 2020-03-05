@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+carthage build --platform iOS --no-use-binaries --cache-builds

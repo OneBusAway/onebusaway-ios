@@ -26,7 +26,7 @@ Once you have these pieces of software installed, clone the OneBusAway app repos
     # note: depending on your system configuration, you may need to run this command with sudo, i.e. sudo gem install bundler
     gem install bundler
     bundle install
-    carthage build --platform iOS
+    scripts/carthage_build
     scripts/generate_project OneBusAway
     open OBAKit.xcodeproj
 
