@@ -26,7 +26,7 @@ github "airbnb/AloeStackView" ~>1.2.0
 github "SCENEE/FloatingPanel" ==1.7.1
 
 # https://github.com/SwipeCellKit/SwipeCellKit/releases
-github "SwipeCellKit/SwipeCellKit" ~>2.5.4
+github "SwipeCellKit/SwipeCellKit" ~>2.7.1
 
 # https://github.com/xmartlabs/Eureka/releases
 github "xmartlabs/Eureka" ~>5.1.0
