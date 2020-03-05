@@ -23,7 +23,7 @@ github "aaronbrethorst/IGListKit" "master"
 github "airbnb/AloeStackView" ~>1.2.0
 
 # https://github.com/SCENEE/FloatingPanel/releases
-github "SCENEE/FloatingPanel" ==1.7.1
+github "SCENEE/FloatingPanel" ~>1.7.4
 
 # https://github.com/SwipeCellKit/SwipeCellKit/releases
 github "SwipeCellKit/SwipeCellKit" ~>2.7.1
