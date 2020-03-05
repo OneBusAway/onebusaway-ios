@@ -1,6 +1,6 @@
 github "AliSoftware/OHHTTPStubs" "8.0.0"
 github "CocoaLumberjack/CocoaLumberjack" "3.6.1"
-github "OneSignal/OneSignal-iOS-SDK" "2.12.4"
+github "OneSignal/OneSignal-iOS-SDK" "2.12.6"
 github "Quick/Nimble" "v8.0.5"
 github "SCENEE/FloatingPanel" "v1.7.4"
 github "SwipeCellKit/SwipeCellKit" "2.7.1"

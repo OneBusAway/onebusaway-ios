@@ -40,4 +40,4 @@ github "alexaubry/BulletinBoard" ~> 4.1.0
 ## Third Party Integrations
 
 # https://github.com/OneSignal/OneSignal-iOS-SDK/releases
-github "OneSignal/OneSignal-iOS-SDK" ~>2.12.4
+github "OneSignal/OneSignal-iOS-SDK" ~>2.12.6
