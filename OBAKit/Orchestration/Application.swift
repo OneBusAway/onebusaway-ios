@@ -412,6 +412,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         MinimalStopAnnotationView.appearance().strokeColor = .gray
         MinimalStopAnnotationView.appearance().highlightedStrokeColor = .blue
 
+        MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
+
         StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
         StopAnnotationView.appearance().fillColor = UIColor.white
         StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText

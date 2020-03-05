@@ -36,13 +36,13 @@
 @implementation OneSignalReceiveReceiptsController
 
 - (BOOL)isReceiveReceiptsEnabled {
-    return [OneSignalUserDefaults.initShared getSavedBoolForKey:ONESIGNAL_ENABLE_RECEIVE_RECEIPTS defaultValue:NO];
+    return [OneSignalUserDefaults.initShared getSavedBoolForKey:OSUD_RECEIVE_RECEIPTS_ENABLED defaultValue:NO];
 }
 
 - (void)sendReceiveReceiptWithNotificationId:(NSString *)notificationId {
     let sharedUserDefaults = OneSignalUserDefaults.initShared;
-    let playerId = [sharedUserDefaults getSavedStringForKey:USERID defaultValue:nil];
-    let appId = [sharedUserDefaults getSavedStringForKey:NSUD_APP_ID defaultValue:nil];
+    let playerId = [sharedUserDefaults getSavedStringForKey:OSUD_PLAYER_ID_TO defaultValue:nil];
+    let appId = [sharedUserDefaults getSavedStringForKey:OSUD_APP_ID defaultValue:nil];
 
     [self sendReceiveReceiptWithPlayerId:playerId
                           notificationId:notificationId
@@ -75,7 +75,7 @@
         [OneSignal onesignal_Log:ONE_S_LL_VERBOSE message:@"Receieve receipts disabled"];
         return;
     }
-    
+
     let request = [OSRequestReceiveReceipts withPlayerId:playerId notificationId:notificationId appId:appId];
     [OneSignalClient.sharedClient executeRequest:request onSuccess:^(NSDictionary *result) {
         if (success)

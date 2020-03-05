@@ -37,6 +37,15 @@ public protocol FloatingPanelControllerDelegate: class {
     ///
     /// By default, any tap and long gesture recognizers are allowed to recognize gestures simultaneously.
     func floatingPanel(_ vc: FloatingPanelController, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool
+
+    /// Asks the delegate for a content offset of the tracked scroll view to be pinned when a floating panel moves
+    ///
+    /// If you do not implement this method, the controller uses a value of the content offset plus the content insets
+    /// of the tracked scroll view. Your implementation of this method can return a value for a navigation bar with a large
+    /// title, for example.
+    ///
+    /// This method will not be called if the controller doesn't track any scroll view.
+    func floatingPanel(_ vc: FloatingPanelController, contentOffsetForPinning trackedScrollView: UIScrollView) -> CGPoint
 }
 
 public extension FloatingPanelControllerDelegate {
@@ -61,6 +70,9 @@ public extension FloatingPanelControllerDelegate {
 
     func floatingPanel(_ vc: FloatingPanelController, shouldRecognizeSimultaneouslyWith gestureRecognizer: UIGestureRecognizer) -> Bool {
         return false
+    }
+    func floatingPanel(_ vc: FloatingPanelController, contentOffsetForPinning trackedScrollView: UIScrollView) -> CGPoint {
+        return CGPoint(x: 0.0, y: 0.0 - trackedScrollView.contentInset.top)
     }
 }
 
@@ -187,7 +199,13 @@ open class FloatingPanelController: UIViewController {
         set { set(contentViewController: newValue) }
         get { return _contentViewController }
     }
-
+    
+    /// The NearbyPosition determines that finger's nearby position.
+    public var nearbyPosition: FloatingPanelPosition {
+        let currentY = surfaceView.frame.minY
+        return floatingPanel.targetPosition(from: currentY, with: .zero)
+    }
+    
     public var contentMode: ContentMode = .static {
         didSet {
             guard position != .hidden else { return }
@@ -279,6 +297,41 @@ open class FloatingPanelController: UIViewController {
         safeAreaInsetsObservation = nil
     }
 
+    // MARK:- Child view controller to consult
+    #if swift(>=4.2)
+    open override var childForStatusBarStyle: UIViewController? {
+        return contentViewController
+    }
+
+    open override var childForStatusBarHidden: UIViewController? {
+        return contentViewController
+    }
+
+    open override var childForScreenEdgesDeferringSystemGestures: UIViewController? {
+        return contentViewController
+    }
+
+    open override var childForHomeIndicatorAutoHidden: UIViewController? {
+        return contentViewController
+    }
+    #else
+    open override var childViewControllerForStatusBarStyle: UIViewController? {
+        return contentViewController
+    }
+
+    open override var childViewControllerForStatusBarHidden: UIViewController? {
+        return contentViewController
+    }
+
+    open override func childViewControllerForScreenEdgesDeferringSystemGestures() -> UIViewController? {
+        return contentViewController
+    }
+
+    open override func childViewControllerForHomeIndicatorAutoHidden() -> UIViewController? {
+        return contentViewController
+    }
+    #endif
+
     // MARK:- Internals
     func prepare(for newCollection: UITraitCollection) {
         guard newCollection.shouldUpdateLayout(from: traitCollection) else { return }
@@ -340,13 +393,18 @@ open class FloatingPanelController: UIViewController {
     private func activateLayout() {
         floatingPanel.layoutAdapter.prepareLayout(in: self)
 
-        // preserve the current content offset
-        let contentOffset = scrollView?.contentOffset
+        // preserve the current content offset if contentInsetAdjustmentBehavior is `.always`
+        var contentOffset: CGPoint?
+        if contentInsetAdjustmentBehavior == .always {
+            contentOffset = scrollView?.contentOffset
+        }
 
         floatingPanel.layoutAdapter.updateHeight()
         floatingPanel.layoutAdapter.activateLayout(of: floatingPanel.state)
 
-        scrollView?.contentOffset = contentOffset ?? .zero
+        if let contentOffset = contentOffset {
+            scrollView?.contentOffset = contentOffset
+        }
     }
 
     // MARK: - Container view controller interface

@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2010-2019, Deusty, LLC
+// Copyright (c) 2010-2020, Deusty, LLC
 // All rights reserved.
 //
 // Redistribution and use of this software in source and binary forms,
@@ -16,6 +16,7 @@
 @import XCTest;
 
 #import <CocoaLumberjack/DDLog.h>
+#import <sys/qos.h>
 
 static NSString * const kDefaultMessage = @"Log message";
 
@@ -159,6 +160,10 @@ static NSString * const kDefaultMessage = @"Log message";
     XCTAssertEqualObjects(self.message.threadName, NSThread.currentThread.name);
 }
 
+- (void)testInitSetsThreadQOSToCurrentThreadQOS {
+    XCTAssertEqual(self.message.qos, qos_class_self());
+}
+
 - (void)testInitSetsFileNameToFilenameWithoutExtensionIfItHasExtension {
     XCTAssertEqualObjects(self.message.fileName, @"DDLogMessageTests");
 }
@@ -222,6 +227,7 @@ static NSString * const kDefaultMessage = @"Log message";
     XCTAssertEqualObjects(self.message.threadID, copy.threadID);
     XCTAssertEqualObjects(self.message.threadName, copy.threadName);
     XCTAssertEqualObjects(self.message.queueLabel, copy.queueLabel);
+    XCTAssertEqual(self.message.qos, copy.qos);
 }
 
 @end

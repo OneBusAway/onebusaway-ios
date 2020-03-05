@@ -1,6 +1,6 @@
 // Software License Agreement (BSD License)
 //
-// Copyright (c) 2010-2019, Deusty, LLC
+// Copyright (c) 2010-2020, Deusty, LLC
 // All rights reserved.
 //
 // Redistribution and use of this software in source and binary forms,
@@ -19,11 +19,14 @@
 #import <CocoaLumberjack/DDFileLogger+Buffering.h>
 #import <CocoaLumberjack/DDLogMacros.h>
 
+#import <sys/xattr.h>
+
 #import "DDSampleFileManager.h"
 
 static const DDLogLevel ddLogLevel = DDLogLevelAll;
 
 @interface DDFileLoggerTests : XCTestCase {
+    DDSampleFileManager *logFileManager;
     DDFileLogger *logger;
     NSString *logsDirectory;
 }
@@ -34,7 +37,8 @@ static const DDLogLevel ddLogLevel = DDLogLevelAll;
 
 - (void)setUp {
     [super setUp];
-    logger = [[DDFileLogger alloc] initWithLogFileManager:[[DDSampleFileManager alloc] initWithLogFileHeader:@"header"]];
+    logFileManager = [[DDSampleFileManager alloc] initWithLogFileHeader:@"header"];
+    logger = [[DDFileLogger alloc] initWithLogFileManager:logFileManager];
     logsDirectory = logger.logFileManager.logsDirectory;
 }
 
@@ -83,11 +87,12 @@ static const DDLogLevel ddLogLevel = DDLogLevelAll;
     XCTAssertNotNil(oldLogFileInfo);
     XCTAssertNotNil(newLogFileInfo);
     XCTAssertNotEqualObjects(oldLogFileInfo.filePath, newLogFileInfo.filePath);
+    XCTAssertEqualObjects(oldLogFileInfo.filePath, logFileManager.archivedLogFilePath);
     XCTAssertTrue(oldLogFileInfo.isArchived);
     XCTAssertFalse(newLogFileInfo.isArchived);
 }
 
-- (void)testAutomaticLogFileRollingWhenNotReusingLogFiles {
+- (void)testExplicitLogFileRollingWhenNotReusingLogFiles {
     logger.doNotReuseLogFiles = YES;
 
     [DDLog addLogger:logger];
@@ -106,6 +111,22 @@ static const DDLogLevel ddLogLevel = DDLogLevelAll;
     XCTAssertEqual(logger.logFileManager.unsortedLogFileInfos.count, 2);
 }
 
+- (void)testAutomaticLogFileRollingWhenNotReusingLogFiles {
+    DDFileLogger *newLogger = [[DDFileLogger alloc] initWithLogFileManager:logFileManager];
+    newLogger.doNotReuseLogFiles = YES;
+
+    [DDLog addLogger:logger];
+    DDLogError(@"Some log in the old file");
+    __auto_type oldLogFileInfo = [logger currentLogFileInfo];
+    __auto_type newLogFileInfo = [newLogger currentLogFileInfo];
+    XCTAssertNotNil(oldLogFileInfo);
+    XCTAssertNotNil(newLogFileInfo);
+    XCTAssertNotEqualObjects(oldLogFileInfo.filePath, newLogFileInfo.filePath);
+    XCTAssertEqualObjects(oldLogFileInfo.filePath, logFileManager.archivedLogFilePath);
+    XCTAssertTrue(oldLogFileInfo.isArchived);
+    XCTAssertFalse(newLogFileInfo.isArchived);
+}
+
 - (void)testCurrentLogFileInfoWhenNotReusingLogFilesOnlyCreatesNewLogFilesIfNecessary {
     logger.doNotReuseLogFiles = YES;
 
@@ -121,6 +142,70 @@ static const DDLogLevel ddLogLevel = DDLogLevelAll;
     XCTAssertNotEqualObjects(info2.filePath, info3.filePath);
 
     XCTAssertEqual(logger.logFileManager.unsortedLogFileInfos.count, 2);
+}
+
+- (void)testExtendedAttributes {
+    logger.doNotReuseLogFiles = YES;
+
+    __auto_type info = logger.currentLogFileInfo;
+
+    char buffer[1];
+    ssize_t result = getxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", buffer, 1, 0, 0);
+    XCTAssertLessThan(result, 0);
+    XCTAssertEqual(errno, ENOATTR);
+
+    info.isArchived = YES;
+    XCTAssertTrue(info.isArchived);
+
+    result = getxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", buffer, 1, 0, 0);
+    XCTAssertEqual(result, 1);
+    XCTAssertEqual(buffer[0], 0x01);
+
+    info.isArchived = NO;
+    XCTAssertFalse(info.isArchived);
+
+    result = getxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", buffer, 1, 0, 0);
+    XCTAssertLessThan(result, 0);
+    XCTAssertEqual(errno, ENOATTR);
+}
+
+- (void)testExtendedAttributesBackwardCompatibility {
+    logger.doNotReuseLogFiles = YES;
+
+    __auto_type info = logger.currentLogFileInfo;
+
+    char buffer[1];
+#if TARGET_IPHONE_SIMULATOR
+    [info renameFile:@"dummy.archived.log"];
+
+    XCTAssertTrue(info.isArchived);
+
+    ssize_t result = getxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", buffer, 1, 0, 0);
+    XCTAssertEqual(result, 1);
+    XCTAssertEqual(buffer[0], 0x01);
+    XCTAssertEqualObjects(info.fileName, @"dummy.log");
+
+    [info renameFile:@"dummy.archived.log"];
+
+    info.isArchived = YES;
+    XCTAssertTrue(info.isArchived);
+    XCTAssertEqualObjects(info.fileName, @"dummy.log");
+
+    [info renameFile:@"dummy.archived.log"];
+
+    info.isArchived = NO;
+    XCTAssertFalse(info.isArchived);
+    XCTAssertEqualObjects(info.fileName, @"dummy.log");
+#else
+    int err = setxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", "", 0, 0, 0);
+    XCTAssertEqual(err, 0);
+
+    XCTAssertTrue(info.isArchived);
+
+    ssize_t result = getxattr([info.filePath fileSystemRepresentation], "lumberjack.log.archived", buffer, 1, 0, 0);
+    XCTAssertEqual(result, 1);
+    XCTAssertEqual(buffer[0], 0x01);
+#endif
 }
 
 - (void)testWrapping {
