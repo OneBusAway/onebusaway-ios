@@ -6,7 +6,7 @@ github "apple/swift-protobuf" ~>1.8.0
 ## Logging
 
 # https://github.com/CocoaLumberjack/CocoaLumberjack/releases
-git "https://github.com/CocoaLumberjack/CocoaLumberjack.git" ~>3.6.0
+github "CocoaLumberjack/CocoaLumberjack" ~>3.6.1
 
 ## Data and Networking
 
