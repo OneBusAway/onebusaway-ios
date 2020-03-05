@@ -175,6 +175,8 @@ brew install swift-protobuf
 
 Now, `cd OBAKitCore/Models/Protobuf`, replace the `gtfs-realtime.proto` file with the modified version, and run `./proto-gen.sh`.
 
+You can find the latest version of the GTFS-RT protobuf file in the https://github.com/google/transit/ repository.
+
 # Third Party Libraries
 
 These are third party libraries directly included inside of this project.

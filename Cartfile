@@ -1,7 +1,7 @@
 ## Data and Modeling
 
 # https://github.com/apple/swift-protobuf/releases
-github "apple/swift-protobuf" ~>1.7.0
+github "apple/swift-protobuf" ~>1.8.0
 
 ## Logging
 
