@@ -36,6 +36,7 @@ open class VisualEffectViewController: UIViewController {
 
     override open func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .clear
         view.addSubview(visualEffectView)
         visualEffectView.pinToSuperview(.edges)
     }

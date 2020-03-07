@@ -237,6 +237,7 @@ public class MapViewController: UIViewController,
         let panel = FloatingPanelController(delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
+        panel.surfaceView.backgroundColor = .clear
 
         // Set a content view controller.
         panel.set(contentViewController: nearbyController)
@@ -275,7 +276,10 @@ public class MapViewController: UIViewController,
 
     // MARK: - Nearby Controller
 
-    private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
+    private lazy var nearbyController: NearbyViewController = {
+        let nearby = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
+        return nearby
+    }()
 
     public func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop) {
         show(stop: stop)
