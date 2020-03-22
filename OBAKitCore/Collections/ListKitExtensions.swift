@@ -39,10 +39,9 @@ public protocol Separated: NSObjectProtocol {
     func layoutSeparator(leftSeparatorInset: CGFloat?)
 }
 
-public extension Separated where Self: UICollectionViewCell {
+public extension Separated where Self: UICollectionReusableView {
     func layoutSeparator(leftSeparatorInset: CGFloat? = nil) {
-        let bounds = contentView.bounds
-        let height: CGFloat = 0.5
+        let height: CGFloat = 1.0 / UIScreen.main.scale
         let inset = leftSeparatorInset ?? layoutMargins.left
 
         separator.frame = CGRect(x: inset, y: bounds.height - height, width: bounds.width - inset, height: height)

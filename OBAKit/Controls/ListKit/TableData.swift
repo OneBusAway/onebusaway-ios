@@ -84,7 +84,7 @@ public class TableRowData: ListViewModel {
     ///   - values: The value for the row.
     ///   - accessoryType: The accessory type.
     ///   - tapped: Tap event handler.
-    convenience init(title: String, value: String, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
+    convenience init(title: String, value: String?, accessoryType: UITableViewCell.AccessoryType, tapped: ListRowActionHandler?) {
         self.init(title: title, attributedTitle: nil, subtitle: value, style: .value1, accessoryType: accessoryType, tapped: tapped)
     }
 

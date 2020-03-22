@@ -31,8 +31,8 @@ public class TableRowView: UIView, Highlightable {
         var constraints: [NSLayoutConstraint] = [
             heightConstraint,
             heightAnchor.constraint(greaterThanOrEqualTo: contentStack.heightAnchor),
-            contentStackWrapper.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            contentStackWrapper.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentStackWrapper.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStackWrapper.centerYAnchor.constraint(equalTo: centerYAnchor),
             contentStackWrapper.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: ThemeMetrics.compactPadding),
             contentStackWrapper.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -ThemeMetrics.compactPadding)
@@ -160,7 +160,7 @@ public class TableRowView: UIView, Highlightable {
         return stack
     }()
 
-    private lazy var labelWrapper = labelStack.embedInWrapperView()
+    fileprivate lazy var labelWrapper = labelStack.embedInWrapperView()
     lazy var labelStack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
     let titleLabel = TableRowView.buildLabel()
@@ -233,6 +233,8 @@ class ValueTableRowView: TableRowView {
 
         subtitleLabel.setContentHuggingPriority(.required, for: .horizontal)
         subtitleLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
+
+        contentStack.setCustomSpacing(ThemeMetrics.padding, after: labelWrapper)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }

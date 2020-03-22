@@ -53,6 +53,11 @@ public extension ListKitStopConverters where Self: UIViewController {
 }
 
 public extension TableRowData {
+
+    /// Creates a row from a `Stop`. Includes a tap handler closure for easily assigning an action to the row.
+    /// - Parameters:
+    ///   - stop: The `Stop` used to create the row.
+    ///   - tapped: The tap action handler.
     convenience init(stop: Stop, tapped: ListRowActionHandler?) {
         let title = Formatters.formattedTitle(stop: stop)
         let subtitle = Formatters.formattedRoutes(stop.routes)

@@ -18,12 +18,17 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     fileprivate var tableRowView: TableRowView! {
         didSet {
+            if kUseDebugColors {
+                tableRowView.backgroundColor = .green
+            }
+
             contentView.addSubview(tableRowView)
             NSLayoutConstraint.activate([
                 tableRowView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
                 tableRowView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
                 tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
+                tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                tableRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
             ])
         }
     }
@@ -56,8 +61,6 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     // MARK: - UIAppearance Selectors
 
-    private let highlightedBackgroundColor = ThemeColors.shared.highlightedBackgroundColor
-
     @objc dynamic var titleFont: UIFont {
         get { return tableRowView.titleFont }
         set { tableRowView.titleFont = newValue }
@@ -66,6 +69,23 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
     @objc dynamic var subtitleFont: UIFont {
         get { return tableRowView.subtitleFont }
         set { tableRowView.subtitleFont = newValue }
+    }
+
+    // MARK: - Style
+
+    public var style: CollectionControllerStyle = .plain {
+        didSet {
+            contentView.backgroundColor = defaultBackgroundColor
+        }
+    }
+
+    public var defaultBackgroundColor: UIColor? {
+        if style == .plain {
+            return nil
+        }
+        else {
+            return ThemeColors.shared.groupedTableRowBackground
+        }
     }
 
     // MARK: - UICollectionViewCell
@@ -77,19 +97,26 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     override var isHighlighted: Bool {
         didSet {
-            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : defaultBackgroundColor
         }
     }
+
+    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+        return calculateLayoutAttributesFitting(layoutAttributes)
+    }
+
+    // MARK: - Separator
+
+    /// When true, the cell will extend the separator all the way to its leading edge.
+    public var collapseLeftInset: Bool = false
 
     let separator = tableCellSeparatorLayer()
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layoutSeparator()
-    }
 
-    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        return calculateLayoutAttributesFitting(layoutAttributes)
+        let inset: CGFloat? = collapseLeftInset ? 0 : nil
+        layoutSeparator(leftSeparatorInset: inset)
     }
 }
 
@@ -124,46 +151,4 @@ class SubtitleTableCell: TableRowCell {
         tableRowView.heightConstraint.priority = .defaultHigh
     }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-}
-
-class TableSectionHeaderView: UICollectionReusableView {
-
-    let textLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = UIFont.boldSystemFont(ofSize: UIFont.systemFontSize)
-        return label
-    }()
-
-    @objc dynamic var font: UIFont {
-        get { return textLabel.font }
-        set { textLabel.font = newValue }
-    }
-
-    override var backgroundColor: UIColor? {
-        didSet {
-            textLabel.backgroundColor = backgroundColor
-        }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-
-        addSubview(textLabel)
-
-        NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: self.layoutMarginsGuide.leadingAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: self.layoutMarginsGuide.trailingAnchor),
-            textLabel.topAnchor.constraint(equalTo: self.topAnchor),
-            textLabel.bottomAnchor.constraint(equalTo: self.bottomAnchor)
-        ])
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        textLabel.text = nil
-    }
 }

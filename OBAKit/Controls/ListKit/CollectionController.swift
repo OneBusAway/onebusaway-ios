@@ -11,14 +11,25 @@ import FloatingPanel
 import IGListKit
 import OBAKitCore
 
+public enum CollectionControllerStyle {
+    case plain, grouped
+}
+
+/// Meant to be used as a child view controller. It hosts a `UICollectionView` plus all of the logic for using `IGListKit`.
 public class CollectionController: UIViewController {
     private let application: Application
-
     public let listAdapter: ListAdapter
+    public let style: CollectionControllerStyle
 
-    public init(application: Application, dataSource: UIViewController & ListAdapterDataSource) {
+    /// Creates a new `CollectionController`.
+    /// - Parameters:
+    ///   - application: The application object.
+    ///   - dataSource: The parent view controller that acts as a data source.
+    ///   - style: The style of the collection view: grouped or plain.
+    public init(application: Application, dataSource: UIViewController & ListAdapterDataSource, style: CollectionControllerStyle = .plain) {
         self.application = application
         self.listAdapter = ListAdapter(updater: ListAdapterUpdater(), viewController: dataSource, workingRangeSize: 1)
+        self.style = style
 
         super.init(nibName: nil, bundle: nil)
 
@@ -41,7 +52,12 @@ public class CollectionController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
         collectionView.translatesAutoresizingMaskIntoConstraints = false
         collectionView.isScrollEnabled = true
-        collectionView.backgroundColor = .clear
+        if style == .plain {
+            collectionView.backgroundColor = .clear
+        }
+        else {
+            collectionView.backgroundColor = ThemeColors.shared.groupedTableBackground
+        }
         collectionView.alwaysBounceVertical = true
         collectionView.directionalLayoutMargins = ThemeMetrics.collectionViewLayoutMargins
 
