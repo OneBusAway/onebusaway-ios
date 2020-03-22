@@ -6,20 +6,22 @@
 //
 
 import UIKit
-import AloeStackView
+import IGListKit
 import SafariServices
 import MessageUI
 import OBAKitCore
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
-@objc(OBAMoreViewController) public class MoreViewController: UIViewController, AloeStackTableBuilder, MFMailComposeViewControllerDelegate, RegionsServiceDelegate, FarePaymentsDelegate {
+@objc(OBAMoreViewController)
+public class MoreViewController: UIViewController,
+    AppContext,
+    FarePaymentsDelegate,
+    ListAdapterDataSource,
+    MFMailComposeViewControllerDelegate,
+    RegionsServiceDelegate {
 
     /// The OBA application object
-    private let application: Application
-
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.groupedTableBackground
-    )
+    public let application: Application
 
     /// A helper object that crafts support emails or alerts when the user's email client isn't configured properly.
     private lazy var contactUsHelper = ContactUsHelper(application: application)
@@ -46,41 +48,55 @@ import OBAKitCore
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
-        reloadData()
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        regionPickerRow.subtitleLabel.text = application.currentRegion?.name ?? ""
+
+        collectionController.reload(animated: false)
     }
 
-    /// Reloads the stack view from scratch
-    private func reloadData() {
-        stackView.removeAllRows()
+    // MARK: - List Kit
 
-        addHeader()
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .grouped)
 
-        if application.userDataStore.debugMode {
-            addDebug()
-        }
+    // MARK: - IGListKit
 
-        addUpdatesAndAlerts()
-        addMyLocationSection()
-        addAbout()
-
-        refreshTableData()
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        return [
+            moreHeaderSection,
+            updatesAndAlertsSection,
+            myLocationSection,
+            aboutSection
+        ]
     }
 
-    /// Refreshes individual rows whose data might change between presentations of this controller.
-    private func refreshTableData() {
-        if let region = application.currentRegion {
-            regionPickerRow.subtitleLabel.text = region.name
-            let fmtString = OBALoc("more_controller.updates_and_alerts.row_fmt", value: "Alerts for %@", comment: "Alerts for {Region Name}")
-            alertsForRegionRow.titleLabel.text = String(format: fmtString, region.name)
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        switch object {
+        case is TableSectionData:
+            return TableSectionController(style: .grouped)
+        case is MoreHeaderSection:
+            return MoreHeaderSectionController()
+        default:
+            return defaultSectionController(for: object)
         }
+    }
+
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
+    }
+
+    // MARK: - Header Section
+
+    private lazy var moreHeaderSection = MoreHeaderSection { [weak self] in
+        guard let self = self else { return }
+        self.application.userDataStore.debugMode = true
+        let alert = UIAlertController(title: OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction.dismissAction)
+        self.present(alert, animated: true, completion: nil)
     }
 
     // MARK: - Actions
@@ -91,87 +107,49 @@ import OBAKitCore
         application.viewRouter.present(navigation, from: self)
     }
 
-    // MARK: - Controller Header
-
-    private lazy var moreHeaderController = MoreHeaderViewController(application: application)
-
-    private func addHeader() {
-        prepareChildController(moreHeaderController) {
-            stackView.addRow(moreHeaderController.view, hideSeparator: true, insets: .zero)
-        }
-    }
-
-    // MARK: - UI Builders
-
     // MARK: - Regional Alerts Section
 
-    private lazy var alertsForRegionRow = DefaultTableRowView(title: OBALoc("more_controller.alerts_for_region", value: "Alerts", comment: "Alerts for region row in the More controller"), accessoryType: .disclosureIndicator)
-
-    private func addUpdatesAndAlerts() {
-        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
-
-        addGroupedTableRowToStack(alertsForRegionRow, isLastRow: true) { [weak self] _ in
+    private var updatesAndAlertsSection: TableSectionData {
+        let tableRow = TableRowData(title: OBALoc("more_controller.alerts_for_region", value: "Alerts", comment: "Alerts for region row in the More controller"), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             let alertsController = AgencyAlertsViewController(application: self.application)
             self.application.viewRouter.navigate(to: alertsController, from: self)
         }
+
+        return TableSectionData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"), rows: [tableRow])
     }
 
     // MARK: - My Location Section
 
-    private func addMyLocationSection() {
-        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."))
+    private var myLocationSection: TableSectionData {
+        var rows = [TableRowData]()
 
-        addRegionPickerRowToStackView()
+        let picker = TableRowData(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), value: application.currentRegion?.name, accessoryType: .disclosureIndicator) { [weak self] _ in
+            guard let self = self else { return }
+            let regionPicker = RegionPickerViewController(application: self.application)
+            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
+            self.application.viewRouter.present(nav, from: self)
+        }
+        rows.append(picker)
 
         if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
-            addPayMyFareRowToStackView()
+            let payMyFare = TableRowData(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), accessoryType: .none) { [weak self] _ in
+                guard let self = self else { return }
+                self.logRowTapAnalyticsEvent(name: "Pay Fare")
+                self.farePayments.beginFarePaymentsWorkflow()
+            }
+            rows.append(payMyFare)
         }
 
-        addAgenciesRowToStackView()
-    }
-
-    private func addRegionPickerRowToStackView() {
-        addGroupedTableRowToStack(regionPickerRow) { [weak self] _ in
-            guard let self = self else { return }
-            self.showRegionPicker()
-        }
-    }
-
-    private lazy var regionPickerRow: ValueTableRowView = {
-        let regionRowTitle = OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region.")
-        let row = ValueTableRowView(title: regionRowTitle, subtitle: "", accessoryType: .disclosureIndicator)
-        row.layoutMargins = ThemeMetrics.groupedRowLayoutMargins
-        row.backgroundColor = ThemeColors.shared.groupedTableRowBackground
-
-        return row
-    }()
-
-    private func showRegionPicker() {
-        let regionPicker = RegionPickerViewController(application: application)
-        let nav = application.viewRouter.buildNavigation(controller: regionPicker)
-        application.viewRouter.present(nav, from: self)
-    }
-
-    private func addPayMyFareRowToStackView() {
-        let rowTitle = OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row")
-        let payMyFareRow = DefaultTableRowView(title: rowTitle, accessoryType: .none)
-        addGroupedTableRowToStack(payMyFareRow) { [weak self] _ in
-            guard let self = self else { return }
-            self.logRowTapAnalyticsEvent(name: "Pay Fare")
-            self.farePayments.beginFarePaymentsWorkflow()
-        }
-    }
-
-    private func addAgenciesRowToStackView() {
-        let rowTitle = OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section")
-        let row = DefaultTableRowView(title: rowTitle, accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(row, isLastRow: true) { [weak self] _ in
+        let agencies = TableRowData(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             self.logRowTapAnalyticsEvent(name: "Show Agencies")
             let agencies = AgenciesViewController(application: self.application)
             self.application.viewRouter.navigate(to: agencies, from: self)
         }
+        rows.append(agencies)
+
+        return TableSectionData(title: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."), rows: rows)
     }
 
     // MARK: - Contact Us Button
@@ -220,21 +198,17 @@ import OBAKitCore
 
     // MARK: - About Section
 
-    private func addAbout() {
-        // Header
-        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."))
+    private var aboutSection: TableSectionData {
+        var rows = [TableRowData]()
 
-        // Credits
-        let credits = DefaultTableRowView(title: OBALoc("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(credits) { [weak self] _ in
+        let credits = TableRowData(title: OBALoc("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             let credits = CreditsViewController(application: self.application)
             self.application.viewRouter.navigate(to: credits, from: self)
         }
+        rows.append(credits)
 
-        // Privacy
-        let privacy = DefaultTableRowView(title: OBALoc("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(privacy) { [weak self] _ in
+        let privacy = TableRowData(title: OBALoc("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard
                 let self = self,
                 let url = Bundle.main.privacyPolicyURL
@@ -243,40 +217,43 @@ import OBAKitCore
             let safari = SFSafariViewController(url: url)
             self.application.viewRouter.present(safari, from: self)
         }
+        rows.append(privacy)
 
         // Weather
-        let weather = DefaultTableRowView(title: OBALoc("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(weather, isLastRow: true) { [weak self] _ in
+        let weather = TableRowData(title: OBALoc("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
         }
+        rows.append(weather)
+
+        return TableSectionData(title: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."), rows: rows)
     }
 
-    private func addDebug() {
-        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
-
-        if application.shouldShowCrashButton {
-            let crashRow = DefaultTableRowView(title: OBALoc("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
-            addGroupedTableRowToStack(crashRow) { [weak self] _ in
-                guard let self = self else { return }
-                self.application.performTestCrash()
-            }
-
-            let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-            let pushIDRow = ValueTableRowView(title: OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), subtitle: pushID, accessoryType: .none)
-            addGroupedTableRowToStack(pushIDRow) { [weak self] _ in
-                if let pushID = self?.application.pushService?.pushUserID {
-                    UIPasteboard.general.string = pushID
-                }
-            }
-        }
-    }
+//    private func addDebug() {
+//        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
+//
+//        if application.shouldShowCrashButton {
+//            let crashRow = DefaultTableRowView(title: OBALoc("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
+//            addGroupedTableRowToStack(crashRow) { [weak self] _ in
+//                guard let self = self else { return }
+//                self.application.performTestCrash()
+//            }
+//
+//            let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+//            let pushIDRow = ValueTableRowView(title: OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), subtitle: pushID, accessoryType: .none)
+//            addGroupedTableRowToStack(pushIDRow) { [weak self] _ in
+//                if let pushID = self?.application.pushService?.pushUserID {
+//                    UIPasteboard.general.string = pushID
+//                }
+//            }
+//        }
+//    }
 
     // MARK: - Fare Payments
 
     private lazy var farePayments = FarePayments(application: application, delegate: self)
 
-    public func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+    public func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: VoidBlock?) {
         application.viewRouter.present(viewController, from: self, isModal: true)
     }
 
@@ -287,7 +264,7 @@ import OBAKitCore
     // MARK: - Regions Service Delegate
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        refreshTableData()
+        collectionController.reload(animated: false)
     }
 
     // MARK: - Private Helpers

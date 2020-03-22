@@ -7,10 +7,81 @@
 
 import UIKit
 import OBAKitCore
+import IGListKit
 
-class MoreHeaderViewController: UIViewController {
+// MARK: - MoreHeaderSection
 
-    private let padding: CGFloat = 16.0
+class MoreHeaderSection: NSObject, ListDiffable {
+    func diffIdentifier() -> NSObjectProtocol {
+        return self
+    }
+
+    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
+        guard let object = object as? MoreHeaderSection else { return false }
+        return self == object
+    }
+
+    init(callback: @escaping VoidBlock) {
+        self.callback = callback
+    }
+
+    fileprivate let callback: VoidBlock
+}
+
+// MARK: MoreHeaderSectionController
+
+final class MoreHeaderSectionController: ListSectionController {
+    override func sizeForItem(at index: Int) -> CGSize {
+        // the height of 200 is semi-arbitrary, and was determined by playing around
+        // looking for a height that doesn't cause the collection view to be misaligned
+        // when it first appears on screen.
+        return CGSize(width: collectionContext!.containerSize.width, height: 200)
+    }
+
+    override func cellForItem(at index: Int) -> UICollectionViewCell {
+        guard let cell = collectionContext?.dequeueReusableCell(of: MoreHeaderCollectionCell.self, for: self, at: index) as? MoreHeaderCollectionCell else {
+            fatalError()
+        }
+        cell.section = sectionData
+        return cell
+    }
+
+    override func didUpdate(to object: Any) {
+        guard let object = object as? MoreHeaderSection else {
+            fatalError()
+        }
+        sectionData = object
+    }
+
+    var sectionData: MoreHeaderSection?
+}
+
+// MARK: - MoreHeaderCollectionCell
+
+class MoreHeaderCollectionCell: SelfSizingCollectionCell {
+    let moreHeader = MoreHeaderView.autolayoutNew()
+
+    var section: MoreHeaderSection? {
+        set { moreHeader.section = newValue }
+        get { moreHeader.section }
+    }
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(moreHeader)
+        moreHeader.pinToSuperview(.edges)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// MARK: - MoreHeaderView
+
+class MoreHeaderView: UIView {
+
+    var section: MoreHeaderSection?
 
     private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [
         topPaddingView,
@@ -25,7 +96,7 @@ class MoreHeaderViewController: UIViewController {
 
     private lazy var topPaddingView: UIView = {
         let view = UIView.autolayoutNew()
-        view.heightAnchor.constraint(equalToConstant: padding).isActive = true
+        view.heightAnchor.constraint(equalToConstant: ThemeMetrics.controllerMargin).isActive = true
         return view
     }()
 
@@ -38,7 +109,7 @@ class MoreHeaderViewController: UIViewController {
 
     private lazy var interiorPaddingView: UIView = {
         let view = UIView.autolayoutNew()
-        view.heightAnchor.constraint(equalToConstant: padding / 2.0).isActive = true
+        view.heightAnchor.constraint(equalToConstant: ThemeMetrics.controllerMargin / 2.0).isActive = true
         return view
     }()
 
@@ -58,32 +129,21 @@ class MoreHeaderViewController: UIViewController {
 
     private lazy var bottomPaddingView: UIView = {
         let view = UIView.autolayoutNew()
-        view.heightAnchor.constraint(equalToConstant: padding).isActive = true
+        view.heightAnchor.constraint(equalToConstant: ThemeMetrics.controllerMargin).isActive = true
         return view
     }()
 
-    private let application: Application
+    override init(frame: CGRect) {
+        super.init(frame: frame)
 
-    init(application: Application) {
-        self.application = application
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        view.backgroundColor = ThemeColors.shared.brand
+        backgroundColor = ThemeColors.shared.brand
 
         appNameLabel.text = Bundle.main.appName
         appVersionLabel.text = Bundle.main.appVersion
         copyrightLabel.text = Bundle.main.copyright
         supportUsLabel.text = OBALoc("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
 
-        view.addSubview(stackView)
+        addSubview(stackView)
         stackView.pinToSuperview(.layoutMargins)
 
         let debugTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(enableDebugMode))
@@ -92,11 +152,11 @@ class MoreHeaderViewController: UIViewController {
         headerImageView.addGestureRecognizer(debugTapRecognizer)
     }
 
-    @objc private func enableDebugMode() {
-        application.userDataStore.debugMode = true
-        let alert = UIAlertController(title: OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
-        alert.addAction(UIAlertAction.dismissAction)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-        present(alert, animated: true, completion: nil)
+    @objc private func enableDebugMode() {
+        section?.callback()
     }
 }

@@ -15,6 +15,8 @@ extension ListAdapterDataSource where Self: AppContext {
 
     /// Provides a default way to map objects to `ListSectionController` objects.
     ///
+    /// Add new section controller types here.
+    ///
     /// - Parameter object: An object that will be mapped to a `ListSectionController`
     /// - Returns: The `ListSectionController`
     func defaultSectionController(for object: Any) -> ListSectionController {
