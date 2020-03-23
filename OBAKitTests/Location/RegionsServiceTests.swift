@@ -17,10 +17,10 @@ import OHHTTPStubs
 // swiftlint:disable force_cast force_try weak_delegate
 
 class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
-    var unableToSelectRegionsCallbacks = [(() -> Void)]()
-    var updatedRegionsListCallbacks = [(() -> Void)]()
-    var newRegionSelectedCallbacks = [(() -> Void)]()
-    var regionUpdateCancelledCallbacks = [(() -> Void)]()
+    var unableToSelectRegionsCallbacks = [VoidBlock]()
+    var updatedRegionsListCallbacks = [VoidBlock]()
+    var newRegionSelectedCallbacks = [VoidBlock]()
+    var regionUpdateCancelledCallbacks = [VoidBlock]()
 
     func tearDown() {
         unableToSelectRegionsCallbacks.removeAll()

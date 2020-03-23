@@ -18,9 +18,9 @@ enum AdjacentTripOrder {
 class AdjacentTripSection: NSObject, ListDiffable {
     let order: AdjacentTripOrder
     let trip: Trip
-    let selected: (() -> Void)
+    let selected: VoidBlock
 
-    init(trip: Trip, order: AdjacentTripOrder, selected: @escaping (() -> Void)) {
+    init(trip: Trip, order: AdjacentTripOrder, selected: @escaping VoidBlock) {
         self.trip = trip
         self.order = order
         self.selected = selected

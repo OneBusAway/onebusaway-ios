@@ -13,7 +13,7 @@ import OBAKitCore
 
 @objc(OBAFarePaymentsDelegate)
 public protocol FarePaymentsDelegate {
-    func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: (() -> Void)?)
+    func farePayments(_ farePayments: FarePayments, present viewController: UIViewController, animated: Bool, completion: VoidBlock?)
     func farePayments(_ farePayments: FarePayments, present error: Error)
 }
 

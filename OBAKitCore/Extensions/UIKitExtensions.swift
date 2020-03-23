@@ -436,7 +436,7 @@ public extension UIViewController {
     /// - Parameters:
     ///   - controller: The child controller
     ///   - config: A block that allows you to prepare your controller's view: insert it into a parent view, set its frame.
-    func prepareChildController(_ controller: UIViewController, block: () -> Void) {
+    func prepareChildController(_ controller: UIViewController, block: VoidBlock) {
         controller.willMove(toParent: self)
         setOverrideTraitCollection(traitCollection, forChild: controller)
         addChild(controller)

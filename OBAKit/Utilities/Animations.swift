@@ -6,8 +6,9 @@
 //
 
 import UIKit
+import OBAKitCore
 
-public typealias AnimationHandler = (() -> Void)
+public typealias AnimationHandler = VoidBlock
 public typealias AnimationCompletionCallback = ((Bool) -> Void)
 
 /// Reusable animation helpers

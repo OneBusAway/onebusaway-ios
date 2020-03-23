@@ -9,12 +9,11 @@
 // Derived from https://gist.github.com/fjcaetano/ff3e994c4edb4991ab8280f34994beb4
 
 import Dispatch
+import OBAKitCore
 
 private var throttleWorkItems = [AnyHashable: DispatchWorkItem]()
 private var lastDebounceCallTimes = [AnyHashable: DispatchTime]()
 private let nilContext: AnyHashable = arc4random()
-
-public typealias DebounceBlock = () -> Void
 
 public extension DispatchQueue {
     /**
@@ -24,7 +23,7 @@ public extension DispatchQueue {
      - action: The closure to be executed
      Executes a closure and ensures no other executions will be made during the interval.
      */
-    func debounce(interval: Double, context: AnyHashable? = nil, action: @escaping DebounceBlock) {
+    func debounce(interval: Double, context: AnyHashable? = nil, action: @escaping VoidBlock) {
         if let last = lastDebounceCallTimes[context ?? nilContext], last + interval > .now() {
             return
         }
@@ -45,7 +44,7 @@ public extension DispatchQueue {
      - action: The closure to be executed
      Delays a closure execution and ensures no other executions are made during deadline
      */
-    func throttle(deadline: DispatchTime, context: AnyHashable? = nil, action: @escaping () -> Void) {
+    func throttle(deadline: DispatchTime, context: AnyHashable? = nil, action: @escaping VoidBlock) {
         let worker = DispatchWorkItem {
             defer { throttleWorkItems.removeValue(forKey: context ?? nilContext) }
             action()
