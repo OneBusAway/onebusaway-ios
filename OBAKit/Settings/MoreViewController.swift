@@ -68,10 +68,11 @@ public class MoreViewController: UIViewController,
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         return [
             moreHeaderSection,
+            debugSection,
             updatesAndAlertsSection,
             myLocationSection,
             aboutSection
-        ]
+        ].compactMap { $0 }
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
@@ -93,8 +94,18 @@ public class MoreViewController: UIViewController,
 
     private lazy var moreHeaderSection = MoreHeaderSection { [weak self] in
         guard let self = self else { return }
-        self.application.userDataStore.debugMode = true
-        let alert = UIAlertController(title: OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode."), message: nil, preferredStyle: .alert)
+
+        self.application.userDataStore.debugMode.toggle()
+        self.collectionController.reload(animated: true)
+
+        let title: String
+        if self.application.userDataStore.debugMode {
+            title = OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode.")
+        }
+        else {
+            title = OBALoc("more_header.debug_disabled.title", value: "Debug Mode Disabled", comment: "Title of the alert that tells the user they've disabled debug mode.")
+        }
+        let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
         alert.addAction(UIAlertAction.dismissAction)
         self.present(alert, animated: true, completion: nil)
     }
@@ -229,25 +240,36 @@ public class MoreViewController: UIViewController,
         return TableSectionData(title: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."), rows: rows)
     }
 
-//    private func addDebug() {
-//        addGroupedTableHeaderToStack(headerText: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"))
-//
-//        if application.shouldShowCrashButton {
-//            let crashRow = DefaultTableRowView(title: OBALoc("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none)
-//            addGroupedTableRowToStack(crashRow) { [weak self] _ in
-//                guard let self = self else { return }
-//                self.application.performTestCrash()
-//            }
-//
-//            let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-//            let pushIDRow = ValueTableRowView(title: OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), subtitle: pushID, accessoryType: .none)
-//            addGroupedTableRowToStack(pushIDRow) { [weak self] _ in
-//                if let pushID = self?.application.pushService?.pushUserID {
-//                    UIPasteboard.general.string = pushID
-//                }
-//            }
-//        }
-//    }
+    // MARK: - Debug Section
+
+    private var debugSection: TableSectionData? {
+        guard application.userDataStore.debugMode else {
+            return nil
+        }
+
+        var rows = [TableRowData]()
+
+        // Crash Row
+        if application.shouldShowCrashButton {
+            let crashRow = TableRowData(title: OBALoc("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none) { [weak self] _ in
+                guard let self = self else { return }
+                self.application.performTestCrash()
+            }
+            rows.append(crashRow)
+        }
+
+        // Push ID Row
+        let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+        let pushIDRow = TableRowData(title: OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), value: pushID, accessoryType: .none) { [weak self] _ in
+            guard let self = self else { return }
+            if let pushID = self.application.pushService?.pushUserID {
+                UIPasteboard.general.string = pushID
+            }
+        }
+        rows.append(pushIDRow)
+
+        return TableSectionData(title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"), rows: rows)
+    }
 
     // MARK: - Fare Payments
 

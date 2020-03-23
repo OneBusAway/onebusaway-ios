@@ -1,5 +1,5 @@
 //
-//  MoreHeaderViewController.swift
+//  MoreHeaderController.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 7/1/19.
