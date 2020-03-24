@@ -221,11 +221,11 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
         #if targetEnvironment(simulator)
-        DDLogWarn("Push notifications don't work on the Simulator. Run this app on a device instead!")
-        return
+            DDLogWarn("Push notifications don't work on the Simulator. Run this app on a device instead!")
+            return
         #else
-        self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
-        self.pushService?.start(launchOptions: launchOptions)
+            self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)
+            self.pushService?.start(launchOptions: launchOptions)
         #endif
     }
 
@@ -286,6 +286,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
+        application.shortcutItems = nil
+
         configurePushNotifications(launchOptions: options)
         reloadRootUserInterface()
 
