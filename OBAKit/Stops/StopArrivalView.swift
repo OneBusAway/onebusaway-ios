@@ -46,6 +46,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         let label = buildLabel()
         label.numberOfLines = 0
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        label.font = UIFont(descriptor: .preferredFontDescriptor(withTextStyle: .headline), size: 16)
         return label
     }()
 
