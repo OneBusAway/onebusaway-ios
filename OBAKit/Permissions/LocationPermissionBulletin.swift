@@ -81,7 +81,7 @@ class RegionPickerBulletin: NSObject {
         return picker
     }()
 
-    private let regionsService: RegionsService
+    public let regionsService: RegionsService
 
     init(regionsService: RegionsService) {
         self.regionsService = regionsService
@@ -90,6 +90,7 @@ class RegionPickerBulletin: NSObject {
     }
 
     func show(in application: UIApplication) {
+        guard !bulletinManager.isShowingBulletin else { return }            // Fixes #185.
         bulletinManager.showBulletin(in: application)
     }
 }
@@ -115,6 +116,7 @@ class RegionPickerItem: BLTNPageItem {
             else { return }
 
             self.regionsService.currentRegion = region
+            self.regionsService.automaticallySelectRegion = false
             self.manager?.dismissBulletin()
         }
     }

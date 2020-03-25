@@ -453,7 +453,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         guard let app = delegate?.uiApplication else { return }
 
-        self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
+        // Fixes #185
+        if regionPickerBulletin == nil || regionPickerBulletin?.regionsService != service {
+            self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
+        }
+
         self.regionPickerBulletin?.show(in: app)
     }
 
