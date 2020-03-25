@@ -29,7 +29,7 @@ github "SCENEE/FloatingPanel" ~>1.7.4
 github "SwipeCellKit/SwipeCellKit" ~>2.7.1
 
 # https://github.com/xmartlabs/Eureka/releases
-github "xmartlabs/Eureka" ~>5.2.0
+github "xmartlabs/Eureka" "master"
 
 # https://github.com/cbpowell/MarqueeLabel/releases
 github "cbpowell/MarqueeLabel" ~>4.0.2

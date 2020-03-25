@@ -122,7 +122,7 @@ public class NearbyViewController: VisualEffectViewController,
     }
 
     func performSearch(request: SearchRequest) {
-        if let searchText = searchBar.searchTextField.text {
+        if let searchText = searchBar.text {
             application.analytics?.reportSearchQuery?(searchText)
         }
 
