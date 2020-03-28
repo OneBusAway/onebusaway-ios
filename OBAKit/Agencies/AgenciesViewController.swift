@@ -6,15 +6,12 @@
 //
 
 import UIKit
-import AloeStackView
+import IGListKit
 import SafariServices
 import OBAKitCore
 
-class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, AloeStackTableBuilder {
-
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.systemBackground
-    )
+/// Loads and displays a list of agencies in the current region.
+class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, AppContext, ListAdapterDataSource {
 
     override init(application: Application) {
         super.init(application: application)
@@ -29,8 +26,9 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
     }
 
     override func loadData() -> AgenciesWithCoverageModelOperation? {
@@ -40,30 +38,42 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
 
         let op = modelService.getAgenciesWithCoverage()
         op.then { [weak self] in
-            guard let self = self else {
-                SVProgressHUD.dismiss()
-                return
-            }
-            self.data = op.agenciesWithCoverage
             SVProgressHUD.dismiss()
+
+            guard let self = self else { return }
+            self.data = op.agenciesWithCoverage
         }
 
         return op
     }
 
     override func updateUI() {
-        guard let agencies = data else {
-            return
-        }
+        collectionController.reload(animated: false)
+    }
 
-        for agency in agencies {
-            let row = DefaultTableRowView(title: agency.agency.name, accessoryType: .disclosureIndicator)
-            addGroupedTableRowToStack(row) { [weak self] _ in
+    // MARK: - IGListKit
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .plain)
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        guard let agencies = data else { return [] }
+
+        let rows = agencies.sorted(by: {$0.agency.name < $1.agency.name}).map { agency -> TableRowData in
+            TableRowData(title: agency.agency.name, accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
-
                 let safari = SFSafariViewController(url: agency.agency.agencyURL)
                 self.application.viewRouter.present(safari, from: self)
             }
         }
+
+        return [TableSectionData(title: nil, rows: rows)]
+    }
+
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
+    }
+
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
     }
 }

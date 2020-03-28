@@ -59,11 +59,9 @@ public class MoreViewController: UIViewController,
         collectionController.reload(animated: false)
     }
 
-    // MARK: - List Kit
+    // MARK: - IGListKit
 
     private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .grouped)
-
-    // MARK: - IGListKit
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         return [
