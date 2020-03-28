@@ -6,18 +6,14 @@
 //
 
 import Eureka
-import AloeStackView
+import IGListKit
 import WebKit
 import OBAKitCore
 
 /// Displays the app's third party credits.
-class CreditsViewController: UIViewController, AloeStackTableBuilder {
+class CreditsViewController: UIViewController, AppContext, ListAdapterDataSource {
 
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.systemBackground
-    )
-
-    private let application: Application
+    let application: Application
 
     private let credits: [String: Any]
 
@@ -42,20 +38,9 @@ class CreditsViewController: UIViewController, AloeStackTableBuilder {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
-        for key in credits.keys.localizedCaseInsensitiveSort() {
-            let row = DefaultTableRowView(title: key, accessoryType: .disclosureIndicator)
-            addGroupedTableRowToStack(row, isLastRow: false) { [weak self] _ in
-                guard let self = self else { return }
-                self.navigateTo(key: key)
-            }
-        }
-
-        if let row = stackView.lastRow {
-            stackView.setSeparatorInset(forRow: row, inset: .zero)
-        }
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
     }
 
     // MARK: - Actions
@@ -64,6 +49,32 @@ class CreditsViewController: UIViewController, AloeStackTableBuilder {
         guard let licenseText = credits[key] as? String else { return }
         let viewer = CreditViewerController(title: key, licenseText: licenseText)
         application.viewRouter.navigate(to: viewer, from: self)
+    }
+
+    // MARK: - IGListKit
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .plain)
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        var rows = [TableRowData]()
+
+        for key in credits.keys.localizedCaseInsensitiveSort() {
+            let row = TableRowData(title: key, accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                self.navigateTo(key: key)
+            }
+            rows.append(row)
+        }
+
+        return [TableSectionData(title: nil, rows: rows)]
+    }
+
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
+    }
+
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
     }
 }
 
