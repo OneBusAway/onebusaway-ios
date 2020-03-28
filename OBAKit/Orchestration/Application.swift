@@ -453,7 +453,9 @@ public class Application: CoreApplication, PushServiceDelegate {
     public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         guard let app = delegate?.uiApplication else { return }
 
-        // Fixes #185
+        // In some cases, CLLocationManager will update the location multiple times a minute,
+        // causing the RegionPickerBulletin to constantly show and interrupt user interaction.
+        // Don’t show another RegionPickerBulletin if one already exists and is being presented.
         if regionPickerBulletin == nil || regionPickerBulletin?.regionsService != service {
             self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
         }

@@ -90,7 +90,9 @@ class RegionPickerBulletin: NSObject {
     }
 
     func show(in application: UIApplication) {
-        guard !bulletinManager.isShowingBulletin else { return }            // Fixes #185.
+        // Don’t show another RegionPickerBulletin if one already exists and is being presented.
+        guard !bulletinManager.isShowingBulletin else { return }
+        
         bulletinManager.showBulletin(in: application)
     }
 }
@@ -116,7 +118,12 @@ class RegionPickerItem: BLTNPageItem {
             else { return }
 
             self.regionsService.currentRegion = region
+
+            // When selecting a region from the RegionPickerBulletin, ensure that automaticallySelectRegion is false.
+            // Since the user is manually selecting a Region, it doesn't make sense to leave control with the app on
+            // this decision any longer.
             self.regionsService.automaticallySelectRegion = false
+
             self.manager?.dismissBulletin()
         }
     }
