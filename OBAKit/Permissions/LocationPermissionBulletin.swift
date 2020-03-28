@@ -92,7 +92,7 @@ class RegionPickerBulletin: NSObject {
     func show(in application: UIApplication) {
         // Don’t show another RegionPickerBulletin if one already exists and is being presented.
         guard !bulletinManager.isShowingBulletin else { return }
-        
+
         bulletinManager.showBulletin(in: application)
     }
 }

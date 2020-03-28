@@ -60,20 +60,20 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
-        guard shouldPerformNavigation(from: fromController, to: .stop(stop)) else { return }
+        guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
         let stopController = StopViewController(application: application, stop: stop)
         stopController.bookmarkContext = bookmark
         navigate(to: stopController, from: fromController)
     }
 
     public func navigateTo(stopID: String, from fromController: UIViewController) {
-        guard shouldPerformNavigation(from: fromController, to: .stopID(stopID)) else { return }
+        guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
         let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)
     }
 
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
-        guard shouldPerformNavigation(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
+        guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
         let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
         navigate(to: tripController, from: fromController)
     }
@@ -91,8 +91,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     /// Checks if the origin view controller wants to override the navigation behavior.
-    private func shouldPerformNavigation(from fromController: UIViewController, to destination: NavigationDestination) -> Bool {
+    private func shouldNavigate(from fromController: UIViewController, to destination: NavigationDestination) -> Bool {
         guard let routerDelegate = fromController as? ViewRouterDelegate else { return true }
-        return routerDelegate.shouldPerformNavigation(to: destination)
+        return routerDelegate.shouldNavigate(to: destination)
     }
 }

@@ -149,16 +149,19 @@ public class TripFloatingPanelController: UIViewController,
 
     // MARK: - ViewRouterDelegate methods
 
-    public func shouldPerformNavigation(to destination: ViewRouter.NavigationDestination) -> Bool {
+    public func shouldNavigate(to destination: ViewRouter.NavigationDestination) -> Bool {
         // If the stop we want to navigate to is a stop in the current trip, let's
         // highlight and mark the stop on the map rather than navigate to a separate
         // view controller.
 
-        guard let tripViewController = self.parentTripViewController else { return true }
-        guard let tripDetails = self.tripDetails else { return true }
-
-        guard case let .stop(destinationStop) = destination,
-            let matchingStopTime = tripDetails.stopTimes.filter({ $0.stop == destinationStop }).first else { return true }
+        guard
+            let tripViewController = self.parentTripViewController,
+            let tripDetails = self.tripDetails,
+            case let .stop(destinationStop) = destination,
+            let matchingStopTime = tripDetails.stopTimes.filter({ $0.stop == destinationStop }).first
+        else {
+            return true
+        }
 
         tripViewController.selectedStopTime = matchingStopTime
         return false

@@ -9,5 +9,12 @@ import Foundation
 
 /// Provide navigation behavior overrides if necessary.
 public protocol ViewRouterDelegate: class {
-    func shouldPerformNavigation(to destination: ViewRouter.NavigationDestination) -> Bool
+
+    /// Gives an implementing view controller the opportunity to override navigation to a destination controller.
+    ///
+    /// For instance, you may want to implement this if the current view controller has the ability to better
+    /// render the information that will be displayed in the navigation destination. One example of this is
+    /// on the `TripFloatingPanelController`, which will highlight the trip in question instead of
+    /// pushing a new controller onto the stack.
+    func shouldNavigate(to destination: ViewRouter.NavigationDestination) -> Bool
 }
