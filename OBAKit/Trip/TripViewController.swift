@@ -13,11 +13,22 @@ import OBAKitCore
 class TripViewController: UIViewController,
     FloatingPanelControllerDelegate,
     Idleable,
-    MKMapViewDelegate {
+    MKMapViewDelegate,
+    AppContext {
 
     public let application: Application
 
     private let tripConvertible: TripConvertible
+
+    public var selectedStopTime: TripStopTime? {
+        didSet {
+            self.mapView.deselectAnnotation(oldValue, animated: true)
+            guard oldValue != self.selectedStopTime,
+                let selectedStopTime = self.selectedStopTime else { return }
+
+            self.mapView.selectAnnotation(selectedStopTime, animated: true)
+        }
+    }
 
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
@@ -119,9 +130,19 @@ class TripViewController: UIViewController,
 
     // MARK: - Drawer/Trip Details UI
 
+    var showTripDetails: Bool = false {
+        didSet {
+            guard oldValue != self.showTripDetails else { return }
+            UIView.animate(withDuration: 0.1) {
+                self.tripDetailsController.collectionController.view.alpha = self.showTripDetails ? 1.0 : 0.0
+            }
+        }
+    }
+
     private lazy var tripDetailsController = TripFloatingPanelController(
         application: application,
-        tripConvertible: tripConvertible
+        tripConvertible: tripConvertible,
+        parentTripViewController: self
     )
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
@@ -129,6 +150,7 @@ class TripViewController: UIViewController,
         let panel = FloatingPanelController(delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
+        panel.contentMode = .fitToBounds
 
         // Set a content view controller.
         panel.set(contentViewController: tripDetailsController)
@@ -140,12 +162,17 @@ class TripViewController: UIViewController,
         return MapPanelLayout(initialPosition: .half)
     }
 
+    func floatingPanelDidMove(_ vc: FloatingPanelController) {
+        showTripDetails = true
+    }
+
     func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
-        if vc.position == .full {
-            tripDetailsController.removeBottomInsetPadding()
-        }
-        else {
-            tripDetailsController.addBottomInsetPadding()
+        showTripDetails = vc.position != .tip
+
+        // We don't need to set the map view's margins if the drawer will take up the whole screen.
+        if vc.position != .full {
+            let drawerHeight = vc.layout.insetFor(position: vc.position) ?? 0
+            mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
         }
     }
 
@@ -181,6 +208,13 @@ class TripViewController: UIViewController,
                 self.currentTripStatus = tripStatus
                 self.mapView.addAnnotation(tripStatus)
             }
+
+            self.mapView.showAnnotations(self.mapView.annotations, animated: true)
+
+            if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
+                let userDestinationStopTime = tripDetails.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+                self.selectedStopTime = userDestinationStopTime
+            }
         }
         tripDetailsOperation = op
     }
@@ -211,7 +245,7 @@ class TripViewController: UIViewController,
 
             self.mapView.addOverlay(polyline)
 
-            self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 220, right: 20))
+            self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
         }
 
         shapeOperation = op
@@ -237,11 +271,24 @@ class TripViewController: UIViewController,
     }()
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard let stopTime = view.annotation as? TripStopTime else {
-            return
-        }
+        guard let stopTime = view.annotation as? TripStopTime else { return }
 
-        tripDetailsController.highlightStopInList(stopTime.stop)
+        floatingPanel.show(animated: true) {
+            self.mapView.setCenter(stopTime.stop.coordinate, animated: true)
+            self.tripDetailsController.highlightStopInList(stopTime.stop)
+        }
+    }
+
+    public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        guard let stopTime = view.annotation as? TripStopTime,
+            stopTime == self.selectedStopTime else { return }
+
+        self.selectedStopTime = nil
+    }
+
+    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        guard let stopTime = view.annotation as? TripStopTime else { return }
+        application.viewRouter.navigateTo(stop: stopTime.stop, from: self)
     }
 
     // TODO FIXME: DRY up with MapRegionManager
@@ -275,6 +322,16 @@ class TripViewController: UIViewController,
 
         if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
+
+            if let stopTime = annotation as? TripStopTime {
+                view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+
+                let calloutLabel = UILabel.autolayoutNew()
+                calloutLabel.textColor = ThemeColors.shared.secondaryLabel
+                calloutLabel.text = application.formatters.timeFormatter.string(from: stopTime.arrivalDate)
+                view.detailCalloutAccessoryView = calloutLabel
+            }
+
             view.canShowCallout = true
         }
 

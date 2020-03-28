@@ -15,6 +15,12 @@ import OBAKitCore
 /// use floating panels or standard `UINavigationController` stacks.
 ///
 public class ViewRouter: NSObject, UINavigationControllerDelegate {
+    public enum NavigationDestination {
+        case stop(Stop)
+        case stopID(String)
+        case arrivalDeparture(ArrivalDeparture)
+    }
+
     private let application: Application
 
     public init(application: Application) {
@@ -54,17 +60,20 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     }
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
+        guard shouldPerformNavigation(from: fromController, to: .stop(stop)) else { return }
         let stopController = StopViewController(application: application, stop: stop)
         stopController.bookmarkContext = bookmark
         navigate(to: stopController, from: fromController)
     }
 
     public func navigateTo(stopID: String, from fromController: UIViewController) {
+        guard shouldPerformNavigation(from: fromController, to: .stopID(stopID)) else { return }
         let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)
     }
 
     public func navigateTo(arrivalDeparture: ArrivalDeparture, from fromController: UIViewController) {
+        guard shouldPerformNavigation(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
         let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
         navigate(to: tripController, from: fromController)
     }
@@ -79,5 +88,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigation.navigationBar.prefersLargeTitles = prefersLargeTitles
 
         return navigation
+    }
+
+    /// Checks if the origin view controller wants to override the navigation behavior.
+    private func shouldPerformNavigation(from fromController: UIViewController, to destination: NavigationDestination) -> Bool {
+        guard let routerDelegate = fromController as? ViewRouterDelegate else { return true }
+        return routerDelegate.shouldPerformNavigation(to: destination)
     }
 }

@@ -10,7 +10,12 @@ import IGListKit
 import OBAKitCore
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
-public class TripFloatingPanelController: UIViewController, ListProvider, ListAdapterDataSource, ListKitStopConverters, AppContext {
+public class TripFloatingPanelController: UIViewController,
+    ListProvider,
+    ListAdapterDataSource,
+    ListKitStopConverters,
+    ViewRouterDelegate,
+    AppContext {
 
     let application: Application
 
@@ -30,6 +35,8 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         }
     }
 
+    weak var parentTripViewController: TripViewController?
+
     private let operation: TripDetailsModelOperation?
 
     // MARK: - Init/Deinit
@@ -37,12 +44,14 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
     /// Initializes the `TripDetailsController` with an OBA application object.
     /// - Parameter application: The application object
     /// - Parameter tripConvertible: Optional `TripConvertible` object.
+    /// - Parameter parentTripViewController: Optional `TripViewController`.
     ///
     /// It is assumed that the creator of this controller will pass in a `TripDetails` object via
     /// the `tripDetails` property later on in order to finish configuring this controller.
-    init(application: Application, tripConvertible: TripConvertible? = nil) {
+    init(application: Application, tripConvertible: TripConvertible? = nil, parentTripViewController: TripViewController? = nil) {
         self.application = application
         self.tripConvertible = tripConvertible
+        self.parentTripViewController = parentTripViewController
         self.operation = nil
 
         super.init(nibName: nil, bundle: nil)
@@ -97,16 +106,8 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
         }
 
         if let listItem = listItem {
-            collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .centeredVertically, animated: true)
+            collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .top, animated: true)
         }
-    }
-
-    public func removeBottomInsetPadding() {
-        collectionController.collectionView.contentInset.bottom = 0
-    }
-
-    public func addBottomInsetPadding() {
-        collectionController.collectionView.contentInset.bottom = 300.0
     }
 
     // MARK: - UI
@@ -145,6 +146,23 @@ public class TripFloatingPanelController: UIViewController, ListProvider, ListAd
     }()
 
     private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalView, separatorView, collectionController.view])
+
+    // MARK: - ViewRouterDelegate methods
+
+    public func shouldPerformNavigation(to destination: ViewRouter.NavigationDestination) -> Bool {
+        // If the stop we want to navigate to is a stop in the current trip, let's
+        // highlight and mark the stop on the map rather than navigate to a separate
+        // view controller.
+
+        guard let tripViewController = self.parentTripViewController else { return true }
+        guard let tripDetails = self.tripDetails else { return true }
+
+        guard case let .stop(destinationStop) = destination,
+            let matchingStopTime = tripDetails.stopTimes.filter({ $0.stop == destinationStop }).first else { return true }
+
+        tripViewController.selectedStopTime = matchingStopTime
+        return false
+    }
 
     // MARK: - ListAdapterDataSource (Data Loading)
 
