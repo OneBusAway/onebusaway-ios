@@ -68,7 +68,6 @@ final class StopArrivalCell: BaseSelfSizingTableCell {
                 stopArrivalView.formatters = formatters
                 stopArrivalView.backgroundColor = .clear
                 contentView.addSubview(stopArrivalView)
-
                 stopArrivalView.pinToSuperview(.layoutMargins)
             }
         }

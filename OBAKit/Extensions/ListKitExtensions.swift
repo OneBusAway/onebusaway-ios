@@ -11,6 +11,8 @@ import IGListKit
 import OBAKitCore
 import CocoaLumberjackSwift
 
+// swiftlint:disable cyclomatic_complexity
+
 protocol HasTableStyle: NSObjectProtocol {
     var tableStyle: TableCollectionStyle { get }
 }
@@ -39,14 +41,20 @@ extension ListAdapterDataSource where Self: AppContext {
             return StopArrivalSectionController(formatters: application.formatters, style: styleForCollection)
         case is BookmarkSectionData:
             return BookmarkSectionController(formatters: application.formatters, style: styleForCollection)
+        case is LoadMoreSectionData:
+            return LoadMoreSectionController(formatters: application.formatters, style: styleForCollection)
         case is MessageSectionData:
             return MessageSectionController(formatters: application.formatters, style: styleForCollection)
         case is TableHeaderData:
             return TableHeaderSectionController(formatters: application.formatters, style: styleForCollection)
         case is TableSectionData:
             return TableSectionController(formatters: application.formatters, style: styleForCollection)
+        case is ToggleSectionData:
+            return ToggleSectionController(formatters: application.formatters, style: styleForCollection)
         case is TripStopListItem:
             return TripStopSectionController(formatters: application.formatters, style: styleForCollection)
+        case is WalkTimeSectionData:
+            return WalkTimeSectionController(formatters: application.formatters, style: styleForCollection)
         default:
             DDLogWarn("You are trying to render \(object), which doesn't have a SectionController mapped to it. Is this a mistake?")
             return LabelSectionController()

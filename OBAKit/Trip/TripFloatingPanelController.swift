@@ -11,10 +11,10 @@ import OBAKitCore
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 public class TripFloatingPanelController: UIViewController,
+    AppContext,
     ListAdapterDataSource,
     ListKitStopConverters,
-    ViewRouterDelegate,
-    AppContext {
+    ViewRouterDelegate {
 
     let application: Application
 

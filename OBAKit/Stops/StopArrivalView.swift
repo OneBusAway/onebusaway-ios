@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import AloeStackView
 import OBAKitCore
 
 // MARK: - StopArrivalDelegate
@@ -23,7 +22,7 @@ public protocol StopArrivalDelegate: NSObjectProtocol {
 ///
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
-public class StopArrivalView: UIView, Highlightable, Tappable {
+public class StopArrivalView: UIView {
 
     public weak var delegate: StopArrivalDelegate?
 
@@ -46,7 +45,7 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
         let label = buildLabel()
         label.numberOfLines = 0
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        label.font = UIFont(descriptor: .preferredFontDescriptor(withTextStyle: .headline), size: 16)
+        label.font = UIFont.preferredFont(forTextStyle: .body).bold
         return label
     }()
 
@@ -150,24 +149,12 @@ public class StopArrivalView: UIView, Highlightable, Tappable {
             routeHeadsignLabel.backgroundColor = .red
             timeExplanationLabel.backgroundColor = .orange
             minutesLabel.backgroundColor = .purple
+            backgroundColor = .green
         }
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    // MARK: - Highlightable
-
-    public func setIsHighlighted(_ isHighlighted: Bool) {
-        guard let cell = superview as? StackViewCell else { return }
-        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
-    }
-
-    // MARK: - Tappable
-
-    public func didTapView() {
-        delegate?.stopArrivalTapped(arrivalDeparture: arrivalDeparture)
     }
 
     // MARK: - UI Builders

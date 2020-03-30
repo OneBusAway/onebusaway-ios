@@ -22,7 +22,6 @@ public class TableRowData: ListViewModel {
     let style: UITableViewCell.CellStyle
 
     public var image: UIImage?
-
     public var imageSize: CGFloat?
 
     // MARK: - Initialization

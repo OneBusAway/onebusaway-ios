@@ -59,4 +59,15 @@ class FakeToolbar: UIView {
 
         hairline.frame = CGRect(x: 0, y: 0, width: frame.width, height: 1.0 / UIScreen.main.scale)
     }
+
+    // MARK: - Class Methods
+
+    class func buildToolbarButton(title: String, image: UIImage, target: Any, action: Selector) -> UIButton {
+        let button = ProminentButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.setImage(image, for: .normal)
+        button.addTarget(target, action: action, for: .touchUpInside)
+        NSLayoutConstraint.activate([button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)])
+        return button
+    }
 }

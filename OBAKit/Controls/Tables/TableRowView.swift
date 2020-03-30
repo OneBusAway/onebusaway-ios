@@ -6,11 +6,10 @@
 //
 
 import UIKit
-import AloeStackView
 import OBAKitCore
 
-/// A view that approximates the appearance of a `UITableViewCell`. Meant to be used directly in an `AloeStackView`.
-public class TableRowView: UIView, Highlightable {
+/// A view that approximates the appearance of a `UITableViewCell`
+public class TableRowView: UIView {
     var kUseDebugColors = false
 
     /// The height constraint for this view.
@@ -183,13 +182,6 @@ public class TableRowView: UIView, Highlightable {
     public func prepareForReuse() {
         titleLabel.text = nil
         subtitleLabel.text = nil
-    }
-
-    // MARK: - Highlightable
-
-    public func setIsHighlighted(_ isHighlighted: Bool) {
-      guard let cell = superview as? StackViewCell else { return }
-        cell.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : cell.rowBackgroundColor
     }
 }
 

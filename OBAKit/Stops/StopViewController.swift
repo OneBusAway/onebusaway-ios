@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import AloeStackView
+import IGListKit
 import OBAKitCore
 import CoreLocation
 
@@ -18,25 +18,13 @@ import CoreLocation
 /// particular vehicle, and report problems with a trip.
 public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
-    AloeStackTableBuilder,
+    AppContext,
     BookmarkEditorDelegate,
+    ListAdapterDataSource,
     ModalDelegate,
     Idleable,
     StopArrivalDelegate,
-StopPreferencesDelegate {
-    private let kUseDebugColors = false
-
-    lazy var stackView: AloeStackView = {
-        let stack = AloeStackView()
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.addSubview(refreshControl)
-        stack.rowInset = .zero
-        stack.alwaysBounceVertical = true
-        stack.backgroundColor = ThemeColors.shared.systemBackground
-        return stack
-    }()
-
-    private let refreshControl = UIRefreshControl()
+    StopPreferencesDelegate {
 
     public let application: Application
 
@@ -68,36 +56,6 @@ StopPreferencesDelegate {
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
-    // MARK: - Subviews
-
-    /// The header displayed at the top of the controller
-    ///
-    /// - Note: Not used with floating panel navigation.
-    private lazy var stopHeader = StopHeaderViewController(application: application)
-
-    /// Provides storage for actively-used `StopArrivalView`s.
-    private var stopArrivalViews = [TripIdentifier: StopArrivalView]()
-
-    /// A button that the user can tap on to load more `ArrivalDeparture` objects.
-    ///
-    /// - Note: See `loadMore()` for more details.
-    private lazy var loadMoreButton: UIButton = {
-        let loadMoreButton = UIButton(type: .system)
-        loadMoreButton.setTitle(OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
-        loadMoreButton.addTarget(self, action: #selector(loadMoreDepartures), for: .touchUpInside)
-        return loadMoreButton
-    }()
-
-    /// A label that is displayed below the `loadMoreButton` when the time window visualized by this view controller is greater than the default.
-    private lazy var timeframeLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.textAlignment = .center
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = ThemeColors.shared.secondaryLabel
-
-        return label
-    }()
-
     // MARK: - Data
 
     /// The data-loading operation for this controller.
@@ -107,18 +65,15 @@ StopPreferencesDelegate {
     var stop: Stop? {
         didSet {
             if stop != oldValue, let stop = stop {
-                stopWasSet(stop)
+                stopUpdated(stop)
             }
         }
     }
 
-    private func stopWasSet(_ stop: Stop) {
+    private func stopUpdated(_ stop: Stop) {
         if let region = application.currentRegion {
             application.userDataStore.addRecentStop(stop, region: region)
         }
-
-        stopHeader.stop = stop
-
         application.analytics?.reportStopViewed?(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
     }
 
@@ -147,7 +102,7 @@ StopPreferencesDelegate {
         self.stop = stop
         self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stop.id, region: application.currentRegion!)
 
-        stopWasSet(stop)
+        stopUpdated(stop)
     }
 
     /// Creates the view controller with only a `stopID`, which requires
@@ -167,9 +122,6 @@ StopPreferencesDelegate {
 
         super.init(nibName: nil, bundle: nil)
 
-        stackView.showsVerticalScrollIndicator = true
-        stackView.alwaysBounceVertical = true
-
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
 
         navigationItem.backBarButtonItem = UIBarButtonItem.backButton
@@ -188,26 +140,16 @@ StopPreferencesDelegate {
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        if kUseDebugColors {
-            stackView.backgroundColor = .yellow
-        }
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
+        collectionController.collectionView.addSubview(refreshControl)
 
-        prepareChildController(stopHeader) {
-            stackView.addRow(stopHeader.view, hideSeparator: true, insets: .zero)
-        }
-
-        refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
-
-        view.addSubview(stackView)
         view.addSubview(fakeToolbar)
 
         let toolbarHeight: CGFloat = 44.0
 
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: view.topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -215,11 +157,10 @@ StopPreferencesDelegate {
             fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
-        var inset = stackView.contentInset
-
+        var inset = collectionController.collectionView.contentInset
         inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-        stackView.contentInset = inset
-        stackView.scrollIndicatorInsets = inset
+        collectionController.collectionView.contentInset = inset
+        collectionController.collectionView.scrollIndicatorInsets = inset
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -246,20 +187,11 @@ StopPreferencesDelegate {
 
     // MARK: - Bottom Toolbar
 
-    private lazy var refreshButton = buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
+    private lazy var refreshButton = FakeToolbar.buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
 
-    private lazy var bookmarkButton = buildToolbarButton(title: Strings.bookmark, image: Icons.bookmark, target: self, action: #selector(addBookmark(sender:)))
+    private lazy var bookmarkButton = FakeToolbar.buildToolbarButton(title: Strings.bookmark, image: Icons.bookmark, target: self, action: #selector(addBookmark(sender:)))
 
-    private lazy var filterButton = buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
-
-    private func buildToolbarButton(title: String, image: UIImage, target: Any, action: Selector) -> UIButton {
-        let button = ProminentButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.setImage(image, for: .normal)
-        button.addTarget(target, action: action, for: .touchUpInside)
-        NSLayoutConstraint.activate([button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)])
-        return button
-    }
+    private lazy var filterButton = FakeToolbar.buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
 
     private lazy var fakeToolbar: FakeToolbar = {
         let toolbar = FakeToolbar(toolbarItems: [refreshButton, bookmarkButton, filterButton])
@@ -350,67 +282,6 @@ StopPreferencesDelegate {
         }
     }
 
-    /// Call this method after data has been reloaded in this controller
-    private func dataDidReload() {
-        guard let stopArrivals = stopArrivals else { return }
-
-        // Remove all of the rows except the header.
-        let rows = stackView.getAllRows()
-        stackView.removeRows(Array(rows[1...]))
-
-        // Service Alerts
-        if stopArrivals.situations.count > 0 {
-            addTableHeaderToStack(headerText: OBALoc("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller."))
-
-            for serviceAlert in Set(stopArrivals.situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
-                let row = DefaultTableRowView(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator)
-                stackView.addRow(row)
-                stackView.setTapHandler(forRow: row) { [weak self] _ in
-                    guard let self = self else { return }
-                    let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
-                    self.application.viewRouter.present(alert, from: self)
-                }
-            }
-
-            stackView.hideLastRowSeparator()
-        }
-
-        // If we have hidden routes, then show the hide/show filter toggle.
-        if stopPreferences.hasHiddenRoutes {
-            stackView.addRow(filterToggleControl)
-            stackView.hideSeparator(forRow: filterToggleControl)
-        }
-        else if stopArrivals.situations.count > 0 {
-            // When we are displaying service alerts, we should also show a header for the section.
-            addTableHeaderToStack(headerText: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller."))
-        }
-
-        // Show arrivals and departures
-        if stopPreferences.sortType == .time {
-            if isListFiltered {
-                addToStack(arrivalDepartures: stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences))
-            }
-            else {
-                addToStack(arrivalDepartures: stopArrivals.arrivalsAndDepartures)
-            }
-        }
-        else {
-            let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-
-            for g in groups {
-                addTableHeaderToStack(headerText: g.route.longName ?? g.route.shortName)
-                addToStack(arrivalDepartures: g.arrivalDepartures)
-            }
-        }
-
-        // Load More and Timeframe
-        stackView.addRow(loadMoreButton, hideSeparator: true)
-        displayTimeframeLabel()
-
-        // More Options
-        addMoreOptionsTableRows()
-    }
-
     // MARK: - Broken Bookmarks
 
     private var errorBulletin: ErrorBulletin?
@@ -433,137 +304,252 @@ StopPreferencesDelegate {
         return bookmarkContext != nil && effective404
     }
 
-    // MARK: - UI Builders
+    // MARK: - IGListKit
 
-    private func addToStack(arrivalDepartures: [ArrivalDeparture]) {
-        // Walking Time and Arrival/Departures
-        var walkingTimeInserted = false
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        guard stopArrivals != nil else {
+            // TODO: show a loading message too
+            return [stopHeaderSection].compactMap {$0}
+        }
 
-        for arrDep in arrivalDepartures {
-            if !walkingTimeInserted {
-                walkingTimeInserted = addWalkingTimeRow(before: arrDep)
+        var sections = [ListDiffable?]()
+
+        sections.append(stopHeaderSection)
+
+        // Service Alerts
+        let serviceAlerts = serviceAlertsSection
+        sections.append(contentsOf: serviceAlerts)
+
+        let hiddenRoutesToggle = self.hiddenRoutesToggle
+        sections.append(hiddenRoutesToggle)
+
+        // When we are displaying service alerts, we should also show a header for the section.
+        // However, don't show a header if a segmented control for toggling hidden routes is visible.
+        if serviceAlerts.count > 0, hiddenRoutesToggle == nil {
+            sections.append(TableHeaderData(title: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")))
+        }
+
+        sections.append(contentsOf: stopArrivalsSections)
+
+        sections.append(loadMoreSection)
+
+        // More Options
+        sections.append(contentsOf: moreOptions)
+
+        return sections.compactMap { $0 }
+    }
+
+    // MARK: - Data/Stop Header
+
+    private var stopHeaderSection: StopHeaderSection? {
+        guard let stop = stop else { return nil }
+        return StopHeaderSection(stop: stop, application: application)
+    }
+
+    // MARK: - Data/Stop Arrivals
+
+    private var stopArrivalsSections: [ListDiffable] {
+        guard let stopArrivals = stopArrivals else { return [] }
+
+        if stopPreferences.sortType == .time {
+            let arrDeps: [ArrivalDeparture]
+            if isListFiltered {
+                arrDeps = stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences)
             }
+            else {
+                arrDeps = stopArrivals.arrivalsAndDepartures
+            }
+            let arrDepRows: [ArrivalDepartureSectionData] = arrDeps.map { a in
+                ArrivalDepartureSectionData(arrivalDeparture: a) { [weak self] in
+                    guard let self = self else { return }
+                    self.application.viewRouter.navigateTo(arrivalDeparture: a, from: self)
+                }
+            }
+            return addWalkTimeRow(to: arrDepRows)
+        }
+        else {
+            let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
 
-            addStopArrivalView(for: arrDep, hideSeparator: false)
+            var rows = [ListDiffable]()
+
+            for g in groups {
+                rows.append(TableHeaderData(title: g.route.longName ?? g.route.shortName))
+                let arrDepRows = g.arrivalDepartures.map { a in
+                    ArrivalDepartureSectionData(arrivalDeparture: a) { [weak self] in
+                        guard let self = self else { return }
+                        self.application.viewRouter.navigateTo(arrivalDeparture: a, from: self)
+                    }
+                }
+                rows.append(contentsOf: addWalkTimeRow(to: arrDepRows))
+            }
+            return rows
         }
     }
 
-    private func addWalkingTimeRow(before arrivalDeparture: ArrivalDeparture) -> Bool {
-        let interval = arrivalDeparture.arrivalDepartureDate.timeIntervalSinceNow
+    private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, arrivalDepartureSections: [ArrivalDepartureSectionData]) -> Int? {
+        for (idx, elt) in arrivalDepartureSections.enumerated() {
+            let interval = elt.arrivalDeparture.arrivalDepartureDate.timeIntervalSinceNow
+            if interval >= walkTimeInterval {
+                return idx
+            }
+        }
+        return nil
+    }
 
+    private func addWalkTimeRow(to arrivalDepartureSections: [ArrivalDepartureSectionData]) -> [ListDiffable] {
         guard
+            arrivalDepartureSections.count > 0,
             let currentLocation = application.locationService.currentLocation,
             let stopLocation = stop?.location,
-            let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation),
-            interval >= walkingTime
-        else { return false }
+            let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
+        else { return arrivalDepartureSections }
 
-        if let lastRow = stackView.lastRow {
-            stackView.removeRow(lastRow)
-            stackView.addRow(lastRow, hideSeparator: true)
+        if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, arrivalDepartureSections: arrivalDepartureSections) {
+            var sections = [ListDiffable](arrivalDepartureSections)
+            let walkTimeSection = WalkTimeSectionData(distance: currentLocation.distance(from: stopLocation), timeToWalk: walkingTime)
+            sections.insert(walkTimeSection, at: insertionIndex)
+            return sections
         }
-
-        let walkTimeRow = WalkTimeView.autolayoutNew()
-        walkTimeRow.formatters = application.formatters
-        walkTimeRow.set(distance: currentLocation.distance(from: stopLocation), timeToWalk: walkingTime)
-
-        stackView.addRow(walkTimeRow, hideSeparator: true)
-        stackView.setInset(forRow: walkTimeRow, inset: .zero)
-
-        return true
-    }
-
-    private func addNearbyStopsTableRow(stop: Stop) {
-        let row = DefaultTableRowView(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator)
-        stackView.addRow(row)
-        stackView.setTapHandler(forRow: row) { _ in
-            let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
-            self.application.viewRouter.navigate(to: nearbyController, from: self)
+        else {
+            return arrivalDepartureSections
         }
     }
 
-    private func addAppleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
-        let appleMaps = DefaultTableRowView(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator)
-        stackView.addRow(appleMaps)
-        stackView.setTapHandler(forRow: appleMaps) { [weak self] _ in
-            guard
-                let self = self,
-                let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: coordinate)
-                else { return }
+    // MARK: - Data/Service Alerts
 
-            self.application.open(url, options: [:], completionHandler: nil)
-        }
-    }
-
-    private func addGoogleMapsTableRow(_ coordinate: CLLocationCoordinate2D) {
+    private var serviceAlertsSection: [ListDiffable] {
         guard
-            let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
-            application.canOpenURL(url)
-        else { return }
+            let situations = stopArrivals?.situations,
+            situations.count > 0
+        else { return [] }
 
-        let row = DefaultTableRowView(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator)
-        stackView.addRow(row, hideSeparator: false)
-        stackView.setTapHandler(forRow: row) { [weak self] _ in
-            guard let self = self else { return }
-            self.application.open(url, options: [:], completionHandler: nil)
+        var sections = [ListDiffable]()
+        sections.append(TableHeaderData(title: OBALoc("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller.")))
+
+        var rows = [TableRowData]()
+
+        for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
+            let row = TableRowData(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
+                self.application.viewRouter.present(alert, from: self)
+            }
+            rows.append(row)
         }
+
+        sections.append(TableSectionData(title: nil, rows: rows))
+
+        return sections
     }
 
-    private func addMoreOptionsTableRows() {
-        addTableHeaderToStack(headerText: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), backgroundColor: ThemeColors.shared.brand, textColor: ThemeColors.shared.lightText)
+    // MARK: - Data/Hidden Routes Toggle
+
+    private var hiddenRoutesToggle: ListDiffable? {
+        guard stopPreferences.hasHiddenRoutes else { return nil }
+
+        // If we have hidden routes, then show the hide/show filter toggle.
+        let segments = [
+            OBALoc("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"),
+            OBALoc("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures")
+        ]
+
+        let selectedIndex = isListFiltered ? 1 : 0
+        let toggleSection = ToggleSectionData(segments: segments, selectedIndex: selectedIndex) { [weak self] _ in
+            guard let self = self else { return }
+            self.isListFiltered.toggle()
+        }
+        return toggleSection
+    }
+
+    // MARK: - Data/Load More
+
+    private var loadMoreSection: ListDiffable {
+        let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
+        let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
+        let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
+
+        let section = LoadMoreSectionData(footerText: footerText) { [weak self] in
+            guard let self = self else { return }
+            self.loadMoreDepartures()
+        }
+
+        return section
+    }
+
+    // MARK: - Data/More Options
+
+    private var moreOptions: [ListDiffable] {
+        var rows = [TableRowData]()
 
         if let stop = stop {
-            addNearbyStopsTableRow(stop: stop)
+            let nearbyStops = TableRowData(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
+                self.application.viewRouter.navigate(to: nearbyController, from: self)
+            }
+            rows.append(nearbyStops)
 
-            addAppleMapsTableRow(stop.coordinate)
+            let appleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard
+                    let self = self,
+                    let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate)
+                    else { return }
+
+                self.application.open(url, options: [:], completionHandler: nil)
+            }
+            rows.append(appleMaps)
 
             #if !targetEnvironment(simulator)
-            addGoogleMapsTableRow(stop.coordinate)
+            let googleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard
+                    let self = self,
+                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
+                    application.canOpenURL(url)
+                else { return }
+
+                self.application.open(url, options: [:], completionHandler: nil)
+            }
+            rows.append(contentsOf: googleMaps)
             #endif
         }
 
         // Report Problem
-        let reportProblem = DefaultTableRowView(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator)
-        stackView.addRow(reportProblem)
-        stackView.setTapHandler(forRow: reportProblem) { [weak self] _ in
+        let reportProblem = TableRowData(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             self.showReportProblem()
         }
+        rows.append(reportProblem)
+
+        return [TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")), TableSectionData(title: nil, rows: rows)]
     }
 
-    /// Adds a `StopArrivalView` to the `stackView` that corresponds to `arrivalDeparture`.
-    /// - Parameter arrivalDeparture: The model object that generates a `StopArrivalView` row.
-    /// - Parameter hideSeparator: Whether or not the bottom separator view should be hidden.
-    private func addStopArrivalView(for arrivalDeparture: ArrivalDeparture?, hideSeparator: Bool) {
-        guard let arrivalDeparture = arrivalDeparture else { return }
+    /// Call this method after data has been reloaded in this controller
+    private func dataDidReload() {
+        collectionController.reload(animated: false)
+    }
 
-        let arrivalView: StopArrivalView!
-
-        if let a = stopArrivalViews[arrivalDeparture.tripID] {
-            arrivalView = a
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        if object is StopHeaderSection {
+            return StopHeaderSectionController(formatters: application.formatters, style: .plain)
         }
         else {
-            arrivalView = StopArrivalView.autolayoutNew()
-            arrivalView.formatters = application.formatters
-            arrivalView.showActionsButton = true
-            arrivalView.delegate = self
-
-            stopArrivalViews[arrivalDeparture.tripID] = arrivalView
+            return defaultSectionController(for: object)
         }
-
-        stackView.addRow(arrivalView, hideSeparator: hideSeparator)
-        arrivalView.arrivalDeparture = arrivalDeparture
     }
 
-    /// Creates a label that depicts the arrival/departure timeframe that the user is viewing, and adds it to the `stackView`.
-    private func displayTimeframeLabel() {
-        // We are showing a wider range of time, which means we should show a label
-        // that depicts the timeframe that is being viewed.
-        let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
-        let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
-        timeframeLabel.text = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-        stackView.addRow(timeframeLabel, hideSeparator: true)
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
     }
+
+    // MARK: - Collection Controller
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self)
+
+    private lazy var refreshControl: UIRefreshControl = {
+        let refreshControl = UIRefreshControl()
+        refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
+        return refreshControl
+    }()
 
     // MARK: - Stop Arrival Actions
 
@@ -747,23 +733,6 @@ StopPreferencesDelegate {
             dataDidReload()
         }
     }
-
-    @objc private func filterToggled() {
-        isListFiltered.toggle()
-    }
-
-    private let filterToggleControl: UISegmentedControl = {
-        let segment = UISegmentedControl.autolayoutNew()
-
-        segment.insertSegment(withTitle: OBALoc("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"), at: 0, animated: false)
-        segment.insertSegment(withTitle: OBALoc("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures"), at: 1, animated: false)
-
-        segment.selectedSegmentIndex = 1
-
-        segment.addTarget(self, action: #selector(filterToggled), for: .valueChanged)
-
-        return segment
-    }()
 
     // MARK: - Analytics
 

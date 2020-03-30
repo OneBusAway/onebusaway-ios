@@ -53,8 +53,7 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.font = UIFont.boldSystemFont(ofSize: UIFont.systemFontSize)
-        label.backgroundColor = ThemeColors.shared.secondaryBackgroundColor
+        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
         return label
     }()
 
@@ -62,6 +61,7 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+        backgroundColor = ThemeColors.shared.secondaryBackgroundColor
 
         addSubview(textLabel)
 

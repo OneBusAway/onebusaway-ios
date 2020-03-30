@@ -5,7 +5,6 @@ targets:
     sources: ["."]
     dependencies:
       - target: OBAKitCore
-      - carthage: AloeStackView
       - carthage: BLTNBoard
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
