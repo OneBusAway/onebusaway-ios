@@ -30,7 +30,7 @@ class MoreHeaderSection: NSObject, ListDiffable {
 
 // MARK: MoreHeaderSectionController
 
-final class MoreHeaderSectionController: ListSectionController {
+final class MoreHeaderSectionController: OBAListSectionController {
     override func sizeForItem(at index: Int) -> CGSize {
         // the height of 200 is semi-arbitrary, and was determined by playing around
         // looking for a height that doesn't cause the collection view to be misaligned

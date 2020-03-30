@@ -43,12 +43,8 @@ class AdjacentTripSection: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class AdjacentTripController: ListSectionController {
+final class AdjacentTripController: OBAListSectionController {
     private var object: AdjacentTripSection?
-
-    override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40)
-    }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard

@@ -16,6 +16,7 @@ import OBAKitCore
 public class MoreViewController: UIViewController,
     AppContext,
     FarePaymentsDelegate,
+    HasTableStyle,
     ListAdapterDataSource,
     MFMailComposeViewControllerDelegate,
     RegionsServiceDelegate {
@@ -61,7 +62,9 @@ public class MoreViewController: UIViewController,
 
     // MARK: - IGListKit
 
-    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .grouped)
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
+
+    var tableStyle: TableCollectionStyle { .grouped }
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         return [
@@ -75,10 +78,8 @@ public class MoreViewController: UIViewController,
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         switch object {
-        case is TableSectionData:
-            return TableSectionController(style: .grouped)
         case is MoreHeaderSection:
-            return MoreHeaderSectionController()
+            return MoreHeaderSectionController(formatters: application.formatters, style: tableStyle)
         default:
             return defaultSectionController(for: object)
         }

@@ -11,13 +11,13 @@ import IGListKit
 import OBAKitCore
 import MapKit
 
-public class SearchResultsController: UIViewController, ListProvider {
+public class SearchResultsController: UIViewController, AppContext, ListAdapterDataSource {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     var scrollView: UIScrollView { collectionController.collectionView }
 
     private weak var delegate: ModalDelegate?
 
-    private let application: Application
+    let application: Application
 
     private let searchResponse: SearchResponse
 
@@ -72,9 +72,8 @@ public class SearchResultsController: UIViewController, ListProvider {
         }
         return String(format: subtitleFormat, searchResponse.request.query)
     }
-}
 
-extension SearchResultsController: ListAdapterDataSource {
+    // MARK: - ListAdapterDataSource
 
     private func tableRowData(from item: Any) -> TableRowData? {
         let row: TableRowData
@@ -132,11 +131,7 @@ extension SearchResultsController: ListAdapterDataSource {
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        switch object {
-        case is TableSectionData: return TableSectionController()
-        default:
-            fatalError()
-        }
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {

@@ -131,9 +131,7 @@ public class RecentStopsViewController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let sectionController = defaultSectionController(for: object)
-        sectionController.inset = .zero
-        return sectionController
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
