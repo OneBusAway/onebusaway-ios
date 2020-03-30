@@ -73,7 +73,7 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     // MARK: - Style
 
-    public var style: CollectionControllerStyle = .plain {
+    public var style: TableCollectionStyle = .plain {
         didSet {
             contentView.backgroundColor = defaultBackgroundColor
         }

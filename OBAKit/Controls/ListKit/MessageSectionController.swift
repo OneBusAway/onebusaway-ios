@@ -116,12 +116,8 @@ final class MessageCell: BaseSelfSizingTableCell {
 
 // MARK: - MessageSectionController
 
-final public class MessageSectionController: ListSectionController {
+final class MessageSectionController: OBAListSectionController {
     var data: MessageSectionData?
-
-    public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40.0)
-    }
 
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
         guard let cell = collectionContext?.dequeueReusableCell(of: MessageCell.self, for: self, at: index) as? MessageCell else {

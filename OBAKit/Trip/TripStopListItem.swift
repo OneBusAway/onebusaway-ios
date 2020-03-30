@@ -84,7 +84,7 @@ class TripStopListItem: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class TripStopSectionController: ListSectionController {
+final class TripStopSectionController: OBAListSectionController {
     private var object: TripStopListItem?
 
     override func sizeForItem(at index: Int) -> CGSize {

@@ -11,7 +11,7 @@ import FloatingPanel
 import IGListKit
 import OBAKitCore
 
-public enum CollectionControllerStyle {
+public enum TableCollectionStyle {
     case plain, grouped
 }
 
@@ -19,14 +19,14 @@ public enum CollectionControllerStyle {
 public class CollectionController: UIViewController {
     private let application: Application
     public let listAdapter: ListAdapter
-    public let style: CollectionControllerStyle
+    public let style: TableCollectionStyle
 
     /// Creates a new `CollectionController`.
     /// - Parameters:
     ///   - application: The application object.
     ///   - dataSource: The parent view controller that acts as a data source.
     ///   - style: The style of the collection view: grouped or plain.
-    public init(application: Application, dataSource: UIViewController & ListAdapterDataSource, style: CollectionControllerStyle = .plain) {
+    public init(application: Application, dataSource: UIViewController & ListAdapterDataSource, style: TableCollectionStyle = .plain) {
         self.application = application
         self.listAdapter = ListAdapter(updater: ListAdapterUpdater(), viewController: dataSource, workingRangeSize: 1)
         self.style = style

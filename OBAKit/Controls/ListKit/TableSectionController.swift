@@ -11,19 +11,12 @@ import IGListKit
 import SwipeCellKit
 import OBAKitCore
 
-final public class TableSectionController: ListSectionController, ListSupplementaryViewSource, SwipeCollectionViewCellDelegate {
+class TableSectionController: OBAListSectionController, ListSupplementaryViewSource, SwipeCollectionViewCellDelegate {
     var data: TableSectionData?
 
-    private let style: CollectionControllerStyle
-
-    public init(style: CollectionControllerStyle = .plain) {
-        self.style = style
-        super.init()
+    override init(formatters: Formatters, style: TableCollectionStyle) {
+        super.init(formatters: formatters, style: style)
         supplementaryViewSource = self
-    }
-
-    public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40.0)
     }
 
     public override func numberOfItems() -> Int {
@@ -51,7 +44,7 @@ final public class TableSectionController: ListSectionController, ListSupplement
         cell.delegate = self
         cell.data = rowData
         cell.style = style
-        cell.collapseLeftInset = (index == numberOfItems() - 1)
+        cell.collapseLeftInset = style == .grouped ? (index == numberOfItems() - 1) : false
 
         return cell
     }

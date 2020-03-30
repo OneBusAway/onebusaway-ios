@@ -206,14 +206,7 @@ public class TripFloatingPanelController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        if object is ArrivalDeparture {
-            return StopArrivalSectionController(formatters: application.formatters)
-        }
-        else {
-            let sectionController = defaultSectionController(for: object)
-            sectionController.inset = .zero
-            return sectionController
-        }
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {

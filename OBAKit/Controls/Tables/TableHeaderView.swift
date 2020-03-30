@@ -9,7 +9,6 @@ import UIKit
 
 /// A view that approximates the appearance of a UITableView section header.
 ///
-/// - Note: Nominally, this is meant to be used in an `AloeStackView` or with `IGListKit`.
 public class TableHeaderView: UIView {
     private let textLabel = UILabel.autolayoutNew()
 

@@ -131,18 +131,8 @@ class BookmarkSectionData: NSObject, ListDiffable {
 
 // MARK: - BookmarkSectionController
 
-final class BookmarkSectionController: ListSectionController, SwipeCollectionViewCellDelegate {
+final class BookmarkSectionController: OBAListSectionController, SwipeCollectionViewCellDelegate {
     var groupData: BookmarkSectionData?
-    private let formatters: Formatters
-
-    public init(formatters: Formatters) {
-        self.formatters = formatters
-        super.init()
-    }
-
-    public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40.0)
-    }
 
     public override func numberOfItems() -> Int {
         guard let groupData = groupData else {
