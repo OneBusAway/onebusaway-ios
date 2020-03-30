@@ -11,43 +11,52 @@ import OBAKitCore
 
 // MARK: - View Model
 
-extension ArrivalDeparture: ListDiffable {
+class ArrivalDepartureSectionData: NSObject, ListDiffable {
+    let arrivalDeparture: ArrivalDeparture
+    let selected: VoidBlock
+
+    init(arrivalDeparture: ArrivalDeparture, selected: @escaping VoidBlock) {
+        self.arrivalDeparture = arrivalDeparture
+        self.selected = selected
+    }
+
     public func diffIdentifier() -> NSObjectProtocol {
         return self
     }
 
     public func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        return isEqual(object)
+        guard let object = object as? ArrivalDepartureSectionData else { return false }
+        return arrivalDeparture == object.arrivalDeparture
     }
 }
 
 // MARK: - Controller
 
-final class StopArrivalSectionController: ListSectionController {
-    private var object: ArrivalDeparture?
-    private let formatters: Formatters
-
-    override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 40)
-    }
+final class StopArrivalSectionController: OBAListSectionController {
+    private var object: ArrivalDepartureSectionData?
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let cell = collectionContext?.dequeueReusableCell(of: StopArrivalCell.self, for: self, at: index) as? StopArrivalCell else {
+        guard
+            let cell = collectionContext?.dequeueReusableCell(of: StopArrivalCell.self, for: self, at: index) as? StopArrivalCell,
+            let object = object
+        else {
             fatalError()
         }
         cell.formatters = formatters
-        cell.arrivalDeparture = object
+        cell.arrivalDeparture = object.arrivalDeparture
         return cell
     }
 
     override func didUpdate(to object: Any) {
-        self.object = (object as! ArrivalDeparture) // swiftlint:disable:this force_cast
+        guard let object = object as? ArrivalDepartureSectionData else {
+            fatalError()
+        }
+        self.object = object
     }
 
-    init(formatters: Formatters) {
-        self.formatters = formatters
-        super.init()
-        inset = .zero
+    override func didSelectItem(at index: Int) {
+        guard let sectionData = object else { return }
+        sectionData.selected()
     }
 }
 
@@ -68,14 +77,10 @@ final class StopArrivalCell: BaseSelfSizingTableCell {
             if stopArrivalView == nil {
                 stopArrivalView = StopArrivalView.autolayoutNew()
                 stopArrivalView.formatters = formatters
+                stopArrivalView.backgroundColor = .clear
                 contentView.addSubview(stopArrivalView)
 
-                NSLayoutConstraint.activate([
-                    stopArrivalView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                    stopArrivalView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-                    stopArrivalView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: ThemeMetrics.tableHeaderTopPadding),
-                    stopArrivalView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-                ])
+                stopArrivalView.pinToSuperview(.layoutMargins)
             }
         }
     }

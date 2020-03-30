@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import AloeStackView
+import IGListKit
 import OBAKitCore
 
 /// The 'hub' view controller for reporting problems about stops and trips.
@@ -14,23 +14,12 @@ import OBAKitCore
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
 ///
 /// - Note: This view controller expects to be presented modally.
-public class ReportProblemViewController: UIViewController, AloeStackTableBuilder {
-
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.groupedTableBackground
-    )
-
-    private let application: Application
+class ReportProblemViewController: OperationController<StopArrivalsModelOperation, StopArrivals>,
+    AppContext,
+    HasTableStyle,
+    ListAdapterDataSource {
 
     private let stop: Stop
-
-    private var operation: StopArrivalsModelOperation?
-
-    private var stopArrivals: StopArrivals? {
-        didSet {
-            updateUI()
-        }
-    }
 
     // MARK: - Init
 
@@ -40,118 +29,114 @@ public class ReportProblemViewController: UIViewController, AloeStackTableBuilde
     ///
     /// Initialize the view controller, wrap it with a navigation controller, and then modally present it to use.
     public init(application: Application, stop: Stop) {
-        self.application = application
         self.stop = stop
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(application: application)
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
 
         title = OBALoc("report_problem.title", value: "Report a Problem", comment: "Title of the Report Problem view controller.")
     }
 
-    deinit {
-        operation?.cancel()
-    }
-
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UIViewController
 
-    /// :nodoc:
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.groupedTableBackground
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
-        updateData()
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
     }
 
-    // MARK: - Data
+    // MARK: - Collection Controller
 
-    private func updateData() {
-        guard let modelService = application.restAPIModelService else { return }
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
+
+    public let tableStyle = TableCollectionStyle.grouped
+
+    // MARK: - OperationController
+
+    override func loadData() -> StopArrivalsModelOperation? {
+        guard let modelService = application.restAPIModelService else { return nil }
+
+        SVProgressHUD.show()
 
         let op = modelService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
         op.then { [weak self] in
+            SVProgressHUD.dismiss()
             guard let self = self else { return }
-            self.stopArrivals = op.stopArrivals
+            self.data = op.stopArrivals
+        }
+        return op
+    }
+
+    override func updateUI() {
+        collectionController.reload(animated: false)
+    }
+
+    // MARK: - IGListKit
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        var sections: [ListDiffable] = [stopProblemSection]
+
+        if let vehicleProblemSections = vehicleProblemSections {
+            sections.append(contentsOf: vehicleProblemSections)
         }
 
-        self.operation = op
+        return sections
     }
 
-    // MARK: - Actions
-
-    @objc private func cancel() {
-        dismiss(animated: true, completion: nil)
+    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
     }
 
-    // MARK: - Form Builder
-
-    private func updateUI() {
-        guard
-            let stop = stopArrivals?.stop,
-            let arrivalsAndDepartures = stopArrivals?.arrivalsAndDepartures
-            else {
-                return
-        }
-
-        addProblemWithTheStopRow(stop)
-        addProblemWithAVehicleRow(arrivalsAndDepartures)
+    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
     }
 
-    private func addProblemWithTheStopRow(_ stop: Stop) {
-        addGroupedTableHeaderToStack(headerText: OBALoc("report_problem_controller.stop_problem.header",
-                                                            value: "Problem with the Stop",
-                                                            comment: "A table header in the 'Report Problem' view controller."))
+    // MARK: - Data Sections
 
+    private var stopProblemSection: TableSectionData {
         let fmt = OBALoc(
             "report_problem_controller.report_stop_problem_fmt",
             value: "Report a problem with the stop at %@",
             comment: "Report a problem with the stop at {Stop Name}"
         )
 
-        let reportStopProblemRow = DefaultTableRowView(
-            title: String(format: fmt, stop.name),
-            accessoryType: .disclosureIndicator
-        )
-
-        addGroupedTableRowToStack(reportStopProblemRow) { [weak self] _ in
+        let row = TableRowData(title: String(format: fmt, stop.name), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
-            let stopProblemController = StopProblemViewController(application: self.application, stop: stop)
+            let stopProblemController = StopProblemViewController(application: self.application, stop: self.stop)
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
-        stackView.setSeparatorInset(forRow: reportStopProblemRow, inset: .zero)
 
-        reportStopProblemRow.isUserInteractionEnabled = true
+        return TableSectionData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."), rows: [row])
     }
 
-    fileprivate func addProblemWithAVehicleRow(_ arrivalsAndDepartures: [ArrivalDeparture]) {
-        addGroupedTableHeaderToStack(headerText: OBALoc("report_problem_controller.vehicle_problem.header",
-                                                      value: "Problem with a Vehicle at the Stop",
-                                                      comment: "A table header in the 'Report Problem' view controller."))
+    private var vehicleProblemSections: [ListDiffable]? {
+        guard let arrivalsAndDepartures = data?.arrivalsAndDepartures, arrivalsAndDepartures.count > 0 else {
+            return nil
+        }
 
-        let rows = arrivalsAndDepartures.map { arrDep -> UIView in
-            let arrivalView = StopArrivalView.autolayoutNew()
-            arrivalView.deemphasizePastEvents = false
-            arrivalView.formatters = application.formatters
-            arrivalView.arrivalDeparture = arrDep
-            addGroupedTableRowToStack(arrivalView) { [weak self] _ in
+        var rows: [ListDiffable] = [TableHeaderData(title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."))]
+
+        for arrDep in arrivalsAndDepartures {
+            let row = ArrivalDepartureSectionData(arrivalDeparture: arrDep) { [weak self] in
                 guard let self = self else { return }
                 let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
                 self.navigationController?.pushViewController(controller, animated: true)
             }
-            arrivalView.isUserInteractionEnabled = true
-
-            return arrivalView
+            rows.append(row)
         }
 
-        if let lastRow = rows.last {
-            stackView.setSeparatorInset(forRow: lastRow, inset: .zero)
-        }
+        return rows
+    }
+
+    // MARK: - Actions
+
+    @objc private func cancel() {
+        dismiss(animated: true, completion: nil)
     }
 }
