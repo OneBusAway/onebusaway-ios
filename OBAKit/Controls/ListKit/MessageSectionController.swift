@@ -42,7 +42,7 @@ final public class MessageSectionData: ListViewModel, ListDiffable {
 
 // MARK: - MessageCell
 
-final class MessageCell: SelfSizingCollectionCell, Separated {
+final class MessageCell: BaseSelfSizingTableCell {
 
     // MARK: - UI
 
@@ -97,25 +97,8 @@ final class MessageCell: SelfSizingCollectionCell, Separated {
         summaryLabel.text = nil
     }
 
-    override var isHighlighted: Bool {
-        didSet {
-            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
-        }
-    }
-
-    let separator = tableCellSeparatorLayer()
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layoutSeparator()
-    }
-
     override init(frame: CGRect) {
         super.init(frame: frame)
-
-        contentView.backgroundColor = ThemeColors.shared.systemBackground
-
-        contentView.layer.addSublayer(separator)
 
         let topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
         let topWrapper = topStack.embedInWrapperView()

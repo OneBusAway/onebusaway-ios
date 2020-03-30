@@ -53,7 +53,7 @@ final class StopArrivalSectionController: ListSectionController {
 
 // MARK: - View
 
-final class StopArrivalCell: SelfSizingCollectionCell {
+final class StopArrivalCell: BaseSelfSizingTableCell {
     var arrivalDeparture: ArrivalDeparture? {
         didSet {
             guard let arrivalDeparture = arrivalDeparture else { return }
@@ -78,14 +78,5 @@ final class StopArrivalCell: SelfSizingCollectionCell {
                 ])
             }
         }
-    }
-
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        contentView.backgroundColor = ThemeColors.shared.systemBackground
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }

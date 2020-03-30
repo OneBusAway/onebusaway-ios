@@ -126,7 +126,7 @@ final class TripStopSectionController: ListSectionController {
 
 // MARK: - Cell
 
-final class TripStopCell: SelfSizingCollectionCell, Separated {
+final class TripStopCell: BaseSelfSizingTableCell {
 
     static let tripSegmentImageWidth: CGFloat = 40.0
 
@@ -135,8 +135,6 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
      [ O  15th & Galer 7:25PM      > ]
      [ |                             ]
      */
-
-    let separator = tableCellSeparatorLayer()
 
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -185,8 +183,6 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        contentView.layer.addSublayer(separator)
-
         let stack = UIStackView.horizontalStack(arrangedSubviews: [tripSegmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
         stack.spacing = ThemeMetrics.compactPadding
         let stackWrapper = stack.embedInWrapperView(setConstraints: true)
@@ -210,11 +206,5 @@ final class TripStopCell: SelfSizingCollectionCell, Separated {
     override func layoutSubviews() {
         super.layoutSubviews()
         layoutSeparator(leftSeparatorInset: TripStopCell.tripSegmentImageWidth + 10.0)
-    }
-
-    override var isHighlighted: Bool {
-        didSet {
-            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
-        }
     }
 }
