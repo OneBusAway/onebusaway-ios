@@ -116,7 +116,3 @@ public class CollectionController: UIViewController {
         collectionView.scrollIndicatorInsets = collectionView.contentInset
     }
 }
-
-public protocol ListProvider: ListAdapterDataSource {
-    var collectionController: CollectionController { get }
-}

@@ -18,7 +18,6 @@ public class BookmarksViewController: UIViewController,
     BookmarkEditorDelegate,
     BookmarkDataDelegate,
     ListAdapterDataSource,
-    ListProvider,
     ManageBookmarksDelegate,
     ModalDelegate {
 
