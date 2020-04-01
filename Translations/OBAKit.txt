@@ -3,847 +3,1017 @@
 		en = Bookmark the Stop
 		comment = Text for the table header for bookmarking an entire stop.
 		pl = Dodaj przystanek do ulubionych
-		fr-CA = 
+		fr = 
+		es =  
 	[add_bookmark_controller.bookmark_trip_header]
 		en = Bookmark a Trip
 		comment = Text for the table header for bookmarking an individual trip.
 		pl = Dodaj kurs do zakładek
-		fr-CA = 
+		fr = 
+		es =  
 	[add_bookmark_controller.title]
 		en = Add Bookmark
 		comment = Title for the Add Bookmark view controller.
 		pl = Dodaj zakładkę
-		fr-CA = 
+		fr = 
+		es =  
 	[add_group_alert.placeholder]
 		en = Bookmark Group Title
 		comment = Text field placeholder on the Add Group Alert.
 		pl = Bookmark Group Title
-		fr-CA = 
+		fr = 
+		es =  
 	[add_group_alert.title]
 		en = Add Group
 		comment = Title of the Add Bookmark Group controller
 		pl = Dodaj grupę
-		fr-CA = 
+		fr = 
+		es =  
 	[agencies_controller.title]
 		en = Agencies
 		comment = Title of the Agencies controller
 		pl = Przewoźnicy
-		fr-CA = 
+		fr = 
+		es =  
 	[agency_alerts_controller.title]
 		en = Alerts
 		comment = The title of the Agency Alerts controller.
 		pl = Alerty
-		fr-CA = 
+		fr = 
+		es =  
 	[alarm_builder_controller.minutes_fmt]
 		en = %d minutes
 		comment = {X} minutes. always plural.
 		pl = %d minut
-		fr-CA = 
+		fr = 
+		es =  
 	[alarm_builder_controller.one_minute]
 		en = 1 minute
 		comment = One minute/1 minute
 		pl = 1 minuta
-		fr-CA = 
+		fr = 
+		es =  
 	[alarm_time_picker.action_button_title]
 		en = Add Alarm
 		comment = Title of the button on the alarm time picker page.
 		pl = Dodaj alarm
-		fr-CA = 
+		fr = 
+		es =  
 	[alarm_time_picker.description]
 		en = Remind me when this vehicle will depart in:
 		comment = Explains what the Alarm Time Picker page does.
 		pl = Przypomnij mi kiedy ten pojazd odjeżdża za:
-		fr-CA = 
+		fr = 
+		es =  
 	[bookmarks_controller.groups_button_title]
 		en = Edit
 		comment = Groups button title in Bookmarks controller
 		pl = Edytuj
-		fr-CA = 
+		fr = 
+		es =  
 	[bookmarks_controller.title]
 		en = Bookmarks
 		comment = Title of the Bookmarks tab
 		pl = Zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[bookmarks_controller.ungrouped_bookmarks_section.title]
 		en = Bookmarks
 		comment = The title for the bookmarks controller section that shows bookmarks that aren't in a group.
 		pl = Zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_us_helper.cant_send_email.body_fmt]
 		en = In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.
 		comment = Body of the the alert that appears when you try sending an email without Mail.app set up
 		pl = Aby skontaktować się z nami, napisz do nas na adres %@. Kliknij proszę w 'Copy Debug Info', aby skopiować informację do schowka, co pomoże nam rozwiązać problem. Uwzględnij tą informację w wiadomości E-mail.
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_us_helper.cant_send_email.copy_email_button]
 		en = Copy Email Address
 		comment = A button that lets the user copy an email address to the clipboard.
 		pl = Skopiuj adres E-mail
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_us_helper.cant_send_email.copy_message_button]
 		en = Copy Debug Info
 		comment = A button that lets the user copy a default message, including debug info, to the clipboard.
 		pl = Kopiuj informację błędu
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_us_helper.cant_send_email.title]
 		en = Can't Send Email via Mail.app
 		comment = Title of the alert that appears when the user's device isn't configured to send email.
 		pl = Nie można było wysłać E-mail przez Mail.app
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_use_helper.feedback_subject.app]
 		en = OneBusAway Feedback
 		comment = Feedback email template subject for the app developers
 		pl = Informacja zwrotna OneBusAway
-		fr-CA = 
+		fr = 
+		es =  
 	[contact_use_helper.feedback_subject.transit_agency]
 		en = Transit Rider Feedback
 		comment = Feedback email template subject for the transit agency
 		pl = Informacja zwrotna pasażera
-		fr-CA = 
+		fr = 
+		es =  
 	[credits_controller.title]
 		en = Credits
 		comment = Title of the Credits controller
 		pl = Podziękowania
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.add_group_button_title]
 		en = Add Bookmark Group
 		comment = Title of the button that lets the user add a new Bookmark Group.
 		pl = Dodaj grupę zakładek
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.group_section.header_title]
 		en = Bookmark Group
 		comment = Title of the Bookmark Group header.
 		pl = Grupa zakładek
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.name_section.header_title]
 		en = Bookmark Name
 		comment = Title of the Bookmark Name header.
 		pl = Nazwa zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.no_group_row]
 		en = (No Group)
 		comment = Don't add this bookmark to a group.
 		pl = (Bez grupy)
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.title_add]
 		en = Add Bookmark
 		comment = Title for the Edit Bookmark controller in add mode
 		pl = Dodaj zakładkę
-		fr-CA = 
+		fr = 
+		es =  
 	[edit_bookmark_controller.title_edit]
 		en = Edit Bookmark
 		comment = Title for the Edit Bookmark controller in edit mode
 		pl = Edytuj zakładkę
-		fr-CA = 
+		fr = 
+		es =  
 	[fare_payments.dont_show_again]
 		en = Continue and Don't Show Again
 		comment = A button that says continue and don't show again.
 		pl = Kontynuuj i nie pokazuj więcej
-		fr-CA = 
+		fr = 
+		es =  
 	[location_permission_bulletin.buttons.deny_permission]
 		en = Maybe Later
 		comment = This button rejects the application's request to see the user's location.
 		pl = Może później
-		fr-CA = 
+		fr = 
+		es =  
 	[location_permission_bulletin.buttons.give_permission]
 		en = Allow Access
 		comment = This button signals the user is willing to grant location access to the app.
 		pl = Zezwól na dostęp
-		fr-CA = 
+		fr = 
+		es =  
 	[location_permission_bulletin.description_text]
 		en = Please allow the app to access your location to make it easier to find your transit stops.
 		comment = Description of why we need location services
 		pl = Zezwól aplikacji na dostęp do Twojej lokalizacji, aby ułatwić wyszukiwanie Twoich najbliższych przystanków.
-		fr-CA = 
+		fr = 
+		es =  
 	[location_permission_bulletin.title]
 		en = Welcome!
 		comment = Title of the alert that appears to request your location.
 		pl = Witaj!
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_bookmarks.controller_footer]
 		en = You can rearrange and delete Bookmarks from this screen.
 		comment = Explains the purpose of the Manage Bookmarks controller
 		pl = Możesz zmieniać kolejność i usuwać zakładki z tego ekranu.
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_bookmarks_groups.toggle.bookmarks]
 		en = Bookmarks
 		comment = Segmented control item for bookmarks
 		pl = Zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_bookmarks_groups.toggle.groups]
 		en = Groups
 		comment = Segmented control item for Groups
 		pl = Grupy
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_groups_controller.add_group_button]
 		en = Add Bookmark Group
 		comment = 'Add Bookmark Group' button text
 		pl = Dodaj grupę zakładek
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_groups_controller.groups.footer_text]
 		en = You can rename, add, delete, and rearrange bookmark groups. Bookmarks in deleted groups are not deleted.
 		comment = Footer explanation on the Groups section of the Manage Groups controller.
 		pl = Możesz zmieniać nazwy, dodawać, usuwać i zmieniać kolejność grup zakładek. Zakładki w usuniętej grupie nie są usuwane.
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_groups_controller.text_field_placeholder]
 		en = Group name
 		comment = Placeholder text for Bookmark Group.
 		pl = Nazwa grupy
-		fr-CA = 
+		fr = 
+		es =  
 	[manage_groups_controller.title]
 		en = Edit Bookmarks
 		comment = Manage Groups controller title
 		pl = Edytuj zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.center_user_location]
 		en = Center map on current location
 		comment = Map controller for centering the map on the user's current location.
 		pl = Centruj mapę na bieżącej lokalizacji
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.change_region_alert.button]
 		en = Change Region
 		comment = Change Region button on the alert that appears when the user is updating their current region manually.
 		pl = Zmień region
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.change_region_alert.message_fmt]
 		en = Would you like to change your region to %@?
 		comment = Body of the alert that appears when the user is updating their current region manually.
 		pl = Czy chcesz zmienić swój region na %@?
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.change_region_alert.title]
 		en = Change Region?
 		comment = Title of the alert that appears when the user is updating their current region manually.
 		pl = Zmienić region?
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.no_search_results_found]
 		en = No search results were found.
 		comment = A generic message shown when the user's search query produces no search results.
 		pl = Brak wyników
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.show_weather_button]
 		en = Show Weather Forecast
 		comment = Accessibility label for a button that provides the current forecast
 		pl = Pokaż prognozę pogody
-		fr-CA = 
+		fr = 
+		es =  
 	[map_controller.vehicle_not_on_trip_error]
 		en = The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.
 		comment = This message appears when a searched-for vehicle doesn't have an assigned trip.
 		pl = Pojazd, który wybrałeś, nie wykonuje żadnego kursu, więc nie mamy co pokazać.
-		fr-CA = 
+		fr = 
+		es =  
 	[map_item_controller.about_header]
 		en = About
 		comment = about section header
 		pl = O nas
-		fr-CA = 
+		fr = 
+		es =  
 	[map_item_controller.more_header]
 		en = More
 		comment = More options header
 		pl = Więcej
-		fr-CA = 
+		fr = 
+		es =  
 	[map_item_controller.nearby_stops_row]
 		en = Nearby Stops
 		comment = A table row that shows stops nearby.
 		pl = Przystanki w pobliżu
-		fr-CA = 
+		fr = 
+		es =  
 	[map_region_manager.status_overlay.zoom_to_see_stops]
 		en = Zoom in to look for stops
 		comment = Map region manager message to the user when they need to zoom in more to view stops
 		pl = Przybliż, aby zobaczyć przystanki
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.about_app]
 		en = About this App
 		comment = Header for a section that shows the user information about this app.
 		pl = O tej aplikacji
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.alerts_for_region]
 		en = Alerts
 		comment = Alerts for region row in the More controller
 		pl = Alerty
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.contact_developers]
 		en = Feature Request/Bug Report
 		comment = Title of the action sheet option for contacting the developers of the app.
 		pl = Zgłoszenie nowej funkcji/błędu
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.contact_transit]
 		en = Vehicle/Schedule Problem
 		comment = Title of the action sheet option for contacting a user's transit agency.
 		pl = Problem z pojazdem/rozkładem
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.contact_us]
 		en = Contact Us
 		comment = A button to contact transit agency/developers.
 		pl = Kontakt
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.contact_us_alert_title]
 		en = Contact Us
 		comment = Contact Us alert title.
 		pl = Kontakt z nami
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.credits_row_title]
 		en = Credits
 		comment = Credits - like who should get credit for creating this.
 		pl = Podziękowania
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.debug_section.crash_row]
 		en = Crash the App
 		comment = Title for a button that will crash the app.
 		pl = Crash the App
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.debug_section.header]
 		en = Debug
 		comment = Section title for debugging helpers
 		pl = Debugowanie
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.debug_section.push_id.not_available]
 		en = Not available
 		comment = This is displayed instead of the user's push ID if the value is not available.
 		pl = Niedostępne
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.debug_section.push_id.title]
 		en = Push ID
 		comment = Title for the Push Notification ID row in the More Controller
 		pl = Push ID
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.my_location.agencies]
 		en = Agencies
 		comment = Title of the Agencies row in the My Location section
 		pl = Przewoźnicy
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.my_location.header]
 		en = My Location
 		comment = 'My Location' section header on the 'More' controller.
 		pl = Moja lokalizacja
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.my_location.pay_fare]
 		en = Pay My Fare
 		comment = Title of the mobile fare payment row
 		pl = Płatność za przejazd
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.my_location.region_row_title]
 		en = Region
 		comment = Title of the row that lets the user choose their current region.
 		pl = Region
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.privacy_row_title]
 		en = Privacy Policy
 		comment = A link to the app's Privacy Policy
 		pl = Polityka prywatności
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.title]
 		en = More
 		comment = Title of the More tab
 		pl = Więcej
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.updates_and_alerts.header]
 		en = Updates and Alerts
 		comment = Updates and Alerts header text
 		pl = Komunikaty i alerty
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.updates_and_alerts.row_fmt]
 		en = Alerts for %@
 		comment = Alerts for {Region Name}
 		pl = Alerty dla %@
-		fr-CA = 
+		fr = 
+		es =  
 	[more_controller.weather_credits_row]
 		en = Weather forecasts powered by Dark Sky
 		comment = Weather forecast attribution
 		pl = Prognoza pogody dostarczana przez Dark Sky
-		fr-CA = 
+		fr = 
+		es =  
 	[more_header.debug_enabled.title]
 		en = Debug Mode Enabled
 		comment = Title of the alert that tells the user they've enabled debug mode.
 		pl = Tryb debugowania włączony
-		fr-CA = 
+		fr = 
+		es =  
 	[more_header.support_us_label_text]
 		en = This app is made and supported by volunteers.
 		comment = Explanation about how this app is built and maintained by volunteers.
 		pl = Ta aplikacja jest stworzona i utrzymywania przez woluntariuszy.
-		fr-CA = 
+		fr = 
+		es =  
 	[nearby_controller.empty_set.body]
 		en = Zoom out or pan around to find some stops.
 		comment = Body for the empty set indicator on the Nearby controller.
-		fr-CA = 
+		fr = 
+		es =  
 	[nearby_controller.empty_set.title]
 		en = No Nearby Stops
 		comment = Title for the empty set indicator on the Nearby controller
-		fr-CA = 
+		fr = 
+		es =  
 	[nearby_stops_controller.empty_set.body]
 		en = There are no other stops in the vicinity.
 		comment = Body for the empty set indicator on the Nearby Stops controller.
 		pl = Nie ma więcej przystanków w okolicy.
-		fr-CA = 
+		fr = 
+		es =  
 	[nearby_stops_controller.empty_set.title]
 		en = No Nearby Stops
 		comment = Title for the empty set indicator on the Nearby Stops controller.
 		pl = Brak przystanków w pobliżu
-		fr-CA = 
+		fr = 
+		es =  
 	[nearby_stops_controller.title]
 		en = Nearby Stops
 		comment = The title of the Nearby Stops controller.
 		pl = Przystanki w pobliżu
-		fr-CA = 
+		fr = 
+		es =  
 	[reachability_bulletin.description.cellular_no_internet]
 		en = We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.
 		comment = Reachability bulletin for a cellular connection that can't access the Internet.
 		pl = Brak dostępu do internetu przy podłączeniu GSM.\r\n\r\nSpróbuj skorzystać z Wi-Fi lub zmień położenie.
-		fr-CA = 
+		fr = 
+		es =  
 	[reachability_bulletin.description.not_connected]
 		en = We can't access the Internet. Try connecting via WiFi or cellular data.
 		comment = Reachability bulletin for a phone with no connection.
 		pl = Brak połączenia z internetem. Skorzystaj z Wi-Fi lub z danych komórkowych.
-		fr-CA = 
+		fr = 
+		es =  
 	[reachability_bulletin.description.wifi_no_internet]
 		en = We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.
 		comment = Reachability bulletin for a WiFi network that can't access the Internet.
 		pl = Brak dostępu do internetu przy podłączeniu Wi-Fi.\r\n\r\nSpróbuj wyłaczyć Wi-Fi lub podłączyć się do innej sieci.
-		fr-CA = 
+		fr = 
+		es =  
 	[reachability_bulletin.title]
 		en = No Internet
 		comment = Title of the alert that appears when the app can't connect to the server.
 		pl = Brak połączenia z internetem.
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops_controller.alarms_section.title]
 		en = Alarms
 		comment = Title of the Alarms section of the Recents controller
 		pl = Alarms
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops.confirmation_alert.title]
 		en = Are you sure you want to delete all of your recent stops?
 		comment = Title for a confirmation alert displayed before the user deletes all of their recent stops.
 		pl = Czy jesteś pewien, że chcesz usunąć wszystkie swoje ostatnie przystanki?
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops.delete_all]
 		en = Delete All
 		comment = A button that deletes all of the recent stops in the app.
 		pl = Usuń wszystkie
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops.empty_set.body]
 		en = Transit stops that you view in the app will appear here.
 		comment = Body for the empty set indicator on the Recent Stops controller.
 		pl = Tutaj pojawią się przystanki, z których korzystasz w aplikacji.
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops.empty_set.title]
 		en = No Recent Stops
 		comment = Title for the empty set indicator on the Recent Stops controller.
 		pl = Brak ostatnich przystanków
-		fr-CA = 
+		fr = 
+		es =  
 	[recent_stops_controller.title]
 		en = Recent
 		comment = The title of the Recent Stops controller.
 		pl = Ostatnie
-		fr-CA = 
+		fr = 
+		es =  
 	[region_mismatch_bulletin.body_fmt]
 		en = Your region is set to %1$@, but you appear to be in %2$@.
 		comment = Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.'
 		pl = Wybrany region to %1$@ ale wygląda na to że jesteś w %2$@.
-		fr-CA = 
+		fr = 
+		es =  
 	[region_mismatch_bulletin.change_region_button_fmt]
 		en = Change to %@
 		comment = A button on the region mismatch alert that changes the user's current region. e.g. 'Change to San Diego'
 		pl = Zmień na %@
-		fr-CA = 
+		fr = 
+		es =  
 	[region_mismatch_bulletin.title]
 		en = Change Region?
 		comment = Alert title shown when there is a mismatch between the user location and selected region.
 		pl = Zmienić region?
-		fr-CA = 
+		fr = 
+		es =  
 	[region_mismatch_bulletin.update_map_button_fmt]
 		en = Show %@ on the map
 		comment = A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map'
 		pl = Pokaż %@ na mapie
-		fr-CA = 
+		fr = 
+		es =  
 	[region_picker.description_text]
 		en = Choose your transit region to use the app.
 		comment = Descriptive text for the region picker card.
 		pl = Wybierz swój region, aby korzystać z aplikacji.
-		fr-CA = 
+		fr = 
+		es =  
 	[region_picker.region_section.title]
 		en = Regions
 		comment = Title of the Regions section.
 		pl = Regiony
-		fr-CA = 
+		fr = 
+		es =  
 	[region_picker.title]
 		en = Choose Region
 		comment = Title of the Region Picker Item, which lets the user choose a new region from the map.
 		pl = Wybierz region
-		fr-CA = 
+		fr = 
+		es =  
 	[region_picker_controller.automatically_select_region_switch_title]
 		en = Automatically select region
 		comment = Title next to the switch that toggles whether the user can manually pick their region.
 		pl = Wybierz region automatycznie
-		fr-CA = 
+		fr = 
+		es =  
 	[region_picker_controller.title]
 		en = Select a Region
 		comment = Region Picker view controller title
 		pl = Wybierz region
-		fr-CA = 
+		fr = 
+		es =  
 	[report_problem.title]
 		en = Report a Problem
 		comment = Title of the Report Problem view controller.
 		pl = Zgłoś problem
-		fr-CA = 
+		fr = 
+		es =  
 	[report_problem_controller.report_stop_problem_fmt]
 		en = Report a problem with the stop at %@
 		comment = Report a problem with the stop at {Stop Name}
 		pl = Zgłoś problem z przystankiem przy %@
-		fr-CA = 
+		fr = 
+		es =  
 	[report_problem_controller.stop_problem.header]
 		en = Problem with the Stop
 		comment = A table header in the 'Report Problem' view controller.
 		pl = Problem z przystankiem
-		fr-CA = 
+		fr = 
+		es =  
 	[report_problem_controller.vehicle_problem.header]
 		en = Problem with a Vehicle at the Stop
 		comment = A table header in the 'Report Problem' view controller.
 		pl = Problem z pojazdem na przystanku
-		fr-CA = 
+		fr = 
+		es =  
 	[route_stops_controller.stops_header]
 		en = Stops
 		comment = A transit vehicle stop.
 		pl = Przystanki
-		fr-CA = 
+		fr = 
+		es =  
 	[search_controller.bookmarks.header]
 		en = Bookmarks
 		comment = Title of the Bookmarks search header
 		pl = Zakładki
-		fr-CA = 
+		fr = 
+		es =  
 	[search_controller.empty_set.body]
 		en = Type in an address, route name, stop number, or vehicle here to search.
 		comment = Body for the empty set indicator on the Search controller.
 		pl = Wpisz tutaj adres, numer linii, symbol przystanku lub numer pojazdu, aby wyszukać.
-		fr-CA = 
+		fr = 
+		es =  
 	[search_controller.empty_set.title]
 		en = Search
 		comment = Title for the empty set indicator on the Search controller.
 		pl = Wyszukiwanie
-		fr-CA = 
+		fr = 
+		es =  
 	[search_controller.quick_search.header]
 		en = Quick Search
 		comment = Quick Search section header in search
 		pl = Szybkie wyszukiwanie
-		fr-CA = 
+		fr = 
+		es =  
 	[search_interactor.quick_search.address_prefix]
 		en = Address:
 		comment = Quick search prefix for Address.
 		pl = Adres:
-		fr-CA = 
+		fr = 
+		es =  
 	[search_interactor.quick_search.route_prefix]
 		en = Route:
 		comment = Quick search prefix for Route.
 		pl = Linia:
-		fr-CA = 
+		fr = 
+		es =  
 	[search_interactor.quick_search.stop_prefix]
 		en = Stop:
 		comment = Quick search prefix for Stop.
 		pl = Przystanek:
-		fr-CA = 
+		fr = 
+		es =  
 	[search_interactor.quick_search.vehicle_prefix]
 		en = Vehicle:
 		comment = Quick search prefix for Vehicle.
 		pl = Pojazd:
-		fr-CA = 
+		fr = 
+		es =  
 	[search_results_controller.subtitle.address_fmt]
 		en = %@
 		comment = A format string for address searches. In English, this is just the address itself without any adornment.
 		pl = %@
-		fr-CA = 
+		fr = 
+		es =  
 	[search_results_controller.subtitle.route_fmt]
 		en = Route %@
 		comment = A format string for address searches. e.g. in english: Route search: \"{SEARCH TEXT}\"
 		pl = Linia %@
-		fr-CA = 
+		fr = 
+		es =  
 	[search_results_controller.subtitle.stop_number_fmt]
 		en = Stop number %@
 		comment = A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"
 		pl = Symbol przystanku %@
-		fr-CA = 
+		fr = 
+		es =  
 	[search_results_controller.subtitle.vehicle_id_fmt]
 		en = Vehicle ID %@
 		comment = A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"
 		pl = Numer boczny pojazdu %@
-		fr-CA = 
+		fr = 
+		es =  
 	[search_results_controller.title]
 		en = Search Results
 		comment = The title of the Search Results controller.
 		pl = Wyniki wyszukiwania
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.alerts_section.display_test_alerts]
 		en = Display test alerts
 		comment = Settings > Alerts section > Display test alerts
 		pl = Wyświetl testowe alerty
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.alerts_section.title]
 		en = Agency Alerts
 		comment = Settings > Alerts section title
 		pl = Alerty przewoźnika
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.map_section.shows_heading]
 		en = Show my current heading
 		comment = Settings > Map section > Show my current heading
 		pl = Pokaż mój obecny kurs
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.map_section.shows_scale]
 		en = Shows scale
 		comment = Settings > Map section > Shows scale
 		pl = Pokaż skalę
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.map_section.shows_traffic]
 		en = Shows traffic
 		comment = Settings > Map section > Shows traffic
 		pl = Pokaż korki drogowe
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.map_section.title]
 		en = Map
 		comment = Settings > Map section title
 		pl = Mapa
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.privacy_section.title]
 		en = Privacy
 		comment = Settings > Privacy section title
 		pl = Prywatność
-		fr-CA = 
+		fr = 
+		es =  
 	[settings_controller.prviacy_section.reporting_enabled]
 		en = Send usage data to developer
 		comment = Settings > Privacy section > Send usage data
 		pl = Wyślij dane użycia do dewelopera
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.add_alarm]
 		en = Add Alarm
 		comment = Action sheet button title for adding an alarm.
 		pl = Dodaj alarm
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.add_bookmark]
 		en = Add Bookmark
 		comment = Action sheet button title for adding a bookmark
 		pl = Dodaj zakładkę
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.alarm_created_message]
 		en = Alarm created
 		comment = A message that appears when a user's alarm is created.
 		pl = Utworzono alarm
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.arrival_departure_header]
 		en = Arrivals and Departures
 		comment = A header for the arrivals and departures section of the stop controller.
 		pl = Przyjazdy i odjazdy
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.bad_bookmark_error_message]
 		en = This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.
 		comment = An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.
 		pl = This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.filter_toggle.all_departures]
 		en = All Departures
 		comment = Segmented control item: show all departures
 		pl = Wszystkie odjazdy
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.filter_toggle.filtered_departures]
 		en = Filtered Departures
 		comment = Segmented control item: show filtered departures
 		pl = Filtrowane odjazdy
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.load_more_button]
 		en = Load More
 		comment = Load More button
 		pl = Załaduj więcej
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.service_alerts_header]
 		en = Service Alerts
 		comment = The header for the Service Alerts section of the stops controller.
 		pl = Komunikaty o stanie sieci
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_controller.share_trip]
 		en = Share Trip
 		comment = Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.)
 		pl = Share Trip
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_preferences_controller.routes_section.header_title]
 		en = Routes
 		comment = Title of the Routes section
 		pl = Linie
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_preferences_controller.sorting_section.header_title]
 		en = Sorting
 		comment = Title of the Sorting section
 		pl = Sortowanie
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_preferences_controller.sorting_section.sort_by_route]
 		en = Sort by route
 		comment = Sort by route option
 		pl = Sortuj po linii
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_preferences_controller.sorting_section.sort_by_time]
 		en = Sort by time
 		comment = Sort by time option
 		pl = Sortuj po czasie
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_preferences_controller.title]
 		en = Sort & Filter Routes
 		comment = Title of the Edit Stop preferences controller
 		pl = Sortowanie & filtrowanie linii
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.comments_section.section_title]
 		en = Additional comments (optional)
 		comment = The section header to a free-form comments field that the user does not have to add text to in order to submit this form.
 		pl = Dodatkowe komentarze (opcjonalne)
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.location_section.section_footer]
 		en = Sharing your location can help your transit agency fix this problem.
 		comment = Footer text of the Share Location section in the Stop Problem Controller
 		pl = Udostępnienie swojego położenia może pomóc deweloperom aplikacji w naprawieniu tego problemu.
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.location_section.section_title]
 		en = Share your location?
 		comment = Title of the Share Location section in the Stop Problem Controller.
 		pl = Udostępnić swoją lokalizację?
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.location_section.switch_title]
 		en = Share location
 		comment = Title of the Share Location switch on stop problem controller
 		pl = Udostępnianie lokalizacji
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.problem_section.row_label]
 		en = Pick one:
 		comment = Title label for the 'choose a problem type' row.
 		pl = Wybierz:
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.problem_section.section_title]
 		en = What seems to be the problem?
 		comment = Title of the first section in the Stop Problem Controller.
 		pl = Na czym polega problem?
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.send_button]
 		en = Send Message
 		comment = The 'send' button that actually sends along the problem report.
 		pl = Wyślij wiadomość
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_controller.title]
 		en = Report a Problem
 		comment = Title for the Report Stop Problem controller
 		pl = Raportuj problem
-		fr-CA = 
+		fr = 
+		es =  
 	[stops_controller.created_new_bookmark]
 		en = Added Bookmark
 		comment = Message displayed when a new bookmark is created.
 		pl =
-		fr-CA =
+		fr = 
+		es = 
 	[stops_controller.updated_bookmark]
 		en = Updated Bookmark
 		comment = Message displayed an existing bookmark is updated.
 		pl =
-		fr-CA =
+		fr = 
+		es = 
 	[stops_controller.more_options]
 		en = More Options
 		comment = More Options section header on the Stops controller
 		pl = Więcej opcji
-		fr-CA = 
+		fr = 
+		es =  
 	[stops_controller.nearby_stops]
 		en = Nearby Stops
 		comment = Title of the row that will show stops that are near this one.
 		pl = Przystanki w pobliżu
-		fr-CA = 
+		fr = 
+		es =  
 	[stops_controller.report_problem]
 		en = Report a Problem
 		comment = Button that launches the 'Report Problem' UI.
 		pl = Raportowanie problemu
-		fr-CA = 
+		fr = 
+		es =  
 	[stops_controller.walking_directions_apple]
 		en = Walking Directions (Apple Maps)
 		comment = Button that launches Apple's maps.app with walking directions to this stop
 		pl = Idź do przystanku (Mapy Apple)
-		fr-CA = 
+		fr = 
+		es =  
 	[stops_controller.walking_directions_google]
 		en = Walking Directions (Google Maps)
 		comment = Button that launches Google Maps with walking directions to this stop
 		pl = Idź do przystanku (Mapy Google)
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_details_controller.continues_as_fmt]
 		en = Continues as %@
 		comment = Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle
 		pl = Kontynuuje jako %@
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_details_controller.last_report_fmt]
 		en = Last report: %@
 		comment = Last report: <TIME>
 		pl = Ostatni raport: %@
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_details_controller.service_alerts.header]
 		en = Service Alerts
 		comment = Service alerts header in the trip details controller.
 		pl = Komunikaty o stanie sieci
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_details_controller.service_alerts_footer]
 		en = Trip Details
 		comment = Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.
 		pl = Szczegóły kursu
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_details_controller.starts_as_fmt]
 		en = Starts as %@
 		comment = Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle
 		pl = Rozpoczyna jako %@
-		fr-CA = 
+		fr = 
+		es =  
 	[user_activity_builder.show_me_my_bus]
 		en = Show me my bus
 		comment = Suggested invocation phrase for Siri Shortcut
 		pl = Pokaż mój autobus
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.comments_section.section_title]
 		en = Additional comments (optional)
 		comment = The section header to a free-form comments field that the user does not have to add text to in order to submit this form.
 		pl = Dodatkowe komentarze (opcjonalne)
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.location_section.section_footer]
 		en = Sharing your location can help your transit agency fix this problem.
 		comment = Footer text of the Share Location section in the Vehicle Problem Controller
 		pl = Udostępnienie swojej lokalizacji pozwoli Twojemu przewoźnikowi poprawić ten problem.
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.location_section.section_title]
 		en = Share your location?
 		comment = Title of the Share Location section in the Vehicle Problem Controller.
 		pl = Udostępnić swoją lokalizację?
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.location_section.switch_title]
 		en = Share location
 		comment = Title of the Share Location switch
 		pl = Udostępnianie lokalizacji
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.on_vehicle_section.section_title]
 		en = Are you on this vehicle?
 		comment = Title of the 'on the vehicle' section in the Vehicle Problem Controller.
 		pl = Jesteś w tym pojeździe?
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.on_vehicle_section.switch_title]
 		en = On the vehicle
 		comment = Title of the 'on the vehicle' switch in the Vehicle Problem Controller.
 		pl = W pojeździe
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.on_vehicle_section.vehicle_id_title]
 		en = Vehicle ID
 		comment = Title of the vehicle ID text field in the Vehicle Problem Controller.
 		pl = Numer boczny pojazdu
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.problem_section.row_label]
 		en = Pick one
 		comment = Title label for the 'choose a problem type' row.
 		pl = Wybierz
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.problem_section.section_title]
 		en = What seems to be the problem?
 		comment = Title of the first section in the Vehicle Problem Controller.
 		pl = Na czym polega problem?
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.send_button]
 		en = Send Message
 		comment = The 'send' button that actually sends along the problem report.
 		pl = Wyślij wiadomość
-		fr-CA = 
+		fr = 
+		es =  
 	[vehicle_problem_controller.title]
 		en = Report a Problem
 		comment = Title for the Report Vehicle Problem controller
 		pl = Zgłaszanie problemu
-		fr-CA = 
+		fr = 
+		es =  
 	[walk_time_view.distance_time_fmt]
 		en = %1$@, %2$@: arriving at %3$@
 		comment = Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.
 		pl = %1$@, %2$@: przyjedzie %3$@
-		fr-CA = 
+		fr = 
+		es =  

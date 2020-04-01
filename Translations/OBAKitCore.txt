@@ -3,302 +3,362 @@
 		en = Back
 		comment = Back, as in 'back to the previous screen.'
 		pl = Powrót
-		fr-CA = 
+		fr = 
+		es =  
 	[common.bookmark]
 		en = Bookmark
 		comment = The verb 'to bookmark'.
 		pl = Zakładka
-		fr-CA = 
+		fr = 
+		es =  
 	[common.cancel]
 		en = Cancel
 		comment = The verb 'to cancel', i.e. to stop an action.
 		pl = Anuluj
-		fr-CA = 
+		fr = 
+		es =  
 	[common.close]
 		en = Close
 		comment = The verb 'to close'.
 		pl = Zamknij
-		fr-CA = 
+		fr = 
+		es =  
 	[common.continue]
 		en = Continue
 		comment = The verb 'to continue'.
 		pl = Kontynuuj
-		fr-CA = 
+		fr = 
+		es =  
 	[common.delete]
 		en = Delete
 		comment = The verb 'to delete', as in to destroy something.
 		pl = Usuń
-		fr-CA = 
+		fr = 
+		es =  
 	[common.dismiss]
 		en = Dismiss
 		comment = The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.
 		pl = Odwołaj
-		fr-CA = 
+		fr = 
+		es =  
 	[common.done]
 		en = Done
 		comment = Past participle of 'do'. As in 'I am done' or 'I am finished.'
 		pl = Gotowe
-		fr-CA = 
+		fr = 
+		es =  
 	[common.edit]
 		en = Edit
 		comment = The verb 'to edit', as in to change or modify something. Used as a button title.
 		pl = Edytować
-		fr-CA = 
+		fr = 
+		es =  
 	[common.empty_bookmark_set.body]
 		en = Add a bookmark for a stop or trip to easily access it here.
 		comment = Body for the bookmark empty set indicator.
 		pl = Dodaj zakładkę dla przystanku lub kursu, aby ułatwić do nich dostęp.
-		fr-CA = 
+		fr = 
+		es =  
 	[common.empty_bookmark_set.title]
 		en = No Bookmarks
 		comment = Title for the bookmark empty set indicator.
 		pl = Brak zakładek
-		fr-CA = 
+		fr = 
+		es =  
 	[common.error]
 		en = Error
 		comment = The noun 'error', as in 'something went wrong'.
 		pl = Błąd
-		fr-CA = 
+		fr = 
+		es =  
 	[common.filter]
 		en = Filter
 		comment = The verb 'to filter'.
 		pl = Filtruj
-		fr-CA = 
+		fr = 
+		es =  
 	[common.learn_more]
 		en = Learn More
 		comment = This is button text that tells the user they can tap on it to learn more about the topic at hand.
 		pl = Dowiedz się więcej
-		fr-CA = 
+		fr = 
+		es =  
 	[common.loading]
 		en = Loading…
 		comment = Used to indicate that content is loading.
 		pl = Ładowanie…
-		fr-CA = 
+		fr = 
+		es =  
 	[common.map]
 		en = Map
 		comment = The noun for a map.
 		pl = Mapa
-		fr-CA = 
+		fr = 
+		es =  
 	[common.ok]
 		en = OK
 		comment = OK
 		pl = OK
-		fr-CA = 
+		fr = 
+		es =  
 	[common.recent_stops]
 		en = Recent Stops
 		comment = i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station.
 		pl = Ostatnie przystanki
-		fr-CA = 
+		fr = 
+		es =  
 	[common.refresh]
 		en = Refresh
 		comment = The verb 'refresh', as in 'reload'.
 		pl = Odśwież
-		fr-CA = 
+		fr = 
+		es =  
 	[common.save]
 		en = Save
 		comment = The verb 'save', as in 'save data'.
 		pl = Zapisz
-		fr-CA = 
+		fr = 
+		es =  
 	[common.scheduled_not_real_time]
 		en = Scheduled/not real-time
 		comment = Explains that this is departure comes from schedule data, not from a real-time vehicle location.
 		pl = Planowo/bez GPS
-		fr-CA = 
+		fr = 
+		es =  
 	[common.settings]
 		en = Settings
 		comment = A noun referring to a collection of options for adjusting app behavior.
 		pl = Ustawienia
-		fr-CA = 
+		fr = 
+		es =  
 	[common.skip]
 		en = Skip
 		comment = The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'
 		pl = Pomiń
-		fr-CA = 
+		fr = 
+		es =  
 	[common.updated_at_fmt]
 		en = Updated: %@
 		comment = A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.
 		pl = Aktualizowano: %@
-		fr-CA = 
+		fr = 
+		es =  
 	[common.updating]
 		en = Updating…
 		comment = Used to tell the user that the UI they are looking at is actively being updated with new data from the server.
 		pl = Aktualizacja…
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.arrived_x_min_ago_fmt]
 		en = Arrived %d min ago
 		comment = Use for vehicles that arrived X minutes ago.
 		pl = Przyejchał %d min temu
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.arrives_in_x_min_fmt]
 		en = Arrives in %d min
 		comment = Use for vehicles arriving in X minutes.
 		pl = Przyjeżdża za %d min
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.arriving_now]
 		en = Arriving now
 		comment = Use for vehicles arriving now.
 		pl = Przyjeżdża teraz
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.east]
 		en = Eastbound
 		comment = Headed in an eastern direction
 		pl = w kier. wschodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.north]
 		en = Northbound
 		comment = Headed in a northern direction
 		pl = w kier. północnym
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.northeast]
 		en = NE bound
 		comment = Headed in a northeastern direction
 		pl = w kier. północno-wschodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.northwest]
 		en = NW bound
 		comment = Headed in a northwestern direction
 		pl = w kier. północno-zachodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.south]
 		en = Southbound
 		comment = Headed in a southern direction
 		pl = w kier. południowym
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.southeast]
 		en = SE bound
 		comment = Headed in an southeastern direction
 		pl = w kier. południowo-wschodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.southwest]
 		en = SW bound
 		comment = Headed in a southwestern direction
 		pl = w kier. południowo-zachodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_adjective.west]
 		en = Westbound
 		comment = Headed in a western direction
 		pl = w kier. zachodnim
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.east]
 		en = E
 		comment = Abbreviation for East
 		pl = wsch.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.north]
 		en = N
 		comment = Abbreviation for North
 		pl = półn.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.northeast]
 		en = NE
 		comment = Abbreviation for Northeast
 		pl = półn.-wsch.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.northwest]
 		en = NW
 		comment = Abbreviation for Northwest
 		pl = półn.-zach.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.south]
 		en = S
 		comment = Abbreviation for South
 		pl = połud.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.southeast]
 		en = SE
 		comment = Abbreviation for Southeast
 		pl = połud.-wsch.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.southwest]
 		en = SW
 		comment = Abbreviation for Southwest
 		pl = połud.-zach.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.cardinal_direction_abbrev.west]
 		en = W
 		comment = Abbreviation for West
 		pl = zach.
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.date_range_fmt]
 		en = %1$@ — %2$@
 		comment = Represents a timeframe. e.g. 9:00 AM — 11:00 AM.
 		pl = %1$@ — %2$@
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.departed_x_min_ago_fmt]
 		en = Departed %d min ago
 		comment = Use for vehicles that departed X minutes ago.
 		pl = Odjechał %d min temu
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.departing_now]
 		en = Departing now
 		comment = Use for vehicles departing now.
 		pl = Odjeżdża teraz
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.departs_in_x_min_fmt]
 		en = Departs in %d min
 		comment = Use for vehicles departing in X minutes.
 		pl = Odjeżdża za %d min
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_future_early_fmt]
 		en = arrives %d min early
 		comment = Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = przyjedzie %d min wcześniej
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_future_late_fmt]
 		en = arrives %d min late
 		comment = Format string for describing a late future arrival schedule deviation. e.g. arrives 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = przyjedzie %d min później
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_future_on_time]
 		en = arrives on time
 		comment = Describes an on-time arrival. e.g. arrives on time.
 		pl = przyjedzie na czas
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_past_early_fmt]
 		en = arrived %d min early
 		comment = Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = przyjechał %d min wcześniej
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_past_late_fmt]
 		en = arrived %d min late
 		comment = Format string for describing a late arrival schedule deviation. e.g. Arrived 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = przyjechał %d min później
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.arrival_past_on_time]
 		en = arrived on time
 		comment = Describes an on-time arrival. e.g. arrived on time.
 		pl = przyjechał na czas
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departs_future_on_time]
 		en = departs on time
 		comment = Describes an on-time departure. e.g. departs on time.
 		pl = odjedzie na czas
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departure_future_early_fmt]
 		en = departs %d min early
 		comment = Format string for describing an early future departure schedule deviation. e.g. departs 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = odjedzie %d min wcześniej
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departure_future_late_fmt]
 		en = departs %d min late
 		comment = Format string for describing a late future departure schedule deviation. e.g. departs 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = odjedzie %d min później
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departure_past_early_fmt]
 		en = departed %d min early
 		comment = Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = odjechał %d min wcześniej
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departure_past_late_fmt]
 		en = departed %d min late
 		comment = Format string for describing a late departure schedule deviation. e.g. Departed 3 min late. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.
 		pl = odjechał %d min później
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.deviation.departure_past_on_time]
 		en = departed on time
 		comment = Describes an on-time departure. e.g. departed on time.
 		pl = odjechał na czas
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.now]
 		en = NOW
 		comment = Short formatted time text for arrivals/departures occurring now.
@@ -306,33 +366,39 @@
 	[formatters.one_minute]
 		en = One minute
 		pl = 
-		fr-CA = 
+		fr = 
+		es =  
 		comment = Formatted time text for arrivals/departures that occur in one minute.
 	[formatters.one_minute_ago]
 		en = One minute ago
 		pl = 
-		fr-CA = 
+		fr = 
+		es =  
 		comment = Formatted time text for arrivals/departures that occurred one minute ago.
 	[formatters.routes_label_fmt]
 		en = Routes: %@
 		comment = A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'
 		pl = Linie: %@
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.search_bar_placeholder_fmt]
 		en = Search in %@
 		comment = Placeholder text for the search bar: 'Search in {REGION NAME}'
 		pl = Szukaj w %@
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.short_time_fmt]
 		en = %dm
 		comment = Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.
 		pl = %dm
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.stop.stop_code_non_numeric]
 		en = Stop: '%@'
 		comment = Format string representing a non-numeric stop number. e.g. Stop: 'Old Library'
 		pl = Przystanek: '%@'
-		fr-CA = 
+		fr = 
+		es =  
 	[formatters.stop.stop_code_numeric]
 		en = Stop #%@
 		comment = Format string representing a numeric stop number. e.g. Stop #1234
@@ -340,60 +406,72 @@
 	[formatters.time_fmt]
 		en = %d minutes
 		pl = 
-		fr-CA = 
+		fr = 
+		es =  
 		comment = Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.
 	[stop_problem_code.user_description.location_wrong]
 		en = Location is wrong
 		comment = User-facing string that means the location of the stop on the map is wrong.
 		pl = Lokalizacja jest niewłaściwa
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_code.user_description.name_wrong]
 		en = Name is wrong
 		comment = User-facing string that means the name of the stop is wrong.
 		pl = Nazwa jest niewłaściwa
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_code.user_description.number_wrong]
 		en = Number is wrong
 		comment = User-facing string that means the number/ID of the stop is wrong.
 		pl = Symbol nie niewłaściwy
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_code.user_description.other]
 		en = Other
 		comment = User-facing string that means that something else is wrong
 		pl = Inne
-		fr-CA = 
+		fr = 
+		es =  
 	[stop_problem_code.user_description.route_or_trip_missing]
 		en = Route or scheduled trip is missing
 		comment = User-facing string that means our data is wrong about a route or a scheduled trip
 		pl = Brak linii lub planowanego kursu
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.came_early]
 		en = Came early
 		comment = User-facing string that means the vehicle came early.
 		pl = Przyjechał wcześniej
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.came_late]
 		en = Came late
 		comment = User-facing string that means the vehicle came late.
 		pl = Przyjechał później
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.does_not_stop_here]
 		en = Does not stop here
 		comment = User-facing string that means the vehicle does not stop here.
 		pl = Nie zatrzymuje się tutaj
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.never_came]
 		en = Never came
 		comment = User-facing string that means the vehicle never came.
 		pl = Nie przyjechał
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.other]
 		en = Other
 		comment = User-facing string that means that something else is wrong
 		pl = Inny
-		fr-CA = 
+		fr = 
+		es =  
 	[trip_problem_code.user_description.wrong_headsign]
 		en = Wrong headsign
 		comment = User-facing string that means the vehicle headsign was wrong.
 		pl = Zły kierunek kursu
-		fr-CA = 
+		fr = 
+		es =  
