@@ -8,21 +8,21 @@
 import UIKit
 import MapKit
 import Contacts
-import AloeStackView
 import SafariServices
 import OBAKitCore
+import IGListKit
 
-class RouteStopsViewController: UIViewController, AloeStackTableBuilder, Scrollable {
+class RouteStopsViewController: UIViewController,
+    AppContext,
+    ListAdapterDataSource,
+    Scrollable {
+
     /// The OBA application object
-    private let application: Application
+    let application: Application
 
     lazy var titleView = FloatingPanelTitleView.autolayoutNew()
 
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.groupedTableBackground
-    )
-
-    var scrollView: UIScrollView { stackView }
+    var scrollView: UIScrollView { collectionController.collectionView }
 
     private let stopsForRoute: StopsForRoute
 
@@ -45,29 +45,43 @@ class RouteStopsViewController: UIViewController, AloeStackTableBuilder, Scrolla
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
         titleView.titleLabel.text = stopsForRoute.route.shortName
         titleView.subtitleLabel.text = stopsForRoute.route.longName
         titleView.closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        stackView.addRow(titleView)
-        stackView.hideSeparator(forRow: titleView)
-
-        addGroupedTableHeaderToStack(headerText: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."))
-
-        for stop in stopsForRoute.stops {
-            let row = SubtitleTableRowView(title: stop.name, subtitle: Formatters.adjectiveFormOfCardinalDirection(stop.direction) ?? "", accessoryType: .disclosureIndicator)
-            addGroupedTableRowToStack(row)
-            stackView.setTapHandler(forRow: row) { [weak self] _ in
-                guard let self = self else { return }
-                self.show(stop: stop)
-            }
+        prepareChildController(collectionController) {
+            let stack = UIStackView.verticalStack(arrangedSubviews: [
+                titleView, collectionController.view
+            ])
+            view.addSubview(stack)
+            stack.pinToSuperview(.edges)
         }
     }
 
-    private func show(stop: Stop) {
-        application.viewRouter.navigateTo(stop: stop, from: self)
+    // MARK: - IGListKit
+
+    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        let rows = stopsForRoute.stops.map { stop -> TableRowData in
+            return TableRowData(title: stop.name, subtitle: Formatters.adjectiveFormOfCardinalDirection(stop.direction) ?? "", accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                self.application.viewRouter.navigateTo(stop: stop, from: self)
+            }
+        }
+
+        return [TableSectionData(title: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."), rows: rows)]
     }
+
+    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
+    }
+
+    func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
+    }
+
+    private lazy var collectionController: CollectionController = {
+        let controller = CollectionController(application: application, dataSource: self)
+        controller.collectionView.showsVerticalScrollIndicator = false
+        return controller
+    }()
 }

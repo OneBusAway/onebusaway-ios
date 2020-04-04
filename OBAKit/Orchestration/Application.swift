@@ -398,9 +398,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         BorderedButton.appearance().setTitleColor(ThemeColors.shared.lightText, for: .normal)
         BorderedButton.appearance().tintColor = ThemeColors.shared.brand
 
-        FloatingPanelTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .title2).bold
-        FloatingPanelTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .body)
-
         HighlightChangeLabel.appearance().highlightedBackgroundColor = ThemeColors.shared.propertyChanged
 
         StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)

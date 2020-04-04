@@ -64,11 +64,11 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
         case .address:
             subtitleFormat = OBALoc("search_results_controller.subtitle.address_fmt", value: "%@", comment: "A format string for address searches. In English, this is just the address itself without any adornment.")
         case .route:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.route_fmt", value: "Route %@", comment: "A format string for address searches. e.g. in english: Route search: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.route_fmt", value: "Route %@", comment: "A format string for route searches. e.g. in english: Route \"{SEARCH TEXT}\"")
         case .stopNumber:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.stop_number_fmt", value: "Stop number %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.stop_number_fmt", value: "Stop number %@", comment: "A format string for stop number searches. e.g. in english: Stop number \"{SEARCH TEXT}\"")
         case .vehicleID:
-            subtitleFormat = OBALoc("search_results_controller.subtitle.vehicle_id_fmt", value: "Vehicle ID %@", comment: "A format string for stop number searches. e.g. in english: Stop number: \"{SEARCH TEXT}\"")
+            subtitleFormat = OBALoc("search_results_controller.subtitle.vehicle_id_fmt", value: "Vehicle ID %@", comment: "A format string for vehicle ID searches. e.g. in english: Vehicle ID \"{SEARCH TEXT}\"")
         }
         return String(format: subtitleFormat, searchResponse.request.query)
     }

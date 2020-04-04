@@ -14,27 +14,19 @@ public class FloatingPanelTitleView: UIView {
 
     // MARK: - Labels
 
-    @objc dynamic var titleFont: UIFont {
-        get { titleLabel.font }
-        set { titleLabel.font = newValue }
-    }
-
     public let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
+        label.font = UIFont.preferredFont(forTextStyle: .title1).bold
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
 
-    @objc dynamic var subtitleFont: UIFont {
-        get { subtitleLabel.font }
-        set { subtitleLabel.font = newValue }
-    }
-
     public let subtitleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.numberOfLines = 0
+        label.font = UIFont.preferredFont(forTextStyle: .body)
         return label
     }()
 
@@ -51,9 +43,10 @@ public class FloatingPanelTitleView: UIView {
         button.setContentHuggingPriority(.required, for: .horizontal)
         button.setContentCompressionResistancePriority(.required, for: .vertical)
         NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: 30.0),
-            button.widthAnchor.constraint(equalToConstant: 30.0)
+            button.heightAnchor.constraint(equalToConstant: 40.0),
+            button.widthAnchor.constraint(equalToConstant: 40.0)
         ])
+        button.imageEdgeInsets = UIEdgeInsets(top: ThemeMetrics.padding, left: ThemeMetrics.padding, bottom: ThemeMetrics.padding, right: ThemeMetrics.padding)
         return button
     }()
 
@@ -71,12 +64,23 @@ public class FloatingPanelTitleView: UIView {
 
     // MARK: - Config
 
+    private let kUseDebugColors = false
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
         let topStack = UIStackView.horizontalStack(arrangedSubviews: [labelStackWrapper, closeButtonWrapper])
         addSubview(topStack)
-        topStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset * 2.0, leading: 0, bottom: 0, trailing: 0))
+        topStack.pinToSuperview(.layoutMargins)
+
+        if kUseDebugColors {
+            titleLabel.backgroundColor = .red
+            subtitleLabel.backgroundColor = .purple
+            labelStackWrapper.backgroundColor = .yellow
+            closeButton.backgroundColor = .blue
+            closeButtonWrapper.backgroundColor = .green
+            backgroundColor = .magenta
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
