@@ -11,7 +11,6 @@ import CoreLocation
 import OBAKitCore
 
 class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>,
-    AppContext,
     ListAdapterDataSource,
     ListKitStopConverters,
     UISearchResultsUpdating {

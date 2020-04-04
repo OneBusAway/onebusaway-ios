@@ -15,7 +15,6 @@ import OBAKitCore
 ///
 /// - Note: This view controller expects to be presented modally.
 class ReportProblemViewController: OperationController<StopArrivalsModelOperation, StopArrivals>,
-    AppContext,
     HasTableStyle,
     ListAdapterDataSource {
 

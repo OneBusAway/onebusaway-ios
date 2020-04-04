@@ -8,7 +8,7 @@
 import UIKit
 
 /// A base class for view controllers that load data from an operation and display it on-screen.
-class OperationController<OperationType, DataType>: UIViewController where OperationType: Operation {
+class OperationController<OperationType, DataType>: UIViewController, AppContext where OperationType: Operation {
     let application: Application
 
     var operation: OperationType?

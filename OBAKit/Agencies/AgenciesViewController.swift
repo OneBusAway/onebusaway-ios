@@ -11,7 +11,7 @@ import SafariServices
 import OBAKitCore
 
 /// Loads and displays a list of agencies in the current region.
-class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, AppContext, ListAdapterDataSource {
+class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, ListAdapterDataSource {
 
     override init(application: Application) {
         super.init(application: application)
