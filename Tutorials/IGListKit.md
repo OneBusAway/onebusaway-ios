@@ -23,10 +23,25 @@ Make the controller conform to `AppContext` and `ListAdapterDataSource`:
         }
     }
 
-
 ## Add a collection controller
 
-Optionally, you can include a refresh control, too, if that matches your expectations for this UI.
+Use the `CollectionController` class to easily create a `UICollectionView` configured for use with IGListKit.
+
+    // MARK: - Collection Controller
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self)
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
+    }
+
+### Refresh Control
+
+You can include a refresh control with your collection view, if that matches your expectations for the UI you are building.
 
     // MARK: - Collection Controller
 
@@ -42,8 +57,6 @@ Optionally, you can include a refresh control, too, if that matches your expecta
         // todo - reload data
     }
 
-## Display the collection controller
-
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -52,6 +65,7 @@ Optionally, you can include a refresh control, too, if that matches your expecta
         collectionController.view.pinToSuperview(.edges)
         collectionController.collectionView.addSubview(refreshControl)
     }
+    
 
 # IGListKit Cells
 
