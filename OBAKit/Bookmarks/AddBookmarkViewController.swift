@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import AloeStackView
+import IGListKit
 import OBAKitCore
 
 protocol BookmarkEditorDelegate: NSObjectProtocol {
@@ -17,13 +17,9 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
 /// The entry-point view controller for creating a new bookmark.
 ///
 /// - Note: This controller expects to be presented modally.
-class AddBookmarkViewController: OperationController<StopArrivalsModelOperation, [ArrivalDeparture]>, AloeStackTableBuilder {
+class AddBookmarkViewController: OperationController<StopArrivalsModelOperation, [ArrivalDeparture]>, HasTableStyle, ListAdapterDataSource {
     private let stop: Stop
     private weak var delegate: BookmarkEditorDelegate?
-
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.groupedTableBackground
-    )
 
     /// This is the default initializer for `AddBookmarkViewController`.
     /// - Parameter application: The application object
@@ -47,8 +43,65 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
+        view.backgroundColor = ThemeColors.shared.systemBackground
+        addChildController(collectionController)
+        collectionController.view.pinToSuperview(.edges)
+    }
+
+    // MARK: - IGListKit
+
+    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
+
+    let tableStyle = TableCollectionStyle.grouped
+
+    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        var sections = [wholeStopBookmarkSection]
+
+        if let tripBookmarkSection = tripBookmarkSection {
+            sections.append(tripBookmarkSection)
+        }
+
+        return sections
+    }
+
+    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
+    }
+
+    func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
+    }
+
+    private var wholeStopBookmarkSection: TableSectionData {
+        let row = TableRowData(title: Formatters.formattedTitle(stop: stop), accessoryType: .disclosureIndicator) { [weak self] _ in
+            guard let self = self else { return }
+
+            let editStopController = EditBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
+            self.navigationController?.pushViewController(editStopController, animated: true)
+        }
+        return TableSectionData(title: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."), rows: [row])
+    }
+
+    private var tripBookmarkSection: TableSectionData? {
+        guard
+            let groupedElts = data?.tripKeyGroupedElements,
+            let tripKeys = data?.uniqueTripKeys,
+            tripKeys.count > 0
+        else { return nil }
+
+        var rows = [TableRowData]()
+
+        for key in tripKeys {
+            let arrDep = groupedElts[key]?.first
+            let row = TableRowData(title: key.routeAndHeadsign, accessoryType: .disclosureIndicator) { [weak self] _ in
+                guard let self = self else { return }
+                let editController = EditBookmarkViewController(application: self.application, arrivalDeparture: arrDep!, bookmark: nil, delegate: self.delegate)
+                self.navigationController?.pushViewController(editController, animated: true)
+            }
+            rows.append(row)
+        }
+
+        return TableSectionData(title: OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip."), rows: rows)
     }
 
     // MARK: - Data and UI
@@ -66,45 +119,7 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
     }
 
     override func updateUI() {
-        addWholeStopBookmarkSection()
-        addTripBookmarkSection()
-    }
-
-    // MARK: - UI Builders
-
-    private func addWholeStopBookmarkSection() {
-        addGroupedTableHeaderToStack(headerText: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."))
-        let stopRow = DefaultTableRowView(title: Formatters.formattedTitle(stop: stop), accessoryType: .disclosureIndicator)
-        addGroupedTableRowToStack(stopRow, isLastRow: true) { [weak self] _ in
-            guard let self = self else { return }
-
-            let editStopController = EditBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
-            self.navigationController?.pushViewController(editStopController, animated: true)
-        }
-    }
-
-    private func addTripBookmarkSection() {
-        guard
-            let groupedElts = data?.tripKeyGroupedElements,
-            let tripKeys = data?.uniqueTripKeys,
-            tripKeys.count > 0
-        else { return }
-
-        addGroupedTableHeaderToStack(headerText: OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip."))
-
-        for key in tripKeys {
-            let arrDep = groupedElts[key]?.first
-            let tripRow = DefaultTableRowView(title: key.routeAndHeadsign, accessoryType: .disclosureIndicator)
-            addGroupedTableRowToStack(tripRow, isLastRow: false) { [weak self] _ in
-                guard let self = self else { return }
-                let editController = EditBookmarkViewController(application: self.application, arrivalDeparture: arrDep!, bookmark: nil, delegate: self.delegate)
-                self.navigationController?.pushViewController(editController, animated: true)
-            }
-        }
-
-        if let lastRow = stackView.lastRow {
-            stackView.setSeparatorInset(forRow: lastRow, inset: .zero)
-        }
+        collectionController.reload(animated: false)
     }
 
     // MARK: - Actions
