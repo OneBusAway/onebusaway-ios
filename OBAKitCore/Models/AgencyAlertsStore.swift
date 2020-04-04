@@ -11,7 +11,7 @@ import Foundation
     @objc optional func agencyAlertsUpdated()
 }
 
-public class AgencyAlertsStore: NSObject {
+public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     public var restModelService: RESTAPIModelService?
     public var obacoModelService: ObacoModelService?
 
@@ -22,21 +22,42 @@ public class AgencyAlertsStore: NSObject {
         static let readAgencyAlertIDs = "readAgencyAlertIDs"
     }
 
-    public init(userDefaults: UserDefaults) {
+    public init(userDefaults: UserDefaults, regionsService: RegionsService) {
         self.userDefaults = userDefaults
         self.userDefaults.register(defaults: [
             UserDefaultKeys.displayRegionalTestAlerts: false
         ])
+
+        self.regionsService = regionsService
+
+        super.init()
+
+        self.regionsService.addDelegate(self)
     }
 
     deinit {
+        cancelAllOperations()
+    }
+
+    // MARK: - Regions Service
+
+    private let regionsService: RegionsService
+
+    public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        cancelAllOperations()
+        deleteAgencyAlerts()
+        checkForUpdates()
+    }
+
+    // MARK: - Updates
+
+    /// Cancels all pending data operations.
+    private func cancelAllOperations() {
         agenciesOperation?.cancel()
         regionalAlertsOperation?.cancel()
         obacoOperation?.cancel()
         queue.cancelAllOperations()
     }
-
-    // MARK: - Updates
 
     private var agenciesOperation: AgenciesWithCoverageModelOperation?
 
@@ -155,6 +176,17 @@ public class AgencyAlertsStore: NSObject {
             for alert in agencyAlerts {
                 self.alerts.insert(alert)
             }
+        }
+    }
+
+    /// Deletes all local data. Useful in preparation for changing the region.
+    private func deleteAgencyAlerts() {
+        queue.addOperation { [weak self] in
+            guard let self = self else { return }
+            self.userDefaults.set([], forKey: UserDefaultKeys.readAgencyAlertIDs)
+            self.agencies.removeAll()
+            self.readAlertIDs.removeAll()
+            self.alerts.removeAll()
         }
     }
 

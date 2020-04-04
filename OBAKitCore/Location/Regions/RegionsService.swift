@@ -14,6 +14,7 @@ import CocoaLumberjackSwift
 public protocol RegionsServiceDelegate: NSObjectProtocol {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
+    @objc optional func regionsService(_ service: RegionsService, willUpdateToRegion region: Region)
     @objc optional func regionsService(_ service: RegionsService, updatedRegion region: Region)
     @objc optional func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool)
 
@@ -92,6 +93,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     private func notifyDelegatesRegionChanged(_ region: Region) {
+        for delegate in delegates.allObjects {
+            delegate.regionsService?(self, willUpdateToRegion: region)
+        }
+
         for delegate in delegates.allObjects {
             delegate.regionsService?(self, updatedRegion: region)
         }

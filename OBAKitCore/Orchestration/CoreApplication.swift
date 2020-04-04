@@ -88,7 +88,7 @@ open class CoreApplication: NSObject,
         return userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
     }
 
-    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults)
+    public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)
 
     // MARK: - LocationServiceDelegate
 
@@ -167,8 +167,12 @@ open class CoreApplication: NSObject,
         return RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
     }()
 
-    open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+    open func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {
         refreshRESTAPIModelService()
         refreshObacoService()
+    }
+
+    open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
+        // nop
     }
 }
