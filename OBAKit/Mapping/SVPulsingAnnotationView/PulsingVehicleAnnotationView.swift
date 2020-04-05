@@ -24,12 +24,8 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
 
         canShowCallout = true
         isUserInteractionEnabled = false
-    }
 
-    override var tintColor: UIColor! {
-        didSet {
-            imageView.tintColor = tintColor
-        }
+        imageView.tintColor = .white
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -87,29 +83,11 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
         headingImageView.isHidden = false
     }
 
-    // MARK: - UIAppearance
+    // MARK: - Appearance
 
     /// The annotation color for a vehicle with available real-time data.
-    @objc dynamic var realTimeAnnotationColor: UIColor {
-        get { return _realTimeAnnotationColor }
-        set {
-            _realTimeAnnotationColor = newValue
-            if isRealTime {
-                annotationColor = newValue
-            }
-        }
-    }
-    private var _realTimeAnnotationColor: UIColor = .green
+    public var realTimeAnnotationColor: UIColor = ThemeColors.shared.brand
 
     /// The annotation color for a vehicle without available real-time data.
-    @objc dynamic var scheduledAnnotationColor: UIColor {
-        get { return _scheduledAnnotationColor }
-        set {
-            _scheduledAnnotationColor = newValue
-            if !isRealTime {
-                annotationColor = newValue
-            }
-        }
-    }
-    private var _scheduledAnnotationColor: UIColor = .gray
+    public var scheduledAnnotationColor: UIColor = ThemeColors.shared.gray
 }

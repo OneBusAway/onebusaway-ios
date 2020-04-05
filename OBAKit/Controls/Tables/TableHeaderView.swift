@@ -6,11 +6,17 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A view that approximates the appearance of a UITableView section header.
 ///
 public class TableHeaderView: UIView {
-    private let textLabel = UILabel.autolayoutNew()
+    private let textLabel: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.textColor = ThemeColors.shared.secondaryLabel
+        return label
+    }()
 
     public var text: String? {
         get {
@@ -26,16 +32,6 @@ public class TableHeaderView: UIView {
                 textLabel.accessibilityLabel = nil
             }
         }
-    }
-
-    @objc public dynamic var font: UIFont {
-        get { return textLabel.font }
-        set { textLabel.font = newValue }
-    }
-
-    @objc public dynamic var textColor: UIColor {
-        get { return textLabel.textColor }
-        set { textLabel.textColor = newValue }
     }
 
     public override init(frame: CGRect) {

@@ -388,56 +388,13 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// configured with at launch or simply don't call this method and set up your own `UIAppearance`
     /// proxies instead.
     private func configureAppearanceProxies() {
-        let tintColor = ThemeColors.shared.brand
-        let tintColorTypes = [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self]
-
-        for t in tintColorTypes {
-            t.appearance().tintColor = tintColor
+        for t in [UIWindow.self, UINavigationBar.self, UISearchBar.self, UISegmentedControl.self, UITabBar.self, UITextField.self, UIButton.self] {
+            t.appearance().tintColor = ThemeColors.shared.brand
         }
-
-        BorderedButton.appearance().setTitleColor(ThemeColors.shared.lightText, for: .normal)
-        BorderedButton.appearance().tintColor = ThemeColors.shared.brand
-
-        HighlightChangeLabel.appearance().highlightedBackgroundColor = ThemeColors.shared.propertyChanged
-
-        StackedTitleView.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
-        StackedTitleView.appearance().titleFont = UIFont.preferredFont(forTextStyle: .footnote).bold
-
-        StatusOverlayView.appearance().innerPadding = ThemeMetrics.padding
-        StatusOverlayView.appearance().textColor = ThemeColors.shared.lightText
-
-        MinimalStopAnnotationView.appearance().annotationSize = 10.0
-        MinimalStopAnnotationView.appearance().fillColor = .white
-        MinimalStopAnnotationView.appearance().strokeColor = .gray
-        MinimalStopAnnotationView.appearance().highlightedStrokeColor = .blue
 
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
 
-        StopAnnotationView.appearance().annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        StopAnnotationView.appearance().fillColor = UIColor.white
-        StopAnnotationView.appearance().mapTextColor = ThemeColors.shared.mapText
-        StopAnnotationView.appearance().showsCallout = true
-        StopAnnotationView.appearance().strokeColor = ThemeColors.shared.stopAnnotationStrokeColor
-
-        PulsingVehicleAnnotationView.appearance().tintColor = .white
-        PulsingVehicleAnnotationView.appearance().realTimeAnnotationColor = ThemeColors.shared.brand
-        PulsingVehicleAnnotationView.appearance().scheduledAnnotationColor = ThemeColors.shared.gray
-
-        SubtitleTableCell.appearance().subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
-
-        TableHeaderView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-        TableHeaderView.appearance().textColor = ThemeColors.shared.secondaryLabel
-
-        TableSectionHeaderView.appearance().backgroundColor = ThemeColors.shared.secondaryBackgroundColor
-
-        TripSegmentView.appearance().imageColor = ThemeColors.shared.brand
-        TripSegmentView.appearance().lineColor = ThemeColors.shared.brand
-
-        WalkTimeView.appearance().font = UIFont.preferredFont(forTextStyle: .footnote)
-        WalkTimeView.appearance().backgroundBarColor = ThemeColors.shared.brand
-        WalkTimeView.appearance().textColor = ThemeColors.shared.lightText
-
-        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: tintColor], for: .normal)
+        UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: ThemeColors.shared.brand], for: .normal)
 
         // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
         UICollectionView.appearance().isPrefetchingEnabled = false

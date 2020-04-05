@@ -63,9 +63,6 @@ extension AloeStackTableBuilder where Self: UIViewController {
     func addTableHeaderToStack(headerText: String, backgroundColor: UIColor? = nil, textColor: UIColor? = nil) {
         let header = TableHeaderView.autolayoutNew()
         header.text = headerText
-        if let textColor = textColor {
-            header.textColor = textColor
-        }
         header.backgroundColor = backgroundColor ?? ThemeColors.shared.secondaryBackgroundColor
         header.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: 10, bottom: ThemeMetrics.compactPadding, trailing: 10)
         stackView.addRow(header, hideSeparator: true)

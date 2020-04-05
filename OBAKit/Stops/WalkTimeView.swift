@@ -17,6 +17,8 @@ class WalkTimeView: UIView {
     private let label: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .right
+        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.textColor = ThemeColors.shared.lightText
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -41,24 +43,8 @@ class WalkTimeView: UIView {
 
     public var formatters: Formatters!
 
-    /// The font used on the label.
-    @objc public dynamic var font: UIFont {
-        set { label.font = newValue }
-        get { return label.font }
-    }
-
-    /// The text color used on the label.
-    @objc public dynamic var textColor: UIColor {
-        set { label.textColor = newValue }
-        get { return label.textColor }
-    }
-
     /// Background color of the background bar and triangle views.
-    @objc public dynamic var backgroundBarColor: UIColor {
-        set { _backgroundBarColor = newValue }
-        get { return _backgroundBarColor }
-    }
-    private var _backgroundBarColor: UIColor = UIColor.green
+    public var backgroundBarColor = ThemeColors.shared.brand
 
     override init(frame: CGRect) {
         super.init(frame: frame)

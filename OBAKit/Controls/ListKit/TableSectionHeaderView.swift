@@ -13,20 +13,10 @@ class TableSectionHeaderView: UICollectionReusableView, Separated {
 
     let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.font = UIFont.boldSystemFont(ofSize: UIFont.systemFontSize)
+        label.font = UIFont.preferredFont(forTextStyle: .body).bold
+        label.backgroundColor = ThemeColors.shared.secondaryBackgroundColor
         return label
     }()
-
-    @objc dynamic var font: UIFont {
-        get { return textLabel.font }
-        set { textLabel.font = newValue }
-    }
-
-    override var backgroundColor: UIColor? {
-        didSet {
-            textLabel.backgroundColor = backgroundColor
-        }
-    }
 
     private lazy var bottomLabelAnchor = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
 

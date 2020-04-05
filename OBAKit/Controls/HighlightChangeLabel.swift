@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// Alerts the user when its value changes by temporarily changing its background color.
 public class HighlightChangeLabel: UILabel {
@@ -32,11 +33,7 @@ public class HighlightChangeLabel: UILabel {
     }
 
     /// This is the color that is used to highlight a value change in this label.
-    @objc dynamic var highlightedBackgroundColor: UIColor {
-        get { return _highlightedBackgroundColor }
-        set { _highlightedBackgroundColor = newValue }
-    }
-    private var _highlightedBackgroundColor: UIColor = .yellow
+    var highlightedBackgroundColor: UIColor = ThemeColors.shared.propertyChanged
 
     /// If `true`, this will cause the next invocation of `highlightBackground()` to immediately return.
     ///

@@ -59,18 +59,6 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
         set { tableRowView.data = newValue }
     }
 
-    // MARK: - UIAppearance Selectors
-
-    @objc dynamic var titleFont: UIFont {
-        get { return tableRowView.titleFont }
-        set { tableRowView.titleFont = newValue }
-    }
-
-    @objc dynamic var subtitleFont: UIFont {
-        get { return tableRowView.subtitleFont }
-        set { tableRowView.subtitleFont = newValue }
-    }
-
     // MARK: - Style
 
     public var style: TableCollectionStyle = .plain {
@@ -149,6 +137,7 @@ class SubtitleTableCell: TableRowCell {
         super.init(frame: frame)
         tableRowView = SubtitleTableRowView.autolayoutNew()
         tableRowView.heightConstraint.priority = .defaultHigh
+        tableRowView.subtitleFont = UIFont.preferredFont(forTextStyle: .footnote)
     }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 }

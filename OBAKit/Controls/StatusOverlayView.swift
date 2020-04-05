@@ -7,44 +7,16 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// An overlay view placed on top of a map to offer status text to the user, like
 /// if they need to zoom in to see stops on the map, or if their search query returned no results.
 public class StatusOverlayView: UIView {
 
-    private var _innerPadding: CGFloat = 0 {
-        didSet {
-            statusOverlay.layer.cornerRadius = _innerPadding
-            statusOverlay.contentView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: _innerPadding / 2.0, leading: _innerPadding, bottom: _innerPadding / 2.0, trailing: _innerPadding)
-        }
-    }
-    @objc dynamic var innerPadding: CGFloat {
-        get { return _innerPadding }
-        set { _innerPadding = newValue }
-    }
-
-    private var _textColor: UIColor = .white {
-        didSet {
-            statusLabel.textColor = _textColor
-        }
-    }
-    @objc dynamic var textColor: UIColor {
-        get { return _textColor }
-        set { _textColor = newValue }
-    }
-
-    private var _font: UIFont = UIFont.boldSystemFont(ofSize: UIFont.labelFontSize) {
-        didSet {
-            statusLabel.font = _font
-        }
-    }
-    @objc dynamic var font: UIFont {
-        get { return _font }
-        set { _font = newValue }
-    }
-
     public override init(frame: CGRect) {
         super.init(frame: frame)
+
+        layer.cornerRadius = ThemeMetrics.padding
 
         addSubview(statusOverlay)
         statusOverlay.pinToSuperview(.edges)
@@ -61,6 +33,7 @@ public class StatusOverlayView: UIView {
         let blurView = UIVisualEffectView(effect: UIBlurEffect(style: .dark))
         blurView.backgroundColor = UIColor.white.withAlphaComponent(0.60)
         blurView.clipsToBounds = true
+        blurView.contentView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: ThemeMetrics.padding, bottom: ThemeMetrics.compactPadding, trailing: ThemeMetrics.padding)
         return blurView
     }()
 
@@ -76,9 +49,9 @@ public class StatusOverlayView: UIView {
 
     private lazy var statusLabel: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.textColor = _textColor
         label.textAlignment = .center
-        label.font = _font
+        label.font = UIFont.preferredFont(forTextStyle: .body).bold
+        label.textColor = ThemeColors.shared.lightText
         return label
     }()
 

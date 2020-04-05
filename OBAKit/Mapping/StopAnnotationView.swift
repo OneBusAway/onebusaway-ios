@@ -75,6 +75,9 @@ class StopAnnotationView: MKAnnotationView {
         let rightCalloutButton = UIButton(type: .detailDisclosure)
         rightCalloutButton.setImage(Icons.chevron, for: .normal)
         rightCalloutAccessoryView = rightCalloutButton
+
+        annotationSize = ThemeMetrics.defaultMapAnnotationSize
+        canShowCallout = true
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -107,30 +110,16 @@ class StopAnnotationView: MKAnnotationView {
         subtitleLabel.text = stop.mapSubtitle
     }
 
-    // MARK: - UIAppearance Proxies
+    // MARK: - Appearance
 
     /// Fill color for this annotation view and its directional arrow.
-    @objc dynamic var fillColor: UIColor {
-        get { return _fillColor }
-        set { _fillColor = newValue }
-    }
-    private var _fillColor: UIColor = .white
+    public var fillColor: UIColor = ThemeColors.shared.stopAnnotationFillColor
 
     /// Stroke color for this annotation view and its directional arrow.
-    @objc dynamic var strokeColor: UIColor {
-        get { return _strokeColor }
-        set { _strokeColor = newValue }
-    }
-    private var _strokeColor: UIColor = .white
-
-    /// UIAppearance proxy-compatible version of `canShowCallout`.
-    @objc dynamic var showsCallout: Bool {
-        get { return canShowCallout }
-        set { canShowCallout = newValue }
-    }
+    public var strokeColor: UIColor = ThemeColors.shared.stopAnnotationStrokeColor
 
     /// Sets the size of the receiver, which in turn configures its bounds and the frame of its contents.
-    @objc dynamic var annotationSize: CGFloat {
+    public var annotationSize: CGFloat {
         get { return bounds.size.width }
         set {
             bounds = CGRect(x: 0, y: 0, width: newValue, height: newValue)
@@ -139,9 +128,5 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     /// Foreground color for text written directly onto the map as part of this annotation view.
-    @objc dynamic var mapTextColor: UIColor {
-        get { return _mapTextColor }
-        set { _mapTextColor = newValue }
-    }
-    private var _mapTextColor: UIColor = .black
+    public var mapTextColor: UIColor = ThemeColors.shared.mapText
 }

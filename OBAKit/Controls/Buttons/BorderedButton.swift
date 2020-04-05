@@ -15,23 +15,13 @@ public class BorderedButton: UIButton {
     override public init(frame: CGRect) {
         super.init(frame: frame)
 
-        configureButton()
-    }
-
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-
-        configureButton()
-    }
-
-    func configureButton() {
+        setTitleColor(ThemeColors.shared.lightText, for: .normal)
+        tintColor = ThemeColors.shared.brand
         contentEdgeInsets = UIEdgeInsets(top: 0, left: ThemeMetrics.padding, bottom: 0, right: ThemeMetrics.padding)
         layer.cornerRadius = 4.0
     }
 
-    public override var tintColor: UIColor! {
-        didSet {
-            backgroundColor = tintColor
-        }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError()
     }
 }

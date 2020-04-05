@@ -22,29 +22,19 @@ class StackedTitleView: UIView {
     }
 
     /// The top label on the `StackedTitleView`.
-    let titleLabel = StackedTitleView.buildLabel()
-
-    /// The font used on the title label.
-    @objc dynamic var titleFont: UIFont {
-        set { titleLabel.font = newValue }
-        get { return titleLabel.font }
-    }
+    let titleLabel = StackedTitleView.buildLabel(font: UIFont.preferredFont(forTextStyle: .footnote).bold)
 
     /// The bottom label on the `StackedTitleView`.
-    let subtitleLabel = StackedTitleView.buildLabel()
-
-    @objc dynamic var subtitleFont: UIFont {
-        set { subtitleLabel.font = newValue }
-        get { return subtitleLabel.font }
-    }
+    let subtitleLabel = StackedTitleView.buildLabel(font: UIFont.preferredFont(forTextStyle: .footnote))
 
     private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
-    private class func buildLabel() -> UILabel {
+    private class func buildLabel(font: UIFont) -> UILabel {
         let label = UILabel.autolayoutNew()
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.textAlignment = .center
+        label.font = font
         label.allowsDefaultTighteningForTruncation = true
 
         return label

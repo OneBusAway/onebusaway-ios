@@ -21,18 +21,10 @@ public class TripSegmentView: UIView {
     private let imageInset: CGFloat = 5.0
 
     /// This is the color that is used to highlight a value change in this label.
-    @objc public dynamic var lineColor: UIColor {
-        get { return _lineColor }
-        set { _lineColor = newValue }
-    }
-    private var _lineColor: UIColor = .gray
+    public var lineColor: UIColor = ThemeColors.shared.brand
 
     /// This is the color that is used to highlight a value change in this label.
-    @objc public dynamic var imageColor: UIColor {
-        get { return _imageColor }
-        set { _imageColor = newValue }
-    }
-    private var _imageColor: UIColor = .green
+    public var imageColor: UIColor = ThemeColors.shared.brand
 
     override init(frame: CGRect) {
         super.init(frame: frame)
