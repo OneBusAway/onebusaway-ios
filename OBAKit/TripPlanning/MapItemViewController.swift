@@ -8,21 +8,21 @@
 import UIKit
 import MapKit
 import Contacts
-import AloeStackView
+import IGListKit
 import SafariServices
 import OBAKitCore
 
-class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable {
+class MapItemViewController: UIViewController,
+    AppContext,
+    ListAdapterDataSource,
+    Scrollable {
+
     /// The OBA application object
-    private let application: Application
+    let application: Application
 
     lazy var titleView = FloatingPanelTitleView.autolayoutNew()
 
-    lazy var stackView = AloeStackView.autolayoutNew(
-        backgroundColor: ThemeColors.shared.groupedTableBackground
-    )
-
-    var scrollView: UIScrollView { stackView }
+    var scrollView: UIScrollView { collectionController.collectionView }
 
     private let mapItem: MKMapItem
 
@@ -45,48 +45,76 @@ class MapItemViewController: UIViewController, AloeStackTableBuilder, Scrollable
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.addSubview(stackView)
-        stackView.pinToSuperview(.edges)
-
         titleView.titleLabel.text = mapItem.name ?? ""
         titleView.closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        stackView.addRow(titleView)
-        stackView.hideSeparator(forRow: titleView)
+        prepareChildController(collectionController) {
+            let stack = UIStackView.verticalStack(arrangedSubviews: [
+                titleView, collectionController.view
+            ])
+            view.addSubview(stack)
+            stack.pinToSuperview(.edges)
+        }
+    }
 
-        addGroupedTableHeaderToStack(headerText: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"))
+    // MARK: - IGListKit
+
+    private var aboutSection: TableSectionData {
+        var rows = [TableRowData]()
 
         if let address = mapItem.placemark.postalAddress {
             let formattedAddress = CNPostalAddressFormatter.string(from: address, style: .mailingAddress)
-            addGroupedTableRowToStack(DefaultTableRowView(title: formattedAddress, accessoryType: .none), isLastRow: false) { [weak self]_ in
+            let row = TableRowData(title: formattedAddress, accessoryType: .none) { [weak self] _ in
                 guard let self = self else { return }
-
                 self.mapItem.openInMaps(launchOptions: nil)
             }
+            rows.append(row)
         }
 
         if let phone = mapItem.phoneNumber, let url = URL(phoneNumber: phone) {
-            addGroupedTableRowToStack(DefaultTableRowView(title: phone, accessoryType: .none), isLastRow: false) { [weak self] _ in
+            let row = TableRowData(title: phone, accessoryType: .none) { [weak self] _ in
                 guard let self = self else { return }
                 self.application.open(url, options: [:], completionHandler: nil)
             }
+            rows.append(row)
         }
 
         if let url = mapItem.url {
-            addGroupedTableRowToStack(DefaultTableRowView(title: url.absoluteString, accessoryType: .none), isLastRow: false) { [weak self] _ in
+            let row = TableRowData(title: url.absoluteString, accessoryType: .none) { [weak self] _ in
                 guard let self = self else { return }
-
                 let safari = SFSafariViewController(url: url)
                 self.application.viewRouter.present(safari, from: self)
             }
+            rows.append(row)
         }
 
-        addGroupedTableHeaderToStack(headerText: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"))
-        addGroupedTableRowToStack(DefaultTableRowView(title: OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator), isLastRow: false) { [weak self] _ in
-            guard let self = self else { return }
+        return TableSectionData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"), rows: rows)
+    }
 
+    private var moreSection: TableSectionData {
+        let row = TableRowData(title: OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator) { [weak self] _ in
+            guard let self = self else { return }
             let nearbyStops = NearbyStopsViewController(coordinate: self.mapItem.placemark.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyStops, from: self)
         }
+        return TableSectionData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"), rows: [row])
     }
+
+    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        return [aboutSection, moreSection]
+    }
+
+    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
+        return defaultSectionController(for: object)
+    }
+
+    func emptyView(for listAdapter: ListAdapter) -> UIView? {
+        return nil
+    }
+
+    private lazy var collectionController: CollectionController = {
+        let controller = CollectionController(application: application, dataSource: self)
+        controller.collectionView.showsVerticalScrollIndicator = false
+        return controller
+    }()
 }
