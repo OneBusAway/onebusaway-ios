@@ -11,7 +11,7 @@ import OBAKitCore
 
 // MARK: - View Model
 
-class ArrivalDepartureSectionData: NSObject, ListDiffable {
+final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     let arrivalDeparture: ArrivalDeparture
     let selected: VoidBlock
 
@@ -32,13 +32,12 @@ class ArrivalDepartureSectionData: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class StopArrivalSectionController: OBAListSectionController {
-    private var object: ArrivalDepartureSectionData?
+final class StopArrivalSectionController: OBAListSectionController<ArrivalDepartureSectionData> {
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard
             let cell = collectionContext?.dequeueReusableCell(of: StopArrivalCell.self, for: self, at: index) as? StopArrivalCell,
-            let object = object
+            let object = sectionData
         else {
             fatalError()
         }
@@ -47,15 +46,8 @@ final class StopArrivalSectionController: OBAListSectionController {
         return cell
     }
 
-    override func didUpdate(to object: Any) {
-        guard let object = object as? ArrivalDepartureSectionData else {
-            fatalError()
-        }
-        self.object = object
-    }
-
     override func didSelectItem(at index: Int) {
-        guard let sectionData = object else { return }
+        guard let sectionData = sectionData else { return }
         sectionData.selected()
     }
 }

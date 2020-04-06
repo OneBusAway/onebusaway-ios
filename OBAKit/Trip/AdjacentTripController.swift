@@ -15,7 +15,7 @@ enum AdjacentTripOrder {
     case previous, next
 }
 
-class AdjacentTripSection: NSObject, ListDiffable {
+final class AdjacentTripSection: NSObject, ListDiffable {
     let order: AdjacentTripOrder
     let trip: Trip
     let selected: VoidBlock
@@ -43,40 +43,34 @@ class AdjacentTripSection: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class AdjacentTripController: OBAListSectionController {
-    private var object: AdjacentTripSection?
+final class AdjacentTripController: OBAListSectionController<AdjacentTripSection> {
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard
             let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell,
-            let object = object
+            let sectionData = sectionData
         else {
             fatalError()
         }
 
         let titleFormat: String
-        if object.order == .previous {
+        if sectionData.order == .previous {
             titleFormat = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
         }
         else {
             titleFormat = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
         }
 
-        cell.titleLabel.text = String(format: titleFormat, object.trip.routeHeadsign)
-        cell.tripSegmentView.adjacentTripOrder = object.order
+        cell.titleLabel.text = String(format: titleFormat, sectionData.trip.routeHeadsign)
+        cell.tripSegmentView.adjacentTripOrder = sectionData.order
 
         return cell
-    }
-
-    override func didUpdate(to object: Any) {
-        precondition(object is AdjacentTripSection)
-        self.object = (object as! AdjacentTripSection) // swiftlint:disable:this force_cast
     }
 
     override func didSelectItem(at index: Int) {
         super.didSelectItem(at: index)
 
-        guard let object = object else { return }
+        guard let object = sectionData else { return }
 
         object.selected()
     }

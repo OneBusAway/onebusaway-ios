@@ -22,7 +22,7 @@ typealias BookmarkListCallback = (Bookmark) -> Void
 typealias BookmarkSectionToggled = (BookmarkSectionData, BookmarkSectionState) -> Void
 
 /// A view model used with `IGListKit` to display `Bookmark` data in the `BookmarksViewController`.
-class BookmarkArrivalData: NSObject, ListDiffable {
+final class BookmarkArrivalData: NSObject, ListDiffable {
     public let bookmark: Bookmark
     public let arrivalDepartures: [ArrivalDeparture]?
     let selected: BookmarkListCallback
@@ -65,7 +65,7 @@ class BookmarkArrivalData: NSObject, ListDiffable {
 }
 
 /// A view model for displaying a `BookmarkGroup` and its `Bookmark`s in the `BookmarksViewController`.
-class BookmarkSectionData: NSObject, ListDiffable {
+final class BookmarkSectionData: NSObject, ListDiffable {
     public let group: BookmarkGroup?
     public let title: String?
     public let bookmarks: [BookmarkArrivalData]
@@ -131,11 +131,9 @@ class BookmarkSectionData: NSObject, ListDiffable {
 
 // MARK: - BookmarkSectionController
 
-final class BookmarkSectionController: OBAListSectionController, SwipeCollectionViewCellDelegate {
-    var groupData: BookmarkSectionData?
-
+final class BookmarkSectionController: OBAListSectionController<BookmarkSectionData>, SwipeCollectionViewCellDelegate {
     public override func numberOfItems() -> Int {
-        guard let groupData = groupData else {
+        guard let groupData = sectionData else {
             return 0
         }
 
@@ -172,7 +170,7 @@ final class BookmarkSectionController: OBAListSectionController, SwipeCollection
 
     private func titleCell(at index: Int) -> UICollectionViewCell {
         guard
-            let groupData = groupData,
+            let groupData = sectionData,
             let cell = collectionContext?.dequeueReusableCell(of: CollapsibleHeaderCell.self, for: self, at: index) as? CollapsibleHeaderCell
         else {
             fatalError()
@@ -205,14 +203,9 @@ final class BookmarkSectionController: OBAListSectionController, SwipeCollection
         }
     }
 
-    public override func didUpdate(to object: Any) {
-        precondition(object is BookmarkSectionData)
-        groupData = object as? BookmarkSectionData
-    }
-
     public override func didSelectItem(at index: Int) {
         if hasTitleRow && index == 0 {
-            guard let groupData = groupData else { return }
+            guard let groupData = sectionData else { return }
             groupData.toggled(groupData, groupData.state.toggledValue())
             return
         }
@@ -224,15 +217,15 @@ final class BookmarkSectionController: OBAListSectionController, SwipeCollection
     // MARK: - Index Path Management
 
     private var hasTitleRow: Bool {
-        groupData?.title != nil
+        sectionData?.title != nil
     }
 
     private func bookmark(at index: Int) -> BookmarkArrivalData? {
         if hasTitleRow {
-            return groupData?.bookmarks[index - 1]
+            return sectionData?.bookmarks[index - 1]
         }
         else {
-            return groupData?.bookmarks[index]
+            return sectionData?.bookmarks[index]
         }
     }
 
@@ -264,7 +257,7 @@ final class BookmarkSectionController: OBAListSectionController, SwipeCollection
             fatalError()
         }
 
-        view.textLabel.text = groupData?.title
+        view.textLabel.text = sectionData?.title
         return view
     }
 }

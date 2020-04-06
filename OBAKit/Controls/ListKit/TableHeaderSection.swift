@@ -11,7 +11,7 @@ import OBAKitCore
 
 // MARK: - TableHeaderData
 
-class TableHeaderData: NSObject, ListDiffable {
+final class TableHeaderData: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
         self as NSObjectProtocol
     }
@@ -31,18 +31,9 @@ class TableHeaderData: NSObject, ListDiffable {
 
 // MARK: - TableHeaderSectionController
 
-class TableHeaderSectionController: OBAListSectionController {
-
-    // MARK: - Data
-
-    private var object: TableHeaderData?
-
-    override func didUpdate(to object: Any) {
-        guard let object = object as? TableHeaderData else {
-            fatalError()
-        }
-
-        self.object = object
+final class TableHeaderSectionController: OBAListSectionController<TableHeaderData> {
+    public override func sizeForItem(at index: Int) -> CGSize {
+        return CGSize(width: collectionContext!.containerSize.width, height: 20.0)
     }
 
     // MARK: - Cell
@@ -51,7 +42,7 @@ class TableHeaderSectionController: OBAListSectionController {
         guard let cell = collectionContext?.dequeueReusableCell(of: TableHeaderCell.self, for: self, at: index) as? TableHeaderCell else {
             fatalError()
         }
-        cell.textLabel.text = object?.title ?? ""
+        cell.textLabel.text = sectionData?.title ?? ""
         cell.isGrouped = style == .grouped
         return cell
     }
@@ -59,7 +50,7 @@ class TableHeaderSectionController: OBAListSectionController {
 
 // MARK: - TableHeaderCell
 
-class TableHeaderCell: SelfSizingCollectionCell, Separated {
+final class TableHeaderCell: SelfSizingCollectionCell, Separated {
     private let kUseDebugColors = false
 
     let textLabel: UILabel = {

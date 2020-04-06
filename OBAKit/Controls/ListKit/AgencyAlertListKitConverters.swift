@@ -14,13 +14,13 @@ import SafariServices
 ///
 /// - Note: The data produced by methods in this protocol are specifically
 ///         designed to work with `objects(for listAdapter:)`.
-public protocol AgencyAlertListKitConverters {
+protocol AgencyAlertListKitConverters {
     var application: Application { get }
     func tableSections(agencyAlerts: [AgencyAlert], tapped: @escaping ListRowActionHandler) -> [MessageSectionData]
     func presentAlert(_ alert: AgencyAlert)
 }
 
-public extension AgencyAlertListKitConverters where Self: UIViewController {
+extension AgencyAlertListKitConverters where Self: UIViewController {
 
     /// Converts an array of `AgencyAlert`s into `[MessageSectionData]` objects, which can be displayed by IGListKit.
     ///

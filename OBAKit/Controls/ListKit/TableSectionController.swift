@@ -11,16 +11,9 @@ import IGListKit
 import SwipeCellKit
 import OBAKitCore
 
-class TableSectionController: OBAListSectionController, ListSupplementaryViewSource, SwipeCollectionViewCellDelegate {
-    var data: TableSectionData?
-
-    override init(formatters: Formatters, style: TableCollectionStyle) {
-        super.init(formatters: formatters, style: style)
-        supplementaryViewSource = self
-    }
-
+final class TableSectionController: OBAListSectionController<TableSectionData>, SwipeCollectionViewCellDelegate {
     public override func numberOfItems() -> Int {
-        return data?.rows.count ?? 0
+        return sectionData?.rows.count ?? 0
     }
 
     private func cellClass(for rowData: TableRowData) -> TableRowCell.Type {
@@ -35,7 +28,7 @@ class TableSectionController: OBAListSectionController, ListSupplementaryViewSou
 
     public override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard
-            let rowData = data?.rows[index],
+            let rowData = sectionData?.rows[index],
             let cell = collectionContext?.dequeueReusableCell(of: cellClass(for: rowData), for: self, at: index) as? TableRowCell
         else {
             fatalError()
@@ -49,14 +42,9 @@ class TableSectionController: OBAListSectionController, ListSupplementaryViewSou
         return cell
     }
 
-    public override func didUpdate(to object: Any) {
-        precondition(object is TableSectionData)
-        data = object as? TableSectionData
-    }
-
     public override func didSelectItem(at index: Int) {
         guard
-            let item = data?.rows[index],
+            let item = sectionData?.rows[index],
             let tapped = item.tapped
         else {
             return
@@ -65,44 +53,12 @@ class TableSectionController: OBAListSectionController, ListSupplementaryViewSou
         tapped(item)
     }
 
-    // MARK: ListSupplementaryViewSource
-
-    public func supportedElementKinds() -> [String] {
-        var supported = [String]()
-
-        if data?.title != nil {
-            supported.append(UICollectionView.elementKindSectionHeader)
-        }
-
-        if data?.footer != nil {
-            supported.append(UICollectionView.elementKindSectionFooter)
-        }
-
-        return supported
-    }
-
-    public func viewForSupplementaryElement(ofKind elementKind: String, at index: Int) -> UICollectionReusableView {
-        switch elementKind {
-        case UICollectionView.elementKindSectionHeader:
-            return buildHeaderView(atIndex: index)
-        case UICollectionView.elementKindSectionFooter:
-            return buildFooterView(atIndex: index)
-        default:
-            fatalError()
-        }
-    }
-
-    public func sizeForSupplementaryView(ofKind elementKind: String, at index: Int) -> CGSize {
-        let height: CGFloat = style == .grouped ? 32 : 20
-        return CGSize(width: collectionContext!.containerSize.width, height: height)
-    }
-
     // MARK: - SwipeCollectionViewCellDelegate
 
     public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
         guard
             orientation == .right,
-            let row = data?.rows[indexPath.item],
+            let row = sectionData?.rows[indexPath.item],
             let deleteHandler = row.deleted
         else {
             return nil
@@ -113,27 +69,5 @@ class TableSectionController: OBAListSectionController, ListSupplementaryViewSou
         }
 
         return [deleteAction]
-    }
-
-    // MARK: - Private
-
-    private func buildHeaderView(atIndex index: Int) -> UICollectionReusableView {
-        guard let view = collectionContext?.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, for: self, class: TableSectionHeaderView.self, at: index) as? TableSectionHeaderView else {
-            fatalError()
-        }
-
-        view.textLabel.text = data?.title ?? ""
-        view.isGrouped = style == .grouped
-
-        return view
-    }
-
-    private func buildFooterView(atIndex index: Int) -> UICollectionReusableView {
-        guard let view = collectionContext?.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, for: self, class: TableSectionHeaderView.self, at: index) as? TableSectionHeaderView else {
-            fatalError()
-        }
-
-        view.textLabel.text = data?.footer ?? ""
-        return view
     }
 }

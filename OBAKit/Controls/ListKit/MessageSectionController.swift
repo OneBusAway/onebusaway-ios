@@ -12,7 +12,7 @@ import OBAKitCore
 
 // MARK: - MessageSectionData
 
-final public class MessageSectionData: ListViewModel, ListDiffable {
+final class MessageSectionData: ListViewModel, ListDiffable {
     var author: String?
     var date: String?
     var subject: String
@@ -116,26 +116,23 @@ final class MessageCell: BaseSelfSizingTableCell {
 
 // MARK: - MessageSectionController
 
-final class MessageSectionController: OBAListSectionController {
-    var data: MessageSectionData?
-
+final class MessageSectionController: OBAListSectionController<MessageSectionData> {
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
         guard let cell = collectionContext?.dequeueReusableCell(of: MessageCell.self, for: self, at: index) as? MessageCell else {
             fatalError()
         }
 
-        cell.data = data
+        cell.data = sectionData
 
         return cell
     }
 
-    public override func didUpdate(to object: Any) {
-        precondition(object is MessageSectionData)
-        data = object as? MessageSectionData
-    }
-
     public override func didSelectItem(at index: Int) {
-        guard let data = data, let tapped = data.tapped else { return }
+        guard
+            let data = sectionData,
+            let tapped = data.tapped
+        else { return }
+
         tapped(data)
     }
 }

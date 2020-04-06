@@ -13,7 +13,7 @@ fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
 
 // MARK: - View Model
 
-class TripStopListItem: NSObject, ListDiffable {
+final class TripStopListItem: NSObject, ListDiffable {
 
     /// Is this where the vehicle on the trip is currently located?
     let isCurrentVehicleLocation: Bool
@@ -84,9 +84,7 @@ class TripStopListItem: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class TripStopSectionController: OBAListSectionController {
-    private var object: TripStopListItem?
-
+final class TripStopSectionController: OBAListSectionController<TripStopListItem> {
     override func sizeForItem(at index: Int) -> CGSize {
         return CGSize(width: collectionContext!.containerSize.width, height: tripStopCellMinimumHeight)
     }
@@ -94,29 +92,25 @@ final class TripStopSectionController: OBAListSectionController {
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard
             let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell,
-            let object = object
+            let sectionData = sectionData
         else {
             fatalError()
         }
 
-        cell.titleLabel.text = object.title
-        cell.timeLabel.text = object.formattedDate
-        cell.tripSegmentView.routeType = object.routeType
+        cell.titleLabel.text = sectionData.title
+        cell.timeLabel.text = sectionData.formattedDate
+        cell.tripSegmentView.routeType = sectionData.routeType
 
-        cell.tripSegmentView.setDestinationStatus(user: object.isUserDestination, vehicle: object.isCurrentVehicleLocation)
+        cell.tripSegmentView.setDestinationStatus(user: sectionData.isUserDestination, vehicle: sectionData.isCurrentVehicleLocation)
 
         return cell
-    }
-
-    override func didUpdate(to object: Any) {
-        self.object = (object as! TripStopListItem) // swiftlint:disable:this force_cast
     }
 
     override func didSelectItem(at index: Int) {
         super.didSelectItem(at: index)
 
         guard
-            let tripStopListItem = object,
+            let tripStopListItem = sectionData,
             let appContext = viewController as? AppContext
         else { return }
 

@@ -12,7 +12,7 @@ import OBAKitCore
 /// An OBAKit-specific subclass of `ListSectionController` meant to be overriden instead of `ListSectionController`.
 ///
 /// Provides easy access to the application-wide `formatters` object, along with the current view controller's table collection style.
-class OBAListSectionController: ListSectionController {
+class OBAListSectionController<T>: ListSectionController where T: ListDiffable {
 
     // MARK: - Init
 
@@ -35,5 +35,17 @@ class OBAListSectionController: ListSectionController {
 
     public override func sizeForItem(at index: Int) -> CGSize {
         return CGSize(width: collectionContext!.containerSize.width, height: 40.0)
+    }
+
+    // MARK: - Data
+
+    public private(set) var sectionData: T?
+
+    override func didUpdate(to object: Any) {
+        guard let object = object as? T else {
+            fatalError()
+        }
+
+        sectionData = object
     }
 }

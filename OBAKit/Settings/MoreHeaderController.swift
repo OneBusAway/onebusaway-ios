@@ -11,7 +11,7 @@ import IGListKit
 
 // MARK: - MoreHeaderSection
 
-class MoreHeaderSection: NSObject, ListDiffable {
+final class MoreHeaderSection: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
         return self
     }
@@ -30,7 +30,7 @@ class MoreHeaderSection: NSObject, ListDiffable {
 
 // MARK: MoreHeaderSectionController
 
-final class MoreHeaderSectionController: OBAListSectionController {
+final class MoreHeaderSectionController: OBAListSectionController<MoreHeaderSection> {
     override func sizeForItem(at index: Int) -> CGSize {
         // the height of 200 is semi-arbitrary, and was determined by playing around
         // looking for a height that doesn't cause the collection view to be misaligned
@@ -45,20 +45,11 @@ final class MoreHeaderSectionController: OBAListSectionController {
         cell.section = sectionData
         return cell
     }
-
-    override func didUpdate(to object: Any) {
-        guard let object = object as? MoreHeaderSection else {
-            fatalError()
-        }
-        sectionData = object
-    }
-
-    var sectionData: MoreHeaderSection?
 }
 
 // MARK: - MoreHeaderCollectionCell
 
-class MoreHeaderCollectionCell: SelfSizingCollectionCell {
+final class MoreHeaderCollectionCell: SelfSizingCollectionCell {
     let moreHeader = MoreHeaderView.autolayoutNew()
 
     var section: MoreHeaderSection? {
@@ -79,7 +70,7 @@ class MoreHeaderCollectionCell: SelfSizingCollectionCell {
 
 // MARK: - MoreHeaderView
 
-class MoreHeaderView: UIView {
+final class MoreHeaderView: UIView {
 
     var section: MoreHeaderSection?
 

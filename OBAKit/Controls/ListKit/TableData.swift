@@ -125,7 +125,6 @@ public class TableRowData: ListViewModel {
 /// Models a section in a table. Contains many `TableRowData` objects.
 public class TableSectionData: NSObject, ListDiffable {
     var title: String?
-    var footer: String?
     let rows: [TableRowData]
 
     public func diffIdentifier() -> NSObjectProtocol {
@@ -137,7 +136,7 @@ public class TableSectionData: NSObject, ListDiffable {
             return false
         }
 
-        return title == rhs.title && footer == rhs.footer && rows == rhs.rows
+        return title == rhs.title && rows == rhs.rows
     }
 
     /// Creates a `TableSectionData`

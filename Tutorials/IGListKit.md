@@ -173,18 +173,18 @@ and then add an entry for the data class and section controller to `ListAdapterD
 
 See below for a full, albeit somewhat contrived implementation of these three classes:
 
-    public class LabelSectionData: NSObject, ListDiffable {
+    final class LabelSectionData: NSObject, ListDiffable {
         let text: String
     
-        public init(text: String) {
+        init(text: String) {
             self.text = text
         }
     
-        public func diffIdentifier() -> NSObjectProtocol {
+        func diffIdentifier() -> NSObjectProtocol {
             return self.text as NSObjectProtocol
         }
 
-        public func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
+        func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
             guard let rhs = object as? LabelSectionData else {
                 return false
             }
@@ -193,9 +193,7 @@ See below for a full, albeit somewhat contrived implementation of these three cl
         }
     }
 
-    final class LabelSectionController: ListSectionController {
-        private var object: LabelSectionData?
-
+    final class LabelSectionController: OBAListSectionController<LabelSectionData> {
         override func sizeForItem(at index: Int) -> CGSize {
             return CGSize(width: collectionContext!.containerSize.width, height: 40)
         }
@@ -206,11 +204,6 @@ See below for a full, albeit somewhat contrived implementation of these three cl
             }
             cell.object = object
             return cell
-        }
-
-        override func didUpdate(to object: Any) {
-            guard let object = object as? LabelSectionData else { fatalError() }
-            self.object = object
         }
     }
 
