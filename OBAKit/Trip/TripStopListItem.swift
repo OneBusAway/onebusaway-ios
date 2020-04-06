@@ -90,17 +90,12 @@ final class TripStopSectionController: OBAListSectionController<TripStopListItem
     }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard
-            let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell,
-            let sectionData = sectionData
-        else {
-            fatalError()
-        }
+        guard let sectionData = sectionData else { fatalError() }
 
+        let cell = dequeueReusableCell(type: TripStopCell.self, at: index)
         cell.titleLabel.text = sectionData.title
         cell.timeLabel.text = sectionData.formattedDate
         cell.tripSegmentView.routeType = sectionData.routeType
-
         cell.tripSegmentView.setDestinationStatus(user: sectionData.isUserDestination, vehicle: sectionData.isCurrentVehicleLocation)
 
         return cell

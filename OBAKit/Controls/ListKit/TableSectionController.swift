@@ -27,13 +27,9 @@ final class TableSectionController: OBAListSectionController<TableSectionData>, 
     }
 
     public override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard
-            let rowData = sectionData?.rows[index],
-            let cell = collectionContext?.dequeueReusableCell(of: cellClass(for: rowData), for: self, at: index) as? TableRowCell
-        else {
-            fatalError()
-        }
+        guard let rowData = sectionData?.rows[index] else { fatalError() }
 
+        let cell = dequeueReusableCell(type: cellClass(for: rowData), at: index)
         cell.delegate = self
         cell.data = rowData
         cell.style = style

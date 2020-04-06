@@ -35,12 +35,9 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
 final class StopArrivalSectionController: OBAListSectionController<ArrivalDepartureSectionData> {
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard
-            let cell = collectionContext?.dequeueReusableCell(of: StopArrivalCell.self, for: self, at: index) as? StopArrivalCell,
-            let object = sectionData
-        else {
-            fatalError()
-        }
+        guard let object = sectionData else { fatalError() }
+
+        let cell = dequeueReusableCell(type: StopArrivalCell.self, at: index)
         cell.formatters = formatters
         cell.arrivalDeparture = object.arrivalDeparture
         return cell

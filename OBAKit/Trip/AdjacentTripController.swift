@@ -46,12 +46,9 @@ final class AdjacentTripSection: NSObject, ListDiffable {
 final class AdjacentTripController: OBAListSectionController<AdjacentTripSection> {
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard
-            let cell = collectionContext?.dequeueReusableCell(of: TripStopCell.self, for: self, at: index) as? TripStopCell,
-            let sectionData = sectionData
-        else {
-            fatalError()
-        }
+        guard let sectionData = sectionData else { fatalError() }
+
+        let cell = dequeueReusableCell(type: TripStopCell.self, at: index)
 
         let titleFormat: String
         if sectionData.order == .previous {

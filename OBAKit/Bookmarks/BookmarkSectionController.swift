@@ -169,12 +169,9 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
     }
 
     private func titleCell(at index: Int) -> UICollectionViewCell {
-        guard
-            let groupData = sectionData,
-            let cell = collectionContext?.dequeueReusableCell(of: CollapsibleHeaderCell.self, for: self, at: index) as? CollapsibleHeaderCell
-        else {
-            fatalError()
-        }
+        guard let groupData = sectionData else { fatalError() }
+
+        let cell = dequeueReusableCell(type: CollapsibleHeaderCell.self, at: index)
 
         cell.textLabel.text = groupData.title
         cell.state = groupData.state
@@ -188,13 +185,14 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
             fatalError()
         }
 
-        let klass = cellClass(for: bookmarkArrivalData.bookmark)
-        if let cell = collectionContext?.dequeueReusableCell(of: klass, for: self, at: index) as? TripBookmarkTableCell {
+        let cell = dequeueReusableCell(type: cellClass(for: bookmarkArrivalData.bookmark), at: index)
+
+        if let cell = cell as? TripBookmarkTableCell {
             cell.delegate = self
             cell.set(data: bookmarkArrivalData, formatters: formatters)
             return cell
         }
-        else if let cell = collectionContext?.dequeueReusableCell(of: klass, for: self, at: index) as? StopBookmarkTableCell {
+        else if let cell = cell as? StopBookmarkTableCell {
             cell.data = bookmarkArrivalData.bookmark
             return cell
         }

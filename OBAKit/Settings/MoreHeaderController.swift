@@ -39,9 +39,7 @@ final class MoreHeaderSectionController: OBAListSectionController<MoreHeaderSect
     }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let cell = collectionContext?.dequeueReusableCell(of: MoreHeaderCollectionCell.self, for: self, at: index) as? MoreHeaderCollectionCell else {
-            fatalError()
-        }
+        let cell = dequeueReusableCell(type: MoreHeaderCollectionCell.self, at: index)
         cell.section = sectionData
         return cell
     }

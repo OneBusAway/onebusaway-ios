@@ -39,9 +39,7 @@ final class TableHeaderSectionController: OBAListSectionController<TableHeaderDa
     // MARK: - Cell
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let cell = collectionContext?.dequeueReusableCell(of: TableHeaderCell.self, for: self, at: index) as? TableHeaderCell else {
-            fatalError()
-        }
+        let cell = dequeueReusableCell(type: TableHeaderCell.self, at: index)
         cell.textLabel.text = sectionData?.title ?? ""
         cell.isGrouped = style == .grouped
         return cell

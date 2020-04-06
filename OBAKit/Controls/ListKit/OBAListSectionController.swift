@@ -48,4 +48,21 @@ class OBAListSectionController<T>: ListSectionController where T: ListDiffable {
 
         sectionData = object
     }
+
+    // MARK: - Cells
+
+    /// Dequeues a reusable cell of the specified type.
+    ///
+    /// This method provides improved ergonomics over `ListSectionController.collectionContext.dequeueReusableCell()`, which it wraps.
+    /// - Parameters:
+    ///   - type: The cell type to dequeue. Must inherit from `UICollectionViewCell`.
+    ///   - index: The row index for which to dequeue a cell.
+    /// - Returns: A cell of type `C`, where `C: UICollectionViewCell`.
+    func dequeueReusableCell<C>(type: C.Type, at index: Int) -> C where C: UICollectionViewCell {
+        guard let cell = collectionContext?.dequeueReusableCell(of: type, for: self, at: index) as? C else {
+            fatalError()
+        }
+
+        return cell
+    }
 }

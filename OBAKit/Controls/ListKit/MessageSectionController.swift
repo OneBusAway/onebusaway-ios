@@ -118,10 +118,7 @@ final class MessageCell: BaseSelfSizingTableCell {
 
 final class MessageSectionController: OBAListSectionController<MessageSectionData> {
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let cell = collectionContext?.dequeueReusableCell(of: MessageCell.self, for: self, at: index) as? MessageCell else {
-            fatalError()
-        }
-
+        let cell = dequeueReusableCell(type: MessageCell.self, at: index)
         cell.data = sectionData
 
         return cell
