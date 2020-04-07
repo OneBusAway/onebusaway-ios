@@ -19,9 +19,6 @@ github "rwbutler/Connectivity" ~>3.3.3
 # github "Instagram/IGListKit" ~>4.0.0
 github "aaronbrethorst/IGListKit" "master"
 
-# https://github.com/airbnb/AloeStackView/releases
-github "airbnb/AloeStackView" ~>1.2.0
-
 # https://github.com/SCENEE/FloatingPanel/releases
 github "SCENEE/FloatingPanel" ~>1.7.4
 
