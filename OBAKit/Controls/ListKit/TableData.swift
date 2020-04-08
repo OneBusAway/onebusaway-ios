@@ -143,4 +143,10 @@ public class TableSectionData: NSObject, ListDiffable {
         self.rows = rows
         super.init()
     }
+
+    /// Convenience initializer for creating a `TableSectionData` with a single row.
+    /// - Parameter row: The single table row.
+    convenience init(row: TableRowData) {
+        self.init(rows: [row])
+    }
 }

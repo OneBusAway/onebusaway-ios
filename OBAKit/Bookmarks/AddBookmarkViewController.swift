@@ -76,8 +76,10 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
             let editStopController = EditBookmarkViewController(application: self.application, stop: self.stop, bookmark: nil, delegate: self.delegate)
             self.navigationController?.pushViewController(editStopController, animated: true)
         }
-        let header = TableHeaderData(title: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."))
-        return [header, TableSectionData(rows: [row])]
+        return [
+            TableHeaderData(title: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop.")),
+            TableSectionData(row: row)
+        ]
     }
 
     private var tripBookmarkSection: [ListDiffable] {
@@ -99,9 +101,10 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
             rows.append(row)
         }
 
-        let header = TableHeaderData(title: OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip."))
-
-        return [header, TableSectionData(rows: rows)]
+        return [
+            TableHeaderData(title: OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip.")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     // MARK: - Data and UI

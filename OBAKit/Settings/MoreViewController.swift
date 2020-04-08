@@ -126,9 +126,10 @@ public class MoreViewController: UIViewController,
             self.application.viewRouter.navigate(to: alertsController, from: self)
         }
 
-        let header = TableHeaderData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
-
-        return [header, TableSectionData(rows: [tableRow])]
+        return [
+            TableHeaderData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text")),
+            TableSectionData(row: tableRow)
+        ]
     }
 
     // MARK: - My Location Section

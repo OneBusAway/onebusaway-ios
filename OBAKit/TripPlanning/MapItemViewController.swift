@@ -88,8 +88,10 @@ class MapItemViewController: UIViewController,
             rows.append(row)
         }
 
-        let header = TableHeaderData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"))
-        return [header, TableSectionData(rows: rows)]
+        return [
+            TableHeaderData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     private var moreSection: [ListDiffable] {
@@ -98,8 +100,10 @@ class MapItemViewController: UIViewController,
             let nearbyStops = NearbyStopsViewController(coordinate: self.mapItem.placemark.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyStops, from: self)
         }
-        let header = TableHeaderData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"))
-        return [header, TableSectionData(rows: [row])]
+        return [
+            TableHeaderData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header")),
+            TableSectionData(row: row)
+        ]
     }
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {

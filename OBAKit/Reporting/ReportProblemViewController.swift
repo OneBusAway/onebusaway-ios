@@ -113,8 +113,10 @@ class ReportProblemViewController: OperationController<StopArrivalsModelOperatio
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
 
-        let header = TableHeaderData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."))
-        return [header, TableSectionData(rows: [row])]
+        return [
+            TableHeaderData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller.")),
+            TableSectionData(row: row)
+        ]
     }
 
     private var vehicleProblemSections: [ListDiffable]? {

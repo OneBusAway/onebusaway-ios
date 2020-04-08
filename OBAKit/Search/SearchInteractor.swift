@@ -61,8 +61,7 @@ class SearchInteractor: NSObject {
             return []
         }
 
-        let header = TableHeaderData(title: Strings.recentStops)
-        return [header, TableSectionData(rows: recentStops)]
+        return [TableHeaderData(title: Strings.recentStops), TableSectionData(rows: recentStops)]
     }
 
     private func buildBookmarksSection(searchText: String) -> [ListDiffable] {
