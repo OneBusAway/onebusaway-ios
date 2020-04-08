@@ -437,7 +437,7 @@ public class StopViewController: UIViewController,
             rows.append(row)
         }
 
-        sections.append(TableSectionData(title: nil, rows: rows))
+        sections.append(TableSectionData(rows: rows))
 
         return sections
     }
@@ -520,7 +520,10 @@ public class StopViewController: UIViewController,
         }
         rows.append(reportProblem)
 
-        return [TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")), TableSectionData(title: nil, rows: rows)]
+        return [
+            TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     /// Call this method after data has been reloaded in this controller

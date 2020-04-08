@@ -235,9 +235,10 @@ public class TripFloatingPanelController: UIViewController,
             rows.append(row)
         }
 
-        let section = TableSectionData(title: OBALoc("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."), rows: rows)
-        let section2 = TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section."))
+        let header1 = TableHeaderData(title: OBALoc("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."))
+        let section1 = TableSectionData(rows: rows)
+        let header2 = TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section."))
 
-        return [section, section2]
+        return [header1, section1, header2]
     }
 }

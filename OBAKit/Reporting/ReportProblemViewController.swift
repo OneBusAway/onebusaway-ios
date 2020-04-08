@@ -79,7 +79,9 @@ class ReportProblemViewController: OperationController<StopArrivalsModelOperatio
     // MARK: - IGListKit
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var sections: [ListDiffable] = [stopProblemSection]
+        var sections = [ListDiffable]()
+
+        sections.append(contentsOf: stopProblemSection)
 
         if let vehicleProblemSections = vehicleProblemSections {
             sections.append(contentsOf: vehicleProblemSections)
@@ -98,7 +100,7 @@ class ReportProblemViewController: OperationController<StopArrivalsModelOperatio
 
     // MARK: - Data Sections
 
-    private var stopProblemSection: TableSectionData {
+    private var stopProblemSection: [ListDiffable] {
         let fmt = OBALoc(
             "report_problem_controller.report_stop_problem_fmt",
             value: "Report a problem with the stop at %@",
@@ -111,7 +113,8 @@ class ReportProblemViewController: OperationController<StopArrivalsModelOperatio
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
 
-        return TableSectionData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."), rows: [row])
+        let header = TableHeaderData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."))
+        return [header, TableSectionData(rows: [row])]
     }
 
     private var vehicleProblemSections: [ListDiffable]? {

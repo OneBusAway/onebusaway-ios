@@ -41,22 +41,16 @@ class SearchInteractor: NSObject {
 
         var sections: [ListDiffable] = []
 
-        sections.append(quickSearchSection(searchText: searchText))
-
-        if let recentStopsSection = buildRecentStopsSection(searchText: searchText) {
-            sections.append(recentStopsSection)
-        }
-
-        if let bookmarksSection = buildBookmarksSection(searchText: searchText) {
-            sections.append(bookmarksSection)
-        }
+        sections.append(contentsOf: quickSearchSection(searchText: searchText))
+        sections.append(contentsOf: buildRecentStopsSection(searchText: searchText))
+        sections.append(contentsOf: buildBookmarksSection(searchText: searchText))
 
         return sections
     }
 
     // MARK: - Private
 
-    private func buildRecentStopsSection(searchText: String) -> TableSectionData? {
+    private func buildRecentStopsSection(searchText: String) -> [ListDiffable] {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
             TableRowData(title: stop.name, accessoryType: .disclosureIndicator) { _ in
                 self.delegate?.searchInteractor(self, showStop: stop)
@@ -64,13 +58,14 @@ class SearchInteractor: NSObject {
         }
 
         guard recentStops.count > 0 else {
-            return nil
+            return []
         }
 
-        return TableSectionData(title: Strings.recentStops, rows: recentStops)
+        let header = TableHeaderData(title: Strings.recentStops)
+        return [header, TableSectionData(rows: recentStops)]
     }
 
-    private func buildBookmarksSection(searchText: String) -> TableSectionData? {
+    private func buildBookmarksSection(searchText: String) -> [ListDiffable] {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
             TableRowData(title: bookmark.name, accessoryType: .disclosureIndicator) { _ in
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
@@ -78,10 +73,13 @@ class SearchInteractor: NSObject {
         }
 
         guard bookmarks.count > 0 else {
-            return nil
+            return []
         }
 
-        return TableSectionData(title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), rows: bookmarks)
+        return [
+            TableHeaderData(title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header")),
+            TableSectionData(rows: bookmarks)
+        ]
     }
 
     // MARK: - Private/Quick Search
@@ -97,7 +95,7 @@ class SearchInteractor: NSObject {
 
     /// Creates a Quick Search section
     /// - Parameter searchText: The text that the user is searching for
-    private func quickSearchSection(searchText: String) -> ListDiffable {
+    private func quickSearchSection(searchText: String) -> [ListDiffable] {
         var quickSearchTypes: [(SearchType, String, UIImage)] = [
             (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route."), Icons.route),
             (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address."), Icons.place),
@@ -124,9 +122,9 @@ class SearchInteractor: NSObject {
             rows.append(row)
         }
 
-        let quickSearchSection = TableSectionData(title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"), rows: rows)
-
-        return quickSearchSection
+        return [
+            TableHeaderData(title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search")),
+            TableSectionData(rows: rows)
+        ]
     }
-
 }

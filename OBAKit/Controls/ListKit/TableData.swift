@@ -123,7 +123,6 @@ public class TableRowData: ListViewModel {
 
 /// Models a section in a table. Contains many `TableRowData` objects.
 public class TableSectionData: NSObject, ListDiffable {
-    var title: String?
     let rows: [TableRowData]
 
     public func diffIdentifier() -> NSObjectProtocol {
@@ -135,22 +134,13 @@ public class TableSectionData: NSObject, ListDiffable {
             return false
         }
 
-        return title == rhs.title && rows == rhs.rows
+        return rows == rhs.rows
     }
 
     /// Creates a `TableSectionData`
-    /// - Parameter title: Optional title of the section
     /// - Parameter rows: The table rows
-    public init(title: String?, rows: [TableRowData]) {
-        self.title = title
+    public init(rows: [TableRowData]) {
         self.rows = rows
-
         super.init()
-    }
-
-    /// Convenience initializer for creating a `TableSectionData` from a single row.
-    /// - Parameter row: The row that will comprise this section.
-    public convenience init(row: TableRowData) {
-        self.init(title: nil, rows: [row])
     }
 }

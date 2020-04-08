@@ -59,7 +59,7 @@ class MapItemViewController: UIViewController,
 
     // MARK: - IGListKit
 
-    private var aboutSection: TableSectionData {
+    private var aboutSection: [ListDiffable] {
         var rows = [TableRowData]()
 
         if let address = mapItem.placemark.postalAddress {
@@ -88,20 +88,25 @@ class MapItemViewController: UIViewController,
             rows.append(row)
         }
 
-        return TableSectionData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"), rows: rows)
+        let header = TableHeaderData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"))
+        return [header, TableSectionData(rows: rows)]
     }
 
-    private var moreSection: TableSectionData {
+    private var moreSection: [ListDiffable] {
         let row = TableRowData(title: OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             let nearbyStops = NearbyStopsViewController(coordinate: self.mapItem.placemark.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyStops, from: self)
         }
-        return TableSectionData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"), rows: [row])
+        let header = TableHeaderData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"))
+        return [header, TableSectionData(rows: [row])]
     }
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return [aboutSection, moreSection]
+        var sections = [ListDiffable]()
+        sections.append(contentsOf: aboutSection)
+        sections.append(contentsOf: moreSection)
+        return sections
     }
 
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {

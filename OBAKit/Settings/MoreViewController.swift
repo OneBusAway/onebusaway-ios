@@ -67,13 +67,13 @@ public class MoreViewController: UIViewController,
     var tableStyle: TableCollectionStyle { .grouped }
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return [
-            moreHeaderSection,
-            debugSection,
-            updatesAndAlertsSection,
-            myLocationSection,
-            aboutSection
-        ].compactMap { $0 }
+        var sections = [ListDiffable]()
+        sections.append(moreHeaderSection)
+        sections.append(contentsOf: debugSection)
+        sections.append(contentsOf: updatesAndAlertsSection)
+        sections.append(contentsOf: myLocationSection)
+        sections.append(contentsOf: aboutSection)
+        return sections
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
@@ -119,19 +119,21 @@ public class MoreViewController: UIViewController,
 
     // MARK: - Regional Alerts Section
 
-    private var updatesAndAlertsSection: TableSectionData {
+    private var updatesAndAlertsSection: [ListDiffable] {
         let tableRow = TableRowData(title: OBALoc("more_controller.alerts_for_region", value: "Alerts", comment: "Alerts for region row in the More controller"), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             let alertsController = AgencyAlertsViewController(application: self.application)
             self.application.viewRouter.navigate(to: alertsController, from: self)
         }
 
-        return TableSectionData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"), rows: [tableRow])
+        let header = TableHeaderData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text"))
+
+        return [header, TableSectionData(rows: [tableRow])]
     }
 
     // MARK: - My Location Section
 
-    private var myLocationSection: TableSectionData {
+    private var myLocationSection: [ListDiffable] {
         var rows = [TableRowData]()
 
         let picker = TableRowData(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), value: application.currentRegion?.name, accessoryType: .disclosureIndicator) { [weak self] _ in
@@ -159,7 +161,10 @@ public class MoreViewController: UIViewController,
         }
         rows.append(agencies)
 
-        return TableSectionData(title: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."), rows: rows)
+        return [
+            TableHeaderData(title: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller.")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     // MARK: - Contact Us Button
@@ -208,7 +213,7 @@ public class MoreViewController: UIViewController,
 
     // MARK: - About Section
 
-    private var aboutSection: TableSectionData {
+    private var aboutSection: [ListDiffable] {
         var rows = [TableRowData]()
 
         let credits = TableRowData(title: OBALoc("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator) { [weak self] _ in
@@ -236,14 +241,17 @@ public class MoreViewController: UIViewController,
         }
         rows.append(weather)
 
-        return TableSectionData(title: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app."), rows: rows)
+        return [
+            TableHeaderData(title: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app.")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     // MARK: - Debug Section
 
-    private var debugSection: TableSectionData? {
+    private var debugSection: [ListDiffable] {
         guard application.userDataStore.debugMode else {
-            return nil
+            return []
         }
 
         var rows = [TableRowData]()
@@ -267,7 +275,10 @@ public class MoreViewController: UIViewController,
         }
         rows.append(pushIDRow)
 
-        return TableSectionData(title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"), rows: rows)
+        return [
+            TableHeaderData(title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers")),
+            TableSectionData(rows: rows)
+        ]
     }
 
     // MARK: - Fare Payments

@@ -66,7 +66,7 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
             }
         }
 
-        return [TableSectionData(title: nil, rows: rows)]
+        return [TableSectionData(rows: rows)]
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {

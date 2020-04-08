@@ -30,7 +30,7 @@ public extension ListKitStopConverters where Self: UIViewController {
     /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData {
         let rows = stops.map { TableRowData(stop: $0, tapped: tapped) }
-        return TableSectionData(title: nil, rows: rows)
+        return TableSectionData(rows: rows)
     }
 
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
@@ -48,7 +48,7 @@ public extension ListKitStopConverters where Self: UIViewController {
             row.deleted = deleted
             return row
         }
-        return TableSectionData(title: nil, rows: rows)
+        return TableSectionData(rows: rows)
     }
 }
 

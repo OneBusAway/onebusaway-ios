@@ -126,7 +126,7 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         let rows = searchResponse.results.compactMap { tableRowData(from: $0) }
-        let tableSection = TableSectionData(title: nil, rows: rows)
+        let tableSection = TableSectionData(rows: rows)
         return [tableSection]
     }
 

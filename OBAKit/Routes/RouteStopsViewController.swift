@@ -68,7 +68,8 @@ class RouteStopsViewController: UIViewController,
             }
         }
 
-        return [TableSectionData(title: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."), rows: rows)]
+        let header = TableHeaderData(title: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop."))
+        return [header, TableSectionData(rows: rows)]
     }
 
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {

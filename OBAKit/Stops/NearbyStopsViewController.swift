@@ -128,8 +128,8 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
         for dir in directions.keys {
             let stops = directions[dir] ?? []
             let section = tableSection(stops: stops, tapped: tapHandler, deleted: nil)
-            section.title = Formatters.adjectiveFormOfCardinalDirection(dir)
-            sections.append(section)
+            let header = TableHeaderData(title: Formatters.adjectiveFormOfCardinalDirection(dir) ?? "")
+            sections.append(contentsOf: [header, section])
         }
 
         return sections

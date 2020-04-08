@@ -104,8 +104,8 @@ public class RecentStopsViewController: UIViewController,
 
                 return rowData
             }
-            let section = TableSectionData(title: OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller"), rows: rows)
-            sections.append(section)
+            sections.append(TableHeaderData(title: OBALoc("recent_stops_controller.alarms_section.title", value: "Alarms", comment: "Title of the Alarms section of the Recents controller")))
+            sections.append(TableSectionData(rows: rows))
         }
 
         let stops = application.userDataStore.recentStops
@@ -122,8 +122,11 @@ public class RecentStopsViewController: UIViewController,
                 self.collectionController.reload(animated: true)
             }
 
+            if alarms.count > 0 {
+                sections.append(TableHeaderData(title: Strings.recentStops))
+            }
+
             let section = tableSection(stops: stops, tapped: tapHandler, deleted: deleteHandler)
-            section.title = alarms.count == 0 ? nil : Strings.recentStops
             sections.append(section)
         }
 
