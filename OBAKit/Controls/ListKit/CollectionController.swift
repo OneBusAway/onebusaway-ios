@@ -86,8 +86,13 @@ public class CollectionController: UIViewController {
     /// Reloads the collection controller's underlying `listAdapter`
     /// - Parameter animated: Animate the reload or not.
     public func reload(animated: Bool) {
-        listAdapter.performUpdates(animated: animated)
+        listAdapter.performUpdates(animated: animated) { [weak self] _ in
+            self?.onReload?()
+        }
     }
+
+    /// Assign a block to this property to receive callbacks when the `CollectionController`'s `ListAdapter` finishes performing updates.
+    public var onReload: VoidBlock?
 
     // MARK: - Keyboard
 

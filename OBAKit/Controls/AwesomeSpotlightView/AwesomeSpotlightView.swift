@@ -181,33 +181,19 @@ import OBAKitCore
         let view = super.hitTest(point, with: event)
         let localPoint = convert(point, from: self)
         hitTestPoints.append(localPoint)
-
-        guard currentIndex < spotlightsArray.count else {
-            return view
-        }
-
-        let currentSpotlight = spotlightsArray[currentIndex]
-        if currentSpotlight.rect.contains(localPoint), currentSpotlight.isAllowPassTouchesThroughSpotlight {
-            if hitTestPoints.filter({ $0 == localPoint }).count == 1 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: {
-                    self.cleanup()
-                })
-            }
-            return nil
-        }
-
         return view
     }
 
     // MARK: - Presenter
 
-    public func start() {
+    public func start(completion: VoidBlock? = nil) {
         alpha = 0
         isHidden = false
         textLabel.font = textLabelFont
         UIView.animate(withDuration: animationDuration, animations: {
             self.alpha = 1
         }, completion: { _ in
+            completion?()
             self.goToFirstSpotlight()
         })
     }
@@ -311,20 +297,12 @@ import OBAKitCore
     // MARK: Helper
 
     private func calculateRectWithMarginForSpotlight(_ spotlight: AwesomeSpotlight) -> CGRect {
-        var rect = spotlight.rect
-
-        rect.size.width += spotlight.margin.left + spotlight.margin.right
-        rect.size.height += spotlight.margin.bottom + spotlight.margin.top
-
-        rect.origin.x -= (spotlight.margin.left + spotlight.margin.right) / 2.0
-        rect.origin.y -= (spotlight.margin.top + spotlight.margin.bottom) / 2.0
-
-        return rect
+        return spotlight.rect
     }
 
     private func calculateTextPositionAndSizeWithSpotlight(spotlight: AwesomeSpotlight) {
         textLabel.frame = CGRect(x: 0, y: 0, width: maxLabelWidth, height: 0)
-        textLabel.attributedText = spotlight.showedText
+        textLabel.attributedText = spotlight.attributedText
 
         if enableArrowDown && currentIndex == 0 {
             labelSpacing += 18
@@ -358,17 +336,7 @@ import OBAKitCore
         }
 
         let spotlightPath = UIBezierPath(rect: bounds)
-        var cutoutPath = UIBezierPath()
-
-        switch spotlight.shape {
-        case .rectangle:
-            cutoutPath = UIBezierPath(rect: rect)
-        case .roundRectangle:
-            cutoutPath = UIBezierPath(roundedRect: rect, cornerRadius: cutoutRadius)
-        case .circle:
-            cutoutPath = UIBezierPath(ovalIn: rect)
-        }
-
+        let cutoutPath = UIBezierPath(rect: rect)
         spotlightPath.append(cutoutPath)
         return spotlightPath
     }
@@ -389,15 +357,7 @@ import OBAKitCore
     private func animateCutoutToSpotlights(spotlights: [AwesomeSpotlight]) {
         let spotlightPath = UIBezierPath(rect: bounds)
         for spotlight in spotlights {
-            var cutoutPath = UIBezierPath()
-            switch spotlight.shape {
-            case .rectangle:
-                cutoutPath = UIBezierPath(rect: spotlight.rect)
-            case .roundRectangle:
-                cutoutPath = UIBezierPath(roundedRect: spotlight.rect, cornerRadius: cutoutRadius)
-            case .circle:
-                cutoutPath = UIBezierPath(ovalIn: spotlight.rect)
-            }
+            let cutoutPath = UIBezierPath(rect: spotlight.rect)
             spotlightPath.append(cutoutPath)
         }
         animateCutoutWithPath(path: spotlightPath.cgPath)

@@ -10,6 +10,8 @@ import Foundation
 
 public class Strings: NSObject {
 
+    public static let alarm = OBALoc("common.alarm", value: "Alarm", comment: "The noun, like an alarm clock or an alarm bell.")
+
     public static let back = OBALoc("common.back", value: "Back", comment: "Back, as in 'back to the previous screen.'")
 
     public static let bookmark = OBALoc("common.bookmark", value: "Bookmark", comment: "The verb 'to bookmark'.")
@@ -37,6 +39,8 @@ public class Strings: NSObject {
     public static let loading = OBALoc("common.loading", value: "Loading…", comment: "Used to indicate that content is loading.")
 
     public static let map = OBALoc("common.map", value: "Map", comment: "The noun for a map.")
+
+    public static let more = OBALoc("common.more", value: "More", comment: "As in 'see more' or 'learn more'.")
 
     public static let ok = OBALoc("common.ok", value: "OK", comment: "OK")
 

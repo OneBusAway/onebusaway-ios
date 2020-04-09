@@ -114,6 +114,10 @@ public class ThemeColors: NSObject {
 
     public let errorColor: UIColor
 
+    public let green: UIColor
+
+    public let blue: UIColor
+
     public static let shared = ThemeColors()
 
     public override convenience init() {
@@ -138,6 +142,8 @@ public class ThemeColors: NSObject {
             departureLateBackground = .systemBlue
 
             gray = .systemGray
+            green = .systemGreen
+            blue = .systemBlue
             groupedTableBackground = .systemGroupedBackground
             groupedTableRowBackground = .white
             systemBackground = .systemBackground
@@ -170,6 +176,8 @@ public class ThemeColors: NSObject {
             departureLateBackground = departureLate
 
             gray = .gray
+            green = .green
+            blue = .blue
             groupedTableBackground = .groupTableViewBackground
             groupedTableRowBackground = .white
             systemBackground = .white

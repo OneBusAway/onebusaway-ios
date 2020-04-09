@@ -23,7 +23,6 @@ public class StopViewController: UIViewController,
     ListAdapterDataSource,
     ModalDelegate,
     Idleable,
-    StopArrivalDelegate,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -122,6 +121,8 @@ public class StopViewController: UIViewController,
 
         super.init(nibName: nil, bundle: nil)
 
+        registerDefaults()
+
         Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
 
         navigationItem.backBarButtonItem = UIBarButtonItem.backButton
@@ -139,6 +140,8 @@ public class StopViewController: UIViewController,
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        installSwipeOptionsNudge()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
         addChildController(collectionController)
@@ -184,6 +187,77 @@ public class StopViewController: UIViewController,
     // MARK: - Idle Timer
 
     public var idleTimerFailsafe: Timer?
+
+    // MARK: - Options Nudge
+
+    /// This method will set up a UI affordance for showing the user how they can swipe on a stop arrival cell to see more options.
+    ///
+    /// If the user has already seen the nudge, as determined by user defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
+    /// will be displayed one second after the stop data finishes loading.
+    private func installSwipeOptionsNudge() {
+        let shouldShowNudge = application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge.rawValue)
+        guard shouldShowNudge else { return }
+
+        collectionController.onReload = { [weak self] in
+            guard let self = self else { return }
+            for cell in self.collectionController.collectionView.sortedVisibleCells {
+                if let cell = cell as? StopArrivalCell,
+                   let arrDep = cell.arrivalDeparture,
+                       arrDep.temporalState != .past {
+                    self.showSwipeOptionsNudge(on: cell)
+                    return
+                }
+            }
+        }
+    }
+
+    private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
+        guard
+            let presentationWindow = view.window,
+            let arrivalDeparture = cell.arrivalDeparture
+        else { return }
+
+        application.userDefaults.set(false, forKey: UserDefaultsKeys.shouldShowArrivalNudge.rawValue)
+
+        let frame = cell.convert(cell.bounds, to: presentationWindow)
+
+        let locText: String
+
+        if canCreateAlarm(for: arrivalDeparture) {
+            locText = OBALoc("stop_controller.swipe_spotlight_text.with_alarm", value: "Swipe on a row to view more options, including adding alarms.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms.")
+        }
+        else {
+            locText = OBALoc("stop_controller.swipe_spotlight_text.without_alarm", value: "Swipe on a row to view more options.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms.")
+        }
+
+        let text = NSAttributedString(string: locText, attributes: [
+            NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .title1),
+            NSAttributedString.Key.foregroundColor: UIColor.white,
+            NSAttributedString.Key.shadow: NSShadow()
+        ])
+
+        let spotlight = AwesomeSpotlight(rect: frame, attributedText: text)
+        let spotlightView = AwesomeSpotlightView(frame: presentationWindow.frame, spotlight: [spotlight])
+        presentationWindow.addSubview(spotlightView)
+        spotlightView.start {
+            cell.showNudge()
+        }
+        self.spotlightView = spotlightView
+    }
+
+    private var spotlightView: AwesomeSpotlightView?
+
+    // MARK: - User Defaults
+
+    private enum UserDefaultsKeys: String {
+        case shouldShowArrivalNudge
+    }
+
+    private func registerDefaults() {
+        application.userDefaults.register(defaults: [
+            UserDefaultsKeys.shouldShowArrivalNudge.rawValue: true
+        ])
+    }
 
     // MARK: - Bottom Toolbar
 
@@ -359,11 +433,8 @@ public class StopViewController: UIViewController,
             else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            let arrDepRows: [ArrivalDepartureSectionData] = arrDeps.map { a in
-                ArrivalDepartureSectionData(arrivalDeparture: a) { [weak self] in
-                    guard let self = self else { return }
-                    self.application.viewRouter.navigateTo(arrivalDeparture: a, from: self)
-                }
+            let arrDepRows: [ArrivalDepartureSectionData] = arrDeps.map {
+                buildArrivalDepartureSectionData(arrivalDeparture: $0)
             }
             return addWalkTimeRow(to: arrDepRows)
         }
@@ -374,16 +445,36 @@ public class StopViewController: UIViewController,
 
             for g in groups {
                 rows.append(TableHeaderData(title: g.route.longName ?? g.route.shortName))
-                let arrDepRows = g.arrivalDepartures.map { a in
-                    ArrivalDepartureSectionData(arrivalDeparture: a) { [weak self] in
-                        guard let self = self else { return }
-                        self.application.viewRouter.navigateTo(arrivalDeparture: a, from: self)
-                    }
+                let arrDepRows = g.arrivalDepartures.map {
+                    buildArrivalDepartureSectionData(arrivalDeparture: $0)
                 }
                 rows.append(contentsOf: addWalkTimeRow(to: arrDepRows))
             }
             return rows
         }
+    }
+
+    private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
+        let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
+
+        let data = ArrivalDepartureSectionData(
+            arrivalDeparture: arrivalDeparture,
+            isAlarmAvailable: alarmAvailable) { [weak self] in
+            guard let self = self else { return }
+            self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
+        }
+
+        data.onCreateAlarm = { [weak self] in
+            guard let self = self else { return }
+            self.addAlarm(arrivalDeparture: arrivalDeparture)
+        }
+
+        data.onShowOptions = { [weak self] in
+            guard let self = self else { return }
+            self.showMoreOptions(arrivalDeparture: arrivalDeparture)
+        }
+
+        return data
     }
 
     private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, arrivalDepartureSections: [ArrivalDepartureSectionData]) -> Int? {
@@ -556,20 +647,8 @@ public class StopViewController: UIViewController,
 
     // MARK: - Stop Arrival Actions
 
-    public func stopArrivalTapped(arrivalDeparture: ArrivalDeparture) {
-        let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
-        application.viewRouter.navigate(to: tripController, from: self)
-    }
-
-    public func actionsButtonTapped(arrivalDeparture: ArrivalDeparture) {
+    public func showMoreOptions(arrivalDeparture: ArrivalDeparture) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        if canCreateAlarm(for: arrivalDeparture) {
-            actionSheet.addAction(title: OBALoc("stop_controller.add_alarm", value: "Add Alarm", comment: "Action sheet button title for adding an alarm.")) { [weak self] _ in
-                guard let self = self else { return }
-                self.addAlarm(arrivalDeparture: arrivalDeparture)
-            }
-        }
 
         actionSheet.addAction(title: OBALoc("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
             guard let self = self else { return }

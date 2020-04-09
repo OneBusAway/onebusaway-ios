@@ -157,6 +157,18 @@ public extension UIColor {
     }
 }
 
+// MARK: - UICollectionView
+
+public extension UICollectionView {
+
+    /// A sorted list of all visible collection view cells.
+    var sortedVisibleCells: [UICollectionViewCell] {
+        indexPathsForVisibleItems.sorted().compactMap { path in
+            return cellForItem(at: path)
+        }
+    }
+}
+
 // MARK: - UIDevice
 
 public extension UIDevice {

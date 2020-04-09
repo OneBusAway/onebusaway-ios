@@ -24,8 +24,6 @@ class StopAnnotationView: MKAnnotationView {
     // MARK: - View Config Constants
 
     private let kUseDebugColors = false
-    private let wrapperSize: CGFloat = 30.0
-    private let imageSize: CGFloat = 20.0
 
     // MARK: - Subviews
 

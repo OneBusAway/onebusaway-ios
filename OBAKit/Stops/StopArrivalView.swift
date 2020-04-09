@@ -9,13 +9,6 @@
 import UIKit
 import OBAKitCore
 
-// MARK: - StopArrivalDelegate
-
-public protocol StopArrivalDelegate: NSObjectProtocol {
-    func actionsButtonTapped(arrivalDeparture: ArrivalDeparture)
-    func stopArrivalTapped(arrivalDeparture: ArrivalDeparture)
-}
-
 // MARK: - StopArrivalView
 
 /// This view displays the route, headsign, and predicted arrival/departure time for an `ArrivalDeparture`.
@@ -23,8 +16,6 @@ public protocol StopArrivalDelegate: NSObjectProtocol {
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
 public class StopArrivalView: UIView {
-
-    public weak var delegate: StopArrivalDelegate?
 
     let kUseDebugColors = false
 
@@ -75,36 +66,6 @@ public class StopArrivalView: UIView {
         ])
         return wrapper
     }()
-
-    // MARK: - Actions/'...' Button
-
-    var showActionsButton: Bool = false {
-        didSet {
-            guard oldValue != showActionsButton else { return }
-
-            if showActionsButton {
-                outerStackView.addArrangedSubview(actionsButton)
-            }
-            else {
-                actionsButton.removeFromSuperview()
-            }
-        }
-    }
-
-    private lazy var actionsButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(Icons.showMore, for: .normal)
-        button.addTarget(self, action: #selector(actionsButtonTapped), for: .touchUpInside)
-        button.setContentHuggingPriority(.required, for: .horizontal)
-        NSLayoutConstraint.activate([
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
-        ])
-        return button
-    }()
-
-    @objc private func actionsButtonTapped() {
-        delegate?.actionsButtonTapped(arrivalDeparture: arrivalDeparture)
-    }
 
     // MARK: - Public Properties
 
