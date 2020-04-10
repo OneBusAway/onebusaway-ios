@@ -80,7 +80,7 @@ class CreditsViewController: UIViewController, AppContext, ListAdapterDataSource
 
 class CreditViewerController: UIViewController {
     private let licenseText: String
-    private let webView = WKWebView()
+    private let webView = DocumentWebView()
 
     init(title: String, licenseText: String) {
         self.licenseText = licenseText
@@ -96,19 +96,8 @@ class CreditViewerController: UIViewController {
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(webView)
 
-        webView.loadHTMLString(buildHTML(), baseURL: nil)
-    }
-
-    private func buildHTML() -> String {
-        guard
-            let path = bundle.path(forResource: "credits", ofType: "html"),
-            let template = try? String(contentsOfFile: path)
-        else {
-            return licenseText
-        }
-
         let mungedCredits = "<code>\(licenseText.replacingOccurrences(of: "\n", with: "<br>"))</code>"
-        return template.replacingOccurrences(of: "{{{credits}}}", with: mungedCredits)
+        webView.setPageContent(mungedCredits)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }

@@ -52,6 +52,8 @@ public class Strings: NSObject {
 
     public static let scheduledNotRealTime = OBALoc("common.scheduled_not_real_time", value: "Scheduled/not real-time", comment: "Explains that this is departure comes from schedule data, not from a real-time vehicle location.")
 
+    public static let serviceAlert = OBALoc("common.service_alert", value: "Service Alert", comment: "A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes.")
+
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
 
     public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")

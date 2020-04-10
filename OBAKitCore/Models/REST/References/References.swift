@@ -67,6 +67,9 @@ public class References: NSObject, Decodable {
 
         super.init()
 
+        // depends: Agency, Route, Stop, Trip
+        situations.loadReferences(self)
+
         // depends: Agency
         routes.loadReferences(self)
 

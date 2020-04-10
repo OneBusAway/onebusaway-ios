@@ -522,8 +522,8 @@ public class StopViewController: UIViewController,
         for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
             let row = TableRowData(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
-                let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
-                self.application.viewRouter.present(alert, from: self)
+                let serviceAlertController = ServiceAlertViewController(serviceAlert: serviceAlert, application: self.application)
+                self.application.viewRouter.navigate(to: serviceAlertController, from: self)
             }
             rows.append(row)
         }

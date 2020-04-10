@@ -9,9 +9,16 @@
 import Foundation
 
 /// Also known as a 'Service Alert'
-public class Situation: NSObject, Decodable {
+public class Situation: NSObject, Decodable, HasReferences {
     public let activeWindows: [TimeWindow]
+
     public let affectedEntities: [AffectedEntity]
+
+    public private(set) var affectedAgencies = [Agency]()
+    public private(set) var affectedRoutes = [Route]()
+    public private(set) var affectedStops = [Stop]()
+    public private(set) var affectedTrips = [Trip]()
+
     public let consequences: [Consequence]
     public let createdAt: Date
     public let situationDescription: TranslatedString
@@ -83,11 +90,20 @@ public class Situation: NSObject, Decodable {
         hasher.combine(url)
         return hasher.finalize()
     }
+
+    // MARK: - HasReferences
+
+    public func loadReferences(_ references: References) {
+        affectedAgencies = affectedEntities.compactMap { references.agencyWithID($0.agencyID) }
+        affectedRoutes = affectedEntities.compactMap { references.routeWithID($0.routeID) }
+        affectedStops = affectedEntities.compactMap { references.stopWithID($0.stopID) }
+        affectedTrips = affectedEntities.compactMap { references.tripWithID($0.tripID) }
+    }
 }
 
 public class TimeWindow: NSObject, Decodable {
-    let from: Int
-    let to: Int
+    public let from: Date
+    public let to: Date
 
     enum CodingKeys: String, CodingKey {
         case from, to
@@ -95,8 +111,8 @@ public class TimeWindow: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        from = try container.decode(Int.self, forKey: .from)
-        to = try container.decode(Int.self, forKey: .to)
+        from = Date(timeIntervalSinceReferenceDate: TimeInterval(try container.decode(Int.self, forKey: .from)))
+        to = Date(timeIntervalSinceReferenceDate: TimeInterval(try container.decode(Int.self, forKey: .to)))
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -113,12 +129,12 @@ public class TimeWindow: NSObject, Decodable {
 }
 
 public class AffectedEntity: NSObject, Codable {
-    let agencyID: String
-    let applicationID: String
-    let directionID: String
-    let routeID: String
-    let stopID: String
-    let tripID: String
+    public let agencyID: String?
+    public let applicationID: String?
+    public let directionID: String?
+    public let routeID: String?
+    public let stopID: String?
+    public let tripID: String?
 
     enum CodingKeys: String, CodingKey {
         case agencyID = "agencyId"
@@ -131,12 +147,13 @@ public class AffectedEntity: NSObject, Codable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        agencyID = try container.decode(String.self, forKey: .agencyID)
-        applicationID = try container.decode(String.self, forKey: .applicationID)
-        directionID = try container.decode(String.self, forKey: .directionID)
-        routeID = try container.decode(String.self, forKey: .routeID)
-        stopID = try container.decode(String.self, forKey: .stopID)
-        tripID = try container.decode(String.self, forKey: .tripID)
+
+        agencyID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .agencyID)))
+        applicationID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .applicationID)))
+        directionID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .directionID)))
+        routeID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .routeID)))
+        stopID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .stopID)))
+        tripID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .tripID)))
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
