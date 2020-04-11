@@ -47,7 +47,7 @@ extension ListAdapterDataSource where Self: AppContext {
     /// - Returns: The `ListSectionController`
     func defaultSectionController(for object: Any) -> ListSectionController {
         let type = sectionControllerType(for: object)
-        return type.init(formatters: application.formatters, style: styleForCollection, hasVisualEffectBackground: true)
+        return type.init(formatters: application.formatters, style: styleForCollection, hasVisualEffectBackground: isWithinVisualEffectView)
     }
 
     private func sectionControllerType(for object: Any) -> (ListSectionController & OBAListSectionControllerInitializer).Type {

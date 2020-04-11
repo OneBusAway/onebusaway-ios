@@ -12,7 +12,7 @@ import IGListKit
 import SafariServices
 import OBAKitCore
 
-class MapItemViewController: UIViewController,
+class MapItemViewController: VisualEffectViewController,
     AppContext,
     ListAdapterDataSource,
     Scrollable {
@@ -52,7 +52,7 @@ class MapItemViewController: UIViewController,
             let stack = UIStackView.verticalStack(arrangedSubviews: [
                 titleView, collectionController.view
             ])
-            view.addSubview(stack)
+            visualEffectView.contentView.addSubview(stack)
             stack.pinToSuperview(.edges)
         }
     }

@@ -219,6 +219,7 @@ public class MapViewController: UIViewController,
 
         let panel = FloatingPanelController()
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
+        panel.surfaceView.backgroundColor = .clear
 
         // Set a content view controller.
         panel.set(contentViewController: childController)
@@ -242,7 +243,7 @@ public class MapViewController: UIViewController,
         // Set a content view controller.
         panel.set(contentViewController: nearbyController)
 
-        // Track a scroll view(or the siblings) in the content view controller.
+        // Track a scroll view (or the siblings) in the content view controller.
         panel.track(scrollView: nearbyController.collectionController.collectionView)
 
         return panel
@@ -276,10 +277,7 @@ public class MapViewController: UIViewController,
 
     // MARK: - Nearby Controller
 
-    private lazy var nearbyController: NearbyViewController = {
-        let nearby = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
-        return nearby
-    }()
+    private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
     public func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop) {
         show(stop: stop)

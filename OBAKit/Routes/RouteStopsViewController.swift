@@ -12,7 +12,7 @@ import SafariServices
 import OBAKitCore
 import IGListKit
 
-class RouteStopsViewController: UIViewController,
+class RouteStopsViewController: VisualEffectViewController,
     AppContext,
     ListAdapterDataSource,
     Scrollable {
@@ -53,7 +53,7 @@ class RouteStopsViewController: UIViewController,
             let stack = UIStackView.verticalStack(arrangedSubviews: [
                 titleView, collectionController.view
             ])
-            view.addSubview(stack)
+            visualEffectView.contentView.addSubview(stack)
             stack.pinToSuperview(.edges)
         }
     }
@@ -68,10 +68,7 @@ class RouteStopsViewController: UIViewController,
             }
         }
 
-        return [
-            TableHeaderData(title: OBALoc("route_stops_controller.stops_header", value: "Stops", comment: "A transit vehicle stop.")),
-            TableSectionData(rows: rows)
-        ]
+        return [TableSectionData(rows: rows)]
     }
 
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
@@ -85,6 +82,7 @@ class RouteStopsViewController: UIViewController,
     private lazy var collectionController: CollectionController = {
         let controller = CollectionController(application: application, dataSource: self)
         controller.collectionView.showsVerticalScrollIndicator = false
+        controller.collectionView.backgroundColor = nil
         return controller
     }()
 }
