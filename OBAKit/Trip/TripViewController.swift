@@ -324,7 +324,7 @@ class TripViewController: UIViewController,
             view.selectedArrivalDeparture = arrivalDeparture
 
             if let stopTime = annotation as? TripStopTime {
-                view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+                view.rightCalloutAccessoryView = UIButton.chevronButton
 
                 let calloutLabel = UILabel.autolayoutNew()
                 calloutLabel.textColor = ThemeColors.shared.secondaryLabel
