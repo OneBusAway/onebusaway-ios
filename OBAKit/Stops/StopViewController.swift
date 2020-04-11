@@ -594,13 +594,13 @@ public class StopViewController: UIViewController,
             let googleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
-                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
-                    application.canOpenURL(url)
+                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+                    self.application.canOpenURL(url)
                 else { return }
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(contentsOf: googleMaps)
+            rows.append(googleMaps)
             #endif
         }
 
