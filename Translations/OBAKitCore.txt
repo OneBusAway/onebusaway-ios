@@ -137,6 +137,12 @@
 		pl = Pomiń
 		fr = 
 		es =  
+	[common.stops]
+		en = Stops
+		comment = Noun. Plural form of a transit stop.
+		pl = Przystanki
+		fr = 
+		es =  
 	[common.updated_at_fmt]
 		en = Updated: %@
 		comment = A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.

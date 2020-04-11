@@ -597,12 +597,6 @@
 		pl = Problem z pojazdem na przystanku
 		fr = 
 		es =  
-	[route_stops_controller.stops_header]
-		en = Stops
-		comment = A transit vehicle stop.
-		pl = Przystanki
-		fr = 
-		es =  
 	[search_controller.bookmarks.header]
 		en = Bookmarks
 		comment = Title of the Bookmarks search header

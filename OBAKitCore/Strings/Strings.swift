@@ -58,6 +58,8 @@ public class Strings: NSObject {
 
     public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")
 
+    public static let stops = OBALoc("common.stops", value: "Stops", comment: "Noun. Plural form of a transit stop.")
+
     public static let updatedAtFormat = OBALoc("common.updated_at_fmt", value: "Updated: %@", comment: "A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.")
 
     public static let updating = OBALoc("common.updating", value: "Updating…", comment: "Used to tell the user that the UI they are looking at is actively being updated with new data from the server.")

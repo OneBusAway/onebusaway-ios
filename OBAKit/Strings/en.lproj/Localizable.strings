@@ -306,9 +306,6 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Problem with a Vehicle at the Stop";
 
-/* A transit vehicle stop. */
-"route_stops_controller.stops_header" = "Stops";
-
 /* Title of the Bookmarks search header */
 "search_controller.bookmarks.header" = "Bookmarks";
 
