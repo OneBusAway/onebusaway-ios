@@ -69,6 +69,7 @@ public class NearbyViewController: VisualEffectViewController,
     private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [searchBar, collectionController.view])
 
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
+
     var scrollView: UIScrollView { collectionController.collectionView }
 
     // MARK: - UI/Search
@@ -164,7 +165,7 @@ public class NearbyViewController: VisualEffectViewController,
     }
 
     private lazy var searchModeEmptyView: EmptyDataSetView = {
-        let emptyView = EmptyDataSetView()
+        let emptyView = EmptyDataSetView(alignment: .top)
         emptyView.titleLabel.text = OBALoc("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
         emptyView.bodyLabel.text = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
 
