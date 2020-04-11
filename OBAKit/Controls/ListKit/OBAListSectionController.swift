@@ -9,16 +9,21 @@ import Foundation
 import IGListKit
 import OBAKitCore
 
+protocol OBAListSectionControllerInitializer {
+    init(formatters: Formatters, style: TableCollectionStyle, hasVisualEffectBackground: Bool)
+}
+
 /// An OBAKit-specific subclass of `ListSectionController` meant to be overriden instead of `ListSectionController`.
 ///
 /// Provides easy access to the application-wide `formatters` object, along with the current view controller's table collection style.
-class OBAListSectionController<T>: ListSectionController where T: ListDiffable {
+class OBAListSectionController<T>: ListSectionController, OBAListSectionControllerInitializer where T: ListDiffable {
 
     // MARK: - Init
 
-    init(formatters: Formatters, style: TableCollectionStyle) {
+    required init(formatters: Formatters, style: TableCollectionStyle, hasVisualEffectBackground: Bool) {
         self.formatters = formatters
         self.style = style
+        self.hasVisualEffectBackground = hasVisualEffectBackground
     }
 
     // MARK: - Formatters
@@ -30,6 +35,8 @@ class OBAListSectionController<T>: ListSectionController where T: ListDiffable {
     let style: TableCollectionStyle
 
     var isStyleGrouped: Bool { style == .grouped }
+
+    let hasVisualEffectBackground: Bool
 
     // MARK: - Sizing
 

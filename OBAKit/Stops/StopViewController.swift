@@ -623,12 +623,7 @@ public class StopViewController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        if object is StopHeaderSection {
-            return StopHeaderSectionController(formatters: application.formatters, style: .plain)
-        }
-        else {
-            return defaultSectionController(for: object)
-        }
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {

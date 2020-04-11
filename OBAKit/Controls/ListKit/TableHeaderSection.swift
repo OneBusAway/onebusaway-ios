@@ -11,6 +11,7 @@ import OBAKitCore
 
 // MARK: - TableHeaderData
 
+/// View model for a collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderData: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
         self as NSObjectProtocol
@@ -31,6 +32,7 @@ final class TableHeaderData: NSObject, ListDiffable {
 
 // MARK: - TableHeaderSectionController
 
+/// Section controller for a collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderSectionController: OBAListSectionController<TableHeaderData> {
     public override func sizeForItem(at index: Int) -> CGSize {
         return CGSize(width: collectionContext!.containerSize.width, height: 20.0)
@@ -39,15 +41,20 @@ final class TableHeaderSectionController: OBAListSectionController<TableHeaderDa
     // MARK: - Cell
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
+        guard let sectionData = sectionData else { fatalError() }
+
         let cell = dequeueReusableCell(type: TableHeaderCell.self, at: index)
-        cell.textLabel.text = sectionData?.title ?? ""
+        cell.textLabel.text = sectionData.title
         cell.isGrouped = style == .grouped
+        cell.hasVisualEffectBackground = hasVisualEffectBackground
+
         return cell
     }
 }
 
 // MARK: - TableHeaderCell
 
+/// A collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderCell: SelfSizingCollectionCell, Separated {
     private let kUseDebugColors = false
 
@@ -61,7 +68,7 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = ThemeColors.shared.secondaryBackgroundColor
+        backgroundColor = defaultBackgroundColor
 
         addSubview(textLabel)
 
@@ -84,6 +91,21 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
     override func prepareForReuse() {
         super.prepareForReuse()
         textLabel.text = nil
+    }
+
+    // MARK: - Visual Effect Background
+
+    private let defaultBackgroundColor = ThemeColors.shared.secondaryBackgroundColor
+
+    var hasVisualEffectBackground: Bool = false {
+        didSet {
+            if hasVisualEffectBackground {
+                backgroundColor = UIColor(white: 1.0, alpha: 0.2)
+            }
+            else {
+                backgroundColor = defaultBackgroundColor
+            }
+        }
     }
 
     // MARK: - Separator

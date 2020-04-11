@@ -77,12 +77,7 @@ public class MoreViewController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        switch object {
-        case is MoreHeaderSection:
-            return MoreHeaderSectionController(formatters: application.formatters, style: tableStyle)
-        default:
-            return defaultSectionController(for: object)
-        }
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
