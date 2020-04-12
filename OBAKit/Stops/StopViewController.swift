@@ -20,9 +20,9 @@ public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
     AppContext,
     BookmarkEditorDelegate,
+    Idleable,
     ListAdapterDataSource,
     ModalDelegate,
-    Idleable,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -457,16 +457,31 @@ public class StopViewController: UIViewController,
     private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
 
-        let data = ArrivalDepartureSectionData(
-            arrivalDeparture: arrivalDeparture,
-            isAlarmAvailable: alarmAvailable) { [weak self] in
+        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable) { [weak self] in
             guard let self = self else { return }
             self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
+        }
+
+        data.previewDestination = { [weak self] in
+            guard let self = self else { return nil }
+            let controller = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
+            controller.enterPreviewMode()
+            return controller
         }
 
         data.onCreateAlarm = { [weak self] in
             guard let self = self else { return }
             self.addAlarm(arrivalDeparture: arrivalDeparture)
+        }
+
+        data.onAddBookmark = { [weak self] in
+            guard let self = self else { return }
+            self.addBookmark(arrivalDeparture: arrivalDeparture)
+        }
+
+        data.onShareTrip = { [weak self] in
+            guard let self = self else { return }
+            self.shareTripStatus(arrivalDeparture: arrivalDeparture)
         }
 
         data.onShowOptions = { [weak self] in
@@ -645,13 +660,13 @@ public class StopViewController: UIViewController,
     public func showMoreOptions(arrivalDeparture: ArrivalDeparture) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        actionSheet.addAction(title: OBALoc("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
+        actionSheet.addAction(title: Strings.addBookmark) { [weak self] _ in
             guard let self = self else { return }
             self.addBookmark(arrivalDeparture: arrivalDeparture)
         }
 
         if application.features.deepLinking == .running {
-            actionSheet.addAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.)")) { [weak self] _ in
+            actionSheet.addAction(title: Strings.shareTrip) { [weak self] _ in
                 guard let self = self else { return }
                 self.shareTripStatus(arrivalDeparture: arrivalDeparture)
             }

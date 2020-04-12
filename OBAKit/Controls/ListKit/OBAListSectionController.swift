@@ -9,9 +9,20 @@ import Foundation
 import IGListKit
 import OBAKitCore
 
+// MARK: - ContextMenuProvider
+
+@available(iOS 13.0, *)
+protocol ContextMenuProvider {
+    func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration?
+}
+
+// MARK: - OBAListSectionControllerInitializer
+
 protocol OBAListSectionControllerInitializer {
     init(formatters: Formatters, style: TableCollectionStyle, hasVisualEffectBackground: Bool)
 }
+
+// MARK: - OBAListSectionController
 
 /// An OBAKit-specific subclass of `ListSectionController` meant to be overriden instead of `ListSectionController`.
 ///
