@@ -22,13 +22,22 @@ class TripViewController: UIViewController,
 
     public var selectedStopTime: TripStopTime? {
         didSet {
-            self.mapView.deselectAnnotation(oldValue, animated: true)
-            guard oldValue != self.selectedStopTime,
-                let selectedStopTime = self.selectedStopTime else { return }
+            var animated = true
+            if isFirstStopTimeLoad {
+                animated = false
+                isFirstStopTimeLoad.toggle()
+            }
+            self.mapView.deselectAnnotation(oldValue, animated: animated)
 
-            self.mapView.selectAnnotation(selectedStopTime, animated: true)
+            guard
+                oldValue != self.selectedStopTime,
+                let selectedStopTime = self.selectedStopTime
+            else { return }
+
+            self.mapView.selectAnnotation(selectedStopTime, animated: animated)
         }
     }
+    private var isFirstStopTimeLoad = true
 
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
