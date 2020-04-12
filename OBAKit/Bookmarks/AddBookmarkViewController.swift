@@ -35,7 +35,7 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
 
-        title = OBALoc("add_bookmark_controller.title", value: "Add Bookmark", comment: "Title for the Add Bookmark view controller.")
+        title = Strings.addBookmark
     }
 
     // MARK: - UIViewController

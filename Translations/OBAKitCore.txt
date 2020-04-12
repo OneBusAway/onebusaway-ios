@@ -1,4 +1,16 @@
 [[OBAKitCore]]
+	[common.add_alarm]
+		en = Add Alarm
+		comment = This will appear on a button or as a title, and indicates that this UI will create a new bookmark.
+		pl = Dodaj alarm
+		fr = 
+		es =
+	[common.add_bookmark]
+		en = Add Bookmark
+		comment = This will appear on a button or as a title, and indicates that this UI will create a new bookmark.
+		pl = Dodaj zakładkę
+		fr = 
+		es =
 	[common.back]
 		en = Back
 		comment = Back, as in 'back to the previous screen.'
@@ -131,6 +143,12 @@
 		pl = Ustawienia
 		fr = 
 		es =  
+	[common.share_trip]
+		en = Share Trip
+		comment = Button title for sharing the status of your trip (i.e. location, arrival time, etc.)
+		pl = 
+		fr = 
+		es = 
 	[common.skip]
 		en = Skip
 		comment = The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'

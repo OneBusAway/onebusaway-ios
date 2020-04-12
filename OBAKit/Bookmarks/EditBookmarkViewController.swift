@@ -35,7 +35,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         super.init(nibName: nil, bundle: nil)
 
         if self.bookmark == nil {
-            title = OBALoc("edit_bookmark_controller.title_add", value: "Add Bookmark", comment: "Title for the Edit Bookmark controller in add mode")
+            title = Strings.addBookmark
         }
         else {
             title = OBALoc("edit_bookmark_controller.title_edit", value: "Edit Bookmark", comment: "Title for the Edit Bookmark controller in edit mode")

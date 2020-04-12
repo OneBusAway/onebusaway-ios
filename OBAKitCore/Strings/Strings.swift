@@ -10,6 +10,10 @@ import Foundation
 
 public class Strings: NSObject {
 
+    public static let addAlarm = OBALoc("common.add_alarm", value: "Add Alarm", comment: "This will appear on a button or as a title, and indicates that this UI will create a new bookmark.")
+
+    public static let addBookmark = OBALoc("common.add_bookmark", value: "Add Bookmark", comment: "This will appear on a button or as a title, and indicates that this UI will create a new bookmark.")
+
     public static let alarm = OBALoc("common.alarm", value: "Alarm", comment: "The noun, like an alarm clock or an alarm bell.")
 
     public static let back = OBALoc("common.back", value: "Back", comment: "Back, as in 'back to the previous screen.'")
@@ -55,6 +59,8 @@ public class Strings: NSObject {
     public static let serviceAlert = OBALoc("common.service_alert", value: "Service Alert", comment: "A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes.")
 
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
+
+    public static let shareTrip = OBALoc("common.share_trip", value: "Share Trip", comment: "Button title for sharing the status of your trip (i.e. location, arrival time, etc.)")
 
     public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")
 
