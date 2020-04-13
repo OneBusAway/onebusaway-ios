@@ -22,7 +22,7 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     var onAddBookmark: VoidBlock?
     var onShareTrip: VoidBlock?
 
-    var previewDestination: (() -> UIViewController?)?
+    var previewDestination: ControllerPreviewProvider?
 
     init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool = false, selected: @escaping VoidBlock) {
         self.arrivalDeparture = arrivalDeparture

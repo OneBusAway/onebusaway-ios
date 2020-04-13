@@ -9,7 +9,17 @@ import Foundation
 import IGListKit
 import OBAKitCore
 
-// MARK: - ContextMenuProvider
+// MARK: - Context Menus
+
+typealias ControllerPreviewProvider = () -> UIViewController?
+
+/// Implement this protocol on `UIViewController`s that are meant to be viewable as Context Menu previews.
+///
+/// For more information, read the `ContextMenus.md` tutorial.
+protocol Previewable: NSObjectProtocol {
+    func enterPreviewMode()
+    func exitPreviewMode()
+}
 
 @available(iOS 13.0, *)
 protocol ContextMenuProvider {

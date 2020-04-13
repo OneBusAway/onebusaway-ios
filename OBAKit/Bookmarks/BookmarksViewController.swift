@@ -126,7 +126,10 @@ public class BookmarksViewController: UIViewController,
                 arrDeps = dataLoader.dataForKey(key)
             }
 
-            return BookmarkArrivalData(bookmark: bm, arrivalDepartures: arrDeps, selected: didSelectBookmark(_:), deleted: didDeleteBookmark(_:), edited: didEditBookmark(_:))
+            let viewModel = BookmarkArrivalData(bookmark: bm, arrivalDepartures: arrDeps, selected: didSelectBookmark(_:), deleted: didDeleteBookmark(_:), edited: didEditBookmark(_:))
+            viewModel.previewDestination = { StopViewController(application: self.application, stop: bm.stop) }
+
+            return viewModel
         }
 
         if arrivalData.count == 0 {
