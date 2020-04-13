@@ -2,7 +2,13 @@
 
 This guide is about implementing an iOS 13 `UIContextMenu`, which replaced 3D Touch/Force Touch.
 
-Kyle Bashour, a software engineer, [wrote a very helpful guide about how this feature works](https://kylebashour.com/posts/context-menu-guide). I found Kyle's guide to be invaluable to my understanding of the feature. This guide, in contrast, is strictly about OBA's implementation of `UIContextMenu`s.
+<img src='images/uicontextmenu.jpg' width="320" alt="UIContextMenu example">
+
+## Helpful Resources
+
+* Kyle Bashour, a software engineer, [wrote a very helpful guide about how this feature works](https://kylebashour.com/posts/context-menu-guide). I found Kyle's guide to be invaluable to my understanding of the feature. This guide, in contrast, is strictly about OBA's implementation of `UIContextMenu`s.
+* [Apple's documentation about this feature](https://developer.apple.com/documentation/uikit/menus_and_shortcuts) may be helpful as well.
+* WWDC 2019 Session 224, [Modernizing Your UI for iOS 13](https://developer.apple.com/videos/play/wwdc2019/224/) also has information on this feature.
 
 ## Dependence on CollectionController
 
