@@ -381,20 +381,20 @@ public class StopViewController: UIViewController,
 
     // MARK: - IGListKit
 
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        guard stopArrivals != nil else {
-            // TODO: show a loading message too
-            return [stopHeaderSection].compactMap {$0}
-        }
-
+    /// Generates a collection of `ListDiffable` objects that should be displayed in a Context Menu preview mode.
+    private func objectsForPreviewMode() -> [ListDiffable] {
         var sections = [ListDiffable?]()
+        sections.append(stopHeaderSection)
+        sections.append(contentsOf: stopArrivalsSections)
+        return sections.compactMap { $0 }
+    }
 
-        if inPreviewMode {
-            sections.append(stopHeaderSection)
-            sections.append(contentsOf: stopArrivalsSections)
-            return sections.compactMap { $0 }
-        }
-
+    /// Generates a collection of `ListDiffable` objects that should be displayed during non-preview use of the view controller.
+    ///
+    /// In other words, this method generates the regular set of `ListDiffable` objects that the user would want to see when
+    /// directly viewing this view controller, as opposed to looking at it through a Context Menu preview.
+    private func objectsForRegularMode() -> [ListDiffable] {
+        var sections = [ListDiffable?]()
         sections.append(stopHeaderSection)
 
         // Service Alerts
@@ -418,6 +418,20 @@ public class StopViewController: UIViewController,
         sections.append(contentsOf: moreOptions)
 
         return sections.compactMap { $0 }
+    }
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        guard stopArrivals != nil else {
+            // TODO: show a loading message too
+            return [stopHeaderSection].compactMap {$0}
+        }
+
+        if inPreviewMode {
+            return objectsForPreviewMode()
+        }
+        else {
+            return objectsForRegularMode()
+        }
     }
 
     // MARK: - Data/Stop Header
