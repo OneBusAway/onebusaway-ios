@@ -102,7 +102,13 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
                 let sectionData = self.sectionData
             else { return nil }
 
-            return sectionData.previewDestination?()
+            let controller = sectionData.previewDestination?()
+
+            if let previewable = controller as? Previewable {
+                previewable.enterPreviewMode()
+            }
+
+            return controller
         }
 
         return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider) { [weak self] _ in

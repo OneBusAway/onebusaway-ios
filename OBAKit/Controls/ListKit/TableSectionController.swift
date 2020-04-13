@@ -26,6 +26,12 @@ public class TableRowData: ListViewModel {
     public var image: UIImage?
     public var imageSize: CGFloat?
 
+    /// Generates the preview view controller for a `UIContextMenu`.
+    var previewDestination: (() -> UIViewController?)?
+
+    /// Generates the `UIMenu`. This block must return a `UIMenu` object or `nil`. `Any?` return type in block is due to the need to support iOS 12.
+    var buildContextMenu: (() -> Any?)?
+
     // MARK: - Initialization
 
     /// Default Initializer. Lets you set everything.
@@ -155,7 +161,7 @@ public class TableSectionData: NSObject, ListDiffable {
 
 // MARK: - TableSectionController
 
-final class TableSectionController: OBAListSectionController<TableSectionData>, SwipeCollectionViewCellDelegate {
+final class TableSectionController: OBAListSectionController<TableSectionData>, SwipeCollectionViewCellDelegate, ContextMenuProvider {
     public override func numberOfItems() -> Int {
         return sectionData?.rows.count ?? 0
     }
@@ -209,5 +215,28 @@ final class TableSectionController: OBAListSectionController<TableSectionData>, 
         }
 
         return [deleteAction]
+    }
+
+    // MARK: - Context Menu
+
+    @available(iOS 13.0, *)
+    func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
+        guard let sectionData = self.sectionData else { return nil }
+        let tableRow = sectionData.rows[indexPath.item]
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+            guard let controller = tableRow.previewDestination?() else { return nil }
+            if let previewable = controller as? Previewable {
+                previewable.enterPreviewMode()
+            }
+            return controller
+        }, actionProvider: { _ -> UIMenu? in
+            if let menu = tableRow.buildContextMenu?() as? UIMenu {
+                return menu
+            }
+            else {
+                return nil
+            }
+        })
     }
 }

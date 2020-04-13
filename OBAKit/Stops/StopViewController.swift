@@ -23,6 +23,7 @@ public class StopViewController: UIViewController,
     Idleable,
     ListAdapterDataSource,
     ModalDelegate,
+    Previewable,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -388,6 +389,12 @@ public class StopViewController: UIViewController,
 
         var sections = [ListDiffable?]()
 
+        if inPreviewMode {
+            sections.append(stopHeaderSection)
+            sections.append(contentsOf: stopArrivalsSections)
+            return sections.compactMap { $0 }
+        }
+
         sections.append(stopHeaderSection)
 
         // Service Alerts
@@ -464,9 +471,7 @@ public class StopViewController: UIViewController,
 
         data.previewDestination = { [weak self] in
             guard let self = self else { return nil }
-            let controller = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
-            controller.enterPreviewMode()
-            return controller
+            return TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
         }
 
         data.onCreateAlarm = { [weak self] in
@@ -824,6 +829,20 @@ public class StopViewController: UIViewController,
         didSet {
             dataDidReload()
         }
+    }
+
+    // MARK: - Previewable
+
+    private var inPreviewMode = false
+
+    func enterPreviewMode() {
+        fakeToolbar.isHidden = true
+        inPreviewMode = true
+    }
+
+    func exitPreviewMode() {
+        fakeToolbar.isHidden = false
+        inPreviewMode = false
     }
 
     // MARK: - Analytics

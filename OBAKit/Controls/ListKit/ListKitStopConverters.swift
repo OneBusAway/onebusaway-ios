@@ -13,12 +13,12 @@ import OBAKitCore
 ///
 /// - Note: The data produced by methods in this protocol are specifically
 ///         designed to work with `objects(for listAdapter:)`.
-public protocol ListKitStopConverters {
+protocol ListKitStopConverters {
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
 }
 
-public extension ListKitStopConverters where Self: UIViewController {
+extension ListKitStopConverters where Self: AppContext {
 
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
     ///
@@ -29,8 +29,7 @@ public extension ListKitStopConverters where Self: UIViewController {
     ///   - tapped: A tap handler, invoked when any of the `Stop`s are tapped.
     /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData {
-        let rows = stops.map { TableRowData(stop: $0, tapped: tapped) }
-        return TableSectionData(rows: rows)
+        return tableSection(stops: stops, tapped: tapped, deleted: nil)
     }
 
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
@@ -46,13 +45,17 @@ public extension ListKitStopConverters where Self: UIViewController {
         let rows = stops.map { (stop: Stop) -> TableRowData in
             let row = TableRowData(stop: stop, tapped: tapped)
             row.deleted = deleted
+            row.previewDestination = {
+                StopViewController(application: self.application, stop: stop)
+            }
+
             return row
         }
         return TableSectionData(rows: rows)
     }
 }
 
-public extension TableRowData {
+extension TableRowData {
 
     /// Creates a row from a `Stop`. Includes a tap handler closure for easily assigning an action to the row.
     /// - Parameters:

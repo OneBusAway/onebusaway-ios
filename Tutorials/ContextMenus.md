@@ -16,13 +16,36 @@ This feature only works as described if your user interface is hosted within an 
 
 ## IGListKit Components
 
-Implement the following method in your `OBAListSectionController` subclass:
+Mark your `OBAListSectionController` subclass as conforming to the `ContextMenuProvider` protocol:
+
+    final class MySectionController: OBAListSectionController<MyViewModel>, ContextMenuProvider { }
+    
+and then implement the `contextMenuConfiguration(forItemAt:)` method:
 
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         // TODO!
     }
-    
+
 Potientally add one or more blocks to your `ListDiffable`-implementing class (i.e. the view model) for a `UIViewController` preview and for each `UIMenu`action that you will support in the `UIContextMenu`.
+
+If your previewed view controller implements the `Previewable` protocol, then you should be calling its `enterPreviewMode()` method here while constructing `UIContextMenuConfiguration`'s `previewProvider` parameter.
+
+Here's a complete example of creating a `UIContextMenuConfiguration` object within `contextMenuConfiguration(forItemAt:)`:
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+            guard let controller = tableRow.previewDestination?() else { return nil }
+            if let previewable = controller as? Previewable {
+                previewable.enterPreviewMode()
+            }
+            return controller
+        }, actionProvider: { _ -> UIMenu? in
+            if let menu = tableRow.buildContextMenu?() as? UIMenu {
+                return menu
+            }
+            else {
+                return nil
+            }
+        })
 
 ## Hosting View Controller
 
@@ -33,7 +56,7 @@ A `UIContextMenu` is presented from a view controller. This view controller, ref
 
 ## Previewed View Controller
 
-This view controller should be conform to the `Previewable` protocol and implement its required methods.
+This view controller should conform to the `Previewable` protocol and implement its required methods.
 
 * `enterPreviewMode()` - configure your view controller UI to be in a 'bare bones' preview state. Show a small, glanceable UI here.
 * `exitPreviewMode()` - configure your view controller UI to be presented in a full screen normal mode. Unhide all of the UI you disabled in `enterPreviewMode().`
