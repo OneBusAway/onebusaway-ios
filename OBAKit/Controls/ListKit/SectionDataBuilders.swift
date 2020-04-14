@@ -21,7 +21,7 @@ protocol SectionDataBuilders: NSObjectProtocol {
 }
 
 extension SectionDataBuilders where Self: AppContext {
-    
+
     /// Converts an array of `Situation`s into `MessageSectionData` objects, which look like rows in Mail.app.
     /// - Parameter situations: The list of `Situation`s that will be converted into `MessageSectionData` objects.
     /// - Returns: An array of `MessageSectionData` view models, suitable for returning via `ListAdapterDataSource`'s `objects(for:)` method.

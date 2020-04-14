@@ -19,8 +19,10 @@ public class MapViewController: UIViewController,
     FloatingPanelControllerDelegate,
     LocationServiceDelegate,
     MapRegionDelegate,
+    MapRegionMapViewDelegate,
     ModalDelegate,
-    NearbyDelegate {
+    NearbyDelegate,
+    UIContextMenuInteractionDelegate {
 
     // MARK: - Hoverbar
 
@@ -96,14 +98,20 @@ public class MapViewController: UIViewController,
         view.addSubview(statusOverlay)
 
         NSLayoutConstraint.activate([
-            statusOverlay.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -8.0),
-            statusOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8.0),
-            statusOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8.0)
+            statusOverlay.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -ThemeMetrics.padding),
+            statusOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: ThemeMetrics.padding),
+            statusOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -ThemeMetrics.padding)
         ])
     }
 
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+        // Only one map will be visible on screen at any given time,
+        // and so we can swap this delegate on the MapRegionManager
+        // at different times. I think this expectation will become
+        // unfounded when UIScene gets adopted in the app. TODO.
+        self.application.mapRegionManager.mapViewDelegate = self
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
@@ -293,7 +301,7 @@ public class MapViewController: UIViewController,
 
     // MARK: - MapRegionDelegate
 
-    public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         if let region = view.annotation as? Region {
             let title = OBALoc("map_controller.change_region_alert.title", value: "Change Region?", comment: "Title of the alert that appears when the user is updating their current region manually.")
             let messageFmt = OBALoc("map_controller.change_region_alert.message_fmt", value: "Would you like to change your region to %@?", comment: "Body of the alert that appears when the user is updating their current region manually.")
@@ -310,7 +318,20 @@ public class MapViewController: UIViewController,
         }
     }
 
-    public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+        // nop.
+    }
+
+    func mapRegionManager(_ manager: MapRegionManager, customize stopAnnotationView: StopAnnotationView) {
+        if #available(iOS 13.0, *) {
+            if stopAnnotationView.interactions.count == 0 {
+                let interaction = UIContextMenuInteraction(delegate: self)
+                stopAnnotationView.addInteraction(interaction)
+            }
+        }
+    }
+
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stop = view.annotation as? Stop else {
             return
         }
@@ -411,5 +432,36 @@ public class MapViewController: UIViewController,
 
     public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
         programmaticallyUpdateVisibleMapRegion(location: location)
+    }
+
+    // MARK: - Context Menus
+
+    @available(iOS 13.0, *)
+    public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard
+            let annotationView = interaction.view as? MKAnnotationView,
+            let stop = annotationView.annotation as? Stop
+        else { return nil }
+
+        let previewController = { () -> UIViewController in
+            let stopController = StopViewController(application: self.application, stop: stop)
+            stopController.enterPreviewMode()
+            return stopController
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewController, actionProvider: nil)
+    }
+
+    @available(iOS 13.0, *)
+    public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        guard let viewController = animator.previewViewController else { return }
+
+        animator.addCompletion {
+            if let previewable = viewController as? Previewable {
+                previewable.exitPreviewMode()
+            }
+
+            self.application.viewRouter.navigate(to: viewController, from: self, animated: false)
+        }
     }
 }

@@ -26,16 +26,21 @@ public protocol MapRegionDelegate {
 
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
     @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
+}
 
-    @objc optional func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
-    @objc optional func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
-
-    @objc optional func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
+protocol MapRegionMapViewDelegate: NSObjectProtocol {
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView)
+    func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView)
+    func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl)
+    func mapRegionManager(_ manager: MapRegionManager, customize stopAnnotationView: StopAnnotationView)
 }
 
 // MARK: - MapRegionManager
 
-public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelegate, RegionsServiceDelegate {
+public class MapRegionManager: NSObject,
+    MKMapViewDelegate,
+    RegionsServiceDelegate,
+    StopAnnotationDelegate {
 
     private let application: Application
 
@@ -202,6 +207,10 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
         self.requestStopsOperation = requestStopsOperation
     }
+
+    // MARK: - Map View Delegate
+
+    weak var mapViewDelegate: MapRegionMapViewDelegate?
 
     // MARK: - Delegates
 
@@ -474,21 +483,15 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
     }
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        for delegate in delegates.allObjects {
-            delegate.mapView?(mapView, didSelect: view)
-        }
+        mapViewDelegate?.mapView(mapView, didSelect: view)
     }
 
     public func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
-        for delegate in delegates.allObjects {
-            delegate.mapView?(mapView, didDeselect: view)
-        }
+        mapViewDelegate?.mapView(mapView, didDeselect: view)
     }
 
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        for delegate in delegates.allObjects {
-            delegate.mapView?(mapView, annotationView: view, calloutAccessoryControlTapped: control)
-        }
+        mapViewDelegate?.mapView(mapView, annotationView: view, calloutAccessoryControlTapped: control)
     }
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -505,6 +508,7 @@ public class MapRegionManager: NSObject, StopAnnotationDelegate, MKMapViewDelega
 
         if let stopAnnotation = annotationView as? StopAnnotationView {
             stopAnnotation.delegate = self
+            mapViewDelegate?.mapRegionManager(self, customize: stopAnnotation)
         }
 
         return annotationView
