@@ -24,6 +24,7 @@ public class StopViewController: UIViewController,
     ListAdapterDataSource,
     ModalDelegate,
     Previewable,
+    SectionDataBuilders,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -541,26 +542,13 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Service Alerts
-
+    
     private var serviceAlertsSection: [ListDiffable] {
-        guard
-            let situations = stopArrivals?.situations,
-            situations.count > 0
-        else { return [] }
-
-        var sections = [ListDiffable]()
-
-        for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
-            let formattedDate = application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt)
-            let message = MessageSectionData(author: Strings.serviceAlert, date: formattedDate, subject: serviceAlert.summary.value, summary: serviceAlert.situationDescription.value) { [weak self] _ in
-                guard let self = self else { return }
-                let serviceAlertController = ServiceAlertViewController(serviceAlert: serviceAlert, application: self.application)
-                self.application.viewRouter.navigate(to: serviceAlertController, from: self)
-            }
-            sections.append(message)
+        guard let situations = stopArrivals?.situations else {
+            return []
         }
-
-        return sections
+        
+        return sectionData(from: situations)
     }
 
     // MARK: - Data/Hidden Routes Toggle

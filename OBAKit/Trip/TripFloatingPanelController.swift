@@ -14,6 +14,7 @@ public class TripFloatingPanelController: UIViewController,
     AppContext,
     ListAdapterDataSource,
     ListKitStopConverters,
+    SectionDataBuilders,
     ViewRouterDelegate {
 
     let application: Application
@@ -236,20 +237,10 @@ public class TripFloatingPanelController: UIViewController,
     }
 
     private func buildServiceAlertsSections(situations: [Situation]) -> [ListDiffable] {
-        var rows = [TableRowData]()
-        for serviceAlert in situations.sorted(by: { $0.createdAt > $1.createdAt }) {
-            let row = TableRowData(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                let alert = SituationAlertPresenter.buildAlert(from: serviceAlert, application: self.application)
-                self.application.viewRouter.present(alert, from: self)
-            }
-            rows.append(row)
-        }
+        var sections = [ListDiffable]()
+        sections.append(contentsOf: sectionData(from: situations))
+        sections.append(TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")))
 
-        let header1 = TableHeaderData(title: OBALoc("trip_details_controller.service_alerts.header", value: "Service Alerts", comment: "Service alerts header in the trip details controller."))
-        let section1 = TableSectionData(rows: rows)
-        let header2 = TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section."))
-
-        return [header1, section1, header2]
+        return sections
     }
 }
