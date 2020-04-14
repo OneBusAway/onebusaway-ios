@@ -765,12 +765,6 @@
 		pl = Załaduj więcej
 		fr = 
 		es =  
-	[stop_controller.service_alerts_header]
-		en = Service Alerts
-		comment = The header for the Service Alerts section of the stops controller.
-		pl = Komunikaty o stanie sieci
-		fr = 
-		es =  
 	[stop_preferences_controller.routes_section.header_title]
 		en = Routes
 		comment = Title of the Routes section

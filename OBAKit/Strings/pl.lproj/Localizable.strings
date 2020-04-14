@@ -372,9 +372,6 @@
 /* Load More button */
 "stop_controller.load_more_button" = "Załaduj więcej";
 
-/* The header for the Service Alerts section of the stops controller. */
-"stop_controller.service_alerts_header" = "Komunikaty o stanie sieci";
-
 /* Title of the Routes section */
 "stop_preferences_controller.routes_section.header_title" = "Linie";
 

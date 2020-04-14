@@ -384,9 +384,6 @@
 /* Load More button */
 "stop_controller.load_more_button" = "Load More";
 
-/* The header for the Service Alerts section of the stops controller. */
-"stop_controller.service_alerts_header" = "Service Alerts";
-
 /* Title of the Routes section */
 "stop_preferences_controller.routes_section.header_title" = "Routes";
 

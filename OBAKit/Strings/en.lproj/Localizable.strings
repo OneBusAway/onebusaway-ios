@@ -378,9 +378,6 @@
 /* Load More button */
 "stop_controller.load_more_button" = "Load More";
 
-/* The header for the Service Alerts section of the stops controller. */
-"stop_controller.service_alerts_header" = "Service Alerts";
-
 /* Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
 "stop_controller.share_trip" = "Share Trip";
 

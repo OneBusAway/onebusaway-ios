@@ -549,20 +549,16 @@ public class StopViewController: UIViewController,
         else { return [] }
 
         var sections = [ListDiffable]()
-        sections.append(TableHeaderData(title: OBALoc("stop_controller.service_alerts_header", value: "Service Alerts", comment: "The header for the Service Alerts section of the stops controller.")))
-
-        var rows = [TableRowData]()
 
         for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
-            let row = TableRowData(title: serviceAlert.summary.value, accessoryType: .disclosureIndicator) { [weak self] _ in
+            let formattedDate = application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt)
+            let message = MessageSectionData(author: Strings.serviceAlert, date: formattedDate, subject: serviceAlert.summary.value, summary: serviceAlert.situationDescription.value) { [weak self] _ in
                 guard let self = self else { return }
                 let serviceAlertController = ServiceAlertViewController(serviceAlert: serviceAlert, application: self.application)
                 self.application.viewRouter.navigate(to: serviceAlertController, from: self)
             }
-            rows.append(row)
+            sections.append(message)
         }
-
-        sections.append(TableSectionData(rows: rows))
 
         return sections
     }
