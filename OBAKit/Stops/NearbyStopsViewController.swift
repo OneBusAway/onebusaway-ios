@@ -137,7 +137,6 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = createSectionController(for: object)
-        sectionController.inset = .zero
         return sectionController
     }
 

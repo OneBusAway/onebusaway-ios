@@ -17,6 +17,10 @@ protocol HasTableStyle: NSObjectProtocol {
     var tableStyle: TableCollectionStyle { get }
 }
 
+protocol HasVisualEffect: NSObjectProtocol {
+    var hasVisualEffectBackground: Bool { get }
+}
+
 extension ListAdapterDataSource where Self: AppContext {
 
     private var styleForCollection: TableCollectionStyle {
@@ -27,6 +31,14 @@ extension ListAdapterDataSource where Self: AppContext {
         return tableStyled.tableStyle
     }
 
+    private var isWithinVisualEffectView: Bool {
+        guard let hasEffect = self as? HasVisualEffect else {
+            return false
+        }
+
+        return hasEffect.hasVisualEffectBackground
+    }
+
     /// Provides a default way to map objects to `ListSectionController` objects.
     ///
     /// Add new section controller types here.
@@ -34,30 +46,26 @@ extension ListAdapterDataSource where Self: AppContext {
     /// - Parameter object: An object that will be mapped to a `ListSectionController`
     /// - Returns: The `ListSectionController`
     func defaultSectionController(for object: Any) -> ListSectionController {
+        let type = sectionControllerType(for: object)
+        return type.init(formatters: application.formatters, style: styleForCollection, hasVisualEffectBackground: isWithinVisualEffectView)
+    }
+
+    private func sectionControllerType(for object: Any) -> (ListSectionController & OBAListSectionControllerInitializer).Type {
         switch object {
-        case is AdjacentTripSection:
-            return AdjacentTripController(formatters: application.formatters, style: styleForCollection)
-        case is ArrivalDepartureSectionData:
-            return StopArrivalSectionController(formatters: application.formatters, style: styleForCollection)
-        case is BookmarkSectionData:
-            return BookmarkSectionController(formatters: application.formatters, style: styleForCollection)
-        case is LoadMoreSectionData:
-            return LoadMoreSectionController(formatters: application.formatters, style: styleForCollection)
-        case is MessageSectionData:
-            return MessageSectionController(formatters: application.formatters, style: styleForCollection)
-        case is TableHeaderData:
-            return TableHeaderSectionController(formatters: application.formatters, style: styleForCollection)
-        case is TableSectionData:
-            return TableSectionController(formatters: application.formatters, style: styleForCollection)
-        case is ToggleSectionData:
-            return ToggleSectionController(formatters: application.formatters, style: styleForCollection)
-        case is TripStopListItem:
-            return TripStopSectionController(formatters: application.formatters, style: styleForCollection)
-        case is WalkTimeSectionData:
-            return WalkTimeSectionController(formatters: application.formatters, style: styleForCollection)
+        case is AdjacentTripSection: return AdjacentTripController.self
+        case is ArrivalDepartureSectionData: return StopArrivalSectionController.self
+        case is BookmarkSectionData: return BookmarkSectionController.self
+        case is LoadMoreSectionData: return LoadMoreSectionController.self
+        case is MessageSectionData: return MessageSectionController.self
+        case is MoreHeaderSection: return MoreHeaderSectionController.self
+        case is StopHeaderSection: return StopHeaderSectionController.self
+        case is TableHeaderData: return TableHeaderSectionController.self
+        case is TableSectionData: return TableSectionController.self
+        case is ToggleSectionData: return ToggleSectionController.self
+        case is TripStopListItem: return TripStopSectionController.self
+        case is WalkTimeSectionData: return WalkTimeSectionController.self
         default:
-            DDLogWarn("You are trying to render \(object), which doesn't have a SectionController mapped to it. Is this a mistake?")
-            return LabelSectionController()
+            fatalError("You are trying to render \(object), which doesn't have a SectionController mapped to it. This is a mistake!")
         }
     }
 }

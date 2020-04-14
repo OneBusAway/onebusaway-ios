@@ -127,10 +127,21 @@ public class TripFloatingPanelController: UIViewController,
         return view
     }()
 
+    private lazy var stopArrivalWrapper: UIView = {
+        let wrapper = stopArrivalView.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            stopArrivalView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.padding),
+            stopArrivalView.leadingAnchor.constraint(equalTo: wrapper.layoutMarginsGuide.leadingAnchor),
+            stopArrivalView.trailingAnchor.constraint(equalTo: wrapper.layoutMarginsGuide.trailingAnchor),
+            stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -ThemeMetrics.compactPadding)
+        ])
+        return wrapper
+    }()
+
     private lazy var topPaddingView: UIView = {
         let view = UIView.autolayoutNew()
         NSLayoutConstraint.activate([
-            view.heightAnchor.constraint(equalToConstant: 8.0)
+            view.heightAnchor.constraint(equalToConstant: ThemeMetrics.floatingPanelTopInset)
         ])
         return view
     }()
@@ -144,7 +155,7 @@ public class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalView, separatorView, collectionController.view])
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, collectionController.view])
 
     // MARK: - ViewRouterDelegate methods
 

@@ -141,7 +141,7 @@ class AlarmTimePickerItem: BLTNPageItem {
 
         descriptionText = OBALoc("alarm_time_picker.description", value: "Remind me when this vehicle will depart in:", comment: "Explains what the Alarm Time Picker page does.")
         isDismissable = true
-        actionButtonTitle = OBALoc("alarm_time_picker.action_button_title", value: "Add Alarm", comment: "Title of the button on the alarm time picker page.")
+        actionButtonTitle = Strings.addAlarm
     }
 
     override func makeViewsUnderDescription(with interfaceBuilder: BLTNInterfaceBuilder) -> [UIView]? {

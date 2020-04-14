@@ -16,7 +16,7 @@ public enum TableCollectionStyle {
 }
 
 /// Meant to be used as a child view controller. It hosts a `UICollectionView` plus all of the logic for using `IGListKit`.
-public class CollectionController: UIViewController {
+public class CollectionController: UIViewController, UICollectionViewDelegate {
     private let application: Application
     public let listAdapter: ListAdapter
     public let style: TableCollectionStyle
@@ -35,6 +35,7 @@ public class CollectionController: UIViewController {
 
         self.listAdapter.collectionView = collectionView
         self.listAdapter.dataSource = dataSource
+        self.listAdapter.collectionViewDelegate = self
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -119,5 +120,32 @@ public class CollectionController: UIViewController {
     @objc private func keyboardWillBeHidden(_ notification: Notification) {
         collectionView.contentInset = UIEdgeInsets(top: collectionView.contentInset.top, left: 0, bottom: 0, right: 0)
         collectionView.scrollIndicatorInsets = collectionView.contentInset
+    }
+
+    // MARK: - UICollectionViewDelegate
+
+    @available(iOS 13.0, *)
+    public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let provider = listAdapter.sectionController(forSection: indexPath.section) as? ContextMenuProvider else {
+            return nil
+        }
+
+        return provider.contextMenuConfiguration(forItemAt: indexPath)
+    }
+
+     @available(iOS 13.0, *)
+     public func collectionView(_ collectionView: UICollectionView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        guard
+            let viewController = animator.previewViewController,
+            let parent = parent
+        else { return }
+
+        animator.addCompletion {
+            if let previewable = viewController as? Previewable {
+                previewable.exitPreviewMode()
+            }
+
+            self.application.viewRouter.navigate(to: viewController, from: parent, animated: false)
+        }
     }
 }

@@ -29,6 +29,8 @@ final class BookmarkArrivalData: NSObject, ListDiffable {
     let deleted: BookmarkListCallback
     let edited: BookmarkListCallback
 
+    var previewDestination: ControllerPreviewProvider?
+
     public init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture]?, selected: @escaping BookmarkListCallback, deleted: @escaping BookmarkListCallback, edited: @escaping BookmarkListCallback) {
         self.bookmark = bookmark
         self.arrivalDepartures = arrivalDepartures
@@ -131,7 +133,7 @@ final class BookmarkSectionData: NSObject, ListDiffable {
 
 // MARK: - BookmarkSectionController
 
-final class BookmarkSectionController: OBAListSectionController<BookmarkSectionData>, SwipeCollectionViewCellDelegate {
+final class BookmarkSectionController: OBAListSectionController<BookmarkSectionData>, SwipeCollectionViewCellDelegate, ContextMenuProvider {
     public override func numberOfItems() -> Int {
         guard let groupData = sectionData else {
             return 0
@@ -246,6 +248,26 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
         }
 
         return [delete, edit]
+    }
+
+    // MARK: - Context Menus
+
+    @available(iOS 13.0, *)
+    func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
+        guard let sectionData = sectionData else { return nil }
+        let row = sectionData.bookmarks[indexPath.item]
+
+        let previewProvider = { () -> UIViewController? in
+            let controller = row.previewDestination?()
+
+            if let previewable = controller as? Previewable {
+                previewable.enterPreviewMode()
+            }
+
+            return controller
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider)
     }
 
     // MARK: - Private

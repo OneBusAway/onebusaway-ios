@@ -53,10 +53,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     /// - Parameters:
     ///   - viewController: The 'to' view controller.
     ///   - fromController: The 'from' view controller.
-    public func navigate(to viewController: UIViewController, from fromController: UIViewController) {
+    ///   - animated: Is the transition animated or not.
+    public func navigate(to viewController: UIViewController, from fromController: UIViewController, animated: Bool = true) {
         assert(fromController.navigationController != nil)
         viewController.hidesBottomBarWhenPushed = true
-        fromController.navigationController?.pushViewController(viewController, animated: true)
+        fromController.navigationController?.pushViewController(viewController, animated: animated)
     }
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {

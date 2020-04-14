@@ -16,8 +16,13 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     let arrivalDeparture: ArrivalDeparture
     let isAlarmAvailable: Bool
     let selected: VoidBlock
+
     var onCreateAlarm: VoidBlock?
     var onShowOptions: VoidBlock?
+    var onAddBookmark: VoidBlock?
+    var onShareTrip: VoidBlock?
+
+    var previewDestination: ControllerPreviewProvider?
 
     init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool = false, selected: @escaping VoidBlock) {
         self.arrivalDeparture = arrivalDeparture
@@ -37,7 +42,9 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
 
 // MARK: - Controller
 
-final class StopArrivalSectionController: OBAListSectionController<ArrivalDepartureSectionData>, SwipeCollectionViewCellDelegate {
+final class StopArrivalSectionController: OBAListSectionController<ArrivalDepartureSectionData>,
+    ContextMenuProvider,
+    SwipeCollectionViewCellDelegate {
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
         guard let object = sectionData else { fatalError() }
@@ -83,6 +90,55 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
         actions.append(moreActions)
 
         return actions
+    }
+
+    // MARK: - Context Menu
+
+    @available(iOS 13.0, *)
+    func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
+        let previewProvider = { [weak self] () -> UIViewController? in
+            guard
+                let self = self,
+                let sectionData = self.sectionData
+            else { return nil }
+
+            let controller = sectionData.previewDestination?()
+
+            if let previewable = controller as? Previewable {
+                previewable.enterPreviewMode()
+            }
+
+            return controller
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider) { [weak self] _ in
+            guard
+                let self = self,
+                let sectionData = self.sectionData
+            else { return nil }
+
+            var actions = [UIAction]()
+
+            if sectionData.isAlarmAvailable {
+                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
+                    sectionData.onCreateAlarm?()
+                }
+                actions.append(alarm)
+            }
+
+            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.bookmark) { _ in
+                sectionData.onAddBookmark?()
+            }
+            actions.append(addBookmark)
+
+            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                sectionData.onShareTrip?()
+            }
+            actions.append(shareTrip)
+
+            // Create and return a UIMenu with all of the actions as children
+            return UIMenu(title: "", children: actions)
+        }
     }
 }
 

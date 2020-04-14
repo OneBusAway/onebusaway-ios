@@ -126,7 +126,7 @@ class SettingsViewController: FormViewController {
 
         section <<< SwitchRow {
             $0.tag = privacySectionReportingEnabled
-            $0.title = OBALoc("settings_controller.prviacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
+            $0.title = OBALoc("settings_controller.privacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
         }
 
         return section

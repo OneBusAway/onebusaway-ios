@@ -70,9 +70,7 @@ class StopAnnotationView: MKAnnotationView {
             subtitleLabel.backgroundColor = .orange
         }
 
-        let rightCalloutButton = UIButton(type: .detailDisclosure)
-        rightCalloutButton.setImage(Icons.chevron, for: .normal)
-        rightCalloutAccessoryView = rightCalloutButton
+        rightCalloutAccessoryView = UIButton.chevronButton
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
         canShowCallout = true

@@ -11,24 +11,15 @@ import FloatingPanel
 import OBAKitCore
 
 class TripViewController: UIViewController,
+    AppContext,
     FloatingPanelControllerDelegate,
     Idleable,
     MKMapViewDelegate,
-    AppContext {
+    Previewable {
 
     public let application: Application
 
     private let tripConvertible: TripConvertible
-
-    public var selectedStopTime: TripStopTime? {
-        didSet {
-            self.mapView.deselectAnnotation(oldValue, animated: true)
-            guard oldValue != self.selectedStopTime,
-                let selectedStopTime = self.selectedStopTime else { return }
-
-            self.mapView.selectAnnotation(selectedStopTime, animated: true)
-        }
-    }
 
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
@@ -73,7 +64,9 @@ class TripViewController: UIViewController,
 
         loadData()
 
-        floatingPanel.addPanel(toParent: self)
+        if !isBeingPreviewed {
+            floatingPanel.addPanel(toParent: self)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -100,6 +93,24 @@ class TripViewController: UIViewController,
         }
 
         self.userActivity = activity
+    }
+
+    // MARK: Previewable
+
+    /// Set this to `true` before `viewDidLoad` to present the UI in a stripped-down 'preview mode'
+    /// suitable for display in a context menu.
+    var isBeingPreviewed = false
+
+    func enterPreviewMode() {
+        isBeingPreviewed = true
+    }
+
+    func exitPreviewMode() {
+        isBeingPreviewed = false
+
+        if isViewLoaded, floatingPanel.parent == nil {
+            floatingPanel.addPanel(toParent: self)
+        }
     }
 
     // MARK: - Idle Timer
@@ -324,7 +335,7 @@ class TripViewController: UIViewController,
             view.selectedArrivalDeparture = arrivalDeparture
 
             if let stopTime = annotation as? TripStopTime {
-                view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+                view.rightCalloutAccessoryView = UIButton.chevronButton
 
                 let calloutLabel = UILabel.autolayoutNew()
                 calloutLabel.textColor = ThemeColors.shared.secondaryLabel
@@ -346,4 +357,25 @@ class TripViewController: UIViewController,
         default: return nil
         }
     }
+
+    public var selectedStopTime: TripStopTime? {
+        didSet {
+            guard !isBeingPreviewed else { return }
+
+            var animated = true
+            if isFirstStopTimeLoad {
+                animated = false
+                isFirstStopTimeLoad.toggle()
+            }
+            self.mapView.deselectAnnotation(oldValue, animated: animated)
+
+            guard
+                oldValue != self.selectedStopTime,
+                let selectedStopTime = self.selectedStopTime
+            else { return }
+
+            self.mapView.selectAnnotation(selectedStopTime, animated: animated)
+        }
+    }
+    private var isFirstStopTimeLoad = true
 }

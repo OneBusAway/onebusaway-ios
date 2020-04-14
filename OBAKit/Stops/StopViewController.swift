@@ -20,9 +20,10 @@ public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
     AppContext,
     BookmarkEditorDelegate,
+    Idleable,
     ListAdapterDataSource,
     ModalDelegate,
-    Idleable,
+    Previewable,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -380,14 +381,20 @@ public class StopViewController: UIViewController,
 
     // MARK: - IGListKit
 
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        guard stopArrivals != nil else {
-            // TODO: show a loading message too
-            return [stopHeaderSection].compactMap {$0}
-        }
-
+    /// Generates a collection of `ListDiffable` objects that should be displayed in a Context Menu preview mode.
+    private func objectsForPreviewMode() -> [ListDiffable] {
         var sections = [ListDiffable?]()
+        sections.append(stopHeaderSection)
+        sections.append(contentsOf: stopArrivalsSections)
+        return sections.compactMap { $0 }
+    }
 
+    /// Generates a collection of `ListDiffable` objects that should be displayed during non-preview use of the view controller.
+    ///
+    /// In other words, this method generates the regular set of `ListDiffable` objects that the user would want to see when
+    /// directly viewing this view controller, as opposed to looking at it through a Context Menu preview.
+    private func objectsForRegularMode() -> [ListDiffable] {
+        var sections = [ListDiffable?]()
         sections.append(stopHeaderSection)
 
         // Service Alerts
@@ -411,6 +418,20 @@ public class StopViewController: UIViewController,
         sections.append(contentsOf: moreOptions)
 
         return sections.compactMap { $0 }
+    }
+
+    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+        guard stopArrivals != nil else {
+            // TODO: show a loading message too
+            return [stopHeaderSection].compactMap {$0}
+        }
+
+        if inPreviewMode {
+            return objectsForPreviewMode()
+        }
+        else {
+            return objectsForRegularMode()
+        }
     }
 
     // MARK: - Data/Stop Header
@@ -457,16 +478,29 @@ public class StopViewController: UIViewController,
     private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
 
-        let data = ArrivalDepartureSectionData(
-            arrivalDeparture: arrivalDeparture,
-            isAlarmAvailable: alarmAvailable) { [weak self] in
+        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable) { [weak self] in
             guard let self = self else { return }
             self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
+        }
+
+        data.previewDestination = { [weak self] in
+            guard let self = self else { return nil }
+            return TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
         }
 
         data.onCreateAlarm = { [weak self] in
             guard let self = self else { return }
             self.addAlarm(arrivalDeparture: arrivalDeparture)
+        }
+
+        data.onAddBookmark = { [weak self] in
+            guard let self = self else { return }
+            self.addBookmark(arrivalDeparture: arrivalDeparture)
+        }
+
+        data.onShareTrip = { [weak self] in
+            guard let self = self else { return }
+            self.shareTripStatus(arrivalDeparture: arrivalDeparture)
         }
 
         data.onShowOptions = { [weak self] in
@@ -594,13 +628,13 @@ public class StopViewController: UIViewController,
             let googleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
-                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: coordinate),
-                    application.canOpenURL(url)
+                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+                    self.application.canOpenURL(url)
                 else { return }
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(contentsOf: googleMaps)
+            rows.append(googleMaps)
             #endif
         }
 
@@ -623,12 +657,7 @@ public class StopViewController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        if object is StopHeaderSection {
-            return StopHeaderSectionController(formatters: application.formatters, style: .plain)
-        }
-        else {
-            return defaultSectionController(for: object)
-        }
+        return defaultSectionController(for: object)
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
@@ -650,13 +679,13 @@ public class StopViewController: UIViewController,
     public func showMoreOptions(arrivalDeparture: ArrivalDeparture) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
-        actionSheet.addAction(title: OBALoc("stop_controller.add_bookmark", value: "Add Bookmark", comment: "Action sheet button title for adding a bookmark")) { [weak self] _ in
+        actionSheet.addAction(title: Strings.addBookmark) { [weak self] _ in
             guard let self = self else { return }
             self.addBookmark(arrivalDeparture: arrivalDeparture)
         }
 
         if application.features.deepLinking == .running {
-            actionSheet.addAction(title: OBALoc("stop_controller.share_trip", value: "Share Trip", comment: "Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.)")) { [weak self] _ in
+            actionSheet.addAction(title: Strings.shareTrip) { [weak self] _ in
                 guard let self = self else { return }
                 self.shareTripStatus(arrivalDeparture: arrivalDeparture)
             }
@@ -814,6 +843,20 @@ public class StopViewController: UIViewController,
         didSet {
             dataDidReload()
         }
+    }
+
+    // MARK: - Previewable
+
+    private var inPreviewMode = false
+
+    func enterPreviewMode() {
+        fakeToolbar.isHidden = true
+        inPreviewMode = true
+    }
+
+    func exitPreviewMode() {
+        fakeToolbar.isHidden = false
+        inPreviewMode = false
     }
 
     // MARK: - Analytics

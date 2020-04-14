@@ -12,9 +12,6 @@
 /* Text for the table header for bookmarking an individual trip. */
 "add_bookmark_controller.bookmark_trip_header" = "Dodaj kurs do zakładek";
 
-/* Title for the Add Bookmark view controller. */
-"add_bookmark_controller.title" = "Dodaj zakładkę";
-
 /* Text field placeholder on the Add Group Alert. */
 "add_group_alert.placeholder" = "Bookmark Group Title";
 
@@ -32,9 +29,6 @@
 
 /* One minute/1 minute */
 "alarm_builder_controller.one_minute" = "1 minuta";
-
-/* Title of the button on the alarm time picker page. */
-"alarm_time_picker.action_button_title" = "Dodaj alarm";
 
 /* Explains what the Alarm Time Picker page does. */
 "alarm_time_picker.description" = "Przypomnij mi kiedy ten pojazd odjeżdża za:";
@@ -80,9 +74,6 @@
 
 /* Don't add this bookmark to a group. */
 "edit_bookmark_controller.no_group_row" = "(Bez grupy)";
-
-/* Title for the Edit Bookmark controller in add mode */
-"edit_bookmark_controller.title_add" = "Dodaj zakładkę";
 
 /* Title for the Edit Bookmark controller in edit mode */
 "edit_bookmark_controller.title_edit" = "Edytuj zakładkę";
@@ -300,9 +291,6 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Problem z pojazdem na przystanku";
 
-/* A transit vehicle stop. */
-"route_stops_controller.stops_header" = "Przystanki";
-
 /* Title of the Bookmarks search header */
 "search_controller.bookmarks.header" = "Zakładki";
 
@@ -364,13 +352,7 @@
 "settings_controller.privacy_section.title" = "Prywatność";
 
 /* Settings > Privacy section > Send usage data */
-"settings_controller.prviacy_section.reporting_enabled" = "Wyślij dane użycia do dewelopera";
-
-/* Action sheet button title for adding an alarm. */
-"stop_controller.add_alarm" = "Dodaj alarm";
-
-/* Action sheet button title for adding a bookmark */
-"stop_controller.add_bookmark" = "Dodaj zakładkę";
+"settings_controller.privacy_section.reporting_enabled" = "Wyślij dane użycia do dewelopera";
 
 /* A message that appears when a user's alarm is created. */
 "stop_controller.alarm_created_message" = "Utworzono alarm";
@@ -392,9 +374,6 @@
 
 /* The header for the Service Alerts section of the stops controller. */
 "stop_controller.service_alerts_header" = "Komunikaty o stanie sieci";
-
-/* Action sheet button title for sharing the status of your trip (i.e. location, arrival time, etc.) */
-"stop_controller.share_trip" = "Share Trip";
 
 /* Title of the Routes section */
 "stop_preferences_controller.routes_section.header_title" = "Linie";
