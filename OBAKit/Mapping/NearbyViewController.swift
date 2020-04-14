@@ -23,9 +23,9 @@ public class NearbyViewController: VisualEffectViewController,
     AgencyAlertListKitConverters,
     AppContext,
     ListAdapterDataSource,
-    ListKitStopConverters,
     RegionsServiceDelegate,
     SearchDelegate,
+    SectionDataBuilders,
     UISearchBarDelegate {
 
     let mapRegionManager: MapRegionManager

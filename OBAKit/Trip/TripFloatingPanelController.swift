@@ -13,7 +13,6 @@ import OBAKitCore
 public class TripFloatingPanelController: UIViewController,
     AppContext,
     ListAdapterDataSource,
-    ListKitStopConverters,
     SectionDataBuilders,
     ViewRouterDelegate {
 

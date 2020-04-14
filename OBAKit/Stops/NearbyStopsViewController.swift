@@ -12,7 +12,7 @@ import OBAKitCore
 
 class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>,
     ListAdapterDataSource,
-    ListKitStopConverters,
+    SectionDataBuilders,
     UISearchResultsUpdating {
 
     private let coordinate: CLLocationCoordinate2D

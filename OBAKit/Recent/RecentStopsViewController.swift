@@ -13,7 +13,7 @@ import OBAKitCore
 public class RecentStopsViewController: UIViewController,
     AppContext,
     ListAdapterDataSource,
-    ListKitStopConverters {
+    SectionDataBuilders {
 
     let application: Application
 

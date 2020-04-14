@@ -9,12 +9,22 @@ import UIKit
 import OBAKitCore
 import IGListKit
 
+/// Describes methods capable of converting REST API models into view
+/// models suitable for display in an IGListKit collection controller.
+///
+/// - Note: The data produced by methods in this protocol are specifically
+///         designed to work with `objects(for listAdapter:)`.
 protocol SectionDataBuilders: NSObjectProtocol {
     func sectionData(from situations: [Situation]) -> [MessageSectionData]
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
 }
 
 extension SectionDataBuilders where Self: AppContext {
     
+    /// Converts an array of `Situation`s into `MessageSectionData` objects, which look like rows in Mail.app.
+    /// - Parameter situations: The list of `Situation`s that will be converted into `MessageSectionData` objects.
+    /// - Returns: An array of `MessageSectionData` view models, suitable for returning via `ListAdapterDataSource`'s `objects(for:)` method.
     func sectionData(from situations: [Situation]) -> [MessageSectionData] {
         var sections = [MessageSectionData]()
         for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
@@ -27,5 +37,55 @@ extension SectionDataBuilders where Self: AppContext {
             sections.append(message)
         }
         return sections
+    }
+
+    /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
+    ///
+    /// - Note: The data produced by this method is specifically designed to work with `objects(for listAdapter:)`.
+    ///
+    /// - Parameters:
+    ///   - stops: An array of `Stop`s.
+    ///   - tapped: A tap handler, invoked when any of the `Stop`s are tapped.
+    /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData {
+        return tableSection(stops: stops, tapped: tapped, deleted: nil)
+    }
+
+    /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
+    ///
+    /// - Note: The data produced by this method is specifically designed to work with `objects(for listAdapter:)`.
+    ///
+    /// - Parameters:
+    ///   - stops: An array of `Stop`s.
+    ///   - tapped: A tap handler, invoked when any of the `Stop`s are tapped.
+    ///   - deleted: Optional handler called when swipe-to-delete is invoked on a row.
+    /// - Returns: A `TableSectionData` object representing the array of `Stop`s.
+    func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler? = nil) -> TableSectionData {
+        let rows = stops.map { (stop: Stop) -> TableRowData in
+            let row = TableRowData(stop: stop, tapped: tapped)
+            row.deleted = deleted
+            row.previewDestination = {
+                StopViewController(application: self.application, stop: stop)
+            }
+
+            return row
+        }
+        return TableSectionData(rows: rows)
+    }
+}
+
+extension TableRowData {
+
+    /// Creates a row from a `Stop`. Includes a tap handler closure for easily assigning an action to the row.
+    /// - Parameters:
+    ///   - stop: The `Stop` used to create the row.
+    ///   - tapped: The tap action handler.
+    convenience init(stop: Stop, tapped: ListRowActionHandler?) {
+        let title = Formatters.formattedTitle(stop: stop)
+        let subtitle = Formatters.formattedRoutes(stop.routes)
+
+        self.init(title: title, attributedTitle: nil, subtitle: subtitle, style: .subtitle, accessoryType: .disclosureIndicator, tapped: tapped)
+
+        self.object = stop
     }
 }
