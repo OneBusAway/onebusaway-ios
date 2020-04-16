@@ -106,8 +106,8 @@ public class TripStatus: NSObject, Decodable {
     /// Active service alerts applicable to this trip.
     public let situations: [Situation]
 
-    /// status modifiers for the trip
-    public let status: String
+    /// Status modifier for the trip
+    public let statusModifier: TripStatusModifier
 
     /// The total length of the trip, in meters
     public let totalDistanceAlongTrip: Double
@@ -174,7 +174,9 @@ public class TripStatus: NSObject, Decodable {
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
         situations = references.situationsWithIDs(situationIDs)
 
-        status = try container.decode(String.self, forKey: .status)
+        let status = try container.decode(String.self, forKey: .status)
+        statusModifier = TripStatusModifier.decode(status)
+
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
         vehicleID = try? container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
@@ -209,7 +211,7 @@ public class TripStatus: NSObject, Decodable {
             serviceDate == rhs.serviceDate &&
             situationIDs == rhs.situationIDs &&
             situations == rhs.situations &&
-            status == rhs.status &&
+            statusModifier == rhs.statusModifier &&
             totalDistanceAlongTrip == rhs.totalDistanceAlongTrip &&
             vehicleID == rhs.vehicleID
     }
@@ -241,10 +243,39 @@ public class TripStatus: NSObject, Decodable {
         hasher.combine(serviceDate)
         hasher.combine(situationIDs)
         hasher.combine(situations)
-        hasher.combine(status)
+        hasher.combine(statusModifier)
         hasher.combine(totalDistanceAlongTrip)
         hasher.combine(vehicleID)
 
         return hasher.finalize()
+    }
+}
+
+// MARK: - TripStatusModifier
+
+public enum TripStatusModifier: Equatable, Hashable {
+    case `default`, scheduled, canceled
+    case other(String)
+
+    /// Converts a `String` into a `TripStatusModifier` enum value.
+    /// - Parameter status: The status string.
+    /// - Returns: An enum value.
+    fileprivate static func decode(_ status: String) -> TripStatusModifier {
+        switch status.uppercased() {
+        case "DEFAULT": return .default
+        case "SCHEDULED": return .scheduled
+        case "CANCELED": return .canceled
+        default: return .other(status)
+        }
+    }
+}
+
+public func == (lhs: TripStatusModifier, rhs: TripStatusModifier) -> Bool {
+    switch (lhs, rhs) {
+    case (.default, .default),
+         (.scheduled, .scheduled),
+         (.canceled, .canceled): return true
+    case let (.other(a), .other(b)): return a == b
+    default: return false
     }
 }
