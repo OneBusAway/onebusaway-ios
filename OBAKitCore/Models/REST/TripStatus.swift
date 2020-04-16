@@ -152,12 +152,7 @@ public class TripStatus: NSObject, Decodable {
         lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
 
         let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
-        if lastUpdateTime == 0 {
-            lastUpdate = nil
-        }
-        else {
-            lastUpdate = Date(timeIntervalSince1970: (lastUpdateTime / 1000.0))
-        }
+        lastUpdate = ModelHelpers.epochMillisecondsToDate(lastUpdateTime)
 
         nextStopID = try? container.decodeIfPresent(String.self, forKey: .nextStopID)
         nextStop = references.stopWithID(nextStopID)
