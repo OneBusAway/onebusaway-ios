@@ -187,6 +187,12 @@ public extension OBATestCase {
 
 public extension OBATestCase {
 
+    /// Returns the path to the specified file in the test bundle.
+    /// - Parameter fileName: The file name, e.g. "regions.json"
+    func path(to fileName: String) -> String {
+        Bundle(for: type(of: self)).path(forResource: fileName, ofType: nil)!
+    }
+
     /// Encodes and decodes the provided `Codable` object. Useful for testing roundtripping.
     /// - Parameter type: The object type.
     /// - Parameter model: The object or objects.
@@ -199,10 +205,7 @@ public extension OBATestCase {
     /// Loads data from the specified file name, searching within the test bundle.
     /// - Parameter file: The file name to load data from. Example: `stop_data.pb`.
     func loadData(file: String) -> Data {
-        let path = OHPathForFile(file, type(of: self))!
-        let data = NSData(contentsOfFile: path)!
-
-        return data as Data
+        NSData(contentsOfFile: path(to: file))! as Data
     }
 
     /// Loads JSON (as `[String: Any]`) from the specified file name, searching within the test bundle.
@@ -236,5 +239,15 @@ public extension OBATestCase {
         let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
 
         return Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
+    }
+
+    var pugetSoundRegion: Region {
+        let regions = try! loadSomeRegions()
+        return regions[1]
+    }
+
+    var tampaRegion: Region {
+        let regions = try! loadSomeRegions()
+        return regions[0]
     }
 }

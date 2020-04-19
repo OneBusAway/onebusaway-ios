@@ -15,20 +15,12 @@ import CoreLocation
 // swiftlint:disable force_try type_name
 
 class UserDefaultsStore_BookmarksTests: OBATestCase {
-
     var userDefaultsStore: UserDefaultsStore!
-    var tampaRegion: Region!
-    var pugetSoundRegion: Region!
     var stops: [Stop]!
 
     override func setUp() {
         super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
-
-        let regions = try! loadSomeRegions()
-        tampaRegion = regions[0]
-        pugetSoundRegion = regions[1]
-
         stops = try! loadSomeStops()
     }
 

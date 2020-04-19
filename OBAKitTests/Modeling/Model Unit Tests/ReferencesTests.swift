@@ -79,8 +79,8 @@ extension ReferencesTests {
         let situation = situations.first!
 
         let activeWindow = situation.activeWindows.first!
-        expect(activeWindow.from) == 1539781200
-        expect(activeWindow.to) == 1539826200
+        expect(activeWindow.from) == Date(timeIntervalSinceReferenceDate: 1539781200)
+        expect(activeWindow.to) == Date(timeIntervalSinceReferenceDate: 1539826200)
 
         let entity = situation.affectedEntities.first!
         expect(entity.routeID) == "MTS_10"

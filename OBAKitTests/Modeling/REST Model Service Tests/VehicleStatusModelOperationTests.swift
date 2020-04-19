@@ -128,7 +128,7 @@ extension VehicleStatusModelOperationTests {
                 expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
                 expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 07, minute: 00, second: 00)
                 expect(tripStatus.situations) == []
-                expect(tripStatus.status) == "SCHEDULED"
+                expect(tripStatus.statusModifier) == .scheduled
                 expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(32491.73, within: 0.01))
                 expect(tripStatus.vehicleID) == "40_11"
 
