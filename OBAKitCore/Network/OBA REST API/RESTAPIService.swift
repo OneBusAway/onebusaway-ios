@@ -159,7 +159,7 @@ public class RESTAPIService: APIService {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued network operation.
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
+    public func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalDepartureOperation {
         let url = TripArrivalDepartureOperation.buildURL(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence, baseURL: baseURL, defaultQueryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: TripArrivalDepartureOperation.self, url: url)
     }
@@ -280,7 +280,12 @@ public class RESTAPIService: APIService {
     ///   - comment: An optional free text field that allows the user to provide more context.
     ///   - location: An optional location value to provide more context.
     /// - Returns: The enqueued network operation.
-    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?) -> StopProblemOperation {
+    public func getStopProblem(
+        stopID: StopID,
+        code: StopProblemCode,
+        comment: String?,
+        location: CLLocation?
+    ) -> StopProblemOperation {
         let url = StopProblemOperation.buildURL(stopID: stopID, code: code, comment: comment, location: location, baseURL: baseURL, queryItems: defaultQueryItems)
         return buildAndEnqueueOperation(type: StopProblemOperation.self, url: url)
     }
@@ -307,7 +312,7 @@ public class RESTAPIService: APIService {
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,
-        stopID: String?,
+        stopID: StopID?,
         code: TripProblemCode,
         comment: String?,
         userOnVehicle: Bool,

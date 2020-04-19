@@ -9,7 +9,7 @@ import Foundation
 
 /// Provides a way to group `ArrivalDeparture`s by the data elements used in trip bookmarks.
 public struct TripBookmarkKey: Hashable, Equatable {
-    let stopID: String
+    let stopID: StopID
     let routeShortName: String
     let routeID: RouteID
     let tripHeadsign: String

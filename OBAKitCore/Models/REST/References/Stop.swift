@@ -9,6 +9,8 @@
 import Foundation
 import CoreLocation
 
+public typealias StopID = String
+
 public enum WheelchairBoarding: String, Decodable {
     case accessible
     case notAccessible
@@ -78,7 +80,7 @@ public class Stop: NSObject, Codable, HasReferences {
     ///
     /// Multiple routes may use the same stop. The stop_id is used by systems as an internal identifier
     /// of this record (e.g., primary key in database), and therefore the stop_id must be dataset unique.
-    public let id: String
+    public let id: StopID
 
     /// The coordinates of the stop.
     public let location: CLLocation
@@ -136,7 +138,7 @@ public class Stop: NSObject, Codable, HasReferences {
 
         code = try container.decode(String.self, forKey: .code)
         _direction = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .direction))
-        id = try container.decode(String.self, forKey: .id)
+        id = try container.decode(StopID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
 
         let lat = try container.decode(Double.self, forKey: .lat)

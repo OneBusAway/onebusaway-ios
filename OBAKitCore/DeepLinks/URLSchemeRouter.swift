@@ -9,7 +9,7 @@ import Foundation
 
 /// A data object for viewing a stop from decoding an URL with `URLSchemeRouter`.
 public struct StopURLData {
-    public let stopID: String
+    public let stopID: StopID
     public let regionID: Int
 }
 
@@ -37,7 +37,7 @@ public class URLSchemeRouter: NSObject {
     /// - Parameters:
     ///   - stopID: The ID for the Stop.
     ///   - regionID: The ID for the Region that hosts the Stop.
-    public func encode(stopID: String, regionID: Int) -> URL {
+    public func encode(stopID: StopID, regionID: Int) -> URL {
         var components = URLComponents()
         components.scheme = scheme
         components.host = viewStopHost

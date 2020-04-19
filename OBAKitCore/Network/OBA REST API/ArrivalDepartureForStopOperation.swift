@@ -15,12 +15,12 @@ public class TripArrivalDepartureOperation: RESTAPIOperation {
 
     private static let apiPath = "/api/where/arrival-and-departure-for-stop/%@.json"
 
-    public class func buildAPIPath(stopID: String) -> String {
+    public class func buildAPIPath(stopID: StopID) -> String {
         return String(format: apiPath, NetworkHelpers.escapePathVariable(stopID))
     }
 
     public class func buildURL(
-        stopID: String,
+        stopID: StopID,
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,

@@ -154,7 +154,7 @@ public class RESTAPIModelService: NSObject {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued model operation.
-    public func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
+    public func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> TripArrivalsModelOperation {
         let service = apiService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         return generateModels(type: TripArrivalsModelOperation.self, serviceOperation: service)
     }
@@ -258,12 +258,12 @@ public class RESTAPIModelService: NSObject {
     ///   - comment: An optional free text field that allows the user to provide more context.
     ///   - location: An optional location value to provide more context.
     /// - Returns: The enqueued model operation.
-    public func getStopProblem(stopID: String, code: StopProblemCode, comment: String?, location: CLLocation?) -> StopProblemModelOperation {
+    public func getStopProblem(stopID: StopID, code: StopProblemCode, comment: String?, location: CLLocation?) -> StopProblemModelOperation {
         let service = apiService.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
         return generateModels(type: StopProblemModelOperation.self, serviceOperation: service)
     }
 
-    public func getTripProblem(tripID: String, serviceDate: Date, vehicleID: String?, stopID: String?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
+    public func getTripProblem(tripID: String, serviceDate: Date, vehicleID: String?, stopID: StopID?, code: TripProblemCode, comment: String?, userOnVehicle: Bool, location: CLLocation?) -> TripProblemModelOperation {
         let service = apiService.getTripProblem(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
         return generateModels(type: TripProblemModelOperation.self, serviceOperation: service)
     }

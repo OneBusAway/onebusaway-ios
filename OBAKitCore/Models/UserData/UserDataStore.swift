@@ -88,7 +88,7 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Finds the `Bookmark` with a matching `stopID` if it exists.
     /// - Parameter stopID: The Stop ID for which to search in existing bookmarks.
-    func findBookmark(stopID: String) -> Bookmark?
+    func findBookmark(stopID: StopID) -> Bookmark?
 
     /// Finds `Bookmark`s that match the provided search text.
     /// - Parameter searchText: The text to search `Bookmark`s for.
@@ -157,7 +157,7 @@ public protocol StopPreferencesStore: NSObjectProtocol {
     /// Retrieves the `stopPreferences` for the specified `Stop`. Always returns a value.
     /// - Parameter stopID: The ID of the `Stop` for which `StopPreferences` will be retrieved.
     /// - Parameter region: The `Region` in which `stop` exists.
-    func preferences(stopID: String, region: Region) -> StopPreferences
+    func preferences(stopID: StopID, region: Region) -> StopPreferences
 }
 
 // MARK: - UserDefaultsStore
@@ -364,7 +364,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         bookmarks.first { $0.id == id }
     }
 
-    public func findBookmark(stopID: String) -> Bookmark? {
+    public func findBookmark(stopID: StopID) -> Bookmark? {
         bookmarks.first { $0.stopID == stopID }
     }
 
@@ -468,7 +468,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         self.stopPreferences[key] = stopPreferences
     }
 
-    public func preferences(stopID: String, region: Region) -> StopPreferences {
+    public func preferences(stopID: StopID, region: Region) -> StopPreferences {
         let prefs = stopPreferences
         let key = stopPreferencesKey(id: stopID, region: region)
         return prefs[key] ?? StopPreferences()

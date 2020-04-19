@@ -14,7 +14,7 @@ public class StopArrivals: NSObject, Decodable {
     public let arrivalsAndDepartures: [ArrivalDeparture]
 
     /// A list of nearby stop IDs.
-    let nearbyStopIDs: [String]
+    let nearbyStopIDs: [StopID]
 
     /// A list of nearby `Stop`s.
     public let nearbyStops: [Stop]
@@ -36,7 +36,7 @@ public class StopArrivals: NSObject, Decodable {
     }
 
     /// The stop ID for the stop this represents.
-    let stopID: String
+    let stopID: StopID
 
     /// The stop to which this object refers.
     public let stop: Stop
@@ -54,13 +54,13 @@ public class StopArrivals: NSObject, Decodable {
 
         arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
 
-        nearbyStopIDs = try container.decode([String].self, forKey: .nearbyStopIDs)
+        nearbyStopIDs = try container.decode([StopID].self, forKey: .nearbyStopIDs)
         nearbyStops = references.stopsWithIDs(nearbyStopIDs)
 
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
         _situations = references.situationsWithIDs(situationIDs)
 
-        stopID = try container.decode(String.self, forKey: .stopID)
+        stopID = try container.decode(StopID.self, forKey: .stopID)
         stop = references.stopWithID(stopID)!
     }
 }

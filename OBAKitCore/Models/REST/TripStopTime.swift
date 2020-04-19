@@ -20,7 +20,7 @@ public class TripStopTime: NSObject, Decodable {
     public private(set) var departureDate: Date!
 
     /// The stop id of the stop visited during the trip
-    public let stopID: String
+    public let stopID: StopID
 
     /// The stop visited during the trip.
     public let stop: Stop

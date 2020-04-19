@@ -8,7 +8,7 @@
 import Foundation
 
 /// This is a bookmark for a `Stop` or a trip.
-@objc(OBABookmark) public class Bookmark: NSObject, Codable, Identifiable {
+@objc(OBABookmark) public class Bookmark: NSObject, Codable {
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
     public var groupID: UUID?
@@ -28,7 +28,7 @@ import Foundation
     ///
     /// This value, in conjunction with the `regionIdentifier`, allows us to retrieve the information that is pointed
     /// to by this object.
-    public let stopID: String
+    public let stopID: StopID
 
     /// Whether or not this `Bookmark` should be displayed in the Today widget, for example. `false` by default.
     public var isFavorite: Bool
@@ -102,7 +102,7 @@ import Foundation
         regionIdentifier = try container.decode(Int.self, forKey: .regionIdentifier)
         sortOrder = try container.decode(Int.self, forKey: .sortOrder)
         stop = try container.decode(Stop.self, forKey: .stop)
-        stopID = try container.decode(String.self, forKey: .stopID)
+        stopID = try container.decode(StopID.self, forKey: .stopID)
         id = try container.decode(UUID.self, forKey: .id)
 
         routeShortName = try container.decodeIfPresent(String.self, forKey: .routeShortName)

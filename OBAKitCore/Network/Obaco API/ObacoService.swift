@@ -53,7 +53,7 @@ public class ObacoService: APIService {
 
     public func postAlarm(
         secondsBefore: TimeInterval,
-        stopID: String,
+        stopID: StopID,
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,

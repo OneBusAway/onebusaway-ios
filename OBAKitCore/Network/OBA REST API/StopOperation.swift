@@ -11,11 +11,11 @@ import Foundation
 public class StopOperation: RESTAPIOperation {
     private static let apiPath = "/api/where/stop/%@.json"
 
-    public class func buildAPIPath(stopID: String) -> String {
+    public class func buildAPIPath(stopID: StopID) -> String {
         return String(format: apiPath, NetworkHelpers.escapePathVariable(stopID))
     }
 
-    public class func buildURL(stopID: String, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
+    public class func buildURL(stopID: StopID, baseURL: URL, queryItems: [URLQueryItem]) -> URL {
         let builder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: queryItems)
         return builder.generateURL(path: buildAPIPath(stopID: stopID))
     }

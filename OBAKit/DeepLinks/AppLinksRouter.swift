@@ -131,7 +131,7 @@ public class AppLinksRouter: NSObject {
     private func routeStop(userActivity: NSUserActivity) -> Bool {
         guard
             let userInfo = userActivity.userInfo,
-            let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? String,
+            let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
             let regionID = userInfo[UserActivityBuilder.UserInfoKeys.regionID] as? Int,
             let modelService = application.restAPIModelService,
             application.currentRegion?.regionIdentifier == regionID

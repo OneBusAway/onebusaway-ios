@@ -133,7 +133,7 @@ public class AffectedEntity: NSObject, Codable {
     public let applicationID: String?
     public let directionID: String?
     public let routeID: String?
-    public let stopID: String?
+    public let stopID: StopID?
     public let tripID: String?
 
     enum CodingKeys: String, CodingKey {

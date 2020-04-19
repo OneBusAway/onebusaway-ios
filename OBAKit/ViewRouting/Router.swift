@@ -67,7 +67,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         navigate(to: stopController, from: fromController)
     }
 
-    public func navigateTo(stopID: String, from fromController: UIViewController) {
+    public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
         let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)

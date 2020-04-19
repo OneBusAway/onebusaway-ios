@@ -47,7 +47,7 @@ public class TripProblemOperation: RESTAPIOperation {
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,
-        stopID: String?,
+        stopID: StopID?,
         code: TripProblemCode,
         comment: String?,
         userOnVehicle: Bool,

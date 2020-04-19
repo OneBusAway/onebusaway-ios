@@ -11,7 +11,7 @@ import OBAKitCore
 /// Represent the body of a push notification for an alarm.
 public struct AlarmPushBody: Codable {
     let tripID: TripIdentifier
-    let stopID: String
+    let stopID: StopID
     let regionID: Int
     let vehicleID: String
     let serviceDate: Date
@@ -29,7 +29,7 @@ public struct AlarmPushBody: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
-        stopID = try container.decode(String.self, forKey: .stopID)
+        stopID = try container.decode(StopID.self, forKey: .stopID)
         regionID = try container.decode(Int.self, forKey: .regionID)
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OBAKitCore
 
 @objc(OBAAnalyticsKeys)
 public class AnalyticsKeys: NSObject {
@@ -36,7 +37,7 @@ public class AnalyticsLabels: NSObject {
     /// Label used for removing bookmarks.
     @objc public static let removeBookmark = "Unstarred route"
 
-    public class func addRemoveBookmarkValue(routeID: String, headsign: String?, stopID: String) -> String {
+    public class func addRemoveBookmarkValue(routeID: String, headsign: String?, stopID: StopID) -> String {
         return "\(routeID)_\(headsign ?? "") for \(stopID)"
     }
 

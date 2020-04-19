@@ -29,7 +29,7 @@ public class StopViewController: UIViewController,
 
     public let application: Application
 
-    let stopID: String
+    let stopID: StopID
 
     public var bookmarkContext: Bookmark?
 
@@ -116,7 +116,7 @@ public class StopViewController: UIViewController,
     /// - Parameters:
     ///   - application: The application object
     ///   - stopID: The ID of the stop the user is viewing
-    public init(application: Application, stopID: String) {
+    public init(application: Application, stopID: StopID) {
         self.application = application
         self.stopID = stopID
         self.stopPreferences = application.stopPreferencesDataStore.preferences(stopID: stopID, region: application.currentRegion!)

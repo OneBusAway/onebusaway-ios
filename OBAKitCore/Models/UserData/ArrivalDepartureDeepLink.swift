@@ -11,7 +11,7 @@ import Foundation
 public class ArrivalDepartureDeepLink: NSObject, Codable {
     public let title: String
     public let regionID: Int
-    public let stopID: String
+    public let stopID: StopID
     public let tripID: TripIdentifier
     public let serviceDate: Date
     public let stopSequence: Int
@@ -21,7 +21,7 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
         self.init(title: arrivalDeparture.routeAndHeadsign, regionID: regionID, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
     }
 
-    public init(title: String, regionID: Int, stopID: String, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
+    public init(title: String, regionID: Int, stopID: StopID, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
         self.title = title
         self.regionID = regionID
         self.stopID = stopID

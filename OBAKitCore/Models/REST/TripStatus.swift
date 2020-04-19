@@ -24,7 +24,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// the id of the closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
-    public let closestStopID: String
+    public let closestStopID: StopID
 
     /// The closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
@@ -64,7 +64,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// Similar to `closestStopID`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
-    let nextStopID: String?
+    let nextStopID: StopID?
 
     /// Similar to `closestStop`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -140,12 +140,12 @@ public class TripStatus: NSObject, Decodable {
 
         blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
 
-        closestStopID = try container.decode(String.self, forKey: .closestStopID)
+        closestStopID = try container.decode(StopID.self, forKey: .closestStopID)
         closestStop = references.stopWithID(closestStopID)!
 
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
-        frequency = try? container.decodeIfPresent(Frequency.self, forKey: .frequency)
+        frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
         lastKnownDistanceAlongTrip = try container.decode(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
         lastKnownOrientation = try container.decode(CLLocationDirection.self, forKey: .lastKnownOrientation)
@@ -154,7 +154,7 @@ public class TripStatus: NSObject, Decodable {
         let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
         lastUpdate = ModelHelpers.epochMillisecondsToDate(lastUpdateTime)
 
-        nextStopID = try? container.decodeIfPresent(String.self, forKey: .nextStopID)
+        nextStopID = try container.decodeIfPresent(StopID.self, forKey: .nextStopID)
         nextStop = references.stopWithID(nextStopID)
 
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
@@ -173,7 +173,7 @@ public class TripStatus: NSObject, Decodable {
         statusModifier = TripStatusModifier.decode(status)
 
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
-        vehicleID = try? container.decodeIfPresent(String.self, forKey: .vehicleID)
+        vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
 
     // MARK: - Equality

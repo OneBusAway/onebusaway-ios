@@ -73,7 +73,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let status: String
 
     /// The stop id of the stop the vehicle is arriving at
-    public let stopID: String
+    public let stopID: StopID
 
     /// The stop the vehicle is arriving at
     public let stop: Stop

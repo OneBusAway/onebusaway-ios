@@ -17,7 +17,7 @@ public class CreateAlarmOperation: NetworkOperation {
 
     public class func buildURLRequest(
         secondsBefore: TimeInterval,
-        stopID: String,
+        stopID: StopID,
         tripID: String,
         serviceDate: Date,
         vehicleID: String?,
