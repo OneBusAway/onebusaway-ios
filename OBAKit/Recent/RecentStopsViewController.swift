@@ -90,22 +90,29 @@ public class RecentStopsViewController: UIViewController,
             let rowData = TableRowData(title: deepLink.title, accessoryType: .disclosureIndicator) { _ in
                 guard
                     let self = self,
-                    let modelService = self.application.restAPIModelService
+                    let apiService = self.application.restAPIService
                 else { return }
 
                 SVProgressHUD.show()
 
-                let op = modelService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
-                op.then {
+                let op = apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
+                op.complete { [weak self] result in
                     SVProgressHUD.dismiss()
-                    guard let arrDep = op.arrivalDeparture else { return }
-                    self.application.viewRouter.navigateTo(arrivalDeparture: arrDep, from: self)
+
+                    guard let self = self else { return }
+
+                    switch result {
+                    case .failure(let error):
+                        print("TODO FIXME handle error! \(error)")
+                    case .success(let response):
+                        self.application.viewRouter.navigateTo(arrivalDeparture: response.list, from: self)
+                    }
                 }
             }
 
             rowData.deleted = { [weak self] _ in
                 guard let self = self else { return }
-                _ = self.application.obacoService?.deleteAlarm(alarm: a)
+                self.application.obacoService?.deleteAlarm(url: a.url)
                 self.application.userDataStore.delete(alarm: a)
                 self.collectionController.reload(animated: true)
             }

@@ -41,7 +41,7 @@ open class CoreApplication: NSObject,
     @objc public let locationService: LocationService
 
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
-    @objc public lazy var regionsService = RegionsService(modelService: regionsModelService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
+    @objc public lazy var regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
 
     /// Helper property that returns `regionsService.currentRegion`.
     @objc public var currentRegion: Region? {
@@ -52,9 +52,9 @@ open class CoreApplication: NSObject,
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    @objc public private(set) var restAPIModelService: RESTAPIModelService? {
+    public private(set) var restAPIService: RESTAPIService? {
         didSet {
-            alertsStore.restModelService = restAPIModelService
+            alertsStore.apiService = restAPIService
         }
     }
 
@@ -78,7 +78,7 @@ open class CoreApplication: NSObject,
         regionsService.addDelegate(self)
         alertsStore.addDelegate(self)
 
-        refreshRESTAPIModelService()
+        refreshRESTAPIService()
         refreshObacoService()
     }
 
@@ -98,21 +98,20 @@ open class CoreApplication: NSObject,
 
     // MARK: - REST API
 
-    /// Recreates the `restAPIModelService` from the current region. This is
+    /// Recreates the `restAPIService` from the current region. This is
     /// called when the app launches and when the current region changes.
-    private func refreshRESTAPIModelService() {
+    private func refreshRESTAPIService() {
         guard let region = regionsService.currentRegion else { return }
 
-        let apiService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
-        restAPIModelService = RESTAPIModelService(apiService: apiService, dataQueue: config.queue)
+        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
     }
 
     // MARK: - Obaco
 
-    @objc public private(set) var obacoService: ObacoModelService? {
+    @objc public private(set) var obacoService: ObacoAPIService? {
         didSet {
             notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
-            alertsStore.obacoModelService = obacoService
+            alertsStore.obacoService = obacoService
         }
     }
 
@@ -130,8 +129,7 @@ open class CoreApplication: NSObject,
 
         obacoNetworkQueue.cancelAllOperations()
 
-        let apiService = ObacoService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: String(region.regionIdentifier), networkQueue: obacoNetworkQueue, delegate: self)
-        obacoService = ObacoModelService(apiService: apiService, dataQueue: obacoNetworkQueue)
+        obacoService = ObacoAPIService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: region.regionIdentifier, networkQueue: obacoNetworkQueue, delegate: self)
     }
 
     // MARK: - UUID
@@ -161,14 +159,8 @@ open class CoreApplication: NSObject,
         return RegionsAPIService(baseURL: regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
     }()
 
-    private lazy var regionsModelService: RegionsModelService? = {
-        guard let regionsAPIService = regionsAPIService else { return nil }
-
-        return RegionsModelService(apiService: regionsAPIService, dataQueue: config.queue)
-    }()
-
     open func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {
-        refreshRESTAPIModelService()
+        refreshRESTAPIService()
         refreshObacoService()
     }
 

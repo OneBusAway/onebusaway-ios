@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import CocoaLumberjackSwift
 
 /// The core class for interacting with the OBA REST API.
 ///
@@ -46,5 +47,18 @@ public class APIService: NSObject {
 
     public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
         self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue())
+    }
+
+    deinit {
+        networkQueue.cancelAllOperations()
+    }
+
+    // MARK: - Internal Helpers
+
+    func enqueueOperation(_ operation: Operation) {
+        if let requestable = operation as? Requestable, let url = requestable.request.url {
+            DDLogInfo("Enqueuing URL: \(url.absoluteString)")
+        }
+        networkQueue.addOperation(operation)
     }
 }

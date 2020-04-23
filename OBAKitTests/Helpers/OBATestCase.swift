@@ -55,8 +55,8 @@ public extension OBATestCase {
 
     // MARK: - Obaco API Service
 
-    var obacoRegionID: String {
-        return "1"
+    var obacoRegionID: Int {
+        return 1
     }
 
     var obacoHost: String {
@@ -71,8 +71,8 @@ public extension OBATestCase {
         return URL(string: obacoURLString)!
     }
 
-    var obacoService: ObacoService {
-        return ObacoService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue(), delegate: nil)
+    var obacoService: ObacoAPIService {
+        return ObacoAPIService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue(), delegate: nil)
     }
 }
 

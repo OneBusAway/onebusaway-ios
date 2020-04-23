@@ -10,9 +10,6 @@ import Foundation
 import MapKit
 
 /// The operation for performing a placemark-search operation.
-///
-/// - Note: this operation uses `MKLocalSearch` under the hood, which is why it inherits from `AsyncOperation`
-///         instead of `NetworkOperation`.
 public class PlacemarkSearchOperation: AsyncOperation {
 
     public let request: MKLocalSearch.Request

@@ -60,7 +60,7 @@ public class StopViewController: UIViewController,
     // MARK: - Data
 
     /// The data-loading operation for this controller.
-    var operation: StopArrivalsModelOperation?
+    var operation: DecodableOperation<RESTAPIResponse<StopArrivals>>?
 
     /// The stop displayed by this controller.
     var stop: Stop? {
@@ -291,28 +291,30 @@ public class StopViewController: UIViewController,
     func updateData() {
         operation?.cancel()
 
-        guard let modelService = application.restAPIModelService else { return }
+        guard let apiService = application.restAPIService else { return }
 
         title = Strings.updating
 
-        let op = modelService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
-        op.then { [weak self] in
+        let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
+        op.complete { [weak self] result in
             guard let self = self else { return }
 
-            if self.isBookmarkBroken(operation: op) {
+            let broken = self.isBookmarkBroken(operation: op)
+
+            switch (broken, result) {
+            case (true, _):
                 self.displayBrokenBookmarkMessage()
-            }
-            else if let error = op.error {
-                print("TODO! Handle me better: \(error)")
-            }
+            case (_, .failure(let error)):
+                print("TODO FIXME handle error! \(error)")
+            case (false, .success(let response)):
+                self.lastUpdated = Date()
+                self.stopArrivals = response.list
+                self.refreshControl.endRefreshing()
+                self.updateTitle()
 
-            self.lastUpdated = Date()
-            self.stopArrivals = op.stopArrivals
-            self.refreshControl.endRefreshing()
-            self.updateTitle()
-
-            if let arrivals = op.stopArrivals, arrivals.arrivalsAndDepartures.count == 0 {
-                self.extendLoadMoreWindow()
+                if response.list.arrivalsAndDepartures.count == 0 {
+                    self.extendLoadMoreWindow()
+                }
             }
         }
 
@@ -375,9 +377,26 @@ public class StopViewController: UIViewController,
 
     /// Attempts to detect if the current `bookmarkContext` is broken, given the server's response.
     /// - Parameter operation: The model operation returned from loading the stop for the specified bookmark.
-    private func isBookmarkBroken(operation: StopArrivalsModelOperation) -> Bool {
-        let effective404 = operation.apiOperation?.isEffective404 ?? false
-        return bookmarkContext != nil && effective404
+    private func isBookmarkBroken(operation: DecodableOperation<RESTAPIResponse<StopArrivals>>) -> Bool {
+        // abxoxo - todo fixme!
+        return false
+//        let effective404 = operation.apiOperation?.isEffective404 ?? false
+//        return bookmarkContext != nil && effective404
+        /// Tries to tell you if you're effectively seeing a 404 'Not Found' error.
+        ///
+        /// The REST API doesn't do a good job of surfacing what should be 404 errors. If you request a
+        /// valid endpoint, but provide it with a bogus piece of data (e.g. a non-existent Stop ID), it should
+        /// return a 404 error to you. Instead, it gives a 200 and a blank body. This method tries to tell you
+        /// if you're seeing an 'effective' 404.
+        ///
+        /// - Note: Other errors, including a missing response, will cause this to return `false`.
+//        public var isEffective404: Bool {
+//            guard let response = response else {
+//                return false
+//            }
+//
+//            return response.expectedContentLength == 0 && response.statusCode == 200
+//        }
     }
 
     // MARK: - IGListKit

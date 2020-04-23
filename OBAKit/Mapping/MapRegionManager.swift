@@ -177,7 +177,7 @@ public class MapRegionManager: NSObject,
     // MARK: - Data Loading
 
     @objc func requestDataForMapRegion(_ timer: Timer) {
-        guard let modelService = application.restAPIModelService else {
+        guard let apiService = application.restAPIService else {
             return
         }
 
@@ -194,18 +194,21 @@ public class MapRegionManager: NSObject,
         mapRegion.span.latitudeDelta *= 1.1
         mapRegion.span.longitudeDelta *= 1.1
 
-        let requestStopsOperation = modelService.getStops(region: mapRegion)
-        requestStopsOperation.then { [weak self] in
+        let op = apiService.getStops(region: mapRegion)
+        op.complete { [weak self] result in
             guard let self = self else { return }
 
-            self.stops = requestStopsOperation.stops
-
-            self.notifyDelegatesDataLoadingFinished()
-
-            self.requestStopsOperation = nil
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.stops = response.list
+                self.notifyDelegatesDataLoadingFinished()
+                self.requestStopsOperation = nil
+            }
         }
 
-        self.requestStopsOperation = requestStopsOperation
+        self.requestStopsOperation = op
     }
 
     // MARK: - Map View Delegate
@@ -275,7 +278,7 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Operations
 
-    private var requestStopsOperation: StopsModelOperation?
+    private var requestStopsOperation: DecodableOperation<RESTAPIResponse<[Stop]>>?
 
     // MARK: - Stops
 
@@ -292,13 +295,18 @@ public class MapRegionManager: NSObject,
             return
         }
 
-        guard let modelService = application.restAPIModelService else {
+        guard let apiService = application.restAPIService else {
             return
         }
 
-        let op = modelService.getStop(id: id)
-        op.then {
-            completion(op.stops.first)
+        let op = apiService.getStop(id: id)
+        op.complete { result in
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                completion(response.list.first)
+            }
         }
     }
 
@@ -403,18 +411,19 @@ public class MapRegionManager: NSObject,
     // MARK: - Search/Route
 
     func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
-        guard let apiService = application.restAPIModelService else { return }
+        guard let apiService = application.restAPIService else { return }
 
-        let op = apiService.getStopsForRoute(routeID: route.id)
+        let op = apiService.getStopsForRoute(id: route.id)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-        op.then { [weak self] in
-            guard
-                let self = self,
-                let stopsForRoute = op.stopsForRoute
-            else { return }
-
-            let response = SearchResponse(response: searchResponse, substituteResult: stopsForRoute)
-            self.searchResponse = response
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                let response = SearchResponse(response: searchResponse, substituteResult: response.list)
+                self.searchResponse = response
+            }
         }
     }
 

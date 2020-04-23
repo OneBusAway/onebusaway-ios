@@ -88,24 +88,26 @@ public class Application: CoreApplication, PushServiceDelegate {
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
             guard
                 let self = self,
-                let modelService = self.restAPIModelService
+                let apiService = self.restAPIService
             else { return }
 
             SVProgressHUD.show()
 
-            let op = modelService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
-            op.then { [weak self] in
-                guard
-                    let self = self,
-                    let topVC = self.topViewController,
-                    let arrDep = op.arrivalDeparture
-                else {
-                    return
-                }
-
+            let op = apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
+            op.complete { [weak self] result in
                 SVProgressHUD.dismiss()
 
-                self.viewRouter.navigateTo(arrivalDeparture: arrDep, from: topVC)
+                guard
+                    let self = self,
+                    let topVC = self.topViewController
+                else { return }
+
+                switch result {
+                case .failure(let error):
+                    print("TODO FIXME handle error! \(error)")
+                case .success(let response):
+                    self.viewRouter.navigateTo(arrivalDeparture: response.list, from: topVC)
+                }
             }
         }
 
@@ -234,20 +236,22 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let modelService = restAPIModelService else {
-            return
-        }
+        guard let apiService = restAPIService else { return }
 
-        let op = modelService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence)
-        op.then { [weak self] in
+        let op = apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence)
+        op.complete { [weak self] result in
             guard
                 let self = self,
-                let topController = self.delegate?.uiApplication?.keyWindow?.topViewController,
-                let arrivalDeparture = op.arrivalDeparture
+                let topController = self.delegate?.uiApplication?.keyWindow?.topViewController
             else { return }
 
-            let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
-            self.viewRouter.navigate(to: tripController, from: topController)
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                let tripController = TripViewController(application: self, arrivalDeparture: response.list)
+                self.viewRouter.navigate(to: tripController, from: topController)
+            }
         }
     }
 

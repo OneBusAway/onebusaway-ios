@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class TripStopTime: NSObject, Decodable {
+public class TripStopTime: NSObject, Decodable, HasReferences {
 
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop.
     private let arrival: TimeInterval
@@ -23,7 +23,7 @@ public class TripStopTime: NSObject, Decodable {
     public let stopID: StopID
 
     /// The stop visited during the trip.
-    public let stop: Stop
+    public private(set) var stop: Stop!
 
     var serviceDate: Date! {
         didSet {
@@ -44,10 +44,6 @@ public class TripStopTime: NSObject, Decodable {
         arrival = try container.decode(TimeInterval.self, forKey: .arrival)
         departure = try container.decode(TimeInterval.self, forKey: .departure)
         stopID = try container.decode(String.self, forKey: .stopID)
-
-        let references = decoder.references
-
-        stop = references.stopWithID(stopID)!
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -65,5 +61,9 @@ public class TripStopTime: NSObject, Decodable {
         hasher.combine(departure)
         hasher.combine(stopID)
         return hasher.finalize()
+    }
+
+    public func loadReferences(_ references: References) {
+        stop = references.stopWithID(stopID)!
     }
 }

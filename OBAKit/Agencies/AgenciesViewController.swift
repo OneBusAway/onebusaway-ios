@@ -11,7 +11,7 @@ import SafariServices
 import OBAKitCore
 
 /// Loads and displays a list of agencies in the current region.
-class AgenciesViewController: OperationController<AgenciesWithCoverageModelOperation, [AgencyWithCoverage]>, ListAdapterDataSource {
+class AgenciesViewController: OperationController<DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>, [AgencyWithCoverage]>, ListAdapterDataSource {
 
     override init(application: Application) {
         super.init(application: application)
@@ -31,17 +31,22 @@ class AgenciesViewController: OperationController<AgenciesWithCoverageModelOpera
         collectionController.view.pinToSuperview(.edges)
     }
 
-    override func loadData() -> AgenciesWithCoverageModelOperation? {
-        guard let modelService = application.restAPIModelService else { return nil }
+    override func loadData() -> DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>? {
+        guard let apiService = application.restAPIService else { return nil }
 
         SVProgressHUD.show()
 
-        let op = modelService.getAgenciesWithCoverage()
-        op.then { [weak self] in
+        let op = apiService.getAgenciesWithCoverage()
+        op.complete { [weak self] result in
             SVProgressHUD.dismiss()
-
             guard let self = self else { return }
-            self.data = op.agenciesWithCoverage
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.data = response.list
+            }
         }
 
         return op

@@ -27,7 +27,7 @@ public protocol RegionsServiceDelegate: NSObjectProtocol {
 
 /// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
 public class RegionsService: NSObject, LocationServiceDelegate {
-    private let modelService: RegionsModelService?
+    private let apiService: RegionsAPIService?
     private let locationService: LocationService
     private let userDefaults: UserDefaults
     private let bundledRegionsFilePath: String
@@ -35,14 +35,14 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
     /// - Parameters:
-    ///   - modelService: Retrieves new data from the region server and turns it into models.
+    ///   - apiService: Retrieves new data from the region server and turns it into models.
     ///   - locationService: A location service object.
     ///   - userDefaults: The user defaults object.
     ///   - bundledRegionsFilePath: The path to the bundled regions file. It is probably named "regions.json" or something similar.
     ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
     ///   - delegate: A delegate object for callbacks.
-    public init(modelService: RegionsModelService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil) {
-        self.modelService = modelService
+    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil) {
+        self.apiService = apiService
         self.locationService = locationService
         self.userDefaults = userDefaults
         self.bundledRegionsFilePath = bundledRegionsFilePath
@@ -228,10 +228,15 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Bundled Regions
 
+    // swiftlint:disable force_try
+
     private static func bundledRegions(path: String) -> [Region] {
-        let data = try! NSData(contentsOfFile: path) as Data // swiftlint:disable:this force_try
-        return DictionaryDecoder.decodeRegionsFileData(data)
+        let data = try! NSData(contentsOfFile: path) as Data
+        let response = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<[Region]>.self, from: data)
+        return response.list
     }
+
+    // swiftlint:enable force_try
 
     // MARK: - Public Methods
 
@@ -246,25 +251,25 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         guard
-            let modelService = modelService,
+            let apiService = apiService,
             let apiPath = apiPath
         else {
             return
         }
 
-        let op = modelService.getRegions(apiPath: apiPath)
-        op.then { [weak self] in
-            guard
-                let self = self,
-                op.regions.count > 0
-            else {
-                return
+        let op = apiService.getRegions(apiPath: apiPath)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                guard response.list.count > 0 else { return }
+                self.regions = response.list
+                self.updateCurrentRegionFromLocation()
             }
-
-            self.regions = op.regions
-            self.updateCurrentRegionFromLocation()
         }
-
         self.regionsOperation = op
     }
 
@@ -273,7 +278,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         regionsOperation?.cancel()
     }
 
-    private var regionsOperation: RegionsModelOperation?
+    private var regionsOperation: DecodableOperation<RESTAPIResponse<[Region]>>?
 
     // MARK: - LocationServiceDelegate
 

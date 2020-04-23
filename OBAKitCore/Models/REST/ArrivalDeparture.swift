@@ -10,7 +10,7 @@ import Foundation
 
 public typealias TripIdentifier = String
 
-public class ArrivalDeparture: NSObject, Decodable {
+public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool
@@ -47,7 +47,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let routeID: RouteID
 
     /// the route for the arriving vehicle
-    public let route: Route
+    public var route: Route!
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
     private let _routeLongName: String?
@@ -68,7 +68,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     let situationIDs: [String]
 
     /// Active service alerts for this trip
-    public let situations: [Situation]
+    public private(set) var situations = [Situation]()
 
     public let status: String
 
@@ -76,7 +76,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let stopID: StopID
 
     /// The stop the vehicle is arriving at
-    public let stop: Stop
+    public var stop: Stop!
 
     /// The index of the stop into the sequence of stops that make up the trip for this arrival
     public let stopSequence: Int
@@ -91,7 +91,7 @@ public class ArrivalDeparture: NSObject, Decodable {
     public let tripID: TripIdentifier
 
     /// The Trip for the arriving vehicle
-    public let trip: Trip
+    public var trip: Trip!
 
     /// Trip-specific status for the arriving transit vehicle
     public let tripStatus: TripStatus?
@@ -129,7 +129,6 @@ public class ArrivalDeparture: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.references
 
         arrivalEnabled = try container.decode(Bool.self, forKey: .arrivalEnabled)
         blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
@@ -145,7 +144,6 @@ public class ArrivalDeparture: NSObject, Decodable {
         predictedDeparture = ModelHelpers.nilifyEpochDate((try container.decode(Date.self, forKey: .predictedDeparture)))
 
         routeID = try container.decode(RouteID.self, forKey: .routeID)
-        route = references.routeWithID(routeID)!
 
         _routeLongName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeLongName))
         _routeShortName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
@@ -154,22 +152,29 @@ public class ArrivalDeparture: NSObject, Decodable {
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
 
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
-        situations = references.situationsWithIDs(situationIDs)
 
         status = try container.decode(String.self, forKey: .status)
 
         stopID = try container.decode(String.self, forKey: .stopID)
-        stop = references.stopWithID(stopID)!
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
         totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
         _tripHeadsign = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
 
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
-        trip = references.tripWithID(tripID)!
 
         tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
         vehicleID = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
+    }
+
+    // MARK: - HasReferences
+
+    public func loadReferences(_ references: References) {
+        route = references.routeWithID(routeID)!
+        situations = references.situationsWithIDs(situationIDs)
+        stop = references.stopWithID(stopID)!
+        trip = references.tripWithID(tripID)!
+        tripStatus?.loadReferences(references)
     }
 
     // MARK: - Helpers/Names

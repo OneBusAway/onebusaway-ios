@@ -180,7 +180,7 @@ public class MapViewController: UIViewController,
         present(alert, animated: true, completion: nil)
     }
 
-    private var weatherOperation: WeatherModelOperation?
+    private var weatherOperation: DecodableOperation<WeatherForecast>?
 
     private var forecast: WeatherForecast? {
         didSet {
@@ -198,9 +198,15 @@ public class MapViewController: UIViewController,
         guard let apiService = application.obacoService else { return }
 
         let op = apiService.getWeather()
-        op.then { [weak self] in
+        op.complete { [weak self] result in
             guard let self = self else { return }
-            self.forecast = op.weatherForecast
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.forecast = response
+            }
         }
         weatherOperation = op
     }

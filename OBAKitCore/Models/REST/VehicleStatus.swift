@@ -9,7 +9,7 @@
 import Foundation
 import CoreLocation
 
-public class VehicleStatus: NSObject, Decodable {
+public class VehicleStatus: NSObject, Decodable, HasReferences {
 
     /// The id of the vehicle
     public let vehicleID: String
@@ -27,7 +27,7 @@ public class VehicleStatus: NSObject, Decodable {
     let tripID: TripIdentifier?
 
     /// The vehicle's current trip
-    public let trip: Trip?
+    public private(set) var trip: Trip?
 
     /// the current journey phase of the vehicle
     public let phase: String
@@ -51,7 +51,6 @@ public class VehicleStatus: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.references
 
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
         lastUpdateTime = try container.decode(Date.self, forKey: .lastUpdateTime)
@@ -64,11 +63,15 @@ public class VehicleStatus: NSObject, Decodable {
         }
 
         tripID = ModelHelpers.nilifyBlankValue(try container.decode(TripIdentifier.self, forKey: .tripID))
-        trip = references.tripWithID(tripID)
 
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)
         location = try? CLLocation(container: container, key: .location)
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
+    }
+
+    public func loadReferences(_ references: References) {
+        trip = references.tripWithID(tripID)
+        tripStatus.loadReferences(references)
     }
 }

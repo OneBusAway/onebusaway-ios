@@ -16,9 +16,10 @@ import MapKit
 /// “stop groupings” that are used to group the stops into useful collections. Currently, the main
 /// grouping provided organizes the set of stops by direction of travel for the route. Finally,
 /// this method also returns a set of polylines that can be used to draw the path traveled by the route.
-public class StopsForRoute: NSObject, Decodable {
+public class StopsForRoute: NSObject, Decodable, HasReferences {
+
     let routeID: String
-    public let route: Route
+    public private(set) var route: Route!
 
     public let rawPolylines: [String]
     public lazy var polylines: [MKPolyline] = rawPolylines.compactMap { Polyline(encodedPolyline: $0).mkPolyline }
@@ -32,7 +33,7 @@ public class StopsForRoute: NSObject, Decodable {
     }()
 
     let stopIDs: [String]
-    public let stops: [Stop]
+    public private(set) var stops: [Stop]!
 
     public let stopGroupings: [StopGrouping]
 
@@ -45,21 +46,23 @@ public class StopsForRoute: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.references
 
         routeID = try container.decode(String.self, forKey: .routeID)
-        route = references.routeWithID(routeID)!
-
         rawPolylines = try container.decode([PolylineEntity].self, forKey: .rawPolylines).compactMap { $0.points }
-
         stopIDs = try container.decode([String].self, forKey: .stopIDs)
-        stops = references.stopsWithIDs(stopIDs)
-
         stopGroupings = try container.decode([StopGrouping].self, forKey: .stopGroupings)
+    }
+
+    // MARK: - HasReferences
+
+    public func loadReferences(_ references: References) {
+        route = references.routeWithID(routeID)!
+        stops = references.stopsWithIDs(stopIDs)
+        stopGroupings.loadReferences(references)
     }
 }
 
-public class StopGrouping: NSObject, Decodable {
+public class StopGrouping: NSObject, Decodable, HasReferences {
     public let ordered: Bool
     public let groupingType: String
     public let stopGroups: [StopGroup]
@@ -76,16 +79,20 @@ public class StopGrouping: NSObject, Decodable {
         groupingType = try container.decode(String.self, forKey: .groupingType)
         stopGroups = try container.decode([StopGroup].self, forKey: .stopGroups)
     }
+
+    public func loadReferences(_ references: References) {
+        stopGroups.loadReferences(references)
+    }
 }
 
-public class StopGroup: NSObject, Decodable {
+public class StopGroup: NSObject, Decodable, HasReferences {
     public let id: String
     public let name: String
     public let groupingType: String
     public let polylines: [String]
 
     let stopIDs: [String]
-    public let stops: [Stop]
+    public private(set) var stops = [Stop]()
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -97,7 +104,6 @@ public class StopGroup: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.references
 
         id = try container.decode(String.self, forKey: .id)
 
@@ -109,6 +115,9 @@ public class StopGroup: NSObject, Decodable {
         polylines = polylineEntities.compactMap { $0.points }
 
         stopIDs = try container.decode([String].self, forKey: .stopIDs)
+    }
+
+    public func loadReferences(_ references: References) {
         stops = references.stopsWithIDs(stopIDs)
     }
 }

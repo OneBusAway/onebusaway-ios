@@ -18,8 +18,8 @@ import MapKit
 class RegionsEncodingTests: OBATestCase {
 
     func testRoundtrippingRegion() {
-        let regionsData = loadData(file: "regions-v3.json")
-        let regionsObjects = DictionaryDecoder.decodeRegionsFileData(regionsData)
+        let data = loadData(file: "regions-v3.json")
+        let regionsObjects = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<[Region]>.self, from: data)
 
         expect(regionsObjects.count) == 12
 

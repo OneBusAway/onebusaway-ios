@@ -117,21 +117,22 @@ class StopProblemViewController: FormViewController {
             let codeRow = form.rowBy(tag: "stopProblemCode") as? PickerInputRow<StopProblemCode>,
             let commentRow = form.rowBy(tag: "comments") as? TextAreaRow,
             let stopProblemCode = codeRow.value,
-            let modelService = application.restAPIModelService else { return }
+            let apiService = application.restAPIService
+        else { return }
 
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
         SVProgressHUD.show()
 
-        let op = modelService.getStopProblem(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
-        op.then { [weak self] in
+        let op = apiService.getStopProblem(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
+        op.complete { [weak self] result in
             guard let self = self else { return }
 
-            if let error = op.error {
+            switch result {
+            case .failure(let error):
                 AlertPresenter.show(error: error, presentingController: self)
                 SVProgressHUD.dismiss()
-            }
-            else {
+            case .success:
                 self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
                 SVProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)

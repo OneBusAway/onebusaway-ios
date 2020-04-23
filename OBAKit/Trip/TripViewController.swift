@@ -189,42 +189,45 @@ class TripViewController: UIViewController,
 
     // MARK: - Trip Details Data
 
-    private var tripDetailsOperation: TripDetailsModelOperation?
+    private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
 
     private var currentTripStatus: TripStatus?
 
     private func loadTripDetails() {
-        guard let apiService = application.restAPIModelService else {
+        guard let apiService = application.restAPIService else {
             return
         }
 
         tripDetailsOperation?.cancel()
 
-        let op = apiService.getTripDetails(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate)
-        op.then { [weak self] in
-            guard
-                let self = self,
-                let tripDetails = op.tripDetails
-            else { return }
+        let op = apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-            self.tripDetailsController.tripDetails = tripDetails
-            self.mapView.updateAnnotations(with: tripDetails.stopTimes)
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                let tripDetails = response.list
+                self.tripDetailsController.tripDetails = tripDetails
+                self.mapView.updateAnnotations(with: tripDetails.stopTimes)
 
-            if let currentTripStatus = self.currentTripStatus {
-                self.mapView.removeAnnotation(currentTripStatus)
-                self.currentTripStatus = nil
-            }
+                if let currentTripStatus = self.currentTripStatus {
+                    self.mapView.removeAnnotation(currentTripStatus)
+                    self.currentTripStatus = nil
+                }
 
-            if let tripStatus = tripDetails.status {
-                self.currentTripStatus = tripStatus
-                self.mapView.addAnnotation(tripStatus)
-            }
+                if let tripStatus = tripDetails.status {
+                    self.currentTripStatus = tripStatus
+                    self.mapView.addAnnotation(tripStatus)
+                }
 
-            self.mapView.showAnnotations(self.mapView.annotations, animated: true)
+                self.mapView.showAnnotations(self.mapView.annotations, animated: true)
 
-            if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
-                let userDestinationStopTime = tripDetails.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
-                self.selectedStopTime = userDestinationStopTime
+                if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
+                    let userDestinationStopTime = tripDetails.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+                    self.selectedStopTime = userDestinationStopTime
+                }
             }
         }
         tripDetailsOperation = op
@@ -232,12 +235,12 @@ class TripViewController: UIViewController,
 
     // MARK: - Map Data
 
-    private var shapeOperation: ShapeModelOperation?
+    private var shapeOperation: DecodableOperation<RESTAPIResponse<PolylineEntity>>?
     private var routePolyline: MKPolyline?
 
     private func loadMapPolyline() {
         guard
-            let apiService = application.restAPIModelService,
+            let apiService = application.restAPIService,
             routePolyline == nil // No need to reload the polyline if we already have it
         else {
             return
@@ -246,17 +249,18 @@ class TripViewController: UIViewController,
         shapeOperation?.cancel()
 
         let op = apiService.getShape(id: tripConvertible.trip.shapeID)
-        op.then { [weak self] in
-            guard
-                let self = self,
-                let polyline = op.polyline
-            else { return }
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-            self.routePolyline = polyline
-
-            self.mapView.addOverlay(polyline)
-
-            self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                guard let polyline = response.list.polyline else { return }
+                self.routePolyline = polyline
+                self.mapView.addOverlay(polyline)
+                self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
+            }
         }
 
         shapeOperation = op

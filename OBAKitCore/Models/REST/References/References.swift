@@ -78,11 +78,11 @@ public class References: NSObject, Decodable {
         trips.loadReferences(self)
     }
 
-    public static func decodeReferences(_ data: [String: Any]) throws -> References {
-        let decoder = DictionaryDecoder.restApiServiceDecoder()
-        let references = try decoder.decode(References.self, from: data)
-        return references
-    }
+//    public static func decodeReferences(_ data: [String: Any]) throws -> References {
+//        let decoder = DictionaryDecoder.restApiServiceDecoder()
+//        let references = try decoder.decode(References.self, from: data)
+//        return references
+//    }
 }
 
 // MARK: - HasReferences
@@ -91,7 +91,7 @@ public protocol HasReferences {
     func loadReferences(_ references: References)
 }
 
-extension Array where Element: HasReferences {
+extension Array: HasReferences where Element: HasReferences {
     public func loadReferences(_ references: References) {
         for elt in self {
             elt.loadReferences(references)

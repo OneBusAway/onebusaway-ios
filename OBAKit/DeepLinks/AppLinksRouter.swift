@@ -133,20 +133,24 @@ public class AppLinksRouter: NSObject {
             let userInfo = userActivity.userInfo,
             let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
             let regionID = userInfo[UserActivityBuilder.UserInfoKeys.regionID] as? Int,
-            let modelService = application.restAPIModelService,
+            let apiService = application.restAPIService,
             application.currentRegion?.regionIdentifier == regionID
             else {
                 return false
         }
 
-        let op = modelService.getStop(id: stopID)
-        op.then { [weak self] in
-            guard
-                let self = self,
-                let stop = op.stops.first
-                else { return }
+        let op = apiService.getStop(id: stopID)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-            self.showStopHandler?(stop)
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                if let stop = response.list.first {
+                    self.showStopHandler?(stop)
+                }
+            }
         }
 
         return true

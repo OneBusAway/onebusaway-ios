@@ -36,7 +36,7 @@ public class TripFloatingPanelController: UIViewController,
 
     weak var parentTripViewController: TripViewController?
 
-    private let operation: TripDetailsModelOperation?
+    private let operation: DecodableOperation<RESTAPIResponse<TripDetails>>?
 
     // MARK: - Init/Deinit
 
@@ -59,15 +59,21 @@ public class TripFloatingPanelController: UIViewController,
     /// Initializes the `TripDetailsController` with an OBA application object and an in-flight model operation.
     /// - Parameter application: The application object
     /// - Parameter operation: An operation that will result in a `TripDetails` object that can be used to finish configuring this controller.
-    init(application: Application, operation: TripDetailsModelOperation) {
+    init(application: Application, operation: DecodableOperation<RESTAPIResponse<TripDetails>>) {
         self.application = application
         self.operation = operation
 
         super.init(nibName: nil, bundle: nil)
 
-        self.operation?.then { [weak self] in
+        self.operation?.complete { [weak self] result in
             guard let self = self else { return }
-            self.tripDetails = self.operation?.tripDetails
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.tripDetails = response.list
+            }
         }
     }
 
@@ -226,11 +232,11 @@ public class TripFloatingPanelController: UIViewController,
 
     private func showAdjacentTrip(_ trip: Trip) {
         guard
-            let apiService = self.application.restAPIModelService,
-            let tripDetails = self.tripDetails
+            let apiService = application.restAPIService,
+            let tripDetails = tripDetails
         else { return }
 
-        let op = apiService.getTripDetails(tripID: trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
+        let op = apiService.getTrip(tripID: trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
         let controller = TripFloatingPanelController(application: self.application, operation: op)
         self.application.viewRouter.navigate(to: controller, from: self)
     }

@@ -9,6 +9,8 @@
 import Foundation
 import CoreLocation
 
+// abxoxo - delete some of me?
+
 struct LocationModel: Codable {
     let latitude: Double
     let longitude: Double
@@ -33,10 +35,6 @@ extension CLLocation {
     }
 }
 
-extension CodingUserInfoKey {
-    public static let references: CodingUserInfoKey = CodingUserInfoKey(rawValue: "references")!
-}
-
 extension DictionaryDecoder {
     public class func restApiServiceDecoder() -> DictionaryDecoder {
         let decoder = DictionaryDecoder()
@@ -44,37 +42,34 @@ extension DictionaryDecoder {
 
         return decoder
     }
-
-    public class func decodeModels<T>(_ entries: [[String: Any]], references: References?, type: T.Type) throws -> [T] where T: Decodable {
-        let decoder = DictionaryDecoder.restApiServiceDecoder()
-
-        if let references = references {
-            decoder.userInfo = [CodingUserInfoKey.references: references]
-        }
-
-        let models = try entries.compactMap { dict -> T? in
-            return try decoder.decode(type, from: dict)
-        }
-
-        return models
-    }
-
-    public class func decodeRegionsFileData(_ data: Data) -> [Region] {
-        // swiftlint:disable force_cast force_try
-        let regionsJSON = try! JSONSerialization.jsonObject(with: data, options: []) as! [AnyHashable: Any]
-        let dataNode = regionsJSON["data"] as! [AnyHashable: Any]
-        let listNode = dataNode["list"] as! [[String: Any]]
-        return try! DictionaryDecoder.decodeModels(listNode, references: nil, type: Region.self)
-        // swiftlint:enable force_cast force_try
-    }
+//
+//    public class func decodeModels<T>(_ entries: [[String: Any]], references: References?, type: T.Type) throws -> [T] where T: Decodable {
+//        let decoder = DictionaryDecoder.restApiServiceDecoder()
+//
+//        if let references = references {
+//            decoder.userInfo = [CodingUserInfoKey.references: references]
+//        }
+//
+//        let models = try entries.compactMap { dict -> T? in
+//            return try decoder.decode(type, from: dict)
+//        }
+//
+//        return models
+//    }
 }
 
 extension JSONDecoder {
-    public class func obacoServiceDecoder() -> JSONDecoder {
+    class var obacoServiceDecoder: JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .iso8601
 
+        return decoder
+    }
+
+    class var RESTDecoder: JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
         return decoder
     }
 }

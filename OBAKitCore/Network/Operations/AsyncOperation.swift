@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// This is a base class on which you can build other operations that execute asynchronously.
 public class AsyncOperation: Operation {
 
     // MARK: - Errors
