@@ -287,12 +287,6 @@
 		pl = zach.
 		fr = 
 		es = 
-	[formatters.date_range_fmt]
-		en = %1$@ — %2$@
-		comment = Represents a timeframe. e.g. 9:00 AM — 11:00 AM.
-		pl = %1$@ — %2$@
-		fr = 
-		es = 
 	[formatters.departed_x_min_ago_fmt]
 		en = Departed %d min ago
 		comment = Use for vehicles that departed X minutes ago.
