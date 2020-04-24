@@ -70,12 +70,15 @@ public class Formatters: NSObject {
         return timeFormatter
     }()
 
-    public func formattedDateRange(from: Date, to: Date) -> String {
-        let fromString = timeFormatter.string(from: from)
-        let toString = timeFormatter.string(from: to)
-        let format = OBALoc("formatters.date_range_fmt", value: "%@ — %@", comment: "Represents a timeframe. e.g. 9:00 AM — 11:00 AM.")
+    public lazy var dateIntervalFormatter: DateIntervalFormatter = {
+        let formatter = DateIntervalFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
-        return String(format: format, fromString, toString)
+    public func formattedDateRange(from: Date, to: Date) -> String {
+        return dateIntervalFormatter.string(from: from, to: to)
     }
 
     /// Creates formatted strings for time intervals.
