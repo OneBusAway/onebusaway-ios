@@ -77,12 +77,6 @@ public class References: NSObject, Decodable {
         stops.loadReferences(self)
         trips.loadReferences(self)
     }
-
-//    public static func decodeReferences(_ data: [String: Any]) throws -> References {
-//        let decoder = DictionaryDecoder.restApiServiceDecoder()
-//        let references = try decoder.decode(References.self, from: data)
-//        return references
-//    }
 }
 
 // MARK: - HasReferences

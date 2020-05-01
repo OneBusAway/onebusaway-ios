@@ -9,8 +9,6 @@
 import Foundation
 import CoreLocation
 
-// abxoxo - delete some of me?
-
 struct LocationModel: Codable {
     let latitude: Double
     let longitude: Double
@@ -33,29 +31,6 @@ extension CLLocation {
 
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
     }
-}
-
-extension DictionaryDecoder {
-    public class func restApiServiceDecoder() -> DictionaryDecoder {
-        let decoder = DictionaryDecoder()
-        decoder.dateDecodingStrategy = .millisecondsSince1970
-
-        return decoder
-    }
-//
-//    public class func decodeModels<T>(_ entries: [[String: Any]], references: References?, type: T.Type) throws -> [T] where T: Decodable {
-//        let decoder = DictionaryDecoder.restApiServiceDecoder()
-//
-//        if let references = references {
-//            decoder.userInfo = [CodingUserInfoKey.references: references]
-//        }
-//
-//        let models = try entries.compactMap { dict -> T? in
-//            return try decoder.decode(type, from: dict)
-//        }
-//
-//        return models
-//    }
 }
 
 extension JSONDecoder {
