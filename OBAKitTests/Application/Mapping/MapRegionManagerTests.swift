@@ -14,11 +14,11 @@ import Nimble
 // swiftlintXdisable force_try
 
 class MapRegionManagerTests: OBATestCase {
-    let apiKey = "apikey"
-    let appVersion = "app-version"
     let queue = OperationQueue()
 
     var config: AppConfig!
+
+    var dataLoader: MockDataLoader!
 
     override func setUp() {
         super.setUp()
@@ -28,7 +28,9 @@ class MapRegionManagerTests: OBATestCase {
 
         let bundledRegions = Bundle.main.path(forResource: "regions", ofType: "json")!
 
-        config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegions, regionsAPIPath: regionsPath)
+        dataLoader = MockDataLoader()
+
+        config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegions, regionsAPIPath: regionsPath, dataLoader: dataLoader, connectivity: MockConnectivity())
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
     }
@@ -39,7 +41,13 @@ class MapRegionManagerTests: OBATestCase {
     }
 
     func test_init() {
-        stubRegions()
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+
+        let agencyAlertsData = Fixtures.loadData(file: "puget_sound_alerts.pb")
+        dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
+            request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
+        }
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
@@ -51,7 +59,13 @@ class MapRegionManagerTests: OBATestCase {
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
     func test_visibleMapRect_nilRegion() {
-        stubRegions()
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
+
+        let agencyAlertsData = Fixtures.loadData(file: "puget_sound_alerts.pb")
+        dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
+            request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
+        }
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)

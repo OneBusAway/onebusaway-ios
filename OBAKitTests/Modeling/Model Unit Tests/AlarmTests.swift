@@ -16,12 +16,12 @@ import Nimble
 class AlarmTests: OBATestCase {
 
     func test_init_baseCase_success() {
-        let alarm = try! loadAlarm()
-        expect(alarm.url.absoluteString) == "http://alerts.example.com/regions/1/alarms/1234567890"
+        let alarm = try! Fixtures.loadAlarm()
+        expect(alarm.url.absoluteString) == "https://alerts.example.com/regions/1/alarms/1234567890"
     }
 
     func test_appendingData() {
-        let alarm = try! loadAlarm()
+        let alarm = try! Fixtures.loadAlarm()
         let interval: TimeInterval = 1580428800
         let serviceDate = Date(timeIntervalSince1970: interval) // January 31, 2020, 12:00 AM GMT
         let tripDate = Date(timeIntervalSince1970: interval + 18000) // + 5 hours.
@@ -39,8 +39,8 @@ class AlarmTests: OBATestCase {
         // then go into RecentStopsViewController and keep checking things off the list
         alarm.set(tripDate: tripDate, alarmOffset: alarmOffset)
 
-        let roundtripped = try! roundtripCodable(type: Alarm.self, model: alarm)
-        expect(roundtripped.url.absoluteString) == "http://alerts.example.com/regions/1/alarms/1234567890"
+        let roundtripped = try! Fixtures.roundtripCodable(type: Alarm.self, model: alarm)
+        expect(roundtripped.url.absoluteString) == "https://alerts.example.com/regions/1/alarms/1234567890"
         expect(roundtripped.deepLink!.title) == "Title"
         expect(roundtripped.deepLink!.stopID) == "1234"
         expect(roundtripped.deepLink!.tripID) == "9876"

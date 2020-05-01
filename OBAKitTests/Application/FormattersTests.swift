@@ -26,8 +26,8 @@ class FormattersTests: OBATestCase {
 
     func testExample() {
         let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
-        let stopArrivals = try! StopArrivals.decodeFromFile(named: "arrivals-and-departures-for-stop-1_75414.json", in: Bundle(for: type(of: self)))
-        let arrDep = stopArrivals.first!.arrivalsAndDepartures.first!
+        let stopArrivals = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: "arrivals-and-departures-for-stop-1_75414.json")
+        let arrDep = stopArrivals.arrivalsAndDepartures.first!
 
         let str = formatters.explanation(from: arrDep)
 

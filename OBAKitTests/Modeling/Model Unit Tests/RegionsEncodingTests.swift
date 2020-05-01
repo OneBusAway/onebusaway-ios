@@ -18,10 +18,9 @@ import MapKit
 class RegionsEncodingTests: OBATestCase {
 
     func testRoundtrippingRegion() {
-        let data = loadData(file: "regions-v3.json")
-        let regionsObjects = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<[Region]>.self, from: data)
+        let regionsObjects = try! Fixtures.loadRESTAPIPayload(type: [Region].self, fileName: "regions-v3.json")
 
-        expect(regionsObjects.count) == 12
+        expect(regionsObjects.count) == 13
 
         let tampa = regionsObjects[0]
         expect(tampa.name) == "Tampa Bay"
@@ -31,7 +30,7 @@ class RegionsEncodingTests: OBATestCase {
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
         let tampaRT = roundTripped[0]
 
-        expect(roundTripped.count) == 12
+        expect(roundTripped.count) == 13
 
         expect(tampaRT.regionIdentifier) == 0
         expect(tampaRT.name) == "Tampa Bay"
@@ -49,10 +48,10 @@ class RegionsEncodingTests: OBATestCase {
         expect(tampaRT.facebookURL).to(beNil())
         expect(tampaRT.contactEmail) == "onebusaway@gohart.org"
         expect(tampaRT.openTripPlannerContactEmail) == "otp-tampa@onebusaway.org"
-        expect(tampaRT.twitterURL) == URL(string: "http://mobile.twitter.com/OBA_tampa")!
+        expect(tampaRT.twitterURL) == URL(string: "https://mobile.twitter.com/OBA_tampa")!
 
-        expect(tampaRT.OBABaseURL) == URL(string: "http://api.tampa.onebusaway.org/api/")!
-        expect(tampaRT.siriBaseURL) == URL(string: "http://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!
+        expect(tampaRT.OBABaseURL) == URL(string: "https://api.tampa.onebusaway.org/api/")!
+        expect(tampaRT.siriBaseURL) == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!
         expect(tampaRT.openTripPlannerURL) == URL(string: "https://otp.prod.obahart.org/otp/")!
         expect(tampaRT.stopInfoURL).to(beNil())
 
@@ -80,7 +79,7 @@ class RegionsEncodingTests: OBATestCase {
     }
 
     func testCustomRegions_creation() {
-        let customRegion = customMinneapolisRegion
+        let customRegion = Fixtures.customMinneapolisRegion
 
         expect(customRegion.name) == "Custom Region"
         expect(customRegion.OBABaseURL.absoluteString) == "http://www.example.com"
@@ -93,7 +92,7 @@ class RegionsEncodingTests: OBATestCase {
     }
 
     func testCustomRegions_roundtripping() {
-        let customRegion = customMinneapolisRegion
+        let customRegion = Fixtures.customMinneapolisRegion
         let plistData = try! PropertyListEncoder().encode([customRegion])
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
         let customRegionRT = roundTripped[0]

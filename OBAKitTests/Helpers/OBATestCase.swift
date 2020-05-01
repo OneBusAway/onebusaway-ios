@@ -8,10 +8,8 @@
 
 import XCTest
 import OBAKit
-import OBAKitCore
+@testable import OBAKitCore
 import OHHTTPStubs
-
-// swiftlint:disable force_cast force_try
 
 open class OBATestCase: XCTestCase {
 
@@ -23,6 +21,14 @@ open class OBATestCase: XCTestCase {
         userDefaults = UserDefaults(suiteName: userDefaultsSuiteName)!
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
 
+        networkQueue = OperationQueue()
+
+        regionsAPIService = RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", networkQueue: networkQueue, dataLoader: MockDataLoader())
+
+        obacoService = ObacoAPIService(baseURL: obacoURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionID: obacoRegionID, networkQueue: networkQueue, delegate: nil, dataLoader: MockDataLoader())
+
+        restService = RESTAPIService(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: MockDataLoader())
+
         let testName = self.name
 
         OHHTTPStubs.onStubMissing { (request) in
@@ -33,6 +39,7 @@ open class OBATestCase: XCTestCase {
 
     open override func tearDown() {
         super.tearDown()
+        networkQueue.cancelAllOperations()
         OHHTTPStubs.removeAllStubs()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
@@ -41,19 +48,18 @@ open class OBATestCase: XCTestCase {
     var userDefaultsSuiteName: String {
         return String(describing: self)
     }
-}
 
-// MARK: - Network
+    // MARK: - API Service Data
 
-public extension OBATestCase {
+    let apiKey = "org.onebusaway.iphone.test"
+    let uuid = "12345-12345-12345-12345-12345"
+    let appVersion = "2018.12.31"
 
-    // MARK: - Obaco Model Service
+    // MARK: - Network
 
-    var obacoModelService: ObacoModelService {
-        return ObacoModelService(apiService: obacoService, dataQueue: OperationQueue())
-    }
+    var networkQueue: OperationQueue!
 
-    // MARK: - Obaco API Service
+    // MARK: - Network/Obaco
 
     var obacoRegionID: Int {
         return 1
@@ -63,91 +69,48 @@ public extension OBATestCase {
         return "alerts.example.com"
     }
 
-    var obacoURLString: String {
-        return "https://\(obacoHost)"
-    }
-
     var obacoURL: URL {
-        return URL(string: obacoURLString)!
+        return URL(string: "https://\(obacoHost)")!
     }
 
-    var obacoService: ObacoAPIService {
-        return ObacoAPIService(baseURL: obacoURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", regionID: obacoRegionID, networkQueue: OperationQueue(), delegate: nil)
-    }
-}
+    var obacoService: ObacoAPIService!
 
-public extension OBATestCase {
+    // MARK: - Network/REST API Service
 
-    // MARK: - REST Model Service
+    var host: String { "www.example.com" }
 
-    var restModelService: RESTAPIModelService {
-        return RESTAPIModelService(apiService: restService, dataQueue: OperationQueue())
-    }
+    var baseURL: URL { URL(string: "https://\(host)")! }
 
-    // MARK: - REST API Service
+    var restService: RESTAPIService!
 
-    var host: String {
-        return "www.example.com"
-    }
+    // MARK: - Network Request Stubbing
 
-    var baseURLString: String {
-        return "https://\(host)"
-    }
+    func stubAgenciesWithCoverage(dataLoader: MockDataLoader, baseURL: URL? = nil) {
 
-    var baseURL: URL {
-        return URL(string: baseURLString)!
+        let host = baseURL?.absoluteString ?? "https://www.example.com/"
+
+        dataLoader.mock(
+            URLString: "\(host)api/where/agencies-with-coverage.json",
+            with: Fixtures.loadData(file: "agencies_with_coverage.json")
+        )
     }
 
-    var restService: RESTAPIService {
-        let url = URL(string: baseURLString)!
-        return RESTAPIService(baseURL: url, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
-    }
-}
-
-// MARK: - Network Request Stubbing
-
-public extension OBATestCase {
-
-    func stubAgenciesWithCoverage(host: String) {
-        stub(condition: { (request) -> Bool in
-            guard let url = request.url else { return false }
-            let hostMatches = url.host == host
-            let pathMatches = url.path == "/api/where/agencies-with-coverage.json"
-
-            return hostMatches && pathMatches
-        }, response: { _ -> OHHTTPStubsResponse in
-            return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
-        })
+    func stubRegions(dataLoader: MockDataLoader) {
+        dataLoader.mock(
+            URLString: "https://regions.example.com/regions-v3.json",
+            with: Fixtures.loadData(file: "regions-v3.json")
+        )
     }
 
-    func stubRegions() {
-        stub(condition: { (request) -> Bool in
-            guard let url = request.url else { return false }
-            let hostMatches = url.host == self.regionsHost
-            let pathMatches = url.path == self.regionsPath
-
-            return hostMatches && pathMatches
-        }, response: { _ -> OHHTTPStubsResponse in
-            return OHHTTPStubsResponse.JSONFile(named: "regions-v3.json")
-        })
+    func stubRegionsJustPugetSound(dataLoader: MockDataLoader) {
+        dataLoader.mock(
+            URLString: "https://regions.example.com/regions-v3.json",
+            with: Fixtures.loadData(file: "regions-just-puget-sound.json")
+        )
     }
 
-    func stubRegionsJustPugetSound() {
-        stub(condition: { (request) -> Bool in
-            guard let url = request.url else { return false }
-            let hostMatches = url.host == self.regionsHost
-            let pathMatches = url.path == self.regionsPath
+    // MARK: - Regions Services
 
-            return hostMatches && pathMatches
-        }, response: { _ -> OHHTTPStubsResponse in
-            return OHHTTPStubsResponse.JSONFile(named: "regions-just-puget-sound.json")
-        })
-    }
-}
-
-// MARK: - Regions Services
-
-public extension OBATestCase {
     var regionsHost: String {
         return "regions.example.com"
     }
@@ -164,13 +127,7 @@ public extension OBATestCase {
         return URL(string: regionsURLString)!
     }
 
-    var regionsModelService: RegionsModelService {
-        return RegionsModelService(apiService: regionsAPIService, dataQueue: OperationQueue())
-    }
-
-    var regionsAPIService: RegionsAPIService {
-        return RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31")
-    }
+    var regionsAPIService: RegionsAPIService!
 
     var bundledRegionsPath: String {
         let bundle = Bundle.main
@@ -180,74 +137,5 @@ public extension OBATestCase {
 
     var regionsAPIPath: String {
         "/regions-v3.json"
-    }
-}
-
-// MARK: - Data and Models
-
-public extension OBATestCase {
-
-    /// Returns the path to the specified file in the test bundle.
-    /// - Parameter fileName: The file name, e.g. "regions.json"
-    func path(to fileName: String) -> String {
-        Bundle(for: type(of: self)).path(forResource: fileName, ofType: nil)!
-    }
-
-    /// Encodes and decodes the provided `Codable` object. Useful for testing roundtripping.
-    /// - Parameter type: The object type.
-    /// - Parameter model: The object or objects.
-    func roundtripCodable<T>(type: T.Type, model: T) throws -> T where T: Codable {
-        let encoded = try PropertyListEncoder().encode(model)
-        let decoded = try PropertyListDecoder().decode(type, from: encoded)
-        return decoded
-    }
-
-    /// Loads data from the specified file name, searching within the test bundle.
-    /// - Parameter file: The file name to load data from. Example: `stop_data.pb`.
-    func loadData(file: String) -> Data {
-        NSData(contentsOfFile: path(to: file))! as Data
-    }
-
-    /// Loads JSON (as `[String: Any]`) from the specified file name, searching within the test bundle.
-    /// - Parameter file: The file name to load data from. Example: `stop_data.json`.
-    func loadJSONDictionary(file: String) -> [String: Any] {
-        let data = loadData(file: file)
-        let json = try! JSONSerialization.jsonObject(with: data, options: [])
-
-        return (json as! [String: Any])
-    }
-}
-
-// MARK: - Fixture Loading
-
-public extension OBATestCase {
-
-    func loadAlarm(id: String = "1234567890", region: String = "1") throws -> Alarm {
-        let dict = ["url": String(format: "http://alerts.example.com/regions/%@/alarms/%@", region, id)]
-        return try DictionaryDecoder().decode(Alarm.self, from: dict)
-    }
-
-    func loadSomeStops() throws -> [Stop] {
-        return try Stop.decodeFromFile(named: "stops_for_location_seattle.json", in: Bundle(for: type(of: self)))
-    }
-
-    func loadSomeRegions() throws -> [Region] {
-        return try Region.decodeFromFile(named: "regions-v3.json", in: Bundle(for: type(of: self)), skipReferences: true)
-    }
-
-    var customMinneapolisRegion: Region {
-        let coordinateRegion = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 44.9778, longitude: -93.2650), latitudinalMeters: 1000.0, longitudinalMeters: 1000.0)
-
-        return Region(name: "Custom Region", OBABaseURL: URL(string: "http://www.example.com")!, coordinateRegion: coordinateRegion, contactEmail: "contact@example.com")
-    }
-
-    var pugetSoundRegion: Region {
-        let regions = try! loadSomeRegions()
-        return regions[1]
-    }
-
-    var tampaRegion: Region {
-        let regions = try! loadSomeRegions()
-        return regions[0]
     }
 }

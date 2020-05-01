@@ -8,22 +8,22 @@
 import Foundation
 import OBAKitCore
 
+typealias MockDataLoaderMatcher = (URLRequest) -> Bool
+
 struct MockDataResponse {
     let data: Data?
     let urlResponse: URLResponse?
     let error: Error?
+    let matcher: MockDataLoaderMatcher
 }
 
 class MockDataLoader: NSObject, URLDataLoader {
-    var urlResponseMap = [URL: MockDataResponse]()
-
-    init(baseURL: URL) {
-        self.baseURL = baseURL
-    }
+    var mockResponses = [MockDataResponse]()
 
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-        guard let url = request.url, let response = urlResponseMap[url] else {
-            fatalError()
+
+        guard let response = matchResponse(to: request) else {
+            fatalError("Missing response to URL: \(request.url!)")
         }
 
         completionHandler(response.data, response.urlResponse, response.error)
@@ -33,34 +33,54 @@ class MockDataLoader: NSObject, URLDataLoader {
 
     // MARK: - Response Mapping
 
-    func mock(path: String, with data: Data) {
-        let response = buildURLResponse(path: path, statusCode: 200)
-        let mockResponse = MockDataResponse(data: data, urlResponse: response, error: nil)
-        mock(path: "/api/v1/regions/1/weather.json", response: mockResponse)
+    func matchResponse(to request: URLRequest) -> MockDataResponse? {
+        for r in mockResponses {
+            if r.matcher(request) {
+                return r
+            }
+        }
+
+        return nil
     }
 
-    func mock(path: String, response: MockDataResponse) {
-        let url = buildURL(path: path)
-        urlResponseMap[url] = response
+    func mock(data: Data, matcher: @escaping MockDataLoaderMatcher) {
+        let urlResponse = buildURLResponse(URL: URL(string: "https://mockdataloader.example.com")!, statusCode: 200)
+        let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil, matcher: matcher)
+        mock(response: mockResponse)
+    }
+
+    func mock(URLString: String, with data: Data) {
+        mock(url: URL(string: URLString)!, with: data)
+    }
+
+    func mock(url: URL, with data: Data) {
+        let urlResponse = buildURLResponse(URL: url, statusCode: 200)
+        let mockResponse = MockDataResponse(data: data, urlResponse: urlResponse, error: nil) {
+            let requestURL = $0.url!
+            return requestURL.host == url.host && requestURL.path == url.path
+        }
+        mock(response: mockResponse)
+    }
+
+    func mock(response: MockDataResponse) {
+        mockResponses.append(response)
     }
 
     func removeMappedResponses() {
-        urlResponseMap.removeAll()
+        mockResponses.removeAll()
     }
 
     // MARK: - URL Response
 
-    func buildURLResponse(path: String, statusCode: Int) -> HTTPURLResponse {
-        return HTTPURLResponse(url: buildURL(path: path), statusCode: 200, httpVersion: "2", headerFields: nil)!
+    func buildURLResponse(URL: URL, statusCode: Int) -> HTTPURLResponse {
+        return HTTPURLResponse(url: URL, statusCode: statusCode, httpVersion: "2", headerFields: ["Content-Type": "application/json"])!
     }
 
-    // MARK: - URLs
+    // MARK: - Description
 
-    let baseURL: URL
-
-    private func buildURL(path: String) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
-        components.path = path
-        return components.url!
+    override var debugDescription: String {
+        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        descriptionBuilder.add(key: "mockResponses", value: mockResponses)
+        return descriptionBuilder.description
     }
 }

@@ -157,6 +157,8 @@ public class MapRegionManager: NSObject,
     }
 
     deinit {
+        mapView.delegate = nil
+        mapView.removeAllAnnotations()
         delegates.removeAllObjects()
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)

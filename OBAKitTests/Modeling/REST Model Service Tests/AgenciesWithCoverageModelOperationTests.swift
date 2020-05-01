@@ -14,37 +14,41 @@ import MapKit
 @testable import OBAKit
 @testable import OBAKitCore
 
-class AgenciesWithCoverageModelOperationTests: OBATestCase {
-    func stubAPICall() {
-        stub(condition: isHost(self.host) && isPath(AgenciesWithCoverageOperation.apiPath)) { _ in
-            return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
-        }
-    }
+// swiftlint:disable force_cast
 
+class AgenciesWithCoverageModelOperationTests: OBATestCase {
     func testLoading_success() {
-        stubAPICall()
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
+        let data = Fixtures.loadData(file: "agencies_with_coverage.json")
+        dataLoader.mock(URLString: "https://www.example.com/api/where/agencies-with-coverage.json", with: data)
+
+        let op = restService.getAgenciesWithCoverage()
 
         waitUntil { (done) in
-            let op = self.restModelService.getAgenciesWithCoverage()
-            op.completionBlock = {
-                let agencies = op.agenciesWithCoverage
-                let childrens = agencies.first!
+            op.complete { result in
+                switch result {
+                case .failure(let error):
+                    print("TODO FIXME handle error! \(error)")
+                case .success(let response):
+                    let agencies = response.list
+                    let childrens = agencies.first!
 
-                expect(agencies.count) == 11
+                    expect(agencies.count) == 11
 
-                expect(childrens.region.center.latitude).to(beCloseTo(47.6470785))
-                expect(childrens.region.center.longitude).to(beCloseTo(-122.296449))
+                    expect(childrens.region.center.latitude).to(beCloseTo(47.6470785))
+                    expect(childrens.region.center.longitude).to(beCloseTo(-122.296449))
 
-                expect(childrens.region.span.latitudeDelta).to(beCloseTo(0.06330499999999972, within: 0.1))
-                expect(childrens.region.span.longitudeDelta).to(beCloseTo(0.07930600000000254, within: 0.1))
+                    expect(childrens.region.span.latitudeDelta).to(beCloseTo(0.06330499999999972, within: 0.1))
+                    expect(childrens.region.span.longitudeDelta).to(beCloseTo(0.07930600000000254, within: 0.1))
 
-                expect(childrens.agencyID) == "98"
-                expect(childrens.agency.name) == "Seattle Children's Hospital"
-                expect(childrens.agency.disclaimer).to(beNil())
-                expect(childrens.agency.email).to(beNil())
-                expect(childrens.agency.fareURL).to(beNil())
+                    expect(childrens.agencyID) == "98"
+                    expect(childrens.agency.name) == "Seattle Children's Hospital"
+                    expect(childrens.agency.disclaimer).to(beNil())
+                    expect(childrens.agency.email).to(beNil())
+                    expect(childrens.agency.fareURL).to(beNil())
 
-                done()
+                    done()
+                }
             }
         }
     }

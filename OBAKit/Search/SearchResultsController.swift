@@ -115,8 +115,7 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
                     case .failure(let error):
                         print("TODO FIXME handle error! \(error)")
                     case .success(let response):
-                        guard let vehicle = response.list.first else { return }
-                        let response = SearchResponse(response: self.searchResponse, substituteResult: vehicle)
+                        let response = SearchResponse(response: self.searchResponse, substituteResult: response.list)
                         self.application.mapRegionManager.searchResponse = response
                         self.delegate?.dismissModalController(self)
                     }

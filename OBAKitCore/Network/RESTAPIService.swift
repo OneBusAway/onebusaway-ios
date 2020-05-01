@@ -32,9 +32,9 @@ public class RESTAPIService: APIService {
     /// - Parameters:
     ///   - vehicleID: Vehicle ID string
     /// - Returns: The enqueued network operation.
-    public func getVehicle(_ vehicleID: String) -> DecodableOperation<RESTAPIResponse<[VehicleStatus]>> {
+    public func getVehicle(_ vehicleID: String) -> DecodableOperation<RESTAPIResponse<VehicleStatus>> {
         let url = URLBuilder.getVehicleURL(vehicleID)
-        let operation = buildOperation(type: RESTAPIResponse<[VehicleStatus]>.self, URL: url)
+        let operation = buildOperation(type: RESTAPIResponse<VehicleStatus>.self, URL: url)
         enqueueOperation(operation)
         return operation
     }
@@ -68,9 +68,9 @@ public class RESTAPIService: APIService {
     /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/current-time.html)
     ///
     /// - Returns: The enqueued network operation.
-    public func getCurrentTime() -> DecodableOperation<RESTAPIResponse<Date>> {
+    public func getCurrentTime() -> DecodableOperation<CoreRESTAPIResponse> {
         let url = URLBuilder.getCurrentTime()
-        let operation = buildOperation(type: RESTAPIResponse<Date>.self, URL: url)
+        let operation = buildOperation(type: CoreRESTAPIResponse.self, URL: url)
         enqueueOperation(operation)
         return operation
     }
@@ -335,9 +335,9 @@ public class RESTAPIService: APIService {
         code: StopProblemCode,
         comment: String?,
         location: CLLocation?
-    ) -> DecodableOperation<RESTAPIResponse<Bool>> {
+    ) -> DecodableOperation<CoreRESTAPIResponse> {
         let url = URLBuilder.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
-        let operation = buildOperation(type: RESTAPIResponse<Bool>.self, URL: url)
+        let operation = buildOperation(type: CoreRESTAPIResponse.self, URL: url)
         enqueueOperation(operation)
         return operation
     }
@@ -369,10 +369,10 @@ public class RESTAPIService: APIService {
         comment: String?,
         userOnVehicle: Bool,
         location: CLLocation?
-    ) -> DecodableOperation<RESTAPIResponse<Bool>> {
+    ) -> DecodableOperation<CoreRESTAPIResponse> {
         // swiftlint:disable:next line_length
         let url = URLBuilder.getTripProblem(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
-        let operation = buildOperation(type: RESTAPIResponse<Bool>.self, URL: url)
+        let operation = buildOperation(type: CoreRESTAPIResponse.self, URL: url)
         enqueueOperation(operation)
         return operation
     }

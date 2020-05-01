@@ -71,8 +71,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
         }
 
-        updateRegionsList()
-
         self.locationService.addDelegate(self)
     }
 
@@ -216,14 +214,20 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     // MARK: - Load Stored Regions
 
     private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region]? {
-        guard
-            let regions = try? userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
-            regions.count > 0
-        else {
+        let regions: [Region]
+
+        do {
+            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey) ?? []
+        } catch {
             return nil
         }
 
-        return regions
+        if regions.count == 0 {
+            return nil
+        }
+        else {
+            return regions
+        }
     }
 
     // MARK: - Bundled Regions
@@ -240,6 +244,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Public Methods
 
+    /// Fetches the current list of `Region`s from the network.
+    /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
     public func updateRegionsList(forceUpdate: Bool = false) {
         // only update once per week, unless forceUpdate is true.
         if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,

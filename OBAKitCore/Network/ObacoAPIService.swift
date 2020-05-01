@@ -119,10 +119,10 @@ public class ObacoAPIService: APIService {
 
     // MARK: - Vehicles
 
-    public func getVehicles(matching query: String) -> DecodableOperation<[VehicleStatus]> {
+    public func getVehicles(matching query: String) -> DecodableOperation<[AgencyVehicle]> {
         let apiPath = String(format: "/api/v1/regions/%d/vehicles", regionID)
         let url = buildURL(path: apiPath, queryItems: [URLQueryItem(name: "query", value: query)])
-        let op = buildOperation(type: [VehicleStatus].self, URL: url)
+        let op = buildOperation(type: [AgencyVehicle].self, URL: url)
         enqueueOperation(op)
         return op
     }

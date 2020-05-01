@@ -78,6 +78,7 @@ open class CoreApplication: NSObject,
         regionsService.addDelegate(self)
         alertsStore.addDelegate(self)
 
+        regionsService.updateRegionsList()
         refreshRESTAPIService()
         refreshObacoService()
     }

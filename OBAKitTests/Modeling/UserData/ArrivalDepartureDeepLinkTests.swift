@@ -17,7 +17,7 @@ class ArrivalDepartureDeepLinkTests: OBATestCase {
 
     func test_roundTripping_success() {
         let deepLink1 = ArrivalDepartureDeepLink(title: "Title", regionID: 1, stopID: "1234", tripID: "9876", serviceDate: Date(timeIntervalSinceReferenceDate: 0), stopSequence: 7, vehicleID: "3456")
-        let deepLink2 = try! roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
+        let deepLink2 = try! Fixtures.roundtripCodable(type: ArrivalDepartureDeepLink.self, model: deepLink1)
 
         expect(deepLink2) == deepLink1
 

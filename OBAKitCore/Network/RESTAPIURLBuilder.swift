@@ -328,7 +328,6 @@ extension RESTAPIURLBuilder {
         location: CLLocation?
     ) -> URL {
         var args: [String: Any] = [
-            "stopId": stopID,
             "code": stopProblemCodeToAPIString(code)
         ]
 
@@ -342,7 +341,7 @@ extension RESTAPIURLBuilder {
             args["userLocationAccuracy"] = location.horizontalAccuracy
         }
 
-        return generateURL(path: "/api/where/report-problem-with-stop.json", params: args)
+        return generateURL(path: "/api/where/report-problem-with-stop/\(stopID).json", params: args)
     }
 
     public func getTripProblem(

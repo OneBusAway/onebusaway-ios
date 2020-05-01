@@ -75,21 +75,52 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
     override func set(data: Data?, response: HTTPURLResponse?, error: Error?) {
         super.set(data: data, response: response, error: error)
 
-        do {
-            if response?.statusCode == 200 {
-                if let data = data {
-                    self.modelData = try decoder.decode(T.self, from: data)
-                }
+        guard let response = response else {
+            self.error = APIError.networkFailure(error)
+            return
+        }
+
+        guard 200...299 ~= response.statusCode else {
+            self.error = APIError.requestFailure(response)
+            return
+        }
+
+        guard response.hasJSONContentType else {
+            if let error = error, errorLooksLikeCaptivePortal(error as NSError) {
+                self.error = APIError.captivePortal
             }
             else {
-                self.error = APIError.noResponseBody
+                self.error = APIError.invalidData(error)
             }
+            return
+        }
+
+        guard let data = data else {
+            self.error = APIError.noResponseBody
+            return
+        }
+
+        do {
+            self.modelData = try decoder.decode(T.self, from: data)
         }
         catch let exception {
-            let urlString = response?.url?.absoluteString ?? "(Unknown URL)"
+            let urlString = response.url?.absoluteString ?? "(Unknown URL)"
             print("Exception caught: \(urlString)")
             print(exception)
             self.error = exception
         }
+    }
+
+    private func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
+        if error.domain == NSCocoaErrorDomain && error.code == 3840 {
+            return true
+        }
+
+        if error.domain == (kCFErrorDomainCFNetwork as String) && error.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
+            return true
+        }
+
+        return false
+
     }
 }

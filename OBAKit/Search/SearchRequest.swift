@@ -147,7 +147,7 @@ public class SearchManager: NSObject {
         }
     }
 
-    private func processSearchResults(request: SearchRequest, matchingVehicles: [VehicleStatus]) {
+    private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
         guard let apiService = application.restAPIService else { return }
 
         if matchingVehicles.count > 1 {
@@ -166,7 +166,7 @@ public class SearchManager: NSObject {
                 case .failure(let error):
                     print("TODO FIXME handle error! \(error)")
                 case .success(let response):
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [response.list], boundingRegion: nil, error: nil)
                 }
             }
             return

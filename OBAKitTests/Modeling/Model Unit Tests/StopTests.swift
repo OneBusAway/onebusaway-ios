@@ -15,7 +15,7 @@ import Nimble
 class StopTests: OBATestCase {
 
     func test_RoundtrippingStops() {
-        let stopOne = try! loadSomeStops().first!
+        let stopOne = try! Fixtures.loadSomeStops().first!
         let data = try! PropertyListEncoder().encode(stopOne)
         let stopTwo = try! PropertyListDecoder().decode(Stop.self, from: data)
 

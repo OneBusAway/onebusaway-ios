@@ -13,172 +13,208 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
+// swiftlint:disable function_body_length force_cast
+
 class VehicleStatusModelOperationTests: OBATestCase {
-    let vehicleID = "40_11"
-    lazy var apiPath = RequestVehicleOperation.buildAPIPath(vehicleID: vehicleID)
+    let vehicleID = "1_4351"
+    lazy var apiPath = "https://www.example.com/api/where/vehicle/\(vehicleID).json"
 
-    func stubVehicle4011() {
-        stubJSON(fileName: "vehicle_for_id_4011.json")
+    var dataLoader: MockDataLoader!
+
+    override func setUp() {
+        super.setUp()
+
+        dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
-    func stubJSON(fileName: String) {
-        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return OHHTTPStubsResponse.JSONFile(named: fileName)
+    func stubVehicle14351Success() {
+        dataLoader.mock(URLString: apiPath, with: Fixtures.loadData(file: "api_where_vehicle_1_4351.json"))
+    }
+
+    func stubVehicle14351CaptivePortal() {
+        let url = URL(string: apiPath)!
+        let httpResponse = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "2", headerFields: ["Content-Type": "text/html"])
+        let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
+        let mockResponse = MockDataResponse(data: Fixtures.loadData(file: "captive_portal.html"), urlResponse: httpResponse, error: error) { (request) -> Bool in
+            return request.url!.absoluteString.starts(with: url.absoluteString)
         }
+        dataLoader.mock(response: mockResponse)
     }
-}
 
-// MARK: - Vehicle Status
-extension VehicleStatusModelOperationTests {
+    // MARK: - Vehicle Status
+
     func testLoading_vehicleStatus_failure_garbageData() {
-        stub(condition: isHost(self.host) && isPath(apiPath)) { _ in
-            return OHHTTPStubsResponse.file(named: "captive_portal.html", contentType: "text/html")
-        }
+        stubVehicle14351CaptivePortal()
+
+        let op = restService.getVehicle(vehicleID)
 
         waitUntil { done in
-            let op = self.restModelService.getVehicleStatus(self.vehicleID)
-            op.completionBlock = {
-                expect(op.vehicles.count) == 0
-
-                done()
+            op.complete { result in
+                switch result {
+                case .failure(let error):
+                    if case APIError.captivePortal = error {
+                        done()
+                    }
+                    else {
+                        fatalError()
+                    }
+                case .success:
+                    fatalError()
+                }
             }
         }
     }
 
     func testLoading_vehicleStatus_success() {
-        stubVehicle4011()
+        stubVehicle14351Success()
+
+        let op = restService.getVehicle(vehicleID)
 
         waitUntil { done in
-            let op = self.restModelService.getVehicleStatus(self.vehicleID)
-            op.completionBlock = {
-                expect(op.vehicles.count) == 1
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    let vehicle = response.list
+                    expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
+                    expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
+                    expect(vehicle.location!.coordinate.latitude).to(beCloseTo(47.6195))
+                    expect(vehicle.location!.coordinate.longitude).to(beCloseTo(-122.3244))
+                    expect(vehicle.phase) == "in_progress"
+                    expect(vehicle.status) == "SCHEDULED"
 
-                let vehicle = op.vehicles.first!
-
-                // Vehicle Status
-                expect(vehicle.lastLocationUpdateTime).to(beNil())
-                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 16, minute: 31, second: 09)
-                expect(vehicle.location!.coordinate.latitude) == 47.608246
-                expect(vehicle.location!.coordinate.longitude) == -122.336166
-                expect(vehicle.phase) == "in_progress"
-                expect(vehicle.status) == "SCHEDULED"
-
-                done()
+                    done()
+                }
             }
         }
     }
-}
 
-// MARK: - Trip Status
-extension VehicleStatusModelOperationTests {
-    // swiftlint:disable:next function_body_length
+    // MARK: - Trip Status
+
     func testLoading_tripStatus_success() {
-        stubVehicle4011()
+        stubVehicle14351Success()
+
+        let op = restService.getVehicle(vehicleID)
 
         waitUntil { done in
-            let op = self.restModelService.getVehicleStatus(self.vehicleID)
-            op.completionBlock = {
-                let vehicle = op.vehicles.first!
 
-                expect(vehicle.vehicleID) == "40_11"
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    let vehicle = response.list
 
-                expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 16, minute: 31, second: 09)
-                expect(vehicle.lastLocationUpdateTime).to(beNil())
-                expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6082))
-                expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3362))
+                    expect(vehicle.vehicleID) == "1_4351"
+                    expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
+                    expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
+                    expect(vehicle.location?.coordinate.latitude).to(beCloseTo(47.6195))
+                    expect(vehicle.location?.coordinate.longitude).to(beCloseTo(-122.3244))
 
-                expect(vehicle.trip!.id) == "40_40804394"
-                expect(vehicle.trip!.routeShortName).to(beNil())
-                expect(vehicle.trip!.shortName) == "LOCAL"
+                    expect(vehicle.trip!.id) == "1_47649081"
+                    expect(vehicle.trip!.routeShortName).to(beNil())
+                    expect(vehicle.trip!.shortName) == "LOCAL"
 
-                expect(vehicle.phase) == "in_progress"
-                expect(vehicle.status) == "SCHEDULED"
+                    expect(vehicle.phase) == "in_progress"
+                    expect(vehicle.status) == "SCHEDULED"
 
-                let tripStatus = vehicle.tripStatus
+                    let tripStatus = vehicle.tripStatus
 
-                // Trip Status
-                expect(tripStatus).toNot(beNil())
+                    // Trip Status
+                    expect(tripStatus).toNot(beNil())
 
-                expect(tripStatus.activeTrip.id) == "40_40804394"
-                expect(tripStatus.activeTrip.headsign) == "University Of Washington Station"
+                    expect(tripStatus.activeTrip.id) == "1_47649081"
+                    expect(tripStatus.activeTrip.headsign) == "Downtown Seattle"
 
-                expect(tripStatus.blockTripSequence) == 3
+                    expect(tripStatus.blockTripSequence) == 19
 
-                expect(tripStatus.closestStop.id) == "1_532"
-                expect(tripStatus.closestStop.name) == "Pioneer Sq Station - Bay A"
+                    expect(tripStatus.closestStop.id) == "1_29266"
+                    expect(tripStatus.closestStop.name) == "E Olive Way & Summit Ave E"
 
-                expect(tripStatus.closestStopTimeOffset) == -7
-                expect(tripStatus.distanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
-                expect(tripStatus.lastKnownDistanceAlongTrip) == 0
-                expect(tripStatus.lastKnownLocation).to(beNil())
-                expect(tripStatus.lastKnownOrientation) == 0
-                expect(tripStatus.lastLocationUpdateTime) == 0
-                expect(tripStatus.lastUpdate) == Date(timeIntervalSince1970: 1538584269)
+                    expect(tripStatus.closestStopTimeOffset) == 23
+                    expect(tripStatus.distanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
+                    expect(tripStatus.lastKnownDistanceAlongTrip) == 0
 
-                expect(tripStatus.nextStop!.id) == "1_565"
-                expect(tripStatus.nextStop!.name) == "University St Station - Bay A"
+                    let lastKnown = tripStatus.lastKnownLocation!.coordinate
+                    expect(lastKnown.latitude).to(beCloseTo(47.61949539))
+                    expect(lastKnown.longitude).to(beCloseTo(-122.32442474))
+                    expect(tripStatus.lastKnownOrientation) == 0
+                    expect(tripStatus.lastLocationUpdateTime) == 1588888744000
+                    expect(tripStatus.lastUpdate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
 
-                expect(tripStatus.nextStopTimeOffset) == 144
-                expect(tripStatus.orientation).to(beCloseTo(132.0288, within: 0.1))
-                expect(tripStatus.phase) == "in_progress"
-                expect(tripStatus.position!.coordinate.latitude).to(beCloseTo(47.60339847, within: 0.01))
-                expect(tripStatus.position!.coordinate.longitude).to(beCloseTo(-122.33187637, within: 0.01))
-                expect(tripStatus.isRealTime).to(beTrue())
-                expect(tripStatus.scheduleDeviation) == 219
-                expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(25959.0657, within: 0.1))
-                expect(tripStatus.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 03, hour: 07, minute: 00, second: 00)
-                expect(tripStatus.situations) == []
-                expect(tripStatus.statusModifier) == .scheduled
-                expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(32491.73, within: 0.01))
-                expect(tripStatus.vehicleID) == "40_11"
+                    expect(tripStatus.nextStop!.id) == "1_29266"
+                    expect(tripStatus.nextStop!.name) == "E Olive Way & Summit Ave E"
 
-                done()
+                    expect(tripStatus.nextStopTimeOffset) == 23
+                    expect(tripStatus.orientation).to(beCloseTo(204.6164, within: 0.1))
+                    expect(tripStatus.phase) == "in_progress"
+                    expect(tripStatus.position!.coordinate.latitude).to(beCloseTo(47.6195, within: 0.01))
+                    expect(tripStatus.position!.coordinate.longitude).to(beCloseTo(-122.33187637, within: 0.01))
+                    expect(tripStatus.isRealTime).to(beTrue())
+                    expect(tripStatus.scheduleDeviation) == -116
+                    expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
+                    expect(tripStatus.serviceDate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00)
+                    expect(tripStatus.situations.count) == 1
+                    expect(tripStatus.statusModifier) == .scheduled
+                    expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(3302.4674, within: 0.01))
+                    expect(tripStatus.vehicleID) == "1_4351"
+
+                    done()
+                }
             }
         }
     }
-}
 
-// MARK: - References
-extension VehicleStatusModelOperationTests {
+    // MARK: - References
+
     func testLoading_references_success() {
-        stubVehicle4011()
+        stubVehicle14351Success()
+
+        let op = restService.getVehicle(vehicleID)
 
         waitUntil { done in
-            let op = self.restModelService.getVehicleStatus(self.vehicleID)
-            op.completionBlock = {
-                let references = op.references!
-
-                expect(references).toNot(beNil())
-
-                expect(references.agencies.count) == 2
-                expect(references.routes.count) == 8
-                expect(references.situations.count) == 0
-                expect(references.stops.count) == 2
-                expect(references.trips.count) == 1
-
-                done()
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    let references = response.references!
+                    expect(references.agencies.count) == 1
+                    expect(references.routes.count) == 3
+                    expect(references.situations.count) == 1
+                    expect(references.stops.count) == 1
+                    expect(references.trips.count) == 1
+                    done()
+                }
             }
         }
     }
-}
 
-// MARK: - Frequency
-extension VehicleStatusModelOperationTests {
+    // MARK: - Frequency
+
     func testLoading_frequency_success() {
-        stubJSON(fileName: "frequency-vehicle.json")
+        let data = Fixtures.loadData(file: "frequency-vehicle.json")
+        dataLoader.mock(URLString: "https://www.example.com/api/where/vehicle/\(vehicleID).json", with: data)
+
+        let op = restService.getVehicle(vehicleID)
 
         waitUntil { done in
-            let op = self.restModelService.getVehicleStatus(self.vehicleID)
-            op.completionBlock = {
-                let frequency = op.vehicles.first!.tripStatus.frequency!
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    let frequency = response.list.tripStatus.frequency!
 
-                expect(frequency).toNot(beNil())
-                expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)
+                    expect(frequency).toNot(beNil())
+                    expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)
 
-                expect(frequency.endTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59)
-                expect(frequency.headway) == 600
+                    expect(frequency.endTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 22, minute: 59, second: 59)
+                    expect(frequency.headway) == 600
 
-                done()
+                    done()
+                }
             }
         }
     }

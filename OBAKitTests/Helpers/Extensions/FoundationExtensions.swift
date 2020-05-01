@@ -19,6 +19,27 @@ public extension Date {
 
 // MARK: - URL
 
+public extension URL {
+    func containsQueryParams(_ params: [String: String?]) -> Bool {
+        guard
+            let comps = URLComponents(url: self, resolvingAgainstBaseURL: true),
+            let queryItems = comps.queryItems
+        else {
+            return false
+        }
+
+        for (k, v) in params {
+            if queryItems.filter({ qi in qi.name == k && qi.value == v }).count == 0 {
+                return false
+            }
+        }
+
+        return true
+    }
+}
+
+// MARK: - URLComponents
+
 public extension URLComponents {
     func queryItemValueMatching(name: String) -> String? {
         guard let queryItems = queryItems else {

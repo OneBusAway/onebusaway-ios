@@ -41,7 +41,11 @@ public class AgencyAlertsOperation: NetworkOperation, HasAgencyAlerts {
         }
 
         agencyAlerts = qualifiedEntities.compactMap { (e: TransitRealtime_FeedEntity) -> AgencyAlert? in
-            try? AgencyAlert(feedEntity: e, agencies: agencies)
+            do {
+                return try AgencyAlert(feedEntity: e, agencies: agencies)
+            } catch {
+                return nil
+            }
         }
     }
 

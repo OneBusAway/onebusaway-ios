@@ -11,26 +11,22 @@ import OHHTTPStubs
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_try
+// swiftlint:disable force_try force_cast
 
 class ObacoAlertModelTests: OBATestCase {
     func testSuccesfulModelRequest() {
-        let apiPath = RegionalAlertsOperation.buildObacoAPIPath(regionID: obacoRegionID)
-
-        stub(condition: isHost(self.obacoHost) && isPath(apiPath)) { _ in
-            let foo = OHHTTPStubsResponse.JSONFile(named: "puget_sound_alerts.pb")
-            return foo
-        }
+        let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let locale = Locale.current
 
-        let agencies = try! AgencyWithCoverage.decodeFromFile(named: "agencies_with_coverage.json", in: Bundle(for: type(of: self)))
+        let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
         expect(agencies.count) == 11
 
+        let op = obacoService.getAlerts(agencies: agencies)
+
         waitUntil { done in
-            let op = self.obacoModelService.getAlerts(agencies: agencies)
-            op.then {
-                let alerts = op.agencyAlerts
+            op.complete { alerts in
                 expect(alerts.count) == 20
                 let first = alerts.first!
                 expect(first.startDate) == Date.fromComponents(year: 2018, month: 10, day: 09, hour: 15, minute: 01, second: 00)

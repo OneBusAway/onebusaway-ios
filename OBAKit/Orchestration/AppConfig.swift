@@ -9,11 +9,13 @@
 import Foundation
 import CoreLocation
 import OBAKitCore
+import Connectivity
 
 @objc(OBAAppConfig)
 public class AppConfig: CoreAppConfig {
 
     let analytics: Analytics?
+    let connectivity: ReachabilityProtocol
     @objc public var pushServiceProvider: PushServiceProvider?
 
     /// Convenience initializer that pulls from the host application's main `Bundle`.
@@ -25,6 +27,9 @@ public class AppConfig: CoreAppConfig {
         userDefaults: UserDefaults,
         analytics: Analytics?
     ) {
+        let connectivity = Connectivity()
+        connectivity.framework = .network
+
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress,
             obacoBaseURL: appBundle.deepLinkServerBaseAddress,
@@ -36,7 +41,8 @@ public class AppConfig: CoreAppConfig {
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: appBundle.bundledRegionsFilePath!,
             regionsAPIPath: appBundle.regionsServerAPIPath,
-            dataLoader: URLSession.shared
+            dataLoader: URLSession.shared,
+            connectivity: connectivity
         )
     }
 
@@ -51,6 +57,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter locationService: The location service object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
+    /// - Parameter connectivity: Determines Internet connectivity.
     public init(
         regionsBaseURL: URL?,
         obacoBaseURL: URL?,
@@ -62,9 +69,11 @@ public class AppConfig: CoreAppConfig {
         locationService: LocationService,
         bundledRegionsFilePath: String,
         regionsAPIPath: String?,
-        dataLoader: URLDataLoader
+        dataLoader: URLDataLoader,
+        connectivity: ReachabilityProtocol
     ) {
         self.analytics = analytics
+        self.connectivity = connectivity
         super.init(
             regionsBaseURL: regionsBaseURL,
             obacoBaseURL: obacoBaseURL,

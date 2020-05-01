@@ -12,9 +12,11 @@ public protocol Requestable {
 }
 
 public enum APIError: Error {
-    case networkFailure(Error)
-    case invalidData(Error)
+    case captivePortal
+    case invalidData(Error?)
+    case networkFailure(Error?)
     case noResponseBody
+    case requestFailure(HTTPURLResponse)
 }
 
 /// This class makes API calls to the OBA REST service and converts the server's responses into model objects.

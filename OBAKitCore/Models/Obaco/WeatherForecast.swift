@@ -28,13 +28,13 @@ public class WeatherForecast: NSObject, Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case latitude, longitude
-        case regionIdentifier
-        case regionName
-        case retrievedAt
+        case regionIdentifier = "region_identifier"
+        case regionName = "region_name"
+        case retrievedAt = "retrieved_at"
         case units
-        case todaySummary
-        case currentForecast
-        case hourlyForecast
+        case todaySummary = "today_summary"
+        case currentForecast = "current_forecast"
+        case hourlyForecast = "hourly_forecast"
     }
 
     public required init(from decoder: Decoder) throws {
@@ -67,11 +67,13 @@ public class HourlyForecast: NSObject, Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case iconName = "icon"
-        case precipPerHour, precipProbability
+        case precipPerHour = "precip_per_hour"
+        case precipProbability = "precip_probability"
         case summary
-        case temperature, temperatureFeelsLike
+        case temperature
+        case temperatureFeelsLike = "temperature_feels_like"
         case time
-        case windSpeed
+        case windSpeed = "wind_speed"
     }
 
     public required init(from decoder: Decoder) throws {

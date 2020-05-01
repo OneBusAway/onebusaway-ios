@@ -16,7 +16,7 @@ import XCTest
 
 class MapKitExtensionTest: OBATestCase {
     func testMapRectCodable_roundTripping() {
-        let decoded = try! roundtripCodable(type: MKMapRect.self, model: TestData.seattleMapRect)
+        let decoded = try! Fixtures.roundtripCodable(type: MKMapRect.self, model: TestData.seattleMapRect)
         expect(decoded.origin.x) == TestData.seattleMapRect.origin.x
         expect(decoded.origin.y) == TestData.seattleMapRect.origin.y
         expect(decoded.size.width) == TestData.seattleMapRect.size.width

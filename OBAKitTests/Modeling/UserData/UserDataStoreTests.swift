@@ -21,7 +21,7 @@ class UserDefaultsStoreTests: OBATestCase {
     override func setUp() {
         super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
-        region = try! loadSomeRegions()[1]
+        region = try! Fixtures.loadSomeRegions()[1]
     }
 
     override func tearDown() {
@@ -41,7 +41,7 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Recent Stops
 
     func test_recentStops_addStop() {
-        let stops = try! loadSomeStops()
+        let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
 
@@ -49,7 +49,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_uniqueStops() {
-        let stops = try! loadSomeStops()
+        let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
         userDefaultsStore.addRecentStop(stop, region: region)
@@ -58,7 +58,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_maxCount() {
-        let stops = try! loadSomeStops()
+        let stops = try! Fixtures.loadSomeStops()
         expect(stops.count).to(beGreaterThan(userDefaultsStore.maximumRecentStopsCount))
 
         for s in stops {
@@ -69,7 +69,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_search() {
-        let stops = try! loadSomeStops()
+        let stops = try! Fixtures.loadSomeStops()
 
         for s in stops {
             userDefaultsStore.addRecentStop(s, region: region)
@@ -85,7 +85,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_removeAll() {
-        let stops = try! loadSomeStops()
+        let stops = try! Fixtures.loadSomeStops()
         let stop = stops.first!
         userDefaultsStore.addRecentStop(stop, region: region)
 
@@ -95,7 +95,7 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_recentStops_removeStop() {
-        let stops = try! loadSomeStops().prefix(20)
+        let stops = try! Fixtures.loadSomeStops().prefix(20)
         let stop = stops.first!
 
         for s in stops {
@@ -110,9 +110,9 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Alarms
 
     func test_alarms_deleteMissingTripDate() {
-        let missingDataAlarm = try! loadAlarm(id: "1")
+        let missingDataAlarm = try! Fixtures.loadAlarm(id: "1")
 
-        let futureAlarm = try! loadAlarm(id: "2")
+        let futureAlarm = try! Fixtures.loadAlarm(id: "2")
         futureAlarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
 
         userDefaultsStore.add(alarm: missingDataAlarm)
@@ -129,10 +129,10 @@ class UserDefaultsStoreTests: OBATestCase {
     }
 
     func test_alarms_deleteExpired() {
-        let expiredAlarm = try! loadAlarm(id: "1")
+        let expiredAlarm = try! Fixtures.loadAlarm(id: "1")
         expiredAlarm.set(tripDate: Date(timeIntervalSinceReferenceDate: 0), alarmOffset: 5)
 
-        let futureAlarm = try! loadAlarm(id: "2")
+        let futureAlarm = try! Fixtures.loadAlarm(id: "2")
         futureAlarm.set(tripDate: Date(timeIntervalSinceNow: 300), alarmOffset: 2)
 
         userDefaultsStore.add(alarm: expiredAlarm)

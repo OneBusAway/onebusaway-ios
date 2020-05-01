@@ -125,6 +125,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     @objc public init(config: AppConfig) {
         self.config = config
 
+        connectivity = config.connectivity
         analytics = config.analytics
 
         super.init(config: config)
@@ -192,26 +193,28 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// In other words, it answers the following questions:
     /// 1. Is the network (WiFi or Cellular) currently working?
     /// 2. Is the server working?
-    public let connectivity = Connectivity()
+    public let connectivity: ReachabilityProtocol
 
     private var reachabilityBulletin: ReachabilityBulletin?
 
     /// This method must only be called once when the `Application` object is first created.
     private func configureConnectivity() {
-        connectivity.framework = .network
-
-        connectivity.whenConnected = { [weak self] connectivity in
-            self?.reachabilityBulletin?.dismiss()
+        connectivity.connected { [weak self] _ in
+            guard let self = self else { return }
+            self.reachabilityBulletin?.dismiss()
         }
 
-        connectivity.whenDisconnected = { [weak self] connectivity in
-            guard let app = self?.delegate?.uiApplication else { return }
+        connectivity.disconnected { [weak self] reach in
+            guard
+                let self = self,
+                let app = self.delegate?.uiApplication
+            else { return }
 
-            if self?.reachabilityBulletin == nil {
-                self?.reachabilityBulletin = ReachabilityBulletin()
+            if self.reachabilityBulletin == nil {
+                self.reachabilityBulletin = ReachabilityBulletin()
             }
 
-            self?.reachabilityBulletin?.showStatus(connectivity.status, in: app)
+            self.reachabilityBulletin?.showStatus(reach.status, in: app)
         }
     }
 
@@ -312,7 +315,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             locationService.startUpdates()
         }
 
-        connectivity.startNotifier()
+        connectivity.startNotifier(queue: .main)
         alertsStore.checkForUpdates()
     }
 

@@ -18,17 +18,6 @@ import Nimble
 class AppConfigTests: OBATestCase {
     let regionsBaseURL = URL(string: "http://www.example.com")!
     let obacoBaseURL = URL(string: "http://www.example.com")!
-    let apiKey = "apikey"
-    let uuid = "uuid-string"
-    let appVersion = "app-version"
-
-    override func setUp() {
-        super.setUp()
-    }
-
-    override func tearDown() {
-        super.tearDown()
-    }
 
     func testAppConfig_creation_propertiesWork() {
         let queue = OperationQueue()
@@ -36,7 +25,10 @@ class AppConfigTests: OBATestCase {
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
         let analytics = AnalyticsMock()
-        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath)
+        let dataLoader = MockDataLoader()
+        let connectivity = MockConnectivity()
+
+        let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader, connectivity: connectivity)
 
         expect(appConfig.regionsBaseURL) == regionsBaseURL
         expect(appConfig.obacoBaseURL) == obacoBaseURL

@@ -13,6 +13,8 @@ import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
+// swiftlint:disable force_cast
+
 class TripProblemModelOperationTests: OBATestCase {
     let tripID = "123456"
     let serviceDate = Date(timeIntervalSince1970: 101010101)
@@ -35,17 +37,25 @@ class TripProblemModelOperationTests: OBATestCase {
     ]
 
     func testSuccessfulRequest() {
-        stub(condition: isHost(host) &&
-            isPath(TripProblemOperation.apiPath) &&
-            containsQueryParams(self.expectedParams)) { _ in
-                return OHHTTPStubsResponse.JSONFile(named: "report_trip_problem.json")
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "report_trip_problem.json")) { request -> Bool in
+            let url = request.url!
+            return url.absoluteString.starts(with: "https://www.example.com/api/where/report-problem-with-trip.json")
+            && url.containsQueryParams(self.expectedParams)
         }
 
+        let op = restService.getTripProblem(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
+
         waitUntil { done in
-            let op = self.restModelService.getTripProblem(tripID: self.tripID, serviceDate: self.serviceDate, vehicleID: self.vehicleID, stopID: self.stopID, code: self.code, comment: self.comment, userOnVehicle: self.userOnVehicle, location: self.location)
-            op.completionBlock = {
-                expect(op.success).to(beTrue())
-                done()
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    expect(response.code) == 200
+                    done()
+                }
             }
         }
     }
