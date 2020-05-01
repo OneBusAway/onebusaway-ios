@@ -62,4 +62,11 @@ public class Agency: NSObject, Codable {
         try container.encode(timeZone, forKey: .timeZone)
         try container.encode(agencyURL, forKey: .agencyURL)
     }
+
+    public override var debugDescription: String {
+        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        descriptionBuilder.add(key: "name", value: name)
+        descriptionBuilder.add(key: "id", value: id)
+        return descriptionBuilder.description
+    }
 }

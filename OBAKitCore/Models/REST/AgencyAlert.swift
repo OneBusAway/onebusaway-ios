@@ -85,9 +85,7 @@ public class AgencyAlert: NSObject {
             throw AlertError.invalidAlert
         }
 
-        guard
-            let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first
-        else {
+        guard let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first else {
             throw AlertError.unknownAgency
         }
 

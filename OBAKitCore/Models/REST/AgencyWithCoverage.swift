@@ -38,4 +38,10 @@ public class AgencyWithCoverage: NSObject, Decodable, HasReferences {
     public func loadReferences(_ references: References) {
         agency = references.agencyWithID(agencyID)
     }
+
+    public override var debugDescription: String {
+        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        descriptionBuilder.add(key: "agency", value: agency)
+        return descriptionBuilder.description
+    }
 }
