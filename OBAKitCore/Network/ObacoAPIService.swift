@@ -20,14 +20,14 @@ public class ObacoAPIService: APIService {
 
     private let regionID: Int
 
-    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: Int, networkQueue: OperationQueue, delegate: ObacoServiceDelegate?) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: Int, networkQueue: OperationQueue, delegate: ObacoServiceDelegate?, dataLoader: URLDataLoader) {
         self.regionID = regionID
         self.delegate = delegate
-        super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue)
+        super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: dataLoader)
     }
 
     private func buildOperation<T>(type: T.Type, URL: URL) -> DecodableOperation<T> where T: Decodable {
-        return DecodableOperation(type: type, decoder: JSONDecoder.obacoServiceDecoder, URL: URL)
+        return DecodableOperation(type: type, decoder: JSONDecoder.obacoServiceDecoder, URL: URL, dataLoader: dataLoader)
     }
 
     // MARK: - Delegate
@@ -104,7 +104,7 @@ public class ObacoAPIService: APIService {
         }
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 
-        let operation = DecodableOperation(type: Alarm.self, decoder: JSONDecoder.obacoServiceDecoder, request: urlRequest as URLRequest)
+        let operation = DecodableOperation(type: Alarm.self, decoder: JSONDecoder.obacoServiceDecoder, request: urlRequest as URLRequest, dataLoader: dataLoader)
         enqueueOperation(operation)
         return operation
     }
@@ -112,7 +112,7 @@ public class ObacoAPIService: APIService {
     @discardableResult public func deleteAlarm(url: URL) -> NetworkOperation {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
-        let op = NetworkOperation(request: request as URLRequest)
+        let op = NetworkOperation(request: request as URLRequest, dataLoader: dataLoader)
         enqueueOperation(op)
         return op
     }
@@ -134,7 +134,7 @@ public class ObacoAPIService: APIService {
         let apiPath = String(format: "/api/v1/regions/%d/alerts.pb", regionID)
         let url = buildURL(path: apiPath, queryItems: queryItems)
 
-        let op = AgencyAlertsOperation(agencies: agencies, URL: url)
+        let op = AgencyAlertsOperation(agencies: agencies, URL: url, dataLoader: dataLoader)
         enqueueOperation(op)
 
         return op

@@ -103,7 +103,7 @@ open class CoreApplication: NSObject,
     private func refreshRESTAPIService() {
         guard let region = regionsService.currentRegion else { return }
 
-        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
+        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader)
     }
 
     // MARK: - Obaco
@@ -129,7 +129,7 @@ open class CoreApplication: NSObject,
 
         obacoNetworkQueue.cancelAllOperations()
 
-        obacoService = ObacoAPIService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: region.regionIdentifier, networkQueue: obacoNetworkQueue, delegate: self)
+        obacoService = ObacoAPIService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: region.regionIdentifier, networkQueue: obacoNetworkQueue, delegate: self, dataLoader: config.dataLoader)
     }
 
     // MARK: - UUID
@@ -156,7 +156,7 @@ open class CoreApplication: NSObject,
             return nil
         }
 
-        return RegionsAPIService(baseURL: regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue)
+        return RegionsAPIService(baseURL: regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader)
     }()
 
     open func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {

@@ -26,13 +26,15 @@ public class NetworkOperation: AsyncOperation, Requestable {
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
     private var dataTask: URLSessionDataTask?
+    private let dataLoader: URLDataLoader
 
-    public convenience init(url: URL) {
-        self.init(request: NetworkOperation.buildRequest(for: url))
+    public convenience init(url: URL, dataLoader: URLDataLoader) {
+        self.init(request: NetworkOperation.buildRequest(for: url), dataLoader: dataLoader)
     }
 
-    public init(request: URLRequest) {
+    public init(request: URLRequest, dataLoader: URLDataLoader) {
         self.request = request
+        self.dataLoader = dataLoader
         super.init()
         self.name = request.url?.absoluteString ?? "(Unknown)"
     }
@@ -40,7 +42,7 @@ public class NetworkOperation: AsyncOperation, Requestable {
     public override func start() {
         super.start()
 
-        let task = URLSession.shared.dataTask(with: request) { [weak self] (data, response, error) in
+        let task = dataLoader.dataTask(with: request) { [weak self] (data, response, error) in
             guard
                 let self = self,
                 !self.isCancelled,
@@ -56,12 +58,6 @@ public class NetworkOperation: AsyncOperation, Requestable {
 
         task.resume()
         self.dataTask = task
-    }
-
-    override func finish() {
-        super.finish()
-
-        // nop?
     }
 
     func set(data: Data?, response: HTTPURLResponse?, error: Error?) {

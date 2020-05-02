@@ -77,8 +77,6 @@ public class PushService: NSObject {
             return
         }
 
-
-
         if key == "arrival_and_departure", let data = additionalData["arrival_and_departure"] as? [String: Any] {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])

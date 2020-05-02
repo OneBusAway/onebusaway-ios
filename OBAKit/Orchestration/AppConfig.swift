@@ -35,7 +35,8 @@ public class AppConfig: CoreAppConfig {
             queue: OperationQueue(),
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: appBundle.bundledRegionsFilePath!,
-            regionsAPIPath: appBundle.regionsServerAPIPath
+            regionsAPIPath: appBundle.regionsServerAPIPath,
+            dataLoader: URLSession.shared
         )
     }
 
@@ -50,7 +51,7 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter locationService: The location service object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
-    @objc public init(
+    public init(
         regionsBaseURL: URL?,
         obacoBaseURL: URL?,
         apiKey: String,
@@ -60,7 +61,8 @@ public class AppConfig: CoreAppConfig {
         queue: OperationQueue,
         locationService: LocationService,
         bundledRegionsFilePath: String,
-        regionsAPIPath: String?
+        regionsAPIPath: String?,
+        dataLoader: URLDataLoader
     ) {
         self.analytics = analytics
         super.init(
@@ -72,7 +74,8 @@ public class AppConfig: CoreAppConfig {
             queue: queue,
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsFilePath,
-            regionsAPIPath: regionsAPIPath
+            regionsAPIPath: regionsAPIPath,
+            dataLoader: dataLoader
         )
     }
 }

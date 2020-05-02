@@ -15,7 +15,7 @@ public class RESTAPIService: APIService {
     lazy var URLBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
 
     private func buildOperation<T>(type: T.Type, URL: URL) -> DecodableOperation<T> where T: Decodable {
-        return DecodableOperation(type: type, decoder: JSONDecoder.RESTDecoder, URL: URL)
+        return DecodableOperation(type: type, decoder: JSONDecoder.RESTDecoder, URL: URL, dataLoader: dataLoader)
     }
 
     // MARK: - Vehicle with ID
@@ -307,7 +307,7 @@ public class RESTAPIService: APIService {
 
     public func getAlerts(agency: AgencyWithCoverage) -> AgencyAlertsOperation {
         let url = URLBuilder.getRESTRegionalAlerts(agencyID: agency.agencyID)
-        let operation = AgencyAlertsOperation(agencies: [agency], URL: url)
+        let operation = AgencyAlertsOperation(agencies: [agency], URL: url, dataLoader: dataLoader)
         enqueueOperation(operation)
         return operation
     }

@@ -11,9 +11,9 @@ public class AgencyAlertsOperation: NetworkOperation, HasAgencyAlerts {
     private let agencies: [AgencyWithCoverage]
     public private(set) var agencyAlerts = [AgencyAlert]()
 
-    public init(agencies: [AgencyWithCoverage], URL: URL) {
+    public init(agencies: [AgencyWithCoverage], URL: URL, dataLoader: URLDataLoader) {
         self.agencies = agencies
-        super.init(request: NetworkOperation.buildRequest(for: URL))
+        super.init(request: NetworkOperation.buildRequest(for: URL), dataLoader: dataLoader)
     }
 
     override func set(data: Data?, response: HTTPURLResponse?, error: Error?) {

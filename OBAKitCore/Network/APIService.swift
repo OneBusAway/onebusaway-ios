@@ -18,8 +18,9 @@ public class APIService: NSObject {
     let baseURL: URL
     let networkQueue: OperationQueue
     let defaultQueryItems: [URLQueryItem]
+    let dataLoader: URLDataLoader
 
-    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue, dataLoader: URLDataLoader) {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
 
         var queryItemsDict = [String: URLQueryItem]()
@@ -43,10 +44,12 @@ public class APIService: NSObject {
         self.baseURL = components.url!
 
         self.networkQueue = networkQueue
+
+        self.dataLoader = dataLoader
     }
 
     public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
-        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue())
+        self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue(), dataLoader: URLSession.shared)
     }
 
     deinit {

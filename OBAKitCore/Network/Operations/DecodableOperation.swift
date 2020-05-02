@@ -18,14 +18,14 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
     private let type: T.Type
     private let decoder: DataDecoder
 
-    convenience init(type: T.Type, decoder: DataDecoder, URL: URL) {
-        self.init(type: type, decoder: decoder, request: NetworkOperation.buildRequest(for: URL))
+    convenience init(type: T.Type, decoder: DataDecoder, URL: URL, dataLoader: URLDataLoader) {
+        self.init(type: type, decoder: decoder, request: NetworkOperation.buildRequest(for: URL), dataLoader: dataLoader)
     }
 
-    init(type: T.Type, decoder: DataDecoder, request: URLRequest) {
+    init(type: T.Type, decoder: DataDecoder, request: URLRequest, dataLoader: URLDataLoader) {
         self.type = type
         self.decoder = decoder
-        super.init(request: request)
+        super.init(request: request, dataLoader: dataLoader)
     }
 
     // MARK: - State

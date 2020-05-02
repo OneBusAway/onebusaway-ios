@@ -11,6 +11,8 @@ import IGListKit
 import OBAKitCore
 import MapKit
 
+// swiftlint:disable cyclomatic_complexity
+
 public class SearchResultsController: UIViewController, AppContext, ListAdapterDataSource {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     var scrollView: UIScrollView { collectionController.collectionView }

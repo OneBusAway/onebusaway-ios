@@ -10,6 +10,8 @@ import IGListKit
 import OBAKitCore
 import CoreLocation
 
+// swiftlint:disable file_length
+
 /// This is the core view controller for displaying information about a transit stop.
 ///
 /// Specifically, `StopViewController` provides you with information about upcoming
