@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKit
 import OBAKitCore
 
 final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
@@ -59,8 +60,8 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
     private lazy var trailingArrival = buildArrivalLabel()
     private lazy var trailingArrivalWrapper = wrapLabel(label: trailingArrival)
 
-    private func buildArrivalLabel() -> TodayArrivalLabel {
-        let label = TodayArrivalLabel.autolayoutNew()
+    private func buildArrivalLabel() -> DepartureTimeBadge {
+        let label = DepartureTimeBadge.autolayoutNew()
         NSLayoutConstraint.activate([
             label.heightAnchor.constraint(greaterThanOrEqualToConstant: 24.0),
             label.widthAnchor.constraint(greaterThanOrEqualToConstant: 36.0)
@@ -68,7 +69,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         return label
     }
 
-    private func wrapLabel(label: TodayArrivalLabel) -> UIView {
+    private func wrapLabel(label: DepartureTimeBadge) -> UIView {
         label.setContentHuggingPriority(.required, for: .horizontal)
         let wrapper = label.embedInWrapperView(setConstraints: false)
         NSLayoutConstraint.activate([
@@ -101,11 +102,11 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         }
     }
 
-    func configureArrivalLabel(bookmarkArrivalData: BookmarkArrivalData, index: Int, label: TodayArrivalLabel, formatters: Formatters) {
+    func configureArrivalLabel(bookmarkArrivalData: BookmarkArrivalData, index: Int, label: DepartureTimeBadge, formatters: Formatters) {
         let arrivalDepartures = bookmarkArrivalData.arrivalDepartures ?? []
         if arrivalDepartures.count > index {
             let data = arrivalDepartures[index]
-            label.setData(arrivalDeparture: data, formatters: formatters)
+            label.set(arrivalDeparture: data, formatters: formatters)
             label.isHidden = false
         }
         else {

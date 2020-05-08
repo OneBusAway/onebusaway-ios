@@ -401,6 +401,9 @@ public enum ArrivalDepartureStatus: Int {
 
 public enum ScheduleStatus: Int {
     case unknown, early, onTime, delayed
+
+    /// Whether real-time data is available.
+    public var isUnknown: Bool { self == .unknown }
 }
 
 public enum TemporalState: Int {

@@ -578,8 +578,7 @@ public class StopViewController: UIViewController,
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
         let section = LoadMoreSectionData(footerText: footerText) { [weak self] in
-            guard let self = self else { return }
-            self.loadMoreDepartures()
+            self?.loadMoreDepartures()
         }
 
         return section

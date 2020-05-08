@@ -12,6 +12,8 @@ import UIKit
 
 public class ThemeMetrics: NSObject {
 
+    public static let accessibilityPadding: CGFloat = 16.0
+
     public static let padding: CGFloat = 8.0
 
     public static let compactPadding: CGFloat = 4.0

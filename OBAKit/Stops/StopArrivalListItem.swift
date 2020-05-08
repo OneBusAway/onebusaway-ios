@@ -154,6 +154,11 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     private var stopArrivalView: StopArrivalView!
 
+    override var accessibilityElements: [Any]? {
+        get { return [stopArrivalView as Any] }
+        set { _ = newValue }
+    }
+
     var formatters: Formatters! {
         didSet {
             if stopArrivalView == nil {
