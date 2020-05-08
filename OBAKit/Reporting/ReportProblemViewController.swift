@@ -14,7 +14,7 @@ import OBAKitCore
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
 ///
 /// - Note: This view controller expects to be presented modally.
-class ReportProblemViewController: OperationController<StopArrivalsModelOperation, StopArrivals>,
+class ReportProblemViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, StopArrivals>,
     HasTableStyle,
     ListAdapterDataSource {
 
@@ -58,16 +58,23 @@ class ReportProblemViewController: OperationController<StopArrivalsModelOperatio
 
     // MARK: - OperationController
 
-    override func loadData() -> StopArrivalsModelOperation? {
-        guard let modelService = application.restAPIModelService else { return nil }
+    override func loadData() -> DecodableOperation<RESTAPIResponse<StopArrivals>>? {
+        guard let apiService = application.restAPIService else { return nil }
 
         SVProgressHUD.show()
 
-        let op = modelService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
-        op.then { [weak self] in
+        let op = apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
+        op.complete { [weak self] result in
             SVProgressHUD.dismiss()
+
             guard let self = self else { return }
-            self.data = op.stopArrivals
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.data = response.list
+            }
         }
         return op
     }

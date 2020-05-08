@@ -26,6 +26,7 @@ open class CoreAppConfig: NSObject {
     public let userDefaults: UserDefaults
     public let locationService: LocationService
     public let bundledRegionsFilePath: String
+    public let dataLoader: URLDataLoader
 
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
@@ -45,7 +46,8 @@ open class CoreAppConfig: NSObject {
             queue: OperationQueue(),
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: bundledRegionsFilePath,
-            regionsAPIPath: appBundle.regionsServerAPIPath!
+            regionsAPIPath: appBundle.regionsServerAPIPath!,
+            dataLoader: URLSession.shared
         )
     }
 
@@ -59,7 +61,7 @@ open class CoreAppConfig: NSObject {
     /// - Parameter locationService: The location service object.
     /// - Parameter bundledRegionsFilePath: The path to the `regions.json` file in the app bundle.
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
-    @objc public init(
+    public init(
         regionsBaseURL: URL?,
         obacoBaseURL: URL?,
         apiKey: String,
@@ -68,7 +70,8 @@ open class CoreAppConfig: NSObject {
         queue: OperationQueue,
         locationService: LocationService,
         bundledRegionsFilePath: String,
-        regionsAPIPath: String?
+        regionsAPIPath: String?,
+        dataLoader: URLDataLoader
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.obacoBaseURL = obacoBaseURL
@@ -79,5 +82,6 @@ open class CoreAppConfig: NSObject {
         self.locationService = locationService
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.regionsAPIPath = regionsAPIPath
+        self.dataLoader = dataLoader
     }
 }

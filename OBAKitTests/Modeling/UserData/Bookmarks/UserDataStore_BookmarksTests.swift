@@ -7,7 +7,6 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -21,7 +20,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
     override func setUp() {
         super.setUp()
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
-        stops = try! loadSomeStops()
+        stops = try! Fixtures.loadSomeStops()
     }
 
     override func tearDown() {
@@ -115,10 +114,10 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         let stop = stops[0]
 
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark, to: group, index: .max)
 
-        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark2)
 
         expect(self.userDefaultsStore.bookmarksInGroup(nil)) == [bookmark2]
@@ -130,10 +129,10 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
         let stop = stops[0]
 
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark, to: group)
 
-        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark2)
 
         expect(self.userDefaultsStore.bookmarksInGroup(group)) == [bookmark]
@@ -141,35 +140,35 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmarks_propertyRoundTripping() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         expect(self.userDefaultsStore.bookmarks) == [bookmark]
     }
 
     func test_bookmark_findByID() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         expect(self.userDefaultsStore.findBookmark(id: bookmark.id)) == bookmark
     }
 
     func test_bookmark_findByStopID() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         expect(self.userDefaultsStore.findBookmark(stopID: stop.id)) == bookmark
     }
 
     func test_bookmark_find_noMatch() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         expect(self.userDefaultsStore.findBookmark(id: UUID())).to(beNil())
     }
 
     func test_bookmark_addToGroup_groupUnregistered() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
         userDefaultsStore.add(bookmark, to: group)
 
@@ -180,7 +179,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_changeGroup() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
         userDefaultsStore.add(bookmark, to: group)
@@ -198,7 +197,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_removeFromGroup() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
         userDefaultsStore.add(bookmark, to: group)
@@ -212,7 +211,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_addToGroup_groupRegistered() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         let group = BookmarkGroup(name: "My Group", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
         userDefaultsStore.add(bookmark, to: group)
@@ -224,7 +223,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_addDuplicate() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
         userDefaultsStore.add(bookmark)
         userDefaultsStore.add(bookmark)
@@ -234,7 +233,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_delete() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
         userDefaultsStore.add(bookmark)
         userDefaultsStore.delete(bookmark: bookmark)
@@ -244,8 +243,8 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
 
     func test_bookmark_deleteNonexistent() {
         let stop = stops[0]
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
-        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark2 = Bookmark(name: "My Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
 
         userDefaultsStore.add(bookmark)
         userDefaultsStore.delete(bookmark: bookmark2)
@@ -256,7 +255,7 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
     func test_bookmark_add_existingRecord() {
         let stop = stops[0]
 
-        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let bookmark = Bookmark(name: "My Bookmark", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark)
         bookmark.name = "Changed Name"
         userDefaultsStore.add(bookmark)
@@ -270,19 +269,19 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
     func test_bookmark_sortOrder_noGroup() {
         let stop = stops[0]
 
-        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark0)
 
         bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
         expect(bookmark0.sortOrder) == 0
 
-        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark1)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
         expect(bookmark1.sortOrder) == 1
 
-        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(newBookmark1, to: nil, index: 1)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
@@ -308,19 +307,19 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let group = BookmarkGroup(name: "Group!", sortOrder: 0)
         userDefaultsStore.upsert(bookmarkGroup: group)
 
-        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var bookmark0 = Bookmark(name: "Bookmark 0", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark0, to: group)
 
         bookmark0 = userDefaultsStore.findBookmark(id: bookmark0.id)!
         expect(bookmark0.sortOrder) == 0
 
-        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var bookmark1 = Bookmark(name: "Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(bookmark1, to: group)
 
         bookmark1 = userDefaultsStore.findBookmark(id: bookmark1.id)!
         expect(bookmark1.sortOrder) == 1
 
-        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        var newBookmark1 = Bookmark(name: "New Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(newBookmark1, to: group, index: 1)
 
         newBookmark1 = userDefaultsStore.findBookmark(id: newBookmark1.id)!
@@ -349,15 +348,15 @@ class UserDefaultsStore_BookmarksTests: OBATestCase {
         let group2 = BookmarkGroup(name: "Group 2", sortOrder: 1)
         userDefaultsStore.upsert(bookmarkGroup: group2)
 
-        let g1b1 = Bookmark(name: "Group 1/Bookmark 1", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let g1b1 = Bookmark(name: "Group 1/Bookmark 1", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b1, to: group1)
 
-        let g1b2 = Bookmark(name: "Group 1/Bookmark 2", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let g1b2 = Bookmark(name: "Group 1/Bookmark 2", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b2, to: group1)
         expect(g1b2.groupID).toNot(beNil())
         expect(g1b2.groupID) == group1.id
 
-        let g1b3 = Bookmark(name: "Group 1/Bookmark 3", regionIdentifier: pugetSoundRegion.regionIdentifier, stop: stop)
+        let g1b3 = Bookmark(name: "Group 1/Bookmark 3", regionIdentifier: Fixtures.pugetSoundRegion.regionIdentifier, stop: stop)
         userDefaultsStore.add(g1b3, to: group1)
 
         expect(g1b1.sortOrder) == 0

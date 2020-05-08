@@ -83,7 +83,7 @@ class AlarmBuilder: NSObject {
 
     // MARK: - Alarm Creation
 
-    private var alarmOperation: AlarmModelOperation?
+    private var alarmOperation: DecodableOperation<Alarm>?
 
     private func createAlarm(minutes: Int) {
         guard
@@ -100,22 +100,18 @@ class AlarmBuilder: NSObject {
             guard let self = self else { return }
 
             let op = modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
-            op.then { [weak self] in
-                guard
-                    let self = self,
-                    let delegate = self.delegate
-                else {
-                    SVProgressHUD.dismiss()
-                    return
-                }
+            op.complete { [weak self] result in
+                SVProgressHUD.dismiss()
+                guard let self = self else { return }
 
-                if let alarm = op.alarm {
+                switch result {
+                case .failure:
+                    self.delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+                case .success(let response):
+                    let alarm = response
                     alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
                     alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
-                    delegate.alarmBuilder(self, alarmCreated: alarm)
-                }
-                else {
-                    delegate.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+                    self.delegate?.alarmBuilder(self, alarmCreated: alarm)
                 }
 
                 self.bulletinManager.dismissBulletin(animated: true)

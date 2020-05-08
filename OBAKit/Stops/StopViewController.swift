@@ -60,7 +60,7 @@ public class StopViewController: UIViewController,
     // MARK: - Data
 
     /// The data-loading operation for this controller.
-    var operation: StopArrivalsModelOperation?
+    var operation: DecodableOperation<RESTAPIResponse<StopArrivals>>?
 
     /// The stop displayed by this controller.
     var stop: Stop? {
@@ -291,28 +291,30 @@ public class StopViewController: UIViewController,
     func updateData() {
         operation?.cancel()
 
-        guard let modelService = application.restAPIModelService else { return }
+        guard let apiService = application.restAPIService else { return }
 
         title = Strings.updating
 
-        let op = modelService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
-        op.then { [weak self] in
+        let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
+        op.complete { [weak self] result in
             guard let self = self else { return }
 
-            if self.isBookmarkBroken(operation: op) {
+            let broken = self.bookmarkContext != nil && (op.statusCodeIsEffectively404 ?? false)
+
+            switch (broken, result) {
+            case (true, _):
                 self.displayBrokenBookmarkMessage()
-            }
-            else if let error = op.error {
-                print("TODO! Handle me better: \(error)")
-            }
+            case (_, .failure(let error)):
+                print("TODO FIXME handle error! \(error)")
+            case (false, .success(let response)):
+                self.lastUpdated = Date()
+                self.stopArrivals = response.list
+                self.refreshControl.endRefreshing()
+                self.updateTitle()
 
-            self.lastUpdated = Date()
-            self.stopArrivals = op.stopArrivals
-            self.refreshControl.endRefreshing()
-            self.updateTitle()
-
-            if let arrivals = op.stopArrivals, arrivals.arrivalsAndDepartures.count == 0 {
-                self.extendLoadMoreWindow()
+                if response.list.arrivalsAndDepartures.count == 0 {
+                    self.extendLoadMoreWindow()
+                }
             }
         }
 
@@ -371,13 +373,6 @@ public class StopViewController: UIViewController,
         let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
         self.errorBulletin = ErrorBulletin(application: self.application, message: message)
         self.errorBulletin?.show(in: uiApp)
-    }
-
-    /// Attempts to detect if the current `bookmarkContext` is broken, given the server's response.
-    /// - Parameter operation: The model operation returned from loading the stop for the specified bookmark.
-    private func isBookmarkBroken(operation: StopArrivalsModelOperation) -> Bool {
-        let effective404 = operation.apiOperation?.isEffective404 ?? false
-        return bookmarkContext != nil && effective404
     }
 
     // MARK: - IGListKit

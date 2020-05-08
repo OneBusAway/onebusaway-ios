@@ -10,13 +10,13 @@ import Foundation
 import CoreLocation
 
 /// The `tripStatus` element captures information about the current status of a transit vehicle serving a trip. It is returned as a sub-element in a number of REST API calls.
-public class TripStatus: NSObject, Decodable {
+public class TripStatus: NSObject, Decodable, HasReferences {
 
     /// the trip id of the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
     let activeTripID: String
 
     /// the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
-    public let activeTrip: Trip
+    public private(set) var activeTrip: Trip!
 
     /// the index of the active trip into the sequence of trips for the active block. Compare to `blockTripSequence`
     /// in `ArrivalAndDeparture` to determine where the active block location is relative to an arrival-and-departure.
@@ -28,7 +28,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// The closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
-    public let closestStop: Stop
+    public private(set) var closestStop: Stop!
 
     /// the time offset, in seconds, from the closest stop to the current position of the transit vehicle
     /// among the stop times of the current trip. If the number is positive, the stop is coming up.
@@ -68,7 +68,7 @@ public class TripStatus: NSObject, Decodable {
 
     /// Similar to `closestStop`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
-    public let nextStop: Stop?
+    public private(set) var nextStop: Stop?
 
     /// Similar to `closestStopTimeOffset`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -104,7 +104,7 @@ public class TripStatus: NSObject, Decodable {
     let situationIDs: [String]
 
     /// Active service alerts applicable to this trip.
-    public let situations: [Situation]
+    public private(set) var situations = [Situation]()
 
     /// Status modifier for the trip
     public let statusModifier: TripStatusModifier
@@ -133,15 +133,12 @@ public class TripStatus: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.userInfo[CodingUserInfoKey.references] as! References // swiftlint:disable:this force_cast
 
         activeTripID = try container.decode(String.self, forKey: .activeTripID)
-        activeTrip = references.tripWithID(activeTripID)!
 
         blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
 
         closestStopID = try container.decode(StopID.self, forKey: .closestStopID)
-        closestStop = references.stopWithID(closestStopID)!
 
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
@@ -155,7 +152,6 @@ public class TripStatus: NSObject, Decodable {
         lastUpdate = ModelHelpers.epochMillisecondsToDate(lastUpdateTime)
 
         nextStopID = try container.decodeIfPresent(StopID.self, forKey: .nextStopID)
-        nextStop = references.stopWithID(nextStopID)
 
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
         orientation = try container.decode(CLLocationDirection.self, forKey: .orientation)
@@ -167,13 +163,19 @@ public class TripStatus: NSObject, Decodable {
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
 
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
-        situations = references.situationsWithIDs(situationIDs)
 
         let status = try container.decode(String.self, forKey: .status)
         statusModifier = TripStatusModifier.decode(status)
 
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
         vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
+    }
+
+    public func loadReferences(_ references: References) {
+        activeTrip = references.tripWithID(activeTripID)!
+        closestStop = references.stopWithID(closestStopID)!
+        nextStop = references.stopWithID(nextStopID)
+        situations = references.situationsWithIDs(situationIDs)
     }
 
     // MARK: - Equality

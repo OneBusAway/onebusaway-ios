@@ -209,23 +209,6 @@ These are third party libraries directly included inside of this project.
     ```
 </details>
 
-## DictionaryCoding
-
-<details>
-  <summary>Includes DictionaryCoding code by Sam Deane, Elegant Chaos Limited.</summary>
-
-  ```
-  The original code is copyright (c) 2014 - 2017 Apple Inc. and the Swift project authors
-
-  Licensed under Apache License v2.0 with Runtime Library Exception
-
-  See https://swift.org/LICENSE.txt for license information
-  See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
-
-  Modifications and additional code here is copyright (c) 2018 Sam Deane, and is licensed under the same terms.
-  ```
-</details>
-
 ## Polyline
 
 <details>

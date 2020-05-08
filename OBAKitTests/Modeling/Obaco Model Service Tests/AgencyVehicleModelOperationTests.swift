@@ -8,27 +8,31 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 @testable import OBAKit
 @testable import OBAKitCore
 
+// swiftlint:disable force_cast
+
 class AgencyVehicleModelOperationTests: OBATestCase {
     func testSuccesfulVehicleRequest() {
-        let apiPath = MatchingVehiclesOperation.buildAPIPath(regionID: obacoRegionID)
+        let dataLoader = (obacoService.dataLoader as! MockDataLoader)
+        let apiPath = String(format: "https://alerts.example.com/api/v1/regions/%d/vehicles", obacoRegionID)
+        dataLoader.mock(URLString: apiPath, with: Fixtures.loadData(file: "vehicles-query-1_1.json"))
 
-        stub(condition: isHost(self.obacoHost) && isPath(apiPath)) { _ in
-            let foo = OHHTTPStubsResponse.JSONFile(named: "vehicles-query-1_1.json")
-            return foo
-        }
+        let op = obacoService.getVehicles(matching: "1_1")
 
         waitUntil { done in
-            let op = self.obacoModelService.getVehicles(matching: "1_1")
-            op.completionBlock = {
-                let matches = op.matchingVehicles
-                expect(matches.count) == 29
-                expect(matches.first!.agencyName) == "Metro Transit"
-                expect(matches.first!.vehicleID) == "1_1156"
-                done()
+            op.complete { result in
+                switch result {
+                case .failure(let error):
+                    print("TODO FIXME handle error! \(error)")
+                case .success(let response):
+                    let matches = response
+                    expect(matches.count) == 29
+                    expect(matches.first!.agencyName) == "Metro Transit"
+                    expect(matches.first!.vehicleID) == "1_1156"
+                    done()
+                }
             }
         }
     }

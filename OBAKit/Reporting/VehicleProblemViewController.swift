@@ -143,14 +143,14 @@ class VehicleProblemViewController: FormViewController {
 
     private func submitForm() {
         guard
-            let modelService = application.restAPIModelService,
+            let apiService = application.restAPIService,
             let tripProblemCode = problemCodePicker.value
         else { return }
 
         let onVehicle = onVehicleSwitch.value ?? false
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
-        let op = modelService.getTripProblem(
+        let op = apiService.getTripProblem(
             tripID: arrivalDeparture.tripID,
             serviceDate: arrivalDeparture.serviceDate,
             vehicleID: vehicleIDField.value,
@@ -163,14 +163,15 @@ class VehicleProblemViewController: FormViewController {
 
         SVProgressHUD.show()
 
-        op.then { [weak self] in
+        op.complete { [weak self] result in
+
             guard let self = self else { return }
 
-            if let error = op.error {
-                AlertPresenter.show(error: error, presentingController: self)
+            switch result {
+            case .failure(let error):
                 SVProgressHUD.dismiss()
-            }
-            else {
+                AlertPresenter.show(error: error, presentingController: self)
+            case .success:
                 self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
                 SVProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)

@@ -77,12 +77,14 @@ public class PushService: NSObject {
             return
         }
 
-        if
-            key == "arrival_and_departure",
-            let data = additionalData["arrival_and_departure"] as? [String: Any],
-            let pushBody = try? DictionaryDecoder.restApiServiceDecoder().decode(AlarmPushBody.self, from: data)
-        {
-            delegate?.pushService(self, received: pushBody)
+        if key == "arrival_and_departure", let data = additionalData["arrival_and_departure"] as? [String: Any] {
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: data, options: [])
+                let pushBody = try JSONDecoder().decode(AlarmPushBody.self, from: jsonData)
+                delegate?.pushService(self, received: pushBody)
+            } catch let error {
+                print("Error decoding AlarmPushBody: \(error)")
+            }
             return
         }
 

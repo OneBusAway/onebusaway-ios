@@ -140,6 +140,21 @@ public extension Dictionary where Key == String {
     }
 }
 
+// MARK: - HTTPURLResponse
+
+public extension HTTPURLResponse {
+
+    /// Returns true if this object has a Content-Type header field set with the value `application/json` or `text/json`.
+    var hasJSONContentType: Bool {
+        guard let contentType = allHeaderFields["Content-Type"] as? String else {
+            return false
+        }
+
+        return contentType == "application/json"
+            || contentType == "text/json"
+    }
+}
+
 // MARK: - MeasurementFormatter
 
 public extension MeasurementFormatter {

@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class StopArrivals: NSObject, Decodable {
+public class StopArrivals: NSObject, Decodable, HasReferences {
 
     /// Upcoming and just-passed vehicle arrivals and departures.
     public let arrivalsAndDepartures: [ArrivalDeparture]
@@ -17,13 +17,13 @@ public class StopArrivals: NSObject, Decodable {
     let nearbyStopIDs: [StopID]
 
     /// A list of nearby `Stop`s.
-    public let nearbyStops: [Stop]
+    public private(set) var nearbyStops = [Stop]()
 
     /// A list of active service alert IDs.
     private let situationIDs: [String]
 
     /// Active service alerts tied to the `StopArrivals` model.
-    private let _situations: [Situation]
+    private var _situations = [Situation]()
 
     /// Returns this model's list of service alerts, if any exist. If this model does not have any, then it returns a flattened list of its `ArrivalDepartures` objects' service alerts.
     public var situations: [Situation] {
@@ -39,7 +39,7 @@ public class StopArrivals: NSObject, Decodable {
     let stopID: StopID
 
     /// The stop to which this object refers.
-    public let stop: Stop
+    public var stop: Stop!
 
     private enum CodingKeys: String, CodingKey {
         case arrivalsAndDepartures
@@ -50,17 +50,17 @@ public class StopArrivals: NSObject, Decodable {
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let references = decoder.references
 
         arrivalsAndDepartures = try container.decode([ArrivalDeparture].self, forKey: .arrivalsAndDepartures)
-
         nearbyStopIDs = try container.decode([StopID].self, forKey: .nearbyStopIDs)
-        nearbyStops = references.stopsWithIDs(nearbyStopIDs)
-
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
-        _situations = references.situationsWithIDs(situationIDs)
-
         stopID = try container.decode(StopID.self, forKey: .stopID)
+    }
+
+    public func loadReferences(_ references: References) {
+        nearbyStops = references.stopsWithIDs(nearbyStopIDs)
+        _situations = references.situationsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
+        arrivalsAndDepartures.loadReferences(references)
     }
 }

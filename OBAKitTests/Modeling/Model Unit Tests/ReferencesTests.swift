@@ -8,28 +8,25 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_cast force_try
+// swiftlint:disable force_try
 
 class ReferencesTests: OBATestCase {
     var references: References!
+
     override func setUp() {
         super.setUp()
-        let json = loadJSONDictionary(file: "references.json")
-        let refsDictionary = json["references"] as! [String: Any]
-
-        references = try! References.decodeReferences(refsDictionary)
+        let data = Fixtures.loadData(file: "references.json")
+        references = try! JSONDecoder.RESTDecoder.decode(References.self, from: data)
     }
-}
 
-// MARK: - Agencies
-extension ReferencesTests {
+    // MARK: - Agencies
+
     func test_agencies_success() {
-        let agencies = self.references!.agencies
+        let agencies = references.agencies
 
         expect(agencies.count) == 1
 
@@ -43,12 +40,11 @@ extension ReferencesTests {
         expect(agency.timeZone) == "America/New_York"
         expect(agency.agencyURL) == URL(string: "http://www.gohart.org")!
     }
-}
 
-// MARK: - Routes
-extension ReferencesTests {
+    // MARK: - Routes
+
     func test_routes_success() {
-        let routes = self.references!.routes
+        let routes = references.routes
         expect(routes.count) == 16
 
         let route = routes.first!
@@ -63,16 +59,13 @@ extension ReferencesTests {
         expect(route.routeType) == .bus
         expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
     }
-}
 
-// MARK: - Situations
-extension ReferencesTests {
+    // MARK: - Situations
+
     func test_situations_success() {
-        let json = loadJSONDictionary(file: "arrival-and-departure-for-stop-MTS_11589.json")
-        let data = json["data"] as! [String: Any]
-        let refsDictionary = data["references"] as! [String: Any]
-        let refs = try! References.decodeReferences(refsDictionary)
-        let situations = refs.situations
+        let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
+        let response = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
+        let situations = response.references!.situations
 
         expect(situations.count) == 1
 
@@ -104,10 +97,9 @@ extension ReferencesTests {
         expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
         expect(situation.url).to(beNil())
     }
-}
 
-// MARK: - Stops
-extension ReferencesTests {
+    // MARK: - Stops
+
     func test_stops_success() {
         let references = self.references!
         let stops = references.stops
@@ -127,10 +119,9 @@ extension ReferencesTests {
         expect(stop.routes.first!.shortName) == "1"
         expect(stop.wheelchairBoarding) == .unknown
     }
-}
 
-// MARK: - Trips
-extension ReferencesTests {
+    // MARK: - Trips
+
     func test_trips_success() {
         let trips = self.references!.trips
 

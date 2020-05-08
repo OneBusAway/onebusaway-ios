@@ -11,6 +11,26 @@ import BLTNBoard
 import Connectivity
 import OBAKitCore
 
+public typealias ReachabilityCallback = (ReachabilityProtocol) -> Void
+
+public protocol ReachabilityProtocol {
+    func connected(_ callback: @escaping ReachabilityCallback)
+    func disconnected(_ callback: @escaping ReachabilityCallback)
+    func startNotifier(queue: DispatchQueue)
+    func stopNotifier()
+    var status: ConnectivityStatus { get }
+}
+
+extension Connectivity: ReachabilityProtocol {
+    public func connected(_ callback: @escaping ReachabilityCallback) {
+        whenConnected = { callback($0) }
+    }
+
+    public func disconnected(_ callback: @escaping ReachabilityCallback) {
+        whenDisconnected = { callback($0) }
+    }
+}
+
 /// This class knows how to present a modal alert that tells the user that their Internet connection is compromised and unable to retrieve data.
 class ReachabilityBulletin: NSObject {
     private let bulletinManager: BLTNItemManager

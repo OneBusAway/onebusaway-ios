@@ -17,7 +17,7 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
 /// The entry-point view controller for creating a new bookmark.
 ///
 /// - Note: This controller expects to be presented modally.
-class AddBookmarkViewController: OperationController<StopArrivalsModelOperation, [ArrivalDeparture]>, HasTableStyle, ListAdapterDataSource {
+class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, [ArrivalDeparture]>, HasTableStyle, ListAdapterDataSource {
     private let stop: Stop
     private weak var delegate: BookmarkEditorDelegate?
 
@@ -109,13 +109,19 @@ class AddBookmarkViewController: OperationController<StopArrivalsModelOperation,
 
     // MARK: - Data and UI
 
-    override func loadData() -> StopArrivalsModelOperation? {
-        guard let modelService = application.restAPIModelService else { return nil }
+    override func loadData() -> DecodableOperation<RESTAPIResponse<StopArrivals>>? {
+        guard let apiService = application.restAPIService else { return nil }
 
-        let op = modelService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
-        op.then { [weak self] in
+        let op = apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
+        op.complete { [weak self] result in
             guard let self = self else { return }
-            self.data = op.stopArrivals?.arrivalsAndDepartures
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.data = response.list.arrivalsAndDepartures
+            }
         }
 
         return op

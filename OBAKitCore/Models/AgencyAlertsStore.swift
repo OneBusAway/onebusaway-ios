@@ -12,8 +12,8 @@ import Foundation
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var restModelService: RESTAPIModelService?
-    public var obacoModelService: ObacoModelService?
+    public var apiService: RESTAPIService?
+    public var obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults
 
@@ -59,24 +59,29 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         queue.cancelAllOperations()
     }
 
-    private var agenciesOperation: AgenciesWithCoverageModelOperation?
+    private var agenciesOperation: DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>?
 
     private var agencies = [AgencyWithCoverage]()
 
     public func checkForUpdates() {
-        guard let restModelService = restModelService else { return }
+        guard let apiService = apiService else { return }
 
         // Step 1: download a list of agencies, if needed.
         if agencies.count == 0 {
-            let agenciesOp = restModelService.getAgenciesWithCoverage()
-            agenciesOperation = agenciesOp
-            agenciesOp.then { [weak self] in
+            let agenciesOp = apiService.getAgenciesWithCoverage()
+            agenciesOp.complete { [weak self] result in
                 guard let self = self else { return }
-                self.agencies = agenciesOp.agenciesWithCoverage
 
-                self.fetchRegionalAlerts()
-                self.fetchObacoAlerts()
+                switch result {
+                case .failure(let error):
+                    print("TODO FIXME handle error! \(error)")
+                case .success(let response):
+                    self.agencies = response.list
+                    self.fetchRegionalAlerts()
+                    self.fetchObacoAlerts()
+                }
             }
+            agenciesOperation = agenciesOp
         }
         else {
             fetchRegionalAlerts()
@@ -86,34 +91,32 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     // MARK: - REST API
 
-    private var regionalAlertsOperation: RegionalAlertsModelOperation?
+    private var regionalAlertsOperation: MultiAgencyAlertsOperation?
 
     private func fetchRegionalAlerts() {
-        guard let restModelService = restModelService else { return }
+        guard let apiService = apiService else { return }
 
-        let op = restModelService.getRegionalAlerts(agencies: agencies)
-        regionalAlertsOperation = op
-
-        op.then { [weak self] in
+        let op = apiService.getAlerts(agencies: agencies)
+        op.complete { [weak self] (alerts) in
             guard let self = self else { return }
-            self.storeAgencyAlerts(op.agencyAlerts)
+            self.storeAgencyAlerts(alerts)
         }
+        regionalAlertsOperation = op
     }
 
     // MARK: - Obaco
 
-    private var obacoOperation: AgencyAlertsModelOperation?
+    private var obacoOperation: AgencyAlertsOperation?
 
     private func fetchObacoAlerts() {
-        guard let obacoModelService = obacoModelService else { return }
+        guard let obacoService = obacoService else { return }
 
-        let op = obacoModelService.getAlerts(agencies: agencies)
-        obacoOperation = op
-
-        op.then { [weak self] in
+        let op = obacoService.getAlerts(agencies: agencies)
+        op.complete { [weak self] (alerts) in
             guard let self = self else { return }
-            self.storeAgencyAlerts(op.agencyAlerts)
+            self.storeAgencyAlerts(alerts)
         }
+        obacoOperation = op
     }
 
     // MARK: - High Severity Alerts

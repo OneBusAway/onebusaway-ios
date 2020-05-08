@@ -7,7 +7,6 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -24,7 +23,7 @@ class BookmarkGroupTests: OBATestCase {
 
     func testCodableRoundtripping() {
         let group = BookmarkGroup(name: "Group 1", sortOrder: 10)
-        let decoded = try! roundtripCodable(type: BookmarkGroup.self, model: group)
+        let decoded = try! Fixtures.roundtripCodable(type: BookmarkGroup.self, model: group)
 
         expect(decoded.name) == "Group 1"
         expect(decoded.id).toNot(beNil())

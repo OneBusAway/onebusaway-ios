@@ -8,6 +8,7 @@
 
 import Foundation
 import MapKit
+import OBAKitCore
 
 /// Describes what kind of search the user is performing.
 public enum SearchType: Int {
@@ -73,14 +74,14 @@ public class SearchManager: NSObject {
 
     private func searchAddress(request: SearchRequest) {
         guard
-            let modelService = application.restAPIModelService,
+            let apiService = application.restAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        let op = modelService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-        op.then { [weak self] in
+        let op = apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
+        op.completionBlock = { [weak self] in
             guard let self = self else { return }
 
             self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
@@ -89,62 +90,89 @@ public class SearchManager: NSObject {
 
     private func searchRoute(request: SearchRequest) {
         guard
-            let modelService = application.restAPIModelService,
+            let apiService = application.restAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        let op = modelService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-        op.then { [weak self] in
+        let op = apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
+        op.complete { [weak self] result in
             guard let self = self else { return }
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.routes, boundingRegion: nil, error: op.error)
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
+            }
         }
     }
 
     private func searchStopNumber(request: SearchRequest) {
-        guard let modelService = application.restAPIModelService else {
+        guard let apiService = application.restAPIService else {
             return
         }
 
         let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
-        let op = modelService.getStops(circularRegion: region, query: request.query)
-        op.then { [weak self] in
+        let op = apiService.getStops(circularRegion: region, query: request.query)
+        op.complete { [weak self] result in
             guard let self = self else { return }
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.stops, boundingRegion: nil, error: op.error)
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
+            }
         }
     }
 
     private func searchVehicleID(request: SearchRequest) {
-        guard
-            let modelService = application.restAPIModelService,
-            let obacoService = application.obacoService
-        else {
-            return
-        }
+        guard let obacoService = application.obacoService else { return }
 
         SVProgressHUD.show()
 
         let op = obacoService.getVehicles(matching: request.query)
-        op.then { [weak self] in
-            guard let self = self else { return }
+        op.complete { [weak self] result in
             SVProgressHUD.dismiss()
+            guard let self = self else { return }
 
-            let matchingVehicles = op.matchingVehicles
-
-            if matchingVehicles.count > 1 {
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
-            }
-            else if matchingVehicles.count == 1, let vehicleID = matchingVehicles[0].vehicleID {
-                let vehicleOp = modelService.getVehicleStatus(vehicleID)
-                vehicleOp.then { [weak self] in
-                    guard let self = self else { return }
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: vehicleOp.vehicles, boundingRegion: nil, error: vehicleOp.error)
-                }
-            }
-            else {
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.processSearchResults(request: request, matchingVehicles: response)
             }
         }
+    }
+
+    private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
+        guard let apiService = application.restAPIService else { return }
+
+        if matchingVehicles.count > 1 {
+            // Show a disambiguation UI.
+            application.mapRegionManager.searchResponse = SearchResponse(request: request, results: matchingVehicles, boundingRegion: nil, error: nil)
+            return
+        }
+
+        if matchingVehicles.count == 1, let vehicleID = matchingVehicles.first?.vehicleID {
+            // One result. Find that vehicle and show it.
+            let op = apiService.getVehicle(vehicleID)
+            op.complete { [weak self] result in
+                guard let self = self else { return }
+
+                switch result {
+                case .failure(let error):
+                    print("TODO FIXME handle error! \(error)")
+                case .success(let response):
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [response.list], boundingRegion: nil, error: nil)
+                }
+            }
+            return
+        }
+
+        // No results :(
+        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
     }
 }

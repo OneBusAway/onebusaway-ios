@@ -8,35 +8,24 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
 
-// swiftlint:disable force_try
+// swiftlint:disable force_try force_cast
 
 class RegionalAlertsModelOperationTests: OBATestCase {
-
-    func stubAPICalls() {
-        stub(condition: isHost(host) && isPath(AgenciesWithCoverageOperation.apiPath)) { _ in
-            return OHHTTPStubsResponse.JSONFile(named: "agencies_with_coverage.json")
-        }
-        for id in ["1", "3", "19", "23", "29", "40", "95", "96", "97", "98", "KMD"] {
-            stub(condition: isHost(host) && isPath(RegionalAlertsOperation.buildRESTAPIPath(agencyID: id))) { _ in
-                return OHHTTPStubsResponse.dataFile(named: "puget_sound_alerts.pb")
-            }
-        }
-    }
-
     func testSuccessfulRequest() {
-        stubAPICalls()
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader)
+        Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        let agencies = try! AgencyWithCoverage.decodeFromFile(named: "agencies_with_coverage.json", in: Bundle(for: type(of: self)))
+        let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
+        let op = restService.getAlerts(agencies: agencies)
 
         waitUntil { (done) in
-            let op = self.restModelService.getRegionalAlerts(agencies: agencies)
-            op.completionBlock = {
-                expect(op.agencyAlerts.count) == 20
+            op.complete { result in
+                expect(result.count) == 20
                 done()
             }
         }

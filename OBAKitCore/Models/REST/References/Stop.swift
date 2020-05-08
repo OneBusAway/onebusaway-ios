@@ -149,10 +149,7 @@ public class Stop: NSObject, Codable, HasReferences {
 
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
 
-        if let references = decoder.userInfo[CodingUserInfoKey.references] as? References {
-            routes = references.routesWithIDs(routeIDs)
-        }
-        else if let encodedRoutes = try? container.decodeIfPresent([Route].self, forKey: .routes) {
+        if let encodedRoutes = try? container.decodeIfPresent([Route].self, forKey: .routes) {
             // If we are decoding a Stop that has been serialized internally (e.g. as
             // part of a Recent Stops list), then it should contain a list of routes.
             // However, if we are decoding data from the REST API, then it will not

@@ -7,7 +7,6 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 @testable import OBAKit
 @testable import OBAKitCore
@@ -22,8 +21,8 @@ class BookmarkTests: OBATestCase {
     override func setUp() {
         super.setUp()
 
-        region = try! loadSomeRegions()[1]
-        stops = try! loadSomeStops()
+        region = try! Fixtures.loadSomeRegions()[1]
+        stops = try! Fixtures.loadSomeStops()
     }
 
     func testCreation() {
@@ -38,7 +37,7 @@ class BookmarkTests: OBATestCase {
     func testCodableRoundtripping() {
         let stop = stops[0]
         let bookmark = Bookmark(name: "BM 1", regionIdentifier: region.regionIdentifier, stop: stop)
-        let roundtripped = try! roundtripCodable(type: Bookmark.self, model: bookmark)
+        let roundtripped = try! Fixtures.roundtripCodable(type: Bookmark.self, model: bookmark)
         expect(roundtripped.name) == "BM 1"
         expect(roundtripped.regionIdentifier) == region.regionIdentifier
         expect(roundtripped.stopID) == stop.id

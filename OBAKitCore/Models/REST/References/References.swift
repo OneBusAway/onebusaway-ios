@@ -25,45 +25,11 @@ public class References: NSObject, Decodable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        do {
-            situations = try container.decode([Situation].self, forKey: .situations)
-        } catch {
-            situations = []
-            DDLogError("error decoding situations: \(error)")
-            throw error
-        }
-
-        do {
-            agencies = try container.decode([Agency].self, forKey: .agencies)
-        } catch {
-            agencies = []
-            DDLogError("error decoding agencies: \(error)")
-            throw error
-        }
-
-        do {
-            routes = try container.decode([Route].self, forKey: .routes)
-        } catch {
-            routes = []
-            DDLogError("error decoding routes: \(error)")
-            throw error
-        }
-
-        do {
-            stops = try container.decode([Stop].self, forKey: .stops)
-        } catch {
-            stops = []
-            DDLogError("error decoding stops: \(error)")
-            throw error
-        }
-
-        do {
-            trips = try container.decode([Trip].self, forKey: .trips)
-        } catch {
-            trips = []
-            DDLogError("error decoding trips: \(error)")
-            throw error
-        }
+        situations = try container.decodeIfPresent([Situation].self, forKey: .situations) ?? []
+        agencies = try container.decodeIfPresent([Agency].self, forKey: .agencies) ?? []
+        routes = try container.decodeIfPresent([Route].self, forKey: .routes) ?? []
+        stops = try container.decodeIfPresent([Stop].self, forKey: .stops) ?? []
+        trips = try container.decodeIfPresent([Trip].self, forKey: .trips) ?? []
 
         super.init()
 
@@ -77,12 +43,6 @@ public class References: NSObject, Decodable {
         stops.loadReferences(self)
         trips.loadReferences(self)
     }
-
-    public static func decodeReferences(_ data: [String: Any]) throws -> References {
-        let decoder = DictionaryDecoder.restApiServiceDecoder()
-        let references = try decoder.decode(References.self, from: data)
-        return references
-    }
 }
 
 // MARK: - HasReferences
@@ -91,7 +51,7 @@ public protocol HasReferences {
     func loadReferences(_ references: References)
 }
 
-extension Array where Element: HasReferences {
+extension Array: HasReferences where Element: HasReferences {
     public func loadReferences(_ references: References) {
         for elt in self {
             elt.loadReferences(references)

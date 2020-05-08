@@ -10,7 +10,7 @@ import IGListKit
 import CoreLocation
 import OBAKitCore
 
-class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]>,
+class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIResponse<[Stop]>>, [Stop]>,
     ListAdapterDataSource,
     SectionDataBuilders,
     UISearchResultsUpdating {
@@ -57,19 +57,22 @@ class NearbyStopsViewController: OperationController<StopsModelOperation, [Stop]
 
     // MARK: - Operation Controller Overrides
 
-    override func loadData() -> StopsModelOperation? {
-        guard let modelService = application.restAPIModelService else { return nil }
+    override func loadData() -> DecodableOperation<RESTAPIResponse<[Stop]>>? {
+        guard let apiService = application.restAPIService else { return nil }
 
         SVProgressHUD.show()
 
-        let op = modelService.getStops(coordinate: coordinate)
-        op.then { [weak self] in
-            guard let self = self else {
-                SVProgressHUD.dismiss()
-                return
-            }
-            self.data = op.stops
+        let op = apiService.getStops(coordinate: coordinate)
+        op.complete { [weak self] result in
             SVProgressHUD.dismiss()
+            guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
+                print("TODO FIXME handle error! \(error)")
+            case .success(let response):
+                self.data = response.list
+            }
         }
 
         return op

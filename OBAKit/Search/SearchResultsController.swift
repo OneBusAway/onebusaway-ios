@@ -11,6 +11,8 @@ import IGListKit
 import OBAKitCore
 import MapKit
 
+// swiftlint:disable cyclomatic_complexity
+
 public class SearchResultsController: UIViewController, AppContext, ListAdapterDataSource {
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
     var scrollView: UIScrollView { collectionController.collectionView }
@@ -100,20 +102,23 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
         case let item as AgencyVehicle:
             guard
                 let vehicleID = item.vehicleID,
-                let modelService = application.restAPIModelService
+                let apiService = application.restAPIService
             else {
                 return nil
             }
             row = TableRowData(title: vehicleID, subtitle: item.agencyName, accessoryType: .none) { [weak self] _ in
-                let vehicleOp = modelService.getVehicleStatus(vehicleID)
-                vehicleOp.then { [weak self] in
-                    guard
-                        let self = self,
-                        let vehicle = vehicleOp.vehicles.first
-                    else { return }
-                    let response = SearchResponse(response: self.searchResponse, substituteResult: vehicle)
-                    self.application.mapRegionManager.searchResponse = response
-                    self.delegate?.dismissModalController(self)
+                let op = apiService.getVehicle(vehicleID)
+                op.complete { [weak self] result in
+                    guard let self = self else { return }
+
+                    switch result {
+                    case .failure(let error):
+                        print("TODO FIXME handle error! \(error)")
+                    case .success(let response):
+                        let response = SearchResponse(response: self.searchResponse, substituteResult: response.list)
+                        self.application.mapRegionManager.searchResponse = response
+                        self.delegate?.dismissModalController(self)
+                    }
                 }
             }
 
