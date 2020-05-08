@@ -10,8 +10,6 @@ import IGListKit
 import OBAKitCore
 import CoreLocation
 
-// swiftlint:disable file_length
-
 /// This is the core view controller for displaying information about a transit stop.
 ///
 /// Specifically, `StopViewController` provides you with information about upcoming
@@ -301,7 +299,7 @@ public class StopViewController: UIViewController,
         op.complete { [weak self] result in
             guard let self = self else { return }
 
-            let broken = self.isBookmarkBroken(operation: op)
+            let broken = self.bookmarkContext != nil && (op.statusCodeIsEffectively404 ?? false)
 
             switch (broken, result) {
             case (true, _):
@@ -375,30 +373,6 @@ public class StopViewController: UIViewController,
         let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
         self.errorBulletin = ErrorBulletin(application: self.application, message: message)
         self.errorBulletin?.show(in: uiApp)
-    }
-
-    /// Attempts to detect if the current `bookmarkContext` is broken, given the server's response.
-    /// - Parameter operation: The model operation returned from loading the stop for the specified bookmark.
-    private func isBookmarkBroken(operation: DecodableOperation<RESTAPIResponse<StopArrivals>>) -> Bool {
-        // abxoxo - todo fixme!
-        return false
-//        let effective404 = operation.apiOperation?.isEffective404 ?? false
-//        return bookmarkContext != nil && effective404
-        /// Tries to tell you if you're effectively seeing a 404 'Not Found' error.
-        ///
-        /// The REST API doesn't do a good job of surfacing what should be 404 errors. If you request a
-        /// valid endpoint, but provide it with a bogus piece of data (e.g. a non-existent Stop ID), it should
-        /// return a 404 error to you. Instead, it gives a 200 and a blank body. This method tries to tell you
-        /// if you're seeing an 'effective' 404.
-        ///
-        /// - Note: Other errors, including a missing response, will cause this to return `false`.
-//        public var isEffective404: Bool {
-//            guard let response = response else {
-//                return false
-//            }
-//
-//            return response.expectedContentLength == 0 && response.statusCode == 200
-//        }
     }
 
     // MARK: - IGListKit

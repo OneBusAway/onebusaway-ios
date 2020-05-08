@@ -62,7 +62,7 @@ public class BookmarkDataLoader: NSObject {
 
             switch result {
             case .failure(let error):
-                print("abxoxo TODO handle error! \(error)")
+                print("TODO FIXME handle error! \(error)")
             case .success(let response):
                 let keysAndDeps = response.list.arrivalsAndDepartures.tripKeyGroupedElements
                 for (key, deps) in keysAndDeps {

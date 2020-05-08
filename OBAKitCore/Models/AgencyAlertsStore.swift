@@ -94,7 +94,6 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     private var regionalAlertsOperation: MultiAgencyAlertsOperation?
 
     private func fetchRegionalAlerts() {
-        // abxoxo todo
         guard let apiService = apiService else { return }
 
         let op = apiService.getAlerts(agencies: agencies)

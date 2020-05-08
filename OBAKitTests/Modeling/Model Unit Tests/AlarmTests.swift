@@ -35,8 +35,6 @@ class AlarmTests: OBATestCase {
 
         alarm.deepLink = deepLink
 
-        // abxoxo - todo! set the trip date and alarm offset and make sure it roundtrips!
-        // then go into RecentStopsViewController and keep checking things off the list
         alarm.set(tripDate: tripDate, alarmOffset: alarmOffset)
 
         let roundtripped = try! Fixtures.roundtripCodable(type: Alarm.self, model: alarm)

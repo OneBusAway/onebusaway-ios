@@ -85,6 +85,8 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
             return
         }
 
+        statusCodeIsEffectively404 = response.expectedContentLength == 0 && response.statusCode == 200
+
         guard response.hasJSONContentType else {
             if let error = error, errorLooksLikeCaptivePortal(error as NSError) {
                 self.error = APIError.captivePortal
@@ -121,6 +123,13 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
         }
 
         return false
-
     }
+
+    /// Tries to tell you if you're effectively seeing a 404 'Not Found' error.
+    ///
+    /// The REST API doesn't do a good job of surfacing what should be 404 errors. If you request a
+    /// valid endpoint, but provide it with a bogus piece of data (e.g. a non-existent Stop ID), it should
+    /// return a 404 error to you. Instead, it gives a 200 and a blank body. This method tries to tell you
+    /// if you're seeing an 'effective' 404.
+    public private(set) var statusCodeIsEffectively404: Bool?
 }
