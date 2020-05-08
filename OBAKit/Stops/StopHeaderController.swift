@@ -129,27 +129,35 @@ class StopHeaderView: UIView {
     public var stop: Stop? {
         didSet {
             if stop != oldValue {
-                updateUI()
+                configureView()
             }
         }
     }
 
-    private func updateUI() {
+    private func configureView() {
         guard let stop = stop else { return }
 
         let maxWidth = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let size = CGSize(width: maxWidth, height: headerHeight)
 
         snapshotter = MapSnapshotter(size: size, stopIconFactory: application.stopIconFactory)
-
         snapshotter?.snapshot(stop: stop, traitCollection: traitCollection) { [weak self] image in
-            guard let self = self else { return }
-            self.backgroundImageView.image = image
+            self?.backgroundImageView.image = image
         }
 
         stopNameLabel.text = stop.name
         stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: stop)
         routesLabel.text = Formatters.formattedRoutes(stop.routes)
+
+        isAccessibilityElement = true
+        accessibilityTraits = [.summaryElement, .header, .staticText]
+        accessibilityLabel = stop.name
+        accessibilityValue = "\(stopNumberLabel.text ?? "") \(routesLabel.text ?? "")"
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.configureView()
     }
 
     private func buildLabel(bold: Bool = false, numberOfLines: Int = 1) -> UILabel {
@@ -158,7 +166,8 @@ class StopHeaderView: UIView {
         label.shadowColor = .black
         label.numberOfLines = numberOfLines
         label.shadowOffset = CGSize(width: 0, height: 1)
-        label.font = bold ? UIFont.preferredFont(forTextStyle: .body).bold : UIFont.preferredFont(forTextStyle: .body)
+        label.font = bold ? UIFont.preferredFont(forTextStyle: .headline) : UIFont.preferredFont(forTextStyle: .body)
+        label.adjustsFontForContentSizeCategory = false
         return label
     }
 }

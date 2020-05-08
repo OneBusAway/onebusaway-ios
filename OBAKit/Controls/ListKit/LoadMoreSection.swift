@@ -33,16 +33,11 @@ final class LoadMoreSectionController: OBAListSectionController<LoadMoreSectionD
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
         let cell = dequeueReusableCell(type: LoadMoreCell.self, at: index)
         cell.footerText = sectionData?.footerText
+        cell.buttonDidTap = { [weak self] in
+            self?.sectionData?.callback()
+        }
 
         return cell
-    }
-
-    public override func didSelectItem(at index: Int) {
-        guard
-            let data = sectionData
-        else { return }
-
-        data.callback()
     }
 }
 
@@ -52,22 +47,31 @@ final class LoadMoreCell: SelfSizingCollectionCell {
         set { footerLabel.text = newValue }
     }
 
+    var buttonDidTap: VoidBlock?
+
     // MARK: - UI
 
-    private lazy var loadMoreLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.textAlignment = .center
-        label.font = UIFont.preferredFont(forTextStyle: .body).bold
-        label.textColor = ThemeColors.shared.brand
-        label.text = OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button")
-        return label
+    private lazy var loadMoreLabel: ProminentButton = {
+        let button = ProminentButton(type: .system)
+        button.setTitle(OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button"), for: .normal)
+        button.titleLabel!.font = .preferredFont(forTextStyle: .headline)
+        button.titleLabel!.adjustsFontForContentSizeCategory = true
+        button.addTarget(self, action: #selector(buttonDidTouchUpInsde), for: .touchUpInside)
+
+        if #available(iOS 13, *) {
+            button.showsLargeContentViewer = true
+            button.addInteraction(UILargeContentViewerInteraction())
+        }
+
+        return button
     }()
 
     private lazy var footerLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
+        label.font = .preferredFont(forTextStyle: .footnote)
         label.textColor = ThemeColors.shared.secondaryLabel
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
@@ -75,11 +79,17 @@ final class LoadMoreCell: SelfSizingCollectionCell {
         super.init(frame: frame)
 
         let stack = UIStackView.verticalStack(arrangedSubviews: [loadMoreLabel, footerLabel])
+        stack.spacing = ThemeMetrics.padding
+        stack.alignment = .center
         contentView.addSubview(stack)
         stack.pinToSuperview(.layoutMargins)
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func buttonDidTouchUpInsde(_ sender: Any) {
+        self.buttonDidTap?()
     }
 }

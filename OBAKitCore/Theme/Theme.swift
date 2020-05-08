@@ -32,6 +32,8 @@ public class ThemeMetrics: NSObject {
 
     public static let tableRowLeadingPadding: CGFloat = 16.0
 
+    public static let buttonContentPadding: CGFloat = 6.0
+
     public static let floatingPanelTopInset: CGFloat = 7.0
 
     public static let compactTopBottomEdgeInsets = NSDirectionalEdgeInsets(top: 4.0, leading: 0, bottom: -4.0, trailing: 0)

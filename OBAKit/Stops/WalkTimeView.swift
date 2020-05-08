@@ -82,18 +82,29 @@ class WalkTimeView: UIView {
         // min' looks weird.
         guard distance > 40 else {
             label.text = nil
+            self.isAccessibilityElement = false
             return
         }
 
         let distanceString = formatters.distanceFormatter.string(fromDistance: distance)
+        let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
 
         if let timeString = formatters.positionalTimeFormatter.string(from: timeToWalk) {
-            let arrivalTime = formatters.timeFormatter.string(from: Date().addingTimeInterval(timeToWalk))
             let fmt = OBALoc("walk_time_view.distance_time_fmt", value: "%@, %@: arriving at %@", comment: "Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.")
             label.text = String(format: fmt, distanceString, timeString, arrivalTime)
-        }
-        else {
+        } else {
             label.text = distanceString
+        }
+
+        self.accessibilityLabel = OBALoc("walk_time_view.accessibility_label", value: "Walking directions", comment: "e.g. Walking Directions.")
+        self.accessibilityTraits = [.staticText]
+        self.isAccessibilityElement = true
+
+        if let timeString = formatters.accessibilityPositionalTimeFormatter.string(from: timeToWalk) {
+            let fmt = OBALoc("walk_time_view.accessibility_value", value: "%@. Takes %@ to walk, arriving at %@", comment: "Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am")
+            self.accessibilityValue = String(format: fmt, distanceString, timeString, arrivalTime)
+        } else {
+            self.accessibilityValue = distanceString
         }
     }
 

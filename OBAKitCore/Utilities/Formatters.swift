@@ -82,11 +82,22 @@ public class Formatters: NSObject {
     }
 
     /// Creates formatted strings for time intervals.
+    /// - Note: If you need strings for accessibility, use `accessibilityPositionalTimeFormatter`
+    /// instead as `"15m"` is misinterpreted by Voiceover as `"15 meters"`.
     public lazy var positionalTimeFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.calendar = locale.calendar
         formatter.allowedUnits = [.hour, .minute]
         formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
+
+    /// Creates voiceover-friendly strings for time intervals.
+    public lazy var accessibilityPositionalTimeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = locale.calendar
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .full
         return formatter
     }()
 
