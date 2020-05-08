@@ -30,6 +30,8 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
                 tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
                 tableRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
             ])
+
+            self.accessibilityElements = [tableRowView]
         }
     }
 

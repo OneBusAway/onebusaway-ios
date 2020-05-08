@@ -122,6 +122,12 @@ public class CollectionController: UIViewController, UICollectionViewDelegate {
         collectionView.scrollIndicatorInsets = collectionView.contentInset
     }
 
+    // MARK: - UI
+    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.reload(animated: true)
+    }
+
     // MARK: - UICollectionViewDelegate
 
     @available(iOS 13.0, *)

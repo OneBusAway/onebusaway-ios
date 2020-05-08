@@ -35,7 +35,8 @@ final class TableHeaderData: NSObject, ListDiffable {
 /// Section controller for a collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderSectionController: OBAListSectionController<TableHeaderData> {
     public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 20.0)
+        return CGSize(width: collectionContext!.containerSize.width,
+                      height: cellForItem(at: index).intrinsicContentSize.height)
     }
 
     // MARK: - Cell
@@ -60,21 +61,27 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
+        label.font = UIFont.preferredFont(forTextStyle: .headline).withSize(15)
+        label.numberOfLines = 1
+        label.accessibilityTraits = .header
         return label
     }()
 
     private lazy var bottomLabelAnchor = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
 
+    override var intrinsicContentSize: CGSize {
+        return self.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         backgroundColor = defaultBackgroundColor
-
         addSubview(textLabel)
 
         NSLayoutConstraint.activate([
             textLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
             textLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            textLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: ThemeMetrics.compactPadding),
             bottomLabelAnchor
         ])
 
