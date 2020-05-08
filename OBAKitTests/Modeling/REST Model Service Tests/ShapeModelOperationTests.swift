@@ -8,7 +8,6 @@
 
 import XCTest
 import Nimble
-import OHHTTPStubs
 import CoreLocation
 import MapKit
 @testable import OBAKit

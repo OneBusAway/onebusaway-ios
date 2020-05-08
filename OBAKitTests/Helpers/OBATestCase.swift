@@ -9,7 +9,6 @@
 import XCTest
 import OBAKit
 @testable import OBAKitCore
-import OHHTTPStubs
 
 open class OBATestCase: XCTestCase {
 
@@ -28,19 +27,11 @@ open class OBATestCase: XCTestCase {
         obacoService = ObacoAPIService(baseURL: obacoURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionID: obacoRegionID, networkQueue: networkQueue, delegate: nil, dataLoader: MockDataLoader())
 
         restService = RESTAPIService(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: MockDataLoader())
-
-        let testName = self.name
-
-        OHHTTPStubs.onStubMissing { (request) in
-            let errorMessage = "Missing Stub in \(testName): \(request.url!) — The unit test suite must not make live network requests!"
-            print(errorMessage)
-        }
     }
 
     open override func tearDown() {
         super.tearDown()
         networkQueue.cancelAllOperations()
-        OHHTTPStubs.removeAllStubs()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
     }

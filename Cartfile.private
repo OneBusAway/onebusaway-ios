@@ -1,6 +1,3 @@
 # https://github.com/Quick/Nimble/releases
 # carthage build Nimble --platform iOS --configuration Debug --verbose
 github "Quick/Nimble" ~>8.0.5
-
-# https://github.com/AliSoftware/OHHTTPStubs/releases
-github "AliSoftware/OHHTTPStubs" ~>8.0.0

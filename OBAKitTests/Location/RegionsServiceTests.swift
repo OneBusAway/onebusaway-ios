@@ -12,7 +12,6 @@ import XCTest
 @testable import OBAKitCore
 import CoreLocation
 import Nimble
-import OHHTTPStubs
 
 // swiftlint:disable force_cast force_try weak_delegate
 

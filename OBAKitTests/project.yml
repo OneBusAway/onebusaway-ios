@@ -6,7 +6,6 @@ targets:
     dependencies:
       - target: App
       - carthage: Nimble
-      - carthage: OHHTTPStubs
     info:
       path: "Info.plist"
       properties:
