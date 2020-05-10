@@ -56,7 +56,7 @@ class AlarmModelOperationTests: OBATestCase {
                 done()
             }
             completion.addDependency(op)
-            self.networkQueue.addOperation(completion)
+            self.obacoService.networkQueue.addOperation(completion)
         }
     }
 }

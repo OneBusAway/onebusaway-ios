@@ -140,11 +140,12 @@ public class RESTAPIService: APIService {
     ///
     /// - Parameters:
     ///   - id: The full, agency-prefixed ID of the stop.
+    ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
     /// - Returns: The enqueued network operation.
-    public func getStop(id: String) -> DecodableOperation<RESTAPIResponse<[Stop]>> {
+    public func getStop(id: String, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<Stop>> {
         let url = URLBuilder.getStop(stopID: id)
-        let operation = buildOperation(type: RESTAPIResponse<[Stop]>.self, URL: url)
-        enqueueOperation(operation)
+        let operation = buildOperation(type: RESTAPIResponse<Stop>.self, URL: url)
+        if enqueue { enqueueOperation(operation) }
         return operation
     }
 
@@ -160,11 +161,12 @@ public class RESTAPIService: APIService {
     ///   - id: The stop ID
     ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
+    ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
     /// - Returns: The enqueued network operation.
-    public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) -> DecodableOperation<RESTAPIResponse<StopArrivals>> {
+    public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<StopArrivals>> {
         let url = URLBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         let operation = buildOperation(type: RESTAPIResponse<StopArrivals>.self, URL: url)
-        enqueueOperation(operation)
+        if enqueue { enqueueOperation(operation) }
         return operation
     }
 

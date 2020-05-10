@@ -88,7 +88,7 @@ class VehicleProblemViewController: FormViewController {
     }
 
     private struct UserDefaultKeys {
-        static let shareLocation = "shareLocationForVehicleProblemReporting"
+        static let shareLocation = "VehicleProblemViewController.shareLocationForVehicleProblemReporting"
     }
 
     private var isLocationSharingPermitted: Bool {

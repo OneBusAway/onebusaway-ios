@@ -30,12 +30,6 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
 
     // MARK: - State
 
-    override func finish() {
-        super.finish()
-
-        invokeCompletionHandler()
-    }
-
     // MARK: - Completion Handler
 
     private var completionHandler: ((Result<T, Error>) -> Void)? {
@@ -74,6 +68,10 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
 
     override func set(data: Data?, response: HTTPURLResponse?, error: Error?) {
         super.set(data: data, response: response, error: error)
+
+        defer {
+            invokeCompletionHandler()
+        }
 
         guard let response = response else {
             self.error = APIError.networkFailure(error)

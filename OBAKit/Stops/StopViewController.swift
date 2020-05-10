@@ -199,7 +199,7 @@ public class StopViewController: UIViewController,
     /// If the user has already seen the nudge, as determined by user defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
     /// will be displayed one second after the stop data finishes loading.
     private func installSwipeOptionsNudge() {
-        let shouldShowNudge = application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge.rawValue)
+        let shouldShowNudge = application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge)
         guard shouldShowNudge else { return }
 
         collectionController.onReload = { [weak self] in
@@ -221,7 +221,7 @@ public class StopViewController: UIViewController,
             let arrivalDeparture = cell.arrivalDeparture
         else { return }
 
-        application.userDefaults.set(false, forKey: UserDefaultsKeys.shouldShowArrivalNudge.rawValue)
+        application.userDefaults.set(false, forKey: UserDefaultsKeys.shouldShowArrivalNudge)
 
         let frame = cell.convert(cell.bounds, to: presentationWindow)
 
@@ -253,13 +253,13 @@ public class StopViewController: UIViewController,
 
     // MARK: - User Defaults
 
-    private enum UserDefaultsKeys: String {
-        case shouldShowArrivalNudge
+    private struct UserDefaultsKeys {
+        static let shouldShowArrivalNudge = "StopViewController.shouldShowArrivalNudge"
     }
 
     private func registerDefaults() {
         application.userDefaults.register(defaults: [
-            UserDefaultsKeys.shouldShowArrivalNudge.rawValue: true
+            UserDefaultsKeys.shouldShowArrivalNudge: true
         ])
     }
 

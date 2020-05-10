@@ -25,7 +25,7 @@ class AppConfigTests: OBATestCase {
         let locationManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManager)
         let analytics = AnalyticsMock()
-        let dataLoader = MockDataLoader()
+        let dataLoader = MockDataLoader(testName: name)
         let connectivity = MockConnectivity()
 
         let appConfig = AppConfig(regionsBaseURL: regionsBaseURL, obacoBaseURL: obacoBaseURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: analytics, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader, connectivity: connectivity)

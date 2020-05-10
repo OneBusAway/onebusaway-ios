@@ -16,6 +16,11 @@ public class ImageBadgeRenderer: NSObject {
     private let backgroundColor: UIColor
     public let badgeSize: CGFloat
 
+    /// Creates an `ImageBadgeRenderer` with a default `badgeSize` of 128.0.
+    /// - Parameters:
+    ///   - fillColor: The fill color of the icon.
+    ///   - backgroundColor: The background color of the badge.
+    ///   - badgeSize: The size of the badge in points.
     public init(fillColor: UIColor, backgroundColor: UIColor, badgeSize: CGFloat = 128.0) {
         self.fillColor = fillColor
         self.backgroundColor = backgroundColor

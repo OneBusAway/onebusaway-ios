@@ -38,6 +38,10 @@ class SettingsViewController: FormViewController {
             form +++ privacySection
         }
 
+        if application.hasDataToMigrate {
+            form +++ migrateDataSection
+        }
+
         form.setValues([
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
@@ -129,6 +133,22 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = privacySectionReportingEnabled
             $0.title = OBALoc("settings_controller.privacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
+        }
+
+        return section
+    }()
+
+    // MARK: - Migrate Data Section
+
+    private lazy var migrateDataSection: Section = {
+        let section = Section(header: nil, footer: Strings.migrateDataDescription)
+
+        section <<< ButtonRow("migrate_tag") {
+            $0.title = Strings.migrateData
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self = self else { return }
+                self.application.performDataMigration()
+            }
         }
 
         return section

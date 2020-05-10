@@ -14,33 +14,27 @@ import Nimble
 // swiftlintXdisable force_try
 
 class MapRegionManagerTests: OBATestCase {
-    let queue = OperationQueue()
+    private var regionsFilePath: String { Bundle.main.path(forResource: "regions", ofType: "json")! }
 
-    var config: AppConfig!
-
-    var dataLoader: MockDataLoader!
-
-    override func setUp() {
-        super.setUp()
-
-        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
-
-        let bundledRegions = Bundle.main.path(forResource: "regions", ofType: "json")!
-
-        dataLoader = MockDataLoader()
-
-        config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegions, regionsAPIPath: regionsPath, dataLoader: dataLoader, connectivity: MockConnectivity())
-
-        expect(locationService.isLocationUseAuthorized).to(beFalse())
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        queue.cancelAllOperations()
+    private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
+        AppConfig(
+            regionsBaseURL: regionsURL,
+            obacoBaseURL: obacoURL,
+            apiKey: apiKey,
+            appVersion: appVersion,
+            userDefaults: userDefaults,
+            analytics: AnalyticsMock(),
+            queue: OperationQueue(),
+            locationService: locationService,
+            bundledRegionsFilePath: bundledRegionsPath,
+            regionsAPIPath: regionsPath,
+            dataLoader: dataLoader,
+            connectivity: MockConnectivity()
+        )
     }
 
     func test_init() {
+        let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
@@ -48,6 +42,11 @@ class MapRegionManagerTests: OBATestCase {
         dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
             request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
         }
+
+        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
+
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)
@@ -59,13 +58,18 @@ class MapRegionManagerTests: OBATestCase {
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
     func test_visibleMapRect_nilRegion() {
+        let dataLoader = MockDataLoader(testName: name)
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
-        let agencyAlertsData = Fixtures.loadData(file: "puget_sound_alerts.pb")
-        dataLoader.mock(data: agencyAlertsData) { (request) -> Bool in
+        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "puget_sound_alerts.pb")) { (request) -> Bool in
             request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
         }
+
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
 
         let application = Application(config: config)
         let mgr = MapRegionManager(application: application)

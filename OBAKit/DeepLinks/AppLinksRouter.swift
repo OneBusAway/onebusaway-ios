@@ -147,9 +147,7 @@ public class AppLinksRouter: NSObject {
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                if let stop = response.list.first {
-                    self.showStopHandler?(stop)
-                }
+                self.showStopHandler?(response.list)
             }
         }
 
