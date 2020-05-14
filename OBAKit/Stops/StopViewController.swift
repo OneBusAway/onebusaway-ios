@@ -473,8 +473,9 @@ public class StopViewController: UIViewController,
 
     private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
+        let highlight = shouldHighlight(arrivalDeparture: arrivalDeparture)
 
-        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable) { [weak self] in
+        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable, highlightOnAppearance: highlight) { [weak self] in
             guard let self = self else { return }
             self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
         }
@@ -505,6 +506,31 @@ public class StopViewController: UIViewController,
         }
 
         return data
+    }
+
+    /// Tracks arrival/departure times for `ArrivalDeparture`s.
+    private var arrivalDepartureTimes = [TripIdentifier: Int]()
+
+    // ^^^ note: I don't see any reason to destroy outmoded data. The size of an individual key/value pair
+    //           is measured in bytes, and the lifecycle of this controller is quite short. If/when the
+    //           lifecycle of a StopViewController is ever measured in days or weeks, then we should
+    //           revisit this decision.
+
+    /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
+    ///
+    /// This is used to indicate whether the departure time for the `ArrivalDeparture` object has changed.
+    ///
+    /// - Parameter arrivalDeparture: The ArrivalDeparture object
+    /// - Returns: Whether or not to highlight the ArrivalDeparture in its cell.
+    private func shouldHighlight(arrivalDeparture: ArrivalDeparture) -> Bool {
+        var highlight = false
+        if let lastMinutes = arrivalDepartureTimes[arrivalDeparture.tripID] {
+            highlight = lastMinutes != arrivalDeparture.arrivalDepartureMinutes
+        }
+
+        arrivalDepartureTimes[arrivalDeparture.tripID] = arrivalDeparture.arrivalDepartureMinutes
+
+        return highlight
     }
 
     private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, arrivalDepartureSections: [ArrivalDepartureSectionData]) -> Int? {

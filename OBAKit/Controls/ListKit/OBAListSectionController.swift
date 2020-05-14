@@ -37,7 +37,7 @@ protocol OBAListSectionControllerInitializer {
 /// An OBAKit-specific subclass of `ListSectionController` meant to be overriden instead of `ListSectionController`.
 ///
 /// Provides easy access to the application-wide `formatters` object, along with the current view controller's table collection style.
-class OBAListSectionController<T>: ListSectionController, OBAListSectionControllerInitializer where T: ListDiffable {
+class OBAListSectionController<T>: ListSectionController, OBAListSectionControllerInitializer, ListDisplayDelegate where T: ListDiffable {
 
     // MARK: - Init
 
@@ -45,6 +45,10 @@ class OBAListSectionController<T>: ListSectionController, OBAListSectionControll
         self.formatters = formatters
         self.style = style
         self.hasVisualEffectBackground = hasVisualEffectBackground
+
+        super.init()
+
+        displayDelegate = self
     }
 
     // MARK: - Formatters
@@ -93,4 +97,16 @@ class OBAListSectionController<T>: ListSectionController, OBAListSectionControll
 
         return cell
     }
+
+    // MARK: - ListDisplayDelegate
+
+    // These methods are all declared as nops, and may be overriden by subclasses as needed without calling super.
+
+    func listAdapter(_ listAdapter: ListAdapter, willDisplay sectionController: ListSectionController) {}
+
+    func listAdapter(_ listAdapter: ListAdapter, didEndDisplaying sectionController: ListSectionController) {}
+
+    func listAdapter(_ listAdapter: ListAdapter, willDisplay sectionController: ListSectionController, cell: UICollectionViewCell, at index: Int) {}
+
+    func listAdapter(_ listAdapter: ListAdapter, didEndDisplaying sectionController: ListSectionController, cell: UICollectionViewCell, at index: Int) {}
 }

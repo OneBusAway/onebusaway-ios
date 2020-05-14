@@ -28,25 +28,17 @@ public class HighlightChangeLabel: UILabel {
         didSet {
             guard oldValue != text else { return }
 
-            highlightBackground()
+            if oldValue != nil {
+                highlightBackground()
+            }
         }
     }
 
     /// This is the color that is used to highlight a value change in this label.
     var highlightedBackgroundColor: UIColor = ThemeColors.shared.propertyChanged
 
-    /// If `true`, this will cause the next invocation of `highlightBackground()` to immediately return.
-    ///
-    /// - Note: This is set to `true` by default so that the label does not flash when first assigned a value.
-    public var skipNextHighlight = true
-
     /// Causes the background of the label to be highlighted for `Animations.longAnimationDuration`.
     public func highlightBackground() {
-        if skipNextHighlight {
-            skipNextHighlight = false
-            return
-        }
-
         let oldBackgroundColor = layer.backgroundColor
         layer.backgroundColor = highlightedBackgroundColor.cgColor
 

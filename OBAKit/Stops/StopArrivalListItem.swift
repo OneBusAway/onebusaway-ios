@@ -12,9 +12,11 @@ import SwipeCellKit
 
 // MARK: - View Model
 
+/// This view model is used to display an `ArrivalDeparture` object within a `StopArrivalCell` in an IGListKit collection view.
 final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     let arrivalDeparture: ArrivalDeparture
     let isAlarmAvailable: Bool
+    let highlightOnAppearance: Bool
     let selected: VoidBlock
 
     var onCreateAlarm: VoidBlock?
@@ -24,9 +26,16 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
 
     var previewDestination: ControllerPreviewProvider?
 
-    init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool = false, selected: @escaping VoidBlock) {
+    /// Creates an instance of `ArrivalDepartureSectionData`.
+    /// - Parameters:
+    ///   - arrivalDeparture: The trip arrival/departure information to display.
+    ///   - isAlarmAvailable: Whether or not the UI to create an alarm should be displayed.
+    ///   - highlightOnAppearance: Whether or not the 'minutes until arrival/departure' label should flash.
+    ///   - selected: An 'on tap' handler.
+    init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool = false, highlightOnAppearance: Bool = false, selected: @escaping VoidBlock) {
         self.arrivalDeparture = arrivalDeparture
         self.isAlarmAvailable = isAlarmAvailable
+        self.highlightOnAppearance = highlightOnAppearance
         self.selected = selected
     }
 
@@ -36,7 +45,7 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
 
     public func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
         guard let object = object as? ArrivalDepartureSectionData else { return false }
-        return arrivalDeparture == object.arrivalDeparture && isAlarmAvailable == object.isAlarmAvailable
+        return arrivalDeparture == object.arrivalDeparture && isAlarmAvailable == object.isAlarmAvailable && highlightOnAppearance == object.highlightOnAppearance
     }
 }
 
@@ -59,6 +68,14 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
     override func didSelectItem(at index: Int) {
         guard let sectionData = sectionData else { return }
         sectionData.selected()
+    }
+
+    override func listAdapter(_ listAdapter: ListAdapter, willDisplay sectionController: ListSectionController, cell: UICollectionViewCell, at index: Int) {
+        guard let object = sectionData else { fatalError() }
+
+        if let cell = cell as? StopArrivalCell, object.highlightOnAppearance {
+            cell.highlightMinutes()
+        }
     }
 
     // MARK: - SwipeCollectionViewCellDelegate
@@ -189,6 +206,15 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
         return calculateLayoutAttributesFitting(layoutAttributes)
+    }
+
+    // MARK: - UI
+
+    func highlightMinutes() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            self.stopArrivalView.minutesLabel.highlightBackground()
+        }
     }
 
     func showNudge() {
