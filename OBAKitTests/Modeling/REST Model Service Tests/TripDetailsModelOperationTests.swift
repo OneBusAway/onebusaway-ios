@@ -54,7 +54,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         expect(tripDetails.nextTrip!.id) == "1_18196555"
         expect(tripDetails.nextTrip!.headsign) == "UNIVERSITY DISTRICT WEDGWOOD"
 
-        expect(tripDetails.situations.count) == 0
+        expect(tripDetails.serviceAlerts.count) == 0
     }
 
     func testLoading_vehicleDetails_success() {

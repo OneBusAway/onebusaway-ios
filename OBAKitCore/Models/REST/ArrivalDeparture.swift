@@ -68,7 +68,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
     let situationIDs: [String]
 
     /// Active service alerts for this trip
-    public private(set) var situations = [Situation]()
+    public private(set) var serviceAlerts = [ServiceAlert]()
 
     public let status: String
 
@@ -171,7 +171,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     public func loadReferences(_ references: References) {
         route = references.routeWithID(routeID)!
-        situations = references.situationsWithIDs(situationIDs)
+        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
         trip = references.tripWithID(tripID)!
         tripStatus?.loadReferences(references)
@@ -323,7 +323,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
             scheduledDeparture == rhs.scheduledDeparture &&
             serviceDate == rhs.serviceDate &&
             situationIDs == rhs.situationIDs &&
-            situations == rhs.situations &&
+            serviceAlerts == rhs.serviceAlerts &&
             status == rhs.status &&
             stopID == rhs.stopID &&
             stop == rhs.stop &&
@@ -356,7 +356,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
         hasher.combine(scheduledDeparture)
         hasher.combine(serviceDate)
         hasher.combine(situationIDs)
-        hasher.combine(situations)
+        hasher.combine(serviceAlerts)
         hasher.combine(status)
         hasher.combine(stopID)
         hasher.combine(stop)

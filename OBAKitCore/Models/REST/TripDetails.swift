@@ -46,8 +46,8 @@ public class TripDetails: NSObject, Decodable, HasReferences {
     /// Contains the IDs for any active `Situation` elements that currently apply to the trip.
     let situationIDs: [String]
 
-    /// Contains any active `Situation` elements that currently apply to the trip.
-    public private(set) var situations = [Situation]()
+    /// Contains any active `ServiceAlert` elements that currently apply to the trip.
+    public private(set) var serviceAlerts = [ServiceAlert]()
 
     private enum CodingKeys: String, CodingKey {
         case frequency
@@ -88,7 +88,7 @@ public class TripDetails: NSObject, Decodable, HasReferences {
         trip = references.tripWithID(tripID)!
         previousTrip = references.tripWithID(previousTripID)
         nextTrip = references.tripWithID(nextTripID)
-        situations = references.situationsWithIDs(situationIDs)
+        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stopTimes.loadReferences(references)
         status?.loadReferences(references)
     }

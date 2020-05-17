@@ -567,11 +567,11 @@ public class StopViewController: UIViewController,
     // MARK: - Data/Service Alerts
 
     private var serviceAlertsSection: [ListDiffable] {
-        guard let situations = stopArrivals?.situations else {
+        guard let alerts = stopArrivals?.serviceAlerts else {
             return []
         }
 
-        return sectionData(from: situations)
+        return sectionData(from: alerts)
     }
 
     // MARK: - Data/Hidden Routes Toggle

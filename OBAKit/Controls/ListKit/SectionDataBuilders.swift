@@ -15,7 +15,7 @@ import IGListKit
 /// - Note: The data produced by methods in this protocol are specifically
 ///         designed to work with `objects(for listAdapter:)`.
 protocol SectionDataBuilders: NSObjectProtocol {
-    func sectionData(from situations: [Situation]) -> [MessageSectionData]
+    func sectionData(from alerts: [ServiceAlert]) -> [MessageSectionData]
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
 }
@@ -23,11 +23,11 @@ protocol SectionDataBuilders: NSObjectProtocol {
 extension SectionDataBuilders where Self: AppContext {
 
     /// Converts an array of `Situation`s into `MessageSectionData` objects, which look like rows in Mail.app.
-    /// - Parameter situations: The list of `Situation`s that will be converted into `MessageSectionData` objects.
+    /// - Parameter alerts: The list of `Situation`s that will be converted into `MessageSectionData` objects.
     /// - Returns: An array of `MessageSectionData` view models, suitable for returning via `ListAdapterDataSource`'s `objects(for:)` method.
-    func sectionData(from situations: [Situation]) -> [MessageSectionData] {
+    func sectionData(from alerts: [ServiceAlert]) -> [MessageSectionData] {
         var sections = [MessageSectionData]()
-        for serviceAlert in Set(situations).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
+        for serviceAlert in Set(alerts).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
             let formattedDate = application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt)
             let message = MessageSectionData(author: Strings.serviceAlert, date: formattedDate, subject: serviceAlert.summary.value, summary: serviceAlert.situationDescription.value) { [weak self] _ in
                 guard let self = self else { return }

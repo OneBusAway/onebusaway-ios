@@ -193,8 +193,8 @@ public class TripFloatingPanelController: UIViewController,
         var sections = [ListDiffable]()
 
         // Section: Service Alerts
-        if tripDetails.situations.count > 0 {
-            sections.append(contentsOf: buildServiceAlertsSections(situations: tripDetails.situations))
+        if tripDetails.serviceAlerts.count > 0 {
+            sections.append(contentsOf: buildServiceAlertsSections(alerts: tripDetails.serviceAlerts))
         }
 
         // Section: Previous Trip
@@ -241,9 +241,9 @@ public class TripFloatingPanelController: UIViewController,
         self.application.viewRouter.navigate(to: controller, from: self)
     }
 
-    private func buildServiceAlertsSections(situations: [Situation]) -> [ListDiffable] {
+    private func buildServiceAlertsSections(alerts: [ServiceAlert]) -> [ListDiffable] {
         var sections = [ListDiffable]()
-        sections.append(contentsOf: sectionData(from: situations))
+        sections.append(contentsOf: sectionData(from: alerts))
         sections.append(TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")))
 
         return sections

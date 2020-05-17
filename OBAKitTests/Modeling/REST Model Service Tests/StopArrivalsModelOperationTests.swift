@@ -86,7 +86,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                     expect(arrivals.nearbyStops.count) == 4
                     expect(arrivals.nearbyStops.first!.name) == "15th Ave NE & NE Campus Pkwy"
 
-                    expect(arrivals.situations.count) == 0
+                    expect(arrivals.serviceAlerts.count) == 0
 
                     expect(arrivals.stop.id) == "1_10914"
                     expect(arrivals.stop.name) == "15th Ave NE & NE Campus Pkwy"
@@ -117,7 +117,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
 
                     expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 11, day: 01, hour: 07, minute: 00, second: 00)
 
-                    expect(arrDep.situations.count) == 0
+                    expect(arrDep.serviceAlerts.count) == 0
 
                     expect(arrDep.status) == "default"
 
@@ -158,7 +158,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 case .success(let response):
                     let arrivals = response.entry
                     expect(arrivals.nearbyStops.count) == 3
-                    expect(arrivals.situations.count) == 0
+                    expect(arrivals.serviceAlerts.count) == 0
 
                     expect(arrivals.stop.id) == "1739_d1e8e68e-83f8-487f-baf5-f465fe70fc84"
                     expect(arrivals.stop.name) == "E Main St - West of Myrtle St"

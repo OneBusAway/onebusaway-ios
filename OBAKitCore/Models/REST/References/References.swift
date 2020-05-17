@@ -12,20 +12,21 @@ import CocoaLumberjackSwift
 public class References: NSObject, Decodable {
     public let agencies: [Agency]
     public let routes: [Route]
-    public let situations: [Situation]
+    public let serviceAlerts: [ServiceAlert]
     public let stops: [Stop]
     public let trips: [Trip]
 
     // MARK: - Initialization
 
     private enum CodingKeys: String, CodingKey {
-        case agencies, routes, situations, stops, trips
+        case agencies, routes, stops, trips
+        case alerts = "situations"
     }
 
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        situations = try container.decodeIfPresent([Situation].self, forKey: .situations) ?? []
+        serviceAlerts = try container.decodeIfPresent([ServiceAlert].self, forKey: .alerts) ?? []
         agencies = try container.decodeIfPresent([Agency].self, forKey: .agencies) ?? []
         routes = try container.decodeIfPresent([Route].self, forKey: .routes) ?? []
         stops = try container.decodeIfPresent([Stop].self, forKey: .stops) ?? []
@@ -34,7 +35,7 @@ public class References: NSObject, Decodable {
         super.init()
 
         // depends: Agency, Route, Stop, Trip
-        situations.loadReferences(self)
+        serviceAlerts.loadReferences(self)
 
         // depends: Agency
         routes.loadReferences(self)
@@ -84,17 +85,17 @@ extension References {
         return routes.filter { ids.contains($0.id) }
     }
 
-    // MARK: - Situations
+    // MARK: - Service Alerts
 
-    public func situationWithID(_ id: String?) -> Situation? {
+    public func alertWithID(_ id: String?) -> ServiceAlert? {
         guard let id = id else {
             return nil
         }
-        return situations.first { $0.id == id }
+        return serviceAlerts.first { $0.id == id }
     }
 
-    public func situationsWithIDs(_ ids: [String]) -> [Situation] {
-        return situations.filter { ids.contains($0.id) }
+    public func serviceAlertsWithIDs(_ ids: [String]) -> [ServiceAlert] {
+        return serviceAlerts.filter { ids.contains($0.id) }
     }
 
     // MARK: - Stops

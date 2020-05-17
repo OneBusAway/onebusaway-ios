@@ -104,7 +104,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     let situationIDs: [String]
 
     /// Active service alerts applicable to this trip.
-    public private(set) var situations = [Situation]()
+    public private(set) var serviceAlerts = [ServiceAlert]()
 
     /// Status modifier for the trip
     public let statusModifier: TripStatusModifier
@@ -175,7 +175,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
         activeTrip = references.tripWithID(activeTripID)!
         closestStop = references.stopWithID(closestStopID)!
         nextStop = references.stopWithID(nextStopID)
-        situations = references.situationsWithIDs(situationIDs)
+        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
     }
 
     // MARK: - Equality
@@ -207,7 +207,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
             scheduledDistanceAlongTrip == rhs.scheduledDistanceAlongTrip &&
             serviceDate == rhs.serviceDate &&
             situationIDs == rhs.situationIDs &&
-            situations == rhs.situations &&
+            serviceAlerts == rhs.serviceAlerts &&
             statusModifier == rhs.statusModifier &&
             totalDistanceAlongTrip == rhs.totalDistanceAlongTrip &&
             vehicleID == rhs.vehicleID
@@ -239,7 +239,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
         hasher.combine(scheduledDistanceAlongTrip)
         hasher.combine(serviceDate)
         hasher.combine(situationIDs)
-        hasher.combine(situations)
+        hasher.combine(serviceAlerts)
         hasher.combine(statusModifier)
         hasher.combine(totalDistanceAlongTrip)
         hasher.combine(vehicleID)

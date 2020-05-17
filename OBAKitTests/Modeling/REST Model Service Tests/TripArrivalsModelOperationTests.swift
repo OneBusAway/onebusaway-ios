@@ -57,8 +57,8 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
                     expect(arrDep.serviceDate) == Date.fromComponents(year: 2018, month: 10, day: 23, hour: 07, minute: 00, second: 00)
 
-                    expect(arrDep.situations.count) == 1
-                    let situation = arrDep.situations.first!
+                    expect(arrDep.serviceAlerts.count) == 1
+                    let situation = arrDep.serviceAlerts.first!
                     expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
                     expect(situation.consequences.first!.condition) == "detour"
                     expect(situation.consequences.first!.conditionDetails!.diversionPath).toNot(beNil())

@@ -60,12 +60,12 @@ class ReferencesTests: OBATestCase {
         expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
     }
 
-    // MARK: - Situations
+    // MARK: - Service Alerts
 
-    func test_situations_success() {
+    func test_serviceAlerts_success() {
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
         let response = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
-        let situations = response.references!.situations
+        let situations = response.references!.serviceAlerts
 
         expect(situations.count) == 1
 

@@ -23,10 +23,10 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         return webView
     }()
 
-    let serviceAlert: Situation
+    let serviceAlert: ServiceAlert
     let application: Application
 
-    init(serviceAlert: Situation, application: Application) {
+    init(serviceAlert: ServiceAlert, application: Application) {
         self.serviceAlert = serviceAlert
         self.application = application
         super.init(nibName: nil, bundle: nil)

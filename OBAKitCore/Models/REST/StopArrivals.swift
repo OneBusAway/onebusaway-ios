@@ -23,15 +23,15 @@ public class StopArrivals: NSObject, Decodable, HasReferences {
     private let situationIDs: [String]
 
     /// Active service alerts tied to the `StopArrivals` model.
-    private var _situations = [Situation]()
+    private var _serviceAlerts = [ServiceAlert]()
 
     /// Returns this model's list of service alerts, if any exist. If this model does not have any, then it returns a flattened list of its `ArrivalDepartures` objects' service alerts.
-    public var situations: [Situation] {
-        if _situations.count > 0 {
-            return _situations
+    public var serviceAlerts: [ServiceAlert] {
+        if _serviceAlerts.count > 0 {
+            return _serviceAlerts
         }
         else {
-            return arrivalsAndDepartures.flatMap { $0.situations }
+            return arrivalsAndDepartures.flatMap { $0.serviceAlerts }
         }
     }
 
@@ -59,7 +59,7 @@ public class StopArrivals: NSObject, Decodable, HasReferences {
 
     public func loadReferences(_ references: References) {
         nearbyStops = references.stopsWithIDs(nearbyStopIDs)
-        _situations = references.situationsWithIDs(situationIDs)
+        _serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
         arrivalsAndDepartures.loadReferences(references)
     }

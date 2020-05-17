@@ -1,5 +1,5 @@
 //
-//  Situation.swift
+//  ServiceAlert.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 10/23/18.
@@ -8,8 +8,11 @@
 
 import Foundation
 
-/// Also known as a 'Service Alert'
-public class Situation: NSObject, Decodable, HasReferences {
+/// An alert about transit service that affects one or more of the following:  `Agency`,  `Route`, `Stop`, or `Trip`.
+///
+/// - Note: The JSON data structure from which a `ServiceAlert` is created is called a "Situation". However, the feature
+///         is referred to as a "Service Alert" pretty much everywhere else, and that is why it is referred to as such here.
+public class ServiceAlert: NSObject, Decodable, HasReferences {
     public let activeWindows: [TimeWindow]
 
     public let affectedEntities: [AffectedEntity]
@@ -60,7 +63,7 @@ public class Situation: NSObject, Decodable, HasReferences {
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? Situation else { return false }
+        guard let rhs = object as? ServiceAlert else { return false }
         return
             activeWindows == rhs.activeWindows &&
             affectedEntities == rhs.affectedEntities &&
@@ -101,6 +104,7 @@ public class Situation: NSObject, Decodable, HasReferences {
     }
 }
 
+/// The range of `Date`s in which a `ServiceAlert` is in effect.
 public class TimeWindow: NSObject, Decodable {
     public let from: Date
     public let to: Date
@@ -128,6 +132,7 @@ public class TimeWindow: NSObject, Decodable {
     }
 }
 
+/// Models the agency, application, direction, route, stop, and/or trip affected by a `ServiceAlert`.
 public class AffectedEntity: NSObject, Codable {
     public let agencyID: String?
     public let applicationID: String?
@@ -179,6 +184,7 @@ public class AffectedEntity: NSObject, Codable {
     }
 }
 
+/// Models the effects of a `ServiceAlert`.
 public class Consequence: NSObject, Decodable {
     public let condition: String
     public let conditionDetails: ConditionDetails?
@@ -206,6 +212,7 @@ public class Consequence: NSObject, Decodable {
     }
 }
 
+/// Models the particular details of a `Consequence`, which is part of a `ServiceAlert`.
 public class ConditionDetails: NSObject, Decodable {
     public let diversionPath: String
     public let stopIDs: [String]
@@ -237,6 +244,7 @@ public class ConditionDetails: NSObject, Decodable {
     }
 }
 
+/// A `ServiceAlert`'s method of describing potentially-localized information.
 public class TranslatedString: NSObject, Decodable {
     public let lang: String
     public let value: String

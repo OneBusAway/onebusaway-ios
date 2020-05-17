@@ -154,7 +154,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
                     expect(tripStatus.scheduleDeviation) == -116
                     expect(tripStatus.scheduledDistanceAlongTrip).to(beCloseTo(2277.5779, within: 0.1))
                     expect(tripStatus.serviceDate) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 07, minute: 00, second: 00)
-                    expect(tripStatus.situations.count) == 1
+                    expect(tripStatus.serviceAlerts.count) == 1
                     expect(tripStatus.statusModifier) == .scheduled
                     expect(tripStatus.totalDistanceAlongTrip).to(beCloseTo(3302.4674, within: 0.01))
                     expect(tripStatus.vehicleID) == "1_4351"
@@ -181,7 +181,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
                     let references = response.references!
                     expect(references.agencies.count) == 1
                     expect(references.routes.count) == 3
-                    expect(references.situations.count) == 1
+                    expect(references.serviceAlerts.count) == 1
                     expect(references.stops.count) == 1
                     expect(references.trips.count) == 1
                     done()
