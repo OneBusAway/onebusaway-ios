@@ -9,10 +9,6 @@ import UIKit
 import BLTNBoard
 import OBAKitCore
 
-public enum AlarmBuilderErrors: Error {
-    case creationFailed
-}
-
 protocol AlarmBuilderDelegate: NSObjectProtocol {
 
     /// Delegate method that gets called when the `AlarmBuilder` begins its request to create an `Alarm`.
@@ -119,6 +115,10 @@ class AlarmBuilder: NSObject {
 
             self.alarmOperation = op
         }
+    }
+
+    public enum AlarmBuilderErrors: Error {
+        case creationFailed
     }
 }
 

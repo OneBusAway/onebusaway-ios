@@ -10,7 +10,7 @@ import UIKit
 import OBAKitCore
 
 /// A subclass of `UIButton` that has a rounded, shadowed border.
-public class BorderedButton: UIButton {
+class BorderedButton: UIButton {
 
     override public init(frame: CGRect) {
         super.init(frame: frame)

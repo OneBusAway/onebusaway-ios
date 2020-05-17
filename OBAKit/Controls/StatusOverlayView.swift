@@ -11,7 +11,7 @@ import OBAKitCore
 
 /// An overlay view placed on top of a map to offer status text to the user, like
 /// if they need to zoom in to see stops on the map, or if their search query returned no results.
-public class StatusOverlayView: UIView {
+class StatusOverlayView: UIView {
 
     public override init(frame: CGRect) {
         super.init(frame: frame)

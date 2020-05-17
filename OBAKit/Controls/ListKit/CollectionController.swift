@@ -11,15 +11,16 @@ import FloatingPanel
 import IGListKit
 import OBAKitCore
 
-public enum TableCollectionStyle {
-    case plain, grouped
-}
-
 /// Meant to be used as a child view controller. It hosts a `UICollectionView` plus all of the logic for using `IGListKit`.
 public class CollectionController: UIViewController, UICollectionViewDelegate {
     private let application: Application
     public let listAdapter: ListAdapter
+
     public let style: TableCollectionStyle
+
+    public enum TableCollectionStyle {
+        case plain, grouped
+    }
 
     /// Creates a new `CollectionController`.
     /// - Parameters:

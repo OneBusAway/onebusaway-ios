@@ -8,11 +8,13 @@
 import Foundation
 import OBAKitCore
 
+/// User Defaults keys for configuring analytics behavior in OBAKit.
 @objc(OBAAnalyticsKeys)
 public class AnalyticsKeys: NSObject {
     @objc public static let reportingEnabledUserDefaultsKey = "reportingEnabledUserDefaultsKey"
 }
 
+/// Standard labels for reporting analytics.
 @objc(OBAAnalyticsLabels)
 public class AnalyticsLabels: NSObject {
 
@@ -51,11 +53,16 @@ public class AnalyticsLabels: NSObject {
     @objc public static let mapShowUserLocationButtonTapped = "Clicked My Location Button"
 }
 
+/// Reported analytics events.
 @objc(OBAAnalyticsEvent)
 public enum AnalyticsEvent: Int {
     case userAction
 }
 
+/// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.
+///
+/// `OBAFirebaseAnalytics`, located in `Apps/Shared/CommonClient`, implements this protocol, and you can
+/// implement it similarly in order to use your own custom analytics provider.
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {
     @objc optional func logEvent(name: String, parameters: [String: Any])

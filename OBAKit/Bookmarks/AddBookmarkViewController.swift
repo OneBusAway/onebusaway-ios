@@ -52,7 +52,7 @@ class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIR
 
     private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
 
-    let tableStyle = TableCollectionStyle.grouped
+    let tableStyle = CollectionController.TableCollectionStyle.grouped
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections = [ListDiffable]()

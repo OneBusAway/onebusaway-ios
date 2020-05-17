@@ -9,7 +9,8 @@
 import UIKit
 import OBAKitCore
 
-public class Icons: NSObject {
+/// Static accessors for icons available in the framework.
+class Icons: NSObject {
 
     // MARK: - Tab Icons
 
@@ -161,7 +162,7 @@ public class Icons: NSObject {
     ///
     /// - Parameter routeType: The route type from which to generate an image.
     /// - Returns: An image representing the route type.
-    public class func transportIcon(from routeType: RouteType) -> UIImage {
+    public class func transportIcon(from routeType: Route.RouteType) -> UIImage {
         switch routeType {
         case .lightRail: return lightRailTransport
         case .subway: return trainTransport

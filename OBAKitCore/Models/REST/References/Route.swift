@@ -11,40 +11,6 @@ import UIKit
 
 public typealias RouteID = String
 
-public enum RouteType: Int, Codable {
-    /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
-    case lightRail = 0
-
-    /// Subway, Metro. Any underground rail system within a metropolitan area.
-    case subway = 1
-
-    ///  Rail. Used for intercity or long-distance travel.
-    case rail = 2
-
-    /// Bus. Used for short- and long-distance bus routes.
-    case bus = 3
-
-    /// Ferry. Used for short- and long-distance boat service.
-    case ferry = 4
-
-    /// Cable car. Used for street-level cable cars where the cable runs beneath the car.
-    case cableCar = 5
-
-    /// Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable.
-    case gondola = 6
-
-    /// Funicular. Any rail system designed for steep inclines.
-    case funicular = 7
-
-    /// An unknown route type. Shouldn't ever happen.
-    case unknown = 999
-
-    public init(from decoder: Decoder) throws {
-        let val = try decoder.singleValueContainer().decode(Int.self)
-        self = RouteType(rawValue: val) ?? .unknown
-    }
-}
-
 public class Route: NSObject, Codable, HasReferences {
 
     let agencyID: String
@@ -152,6 +118,42 @@ public class Route: NSObject, Codable, HasReferences {
         hasher.combine(routeType)
         hasher.combine(routeURL)
         return hasher.finalize()
+    }
+
+    // MARK: - RouteType
+
+    public enum RouteType: Int, Codable {
+        /// Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.
+        case lightRail = 0
+
+        /// Subway, Metro. Any underground rail system within a metropolitan area.
+        case subway = 1
+
+        ///  Rail. Used for intercity or long-distance travel.
+        case rail = 2
+
+        /// Bus. Used for short- and long-distance bus routes.
+        case bus = 3
+
+        /// Ferry. Used for short- and long-distance boat service.
+        case ferry = 4
+
+        /// Cable car. Used for street-level cable cars where the cable runs beneath the car.
+        case cableCar = 5
+
+        /// Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable.
+        case gondola = 6
+
+        /// Funicular. Any rail system designed for steep inclines.
+        case funicular = 7
+
+        /// An unknown route type. Shouldn't ever happen.
+        case unknown = 999
+
+        public init(from decoder: Decoder) throws {
+            let val = try decoder.singleValueContainer().decode(Int.self)
+            self = RouteType(rawValue: val) ?? .unknown
+        }
     }
 }
 

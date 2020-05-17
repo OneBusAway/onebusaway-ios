@@ -14,7 +14,7 @@ import CocoaLumberjackSwift
 // swiftlint:disable cyclomatic_complexity
 
 protocol HasTableStyle: NSObjectProtocol {
-    var tableStyle: TableCollectionStyle { get }
+    var tableStyle: CollectionController.TableCollectionStyle { get }
 }
 
 protocol HasVisualEffect: NSObjectProtocol {
@@ -23,7 +23,7 @@ protocol HasVisualEffect: NSObjectProtocol {
 
 extension ListAdapterDataSource where Self: AppContext {
 
-    private var styleForCollection: TableCollectionStyle {
+    private var styleForCollection: CollectionController.TableCollectionStyle {
         guard let tableStyled = self as? HasTableStyle else {
             return .plain
         }

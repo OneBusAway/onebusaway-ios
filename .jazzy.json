@@ -1,0 +1,113 @@
+{
+    "author": "Aaron Brethorst",
+    "author_url": "https://github.com/aaronbrethorst/OBAKit",
+    "module": "OBAKit",
+    "documentation": "Guides/*.md",
+    "custom_categories": [
+        {
+            "name": "Guides",
+            "children": [
+                "IGListKit"
+            ]
+        },
+        {
+            "name": "Orchestration",
+            "children": [
+                "Application",
+                "CoreApplication",
+                "AppConfig",
+                "CoreAppConfig",
+                "ClassicApplicationRootController"
+            ]
+        },
+        {
+            "name": "REST API",
+            "children": [
+                "RESTAPIService",
+                "Agency",
+                "AgencyAlert",
+                "AgencyAlertsStore",
+                "AgencyWithCoverage",
+                "ArrivalDeparture",
+                "CoreRESTAPIResponse",
+                "Frequency",
+                "HasReferences",
+                "Open311Server",
+                "PolylineEntity",
+                "RESTAPIResponse",
+                "References",
+                "Route",
+                "ServiceAlert",
+                "Stop",
+                "StopArrivals",
+                "StopsForRoute",
+                "Trip",
+                "TripDetails",
+                "TripStatus",
+                "TripStopTime"
+            ]
+        },
+        {
+            "name": "Regions API",
+            "children": [
+                "Region",
+                "RegionsAPIService"
+            ]
+        },
+        {
+            "name": "OneBusAway.co (Obaco) API",
+            "children": [
+                "ObacoAPIService",
+                "AgencyVehicle",
+                "Alarm",
+                "WeatherForecast"
+            ]
+        },
+        {
+            "name": "Bookmarks",
+            "children": [
+                "Bookmark",
+                "BookmarkDataLoader",
+                "BookmarkGroup",
+                "BookmarksViewController"
+            ]
+        },
+        {
+            "name": "Operations",
+            "children": [
+                "AgencyAlertsOperation",
+                "AsyncOperation",
+                "DecodableOperation",
+                "NetworkOperation",
+                "PlacemarkSearchOperation",
+                "MultiAgencyAlertsOperation"
+            ]
+        },
+        {
+            "name": "Analytics",
+            "children": [
+                "Analytics",
+                "AnalyticsKeys",
+                "AnalyticsLabels",
+                "AnalyticsEvent"
+            ]
+        },
+        {
+            "name": "Protobuf Alerts",
+            "children": [
+                "TransitRealtime_Alert",
+                "TransitRealtime_EntitySelector",
+                "TransitRealtime_FeedEntity",
+                "TransitRealtime_FeedHeader",
+                "TransitRealtime_FeedMessage",
+                "TransitRealtime_Position",
+                "TransitRealtime_TimeRange",
+                "TransitRealtime_TranslatedString",
+                "TransitRealtime_TripDescriptor",
+                "TransitRealtime_TripUpdate",
+                "TransitRealtime_VehicleDescriptor",
+                "TransitRealtime_VehiclePosition"
+            ]
+        }
+    ]
+}

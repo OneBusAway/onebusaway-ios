@@ -51,6 +51,9 @@ public protocol ApplicationDelegate {
 
 // MARK: - Application Class
 
+/// Responsible for creating the entire application 'stack': API service, regions, push notifications, UI, and everything else that makes the app run.
+///
+/// - Note: See `OBAKitCore.CoreApplication` for a version of this class suitable for running in an application extension.
 @objc(OBAApplication)
 public class Application: CoreApplication, PushServiceDelegate {
 
@@ -72,7 +75,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc public private(set) lazy var searchManager = SearchManager(application: self)
 
-    @objc public private(set) lazy var userActivityBuilder = UserActivityBuilder(application: self)
+    @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
         let router = AppLinksRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
@@ -450,6 +453,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Feature Availability
 
+    /// Models feature availability state in the app.
+    ///
+    /// Some applications might have support for features, like push notifications, that other white label versions of the app might lack.
+    /// `FeatureStatus` and `FeatureAvailability` describe whether those features are unavailable, not running, or available for use.
     public enum FeatureStatus {
 
         /// This feature is not available in this app.
@@ -464,6 +471,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         case running
     }
 
+    /// Describes feature availability state in the app.
+    ///
+    /// Some applications might have support for features, like push notifications, that other white label versions of the app might lack.
+    /// `FeatureStatus` and `FeatureAvailability` describe whether those features are unavailable, not running, or available for use.
     public struct FeatureAvailability {
         private let config: AppConfig
         private weak var application: Application?

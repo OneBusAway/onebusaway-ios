@@ -8,7 +8,7 @@
 
 import UIKit
 
-final public class AwesomeSpotlight: NSObject {
+final class AwesomeSpotlight: NSObject {
     let rect: CGRect
     let attributedText: NSAttributedString
 

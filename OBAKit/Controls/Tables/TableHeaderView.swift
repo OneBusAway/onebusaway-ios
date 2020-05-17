@@ -9,8 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// A view that approximates the appearance of a UITableView section header.
-///
-public class TableHeaderView: UIView {
+class TableHeaderView: UIView {
     private let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.font = UIFont.preferredFont(forTextStyle: .footnote)

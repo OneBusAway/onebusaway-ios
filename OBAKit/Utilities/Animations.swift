@@ -12,7 +12,7 @@ public typealias AnimationHandler = VoidBlock
 public typealias AnimationCompletionCallback = ((Bool) -> Void)
 
 /// Reusable animation helpers
-public class Animations: NSObject {
+class Animations: NSObject {
 
     public static let longAnimationDuration: TimeInterval = 2.0
 

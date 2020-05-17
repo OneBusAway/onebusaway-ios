@@ -64,7 +64,7 @@ public class MoreViewController: UIViewController,
 
     private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
 
-    var tableStyle: TableCollectionStyle { .grouped }
+    var tableStyle: CollectionController.TableCollectionStyle { .grouped }
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         var sections = [ListDiffable]()

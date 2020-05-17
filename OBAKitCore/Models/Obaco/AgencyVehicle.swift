@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// A search result for partial-match searches for vehicles by ID. Part of the Obaco service.
 public class AgencyVehicle: NSObject, Decodable {
     public let agencyID: String
     public let agencyName: String

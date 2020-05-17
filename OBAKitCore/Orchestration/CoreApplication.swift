@@ -8,6 +8,9 @@
 import Foundation
 import CoreLocation
 
+/// Responsible for creating the base application 'stack': API service, regions, and everything else that makes the app run.
+///
+/// - Note: See `OBAKit.Application` for a richer version of this class suitable for use in an iOS app.
 @objc(OBACoreApplication)
 open class CoreApplication: NSObject,
     AgencyAlertsDelegate,

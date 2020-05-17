@@ -100,13 +100,13 @@ public class Stop: NSObject, Codable, HasReferences {
     public var routes: [Route]!
 
     /// All unique route types at this Stop.
-    public lazy var routeTypes: Set<RouteType> = {
+    public lazy var routeTypes: Set<Route.RouteType> = {
         return Set(routes.map { $0.routeType })
     }()
 
     /// The route type that should be used to represent this Stop on a map.
-    public var prioritizedRouteTypeForDisplay: RouteType {
-        let priorities: [RouteType] = [.ferry, .lightRail, .subway, .rail, .bus]
+    public var prioritizedRouteTypeForDisplay: Route.RouteType {
+        let priorities: [Route.RouteType] = [.ferry, .lightRail, .subway, .rail, .bus]
 
         for t in priorities {
             if routeTypes.contains(t) {

@@ -10,7 +10,7 @@ import Intents
 import OBAKitCore
 
 /// Simplifies creating `NSUserActivity` objects suitable for use with Handoff and Siri.
-public class UserActivityBuilder: NSObject {
+class UserActivityBuilder: NSObject {
     private let application: Application
 
     /// Creates the `UserActivityBuilder` object

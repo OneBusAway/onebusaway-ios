@@ -30,7 +30,7 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    public var routeType: RouteType {
+    public var routeType: Route.RouteType {
         didSet {
             image = Icons.transportIcon(from: routeType)
         }

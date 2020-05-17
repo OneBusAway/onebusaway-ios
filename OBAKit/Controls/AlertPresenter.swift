@@ -9,7 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// Provides a UI-independent way to display error messages and other alerts to the user.
-public class AlertPresenter: NSObject {
+class AlertPresenter: NSObject {
 
     /// Displays an error message to the user
     /// - Parameter error: The error to show to the user.

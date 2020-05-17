@@ -9,6 +9,8 @@
 import Foundation
 import MapKit
 
+// swiftlint:disable nesting
+
 /// Retrieve the set of stops serving a particular route, including groups by direction of travel.
 ///
 /// The stops-for-route method first and foremost provides a method for retrieving the set of stops
@@ -60,82 +62,70 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
         stops = references.stopsWithIDs(stopIDs)
         stopGroupings.loadReferences(references)
     }
-}
 
-public class StopGrouping: NSObject, Decodable, HasReferences {
-    public let ordered: Bool
-    public let groupingType: String
-    public let stopGroups: [StopGroup]
+    // MARK: - Nested Types
 
-    private enum CodingKeys: String, CodingKey {
-        case ordered
-        case groupingType = "type"
-        case stopGroups
+    // MARK: - StopGrouping
+
+    public class StopGrouping: NSObject, Decodable, HasReferences {
+        public let ordered: Bool
+        public let groupingType: String
+        public let stopGroups: [StopGroup]
+
+        private enum CodingKeys: String, CodingKey {
+            case ordered
+            case groupingType = "type"
+            case stopGroups
+        }
+
+        public required init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            ordered = try container.decode(Bool.self, forKey: .ordered)
+            groupingType = try container.decode(String.self, forKey: .groupingType)
+            stopGroups = try container.decode([StopGroup].self, forKey: .stopGroups)
+        }
+
+        public func loadReferences(_ references: References) {
+            stopGroups.loadReferences(references)
+        }
     }
 
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        ordered = try container.decode(Bool.self, forKey: .ordered)
-        groupingType = try container.decode(String.self, forKey: .groupingType)
-        stopGroups = try container.decode([StopGroup].self, forKey: .stopGroups)
+    // MARK: - StopGroup
+
+    public class StopGroup: NSObject, Decodable, HasReferences {
+        public let id: String
+        public let name: String
+        public let groupingType: String
+        public let polylines: [String]
+
+        let stopIDs: [String]
+        public private(set) var stops = [Stop]()
+
+        private enum CodingKeys: String, CodingKey {
+            case id
+            case name
+            case groupingType = "type"
+            case polylines
+            case stopIDs = "stopIds"
+        }
+
+        public required init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+
+            id = try container.decode(String.self, forKey: .id)
+
+            let nameContainer = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .name)
+            name = try nameContainer.decode(String.self, forKey: .name)
+            groupingType = try nameContainer.decode(String.self, forKey: .groupingType)
+
+            let polylineEntities = try container.decode([PolylineEntity].self, forKey: .polylines)
+            polylines = polylineEntities.compactMap { $0.points }
+
+            stopIDs = try container.decode([String].self, forKey: .stopIDs)
+        }
+
+        public func loadReferences(_ references: References) {
+            stops = references.stopsWithIDs(stopIDs)
+        }
     }
-
-    public func loadReferences(_ references: References) {
-        stopGroups.loadReferences(references)
-    }
-}
-
-public class StopGroup: NSObject, Decodable, HasReferences {
-    public let id: String
-    public let name: String
-    public let groupingType: String
-    public let polylines: [String]
-
-    let stopIDs: [String]
-    public private(set) var stops = [Stop]()
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case groupingType = "type"
-        case polylines
-        case stopIDs = "stopIds"
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        id = try container.decode(String.self, forKey: .id)
-
-        let nameContainer = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .name)
-        name = try nameContainer.decode(String.self, forKey: .name)
-        groupingType = try nameContainer.decode(String.self, forKey: .groupingType)
-
-        let polylineEntities = try container.decode([PolylineEntity].self, forKey: .polylines)
-        polylines = polylineEntities.compactMap { $0.points }
-
-        stopIDs = try container.decode([String].self, forKey: .stopIDs)
-    }
-
-    public func loadReferences(_ references: References) {
-        stops = references.stopsWithIDs(stopIDs)
-    }
-}
-
-public class PolylineEntity: NSObject, Decodable {
-    public let points: String
-
-    private enum CodingKeys: String, CodingKey {
-        case points
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        points = try container.decode(String.self, forKey: .points)
-    }
-
-    public lazy var polyline: MKPolyline? = {
-        let p = Polyline(encodedPolyline: points)
-        return p.mkPolyline
-    }()
 }

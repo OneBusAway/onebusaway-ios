@@ -126,7 +126,7 @@ public class StopIconFactory: NSObject {
     /// - Parameter routeType: The transport glyph type that will be drawn.
     /// - Parameter rect: The rectangle in which to draw.
     /// - Parameter context: The Core Graphics context in which drawing happens.
-    private func drawIcon(routeType: RouteType, rect: CGRect, context: CGContext) {
+    private func drawIcon(routeType: Route.RouteType, rect: CGRect, context: CGContext) {
         context.pushPop {
             let image = Icons.transportIcon(from: routeType)
             image.draw(in: rect.insetBy(dx: transportGlyphInset, dy: transportGlyphInset))

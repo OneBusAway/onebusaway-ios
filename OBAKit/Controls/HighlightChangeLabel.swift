@@ -9,7 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// Alerts the user when its value changes by temporarily changing its background color.
-public class HighlightChangeLabel: UILabel {
+class HighlightChangeLabel: UILabel {
 
     override public init(frame: CGRect) {
         super.init(frame: frame)

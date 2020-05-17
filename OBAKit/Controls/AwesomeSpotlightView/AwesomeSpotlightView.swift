@@ -11,16 +11,16 @@ import OBAKitCore
 
 // MARK: - AwesomeSpotlightViewDelegate
 
-@objc public protocol AwesomeSpotlightViewDelegate {
+@objc protocol AwesomeSpotlightViewDelegate {
     @objc optional func spotlightView(_ spotlightView: AwesomeSpotlightView, willNavigateToIndex index: Int)
     @objc optional func spotlightView(_ spotlightView: AwesomeSpotlightView, didNavigateToIndex index: Int)
     @objc optional func spotlightViewWillCleanup(_ spotlightView: AwesomeSpotlightView, atIndex index: Int)
     @objc optional func spotlightViewDidCleanup(_ spotlightView: AwesomeSpotlightView)
 }
 
-@objc public class AwesomeSpotlightView: UIView {
+class AwesomeSpotlightView: UIView {
 
-    public weak var delegate: AwesomeSpotlightViewDelegate?
+    weak var delegate: AwesomeSpotlightViewDelegate?
 
     // MARK: - private variables
 

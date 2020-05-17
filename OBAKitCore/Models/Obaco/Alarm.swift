@@ -8,6 +8,7 @@
 
 import Foundation
 
+/// An alarm is a local representation of a push notification that will arrive to signal the user when it is time to depart to meet a transit vehicle. Part of the Obaco service.
 public class Alarm: NSObject, Codable {
     public let url: URL
     public var deepLink: ArrivalDepartureDeepLink?

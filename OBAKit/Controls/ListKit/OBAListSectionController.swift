@@ -29,7 +29,7 @@ protocol ContextMenuProvider {
 // MARK: - OBAListSectionControllerInitializer
 
 protocol OBAListSectionControllerInitializer {
-    init(formatters: Formatters, style: TableCollectionStyle, hasVisualEffectBackground: Bool)
+    init(formatters: Formatters, style: CollectionController.TableCollectionStyle, hasVisualEffectBackground: Bool)
 }
 
 // MARK: - OBAListSectionController
@@ -41,7 +41,7 @@ class OBAListSectionController<T>: ListSectionController, OBAListSectionControll
 
     // MARK: - Init
 
-    required init(formatters: Formatters, style: TableCollectionStyle, hasVisualEffectBackground: Bool) {
+    required init(formatters: Formatters, style: CollectionController.TableCollectionStyle, hasVisualEffectBackground: Bool) {
         self.formatters = formatters
         self.style = style
         self.hasVisualEffectBackground = hasVisualEffectBackground
@@ -57,7 +57,7 @@ class OBAListSectionController<T>: ListSectionController, OBAListSectionControll
 
     // MARK: - Style
 
-    let style: TableCollectionStyle
+    let style: CollectionController.TableCollectionStyle
 
     var isStyleGrouped: Bool { style == .grouped }
 

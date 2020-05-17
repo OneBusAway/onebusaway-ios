@@ -314,7 +314,7 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Map Status Overlay
 
-    public weak var statusOverlay: StatusOverlayView?
+    weak var statusOverlay: StatusOverlayView?
 
     private static let requiredHeightToShowStops = 40000.0
 

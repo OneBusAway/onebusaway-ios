@@ -54,7 +54,7 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
 
     private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
 
-    public let tableStyle = TableCollectionStyle.grouped
+    public let tableStyle = CollectionController.TableCollectionStyle.grouped
 
     // MARK: - OperationController
 

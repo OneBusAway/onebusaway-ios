@@ -31,7 +31,7 @@ final class TripStopListItem: NSObject, ListDiffable {
     let formattedDate: String
 
     /// The route type which will be used to determine the image to display.
-    let routeType: RouteType
+    let routeType: Route.RouteType
 
     /// The `Stop` referred to by this object.
     let stop: Stop

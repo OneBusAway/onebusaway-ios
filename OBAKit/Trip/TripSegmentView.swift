@@ -11,7 +11,7 @@ import OBAKitCore
 /// The line/circle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
 /// Depicts if the associated stop is the user's destination or the current location of the transit vehicle.
-public class TripSegmentView: UIView {
+class TripSegmentView: UIView {
 
     private let lineWidth: CGFloat = 1.0
     private let circleRadius: CGFloat = 30.0
@@ -41,7 +41,7 @@ public class TripSegmentView: UIView {
         }
     }
 
-    var routeType: RouteType = .unknown
+    var routeType: Route.RouteType = .unknown
 
     private var isUserDestination: Bool = false
     private var isCurrentVehicleLocation: Bool = false
@@ -134,7 +134,7 @@ public class TripSegmentView: UIView {
         context?.restoreGState()
     }
 
-    private func drawRouteType(_ routeType: RouteType, frame: CGRect) {
+    private func drawRouteType(_ routeType: Route.RouteType, frame: CGRect) {
         let image = Icons.transportIcon(from: routeType).tinted(color: imageColor)
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }

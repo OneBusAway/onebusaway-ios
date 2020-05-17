@@ -9,7 +9,7 @@
 import Foundation
 import CocoaLumberjackSwift
 
-/// The core class for interacting with the OBA REST API.
+/// The core class for interacting with the OBA REST API. Treat this as an abstract class, and instead interact with its subclasses.
 ///
 /// This class is responsible for managing the base URL for the OBA REST API server,
 /// the network queue for in-flight operations, and the query parameters that are
@@ -20,6 +20,14 @@ public class APIService: NSObject {
     let defaultQueryItems: [URLQueryItem]
     let dataLoader: URLDataLoader
 
+    /// Creates a new instance of APIService.
+    /// - Parameters:
+    ///   - baseURL: The base URL for the service you will be using.
+    ///   - apiKey: The API key for the service you will be using. Passed along as `key` in query params.
+    ///   - uuid: A unique, anonymous user ID.
+    ///   - appVersion: The version of the app making the request.
+    ///   - networkQueue: The queue on which all network operations will be performed.
+    ///   - dataLoader: The object used to perform network operations. A protocol facade is provided here to simplify testing.
     public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue, dataLoader: URLDataLoader) {
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
 
@@ -48,6 +56,12 @@ public class APIService: NSObject {
         self.dataLoader = dataLoader
     }
 
+    /// Creates a new instance of APIService.
+    /// - Parameters:
+    ///   - baseURL: The base URL for the service you will be using.
+    ///   - apiKey: The API key for the service you will be using. Passed along as `key` in query params.
+    ///   - uuid: A unique, anonymous user ID.
+    ///   - appVersion: The version of the app making the request.
     public convenience init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
         self.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: OperationQueue(), dataLoader: URLSession.shared)
     }

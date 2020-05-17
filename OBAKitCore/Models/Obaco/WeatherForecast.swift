@@ -9,7 +9,9 @@
 import CoreLocation
 import Foundation
 
-/// Represents a weather forecast—usually for the region where the user is located.
+// swiftlint:disable nesting
+
+/// Represents a weather forecast—usually for the region where the user is located. Part of the Obaco service.
 public class WeatherForecast: NSObject, Decodable {
     public let location: CLLocation
 
@@ -50,41 +52,42 @@ public class WeatherForecast: NSObject, Decodable {
         units = try container.decode(String.self, forKey: .units)
         todaySummary = try container.decode(String.self, forKey: .todaySummary)
 
-        currentForecast = try container.decode(HourlyForecast.self, forKey: .currentForecast)
-        hourlyForecasts = try container.decode([HourlyForecast].self, forKey: .hourlyForecast)
-    }
-}
-
-public class HourlyForecast: NSObject, Decodable {
-    public let iconName: String
-    public let precipPerHour: Double
-    public let precipProbability: Double
-    public let summary: String
-    public let temperature: Double
-    public let temperatureFeelsLike: Double
-    public let time: Date
-    public let windSpeed: Double
-
-    private enum CodingKeys: String, CodingKey {
-        case iconName = "icon"
-        case precipPerHour = "precip_per_hour"
-        case precipProbability = "precip_probability"
-        case summary
-        case temperature
-        case temperatureFeelsLike = "temperature_feels_like"
-        case time
-        case windSpeed = "wind_speed"
+        currentForecast = try container.decode(WeatherForecast.HourlyForecast.self, forKey: .currentForecast)
+        hourlyForecasts = try container.decode([WeatherForecast.HourlyForecast].self, forKey: .hourlyForecast)
     }
 
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        iconName = try container.decode(String.self, forKey: .iconName)
-        precipPerHour = try container.decode(Double.self, forKey: .precipPerHour)
-        precipProbability = try container.decode(Double.self, forKey: .precipProbability)
-        summary = try container.decode(String.self, forKey: .summary)
-        temperature = try container.decode(Double.self, forKey: .temperature)
-        temperatureFeelsLike = try container.decode(Double.self, forKey: .temperatureFeelsLike)
-        time = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: .time))
-        windSpeed = try container.decode(Double.self, forKey: .windSpeed)
+    /// A part of a `WeatherForecast`. Represents one hour's weather conditions. Part of the Obaco service.
+    public class HourlyForecast: NSObject, Decodable {
+        public let iconName: String
+        public let precipPerHour: Double
+        public let precipProbability: Double
+        public let summary: String
+        public let temperature: Double
+        public let temperatureFeelsLike: Double
+        public let time: Date
+        public let windSpeed: Double
+
+        private enum CodingKeys: String, CodingKey {
+            case iconName = "icon"
+            case precipPerHour = "precip_per_hour"
+            case precipProbability = "precip_probability"
+            case summary
+            case temperature
+            case temperatureFeelsLike = "temperature_feels_like"
+            case time
+            case windSpeed = "wind_speed"
+        }
+
+        public required init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            iconName = try container.decode(String.self, forKey: .iconName)
+            precipPerHour = try container.decode(Double.self, forKey: .precipPerHour)
+            precipProbability = try container.decode(Double.self, forKey: .precipProbability)
+            summary = try container.decode(String.self, forKey: .summary)
+            temperature = try container.decode(Double.self, forKey: .temperature)
+            temperatureFeelsLike = try container.decode(Double.self, forKey: .temperatureFeelsLike)
+            time = Date(timeIntervalSince1970: try container.decode(TimeInterval.self, forKey: .time))
+            windSpeed = try container.decode(Double.self, forKey: .windSpeed)
+        }
     }
 }
