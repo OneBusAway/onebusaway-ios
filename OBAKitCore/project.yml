@@ -7,9 +7,6 @@ targets:
       - carthage: CocoaLumberjack
       - carthage: CocoaLumberjackSwift
       - carthage: SwiftProtobuf
-    postBuildScripts:
-      - path: "../scripts/swiftlint.sh"
-        name: Swiftlint
     scheme:
       gatherCoverageData: true
     info:
