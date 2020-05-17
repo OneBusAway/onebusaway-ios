@@ -120,7 +120,7 @@ class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIR
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                self.data = response.list.arrivalsAndDepartures
+                self.data = response.entry.arrivalsAndDepartures
             }
         }
 

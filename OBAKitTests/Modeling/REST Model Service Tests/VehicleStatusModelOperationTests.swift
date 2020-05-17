@@ -75,7 +75,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let vehicle = response.list
+                    let vehicle = response.entry
                     expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
                     expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
                     expect(vehicle.location!.coordinate.latitude).to(beCloseTo(47.6195))
@@ -103,7 +103,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let vehicle = response.list
+                    let vehicle = response.entry
 
                     expect(vehicle.vehicleID) == "1_4351"
                     expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
@@ -204,7 +204,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let frequency = response.list.tripStatus.frequency!
+                    let frequency = response.entry.tripStatus.frequency!
 
                     expect(frequency).toNot(beNil())
                     expect(frequency.startTime) == Date.fromComponents(year: 2010, month: 11, day: 12, hour: 16, minute: 30, second: 00)

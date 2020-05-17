@@ -69,7 +69,7 @@ class TripDetailsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    self.checkExpectations(response.list)
+                    self.checkExpectations(response.entry)
                     done()
                 }
             }
@@ -88,7 +88,7 @@ class TripDetailsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    self.checkExpectations(response.list)
+                    self.checkExpectations(response.entry)
                     done()
                 }
             }

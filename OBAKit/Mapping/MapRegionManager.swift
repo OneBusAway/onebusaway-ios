@@ -423,7 +423,7 @@ public class MapRegionManager: NSObject,
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                let response = SearchResponse(response: searchResponse, substituteResult: response.list)
+                let response = SearchResponse(response: searchResponse, substituteResult: response.entry)
                 self.searchResponse = response
             }
         }

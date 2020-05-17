@@ -106,7 +106,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 case .failure(let error):
                     print("TODO FIXME handle error! \(error)")
                 case .success(let response):
-                    self.viewRouter.navigateTo(arrivalDeparture: response.list, from: topVC)
+                    self.viewRouter.navigateTo(arrivalDeparture: response.entry, from: topVC)
                 }
             }
         }
@@ -252,7 +252,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                let tripController = TripViewController(application: self, arrivalDeparture: response.list)
+                let tripController = TripViewController(application: self, arrivalDeparture: response.entry)
                 self.viewRouter.navigate(to: tripController, from: topController)
             }
         }

@@ -105,7 +105,7 @@ public class RecentStopsViewController: UIViewController,
                     case .failure(let error):
                         print("TODO FIXME handle error! \(error)")
                     case .success(let response):
-                        self.application.viewRouter.navigateTo(arrivalDeparture: response.list, from: self)
+                        self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
                     }
                 }
             }

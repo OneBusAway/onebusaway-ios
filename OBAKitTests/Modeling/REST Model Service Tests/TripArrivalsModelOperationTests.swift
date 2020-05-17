@@ -33,7 +33,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let arrDep = response.list
+                    let arrDep = response.entry
                     expect(arrDep.arrivalEnabled).to(beTrue())
                     expect(arrDep.blockTripSequence) == 6
                     expect(arrDep.departureEnabled).to(beTrue())

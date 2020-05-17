@@ -31,7 +31,7 @@ class ShapeModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let polyline = response.list.polyline!
+                    let polyline = response.entry.polyline!
                     let coordinate = polyline.coordinate
                     expect(coordinate.latitude).to(beCloseTo(47.6229))
                     expect(coordinate.longitude).to(beCloseTo(-122.3225))

@@ -72,7 +72,7 @@ public class TripFloatingPanelController: UIViewController,
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                self.tripDetails = response.list
+                self.tripDetails = response.entry
             }
         }
     }

@@ -53,7 +53,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let arrivals = response.list
+                    let arrivals = response.entry
                     expect(arrivals.arrivalsAndDepartures.count) == 5
 
                     expect(arrivals.arrivalsAndDepartures[0].arrivalDepartureStatus) == .arriving
@@ -81,7 +81,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let arrivals = response.list
+                    let arrivals = response.entry
                     expect(arrivals.nearbyStops.count) == 4
                     expect(arrivals.nearbyStops.count) == 4
                     expect(arrivals.nearbyStops.first!.name) == "15th Ave NE & NE Campus Pkwy"
@@ -156,7 +156,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
                 case .failure:
                     fatalError()
                 case .success(let response):
-                    let arrivals = response.list
+                    let arrivals = response.entry
                     expect(arrivals.nearbyStops.count) == 3
                     expect(arrivals.situations.count) == 0
 

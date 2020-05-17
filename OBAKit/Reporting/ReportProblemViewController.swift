@@ -73,7 +73,7 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                self.data = response.list
+                self.data = response.entry
             }
         }
         return op

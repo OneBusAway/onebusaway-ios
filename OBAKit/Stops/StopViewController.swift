@@ -10,6 +10,8 @@ import IGListKit
 import OBAKitCore
 import CoreLocation
 
+// swiftlint:disable file_length
+
 /// This is the core view controller for displaying information about a transit stop.
 ///
 /// Specifically, `StopViewController` provides you with information about upcoming
@@ -308,11 +310,11 @@ public class StopViewController: UIViewController,
                 print("TODO FIXME handle error! \(error)")
             case (false, .success(let response)):
                 self.lastUpdated = Date()
-                self.stopArrivals = response.list
+                self.stopArrivals = response.entry
                 self.refreshControl.endRefreshing()
                 self.updateTitle()
 
-                if response.list.arrivalsAndDepartures.count == 0 {
+                if response.entry.arrivalsAndDepartures.count == 0 {
                     self.extendLoadMoreWindow()
                 }
             }

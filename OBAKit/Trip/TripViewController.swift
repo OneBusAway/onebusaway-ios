@@ -208,16 +208,15 @@ class TripViewController: UIViewController,
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                let tripDetails = response.list
-                self.tripDetailsController.tripDetails = tripDetails
-                self.mapView.updateAnnotations(with: tripDetails.stopTimes)
+                self.tripDetailsController.tripDetails = response.entry
+                self.mapView.updateAnnotations(with: response.entry.stopTimes)
 
                 if let currentTripStatus = self.currentTripStatus {
                     self.mapView.removeAnnotation(currentTripStatus)
                     self.currentTripStatus = nil
                 }
 
-                if let tripStatus = tripDetails.status {
+                if let tripStatus = response.entry.status {
                     self.currentTripStatus = tripStatus
                     self.mapView.addAnnotation(tripStatus)
                 }
@@ -225,7 +224,7 @@ class TripViewController: UIViewController,
                 self.mapView.showAnnotations(self.mapView.annotations, animated: true)
 
                 if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
-                    let userDestinationStopTime = tripDetails.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
+                    let userDestinationStopTime = response.entry.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
                     self.selectedStopTime = userDestinationStopTime
                 }
             }
@@ -256,7 +255,7 @@ class TripViewController: UIViewController,
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                guard let polyline = response.list.polyline else { return }
+                guard let polyline = response.entry.polyline else { return }
                 self.routePolyline = polyline
                 self.mapView.addOverlay(polyline)
                 self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
