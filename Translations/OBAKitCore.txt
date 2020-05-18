@@ -427,3 +427,57 @@
 		fr = 
 		es = 
 		comment = Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.
+	[voiceover.arrivaldeparture_route_fmt]
+		en = Route %@
+		comment = VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals.
+		pl = 
+		fr = 
+		es = 
+	[voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt]
+		en = arrived %d minutes ago at %@.
+		comment = VoiceOver text describing a route that has already arrived, regardless of realtime data availability.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_departed_x_minutes_ago_fmt]
+		en = departed %d minutes ago at %@.
+		comment = VoiceOver text describing a route that has already departed, regardless of realtime data availability.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_arriving_now]
+		en = arriving now!
+		comment = VoiceOver text describing a route that is arriving now, regardless of realtime data availability.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_departing_now]
+		en = departing now!
+		comment = VoiceOver text describing a route that is departing now, regardless of realtime data availability.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_arriving_in_x_minutes]
+		en = arriving in %d minutes at %@.
+		comment = VoiceOver text describing a future arrival that is based off realtime data.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_departing_in_x_minutes_fmt]
+		en = departing in %d minutes at %@.
+		comment = VoiceOver text describing a future departure that is based off realtime data.
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt]
+		en = scheduled to arrive in %d minutes at %@.
+		comment = VoiceOver text describing a route that is scheduled to arrive (no realtime data was available).
+		pl = 
+		es = 
+		fr = 
+	[voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt] 
+		en = scheduled to depart in %d minutes at %@.
+		comment = VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"
+		pl = 
+		es = 
+		fr = 

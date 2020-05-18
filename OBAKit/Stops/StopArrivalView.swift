@@ -15,6 +15,35 @@ import OBAKitCore
 ///
 /// This view is what displays the core information at the heart of the `StopViewController`, and everywhere
 /// else that we show information from an `ArrivalDeparture`.
+/// # Layout
+/// This view will adapt to accessibility settings.
+///
+/// ## Standard Content Size
+/// ```
+/// +----------------outerStackView------------------+
+/// | +-------infoStack------+                       |
+/// | |routeHeadsignLabel    |                       |
+/// | |                      |       minutesWrapper  |
+/// | |fullExplanationlabel  |                       |
+/// | +----------------------+                       |
+/// +------------------------------------------------+
+/// ```
+///
+/// ## Accessibility Content Size
+/// ```
+/// +-----------------outerStackView-----------------+
+/// | +------------------infoStack-----------------+ |
+/// | |routeHeadsignLabel                          | |
+/// | |accessibilityTimeLabel                      | |
+/// | |accessibilityScheduleDeviationLabel         | |
+/// | |accessibilityRelativeTimeBadge              | |
+/// | +--------------------------------------------+ |
+/// +------------------------------------------------+
+/// ```
+///
+/// ## Standard → Accessibility:
+/// - Collapse data into one column
+/// - Add background color to relative time text for clarity and to differentiate
 public class StopArrivalView: UIView {
 
     let kUseDebugColors = false
@@ -33,19 +62,57 @@ public class StopArrivalView: UIView {
     ///
     /// For example, this might contain the text `10 - Downtown Seattle`.
     let routeHeadsignLabel: UILabel = {
-        let label = buildLabel()
-        label.numberOfLines = 0
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        label.font = UIFont.preferredFont(forTextStyle: .body).bold
+        let label = buildLabel(textStyle: .headline)
+        label.numberOfLines = 2
+        label.allowsDefaultTighteningForTruncation = true
+
+        // Re: limiting number of lines to 2 -- there is a weird layout bug I
+        // can't trace that is always setting a fixed height constraint to
+        // StopArrivalCell, which inherits SwipeCollectionViewCell. If we can
+        // get rid of the height constraint, set the label to have infinite lines.
+
         return label
     }()
 
     /// Second line in the view; contains the arrival/departure time and status relative to schedule.
     ///
     /// For example, this might contain the text `11:20 AM - arriving on time`.
-    let timeExplanationLabel = buildLabel()
+    let fullExplanationLabel = buildLabel(textStyle: .body)
 
-    private lazy var infoStack: UIStackView = UIStackView.verticalStack(arrangedSubviews: [routeHeadsignLabel, timeExplanationLabel, UIView.autolayoutNew()])
+    /// Accessibility feature for one-column compact view. For example, `11:20 AM`
+    let accessibilityTimeLabel = buildLabel(textStyle: .subheadline)
+
+    /// Accessibility feature for one-column compact view. For example, `arriving on time`.
+    let accessibilityScheduleDeviationLabel = buildLabel(textStyle: .subheadline)
+
+    /// Accessibility feature for one-column compact view. For example, `15m`
+    let accessibilityRelativeTimeBadge: DepartureTimeBadge = {
+        let badge = DepartureTimeBadge()
+        badge.adjustsFontForContentSizeCategory = true
+
+        return badge
+    }()
+
+    /// Views to set visible when not in accessibility.
+    var normalInfoStack: [UIView] {
+        [fullExplanationLabel, minutesWrapper]
+    }
+
+    /// Views to set visible when user is in accessibility.
+    var accessibilityInfoStack: [UIView] {
+        [accessibilityTimeLabel,
+         accessibilityScheduleDeviationLabel,
+         accessibilityRelativeTimeBadge]
+    }
+
+    /// Views containing info elements. To simplify logic, we will include all info views into the stack view.
+    private lazy var infoStack = UIStackView.verticalStack(arrangedSubviews: [
+        routeHeadsignLabel,
+        fullExplanationLabel,
+        accessibilityTimeLabel,
+        accessibilityScheduleDeviationLabel,
+        accessibilityRelativeTimeBadge
+    ])
 
     private lazy var infoStackWrapper = infoStack.embedInWrapperView()
 
@@ -78,23 +145,17 @@ public class StopArrivalView: UIView {
 
     public func prepareForReuse() {
         routeHeadsignLabel.text = nil
-        timeExplanationLabel.text = nil
+        fullExplanationLabel.text = nil
+        accessibilityTimeLabel.text = nil
+        accessibilityScheduleDeviationLabel.text = nil
+        accessibilityRelativeTimeBadge.prepareForReuse()
         minutesLabel.text = ""
     }
 
     /// Set this to display data in this view.
     public var arrivalDeparture: ArrivalDeparture! {
         didSet {
-            if deemphasizePastEvents {
-                // 'Gray out' the view if it occurred in the past.
-                alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
-            }
-
-            routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
-            timeExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: arrivalDeparture)
-
-            minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
-            minutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+            configureView(for: traitCollection)
         }
     }
 
@@ -106,9 +167,11 @@ public class StopArrivalView: UIView {
         addSubview(outerStackView)
         outerStackView.pinToSuperview(.edges)
 
+        configureView(for: traitCollection)
+
         if kUseDebugColors {
             routeHeadsignLabel.backgroundColor = .red
-            timeExplanationLabel.backgroundColor = .orange
+            fullExplanationLabel.backgroundColor = .orange
             minutesLabel.backgroundColor = .purple
             backgroundColor = .green
         }
@@ -118,12 +181,36 @@ public class StopArrivalView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - UIAppearance
+
+    @objc public dynamic var notificationCenter: NotificationCenter {
+        get { _notificationCenter }
+        set { _notificationCenter = newValue }
+    }
+
+    private var _notificationCenter: NotificationCenter! {
+        didSet {
+            _notificationCenter.addObserver(self,
+                                            selector: #selector(contentSizeDidChange),
+                                            name: UIContentSizeCategory.didChangeNotification,
+                                            object: nil)
+        }
+    }
+
     // MARK: - UI Builders
 
-    private class func buildLabel() -> UILabel {
+    private class func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
         let label = UILabel.autolayoutNew()
-        label.setHugging(horizontal: .defaultLow, vertical: .defaultLow)
-        label.setCompressionResistance(horizontal: .required, vertical: .required)
+        label.font = .preferredFont(forTextStyle: textStyle)
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 3/4
+        label.numberOfLines = 1
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
 
         return label
     }
@@ -132,5 +219,47 @@ public class StopArrivalView: UIView {
         let wrapper = label.embedInWrapperView()
         wrapper.setCompressionResistance(horizontal: .required, vertical: .required)
         return wrapper
+    }
+
+    func configureView(for traitCollection: UITraitCollection) {
+        guard let arrivalDeparture = arrivalDeparture else { return }
+        let accessibilityMode = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+
+        if deemphasizePastEvents {
+            // 'Gray out' the view if it occurred in the past.
+            alpha = arrivalDeparture.temporalState == .past ? 0.50 : 1.0
+        }
+
+        routeHeadsignLabel.text = arrivalDeparture.routeAndHeadsign
+        fullExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: arrivalDeparture)
+
+        minutesLabel.text = formatters.shortFormattedTime(until: arrivalDeparture)
+        minutesLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+
+        accessibilityTimeLabel.text = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+
+        if arrivalDeparture.scheduleStatus == .unknown {
+            accessibilityScheduleDeviationLabel.text = Strings.scheduledNotRealTime
+        }
+        else {
+            accessibilityScheduleDeviationLabel.text = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+        }
+
+        accessibilityScheduleDeviationLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+        accessibilityRelativeTimeBadge.set(arrivalDeparture: arrivalDeparture, formatters: formatters)
+
+        accessibilityLabel = formatters.accessibilityLabel(for: arrivalDeparture)
+        accessibilityValue = formatters.accessibilityValue(for: arrivalDeparture)
+        accessibilityTraits = [.button, .updatesFrequently]
+        isAccessibilityElement = true
+
+        normalInfoStack.forEach { $0.isHidden = accessibilityMode }
+        accessibilityInfoStack.forEach { $0.isHidden = !accessibilityMode }
+
+        infoStack.spacing = accessibilityMode ? ThemeMetrics.padding : 0
+    }
+
+    @objc func contentSizeDidChange(_ notification: Notification) {
+        configureView(for: traitCollection)
     }
 }

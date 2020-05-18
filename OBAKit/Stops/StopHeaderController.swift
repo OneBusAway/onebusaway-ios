@@ -129,12 +129,12 @@ class StopHeaderView: UIView {
     public var stop: Stop? {
         didSet {
             if stop != oldValue {
-                updateUI()
+                configureView()
             }
         }
     }
 
-    private func updateUI() {
+    private func configureView() {
         guard let stop = stop else { return }
 
         let maxWidth = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -150,6 +150,16 @@ class StopHeaderView: UIView {
         stopNameLabel.text = stop.name
         stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: stop)
         routesLabel.text = Formatters.formattedRoutes(stop.routes)
+
+        isAccessibilityElement = true
+        accessibilityTraits = [.summaryElement, .header, .staticText]
+        accessibilityLabel = stop.name
+        accessibilityValue = [stopNumberLabel.text, routesLabel.text].compactMap {$0}.joined(separator: " ")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.configureView()
     }
 
     private func buildLabel(bold: Bool = false, numberOfLines: Int = 1) -> UILabel {
@@ -158,7 +168,8 @@ class StopHeaderView: UIView {
         label.shadowColor = .black
         label.numberOfLines = numberOfLines
         label.shadowOffset = CGSize(width: 0, height: 1)
-        label.font = bold ? UIFont.preferredFont(forTextStyle: .body).bold : UIFont.preferredFont(forTextStyle: .body)
+        label.font = UIFont.preferredFont(forTextStyle: (bold ? .headline : .body))
+        label.adjustsFontForContentSizeCategory = false
         return label
     }
 }

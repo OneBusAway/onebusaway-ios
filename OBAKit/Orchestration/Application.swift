@@ -402,6 +402,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             t.appearance().tintColor = ThemeColors.shared.brand
         }
 
+        StopArrivalView.appearance().notificationCenter = notificationCenter
+
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: ThemeColors.shared.brand], for: .normal)

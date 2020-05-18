@@ -43,6 +43,10 @@ class FakeToolbar: UIView {
             stackWrapper.trailingAnchor.constraint(equalTo: blurContainerView.contentView.trailingAnchor),
             stackWrapper.topAnchor.constraint(equalTo: blurContainerView.contentView.topAnchor)
         ])
+
+        if #available(iOS 13, *) {
+            self.addInteraction(UILargeContentViewerInteraction())
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -68,6 +72,11 @@ class FakeToolbar: UIView {
         button.setImage(image, for: .normal)
         button.addTarget(target, action: action, for: .touchUpInside)
         NSLayoutConstraint.activate([button.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)])
+
+        if #available(iOS 13, *) {
+            button.showsLargeContentViewer = true
+            button.scalesLargeContentImage = true
+        }
         return button
     }
 }

@@ -56,6 +56,6 @@ class ProminentButton: UIButton {
             highlightFrame = .zero
         }
 
-        highlightLayer.frame = highlightFrame.insetBy(dx: -ThemeMetrics.compactPadding, dy: -ThemeMetrics.compactPadding)
+        highlightLayer.frame = highlightFrame.insetBy(dx: -ThemeMetrics.buttonContentPadding, dy: -ThemeMetrics.buttonContentPadding)
     }
 }
