@@ -82,11 +82,22 @@ public class Formatters: NSObject {
     }
 
     /// Creates formatted strings for time intervals.
+    /// - Note: If you need strings for accessibility, use `accessibilityPositionalTimeFormatter`
+    /// instead as `"15m"` is misinterpreted by VoiceOver as `"15 meters"`.
     public lazy var positionalTimeFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.calendar = locale.calendar
         formatter.allowedUnits = [.hour, .minute]
         formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
+
+    /// Creates VoiceOver-friendly strings for time intervals.
+    public lazy var accessibilityPositionalTimeFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = locale.calendar
+        formatter.allowedUnits = [.hour, .minute]
+        formatter.unitsStyle = .full
         return formatter
     }()
 
@@ -113,6 +124,46 @@ public class Formatters: NSObject {
         attributedExplanation.append(explanation)
 
         return attributedExplanation
+    }
+
+    /// Creates a localized string appropriate for using in UIAccessibility.accessibilityLabel. Example: "Route 49 - University District Broadway"
+    public func accessibilityLabel(for arrivalDeparture: ArrivalDeparture) -> String {
+        return String(format: OBALoc("voiceover.arrivaldeparture_route_fmt", value: "Route %@", comment: "VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals."), arrivalDeparture.routeAndHeadsign)
+    }
+
+    /// Creates a localized string appropriate for using in UIAccessibility.accessibilityValue.
+    /// - Note: This does not include schedule deviation information.
+    /// ## Examples
+    /// - "arriving in 3 minutes at 9:57pm"
+    /// - "scheduled to arrive in 3 minutes at 9:57pm"
+    public func accessibilityValue(for arrivalDeparture: ArrivalDeparture) -> String {
+        let arrDepTime = timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+
+        let apply: (String) -> String = { String(format: $0, abs(arrivalDeparture.arrivalDepartureMinutes), arrDepTime) }
+
+        let scheduleStatus: String
+        switch (arrivalDeparture.arrivalDepartureStatus,
+                arrivalDeparture.temporalState,
+                arrivalDeparture.scheduleStatus == .unknown) {
+
+        // Is a past event, regardless of realtime data availability.
+        case (.arriving, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt", value: "arrived %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already arrived, regardless of realtime data availability."))
+        case (.departing, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departed_x_minutes_ago_fmt", value: "departed %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already departed, regardless of realtime data availability."))
+
+        // Is a current event, regardless of realtime data availability.
+        case (.arriving, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_arriving_now", value: "arriving now!", comment: "VoiceOver text describing a route that is arriving now, regardless of realtime data availability.")
+        case (.departing, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_departing_now", value: "departing now!", comment: "VoiceOver text describing a route that is departing now, regardless of realtime data availability.")
+
+        // Has realtime data and is a future event.
+        case (.arriving, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arriving_in_x_minutes", value: "arriving in %d minutes at %@.", comment: "VoiceOver text describing a future arrival that is based off realtime data."))
+        case (.departing, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departing_in_x_minutes_fmt", value: "departing in %d minutes at %@.", comment: "VoiceOver text describing a future departure that is based off realtime data."))
+
+        // No realtime data and is a future event.
+        case (.arriving, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt", value: "scheduled to arrive in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to arrive (no realtime data was available)."))
+        case (.departing, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt", value: "scheduled to depart in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"))
+        }
+
+        return scheduleStatus
     }
 
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.

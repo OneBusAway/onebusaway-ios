@@ -17,6 +17,15 @@ public class TableRowView: UIView {
     /// - Note: This is exposed primarily so that the constraint priority can be adjusted by `IGListKit` cells.
     var heightConstraint: NSLayoutConstraint!
 
+    var topConstraint: NSLayoutConstraint!
+    var bottomConstraint: NSLayoutConstraint!
+
+    func setTopBottomMargin(_ margin: CGFloat) {
+        topConstraint.constant = margin
+        bottomConstraint.constant = -margin
+        self.layoutIfNeeded()
+    }
+
     // MARK: - Initialization
 
     public override init(frame: CGRect) {
@@ -27,14 +36,17 @@ public class TableRowView: UIView {
         heightConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
         heightConstraint.priority = .required
 
+        topConstraint = contentStackWrapper.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: ThemeMetrics.compactPadding)
+        bottomConstraint = contentStackWrapper.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -ThemeMetrics.compactPadding)
+
         var constraints: [NSLayoutConstraint] = [
             heightConstraint,
             heightAnchor.constraint(greaterThanOrEqualTo: contentStack.heightAnchor),
-            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor, constant: ThemeMetrics.tableRowLeadingPadding),
             contentStackWrapper.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStackWrapper.centerYAnchor.constraint(equalTo: centerYAnchor),
-            contentStackWrapper.topAnchor.constraint(lessThanOrEqualTo: topAnchor, constant: ThemeMetrics.compactPadding),
-            contentStackWrapper.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor, constant: -ThemeMetrics.compactPadding)
+            topConstraint,
+            bottomConstraint
         ]
 
         constraints.append(contentsOf: accessoryImageViewWrapper.vendedConstraints)
@@ -76,6 +88,16 @@ public class TableRowView: UIView {
             accessoryType = data.accessoryType
 
             imageWrapper.maxImageSize = data.imageSize ?? defaultImageWrapperSize
+
+            self.accessibilityLabel = data.title
+            self.accessibilityValue = data.subtitle
+            self.isAccessibilityElement = true
+
+            if data.tapped != nil {
+                self.accessibilityTraits = [.button, .staticText]
+            } else {
+                self.accessibilityTraits = [.staticText]
+            }
 
             if let image = data.image {
                 imageWrapper.imageView.image = image
@@ -172,9 +194,22 @@ public class TableRowView: UIView {
 
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()
+        label.font = .preferredFont(forTextStyle: .body)
+        label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
         label.backgroundColor = .clear
         return label
+    }
+
+    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+
+        if !(self is SubtitleTableRowView) {
+            self.labelStack.axis = isAccessibility ? .vertical : .horizontal
+        }
+
+        self.setTopBottomMargin(isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding)
     }
 
     // MARK: - UICollectionViewCell-alikes
@@ -313,6 +348,9 @@ fileprivate class ImageWrapper: UIView {
         wrapperWidth.priority = .required
 
         addSubview(imageView)
+
+        self.accessibilityElements = [imageView]
+        self.accessibilityTraits = .image
 
         NSLayoutConstraint.activate([
             imageView.centerXAnchor.constraint(equalTo: centerXAnchor),

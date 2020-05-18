@@ -1,5 +1,5 @@
 //
-//  TodayArrivalLabel.swift
+//  DepartureTimeBadge.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 12/22/19.
@@ -7,17 +7,16 @@
 //
 
 import UIKit
-import OBAKitCore
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
-public class TodayArrivalLabel: UILabel {
+public class DepartureTimeBadge: UILabel {
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
         textColor = ThemeColors.shared.lightText
 
         textAlignment = .center
-        font = UIFont.preferredFont(forTextStyle: .footnote).bold
+        font = UIFont.preferredFont(forTextStyle: .headline)
 
         backgroundColor = .clear
         layer.masksToBounds = true
@@ -33,7 +32,7 @@ public class TodayArrivalLabel: UILabel {
         text = nil
     }
 
-    public func setData(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+    public func set(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
         accessibilityLabel = formatters.formattedTime(until: arrivalDeparture)
         text = formatters.shortFormattedTime(until: arrivalDeparture)
 

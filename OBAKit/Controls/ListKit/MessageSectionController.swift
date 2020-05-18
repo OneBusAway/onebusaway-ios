@@ -18,6 +18,14 @@ final class MessageSectionData: ListViewModel, ListDiffable {
     var subject: String
     var summary: String?
 
+    /// The maximum number of lines to display for the summary before truncation. Set to `0` for unlimited lines.
+    /// - Note: A multiple of this value is used when the user's content size is set to an accessibility size.
+    var summaryNumberOfLines: Int = 2
+
+    /// The maximum number of lines to display for the subject before truncation. Set to `0` for unlimited lines.
+    /// - Note: A multiple of this value is used when the user's content size is set to an accessibility size.
+    var subjectNumberOfLines: Int = 1
+
     public func diffIdentifier() -> NSObjectProtocol {
         return self
     }
@@ -49,6 +57,7 @@ final class MessageCell: BaseSelfSizingTableCell {
     private let authorLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.font = UIFont.preferredFont(forTextStyle: .headline)
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
@@ -56,12 +65,14 @@ final class MessageCell: BaseSelfSizingTableCell {
         let label = UILabel.autolayoutNew()
         label.font = UIFont.preferredFont(forTextStyle: .footnote)
         label.textColor = ThemeColors.shared.secondaryLabel
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
     private let subjectLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.font = UIFont.preferredFont(forTextStyle: .subheadline)
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
 
@@ -70,19 +81,17 @@ final class MessageCell: BaseSelfSizingTableCell {
         label.font = UIFont.preferredFont(forTextStyle: .subheadline)
         label.textColor = ThemeColors.shared.secondaryLabel
         label.numberOfLines = 2
+        label.adjustsFontForContentSizeCategory = true
         return label
     }()
+
+    private var topStack: UIStackView!
 
     // MARK: - Data
 
     var data: MessageSectionData? {
         didSet {
-            guard let data = data else { return }
-
-            authorLabel.text = data.author
-            dateLabel.text = data.date
-            subjectLabel.text = data.subject
-            summaryLabel.text = data.summary
+            configureView()
         }
     }
 
@@ -95,18 +104,68 @@ final class MessageCell: BaseSelfSizingTableCell {
         dateLabel.text = nil
         subjectLabel.text = nil
         summaryLabel.text = nil
+
+        configureView()
     }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
+        self.topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
         let topWrapper = topStack.embedInWrapperView()
 
         let outerStack = UIStackView.verticalStack(arrangedSubviews: [topWrapper, subjectLabel, summaryLabel])
         contentView.addSubview(outerStack)
 
         outerStack.pinToSuperview(.layoutMargins)
+
+        configureView()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        configureView()
+    }
+
+    private func configureView() {
+        guard let data = data else { return }
+
+        authorLabel.text = data.author
+        dateLabel.text = data.date
+        subjectLabel.text = data.subject
+        summaryLabel.text = data.summary
+
+        let isAccessibility = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+
+        topStack.axis = isAccessibility ? .vertical : .horizontal
+        authorLabel.numberOfLines = isAccessibility ? 3 : 1
+
+        let subjectNumberOfLines = data.subjectNumberOfLines
+        if subjectNumberOfLines > 0 {
+            subjectLabel.numberOfLines = isAccessibility ? subjectNumberOfLines * 3 : subjectNumberOfLines
+        }
+        else {
+            subjectLabel.numberOfLines = subjectNumberOfLines
+        }
+
+        let summaryNumberOfLines = data.summaryNumberOfLines
+        if summaryNumberOfLines > 0 {
+            summaryLabel.numberOfLines = isAccessibility ? summaryNumberOfLines * 4 : summaryNumberOfLines
+        }
+        else {
+            summaryLabel.numberOfLines = summaryNumberOfLines
+        }
+
+        isAccessibilityElement = true
+        accessibilityTraits = data.tapped == nil ? [.staticText] : [.button, .staticText]
+        accessibilityLabel = data.subject
+
+        if let date = data.date {
+            accessibilityValue = "\(date), \(data.summary ?? "")"
+        }
+        else {
+            accessibilityValue = data.summary
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {

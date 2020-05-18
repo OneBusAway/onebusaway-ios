@@ -1053,6 +1053,18 @@
 		pl = Zgłaszanie problemu
 		fr = 
 		es = 
+	[walk_time_view.accessibility_label]
+		en = Time to walk to stop
+		comment = A label for blind or low-vision users on the UI element that describes how long it takes to walk to the stop.
+		pl = 
+		fr = 
+		es = 
+	[walk_time_view.accessibility_value]
+		en = %@. Takes %@ to walk, arriving at %@
+		comment = Accessibility string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles. Takes 17 minutes to walk, arriving at 9:41 am
+		pl = 
+		fr = 
+		es = 
 	[walk_time_view.distance_time_fmt]
 		en = %1$@, %2$@: arriving at %3$@
 		comment = Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M.
