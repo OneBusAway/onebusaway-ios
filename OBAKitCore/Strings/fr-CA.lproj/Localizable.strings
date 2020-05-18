@@ -132,9 +132,6 @@
 /* Abbreviation for West */
 "formatters.cardinal_direction_abbrev.west" = "W";
 
-/* Represents a timeframe. e.g. 9:00 AM — 11:00 AM. */
-"formatters.date_range_fmt" = "%1$@ — %2$@";
-
 /* Use for vehicles that departed X minutes ago. */
 "formatters.departed_x_min_ago_fmt" = "Departed %d min ago";
 
