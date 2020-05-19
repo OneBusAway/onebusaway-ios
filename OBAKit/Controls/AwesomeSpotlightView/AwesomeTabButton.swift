@@ -8,7 +8,7 @@
 
 import UIKit
 
-public struct AwesomeTabButton {
+struct AwesomeTabButton {
 
   public var title: String
   public var font: UIFont

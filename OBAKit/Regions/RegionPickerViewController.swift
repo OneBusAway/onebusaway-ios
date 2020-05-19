@@ -11,7 +11,7 @@ import Eureka
 import OBAKitCore
 
 /// Entrypoint for manual management of `Region`s in the app. Includes affordances for creating custom `Region`s.
-public class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
+class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     // MARK: - Properties
 

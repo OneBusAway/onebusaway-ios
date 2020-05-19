@@ -1,5 +1,5 @@
 //
-//  AlarmBuilderViewController.swift
+//  AlarmBuilder.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 9/4/19.

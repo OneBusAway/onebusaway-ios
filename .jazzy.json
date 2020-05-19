@@ -16,8 +16,17 @@
                 "Application",
                 "CoreApplication",
                 "AppConfig",
-                "CoreAppConfig",
-                "ClassicApplicationRootController"
+                "CoreAppConfig"
+            ]
+        },
+        {
+            "name": "OBA Classic UI",
+            "children": [
+                "ClassicApplicationRootController",
+                "MapViewController",
+                "MoreViewController",
+                "RecentStopsViewController",
+                "StopViewController"
             ]
         },
         {
@@ -44,7 +53,8 @@
                 "Trip",
                 "TripDetails",
                 "TripStatus",
-                "TripStopTime"
+                "TripStopTime",
+                "VehicleStatus"
             ]
         },
         {
@@ -78,9 +88,39 @@
                 "AgencyAlertsOperation",
                 "AsyncOperation",
                 "DecodableOperation",
+                "MultiAgencyAlertsOperation",
                 "NetworkOperation",
-                "PlacemarkSearchOperation",
-                "MultiAgencyAlertsOperation"
+                "PlacemarkSearchOperation"
+            ]
+        },
+        {
+            "name": "Other Services",
+            "children": [
+                "APIService",
+                "LocationService",
+                "MapRegionManager",
+                "RegionsService"
+            ]
+        },
+        {
+            "name": "User Data",
+            "children": [
+                "UserDataStore",
+                "UserDefaultsStore"
+            ]
+        },
+        {
+            "name": "Push Notifications",
+            "children": [
+                "AlarmPushBody",
+                "PushErrors",
+                "PushManagerUserID",
+                "PushManagerUserIDCallback",
+                "PushService",
+                "PushServiceDelegate",
+                "PushServiceErrorHandler",
+                "PushServiceNotificationReceivedHandler",
+                "PushServiceProvider"
             ]
         },
         {
@@ -100,6 +140,18 @@
                 "SearchResponse",
                 "SearchType",
                 "SearchResultsController"
+            ]
+        },
+        {
+            "name": "Deep Linking",
+            "children": [
+                "AppInterop",
+                "AppLinksRouter",
+                "ArrivalDepartureDeepLink",
+                "StopURLData",
+                "TripConvertible",
+                "URLSchemeRouter",
+                "ViewRouter"
             ]
         },
         {
@@ -168,6 +220,20 @@
             "name": "Third Party Extensions",
             "children": [
                 "Connectivity"
+            ]
+        },
+        {
+            "name": "Miscellaneous UI",
+            "children": [
+                "CollectionController",
+                "DepartureTimeBadge",
+                "EmptyDataSetView",
+                "Formatters",
+                "ImageBadgeRenderer",
+                "Strings",
+                "ThemeColors",
+                "ThemeMetrics",
+                "VisualEffectViewController"
             ]
         },
         {

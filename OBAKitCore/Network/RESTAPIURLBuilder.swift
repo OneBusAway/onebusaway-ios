@@ -328,7 +328,7 @@ extension RESTAPIURLBuilder {
         location: CLLocation?
     ) -> URL {
         var args: [String: Any] = [
-            "code": stopProblemCodeToAPIString(code)
+            "code": code.APIStringValue
         ]
 
         if let comment = comment {
@@ -358,7 +358,7 @@ extension RESTAPIURLBuilder {
         var args: [String: Any] = [
             "tripId": tripID,
             "serviceDate": Int64(serviceDate.timeIntervalSince1970 * 1000),
-            "code": tripProblemCodeToString(code),
+            "code": code.APIStringValue,
             "userOnVehicle": userOnVehicle ? "true" : "false"
         ]
 

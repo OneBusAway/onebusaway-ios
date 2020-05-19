@@ -7,16 +7,10 @@ import Foundation
 import UIKit
 import CoreGraphics
 
-public struct Shadow {
+struct Shadow {
     let offset: CGSize
     let blur: CGFloat
     let color: UIColor
-
-    public init(offset: CGSize, blur: CGFloat, color: UIColor) {
-        self.offset = offset
-        self.blur = blur
-        self.color = color
-    }
 }
 
 extension UIImage {
@@ -30,7 +24,7 @@ extension UIImage {
     ///   - shadow: describes the offset, blur and color of the desired shadow.
     ///   - shouldDrawCapInsets: if `true`, debug lines are added to the image to help visualize the 9-part image.
     /// - Returns: a 9-part template image.
-    public static func resizableShadowImage(
+    static func resizableShadowImage(
         withSideLength sideLength: CGFloat,
         cornerRadius: CGFloat,
         shadow: Shadow,

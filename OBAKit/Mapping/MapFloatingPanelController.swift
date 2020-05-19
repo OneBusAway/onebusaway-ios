@@ -11,14 +11,14 @@ import IGListKit
 import FloatingPanel
 import OBAKitCore
 
-public protocol MapPanelDelegate: NSObjectProtocol {
+protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop)
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool)
 }
 
 /// This is the view controller that powers the drawer on the `MapViewController`.
-public class MapFloatingPanelController: VisualEffectViewController,
+class MapFloatingPanelController: VisualEffectViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
     AppContext,

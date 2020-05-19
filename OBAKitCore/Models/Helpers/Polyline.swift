@@ -111,7 +111,7 @@ public struct Polyline {
     }
 }
 
-// MARK: - Public Functions -
+// MARK: - Functions
 
 /// This function encodes an `[CLLocationCoordinate2D]` to a `String`
 ///
@@ -119,7 +119,7 @@ public struct Polyline {
 /// - parameter precision: The precision used to encode coordinates (default: `1e5`)
 ///
 /// - returns: A `String` representing the encoded Polyline
-public func encodeCoordinates(_ coordinates: [CLLocationCoordinate2D], precision: Double = 1e5) -> String {
+func encodeCoordinates(_ coordinates: [CLLocationCoordinate2D], precision: Double = 1e5) -> String {
 
     var previousCoordinate = IntegerCoordinates(0, 0)
     var encodedPolyline = ""
@@ -144,7 +144,7 @@ public func encodeCoordinates(_ coordinates: [CLLocationCoordinate2D], precision
 /// - parameter precision: The precision used to encode locations (default: `1e5`)
 ///
 /// - returns: A `String` representing the encoded Polyline
-public func encodeLocations(_ locations: [CLLocation], precision: Double = 1e5) -> String {
+func encodeLocations(_ locations: [CLLocation], precision: Double = 1e5) -> String {
 
     return encodeCoordinates(toCoordinates(locations), precision: precision)
 }
@@ -154,7 +154,7 @@ public func encodeLocations(_ locations: [CLLocation], precision: Double = 1e5) 
 /// - parameter levels: The `Array` of `UInt32` levels that you want to encode
 ///
 /// - returns: A `String` representing the encoded Levels
-public func encodeLevels(_ levels: [UInt32]) -> String {
+func encodeLevels(_ levels: [UInt32]) -> String {
     return levels.reduce("") {
         $0 + encodeLevel($1)
     }
@@ -166,7 +166,7 @@ public func encodeLevels(_ levels: [UInt32]) -> String {
 /// - parameter precision: The precision used to decode coordinates (default: `1e5`)
 ///
 /// - returns: A `[CLLocationCoordinate2D]` representing the decoded polyline if valid, `nil` otherwise
-public func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -> [CLLocationCoordinate2D]? {
+func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -> [CLLocationCoordinate2D]? {
 
     let data = encodedPolyline.data(using: String.Encoding.utf8)!
 
@@ -203,7 +203,7 @@ public func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -
 /// - parameter precision: The precision used to decode locations (default: 1e5)
 ///
 /// - returns: A [CLLocation] representing the decoded polyline if valid, nil otherwise
-public func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -> [CLLocation]? {
+func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -> [CLLocation]? {
 
     return decodePolyline(encodedPolyline, precision: precision).map(toLocations)
 }
@@ -213,7 +213,7 @@ public func decodePolyline(_ encodedPolyline: String, precision: Double = 1e5) -
 /// - parameter encodedLevels: The `String` representing the levels to decode
 ///
 /// - returns: A `[UInt32]` representing the decoded Levels if the `String` is valid, `nil` otherwise
-public func decodeLevels(_ encodedLevels: String) -> [UInt32]? {
+func decodeLevels(_ encodedLevels: String) -> [UInt32]? {
     var remainingLevels = encodedLevels.unicodeScalars
     var decodedLevels   = [UInt32]()
 
@@ -232,7 +232,7 @@ public func decodeLevels(_ encodedLevels: String) -> [UInt32]? {
 }
 
 
-// MARK: - Private -
+// MARK: - Private
 
 // MARK: Encode Coordinate
 

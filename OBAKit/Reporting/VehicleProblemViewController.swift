@@ -32,7 +32,7 @@ class VehicleProblemViewController: FormViewController {
             $0.value = $0.options.first
             $0.displayValueFor = { code -> String? in
                 guard let code = code else { return nil }
-                return tripProblemCodeToUserFacingString(code)
+                return code.userFriendlyStringValue
             }
         }
     }()

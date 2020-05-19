@@ -28,15 +28,11 @@ public extension SelfSizing where Self: UICollectionViewCell {
 
 // MARK: - SeparatedCell
 
-public func tableCellSeparatorLayer() -> CALayer {
-    let layer = CALayer()
-    layer.backgroundColor = ThemeColors.shared.separator.cgColor
-    return layer
-}
-
 public protocol Separated: NSObjectProtocol {
     var separator: CALayer { get }
     func layoutSeparator(leftSeparatorInset: CGFloat?)
+
+    static func tableCellSeparatorLayer() -> CALayer
 }
 
 public extension Separated where Self: UICollectionReusableView {
@@ -45,5 +41,11 @@ public extension Separated where Self: UICollectionReusableView {
         let inset = leftSeparatorInset ?? layoutMargins.left
 
         separator.frame = CGRect(x: inset, y: bounds.height - height, width: bounds.width - inset, height: height)
+    }
+
+    static func tableCellSeparatorLayer() -> CALayer {
+        let layer = CALayer()
+        layer.backgroundColor = ThemeColors.shared.separator.cgColor
+        return layer
     }
 }
