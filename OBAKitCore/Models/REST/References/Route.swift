@@ -50,13 +50,13 @@ public class Route: NSObject, Codable, HasReferences {
         // `loadReferences()` method call, which is part of the HasReferences protocol.
         agency = try? container.decodeIfPresent(Agency.self, forKey: .agency)
 
-        color = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
+        color = UIColor(hex: String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
 
-        routeDescription = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeDescription))
+        routeDescription = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeDescription))
         id = try container.decode(RouteID.self, forKey: .id)
-        longName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .longName))
+        longName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .longName))
         shortName = try container.decode(String.self, forKey: .shortName)
-        textColor = UIColor(hex: ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
+        textColor = UIColor(hex: String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .textColor)))
         routeType = try container.decode(RouteType.self, forKey: .routeType)
         routeURL = try? container.decodeGarbageURL(forKey: .routeURL)
     }

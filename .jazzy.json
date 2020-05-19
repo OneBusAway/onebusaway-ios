@@ -93,6 +93,84 @@
             ]
         },
         {
+            "name": "Search",
+            "children": [
+                "SearchManager",
+                "SearchRequest",
+                "SearchResponse",
+                "SearchType",
+                "SearchResultsController"
+            ]
+        },
+        {
+            "name": "Foundation Extensions",
+            "children": [
+                "Array",
+                "Bundle",
+                "Dictionary",
+                "DispatchQueue",
+                "HTTPURLResponse",
+                "MeasurementFormatter",
+                "Sequence",
+                "Set",
+                "String",
+                "URL",
+                "URLComponents",
+                "URLSession",
+                "UUID",
+                "UserDefaults"
+            ]
+        },
+        {
+            "name": "CoreLocation Extensions",
+            "children": [
+                "CLAuthorizationStatus",
+                "CLCircularRegion",
+                "CLLocationCoordinate2D",
+                "CLLocationDirection",
+                "CLLocationManager"
+            ]
+        },
+        {
+            "name": "MapKit Extensions",
+            "children": [
+                "MKDirections",
+                "MKMapPoint",
+                "MKMapRect",
+                "MKMapSize",
+                "MKMapView",
+                "MKUserLocation"
+            ]
+        },
+        {
+            "name": "UIKit Extensions",
+            "children": [
+                "UIAlertAction",
+                "UIAlertController",
+                "UIBarButtonItem",
+                "UIButton",
+                "UICollectionView",
+                "UIColor",
+                "UIDevice",
+                "UIEdgeInsets",
+                "UIFont",
+                "UIImage",
+                "UILabel",
+                "UILayoutGuide",
+                "UIPasteboard",
+                "UIStackView",
+                "UIView",
+                "UIViewController",
+                "UIWindow"
+            ]
+        },
+        {
+            "name": "Third Party Extensions",
+            "children": [
+                "Connectivity"
+            ]
+        },
+        {
             "name": "Protobuf Alerts",
             "children": [
                 "TransitRealtime_Alert",

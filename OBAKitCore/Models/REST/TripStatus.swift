@@ -107,7 +107,24 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     public private(set) var serviceAlerts = [ServiceAlert]()
 
     /// Status modifier for the trip
-    public let statusModifier: TripStatusModifier
+    public let statusModifier: StatusModifier
+
+    public enum StatusModifier: Equatable, Hashable {
+        case `default`, scheduled, canceled
+        case other(String)
+
+        /// Converts a `String` into a `StatusModifier` enum value.
+        /// - Parameter status: The status string.
+        /// - Returns: An enum value.
+        fileprivate static func decode(_ status: String) -> StatusModifier {
+            switch status.uppercased() {
+            case "DEFAULT": return .default
+            case "SCHEDULED": return .scheduled
+            case "CANCELED": return .canceled
+            default: return .other(status)
+            }
+        }
+    }
 
     /// The total length of the trip, in meters
     public let totalDistanceAlongTrip: Double
@@ -165,7 +182,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
         situationIDs = try container.decode([String].self, forKey: .situationIDs)
 
         let status = try container.decode(String.self, forKey: .status)
-        statusModifier = TripStatusModifier.decode(status)
+        statusModifier = StatusModifier.decode(status)
 
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
         vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
@@ -248,26 +265,8 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     }
 }
 
-// MARK: - TripStatusModifier
-
-public enum TripStatusModifier: Equatable, Hashable {
-    case `default`, scheduled, canceled
-    case other(String)
-
-    /// Converts a `String` into a `TripStatusModifier` enum value.
-    /// - Parameter status: The status string.
-    /// - Returns: An enum value.
-    fileprivate static func decode(_ status: String) -> TripStatusModifier {
-        switch status.uppercased() {
-        case "DEFAULT": return .default
-        case "SCHEDULED": return .scheduled
-        case "CANCELED": return .canceled
-        default: return .other(status)
-        }
-    }
-}
-
-public func == (lhs: TripStatusModifier, rhs: TripStatusModifier) -> Bool {
+/// :nodoc:
+public func == (lhs: TripStatus.StatusModifier, rhs: TripStatus.StatusModifier) -> Bool {
     switch (lhs, rhs) {
     case (.default, .default),
          (.scheduled, .scheduled),

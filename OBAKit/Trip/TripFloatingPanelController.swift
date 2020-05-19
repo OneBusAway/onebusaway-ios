@@ -10,7 +10,7 @@ import IGListKit
 import OBAKitCore
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
-public class TripFloatingPanelController: UIViewController,
+class TripFloatingPanelController: UIViewController,
     AppContext,
     ListAdapterDataSource,
     SectionDataBuilders,

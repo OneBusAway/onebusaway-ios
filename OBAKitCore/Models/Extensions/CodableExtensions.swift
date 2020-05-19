@@ -30,7 +30,7 @@ extension KeyedDecodingContainer {
             print("Error: \(err)")
             throw err
         }
-        guard let urlString = ModelHelpers.nilifyBlankValue(rawStr) else {
+        guard let urlString = String.nilifyBlankValue(rawStr) else {
             return nil
         }
         return URL(string: urlString)

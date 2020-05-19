@@ -44,7 +44,7 @@ import OBAKitCore
 /// ## Standard → Accessibility:
 /// - Collapse data into one column
 /// - Add background color to relative time text for clarity and to differentiate
-public class StopArrivalView: UIView {
+class StopArrivalView: UIView {
 
     let kUseDebugColors = false
 

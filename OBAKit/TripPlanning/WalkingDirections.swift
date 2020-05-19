@@ -9,7 +9,7 @@ import Foundation
 import CoreLocation
 
 /// Provides facilities for calculating walking directions and travel times.
-@objc(OBAWalkingDirections) public class WalkingDirections: NSObject {
+class WalkingDirections: NSObject {
 
     /// Average human walking speed is 1.4 meters per second (about 3.1 miles per hour).
     private static let walkingVelocity = 1.4

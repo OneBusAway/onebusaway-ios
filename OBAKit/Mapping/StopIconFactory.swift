@@ -9,7 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// Renders a stop icon. This is the transport type icon, a directional arrow, and all of the other adornments that go with it.
-public class StopIconFactory: NSObject {
+class StopIconFactory: NSObject {
     private let kUseDebugColors = false
 
     private let iconSize: CGFloat

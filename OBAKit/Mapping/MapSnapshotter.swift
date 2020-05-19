@@ -10,10 +10,10 @@ import CoreLocation
 import MapKit
 import OBAKitCore
 
-public typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
+typealias MapSnapshotterCompletionHandler = ((UIImage?) -> Void)
 
 /// Convenience helpers built on top of `MKMapSnapshotter` to simplify the process of creating a map screenshot.
-public class MapSnapshotter: NSObject {
+class MapSnapshotter: NSObject {
 
     private let size: CGSize
     private let scale: CGFloat

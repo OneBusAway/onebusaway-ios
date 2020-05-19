@@ -10,10 +10,14 @@ import Foundation
 import MapKit
 import OBAKitCore
 
+// MARK: - SearchType
+
 /// Describes what kind of search the user is performing.
 public enum SearchType: Int {
     case address, route, stopNumber, vehicleID
 }
+
+// MARK: - SearchRequest
 
 /// Create a `SearchRequest` to define what the user is searching for.
 public class SearchRequest: NSObject {
@@ -25,6 +29,8 @@ public class SearchRequest: NSObject {
         self.searchType = type
     }
 }
+
+// MARK: - SearchResponse
 
 /// This class manages the results of a user search.
 public class SearchResponse: NSObject {
@@ -54,6 +60,8 @@ public class SearchResponse: NSObject {
     }
 }
 
+// MARK: - SearchManager
+
 public class SearchManager: NSObject {
     private let application: Application
 
@@ -69,8 +77,6 @@ public class SearchManager: NSObject {
         case .vehicleID:  searchVehicleID(request: request)
         }
     }
-
-    // MARK: - Private Helpers
 
     private func searchAddress(request: SearchRequest) {
         guard

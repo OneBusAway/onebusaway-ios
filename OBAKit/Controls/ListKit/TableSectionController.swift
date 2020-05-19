@@ -14,7 +14,7 @@ import OBAKitCore
 // MARK: - TableRowData
 
 /// Models a single table row
-public class TableRowData: ListViewModel {
+class TableRowData: ListViewModel {
 
     let title: String?
     let attributedTitle: NSAttributedString?
@@ -130,7 +130,7 @@ public class TableRowData: ListViewModel {
 // MARK: - TableSectionData
 
 /// Models a section in a table. Contains many `TableRowData` objects.
-public class TableSectionData: NSObject, ListDiffable {
+class TableSectionData: NSObject, ListDiffable {
     let rows: [TableRowData]
 
     public func diffIdentifier() -> NSObjectProtocol {

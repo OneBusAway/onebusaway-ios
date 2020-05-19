@@ -109,7 +109,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
             return []
         }
 
-        let filter = ModelHelpers.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
+        let filter = String.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
 
         var directions = [Direction: [Stop]]()
 

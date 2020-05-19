@@ -1,5 +1,5 @@
 //
-//  NearbyViewController.swift
+//  MapFloatingPanelController.swift
 //  OBANext
 //
 //  Created by Aaron Brethorst on 11/29/18.
@@ -11,14 +11,14 @@ import IGListKit
 import FloatingPanel
 import OBAKitCore
 
-public protocol NearbyDelegate: NSObjectProtocol {
-    func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop)
-    func nearbyControllerDisplaySearch(_ nearbyController: NearbyViewController)
-    func nearbyController(_ nearbyController: NearbyViewController, moveTo position: FloatingPanelPosition, animated: Bool)
+public protocol MapPanelDelegate: NSObjectProtocol {
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop)
+    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
+    func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool)
 }
 
 /// This is the view controller that powers the drawer on the `MapViewController`.
-public class NearbyViewController: VisualEffectViewController,
+public class MapFloatingPanelController: VisualEffectViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
     AppContext,
@@ -30,7 +30,7 @@ public class NearbyViewController: VisualEffectViewController,
 
     let mapRegionManager: MapRegionManager
 
-    public weak var nearbyDelegate: NearbyDelegate?
+    public weak var mapPanelDelegate: MapPanelDelegate?
 
     public let application: Application
 
@@ -42,10 +42,10 @@ public class NearbyViewController: VisualEffectViewController,
 
     // MARK: - Init/Deinit
 
-    init(application: Application, mapRegionManager: MapRegionManager, delegate: NearbyDelegate) {
+    init(application: Application, mapRegionManager: MapRegionManager, delegate: MapPanelDelegate) {
         self.application = application
         self.mapRegionManager = mapRegionManager
-        self.nearbyDelegate = delegate
+        self.mapPanelDelegate = delegate
 
         super.init(nibName: nil, bundle: nil)
 
@@ -78,10 +78,10 @@ public class NearbyViewController: VisualEffectViewController,
         didSet {
             if inSearchMode {
                 application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.searchSelected, value: nil)
-                nearbyDelegate?.nearbyControllerDisplaySearch(self)
+                mapPanelDelegate?.mapPanelControllerDisplaySearch(self)
             }
             else {
-                nearbyDelegate?.nearbyController(self, moveTo: .tip, animated: true)
+                mapPanelDelegate?.mapPanelController(self, moveTo: .tip, animated: true)
             }
             collectionController.reload(animated: false)
         }
@@ -127,12 +127,12 @@ public class NearbyViewController: VisualEffectViewController,
         }
 
         searchBar.resignFirstResponder()
-        nearbyDelegate?.nearbyController(self, moveTo: .half, animated: true)
+        mapPanelDelegate?.mapPanelController(self, moveTo: .half, animated: true)
         application.searchManager.search(request: request)
     }
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
-        nearbyDelegate?.nearbyController(self, didSelectStop: stop)
+        mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
     }
 
     var isVehicleSearchAvailable: Bool {
@@ -218,7 +218,7 @@ public class NearbyViewController: VisualEffectViewController,
                     let stop = vm.object as? Stop
                 else { return }
 
-                self.nearbyDelegate?.nearbyController(self, didSelectStop: stop)
+                self.mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
             }
             sections.append(section)
         }
@@ -243,7 +243,7 @@ public class NearbyViewController: VisualEffectViewController,
 
 // MARK: - MapRegionDelegate
 
-extension NearbyViewController: MapRegionDelegate {
+extension MapFloatingPanelController: MapRegionDelegate {
 
     public var bottomScrollInset: CGFloat {
         get {

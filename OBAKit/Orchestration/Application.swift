@@ -66,14 +66,14 @@ public class Application: CoreApplication, PushServiceDelegate {
     // MARK: - Public Properties
 
     /// Responsible for figuring out how to navigate between view controllers.
-    @objc public lazy var viewRouter = ViewRouter(application: self)
+    lazy var viewRouter = ViewRouter(application: self)
 
     /// Responsible for creating stop 'badges' for the map.
-    public lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize)
+    lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize)
 
-    @objc public private(set) lazy var mapRegionManager = MapRegionManager(application: self)
+    lazy var mapRegionManager = MapRegionManager(application: self)
 
-    @objc public private(set) lazy var searchManager = SearchManager(application: self)
+    lazy var searchManager = SearchManager(application: self)
 
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 

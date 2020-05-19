@@ -158,12 +158,12 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
 
-            agencyID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .agencyID)))
-            applicationID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .applicationID)))
-            directionID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .directionID)))
-            routeID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .routeID)))
-            stopID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .stopID)))
-            tripID = ModelHelpers.nilifyBlankValue((try container.decode(String.self, forKey: .tripID)))
+            agencyID = String.nilifyBlankValue((try container.decode(String.self, forKey: .agencyID)))
+            applicationID = String.nilifyBlankValue((try container.decode(String.self, forKey: .applicationID)))
+            directionID = String.nilifyBlankValue((try container.decode(String.self, forKey: .directionID)))
+            routeID = String.nilifyBlankValue((try container.decode(String.self, forKey: .routeID)))
+            stopID = String.nilifyBlankValue((try container.decode(String.self, forKey: .stopID)))
+            tripID = String.nilifyBlankValue((try container.decode(String.self, forKey: .tripID)))
         }
 
         public override func isEqual(_ object: Any?) -> Bool {

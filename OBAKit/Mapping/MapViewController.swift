@@ -21,7 +21,7 @@ public class MapViewController: UIViewController,
     MapRegionDelegate,
     MapRegionMapViewDelegate,
     ModalDelegate,
-    NearbyDelegate,
+    MapPanelDelegate,
     UIContextMenuInteractionDelegate {
 
     // MARK: - Hoverbar
@@ -255,10 +255,10 @@ public class MapViewController: UIViewController,
         panel.surfaceView.backgroundColor = .clear
 
         // Set a content view controller.
-        panel.set(contentViewController: nearbyController)
+        panel.set(contentViewController: mapPanelController)
 
         // Track a scroll view (or the siblings) in the content view controller.
-        panel.track(scrollView: nearbyController.collectionController.collectionView)
+        panel.track(scrollView: mapPanelController.collectionController.collectionView)
 
         return panel
     }()
@@ -289,19 +289,19 @@ public class MapViewController: UIViewController,
         }
     }
 
-    // MARK: - Nearby Controller
+    // MARK: - Map Panel Controller
 
-    private lazy var nearbyController = NearbyViewController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
+    private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
-    public func nearbyController(_ nearbyController: NearbyViewController, didSelectStop stop: Stop) {
+    public func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop) {
         show(stop: stop)
     }
 
-    public func nearbyControllerDisplaySearch(_ nearbyController: NearbyViewController) {
+    public func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
         floatingPanel.move(to: .full, animated: true)
     }
 
-    public func nearbyController(_ nearbyController: NearbyViewController, moveTo position: FloatingPanelPosition, animated: Bool) {
+    public func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool) {
         floatingPanel.move(to: position, animated: animated)
     }
 
@@ -386,7 +386,7 @@ public class MapViewController: UIViewController,
     }
 
     public func mapRegionManagerDismissSearch(_ manager: MapRegionManager) {
-        nearbyController.exitSearchMode()
+        mapPanelController.exitSearchMode()
     }
 
     // MARK: - LocationServiceDelegate

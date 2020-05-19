@@ -137,7 +137,7 @@ public class Stop: NSObject, Codable, HasReferences {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         code = try container.decode(String.self, forKey: .code)
-        _direction = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .direction))
+        _direction = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .direction))
         id = try container.decode(StopID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
 

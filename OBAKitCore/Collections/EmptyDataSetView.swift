@@ -7,12 +7,12 @@
 
 import UIKit
 
-public enum EmptyDataSetAlignment {
-    case top, center
-}
-
 /// Provides a simple implementation of the 'empty data set' UI pattern.
 public class EmptyDataSetView: UIView {
+
+    public enum EmptyDataSetAlignment {
+        case top, center
+    }
 
     /// The font used on the title label.
     @objc public dynamic var titleLabelFont: UIFont {

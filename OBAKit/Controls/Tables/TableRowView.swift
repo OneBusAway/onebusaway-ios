@@ -9,7 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// A view that approximates the appearance of a `UITableViewCell`
-public class TableRowView: UIView {
+class TableRowView: UIView {
     var kUseDebugColors = false
 
     /// The height constraint for this view.

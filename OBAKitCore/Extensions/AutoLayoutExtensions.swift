@@ -36,10 +36,10 @@ extension UIView: Autolayoutable {
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }
-}
 
-public enum AutoLayoutPinTarget: Int {
-    case safeArea, layoutMargins, edges
+    public enum AutoLayoutPinTarget: Int {
+        case safeArea, layoutMargins, edges
+    }
 }
 
 extension UIView {
@@ -93,7 +93,7 @@ extension UIView {
         ])
     }
 
-    private func anchorable(for view: UIView, pinTarget: AutoLayoutPinTarget) -> Anchorable {
+    private func anchorable(for view: UIView, pinTarget: UIView.AutoLayoutPinTarget) -> Anchorable {
         switch pinTarget {
         case .edges: return view
         case .layoutMargins: return view.layoutMarginsGuide
@@ -108,32 +108,32 @@ extension UIView {
     /// - Parameters:
     ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
     ///   - insets: Optional inset from the pinTarget. Defaults to zero.
-    public func pinToSuperview(_ pinTarget: AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
+    public func pinToSuperview(_ pinTarget: UIView.AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
         pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets)
     }
 }
 
 public struct DirectionalPinTargets {
-    public let leading: AutoLayoutPinTarget
-    public let trailing: AutoLayoutPinTarget
-    public let top: AutoLayoutPinTarget
-    public let bottom: AutoLayoutPinTarget
+    public let leading: UIView.AutoLayoutPinTarget
+    public let trailing: UIView.AutoLayoutPinTarget
+    public let top: UIView.AutoLayoutPinTarget
+    public let bottom: UIView.AutoLayoutPinTarget
 
-    public init(pinTarget: AutoLayoutPinTarget) {
+    public init(pinTarget: UIView.AutoLayoutPinTarget) {
         leading = pinTarget
         trailing = pinTarget
         top = pinTarget
         bottom = pinTarget
     }
 
-    public init(leading: AutoLayoutPinTarget, trailing: AutoLayoutPinTarget, top: AutoLayoutPinTarget, bottom: AutoLayoutPinTarget) {
+    public init(leading: UIView.AutoLayoutPinTarget, trailing: UIView.AutoLayoutPinTarget, top: UIView.AutoLayoutPinTarget, bottom: UIView.AutoLayoutPinTarget) {
         self.leading = leading
         self.trailing = trailing
         self.top = top
         self.bottom = bottom
     }
 
-    public init(leadingTrailing: AutoLayoutPinTarget, topBottom: AutoLayoutPinTarget) {
+    public init(leadingTrailing: UIView.AutoLayoutPinTarget, topBottom: UIView.AutoLayoutPinTarget) {
         self.leading = leadingTrailing
         self.trailing = leadingTrailing
         self.top = topBottom

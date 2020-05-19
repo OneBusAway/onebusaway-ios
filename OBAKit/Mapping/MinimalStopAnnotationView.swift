@@ -9,7 +9,7 @@ import UIKit
 import MapKit
 import OBAKitCore
 
-public class MinimalStopAnnotationView: MKAnnotationView {
+class MinimalStopAnnotationView: MKAnnotationView {
 
     public var selectedArrivalDeparture: ArrivalDeparture?
 

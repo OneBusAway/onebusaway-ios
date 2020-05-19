@@ -145,8 +145,8 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
         routeID = try container.decode(RouteID.self, forKey: .routeID)
 
-        _routeLongName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeLongName))
-        _routeShortName = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
+        _routeLongName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeLongName))
+        _routeShortName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
         scheduledArrival = try container.decode(Date.self, forKey: .scheduledArrival)
         scheduledDeparture = try container.decode(Date.self, forKey: .scheduledDeparture)
         serviceDate = try container.decode(Date.self, forKey: .serviceDate)
@@ -159,12 +159,12 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
         totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
-        _tripHeadsign = ModelHelpers.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
+        _tripHeadsign = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
 
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
 
         tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
-        vehicleID = ModelHelpers.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
+        vehicleID = String.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
     }
 
     // MARK: - HasReferences

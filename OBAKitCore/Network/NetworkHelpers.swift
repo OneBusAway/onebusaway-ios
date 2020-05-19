@@ -9,7 +9,7 @@
 import Foundation
 
 /// Helper functions for creating network requests.
-public class NetworkHelpers: NSObject {
+class NetworkHelpers: NSObject {
 
     /// Creates an array of `URLQueryItem`s from a dictionary.
     ///

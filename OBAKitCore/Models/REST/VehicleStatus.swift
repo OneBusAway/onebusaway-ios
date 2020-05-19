@@ -62,7 +62,7 @@ public class VehicleStatus: NSObject, Decodable, HasReferences {
             lastLocationUpdateTime = updateTime
         }
 
-        tripID = ModelHelpers.nilifyBlankValue(try container.decode(TripIdentifier.self, forKey: .tripID))
+        tripID = String.nilifyBlankValue(try container.decode(TripIdentifier.self, forKey: .tripID))
 
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)

@@ -8,10 +8,10 @@
 import Foundation
 import IGListKit
 
-public typealias ListRowActionHandler = ((ListViewModel) -> Void)
+typealias ListRowActionHandler = ((ListViewModel) -> Void)
 
 /// Base class for all OBAKit ListKit view models.
-public class ListViewModel: NSObject {
+class ListViewModel: NSObject {
     public var tapped: ListRowActionHandler?
     public var deleted: ListRowActionHandler?
     public var object: Any?

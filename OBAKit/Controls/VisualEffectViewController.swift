@@ -15,7 +15,7 @@ import UIKit
 /// `view` in `viewDidLoad` with Auto Layout.
 ///
 /// - Note: Subviews must be added to `visualEffectView.contentView`.
-open class VisualEffectViewController: UIViewController, HasVisualEffect {
+public class VisualEffectViewController: UIViewController, HasVisualEffect {
 
     public override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)

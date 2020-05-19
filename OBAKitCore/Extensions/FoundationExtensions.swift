@@ -210,6 +210,23 @@ public extension String {
     func strip() -> String {
         return trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    /// Converts empty string fields into `nil`s.
+    ///
+    /// There are some parts of the OneBusAway REST API that return empty strings
+    /// where null would actually be a more appropriate value to provide. Alas,
+    /// this will probably never change because of backwards compatibility concerns
+    /// but that doesn't mean we can't address it here.
+    ///
+    /// - Parameter string: The string to inspect.
+    /// - Returns: Nil if the string's character count is zero, and the string otherwise.
+    static func nilifyBlankValue(_ string: String?) -> String? {
+        guard let string = string else {
+            return nil
+        }
+
+        return string.count > 0 ? string : nil
+    }
 }
 
 // MARK: - String/Regex
