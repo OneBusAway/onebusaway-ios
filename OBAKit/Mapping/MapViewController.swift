@@ -293,15 +293,15 @@ public class MapViewController: UIViewController,
 
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
-    public func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop) {
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop) {
         show(stop: stop)
     }
 
-    public func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
+    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
         floatingPanel.move(to: .full, animated: true)
     }
 
-    public func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool) {
+    func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool) {
         floatingPanel.move(to: position, animated: animated)
     }
 
