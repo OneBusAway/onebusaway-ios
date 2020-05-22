@@ -402,6 +402,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             t.appearance().tintColor = ThemeColors.shared.brand
         }
 
+        UISwitch.appearance().onTintColor = ThemeColors.shared.brand
+
         StopArrivalView.appearance().notificationCenter = notificationCenter
 
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
