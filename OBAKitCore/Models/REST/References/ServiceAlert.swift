@@ -32,7 +32,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
     public let reason: String
     public let severity: String
     public let summary: TranslatedString
-    public let url: URL?
+    public let urlString: TranslatedString?
 
     enum CodingKeys: String, CodingKey {
         case activeWindows
@@ -61,7 +61,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         reason = try container.decode(String.self, forKey: .reason)
         severity = try container.decode(String.self, forKey: .severity)
         summary = try container.decode(TranslatedString.self, forKey: .summary)
-        url = try container.decodeGarbageURL(forKey: .url)
+        self.urlString = try container.decodeIfPresent(TranslatedString.self, forKey: .url)
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -77,7 +77,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
             reason == rhs.reason &&
             severity == rhs.severity &&
             summary == rhs.summary &&
-            url == rhs.url
+            urlString == rhs.urlString
     }
 
     override public var hash: Int {
@@ -92,7 +92,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         hasher.combine(reason)
         hasher.combine(severity)
         hasher.combine(summary)
-        hasher.combine(url)
+        hasher.combine(urlString)
         return hasher.finalize()
     }
 
