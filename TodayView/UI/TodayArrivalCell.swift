@@ -105,7 +105,7 @@ final class TodayArrivalCell: UICollectionViewCell, SelfSizing, Separated {
         let arrivalDepartures = bookmarkArrivalData.arrivalDepartures ?? []
         if arrivalDepartures.count > index {
             let data = arrivalDepartures[index]
-            label.set(arrivalDeparture: data, formatters: formatters)
+            label.configure(with: data, formatters: formatters)
             label.isHidden = false
         }
         else {

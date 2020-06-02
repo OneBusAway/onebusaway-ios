@@ -9,7 +9,10 @@
 import UIKit
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
-public class DepartureTimeBadge: UILabel {
+public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
+
+    public var highlightedBackgroundColor: UIColor = ThemeColors.shared.propertyChanged
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -18,7 +21,7 @@ public class DepartureTimeBadge: UILabel {
         textAlignment = .center
         font = UIFont.preferredFont(forTextStyle: .headline)
 
-        backgroundColor = .clear
+        layer.backgroundColor = UIColor.clear.cgColor
         layer.masksToBounds = true
         layer.cornerRadius = 8
     }
@@ -32,11 +35,20 @@ public class DepartureTimeBadge: UILabel {
         text = nil
     }
 
-    public func set(arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+    public func configure(with arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
         accessibilityLabel = formatters.formattedTime(until: arrivalDeparture)
         text = formatters.shortFormattedTime(until: arrivalDeparture)
 
         let status = arrivalDeparture.scheduleStatus
-        backgroundColor = formatters.backgroundColorForScheduleStatus(status)
+        layer.backgroundColor = formatters.backgroundColorForScheduleStatus(status).cgColor
+    }
+
+    public func highlightBackground() {
+        let oldBackgroundColor = layer.backgroundColor
+        layer.backgroundColor = highlightedBackgroundColor.cgColor
+
+        UIView.animate(withDuration: 2.0) { [weak self] in
+            self?.layer.backgroundColor = oldBackgroundColor
+        }
     }
 }

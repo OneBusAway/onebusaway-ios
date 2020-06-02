@@ -9,8 +9,7 @@ import UIKit
 import OBAKitCore
 
 /// Alerts the user when its value changes by temporarily changing its background color.
-class HighlightChangeLabel: UILabel {
-
+class HighlightChangeLabel: UILabel, ArrivalDepartureDrivenUI {
     override public init(frame: CGRect) {
         super.init(frame: frame)
         setContentCompressionResistancePriority(.required, for: .vertical)
@@ -46,5 +45,10 @@ class HighlightChangeLabel: UILabel {
             guard let self = self else { return }
             self.layer.backgroundColor = oldBackgroundColor
         }
+    }
+
+    func configure(with arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+        self.text = formatters.shortFormattedTime(until: arrivalDeparture)
+        self.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
     }
 }
