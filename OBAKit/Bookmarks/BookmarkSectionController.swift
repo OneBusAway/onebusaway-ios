@@ -320,11 +320,28 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
         didSet {
             if state == .open {
                 stateImageView.transform = CGAffineTransform(rotationAngle: .pi / 2.0)
-            }
-            else {
+            } else {
                 stateImageView.transform = CGAffineTransform(rotationAngle: 0.0)
             }
         }
+    }
+
+    // Override accessibility properties so we don't need to manually update.
+    override var accessibilityLabel: String? {
+        get { return textLabel.text }
+        set { _ = newValue }
+    }
+
+    override var accessibilityValue: String? {
+        get {
+            switch state {
+            case .open:
+                return OBALoc("collapsible_header_cell.voiceover.expanded", value: "Section expanded", comment: "Voiceover text describing an expanded (or opened) section.")
+            case .closed:
+                return OBALoc("collapsible_header_cell.voiceover.collapsed", value: "Section collapsed", comment: "Voiceover text describing a collapsed (or closed) section.")
+            }
+        }
+        set { _ = newValue }
     }
 
     override init(frame: CGRect) {
@@ -360,6 +377,9 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
             stateImageView.backgroundColor = .blue
             imageWrapper.backgroundColor = .purple
         }
+
+        accessibilityTraits = [.header, .button]
+        isAccessibilityElement = true
     }
 
     required init?(coder aDecoder: NSCoder) {
