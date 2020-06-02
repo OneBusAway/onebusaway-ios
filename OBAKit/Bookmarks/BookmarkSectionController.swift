@@ -191,7 +191,7 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
 
         if let cell = cell as? TripBookmarkTableCell {
             cell.delegate = self
-            cell.set(data: bookmarkArrivalData, formatters: formatters)
+            cell.configureView(with: bookmarkArrivalData, formatters: formatters)
             return cell
         }
         else if let cell = cell as? StopBookmarkTableCell {
