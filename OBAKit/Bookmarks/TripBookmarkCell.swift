@@ -214,6 +214,15 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
     }
 
+    func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
+                           basedOn arrivalDepartureTimes: inout ArrivalDepartureTimes) {
+        let views: [ArrivalDepartureDrivenUI] = [primaryMinutesLabel, secondaryMinutesLabel, tertiaryMinutesLabel]
+
+        for view in views.enumerated() {
+            guard newArrivalDepartures.count > view.offset else { continue }
+            let arrDep = newArrivalDepartures[view.offset]
+            view.element.highlightIfNeeded(arrivalDeparture: arrDep, basedOn: &arrivalDepartureTimes)
+        }
     }
 
     // MARK: - Separator

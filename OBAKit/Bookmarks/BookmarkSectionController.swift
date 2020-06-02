@@ -134,6 +134,8 @@ final class BookmarkSectionData: NSObject, ListDiffable {
 // MARK: - BookmarkSectionController
 
 final class BookmarkSectionController: OBAListSectionController<BookmarkSectionData>, SwipeCollectionViewCellDelegate, ContextMenuProvider {
+    var arrivalDepartureTimes = ArrivalDepartureTimes()
+
     public override func numberOfItems() -> Int {
         guard let groupData = sectionData else {
             return 0
@@ -212,6 +214,18 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
 
         guard let bookmark = bookmark(at: index) else { return }
         bookmark.selected(bookmark.bookmark)
+    }
+
+    override func listAdapter(_ listAdapter: ListAdapter, willDisplay sectionController: ListSectionController, cell: UICollectionViewCell, at index: Int) {
+        if hasTitleRow && index == 0 { return }
+
+        guard let arrivalDepartures = self.bookmark(at: index)?.arrivalDepartures,
+            let cell = cell as? TripBookmarkTableCell else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            cell.highlightIfNeeded(newArrivalDepartures: arrivalDepartures, basedOn: &self.arrivalDepartureTimes)
+        }
     }
 
     // MARK: - Index Path Management
