@@ -269,7 +269,10 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
     @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = sectionData else { return nil }
-        let row = sectionData.bookmarks[indexPath.item]
+        if hasTitleRow && indexPath.row == 0 { return nil }
+
+        let bookmarksIndex = hasTitleRow ? indexPath.item - 1 : indexPath.item
+        let row = sectionData.bookmarks[bookmarksIndex]
 
         let previewProvider = { () -> UIViewController? in
             let controller = row.previewDestination?()
