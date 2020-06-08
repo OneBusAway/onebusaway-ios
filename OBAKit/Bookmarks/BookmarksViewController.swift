@@ -167,12 +167,27 @@ public class BookmarksViewController: UIViewController,
     }
 
     private func didDeleteBookmark(_ bookmark: Bookmark) {
-        if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
-            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
-        }
+        let title = OBALoc("bookmarks_controller.delete_bookmark.actionsheet.title", value: "Delete Bookmark", comment: "The title to display to confirm the user's action to delete a bookmark.")
+        let message = OBALoc("bookmarks_controller.delete_bookmark.actionsheet.message", value: "Are you sure you want to delete %@?", comment: "The message to display to confirm the user's action to delete a bookmark, includes a placeholder to display the bookmark's name.")
+        let formattedMessage = String(format: message, bookmark.name)
 
-        application.userDataStore.delete(bookmark: bookmark)
-        collectionController.reload(animated: true)
+        let alert = UIAlertController(title: title,
+                                      message: formattedMessage,
+                                      preferredStyle: .actionSheet)
+
+        alert.addAction(title: Strings.delete, style: .destructive) { [weak self] _ in
+            // Report remove bookmark event to analytics
+            if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
+                self?.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
+            }
+
+            // Delete bookmark
+            self?.application.userDataStore.delete(bookmark: bookmark)
+            self?.collectionController.reload(animated: true)
+        }
+        alert.addAction(title: Strings.cancel, style: .cancel, handler: nil)
+
+        self.present(alert, animated: true)
     }
 
     private func didEditBookmark(_ bookmark: Bookmark) {
