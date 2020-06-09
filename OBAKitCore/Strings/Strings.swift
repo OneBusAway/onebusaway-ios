@@ -44,6 +44,10 @@ public class Strings: NSObject {
 
     public static let map = OBALoc("common.map", value: "Map", comment: "The noun for a map.")
 
+    public static let migrateData = OBALoc("common.migrate_data", value: "Migrate Data", comment: "A title or command for upgrading data from older versions of OBA.")
+
+    public static let migrateDataDescription = OBALoc("common.migrate_data_description", value: "Upgrade your recent stops and bookmarks to work with the latest version of the app.", comment: "An explanation about what the Migrate Data feature does.")
+
     public static let more = OBALoc("common.more", value: "More", comment: "As in 'see more' or 'learn more'.")
 
     public static let ok = OBALoc("common.ok", value: "OK", comment: "OK")

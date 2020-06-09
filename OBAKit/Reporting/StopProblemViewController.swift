@@ -45,7 +45,7 @@ class StopProblemViewController: FormViewController {
     }
 
     private struct UserDefaultKeys {
-        static let shareLocation = "shareLocationForStopProblemReporting"
+        static let shareLocation = "StopProblemViewController.shareLocationForStopProblemReporting"
     }
 
     private var isLocationSharingPermitted: Bool {

@@ -307,7 +307,7 @@ public class MapRegionManager: NSObject,
             case .failure(let error):
                 print("TODO FIXME handle error! \(error)")
             case .success(let response):
-                completion(response.list.first)
+                completion(response.list)
             }
         }
     }

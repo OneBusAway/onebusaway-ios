@@ -44,7 +44,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     private let userDefaults: UserDefaults
 
     private struct UserDefaultsKeys {
-        static let promptUserForLocationPermission = "promptUserForLocationPermission"
+        static let promptUserForLocationPermission = "LocationService.promptUserForLocationPermission"
     }
 
     private func registerDefaults() {

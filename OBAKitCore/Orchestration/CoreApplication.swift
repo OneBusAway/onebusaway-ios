@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import CocoaLumberjackSwift
 
 /// Responsible for creating the base application 'stack': API service, regions, and everything else that makes the app run.
 ///
@@ -14,6 +15,7 @@ import CoreLocation
 @objc(OBACoreApplication)
 open class CoreApplication: NSObject,
     AgencyAlertsDelegate,
+    DataMigrationDelegate,
     LocationServiceDelegate,
     ObacoServiceDelegate,
     RegionsServiceDelegate {
@@ -105,7 +107,9 @@ open class CoreApplication: NSObject,
     /// Recreates the `restAPIService` from the current region. This is
     /// called when the app launches and when the current region changes.
     private func refreshRESTAPIService() {
-        guard let region = regionsService.currentRegion else { return }
+        guard let region = regionsService.currentRegion else {
+            return
+        }
 
         self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader)
     }
@@ -170,5 +174,28 @@ open class CoreApplication: NSObject,
 
     open func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         // nop
+    }
+
+    // MARK: - Migration
+
+    public lazy var dataMigrator = DataMigrator(userDefaults: config.userDefaults, delegate: self, application: self)
+
+    public func migrate(userID: String) {
+        userDefaults.set(userID, forKey: userUUIDDefaultsKey)
+    }
+
+    public func migrate(region: MigrationRegion) {
+        if let newRegion = regionsService.find(id: region.identifier) {
+            regionsService.currentRegion = newRegion
+        }
+    }
+
+    public func migrate(recentStop: Stop) {
+        guard let currentRegion = currentRegion else { return }
+        userDataStore.addRecentStop(recentStop, region: currentRegion)
+    }
+
+    public func migrate(bookmark: Bookmark, group: BookmarkGroup?) {
+        userDataStore.add(bookmark, to: group)
     }
 }

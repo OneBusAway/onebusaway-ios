@@ -95,7 +95,7 @@ class ReferencesTests: OBATestCase {
         expect(situation.severity) == ""
         expect(situation.summary.lang) == "en"
         expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
-        expect(situation.url).to(beNil())
+        expect(situation.urlString).to(beNil())
     }
 
     // MARK: - Stops

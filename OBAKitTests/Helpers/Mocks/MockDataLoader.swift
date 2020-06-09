@@ -20,10 +20,16 @@ struct MockDataResponse {
 class MockDataLoader: NSObject, URLDataLoader {
     var mockResponses = [MockDataResponse]()
 
+    let testName: String
+
+    init(testName: String) {
+        self.testName = testName
+    }
+
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
 
         guard let response = matchResponse(to: request) else {
-            fatalError("Missing response to URL: \(request.url!)")
+            fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
 
         completionHandler(response.data, response.urlResponse, response.error)

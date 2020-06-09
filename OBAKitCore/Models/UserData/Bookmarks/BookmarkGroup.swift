@@ -59,8 +59,10 @@ public class BookmarkGroup: NSObject, Codable {
     // MARK: - Debug
 
     override public var debugDescription: String {
-        let desc = super.debugDescription
-        let props: [String: Any] = ["name": name as Any, "sortOrder": sortOrder as Any, "id": id as Any]
-        return "\(desc) \(props)"
+        var builder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        builder.add(key: "name", value: name)
+        builder.add(key: "sortOrder", value: sortOrder)
+        builder.add(key: "id", value: id)
+        return builder.description
     }
 }

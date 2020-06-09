@@ -17,23 +17,29 @@ open class OBATestCase: XCTestCase {
     open override func setUp() {
         super.setUp()
         NSTimeZone.default = NSTimeZone(forSecondsFromGMT: 0) as TimeZone
-        userDefaults = UserDefaults(suiteName: userDefaultsSuiteName)!
+        userDefaults = buildUserDefaults()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
 
-        networkQueue = OperationQueue()
+        regionsAPIService = buildRegionsAPIService()
 
-        regionsAPIService = RegionsAPIService(baseURL: regionsURL, apiKey: "org.onebusaway.iphone.test", uuid: "12345-12345-12345-12345-12345", appVersion: "2018.12.31", networkQueue: networkQueue, dataLoader: MockDataLoader())
+        obacoService = buildObacoService()
 
-        obacoService = ObacoAPIService(baseURL: obacoURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionID: obacoRegionID, networkQueue: networkQueue, delegate: nil, dataLoader: MockDataLoader())
-
-        restService = RESTAPIService(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: MockDataLoader())
+        restService = buildRESTService()
     }
 
     open override func tearDown() {
         super.tearDown()
-        networkQueue.cancelAllOperations()
+        regionsAPIService.networkQueue.cancelAllOperations()
+        obacoService.networkQueue.cancelAllOperations()
+        restService.networkQueue.cancelAllOperations()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
+    }
+
+    // MARK: - User Defaults
+
+    func buildUserDefaults(suiteName: String? = nil) -> UserDefaults {
+        UserDefaults(suiteName: suiteName ?? userDefaultsSuiteName)!
     }
 
     var userDefaultsSuiteName: String {
@@ -45,10 +51,6 @@ open class OBATestCase: XCTestCase {
     let apiKey = "org.onebusaway.iphone.test"
     let uuid = "12345-12345-12345-12345-12345"
     let appVersion = "2018.12.31"
-
-    // MARK: - Network
-
-    var networkQueue: OperationQueue!
 
     // MARK: - Network/Obaco
 
@@ -66,6 +68,19 @@ open class OBATestCase: XCTestCase {
 
     var obacoService: ObacoAPIService!
 
+    func buildObacoService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> ObacoAPIService {
+        ObacoAPIService(
+            baseURL: obacoURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionID: obacoRegionID,
+            networkQueue: networkQueue ?? OperationQueue(),
+            delegate: nil,
+            dataLoader: dataLoader ?? MockDataLoader(testName: name)
+        )
+    }
+
     // MARK: - Network/REST API Service
 
     var host: String { "www.example.com" }
@@ -73,6 +88,17 @@ open class OBATestCase: XCTestCase {
     var baseURL: URL { URL(string: "https://\(host)")! }
 
     var restService: RESTAPIService!
+
+    func buildRESTService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> RESTAPIService {
+        RESTAPIService(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            networkQueue: networkQueue ?? OperationQueue(),
+            dataLoader: dataLoader ?? MockDataLoader(testName: name)
+        )
+    }
 
     // MARK: - Network Request Stubbing
 
@@ -119,6 +145,17 @@ open class OBATestCase: XCTestCase {
     }
 
     var regionsAPIService: RegionsAPIService!
+
+    func buildRegionsAPIService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> RegionsAPIService {
+        RegionsAPIService(
+            baseURL: regionsURL,
+            apiKey: "org.onebusaway.iphone.test",
+            uuid: "12345-12345-12345-12345-12345",
+            appVersion: "2018.12.31",
+            networkQueue: networkQueue ?? OperationQueue(),
+            dataLoader: dataLoader ?? MockDataLoader(testName: name)
+        )
+    }
 
     var bundledRegionsPath: String {
         let bundle = Bundle.main

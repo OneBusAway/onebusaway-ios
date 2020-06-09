@@ -121,8 +121,6 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc public let reachability = Reachability()
 
-    private var locationPermissionBulletin: LocationPermissionBulletin?
-
     // MARK: - Init
 
     @objc public init(config: AppConfig) {
@@ -140,14 +138,36 @@ public class Application: CoreApplication, PushServiceDelegate {
         configureConnectivity()
     }
 
-    // MARK: - App State Management
+    // MARK: - Onboarding
 
-    /// True when the app should show an interstitial location service permission
-    /// request user interface. Meant to be called on app launch to determine
-    /// which piece of UI should be shown initially.
-    @objc public var showPermissionPromptUI: Bool {
-        return locationService.canRequestAuthorization && locationService.canPromptUserForPermission
+    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService, dataMigrator: dataMigrator)
+
+    /// Performs the full onboarding process: location permissions, region selection, and data migration.
+    public func performOnboarding() {
+        guard
+            onboarder.onboardingRequired,
+            let uiApp = self.delegate?.uiApplication
+        else { return }
+
+        onboarder.show(in: uiApp)
     }
+
+    // MARK: - Onboarding/Data Migration
+
+    public var hasDataToMigrate: Bool { dataMigrationBulletin.hasDataToMigrate }
+
+    lazy var dataMigrationBulletin = DataMigrationBulletinManager(dataMigrator: dataMigrator)
+
+    public func performDataMigration() {
+        guard
+            hasDataToMigrate,
+            let uiApp = self.delegate?.uiApplication
+        else { return }
+
+        dataMigrationBulletin.show(in: uiApp)
+    }
+
+    // MARK: - UI
 
     /// Requests that the delegate reloads the application user interface in
     /// response to major state changes, like permission changes or the selected
@@ -301,14 +321,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         configurePushNotifications(launchOptions: options)
         reloadRootUserInterface()
 
-        if showPermissionPromptUI {
-            self.locationPermissionBulletin = LocationPermissionBulletin(locationService: locationService, regionsService: regionsService)
-            self.locationPermissionBulletin?.show(in: application)
-        }
-        else if regionsService.currentRegion == nil {
-            regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
-            regionPickerBulletin?.show(in: application)
-        }
+        performOnboarding()
 
         reportAnalyticsUserProperties()
     }
@@ -402,6 +415,8 @@ public class Application: CoreApplication, PushServiceDelegate {
             t.appearance().tintColor = ThemeColors.shared.brand
         }
 
+        UISwitch.appearance().onTintColor = ThemeColors.shared.brand
+
         StopArrivalView.appearance().notificationCenter = notificationCenter
 
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
@@ -414,19 +429,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Regions Management
 
-    private var regionPickerBulletin: RegionPickerBulletin?
-
     public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
         guard let app = delegate?.uiApplication else { return }
 
-        // In some cases, CLLocationManager will update the location multiple times a minute,
-        // causing the RegionPickerBulletin to constantly show and interrupt user interaction.
-        // Don’t show another RegionPickerBulletin if one already exists and is being presented.
-        if regionPickerBulletin == nil || regionPickerBulletin?.regionsService != service {
-            self.regionPickerBulletin = RegionPickerBulletin(regionsService: regionsService)
-        }
-
-        self.regionPickerBulletin?.show(in: app)
+        onboarder.show(in: app)
     }
 
     public func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool) {

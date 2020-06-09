@@ -22,17 +22,18 @@ public struct TripBookmarkKey: Hashable, Equatable {
         else {
             return nil
         }
-        self.stopID = bookmark.stopID
-        self.routeShortName = routeShortName
-        self.routeID = routeID
-        self.tripHeadsign = tripHeadsign
+        self.init(stopID: bookmark.stopID, routeShortName: routeShortName, routeID: routeID, tripHeadsign: tripHeadsign)
     }
 
     public init(arrivalDeparture: ArrivalDeparture) {
-        self.stopID = arrivalDeparture.stopID
-        self.routeShortName = arrivalDeparture.routeShortName
-        self.routeID = arrivalDeparture.routeID
-        self.tripHeadsign = arrivalDeparture.tripHeadsign ?? ""
+        self.init(stopID: arrivalDeparture.stopID, routeShortName: arrivalDeparture.routeShortName, routeID: arrivalDeparture.routeID, tripHeadsign: arrivalDeparture.tripHeadsign ?? "")
+    }
+
+    public init(stopID: StopID, routeShortName: String, routeID: RouteID, tripHeadsign: String) {
+        self.stopID = stopID
+        self.routeShortName = routeShortName
+        self.routeID = routeID
+        self.tripHeadsign = tripHeadsign
     }
 
     /// A composite of the route name and headsign.
