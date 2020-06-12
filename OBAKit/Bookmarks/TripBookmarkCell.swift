@@ -155,6 +155,9 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
             favoriteImageViewSizeConstraint,
             favoriteImageView.widthAnchor.constraint(equalTo: favoriteImageView.heightAnchor)
         ])
+
+        isAccessibilityElement = true
+        accessibilityTraits = [.button, .updatesFrequently]
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -212,6 +215,9 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         update(view: primaryMinutesLabel, withDataAtIndex: 0)
         update(view: secondaryMinutesLabel, withDataAtIndex: 1)
         update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
+
+        accessibilityLabel = formatters.accessibilityLabel(for: data)
+        accessibilityValue = formatters.accessibilityValue(for: data)
     }
 
     func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
@@ -251,6 +257,9 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         primaryMinutesLabel.prepareForReuse()
         secondaryMinutesLabel.text = nil
         tertiaryMinutesLabel.text = nil
+
+        accessibilityLabel = nil
+        accessibilityValue = nil
     }
 
     override var isHighlighted: Bool {

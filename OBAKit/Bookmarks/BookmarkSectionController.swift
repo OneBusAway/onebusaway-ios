@@ -197,7 +197,7 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
             return cell
         }
         else if let cell = cell as? StopBookmarkTableCell {
-            cell.data = bookmarkArrivalData.bookmark
+            cell.configureView(with: bookmarkArrivalData, formatters: formatters)
             return cell
         }
         else {
@@ -391,20 +391,23 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
 }
 
 final class StopBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separated {
-    var data: Bookmark? {
-        didSet {
-            guard let data = data else { return }
-            label.text = data.name
-        }
-    }
-
     override func prepareForReuse() {
         super.prepareForReuse()
 
         label.text = nil
+        accessibilityLabel = nil
     }
 
-    let label = UILabel.autolayoutNew()
+    let label: UILabel = {
+        let lbl = UILabel.autolayoutNew()
+        lbl.font = .preferredFont(forTextStyle: .headline)
+        lbl.numberOfLines = 0
+        lbl.adjustsFontForContentSizeCategory = true
+        lbl.adjustsFontSizeToFitWidth = true
+        lbl.minimumScaleFactor = 3/4
+
+        return lbl
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -415,10 +418,18 @@ final class StopBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
         contentView.addSubview(label)
         label.pinToSuperview(.layoutMargins)
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func configureView(with data: BookmarkArrivalData, formatters: Formatters) {
+        label.text = data.bookmark.name
+        accessibilityLabel = formatters.accessibilityLabel(for: data)
     }
 
     // MARK: - Separator
