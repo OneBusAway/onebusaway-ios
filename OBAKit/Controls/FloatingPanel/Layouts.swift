@@ -8,7 +8,7 @@
 import FloatingPanel
 
 /// A layout object used with `FloatingPanel` on `MapViewController`.
-class MapPanelLayout: NSObject, FloatingPanelLayout {
+final class MapPanelLayout: NSObject, FloatingPanelLayout {
     init(initialPosition: FloatingPanelPosition) {
         self.initialPosition = initialPosition
     }
@@ -25,5 +25,37 @@ class MapPanelLayout: NSObject, FloatingPanelLayout {
 
     var supportedPositions: Set<FloatingPanelPosition> {
         [.tip, .half, .full]
+    }
+}
+
+/// A layout object used with `FloatingPanel` on `MapViewController`.
+final class MapPanelLandscapeLayout: FloatingPanelLayout {
+    init(initialPosition: FloatingPanelPosition) {
+        self.initialPosition = initialPosition
+    }
+
+    var initialPosition: FloatingPanelPosition
+
+    public var supportedPositions: Set<FloatingPanelPosition> {
+        return [.full, .tip]
+    }
+
+    public func insetFor(position: FloatingPanelPosition) -> CGFloat? {
+        switch position {
+        case .full: return 16.0
+        case .tip: return 69.0
+        default: return nil
+        }
+    }
+
+    public func prepareLayout(surfaceView: UIView, in view: UIView) -> [NSLayoutConstraint] {
+        return [
+            surfaceView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 8.0),
+            surfaceView.widthAnchor.constraint(equalToConstant: 291)
+        ]
+    }
+
+    public func backdropAlphaFor(position: FloatingPanelPosition) -> CGFloat {
+        return 0.0
     }
 }

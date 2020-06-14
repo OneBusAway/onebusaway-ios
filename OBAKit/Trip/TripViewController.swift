@@ -170,7 +170,12 @@ class TripViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-        return MapPanelLayout(initialPosition: .half)
+        switch newCollection.verticalSizeClass {
+        case .compact:
+            return MapPanelLandscapeLayout(initialPosition: .full)
+        default:
+            return MapPanelLayout(initialPosition: .half)
+        }
     }
 
     func floatingPanelDidMove(_ vc: FloatingPanelController) {

@@ -20,7 +20,7 @@ github "rwbutler/Connectivity" ~>3.3.3
 github "aaronbrethorst/IGListKit" "master"
 
 # https://github.com/SCENEE/FloatingPanel/releases
-github "SCENEE/FloatingPanel" ~>1.7.4
+github "SCENEE/FloatingPanel" ~>1.7.5
 
 # https://github.com/SwipeCellKit/SwipeCellKit/releases
 github "SwipeCellKit/SwipeCellKit" ~>2.7.1
