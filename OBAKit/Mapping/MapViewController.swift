@@ -160,13 +160,11 @@ public class MapViewController: UIViewController,
     }()
 
     @objc private func showWeather() {
-        let camera = mapRegionManager.mapView.camera
-        print("Heading: \(camera.heading.radians)")
-//        guard let forecast = forecast else { return }
-//
-//        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
-//        alert.addAction(UIAlertAction.dismissAction)
-//        present(alert, animated: true, completion: nil)
+        guard let forecast = forecast else { return }
+
+        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
+        alert.addAction(UIAlertAction.dismissAction)
+        present(alert, animated: true, completion: nil)
     }
 
     private var weatherOperation: DecodableOperation<WeatherForecast>?
