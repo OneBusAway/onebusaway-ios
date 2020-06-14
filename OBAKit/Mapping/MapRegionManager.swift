@@ -56,7 +56,7 @@ public class MapRegionManager: NSObject,
         let mapView = MKMapView()
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
-        mapView.showsCompass = false
+        mapView.isRotateEnabled = false
         return mapView
     }()
 

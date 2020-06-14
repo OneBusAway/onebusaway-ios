@@ -75,23 +75,19 @@ public class MapViewController: UIViewController,
         super.viewDidLoad()
 
         let mapView = mapRegionManager.mapView
-        mapView.showsCompass = false
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
         floatingPanel.addPanel(toParent: self)
 
         view.insertSubview(toolbar, aboveSubview: mapView)
-        view.addSubview(compassButton)
 
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
             toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 40.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
-            compassButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            compassButton.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: ThemeMetrics.padding)
+            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor)
         ])
 
         mapRegionManager.statusOverlay = statusOverlay
@@ -151,15 +147,6 @@ public class MapViewController: UIViewController,
         return button
     }()
 
-    // MARK: - Map Compass
-
-    private lazy var compassButton: MKCompassButton = {
-        let compassBtn = MKCompassButton(mapView: mapRegionManager.mapView)
-        compassBtn.translatesAutoresizingMaskIntoConstraints = false
-        compassBtn.compassVisibility = .adaptive
-        return compassBtn
-    }()
-
     // MARK: - Weather
 
     private let weatherButton: UIButton = {
@@ -173,11 +160,13 @@ public class MapViewController: UIViewController,
     }()
 
     @objc private func showWeather() {
-        guard let forecast = forecast else { return }
-
-        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
-        alert.addAction(UIAlertAction.dismissAction)
-        present(alert, animated: true, completion: nil)
+        let camera = mapRegionManager.mapView.camera
+        print("Heading: \(camera.heading.radians)")
+//        guard let forecast = forecast else { return }
+//
+//        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
+//        alert.addAction(UIAlertAction.dismissAction)
+//        present(alert, animated: true, completion: nil)
     }
 
     private var weatherOperation: DecodableOperation<WeatherForecast>?
