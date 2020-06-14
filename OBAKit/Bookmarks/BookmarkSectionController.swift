@@ -134,6 +134,8 @@ final class BookmarkSectionData: NSObject, ListDiffable {
 // MARK: - BookmarkSectionController
 
 final class BookmarkSectionController: OBAListSectionController<BookmarkSectionData>, SwipeCollectionViewCellDelegate, ContextMenuProvider {
+    var arrivalDepartureTimes = ArrivalDepartureTimes()
+
     public override func numberOfItems() -> Int {
         guard let groupData = sectionData else {
             return 0
@@ -191,11 +193,11 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
 
         if let cell = cell as? TripBookmarkTableCell {
             cell.delegate = self
-            cell.set(data: bookmarkArrivalData, formatters: formatters)
+            cell.configureView(with: bookmarkArrivalData, formatters: formatters)
             return cell
         }
         else if let cell = cell as? StopBookmarkTableCell {
-            cell.data = bookmarkArrivalData.bookmark
+            cell.configureView(with: bookmarkArrivalData, formatters: formatters)
             return cell
         }
         else {
@@ -212,6 +214,18 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
 
         guard let bookmark = bookmark(at: index) else { return }
         bookmark.selected(bookmark.bookmark)
+    }
+
+    override func listAdapter(_ listAdapter: ListAdapter, willDisplay sectionController: ListSectionController, cell: UICollectionViewCell, at index: Int) {
+        if hasTitleRow && index == 0 { return }
+
+        guard let arrivalDepartures = self.bookmark(at: index)?.arrivalDepartures,
+            let cell = cell as? TripBookmarkTableCell else { return }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self = self else { return }
+            cell.highlightIfNeeded(newArrivalDepartures: arrivalDepartures, basedOn: &self.arrivalDepartureTimes)
+        }
     }
 
     // MARK: - Index Path Management
@@ -255,7 +269,10 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
     @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = sectionData else { return nil }
-        let row = sectionData.bookmarks[indexPath.item]
+        if hasTitleRow && indexPath.row == 0 { return nil }
+
+        let bookmarksIndex = hasTitleRow ? indexPath.item - 1 : indexPath.item
+        let row = sectionData.bookmarks[bookmarksIndex]
 
         let previewProvider = { () -> UIViewController? in
             let controller = row.previewDestination?()
@@ -306,11 +323,28 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
         didSet {
             if state == .open {
                 stateImageView.transform = CGAffineTransform(rotationAngle: .pi / 2.0)
-            }
-            else {
+            } else {
                 stateImageView.transform = CGAffineTransform(rotationAngle: 0.0)
             }
         }
+    }
+
+    // Override accessibility properties so we don't need to manually update.
+    override var accessibilityLabel: String? {
+        get { return textLabel.text }
+        set { _ = newValue }
+    }
+
+    override var accessibilityValue: String? {
+        get {
+            switch state {
+            case .open:
+                return OBALoc("collapsible_header_cell.voiceover.expanded", value: "Section expanded", comment: "Voiceover text describing an expanded (or opened) section.")
+            case .closed:
+                return OBALoc("collapsible_header_cell.voiceover.collapsed", value: "Section collapsed", comment: "Voiceover text describing a collapsed (or closed) section.")
+            }
+        }
+        set { _ = newValue }
     }
 
     override init(frame: CGRect) {
@@ -346,6 +380,9 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
             stateImageView.backgroundColor = .blue
             imageWrapper.backgroundColor = .purple
         }
+
+        accessibilityTraits = [.header, .button]
+        isAccessibilityElement = true
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -354,20 +391,23 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
 }
 
 final class StopBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separated {
-    var data: Bookmark? {
-        didSet {
-            guard let data = data else { return }
-            label.text = data.name
-        }
-    }
-
     override func prepareForReuse() {
         super.prepareForReuse()
 
         label.text = nil
+        accessibilityLabel = nil
     }
 
-    let label = UILabel.autolayoutNew()
+    let label: UILabel = {
+        let lbl = UILabel.autolayoutNew()
+        lbl.font = .preferredFont(forTextStyle: .headline)
+        lbl.numberOfLines = 0
+        lbl.adjustsFontForContentSizeCategory = true
+        lbl.adjustsFontSizeToFitWidth = true
+        lbl.minimumScaleFactor = 3/4
+
+        return lbl
+    }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -378,10 +418,18 @@ final class StopBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
         contentView.addSubview(label)
         label.pinToSuperview(.layoutMargins)
+
+        isAccessibilityElement = true
+        accessibilityTraits = .button
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func configureView(with data: BookmarkArrivalData, formatters: Formatters) {
+        label.text = data.bookmark.name
+        accessibilityLabel = formatters.accessibilityLabel(for: data)
     }
 
     // MARK: - Separator

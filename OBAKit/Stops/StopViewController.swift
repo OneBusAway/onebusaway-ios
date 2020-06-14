@@ -511,7 +511,7 @@ public class StopViewController: UIViewController,
     }
 
     /// Tracks arrival/departure times for `ArrivalDeparture`s.
-    private var arrivalDepartureTimes = [TripIdentifier: Int]()
+    private var arrivalDepartureTimes = ArrivalDepartureTimes()
 
     // ^^^ note: I don't see any reason to destroy outmoded data. The size of an individual key/value pair
     //           is measured in bytes, and the lifecycle of this controller is quite short. If/when the

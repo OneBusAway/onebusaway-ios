@@ -370,9 +370,21 @@ public extension UIStackView {
         return stack(axis: .vertical, arrangedSubviews: views)
     }
 
-    private class func stack(axis: NSLayoutConstraint.Axis, arrangedSubviews views: [UIView]) -> UIStackView {
+    /// Creates a stack view with the specified parameters.
+    ///
+    /// - Parameter axis: This property determines the orientation of the arranged views. Assigning the `.vertical` value creates a column of views. Assigning the `.horizontal` value creates a row. The default value is `.horizontal`.
+    /// - Parameter distribution: This property determines how the stack view lays out its arranged views along its axis. The default value is `.fill`. For a list of possible values, see `UIStackView.Distribution`.
+    /// - Parameter alignment: This property determines how the stack view lays out its arranged views perpendicularly to its axis. The default value is `.fill`. For a list of possible values, see `UIStackView.Alignment`.
+    /// - Parameter views: The arranged subviews
+    /// - Returns: The stack view configured with the specified parameters.
+    class func stack(axis: NSLayoutConstraint.Axis = .horizontal,
+                     distribution: UIStackView.Distribution = .fill,
+                     alignment: UIStackView.Alignment = .fill,
+                     arrangedSubviews views: [UIView]) -> UIStackView {
         let stack = UIStackView(arrangedSubviews: views)
         stack.axis = axis
+        stack.distribution = distribution
+        stack.alignment = alignment
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }

@@ -10,154 +10,131 @@ import OBAKitCore
 import IGListKit
 import SwipeCellKit
 
+/// This view displays the information of a `Bookmark`. If the bookmark is a trip, then it will display route,
+/// headsign, and predicted arrival/departure times.
+///
+/// # Trip Layout
+/// This view will adapt to accessibility settings.
+///
+/// ## Standard Content Size
+/// ```
+/// +----------------------------stackView--------------------------------+
+/// |                +-------infoStack-------+  +------minutesStack-----+ |
+/// |                | routeHeadsignLabel    |  |   primaryMinutesLabel | |
+/// |  pinImageView  |                       |  | secondaryMinutesLabel | |
+/// |                | fullExplanationlabel  |  |  tertiaryMinutesLabel | |
+/// |                +-----------------------+  +-----------------------+ |
+/// +---------------------------------------------------------------------+
+/// ```
+///
+/// ## Accessibility Content Size
+/// ```
+/// +--------------------------------stackView----------------------------------+
+/// | pinImageView                                                              |
+/// | +------------------------------infoStack--------------------------------+ |
+/// | | routeHeadsignLabel                                                    | |
+/// | | accessibilityTimeLabel                                                | |
+/// | | accessibilityScheduleDeviationLabel                                   | |
+/// | +-----------------------------------------------------------------------+ |
+/// | +----------------------------minutesStack-------------------------------+ |
+/// | | primaryMinutesLabel    secondaryMinutesLabel     tertiaryMinutesLabel | |
+/// | +-----------------------------------------------------------------------+ |
+/// +---------------------------------------------------------------------------+
+/// ```
+///
+/// ## Standard → Accessibility:
+/// - Display accessibility labels
+/// - stackView becomes vertical stack; minutesStack becomes horizontal stack.
 final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
     // MARK: - Info Label Stack
+    public let routeHeadsignLabel = buildLabel(textStyle: .headline)
 
-    public let routeHeadsignLabel: UILabel = {
-        let label = buildLabel()
-        label.numberOfLines = 0
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        return label
-    }()
-
+    private lazy var favoriteImageViewSizeConstraint = favoriteImageView.heightAnchor.constraint(equalToConstant: 16.0)
     private lazy var favoriteImageView: UIImageView = {
         let imageView = UIImageView.autolayoutNew()
         imageView.image = Icons.star
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = ThemeColors.shared.label
         imageView.setContentHuggingPriority(.required, for: .horizontal)
-
-        NSLayoutConstraint.activate([
-            imageView.heightAnchor.constraint(equalToConstant: 16.0),
-            imageView.widthAnchor.constraint(equalToConstant: 16.0)
-        ])
-
         return imageView
     }()
-
-    private lazy var routeHeadsignStack: UIStackView = {
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [favoriteImageView, routeHeadsignLabel])
-        return stack
-    }()
-
-    private lazy var routeHeadsignWrapper = routeHeadsignStack.embedInWrapperView()
 
     /// Second line in the view; contains the arrival/departure time and status relative to schedule.
     ///
     /// For example, this might contain the text `11:20 AM - arriving on time`.
-    let timeExplanationLabel = buildLabel()
+    private let fullExplanationLabel = buildLabel(textStyle: .body)
 
-    lazy var labelStack = UIStackView.verticalStack(arrangedSubviews: [routeHeadsignWrapper, timeExplanationLabel, UIView.autolayoutNew()])
+    /// Accessibility feature for one-column compact view. For example, `11:20 AM`
+    private let accessibilityTimeLabel = buildLabel(textStyle: .subheadline)
+
+    /// Accessibility feature for one-column compact view. For example, `arriving on time`.
+    private let accessibilityScheduleDeviationLabel = buildLabel(textStyle: .caption1)
+
+    /// Views to set visible when not in accessibility.
+    private var standardInfoStack: [UIView] {
+        [fullExplanationLabel]
+    }
+
+    /// Views to set visible when user is in accessibility.
+    private var accessibilityInfoStack: [UIView] {
+        [accessibilityTimeLabel,
+         accessibilityScheduleDeviationLabel]
+    }
+
+    /// Views containing info elements. To simplify logic, we will include all info views into the stack view.
+    private lazy var infoStackView = UIStackView.stack(axis: .vertical, alignment: .leading, arrangedSubviews: [
+        routeHeadsignLabel,
+        fullExplanationLabel,
+        accessibilityTimeLabel,
+        accessibilityScheduleDeviationLabel
+    ])
 
     // MARK: - Minutes to Departure Labels
-
-    /// Appears on the trailing side of the view; contains the number of minutes until arrival/departure.
-    ///
-    /// For example, this might contain the text `10m`.
-    let topMinutesLabel = HighlightChangeLabel.autolayoutNew()
-
-    private lazy var topMinutesWrapper = buildMinutesLabelWrapper(label: topMinutesLabel)
-
-    let centerMinutesLabel = HighlightChangeLabel.autolayoutNew()
-
-    private lazy var centerMinutesWrapper = buildMinutesLabelWrapper(label: centerMinutesLabel)
-
-    let bottomMinutesLabel = HighlightChangeLabel.autolayoutNew()
-
-    private lazy var bottomMinutesWrapper = buildMinutesLabelWrapper(label: bottomMinutesLabel)
-
-    private lazy var minutesStack = UIStackView.verticalStack(arrangedSubviews: [topMinutesWrapper, centerMinutesWrapper, bottomMinutesWrapper])
-
-    private lazy var minutesWrappers: UIView = {
-        let wrapper = minutesStack.embedInWrapperView(setConstraints: false)
-        NSLayoutConstraint.activate([
-            minutesStack.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-            minutesStack.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
-            minutesStack.topAnchor.constraint(equalTo: wrapper.topAnchor),
-            minutesStack.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
-        ])
-
-        return wrapper
+    private lazy var primaryMinutesLabel: DepartureTimeBadge = {
+        let label = DepartureTimeBadge.autolayoutNew()
+        label.minimumScaleFactor = 3/4
+        label.adjustsFontForContentSizeCategory = true
+        return label
     }()
 
-    // MARK: - Outer Stack
+    private let secondaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
+    private let tertiaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
 
-    lazy var outerStack = UIStackView.horizontalStack(arrangedSubviews: [labelStack, minutesWrappers])
-
-    // MARK: - UI Builders
-
-    private class func buildLabel() -> UILabel {
-        let label = UILabel.autolayoutNew()
-        label.setCompressionResistance(horizontal: .required, vertical: .required)
-        label.setHugging(horizontal: .defaultLow, vertical: .defaultLow)
+    static var buildMinutesLabel: HighlightChangeLabel {
+        let label = HighlightChangeLabel.autolayoutNew()
+        label.font = .preferredFont(forTextStyle: .subheadline)
+        label.adjustsFontForContentSizeCategory = true
         return label
     }
 
-    private func buildMinutesLabelWrapper(label: UILabel) -> UIView {
-        let wrapper = label.embedInWrapperView()
-        wrapper.setCompressionResistance(horizontal: .required, vertical: .required)
-        return wrapper
+    lazy var minutesStackView = UIStackView(arrangedSubviews: [
+        primaryMinutesLabel,
+        secondaryMinutesLabel,
+        tertiaryMinutesLabel])
+
+    // MARK: - Outer Stack
+
+    lazy var stackView = UIStackView.stack(alignment: .leading, arrangedSubviews: [
+        favoriteImageView,
+        infoStackView,
+        minutesStackView
+    ])
+
+    // MARK: - UI Builders
+    private class func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
+        let label = UILabel.autolayoutNew()
+        label.numberOfLines = 0
+        label.font = .preferredFont(forTextStyle: textStyle)
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 3/4
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setCompressionResistance(horizontal: .required, vertical: .required)
+        label.setHugging(horizontal: .defaultLow, vertical: .defaultLow)
+
+        return label
     }
-
-    // MARK: - Data
-
-    public func set(data: BookmarkArrivalData, formatters: Formatters) {
-        self.formatters = formatters
-        self.data = data
-    }
-
-    var data: BookmarkArrivalData? {
-        didSet {
-            guard let data = data else { return }
-
-            let isFavorite = data.bookmark.isFavorite
-            let isFavoriteViewInstalled = routeHeadsignStack.arrangedSubviews.contains(favoriteImageView)
-
-            switch (isFavorite, isFavoriteViewInstalled) {
-            case (true, false):
-                routeHeadsignStack.insertArrangedSubview(favoriteImageView, at: 0)
-                favoriteImageView.isHidden = false
-            case (false, true):
-                routeHeadsignStack.removeArrangedSubview(favoriteImageView)
-                favoriteImageView.isHidden = true
-            default: break // true/true and false/false are both nops.
-            }
-
-            routeHeadsignLabel.text = data.bookmark.name
-            arrivalDepartures = data.arrivalDepartures
-        }
-    }
-
-    /// Set this to display up to three `ArrivalDeparture`s in this view.
-    private var arrivalDepartures: [ArrivalDeparture]? {
-        didSet {
-            guard let arrivalDepartures = arrivalDepartures else { return }
-
-            if let first = arrivalDepartures.first {
-                timeExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: first)
-            }
-
-            let updateLabelWithDeparture = { (label: UILabel, wrapper: UIView, index: Int) in
-                if arrivalDepartures.count > index {
-                    let dep = arrivalDepartures[index]
-                    label.text = self.formatters.shortFormattedTime(until: dep)
-                    label.textColor = self.formatters.colorForScheduleStatus(dep.scheduleStatus)
-                    self.minutesStack.insertArrangedSubview(wrapper, at: index)
-                }
-                else {
-                    wrapper.removeFromSuperview()
-                    label.text = nil
-                }
-            }
-
-            updateLabelWithDeparture(topMinutesLabel, topMinutesWrapper, 0)
-            updateLabelWithDeparture(centerMinutesLabel, centerMinutesWrapper, 1)
-            updateLabelWithDeparture(bottomMinutesLabel, bottomMinutesWrapper, 2)
-        }
-    }
-
-    private var formatters: Formatters!
 
     // MARK: - Init
 
@@ -169,12 +146,89 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         contentView.backgroundColor = ThemeColors.shared.systemBackground
         contentView.layer.addSublayer(separator)
 
-        contentView.addSubview(outerStack)
-        outerStack.pinToSuperview(.layoutMargins)
+        contentView.addSubview(stackView)
+        stackView.pinToSuperview(.layoutMargins)
+
+        NSLayoutConstraint.activate([
+            primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8),
+
+            favoriteImageViewSizeConstraint,
+            favoriteImageView.widthAnchor.constraint(equalTo: favoriteImageView.heightAnchor)
+        ])
+
+        isAccessibilityElement = true
+        accessibilityTraits = [.button, .updatesFrequently]
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Data
+
+    func configureView(with data: BookmarkArrivalData, formatters: Formatters) {
+        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+
+        routeHeadsignLabel.text = data.bookmark.name
+        favoriteImageView.isHidden = !data.bookmark.isFavorite
+
+        guard let arrivalDepartures = data.arrivalDepartures else { return }
+        if let arrivalDeparture = arrivalDepartures.first {
+            fullExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: arrivalDeparture)
+            accessibilityTimeLabel.text = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+
+            if arrivalDeparture.scheduleStatus == .unknown {
+                accessibilityScheduleDeviationLabel.text = Strings.scheduledNotRealTime
+            }
+            else {
+                accessibilityScheduleDeviationLabel.text = formatters.formattedScheduleDeviation(for: arrivalDeparture)
+            }
+
+            accessibilityScheduleDeviationLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
+        }
+
+        // Do accessibility
+        standardInfoStack.forEach { $0.isHidden = isAccessibility }
+        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
+
+        stackView.axis = isAccessibility ? .vertical : .horizontal
+        minutesStackView.axis = isAccessibility ? .horizontal : .vertical
+
+        stackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
+        minutesStackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
+
+        minutesStackView.alignment = isAccessibility ? .center : .trailing
+        minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
+
+        favoriteImageViewSizeConstraint.constant = isAccessibility ? 48 : 16
+
+        // Update data
+        func update(view: ArrivalDepartureDrivenUI, withDataAtIndex index: Int) {
+            if arrivalDepartures.count > index {
+                view.configure(with: arrivalDepartures[index], formatters: formatters)
+                view.isHidden = false
+            } else {
+                view.isHidden = true
+            }
+        }
+
+        update(view: primaryMinutesLabel, withDataAtIndex: 0)
+        update(view: secondaryMinutesLabel, withDataAtIndex: 1)
+        update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
+
+        accessibilityLabel = formatters.accessibilityLabel(for: data)
+        accessibilityValue = formatters.accessibilityValue(for: data)
+    }
+
+    func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
+                           basedOn arrivalDepartureTimes: inout ArrivalDepartureTimes) {
+        let views: [ArrivalDepartureDrivenUI] = [primaryMinutesLabel, secondaryMinutesLabel, tertiaryMinutesLabel]
+
+        for view in views.enumerated() {
+            guard newArrivalDepartures.count > view.offset else { continue }
+            let arrDep = newArrivalDepartures[view.offset]
+            view.element.highlightIfNeeded(arrivalDeparture: arrDep, basedOn: &arrivalDepartureTimes)
+        }
     }
 
     // MARK: - Separator
@@ -196,10 +250,16 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         super.prepareForReuse()
 
         routeHeadsignLabel.text = nil
-        timeExplanationLabel.text = nil
-        topMinutesLabel.text = ""
-        centerMinutesLabel.text = ""
-        bottomMinutesLabel.text = ""
+        fullExplanationLabel.text = nil
+        accessibilityTimeLabel.text = nil
+        accessibilityScheduleDeviationLabel.text = nil
+
+        primaryMinutesLabel.prepareForReuse()
+        secondaryMinutesLabel.text = nil
+        tertiaryMinutesLabel.text = nil
+
+        accessibilityLabel = nil
+        accessibilityValue = nil
     }
 
     override var isHighlighted: Bool {
