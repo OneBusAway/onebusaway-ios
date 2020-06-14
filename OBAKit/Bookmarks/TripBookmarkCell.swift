@@ -50,16 +50,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
     // MARK: - Info Label Stack
     public let routeHeadsignLabel = buildLabel(textStyle: .headline)
 
-    private lazy var favoriteImageViewSizeConstraint = favoriteImageView.heightAnchor.constraint(equalToConstant: 16.0)
-    private lazy var favoriteImageView: UIImageView = {
-        let imageView = UIImageView.autolayoutNew()
-        imageView.image = Icons.star
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = ThemeColors.shared.label
-        imageView.setContentHuggingPriority(.required, for: .horizontal)
-        return imageView
-    }()
-
     /// Second line in the view; contains the arrival/departure time and status relative to schedule.
     ///
     /// For example, this might contain the text `11:20 AM - arriving on time`.
@@ -116,7 +106,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
     // MARK: - Outer Stack
 
     lazy var stackView = UIStackView.stack(alignment: .leading, arrangedSubviews: [
-        favoriteImageView,
         infoStackView,
         minutesStackView
     ])
@@ -150,10 +139,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         stackView.pinToSuperview(.layoutMargins)
 
         NSLayoutConstraint.activate([
-            primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8),
-
-            favoriteImageViewSizeConstraint,
-            favoriteImageView.widthAnchor.constraint(equalTo: favoriteImageView.heightAnchor)
+            primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8)
         ])
 
         isAccessibilityElement = true
@@ -170,7 +156,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
 
         routeHeadsignLabel.text = data.bookmark.name
-        favoriteImageView.isHidden = !data.bookmark.isFavorite
 
         guard let arrivalDepartures = data.arrivalDepartures else { return }
         if let arrivalDeparture = arrivalDepartures.first {
@@ -199,8 +184,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
         minutesStackView.alignment = isAccessibility ? .center : .trailing
         minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
-
-        favoriteImageViewSizeConstraint.constant = isAccessibility ? 48 : 16
 
         // Update data
         func update(view: ArrivalDepartureDrivenUI, withDataAtIndex index: Int) {
