@@ -99,8 +99,8 @@ public class MapViewController: UIViewController,
 
         NSLayoutConstraint.activate([
             statusOverlay.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -ThemeMetrics.padding),
-            statusOverlay.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: ThemeMetrics.padding),
-            statusOverlay.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -ThemeMetrics.padding)
+            statusOverlay.leadingAnchor.constraint(equalTo: floatingPanel.surfaceView.leadingAnchor, constant: ThemeMetrics.padding),
+            statusOverlay.trailingAnchor.constraint(equalTo: floatingPanel.surfaceView.trailingAnchor, constant: -ThemeMetrics.padding)
         ])
     }
 
@@ -264,7 +264,12 @@ public class MapViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-        return MapPanelLayout(initialPosition: .tip)
+        switch newCollection.verticalSizeClass {
+        case .compact:
+            return MapPanelLandscapeLayout(initialPosition: .tip)
+        default:
+            return MapPanelLayout(initialPosition: .tip)
+        }
     }
 
     public func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
