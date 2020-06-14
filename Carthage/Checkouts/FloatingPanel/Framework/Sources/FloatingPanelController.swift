@@ -371,7 +371,6 @@ open class FloatingPanelController: UIViewController {
         switch contentInsetAdjustmentBehavior {
         case .always:
             scrollView?.contentInset = adjustedContentInsets
-            scrollView?.scrollIndicatorInsets = adjustedContentInsets
         default:
             break
         }
@@ -422,9 +421,11 @@ open class FloatingPanelController: UIViewController {
             // inset's update expectedly.
             // 2. The safe area top inset can be variable on the large title navigation bar(iOS11+).
             // That's why it needs the observation to keep `adjustedContentInsets` correct.
-            safeAreaInsetsObservation = self.observe(\.view.safeAreaInsets, options: [.initial, .new, .old]) { [weak self] (vc, change) in
-                guard change.oldValue != change.newValue else { return }
-                self?.update(safeAreaInsets: vc.layoutInsets)
+            safeAreaInsetsObservation = self.view.observe(\.safeAreaInsets, options: [.initial, .new, .old]) { [weak self] (_, change) in
+                // Use `self.view.safeAreaInsets` becauese `change.newValue` can be nil in particular case when
+                // is reported in https://github.com/SCENEE/FloatingPanel/issues/330
+                guard let `self` = self, change.oldValue != self.view.safeAreaInsets else { return }
+                self.update(safeAreaInsets: self.view.safeAreaInsets)
             }
         } else {
             // KVOs for topLayoutGuide & bottomLayoutGuide are not effective.
@@ -669,7 +670,8 @@ public extension UIViewController {
         }
         // Call dismiss(animated:completion:) to FloatingPanelController directly
         if let fpc = self as? FloatingPanelController {
-            if fpc.presentingViewController != nil {
+            // When a panel is presented modally and it's not a child view controller of the presented view controller.
+            if fpc.presentingViewController != nil, fpc.parent == nil {
                 self.fp_original_dismiss(animated: flag, completion: completion)
             } else {
                 fpc.removePanelFromParent(animated: flag, completion: completion)
