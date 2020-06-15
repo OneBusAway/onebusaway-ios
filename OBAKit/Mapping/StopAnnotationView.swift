@@ -104,6 +104,13 @@ class StopAnnotationView: MKAnnotationView {
 
         titleLabel.text = stop.mapTitle
         subtitleLabel.text = stop.mapSubtitle
+
+        let detailLabel = UILabel()
+        detailLabel.font = .preferredFont(forTextStyle: .caption1)
+        detailLabel.numberOfLines = 0
+        detailLabel.text = stop.subtitle
+
+        detailCalloutAccessoryView = detailLabel
     }
 
     // MARK: - Appearance
