@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if ! which jazzy >/dev/null; then
+  echo "Jazzy not detected. Consult the README for more information. (tl; dr: run the command `bundle install`)"
+  exit
+fi
+
+if ! which sourcekitten >/dev/null; then
+  echo "Sourcekitten not detected. Consult the README for more information. (tl; dr: run the command `brew install sourcekitten`)"
+  exit
+fi
+
+mkdir -p docs
+
+kitCoreDocs=$(sourcekitten doc --module-name OBAKitCore)
+kitDocs=$(sourcekitten doc --module-name OBAKit)
+echo ${kitCoreDocs%?}', '${kitDocs:1} > docs/kitty.json
+jazzy --sourcekitten-sourcefile docs/kitty.json --config .jazzy.json

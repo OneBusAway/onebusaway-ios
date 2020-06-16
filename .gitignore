@@ -54,3 +54,6 @@ fastlane/test_output
 
 # Don't bother saving docs.
 docs
+
+# But do save the docs script
+!scripts/docs
