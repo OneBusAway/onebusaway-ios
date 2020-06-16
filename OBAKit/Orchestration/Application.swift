@@ -77,6 +77,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
+    /// Handles all deep-linking into the app.
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
         let router = AppLinksRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
         router?.showStopHandler = { [weak self] stop in
@@ -117,12 +118,16 @@ public class Application: CoreApplication, PushServiceDelegate {
         return router
     }()
 
+    /// The application delegate object.
     @objc public weak var delegate: ApplicationDelegate?
 
+    /// Reachability is responsible for determining if the user has a functioning Internet connection.
     @objc public let reachability = Reachability()
 
     // MARK: - Init
 
+    /// Creates a new `Application` object.
+    /// - Parameter config: A configuration object that determines the characteristics of this app.
     @objc public init(config: AppConfig) {
         self.config = config
 
@@ -154,10 +159,12 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Onboarding/Data Migration
 
+    /// When true, this means that the application's user defaults contain data that can be migrated into a modern format.
     public var hasDataToMigrate: Bool { dataMigrationBulletin.hasDataToMigrate }
 
     lazy var dataMigrationBulletin = DataMigrationBulletinManager(dataMigrator: dataMigrator)
 
+    /// If data exists to migrate, this method will prompt the user about whether they wish to migrate data from an old format to the new format.
     public func performDataMigration() {
         guard
             hasDataToMigrate,
@@ -243,6 +250,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Push Notifications
 
+    /// An optional property that contains this app's configured push notifications service.
     public private(set) var pushService: PushService?
 
     private func configurePushNotifications(launchOptions: [AnyHashable: Any]) {
