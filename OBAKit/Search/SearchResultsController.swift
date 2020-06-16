@@ -113,7 +113,7 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
 
                     switch result {
                     case .failure(let error):
-                        print("TODO FIXME handle error! \(error)")
+                        self.application.displayError(error)
                     case .success(let response):
                         let response = SearchResponse(response: self.searchResponse, substituteResult: response.entry)
                         self.application.mapRegionManager.searchResponse = response

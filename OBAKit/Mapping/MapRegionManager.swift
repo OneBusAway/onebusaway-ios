@@ -202,7 +202,7 @@ public class MapRegionManager: NSObject,
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 self.stops = response.list
                 self.notifyDelegatesDataLoadingFinished()
@@ -305,7 +305,7 @@ public class MapRegionManager: NSObject,
         op.complete { result in
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 completion(response.list)
             }
@@ -421,7 +421,7 @@ public class MapRegionManager: NSObject,
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 let response = SearchResponse(response: searchResponse, substituteResult: response.entry)
                 self.searchResponse = response

@@ -9,6 +9,7 @@ import Foundation
 
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
     @objc optional func agencyAlertsUpdated()
+    @objc optional func agencyAlertsStore(_ store: AgencyAlertsStore, displayError error: Error)
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
@@ -74,7 +75,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
                 switch result {
                 case .failure(let error):
-                    print("TODO FIXME handle error! \(error)")
+                    self.notifyDelegates(error: error)
                 case .success(let response):
                     self.agencies = response.list
                     self.fetchRegionalAlerts()
@@ -216,6 +217,15 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         DispatchQueue.main.async {
             for d in delegates {
                 d.agencyAlertsUpdated?()
+            }
+        }
+    }
+
+    private func notifyDelegates(error: Error) {
+        let delegates = self.delegates.allObjects
+        DispatchQueue.main.async {
+            for d in delegates {
+                d.agencyAlertsStore?(self, displayError: error)
             }
         }
     }

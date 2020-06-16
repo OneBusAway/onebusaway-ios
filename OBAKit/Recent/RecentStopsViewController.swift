@@ -103,7 +103,7 @@ public class RecentStopsViewController: UIViewController,
 
                     switch result {
                     case .failure(let error):
-                        print("TODO FIXME handle error! \(error)")
+                        self.application.displayError(error)
                     case .success(let response):
                         self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
                     }

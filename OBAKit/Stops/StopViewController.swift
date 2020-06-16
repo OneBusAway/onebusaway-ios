@@ -307,7 +307,7 @@ public class StopViewController: UIViewController,
             case (true, _):
                 self.displayBrokenBookmarkMessage()
             case (_, .failure(let error)):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case (false, .success(let response)):
                 self.lastUpdated = Date()
                 self.stopArrivals = response.entry

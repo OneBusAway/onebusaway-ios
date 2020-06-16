@@ -69,7 +69,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 self.data = response.list
             }

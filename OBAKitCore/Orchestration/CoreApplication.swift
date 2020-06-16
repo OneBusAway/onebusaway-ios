@@ -198,4 +198,10 @@ open class CoreApplication: NSObject,
     public func migrate(bookmark: Bookmark, group: BookmarkGroup?) {
         userDataStore.add(bookmark, to: group)
     }
+
+    // MARK: - Error Handling
+
+    open func displayError(_ error: Error) {
+        DDLogError("Error: \(error.localizedDescription)")
+    }
 }

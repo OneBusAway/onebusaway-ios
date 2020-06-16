@@ -23,6 +23,8 @@ public protocol RegionsServiceDelegate: NSObjectProtocol {
     /// The update will be cancelled when the regions list has been updated within the past week, and an update is not forced.
     /// - parameter service: The `RegionsService` object.
     @objc optional func regionsServiceListUpdateCancelled(_ service: RegionsService)
+
+    @objc optional func regionsService(_ service: RegionsService, displayError error: Error)
 }
 
 /// Manages the app's list of `Region`s, including list updates, and which `Region` the user is currently located in.
@@ -121,6 +123,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private func notifyDelegatesAutomaticallySelectRegionChanged(value: Bool) {
         for delegate in delegates.allObjects {
             delegate.regionsService?(self, changedAutomaticRegionSelection: value)
+        }
+    }
+
+    private func notifyDelegatesDisplayError(_ error: Error) {
+        for delegate in delegates.allObjects {
+            delegate.regionsService?(self, displayError: error)
         }
     }
 
@@ -269,7 +277,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.notifyDelegatesDisplayError(error)
             case .success(let response):
                 guard response.list.count > 0 else { return }
                 self.regions = response.list

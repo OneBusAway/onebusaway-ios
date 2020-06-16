@@ -90,7 +90,7 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
                 self.error = APIError.captivePortal
             }
             else {
-                self.error = APIError.invalidData(error)
+                self.error = APIError.invalidContentType(originalError: error, expectedContentType: "JSON", actualContentType: response.contentType)
             }
             return
         }

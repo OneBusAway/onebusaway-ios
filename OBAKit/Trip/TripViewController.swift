@@ -211,7 +211,7 @@ class TripViewController: UIViewController,
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 self.tripDetailsController.tripDetails = response.entry
                 self.mapView.updateAnnotations(with: response.entry.stopTimes)
@@ -258,7 +258,7 @@ class TripViewController: UIViewController,
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 guard let polyline = response.entry.polyline else { return }
                 self.routePolyline = polyline

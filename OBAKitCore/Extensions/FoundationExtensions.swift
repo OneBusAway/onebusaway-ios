@@ -146,13 +146,16 @@ public extension HTTPURLResponse {
 
     /// Returns true if this object has a Content-Type header field set with the value `application/json` or `text/json`.
     var hasJSONContentType: Bool {
-        guard let contentType = allHeaderFields["Content-Type"] as? String else {
+        guard let contentType = contentType else {
             return false
         }
 
-        return contentType == "application/json"
-            || contentType == "text/json"
+        return contentType.hasPrefix("application/json") ||
+               contentType.hasPrefix("text/json")
     }
+
+    /// Returns the value of the `Content-Type` header field.
+    var contentType: String? { allHeaderFields["Content-Type"] as? String ?? nil }
 }
 
 // MARK: - MeasurementFormatter

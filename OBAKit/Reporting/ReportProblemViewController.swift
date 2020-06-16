@@ -71,7 +71,7 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.application.displayError(error)
             case .success(let response):
                 self.data = response.entry
             }

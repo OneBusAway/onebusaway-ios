@@ -108,7 +108,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
                 switch result {
                 case .failure(let error):
-                    print("TODO FIXME handle error! \(error)")
+                    self.displayError(error)
                 case .success(let response):
                     self.viewRouter.navigateTo(arrivalDeparture: response.entry, from: topVC)
                 }
@@ -276,12 +276,12 @@ public class Application: CoreApplication, PushServiceDelegate {
         op.complete { [weak self] result in
             guard
                 let self = self,
-                let topController = self.delegate?.uiApplication?.keyWindow?.topViewController
+                let topController = self.topViewController
             else { return }
 
             switch result {
             case .failure(let error):
-                print("TODO FIXME handle error! \(error)")
+                self.displayError(error)
             case .success(let response):
                 let tripController = TripViewController(application: self, arrivalDeparture: response.entry)
                 self.viewRouter.navigate(to: tripController, from: topController)
@@ -314,6 +314,10 @@ public class Application: CoreApplication, PushServiceDelegate {
             }
         }
         alertBulletin?.show(in: app)
+    }
+
+    func agencyAlertsStore(_ store: AgencyAlertsStore, displayError error: Error) {
+        displayError(error)
     }
 
     // MARK: - UIApplication Hooks
@@ -458,6 +462,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
     }
 
+    public func regionsService(_ service: RegionsService, displayError error: Error) {
+        displayError(error)
+    }
+
     // MARK: - Analytics
 
     @objc public private(set) var analytics: Analytics?
@@ -466,6 +474,24 @@ public class Application: CoreApplication, PushServiceDelegate {
         let val = UIAccessibility.isVoiceOverRunning ? "YES" : "NO"
         analytics?.setUserProperty?(key: "accessibility", value: val)
     }
+
+    // MARK: - Error Visualization
+
+    /// Displays an error to the end user.
+    ///
+    /// Hopefully, the error object conforms to `LocalizedError` and provides an understandable, localized
+    /// explanation to the user via `localizedDescription`.
+    ///
+    /// - Parameter error: The error to display.
+    public override func displayError(_ error: Error) {
+        super.displayError(error)
+        guard let uiApp = delegate?.uiApplication else { return }
+        let bulletin = ErrorBulletin(application: self, message: error.localizedDescription)
+        bulletin.show(in: uiApp)
+        self.errorBulletin = bulletin
+    }
+
+    private var errorBulletin: ErrorBulletin?
 
     // MARK: - Feature Availability
 
