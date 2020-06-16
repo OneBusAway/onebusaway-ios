@@ -59,6 +59,9 @@ public class MapViewController: UIViewController,
         // Assign delegates
         self.application.mapRegionManager.addDelegate(self)
         self.application.locationService.addDelegate(self)
+
+        self.application.notificationCenter.addObserver(self, selector: #selector(applictionDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
+        self.application.notificationCenter.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -128,11 +131,14 @@ public class MapViewController: UIViewController,
 
     // MARK: - User Location
 
-    @objc public func centerMapOnUserLocation() {
+    @objc func centerMapOnUserLocationViaTap(_ sender: Any?) {
         guard isLoadedAndOnScreen else { return }
-
         application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapShowUserLocationButtonTapped, value: nil)
+        centerMapOnUserLocation()
+    }
 
+    func centerMapOnUserLocation() {
+        guard isLoadedAndOnScreen else { return }
         let userLocation = mapRegionManager.mapView.userLocation
         guard userLocation.isValid else { return }
 
@@ -142,7 +148,7 @@ public class MapViewController: UIViewController,
     private let locationButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(Icons.mapTabIcon, for: .normal)
-        button.addTarget(self, action: #selector(centerMapOnUserLocation), for: .touchUpInside)
+        button.addTarget(self, action: #selector(centerMapOnUserLocationViaTap), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
     }()
@@ -196,6 +202,25 @@ public class MapViewController: UIViewController,
             }
         }
         weatherOperation = op
+    }
+
+    // MARK: - Application State
+
+    private var resignedActiveAt: Date?
+
+    @objc func applicationWillResignActive(_ notification: NSNotification) {
+        resignedActiveAt = Date()
+    }
+
+    @objc func applictionDidBecomeActive(_ notification: NSNotification) {
+        guard
+            let resignedActiveAt = resignedActiveAt,
+            abs(resignedActiveAt.timeIntervalSinceNow) > 600
+        else {
+            return
+        }
+
+        centerMapOnUserLocation()
     }
 
     // MARK: - Content Presentation
