@@ -1,0 +1,32 @@
+name: OBAKitTests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    # Use cache for Carthage (saves up to 12 minutes on incremental builds). If the Cartfile has changed,
+    # such as an updated dependency, it will trigger a rebuild of all dependencies.
+    - uses: actions/cache@v2
+      with:
+        path: Carthage
+        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-carthage-
+
+    - name: Install xcodegen
+      run: brew install xcodegen
+    - name: Build Carthage
+      run: scripts/carthage_build
+    - name: Generate xcodeproj for OneBusAway
+      run: scripts/generate_project OneBusAway
+    - name: Build OneBusAway and Test OBAKit
+      run: xcodebuild clean test -project 'OBAKit.xcodeproj' -scheme 'App' -sdk iphonesimulator -destination 'name=iPhone 11 Pro Max'
