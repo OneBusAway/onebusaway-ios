@@ -8,6 +8,7 @@
 import UIKit
 import IGListKit
 import OBAKitCore
+import FloatingPanel
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 class TripFloatingPanelController: UIViewController,
@@ -112,6 +113,23 @@ class TripFloatingPanelController: UIViewController,
 
         if let listItem = listItem {
             collectionController.listAdapter.scroll(to: listItem, supplementaryKinds: nil, scrollDirection: .vertical, scrollPosition: .top, animated: true)
+        }
+    }
+
+    public func configureView(for drawerPosition: FloatingPanelPosition) {
+        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        switch drawerPosition {
+        case .hidden: break
+        case .tip:
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = true }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
+        case .half:
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
+            self.stopArrivalView.accessibilityMinimalInfoStack.forEach { $0.isHidden = !isAccessibility }
+        case .full:
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
         }
     }
 

@@ -190,6 +190,8 @@ class TripViewController: UIViewController,
             let drawerHeight = vc.layout.insetFor(position: vc.position) ?? 0
             mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
         }
+
+        self.tripDetailsController.configureView(for: vc.position)
     }
 
     // MARK: - Trip Details Data

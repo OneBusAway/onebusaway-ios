@@ -105,6 +105,11 @@ class StopArrivalView: UIView {
          accessibilityRelativeTimeBadge]
     }
 
+    /// Views to set visible in accessibility when in minimal view.
+    var accessibilityMinimalInfoStack: [UIView] {
+        [accessibilityRelativeTimeBadge]
+    }
+
     /// Views containing info elements. To simplify logic, we will include all info views into the stack view.
     private lazy var infoStack = UIStackView.verticalStack(arrangedSubviews: [
         routeHeadsignLabel,
