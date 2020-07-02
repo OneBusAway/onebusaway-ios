@@ -201,7 +201,7 @@ final class TripStopCell: BaseSelfSizingTableCell {
         let heightConstraint = stackWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: tripStopCellMinimumHeight)
         heightConstraint.priority = .defaultHigh
         NSLayoutConstraint.activate([
-            stackWrapper.leadingAnchor.constraint(equalTo: tripSegmentView.trailingAnchor, constant: ThemeMetrics.compactPadding),
+            stackWrapper.leadingAnchor.constraint(equalTo: tripSegmentView.trailingAnchor, constant: ThemeMetrics.padding),
             stackWrapper.topAnchor.constraint(equalTo: contentView.topAnchor),
             stackWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             heightConstraint
