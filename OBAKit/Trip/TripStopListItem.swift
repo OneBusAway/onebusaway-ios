@@ -115,15 +115,23 @@ final class TripStopSectionController: OBAListSectionController<TripStopListItem
 
 // MARK: - Cell
 
+/// ## Standard Cell Appearance
+/// ```
+/// [ |                            ]
+/// [ O  15th & Galer     7:25PM > ]
+/// [ |                            ]
+/// ```
+///
+/// ## Accessibility Cell Appearance
+/// ```
+/// [ |                            ]
+/// [ |  15th                      ]
+/// [ O  & Galer                 > ]
+/// [ |  7:25PM                    ]
+/// [ |                            ]
+/// ```
 final class TripStopCell: BaseSelfSizingTableCell {
-
     static let tripSegmentImageWidth: CGFloat = 40.0
-
-    /*
-     [ |                             ]
-     [ O  15th & Galer 7:25PM      > ]
-     [ |                             ]
-     */
 
     override func prepareForReuse() {
         super.prepareForReuse()
@@ -135,6 +143,8 @@ final class TripStopCell: BaseSelfSizingTableCell {
 
     let titleLabel: UILabel = {
         let label = UILabel.autolayoutNew()
+        label.font = .preferredFont(forTextStyle: .body)
+        label.adjustsFontForContentSizeCategory = true
         label.numberOfLines = 0
         label.textColor = ThemeColors.shared.label
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -144,12 +154,17 @@ final class TripStopCell: BaseSelfSizingTableCell {
 
     let timeLabel: UILabel = {
         let label = UILabel.autolayoutNew()
+        label.font = .preferredFont(forTextStyle: .callout)
+        label.adjustsFontForContentSizeCategory = true
         label.textColor = ThemeColors.shared.secondaryLabel
         label.numberOfLines = 1
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
+
+    let textLabelSpacerView = UIView.autolayoutNew()
+    lazy var textLabelsStack: UIStackView = UIStackView(arrangedSubviews: [titleLabel, textLabelSpacerView, timeLabel])
 
     let tripSegmentView = TripSegmentView.autolayoutNew()
 
@@ -172,21 +187,32 @@ final class TripStopCell: BaseSelfSizingTableCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [tripSegmentView, titleLabel, UIView.autolayoutNew(), timeLabel, accessoryImageView])
-        stack.spacing = ThemeMetrics.compactPadding
-        let stackWrapper = stack.embedInWrapperView(setConstraints: true)
+        contentView.addSubview(tripSegmentView)
+        NSLayoutConstraint.activate([
+            tripSegmentView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            tripSegmentView.topAnchor.constraint(equalTo: contentView.topAnchor),
+            tripSegmentView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            tripSegmentView.widthAnchor.constraint(equalToConstant: TripStopCell.tripSegmentImageWidth)
+        ])
+
+        let stackWrapper = textLabelsStack.embedInWrapperView(setConstraints: true)
         contentView.addSubview(stackWrapper)
 
         let heightConstraint = stackWrapper.heightAnchor.constraint(greaterThanOrEqualToConstant: tripStopCellMinimumHeight)
         heightConstraint.priority = .defaultHigh
-
         NSLayoutConstraint.activate([
-            stackWrapper.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            stackWrapper.leadingAnchor.constraint(equalTo: tripSegmentView.trailingAnchor, constant: ThemeMetrics.compactPadding),
             stackWrapper.topAnchor.constraint(equalTo: contentView.topAnchor),
-            stackWrapper.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
             stackWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            heightConstraint,
-            tripSegmentView.widthAnchor.constraint(equalToConstant: TripStopCell.tripSegmentImageWidth)
+            heightConstraint
+        ])
+
+        contentView.addSubview(accessoryImageView)
+        NSLayoutConstraint.activate([
+            accessoryImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            accessoryImageView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            accessoryImageView.widthAnchor.constraint(equalToConstant: 16),
+            stackWrapper.trailingAnchor.constraint(equalTo: accessoryImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
     }
 
@@ -195,5 +221,17 @@ final class TripStopCell: BaseSelfSizingTableCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         layoutSeparator(leftSeparatorInset: TripStopCell.tripSegmentImageWidth + 10.0)
+        layoutAccessibility()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        layoutAccessibility()
+    }
+
+    func layoutAccessibility() {
+        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        self.textLabelsStack.axis = isAccessibility ? .vertical : .horizontal
+        self.textLabelSpacerView.isHidden = isAccessibility
     }
 }
