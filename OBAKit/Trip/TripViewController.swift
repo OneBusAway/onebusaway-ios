@@ -46,7 +46,12 @@ class TripViewController: UIViewController,
 
     // MARK: - UIViewController
 
-    lazy var reloadButton = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh))
+    lazy var reloadButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh))
+        button.title = Strings.refresh
+        return button
+    }()
+
     let activityIndicatorButton = UIActivityIndicatorView.asNavigationItem()
 
     override func viewDidLoad() {
@@ -57,7 +62,6 @@ class TripViewController: UIViewController,
         mapView.showsScale = application.mapRegionManager.mapViewShowsScale
         application.mapRegionManager.registerAnnotationViews(mapView: mapView)
 
-        navigationItem.titleView = titleView
         updateTitleView()
 
         view.addSubview(mapView)
@@ -80,6 +84,11 @@ class TripViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateTitleView()
     }
 
     // MARK: - NSUserActivity
@@ -123,7 +132,10 @@ class TripViewController: UIViewController,
     private let titleView = StackedMarqueeTitleView(width: 178.0)
 
     private func updateTitleView() {
+        navigationItem.titleView = isAccessibility ? nil : titleView
+
         guard let tripStatus = tripConvertible.tripStatus else {
+            title = nil
             titleView.topLabel.text = ""
             titleView.bottomLabel.text = ""
             return
@@ -131,6 +143,7 @@ class TripViewController: UIViewController,
 
         if let vehicleID = tripStatus.vehicleID {
             titleView.topLabel.text = vehicleID
+            title = vehicleID
         }
 
         if let lastUpdate = tripStatus.lastUpdate {
