@@ -46,6 +46,9 @@ class TripViewController: UIViewController,
 
     // MARK: - UIViewController
 
+    lazy var reloadButton = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh))
+    let activityIndicatorButton = UIActivityIndicatorView.asNavigationItem()
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -56,8 +59,6 @@ class TripViewController: UIViewController,
 
         navigationItem.titleView = titleView
         updateTitleView()
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh(_:)))
 
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
@@ -170,11 +171,20 @@ class TripViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
+        let layout: FloatingPanelLayout
         switch newCollection.verticalSizeClass {
         case .compact:
-            return MapPanelLandscapeLayout(initialPosition: .full)
+            layout = MapPanelLandscapeLayout(initialPosition: .full)
         default:
-            return MapPanelLayout(initialPosition: .half)
+            layout = MapPanelLayout(initialPosition: .half)
+        }
+
+        // If data is loading, limit the panel to just the tip.
+        // If operation is nil, data has probably never loaded.
+        if self.tripDetailsOperation?.isExecuting ?? true {
+            return SinglePositionMapPanelLayout(position: .tip, positionInset: layout.insetFor(position: .tip) ?? 64)
+        } else {
+            return layout
         }
     }
 
@@ -207,6 +217,11 @@ class TripViewController: UIViewController,
 
         tripDetailsOperation?.cancel()
 
+        self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
+
+        // Let the user still look at data if there was already details from a previous request.
+        self.floatingPanel.surfaceView.grabberHandle.isHidden = self.tripDetailsController.tripDetails == nil
+
         let op = apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate)
         op.complete { [weak self] result in
             guard let self = self else { return }
@@ -234,7 +249,11 @@ class TripViewController: UIViewController,
                     let userDestinationStopTime = response.entry.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
                     self.selectedStopTime = userDestinationStopTime
                 }
+
+                self.floatingPanel.surfaceView.grabberHandle.isHidden = false
             }
+
+            self.navigationItem.rightBarButtonItem = self.reloadButton
         }
         tripDetailsOperation = op
     }

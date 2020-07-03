@@ -121,13 +121,16 @@ class TripFloatingPanelController: UIViewController,
         switch drawerPosition {
         case .hidden: break
         case .tip:
-            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = true }
+            self.separatorView.isHidden = true
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
         case .half:
+            self.separatorView.isHidden = false
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
             self.stopArrivalView.accessibilityMinimalInfoStack.forEach { $0.isHidden = !isAccessibility }
         case .full:
+            self.separatorView.isHidden = false
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
         }
