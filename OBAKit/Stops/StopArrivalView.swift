@@ -228,7 +228,6 @@ class StopArrivalView: UIView {
 
     func configureView(for traitCollection: UITraitCollection) {
         guard let arrivalDeparture = arrivalDeparture else { return }
-        let accessibilityMode = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
 
         if deemphasizePastEvents {
             // 'Gray out' the view if it occurred in the past.
@@ -258,10 +257,10 @@ class StopArrivalView: UIView {
         accessibilityTraits = [.button, .updatesFrequently]
         isAccessibilityElement = true
 
-        normalInfoStack.forEach { $0.isHidden = accessibilityMode }
-        accessibilityInfoStack.forEach { $0.isHidden = !accessibilityMode }
+        normalInfoStack.forEach { $0.isHidden = isAccessibility }
+        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
 
-        infoStack.spacing = accessibilityMode ? ThemeMetrics.padding : 0
+        infoStack.spacing = isAccessibility ? ThemeMetrics.padding : 0
     }
 
     @objc func contentSizeDidChange(_ notification: Notification) {

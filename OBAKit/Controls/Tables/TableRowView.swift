@@ -203,7 +203,6 @@ class TableRowView: UIView {
 
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
-        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
 
         if !(self is SubtitleTableRowView) {
             self.labelStack.axis = isAccessibility ? .vertical : .horizontal

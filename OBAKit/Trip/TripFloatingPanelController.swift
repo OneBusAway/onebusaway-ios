@@ -117,7 +117,6 @@ class TripFloatingPanelController: UIViewController,
     }
 
     public func configureView(for drawerPosition: FloatingPanelPosition) {
-        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
         switch drawerPosition {
         case .hidden: break
         case .tip:

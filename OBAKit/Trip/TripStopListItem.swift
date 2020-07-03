@@ -230,7 +230,6 @@ final class TripStopCell: BaseSelfSizingTableCell {
     }
 
     func layoutAccessibility() {
-        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
         self.textLabelsStack.axis = isAccessibility ? .vertical : .horizontal
         self.textLabelSpacerView.isHidden = isAccessibility
     }

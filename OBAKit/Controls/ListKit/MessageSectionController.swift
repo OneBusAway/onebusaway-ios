@@ -135,8 +135,6 @@ final class MessageCell: BaseSelfSizingTableCell {
         subjectLabel.text = data.subject
         summaryLabel.text = data.summary
 
-        let isAccessibility = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
-
         topStack.axis = isAccessibility ? .vertical : .horizontal
         authorLabel.numberOfLines = isAccessibility ? 3 : 1
 
