@@ -220,7 +220,6 @@ class TripViewController: UIViewController,
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
-
     private var currentTripStatus: TripStatus?
 
     private func loadTripDetails() {
@@ -267,8 +266,12 @@ class TripViewController: UIViewController,
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton
+            self.tripDetailsController.progressView.isHidden = true
         }
         tripDetailsOperation = op
+
+        self.tripDetailsController.progressView.isHidden = false
+        self.tripDetailsController.progressView.observedProgress = op.progress
     }
 
     // MARK: - Map Data

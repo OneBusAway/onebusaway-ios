@@ -36,6 +36,11 @@ class TripFloatingPanelController: UIViewController,
     }
 
     weak var parentTripViewController: TripViewController?
+    weak var tripDetailsOperation: NetworkOperation? {
+        didSet {
+            self.progressView.observedProgress = tripDetailsOperation!.progress
+        }
+    }
 
     private let operation: DecodableOperation<RESTAPIResponse<TripDetails>>?
 
@@ -172,6 +177,8 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
+    public lazy var progressView = UIProgressView.autolayoutNew()
+
     private lazy var separatorView: UIView = {
         let view = UIView.autolayoutNew()
         view.backgroundColor = ThemeColors.shared.separator
@@ -181,7 +188,7 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, collectionController.view])
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, progressView, separatorView, collectionController.view])
 
     // MARK: - ViewRouterDelegate methods
 
