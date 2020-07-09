@@ -26,7 +26,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
 
     public let consequences: [Consequence]
     public let createdAt: Date
-    public let situationDescription: TranslatedString
+    public let situationDescription: TranslatedString?
     public let id: String
     public let publicationWindows: [TimeWindow]
     public let reason: String
@@ -55,7 +55,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         affectedEntities = try container.decode([AffectedEntity].self, forKey: .affectedEntities)
         consequences = try container.decode([Consequence].self, forKey: .consequences)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
-        situationDescription = try container.decode(TranslatedString.self, forKey: .situationDescription)
+        situationDescription = try container.decodeIfPresent(TranslatedString.self, forKey: .situationDescription)
         id = try container.decode(String.self, forKey: .id)
         publicationWindows = try container.decode([TimeWindow].self, forKey: .publicationWindows)
         reason = try container.decode(String.self, forKey: .reason)

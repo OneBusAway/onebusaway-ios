@@ -86,8 +86,8 @@ class ReferencesTests: OBATestCase {
         expect(situation.createdAt) == Date.fromComponents(year: 2018, month: 10, day: 13, hour: 02, minute: 26, second: 33)
 
         let desc = situation.situationDescription
-        expect(desc.lang) == "en"
-        expect(desc.value) == "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops."
+        expect(desc?.lang) == "en"
+        expect(desc?.value) == "Due to construction, the Washington St. off ramp from Pacific Highway will be closed Wednesday, October 17, from 6:30am - 6:30pm. Eastbound route 10 will detour, but will not miss any stops."
 
         expect(situation.id) == "MTS_RTA:11638227"
         expect(situation.publicationWindows) == []
