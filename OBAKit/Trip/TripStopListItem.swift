@@ -14,7 +14,6 @@ fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
 // MARK: - View Model
 
 final class TripStopListItem: NSObject, ListDiffable {
-
     /// Is this where the vehicle on the trip is currently located?
     let isCurrentVehicleLocation: Bool
 
@@ -64,7 +63,7 @@ final class TripStopListItem: NSObject, ListDiffable {
     // MARK: - ListDiffable
 
     func diffIdentifier() -> NSObjectProtocol {
-        return self
+        return stop.id as NSString
     }
 
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {

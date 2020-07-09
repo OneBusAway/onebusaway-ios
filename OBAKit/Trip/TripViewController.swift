@@ -414,12 +414,15 @@ class TripViewController: UIViewController,
             }
             self.mapView.deselectAnnotation(oldValue, animated: animated)
 
-            guard
-                oldValue != self.selectedStopTime,
-                let selectedStopTime = self.selectedStopTime
-            else { return }
+            guard oldValue != self.selectedStopTime,
+                let selectedStopTime = self.selectedStopTime else { return }
 
-            self.mapView.selectAnnotation(selectedStopTime, animated: animated)
+            // Fixes #220: Find matching trip stop using stop ID instead of using pointers.
+            if let annotation = self.mapView.annotations
+                .filter(type: TripStopTime.self)
+                .filter({ $0.stopID == selectedStopTime.stopID }).first {
+                self.mapView.selectAnnotation(annotation, animated: true)
+            }
         }
     }
     private var isFirstStopTimeLoad = true
