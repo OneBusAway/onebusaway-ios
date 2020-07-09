@@ -255,7 +255,11 @@ class TripViewController: UIViewController,
                     self.mapView.addAnnotation(tripStatus)
                 }
 
-                self.mapView.showAnnotations(self.mapView.annotations, animated: true)
+                // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
+                var annotationsToShow = self.mapView.annotations
+                annotationsToShow.removeAll(where: { $0.coordinate.longitude == 0 && $0.coordinate.latitude == 0 })
+
+                self.mapView.showAnnotations(annotationsToShow, animated: true)
 
                 if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
                     let userDestinationStopTime = response.entry.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
