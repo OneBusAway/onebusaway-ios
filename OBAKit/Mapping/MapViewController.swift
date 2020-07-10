@@ -22,7 +22,8 @@ public class MapViewController: UIViewController,
     MapRegionMapViewDelegate,
     ModalDelegate,
     MapPanelDelegate,
-    UIContextMenuInteractionDelegate {
+    UIContextMenuInteractionDelegate,
+    UILargeContentViewerInteractionDelegate {
 
     // MARK: - Hoverbar
 
@@ -81,14 +82,27 @@ public class MapViewController: UIViewController,
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
+        mapStatusView.configure(for: application.locationService.authorizationStatus)
+        mapStatusView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapMapStatus)))
+        view.addSubview(mapStatusView)
+        NSLayoutConstraint.activate([
+            mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mapStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
+        ])
+
+        if #available(iOS 13, *) {
+            mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
+        }
+
         floatingPanel.addPanel(toParent: self)
 
         view.insertSubview(toolbar, aboveSubview: mapView)
 
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
-            toolbar.widthAnchor.constraint(equalToConstant: 40.0),
+            toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor)
         ])
@@ -115,6 +129,7 @@ public class MapViewController: UIViewController,
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         updateVisibleMapRect()
+        layoutMapMargins()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -143,6 +158,41 @@ public class MapViewController: UIViewController,
         guard userLocation.isValid else { return }
 
         mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: 17, animated: true)
+    }
+
+    @objc func didTapMapStatus(_ sender: Any) {
+        guard isLoadedAndOnScreen else { return }
+        let mapStatusViewState = MapStatusView.State(application.locationService.authorizationStatus)
+        guard let alert = MapStatusView.alert(for: mapStatusViewState) else { return }
+
+        var keepLocationOffButton: UIAlertAction {
+            return UIAlertAction(title: OBALoc("locationservices_alert_keepoff.button", value: "Keep Location Off", comment: ""), style: .default)
+        }
+
+        var goToSettingsButton: UIAlertAction {
+            let title = OBALoc("locationservices_alert_gotosettings.button", value: "Turn On in Settings", comment: "")
+            return UIAlertAction(title: title, style: .default, handler: { _ in
+                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
+            })
+        }
+
+        switch mapStatusViewState {
+        case .notDetermined:
+            alert.addAction(title: OBALoc("locationservices_alert_request_access.button", value: "Allow Access to Location", comment: "")) { _ in
+                self.application.locationService.requestInUseAuthorization()
+            }
+            alert.addAction(keepLocationOffButton)
+        case .locationServicesOff:
+            alert.addAction(goToSettingsButton)
+            alert.addAction(keepLocationOffButton)
+        case .impreciseLocation:
+            alert.addAction(goToSettingsButton)
+            alert.addAction(title: OBALoc("locationservices_alert_keep_precise_location_off.button", value: "Keep Precise Location Off", comment: ""), handler: nil)
+        case .locationServicesUnavailable, .locationServicesOn:
+            // We shouldn't hit this state, but if we do, that's OK.
+            alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
+        }
+        self.present(alert, animated: true)
     }
 
     private let locationButton: UIButton = {
@@ -232,9 +282,21 @@ public class MapViewController: UIViewController,
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
-    // MARK: - Status Overlay
+    // MARK: - Overlays
 
     private let statusOverlay = StatusOverlayView.autolayoutNew()
+    private let mapStatusView = MapStatusView.autolayoutNew()
+
+    /// Sets the margins for the map view to keep the scale and legal info within the viewable area.
+    /// Call this when you modify top level UI.
+    func layoutMapMargins() {
+        let panelViewHeight = floatingPanel.layout.insetFor(position: .tip) ?? 0
+
+        let top = mapStatusView.frame.height - view.safeAreaInsets.top
+        let bottom = panelViewHeight + ThemeMetrics.compactPadding
+
+        self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: top, leading: 0, bottom: bottom, trailing: 0)
+    }
 
     // MARK: - Floating Panel Controller
 
@@ -457,6 +519,11 @@ public class MapViewController: UIViewController,
         programmaticallyUpdateVisibleMapRegion(location: location)
     }
 
+    public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+        mapStatusView.configure(for: status)
+        layoutMapMargins()
+    }
+
     // MARK: - Context Menus
 
     @available(iOS 13.0, *)
@@ -485,6 +552,13 @@ public class MapViewController: UIViewController,
             }
 
             self.application.viewRouter.navigate(to: viewController, from: self, animated: false)
+        }
+    }
+
+    @available(iOS 13, *)
+    public func largeContentViewerInteraction(_ interaction: UILargeContentViewerInteraction, didEndOn item: UILargeContentViewerItem?, at point: CGPoint) {
+        if mapStatusView.frame.contains(point) {
+            didTapMapStatus(interaction)
         }
     }
 }
