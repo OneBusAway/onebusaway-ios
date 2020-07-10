@@ -47,7 +47,9 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         let builder = HTMLBuilder()
         builder.append(.h1, value: serviceAlert.summary.value)
         builder.append(.p, value: application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt))
-        builder.append(.p, value: serviceAlert.situationDescription.value)
+        if let description = serviceAlert.situationDescription {
+            builder.append(.p, value: description.value)
+        }
 
         if let urlString = serviceAlert.urlString?.value {
             let fmt = OBALoc("service_alert_controller.learn_more_fmt", value: "Learn more: %@", comment: "Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE>")
