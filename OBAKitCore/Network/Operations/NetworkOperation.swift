@@ -44,6 +44,9 @@ public class NetworkOperation: AsyncOperation, Requestable {
     public let request: URLRequest
     public private(set) var response: HTTPURLResponse?
     public private(set) var data: Data?
+
+    public let progress: Progress = Progress(totalUnitCount: 1)
+
     private var dataTask: URLSessionDataTask?
     private let dataLoader: URLDataLoader
 
@@ -74,7 +77,7 @@ public class NetworkOperation: AsyncOperation, Requestable {
 
             self.finish()
         }
-
+        progress.addChild(task.progress, withPendingUnitCount: 1)
         task.resume()
         self.dataTask = task
     }

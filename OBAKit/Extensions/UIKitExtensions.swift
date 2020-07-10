@@ -18,3 +18,10 @@ public extension UIButton {
         return button
     }
 }
+
+// MARK: - UITraitEnvironment Accessibility
+extension UITraitEnvironment {
+    var isAccessibility: Bool {
+        return traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+    }
+}

@@ -105,6 +105,11 @@ class StopArrivalView: UIView {
          accessibilityRelativeTimeBadge]
     }
 
+    /// Views to set visible in accessibility when in minimal view.
+    var accessibilityMinimalInfoStack: [UIView] {
+        [accessibilityRelativeTimeBadge]
+    }
+
     /// Views containing info elements. To simplify logic, we will include all info views into the stack view.
     private lazy var infoStack = UIStackView.verticalStack(arrangedSubviews: [
         routeHeadsignLabel,
@@ -223,7 +228,6 @@ class StopArrivalView: UIView {
 
     func configureView(for traitCollection: UITraitCollection) {
         guard let arrivalDeparture = arrivalDeparture else { return }
-        let accessibilityMode = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
 
         if deemphasizePastEvents {
             // 'Gray out' the view if it occurred in the past.
@@ -253,10 +257,10 @@ class StopArrivalView: UIView {
         accessibilityTraits = [.button, .updatesFrequently]
         isAccessibilityElement = true
 
-        normalInfoStack.forEach { $0.isHidden = accessibilityMode }
-        accessibilityInfoStack.forEach { $0.isHidden = !accessibilityMode }
+        normalInfoStack.forEach { $0.isHidden = isAccessibility }
+        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
 
-        infoStack.spacing = accessibilityMode ? ThemeMetrics.padding : 0
+        infoStack.spacing = isAccessibility ? ThemeMetrics.padding : 0
     }
 
     @objc func contentSizeDidChange(_ notification: Notification) {

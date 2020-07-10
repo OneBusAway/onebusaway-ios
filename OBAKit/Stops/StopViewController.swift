@@ -296,6 +296,7 @@ public class StopViewController: UIViewController,
         guard let apiService = application.restAPIService else { return }
 
         title = Strings.updating
+        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         op.complete { [weak self] result in
@@ -318,6 +319,8 @@ public class StopViewController: UIViewController,
                     self.extendLoadMoreWindow()
                 }
             }
+
+            self.navigationItem.rightBarButtonItem = nil
         }
 
         self.operation = op

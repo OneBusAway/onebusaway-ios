@@ -8,6 +8,7 @@
 import UIKit
 import IGListKit
 import OBAKitCore
+import FloatingPanel
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
 class TripFloatingPanelController: UIViewController,
@@ -35,6 +36,11 @@ class TripFloatingPanelController: UIViewController,
     }
 
     weak var parentTripViewController: TripViewController?
+    weak var tripDetailsOperation: NetworkOperation? {
+        didSet {
+            self.progressView.observedProgress = tripDetailsOperation!.progress
+        }
+    }
 
     private let operation: DecodableOperation<RESTAPIResponse<TripDetails>>?
 
@@ -115,6 +121,25 @@ class TripFloatingPanelController: UIViewController,
         }
     }
 
+    public func configureView(for drawerPosition: FloatingPanelPosition) {
+        switch drawerPosition {
+        case .hidden: break
+        case .tip:
+            self.separatorView.isHidden = true
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
+        case .half:
+            self.separatorView.isHidden = false
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = true }
+            self.stopArrivalView.accessibilityMinimalInfoStack.forEach { $0.isHidden = !isAccessibility }
+        case .full:
+            self.separatorView.isHidden = false
+            self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
+            self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
+        }
+    }
+
     // MARK: - UI
 
     public lazy var collectionController: CollectionController = {
@@ -152,6 +177,8 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
+    public lazy var progressView = UIProgressView.autolayoutNew()
+
     private lazy var separatorView: UIView = {
         let view = UIView.autolayoutNew()
         view.backgroundColor = ThemeColors.shared.separator
@@ -161,7 +188,7 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, collectionController.view])
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, progressView, separatorView, collectionController.view])
 
     // MARK: - ViewRouterDelegate methods
 

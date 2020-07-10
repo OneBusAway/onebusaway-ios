@@ -46,6 +46,14 @@ class TripViewController: UIViewController,
 
     // MARK: - UIViewController
 
+    lazy var reloadButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh))
+        button.title = Strings.refresh
+        return button
+    }()
+
+    let activityIndicatorButton = UIActivityIndicatorView.asNavigationItem()
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -54,10 +62,7 @@ class TripViewController: UIViewController,
         mapView.showsScale = application.mapRegionManager.mapViewShowsScale
         application.mapRegionManager.registerAnnotationViews(mapView: mapView)
 
-        navigationItem.titleView = titleView
         updateTitleView()
-
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: Icons.refresh, style: .plain, target: self, action: #selector(refresh(_:)))
 
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
@@ -79,6 +84,11 @@ class TripViewController: UIViewController,
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateTitleView()
     }
 
     // MARK: - NSUserActivity
@@ -122,7 +132,10 @@ class TripViewController: UIViewController,
     private let titleView = StackedMarqueeTitleView(width: 178.0)
 
     private func updateTitleView() {
+        navigationItem.titleView = isAccessibility ? nil : titleView
+
         guard let tripStatus = tripConvertible.tripStatus else {
+            title = nil
             titleView.topLabel.text = ""
             titleView.bottomLabel.text = ""
             return
@@ -130,6 +143,7 @@ class TripViewController: UIViewController,
 
         if let vehicleID = tripStatus.vehicleID {
             titleView.topLabel.text = vehicleID
+            title = vehicleID
         }
 
         if let lastUpdate = tripStatus.lastUpdate {
@@ -170,11 +184,20 @@ class TripViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
+        let layout: FloatingPanelLayout
         switch newCollection.verticalSizeClass {
         case .compact:
-            return MapPanelLandscapeLayout(initialPosition: .full)
+            layout = MapPanelLandscapeLayout(initialPosition: .full)
         default:
-            return MapPanelLayout(initialPosition: .half)
+            layout = MapPanelLayout(initialPosition: .half)
+        }
+
+        // If data is loading, limit the panel to just the tip.
+        // If operation is nil, data has probably never loaded.
+        if self.tripDetailsOperation?.isExecuting ?? true {
+            return SinglePositionMapPanelLayout(position: .tip, positionInset: layout.insetFor(position: .tip) ?? 64)
+        } else {
+            return layout
         }
     }
 
@@ -190,12 +213,13 @@ class TripViewController: UIViewController,
             let drawerHeight = vc.layout.insetFor(position: vc.position) ?? 0
             mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
         }
+
+        self.tripDetailsController.configureView(for: vc.position)
     }
 
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
-
     private var currentTripStatus: TripStatus?
 
     private func loadTripDetails() {
@@ -204,6 +228,11 @@ class TripViewController: UIViewController,
         }
 
         tripDetailsOperation?.cancel()
+
+        self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
+
+        // Let the user still look at data if there was already details from a previous request.
+        self.floatingPanel.surfaceView.grabberHandle.isHidden = self.tripDetailsController.tripDetails == nil
 
         let op = apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate)
         op.complete { [weak self] result in
@@ -226,15 +255,27 @@ class TripViewController: UIViewController,
                     self.mapView.addAnnotation(tripStatus)
                 }
 
-                self.mapView.showAnnotations(self.mapView.annotations, animated: true)
+                // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
+                var annotationsToShow = self.mapView.annotations
+                annotationsToShow.removeAll(where: { $0.coordinate.longitude == 0 && $0.coordinate.latitude == 0 })
+
+                self.mapView.showAnnotations(annotationsToShow, animated: true)
 
                 if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
                     let userDestinationStopTime = response.entry.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
                     self.selectedStopTime = userDestinationStopTime
                 }
+
+                self.floatingPanel.surfaceView.grabberHandle.isHidden = false
             }
+
+            self.navigationItem.rightBarButtonItem = self.reloadButton
+            self.tripDetailsController.progressView.isHidden = true
         }
         tripDetailsOperation = op
+
+        self.tripDetailsController.progressView.isHidden = false
+        self.tripDetailsController.progressView.observedProgress = op.progress
     }
 
     // MARK: - Map Data
@@ -377,12 +418,15 @@ class TripViewController: UIViewController,
             }
             self.mapView.deselectAnnotation(oldValue, animated: animated)
 
-            guard
-                oldValue != self.selectedStopTime,
-                let selectedStopTime = self.selectedStopTime
-            else { return }
+            guard oldValue != self.selectedStopTime,
+                let selectedStopTime = self.selectedStopTime else { return }
 
-            self.mapView.selectAnnotation(selectedStopTime, animated: animated)
+            // Fixes #220: Find matching trip stop using stop ID instead of using pointers.
+            if let annotation = self.mapView.annotations
+                .filter(type: TripStopTime.self)
+                .filter({ $0.stopID == selectedStopTime.stopID }).first {
+                self.mapView.selectAnnotation(annotation, animated: true)
+            }
         }
     }
     private var isFirstStopTimeLoad = true

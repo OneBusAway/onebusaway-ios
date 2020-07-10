@@ -153,8 +153,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
     // MARK: - Data
 
     func configureView(with data: BookmarkArrivalData, formatters: Formatters) {
-        let isAccessibility = self.traitCollection.preferredContentSizeCategory.isAccessibilityCategory
-
         routeHeadsignLabel.text = data.bookmark.name
 
         guard let arrivalDepartures = data.arrivalDepartures else { return }
