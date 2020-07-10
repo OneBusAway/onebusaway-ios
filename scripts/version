@@ -10,7 +10,7 @@ end
 
 def update_all_apps
   apps = Dir.glob("Apps/*") - ["Apps/Shared"]
-  apps += ["OBAKit", "OBAKitCore"]
+  apps += ["OBAKit", "OBAKitCore", "TodayView"]
   launch_directory = Dir.pwd
   
   build_version = DateTime.now.strftime("%Y%m%d.%H")
