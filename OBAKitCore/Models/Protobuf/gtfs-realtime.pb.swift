@@ -651,6 +651,22 @@ public struct TransitRealtime_VehiclePosition: SwiftProtobuf.ExtensibleMessage {
   /// Clears the value of `occupancyStatus`. Subsequent reads from it will return its default value.
   public mutating func clearOccupancyStatus() {_uniqueStorage()._occupancyStatus = nil}
 
+  /// A percentage value representing the degree of passenger occupancy of the vehicle.
+  /// The values are represented as an integer without decimals. 0 means 0% and 100 means 100%.
+  /// The value 100 should represent the total maximum occupancy the vehicle was designed for,
+  /// including both seated and standing capacity, and current operating regulations allow.
+  /// It is possible that the value goes over 100 if there are currently more passengers than what the vehicle was designed for.
+  /// The precision of occupancy_percentage should be low enough that you can't track a single person boarding and alighting for privacy reasons.
+  /// This field is still experimental, and subject to change. It may be formally adopted in the future.
+  public var occupancyPercentage: UInt32 {
+    get {return _storage._occupancyPercentage ?? 0}
+    set {_uniqueStorage()._occupancyPercentage = newValue}
+  }
+  /// Returns true if `occupancyPercentage` has been explicitly set.
+  public var hasOccupancyPercentage: Bool {return _storage._occupancyPercentage != nil}
+  /// Clears the value of `occupancyPercentage`. Subsequent reads from it will return its default value.
+  public mutating func clearOccupancyPercentage() {_uniqueStorage()._occupancyPercentage = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public enum VehicleStopStatus: SwiftProtobuf.Enum {
@@ -1040,7 +1056,6 @@ public struct TransitRealtime_Alert: SwiftProtobuf.ExtensibleMessage {
   }
 
   /// Severity of this alert.
-  /// This field is still experimental, and subject to change. It may be formally adopted in the future.
   public enum SeverityLevel: SwiftProtobuf.Enum {
     public typealias RawValue = Int
     case unknownSeverity // = 1
@@ -1245,9 +1260,7 @@ public struct TransitRealtime_TripDescriptor: SwiftProtobuf.ExtensibleMessage {
   public mutating func clearRouteID() {self._routeID = nil}
 
   /// The direction_id from the GTFS feed trips.txt file, indicating the
-  /// direction of travel for trips this selector refers to. This field is
-  /// still experimental, and subject to change. It may be formally adopted in
-  /// the future.
+  /// direction of travel for trips this selector refers to.
   public var directionID: UInt32 {
     get {return _directionID ?? 0}
     set {_directionID = newValue}
@@ -1488,8 +1501,7 @@ public struct TransitRealtime_EntitySelector: SwiftProtobuf.ExtensibleMessage {
   public mutating func clearStopID() {_uniqueStorage()._stopID = nil}
 
   /// Corresponds to trip direction_id in GTFS trips.txt. If provided the
-  /// route_id must also be provided. This field is still experimental, and
-  /// subject to change. It may be formally adopted in the future.
+  /// route_id must also be provided.
   public var directionID: UInt32 {
     get {return _storage._directionID ?? 0}
     set {_uniqueStorage()._directionID = newValue}
@@ -2112,6 +2124,7 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
     5: .same(proto: "timestamp"),
     6: .standard(proto: "congestion_level"),
     9: .standard(proto: "occupancy_status"),
+    10: .standard(proto: "occupancy_percentage"),
   ]
 
   fileprivate class _StorageClass {
@@ -2124,6 +2137,7 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
     var _timestamp: UInt64? = nil
     var _congestionLevel: TransitRealtime_VehiclePosition.CongestionLevel? = nil
     var _occupancyStatus: TransitRealtime_VehiclePosition.OccupancyStatus? = nil
+    var _occupancyPercentage: UInt32? = nil
 
     static let defaultInstance = _StorageClass()
 
@@ -2139,6 +2153,7 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
       _timestamp = source._timestamp
       _congestionLevel = source._congestionLevel
       _occupancyStatus = source._occupancyStatus
+      _occupancyPercentage = source._occupancyPercentage
     }
   }
 
@@ -2173,6 +2188,7 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
         case 7: try decoder.decodeSingularStringField(value: &_storage._stopID)
         case 8: try decoder.decodeSingularMessageField(value: &_storage._vehicle)
         case 9: try decoder.decodeSingularEnumField(value: &_storage._occupancyStatus)
+        case 10: try decoder.decodeSingularUInt32Field(value: &_storage._occupancyPercentage)
         case 1000..<2000, 9000..<10000:
           try decoder.decodeExtensionField(values: &_protobuf_extensionFieldValues, messageType: TransitRealtime_VehiclePosition.self, fieldNumber: fieldNumber)
         default: break
@@ -2210,6 +2226,9 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
       if let v = _storage._occupancyStatus {
         try visitor.visitSingularEnumField(value: v, fieldNumber: 9)
       }
+      if let v = _storage._occupancyPercentage {
+        try visitor.visitSingularUInt32Field(value: v, fieldNumber: 10)
+      }
       try visitor.visitExtensionFields(fields: _protobuf_extensionFieldValues, start: 1000, end: 2000)
       try visitor.visitExtensionFields(fields: _protobuf_extensionFieldValues, start: 9000, end: 10000)
     }
@@ -2230,6 +2249,7 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
         if _storage._timestamp != rhs_storage._timestamp {return false}
         if _storage._congestionLevel != rhs_storage._congestionLevel {return false}
         if _storage._occupancyStatus != rhs_storage._occupancyStatus {return false}
+        if _storage._occupancyPercentage != rhs_storage._occupancyPercentage {return false}
         return true
       }
       if !storagesAreEqual {return false}
