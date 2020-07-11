@@ -38,7 +38,7 @@ public class MoreViewController: UIViewController,
         tabBarItem.image = Icons.moreTabIcon
 
         let contactUs = OBALoc("more_controller.contact_us", value: "Contact Us", comment: "A button to contact transit agency/developers.")
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: contactUs, style: .plain, target: self, action: #selector(showContactUsDialog))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: contactUs, style: .plain, target: self, action: #selector(showContactUsDialog(_:)))
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: Strings.settings, style: .plain, target: self, action: #selector(showSettings))
 
         application.regionsService.addDelegate(self)
@@ -184,7 +184,7 @@ public class MoreViewController: UIViewController,
         }
     }
 
-    @objc func showContactUsDialog() {
+    @objc func showContactUsDialog(_ sender: UIBarButtonItem) {
         let sheetTitle = OBALoc("more_controller.contact_us_alert_title", value: "Contact Us", comment: "Contact Us alert title.")
         let sheet = UIAlertController(title: sheetTitle, message: nil, preferredStyle: .actionSheet)
 
@@ -204,7 +204,12 @@ public class MoreViewController: UIViewController,
 
         sheet.addAction(UIAlertAction.cancelAction)
 
-        present(sheet, animated: true, completion: nil)
+        application.viewRouter.present(
+            sheet,
+            from: self,
+            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            popoverBarButtonItem: sender
+        )
     }
 
     // MARK: - About Section
