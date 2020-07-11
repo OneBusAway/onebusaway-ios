@@ -79,8 +79,8 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
         addSubview(textLabel)
 
         NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            textLabel.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
+            textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             textLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: ThemeMetrics.compactPadding),
             bottomLabelAnchor
         ])

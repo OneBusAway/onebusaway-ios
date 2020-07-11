@@ -163,8 +163,8 @@ class TripFloatingPanelController: UIViewController,
         let wrapper = stopArrivalView.embedInWrapperView(setConstraints: false)
         NSLayoutConstraint.activate([
             stopArrivalView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.padding),
-            stopArrivalView.leadingAnchor.constraint(equalTo: wrapper.layoutMarginsGuide.leadingAnchor),
-            stopArrivalView.trailingAnchor.constraint(equalTo: wrapper.layoutMarginsGuide.trailingAnchor),
+            stopArrivalView.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
+            stopArrivalView.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor),
             stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -ThemeMetrics.compactPadding)
         ])
         return wrapper

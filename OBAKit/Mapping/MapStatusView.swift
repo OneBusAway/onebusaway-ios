@@ -105,8 +105,8 @@ class MapStatusView: UIView {
 
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: visualView.layoutMarginsGuide.centerXAnchor),
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: visualView.layoutMarginsGuide.leadingAnchor),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: visualView.layoutMarginsGuide.trailingAnchor),
+            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: visualView.readableContentGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: visualView.readableContentGuide.trailingAnchor),
             stackView.topAnchor.constraint(equalTo: visualView.layoutMarginsGuide.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: visualView.layoutMarginsGuide.bottomAnchor)
         ])

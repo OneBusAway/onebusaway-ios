@@ -367,8 +367,8 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
 
         NSLayoutConstraint.activate([
             stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -ThemeMetrics.compactPadding),
-            stack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            stack.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
 
             contentView.heightAnchor.constraint(greaterThanOrEqualTo: stack.heightAnchor),
             contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)

@@ -209,7 +209,7 @@ final class TripStopCell: BaseSelfSizingTableCell {
         contentView.addSubview(accessoryImageView)
         NSLayoutConstraint.activate([
             accessoryImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            accessoryImageView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            accessoryImageView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
             accessoryImageView.widthAnchor.constraint(equalToConstant: 16),
             stackWrapper.trailingAnchor.constraint(equalTo: accessoryImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
