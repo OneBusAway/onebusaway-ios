@@ -32,6 +32,8 @@ public class MapViewController: UIViewController,
         hover.tintColor = ThemeColors.shared.label
         hover.stackView.addArrangedSubview(locationButton)
 
+        locationButton.isHidden = !application.locationService.isLocationUseAuthorized
+
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(weatherButton)
         }
@@ -522,6 +524,7 @@ public class MapViewController: UIViewController,
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
         mapStatusView.configure(for: status)
         layoutMapMargins()
+        locationButton.isHidden = !service.isLocationUseAuthorized
     }
 
     // MARK: - Context Menus
