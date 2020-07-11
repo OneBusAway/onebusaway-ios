@@ -19,6 +19,7 @@ enum BookmarkSectionState: String, Codable {
 }
 
 typealias BookmarkListCallback = (Bookmark) -> Void
+typealias BookmarkDeleteCallback = (Bookmark, UIView?, CGRect?) -> Void
 typealias BookmarkSectionToggled = (BookmarkSectionData, BookmarkSectionState) -> Void
 
 /// A view model used with `IGListKit` to display `Bookmark` data in the `BookmarksViewController`.
@@ -26,12 +27,12 @@ final class BookmarkArrivalData: NSObject, ListDiffable {
     public let bookmark: Bookmark
     public let arrivalDepartures: [ArrivalDeparture]?
     let selected: BookmarkListCallback
-    let deleted: BookmarkListCallback
+    let deleted: BookmarkDeleteCallback
     let edited: BookmarkListCallback
 
     var previewDestination: ControllerPreviewProvider?
 
-    public init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture]?, selected: @escaping BookmarkListCallback, deleted: @escaping BookmarkListCallback, edited: @escaping BookmarkListCallback) {
+    public init(bookmark: Bookmark, arrivalDepartures: [ArrivalDeparture]?, selected: @escaping BookmarkListCallback, deleted: @escaping BookmarkDeleteCallback, edited: @escaping BookmarkListCallback) {
         self.bookmark = bookmark
         self.arrivalDepartures = arrivalDepartures
         self.selected = selected
@@ -258,7 +259,11 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
         }
 
         let delete = SwipeAction(style: .destructive, title: Strings.delete) { _, _ in
-            bookmark.deleted(bookmark.bookmark)
+            let cell = collectionView.cellForItem(at: indexPath)
+            var frame = collectionView.layoutAttributesForItem(at: indexPath)?.bounds ?? .zero
+            frame.origin.x = frame.width - 60.0
+
+            bookmark.deleted(bookmark.bookmark, cell, frame)
         }
 
         return [delete, edit]
@@ -367,8 +372,8 @@ final class CollapsibleHeaderCell: SelfSizingCollectionCell {
 
         NSLayoutConstraint.activate([
             stack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -ThemeMetrics.compactPadding),
-            stack.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+            stack.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
 
             contentView.heightAnchor.constraint(greaterThanOrEqualTo: stack.heightAnchor),
             contentView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)

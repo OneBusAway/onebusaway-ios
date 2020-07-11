@@ -20,7 +20,7 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     let selected: VoidBlock
 
     var onCreateAlarm: VoidBlock?
-    var onShowOptions: VoidBlock?
+    var onShowOptions: ((UIView?, CGRect?) -> Void)?
     var onAddBookmark: VoidBlock?
     var onShareTrip: VoidBlock?
 
@@ -99,7 +99,11 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
         }
 
         let moreActions = SwipeAction(style: .default, title: Strings.more) { (_, _) in
-            sectionData.onShowOptions?()
+            let cell = collectionView.cellForItem(at: indexPath)
+            var frame = collectionView.layoutAttributesForItem(at: indexPath)?.bounds ?? .zero
+            frame.origin.x = frame.width - 110.0
+
+            sectionData.onShowOptions?(cell, frame)
         }
         moreActions.font = UIFont.preferredFont(forTextStyle: .caption1)
         moreActions.backgroundColor = ThemeColors.shared.green

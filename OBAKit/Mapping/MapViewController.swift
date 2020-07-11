@@ -340,9 +340,9 @@ public class MapViewController: UIViewController,
     }()
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
-        switch newCollection.verticalSizeClass {
-        case .compact:
-            return MapPanelLandscapeLayout(initialPosition: .tip)
+        switch newCollection.horizontalSizeClass {
+        case .regular:
+            return MapPanelLandscapeLayout(initialPosition: .half)
         default:
             return MapPanelLayout(initialPosition: .tip)
         }

@@ -38,9 +38,9 @@ class TableHeaderView: UIView {
 
         addSubview(textLabel)
         NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            textLabel.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             textLabel.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             textLabel.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor)
         ])
     }

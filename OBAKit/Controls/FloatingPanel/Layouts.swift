@@ -37,12 +37,13 @@ final class MapPanelLandscapeLayout: FloatingPanelLayout {
     var initialPosition: FloatingPanelPosition
 
     public var supportedPositions: Set<FloatingPanelPosition> {
-        return [.full, .tip]
+        return [.full, .half, .tip]
     }
 
     public func insetFor(position: FloatingPanelPosition) -> CGFloat? {
         switch position {
         case .full: return 16.0
+        case .half: return 250.0
         case .tip: return 69.0
         default: return nil
         }

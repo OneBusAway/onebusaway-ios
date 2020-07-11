@@ -63,13 +63,13 @@ class WalkTimeView: UIView {
 
         NSLayoutConstraint.activate([
             walkerImageView.topAnchor.constraint(equalTo: topAnchor, constant: ThemeMetrics.ultraCompactPadding),
-            walkerImageView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor, constant: -walkerImageInset - 5.0),
+            walkerImageView.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor, constant: -walkerImageInset - 5.0),
             walkerImageView.heightAnchor.constraint(equalToConstant: 16.0),
             walkerImageView.widthAnchor.constraint(equalToConstant: 16.0),
 
             label.topAnchor.constraint(equalTo: topAnchor),
             label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -triangleHeight),
-            label.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            label.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             label.trailingAnchor.constraint(equalTo: walkerImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
     }

@@ -26,8 +26,8 @@ class TableSectionHeaderView: UICollectionReusableView, Separated {
         addSubview(textLabel)
 
         NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            textLabel.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
+            textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             bottomLabelAnchor
         ])
 

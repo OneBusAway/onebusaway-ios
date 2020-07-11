@@ -24,8 +24,8 @@ class TableRowCell: SwipeCollectionViewCell, SelfSizing, Separated {
 
             contentView.addSubview(tableRowView)
             NSLayoutConstraint.activate([
-                tableRowView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-                tableRowView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
+                tableRowView.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
+                tableRowView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
                 tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
                 tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
                 tableRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)

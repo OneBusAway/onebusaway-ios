@@ -185,9 +185,9 @@ class TripViewController: UIViewController,
 
     public func floatingPanel(_ vc: FloatingPanelController, layoutFor newCollection: UITraitCollection) -> FloatingPanelLayout? {
         let layout: FloatingPanelLayout
-        switch newCollection.verticalSizeClass {
-        case .compact:
-            layout = MapPanelLandscapeLayout(initialPosition: .full)
+        switch newCollection.horizontalSizeClass {
+        case .regular:
+            layout = MapPanelLandscapeLayout(initialPosition: .half)
         default:
             layout = MapPanelLayout(initialPosition: .half)
         }

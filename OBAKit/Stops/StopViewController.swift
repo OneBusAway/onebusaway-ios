@@ -505,9 +505,9 @@ public class StopViewController: UIViewController,
             self.shareTripStatus(arrivalDeparture: arrivalDeparture)
         }
 
-        data.onShowOptions = { [weak self] in
+        data.onShowOptions = { [weak self] view, frame in
             guard let self = self else { return }
-            self.showMoreOptions(arrivalDeparture: arrivalDeparture)
+            self.showMoreOptions(arrivalDeparture: arrivalDeparture, sourceView: view, sourceFrame: frame)
         }
 
         return data
@@ -686,7 +686,7 @@ public class StopViewController: UIViewController,
 
     // MARK: - Stop Arrival Actions
 
-    public func showMoreOptions(arrivalDeparture: ArrivalDeparture) {
+    public func showMoreOptions(arrivalDeparture: ArrivalDeparture, sourceView: UIView?, sourceFrame: CGRect?) {
         let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
 
         actionSheet.addAction(title: Strings.addBookmark) { [weak self] _ in
@@ -703,7 +703,13 @@ public class StopViewController: UIViewController,
 
         actionSheet.addAction(UIAlertAction.cancelAction)
 
-        application.viewRouter.present(actionSheet, from: self)
+        application.viewRouter.present(
+            actionSheet,
+            from: self,
+            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            popoverSourceView: sourceView,
+            popoverSourceFrame: sourceFrame
+        )
     }
 
     // MARK: - Alarms

@@ -65,8 +65,8 @@ public class EmptyDataSetView: UIView {
         let stack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, bodyLabel])
         addSubview(stack)
 
-        let leading = stack.leadingAnchor.constraint(equalTo: self.layoutMarginsGuide.leadingAnchor)
-        let trailing = stack.trailingAnchor.constraint(equalTo: self.layoutMarginsGuide.trailingAnchor)
+        let leading = stack.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor)
+        let trailing = stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor)
 
         // Priorities are specified to ensure that, for the period of time when this view
         // has a width==0, we don't end up with 'unsatisfiable constraints' errors.
@@ -76,10 +76,10 @@ public class EmptyDataSetView: UIView {
         let vertical: NSLayoutConstraint
 
         if alignment == .center {
-            vertical = stack.centerYAnchor.constraint(equalTo: self.layoutMarginsGuide.centerYAnchor)
+            vertical = stack.centerYAnchor.constraint(equalTo: layoutMarginsGuide.centerYAnchor)
         }
         else {
-            vertical = stack.topAnchor.constraint(equalTo: self.layoutMarginsGuide.topAnchor)
+            vertical = stack.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor)
         }
 
         NSLayoutConstraint.activate([vertical, leading, trailing])

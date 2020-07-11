@@ -117,8 +117,8 @@ class StopHeaderView: UIView {
         addSubview(stack)
 
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            stack.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: ThemeMetrics.padding),
             stack.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor)
         ])
