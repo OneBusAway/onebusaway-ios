@@ -1,6 +1,6 @@
 # OBAKit
 
-OBAKit is a rewrite of OneBusAway for iOS from the ground up. The codebase is explicitly designed to be relatively easy to understand, test, and maintain. The expectation is that this is the foundation of OneBusAway for iOS for the project's second decade of life.
+OBAKit is a rewrite of OneBusAway for iOS from the ground up. The codebase is explicitly designed to be easy to understand, test, and maintain. This is the foundation of OneBusAway's second decade of life on Apple platforms.
 
 ## Quick Start
 
