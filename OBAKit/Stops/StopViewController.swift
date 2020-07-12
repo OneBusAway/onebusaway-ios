@@ -199,16 +199,18 @@ public class StopViewController: UIViewController,
     /// If the user has already seen the nudge, as determined by user defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
     /// will be displayed one second after the stop data finishes loading.
     private func installSwipeOptionsNudge() {
-        let shouldShowNudge = application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge)
-        guard shouldShowNudge else { return }
+        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
+            return
+        }
 
         collectionController.onReload = { [weak self] in
             guard let self = self else { return }
             for cell in self.collectionController.collectionView.sortedVisibleCells {
                 if let cell = cell as? StopArrivalCell,
                    let arrDep = cell.arrivalDeparture,
-                       arrDep.temporalState != .past {
+                   arrDep.temporalState != .past {
                     self.showSwipeOptionsNudge(on: cell)
+                    self.collectionController.onReload = nil
                     return
                 }
             }
