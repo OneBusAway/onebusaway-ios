@@ -11,7 +11,7 @@ import OBAKitCore
 
 // MARK: - LocationPermissionItem
 
-class LocationPermissionItem: BLTNPageItem {
+class LocationPermissionItem: BLTNPageItem, LocationServiceDelegate {
     private let locationService: LocationService
     private let completion: VoidBlock
 
@@ -20,6 +20,8 @@ class LocationPermissionItem: BLTNPageItem {
         self.completion = completion
 
         super.init(title: OBALoc("location_permission_bulletin.title", value: "Welcome!", comment: "Title of the alert that appears to request your location."))
+
+        self.locationService.addDelegate(self)
 
         isDismissable = false
 
@@ -33,9 +35,7 @@ class LocationPermissionItem: BLTNPageItem {
         alternativeButtonTitle = OBALoc("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
 
         actionHandler = { [weak self] _ in
-            guard let self = self else { return }
-            self.locationService.requestInUseAuthorization()
-            self.completion()
+            self?.locationService.requestInUseAuthorization()
         }
 
         alternativeHandler = { [weak self] _ in
@@ -43,5 +43,9 @@ class LocationPermissionItem: BLTNPageItem {
             self.locationService.canPromptUserForPermission = false
             self.completion()
         }
+    }
+
+    func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+        self.completion()
     }
 }
