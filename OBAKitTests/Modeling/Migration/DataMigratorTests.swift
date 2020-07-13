@@ -30,7 +30,9 @@ class DataMigratorTests: OBATestCase {
 
         defaults = buildUserDefaults()
         migrationPrefs = try! [String: Any](plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
-        defaults.register(defaults: migrationPrefs)
+        for (k, v) in migrationPrefs {
+            defaults.set(v, forKey: k)
+        }
 
         dataLoader = MockDataLoader(testName: name)
 
