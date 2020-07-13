@@ -20,7 +20,10 @@ class MigrationDataExtractorTests: OBATestCase {
         super.setUp()
 
         let testValues = try! Dictionary<String, Any>(plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
-        userDefaults.register(defaults: testValues)
+        for (k, v) in testValues {
+            userDefaults.set(v, forKey: k)
+        }
+
         extractor = MigrationDataExtractor(defaults: userDefaults)
     }
 

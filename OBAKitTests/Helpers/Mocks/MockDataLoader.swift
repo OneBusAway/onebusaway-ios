@@ -17,6 +17,12 @@ struct MockDataResponse {
     let matcher: MockDataLoaderMatcher
 }
 
+class MockTask: URLSessionDataTask {
+    override var progress: Progress {
+        return Progress()
+    }
+}
+
 class MockDataLoader: NSObject, URLDataLoader {
     var mockResponses = [MockDataResponse]()
 
@@ -34,7 +40,7 @@ class MockDataLoader: NSObject, URLDataLoader {
 
         completionHandler(response.data, response.urlResponse, response.error)
 
-        return URLSessionDataTask()
+        return MockTask()
     }
 
     // MARK: - Response Mapping

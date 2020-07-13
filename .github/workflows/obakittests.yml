@@ -29,4 +29,4 @@ jobs:
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
     - name: Build OneBusAway and Test OBAKit
-      run: xcodebuild clean test -project 'OBAKit.xcodeproj' -scheme 'App' -sdk iphonesimulator -destination 'name=iPhone 11 Pro Max'
+      run: xcodebuild clean test -project 'OBAKit.xcodeproj' -scheme 'App' -sdk iphonesimulator -destination 'name=iPhone 11 Pro Max' -quiet
