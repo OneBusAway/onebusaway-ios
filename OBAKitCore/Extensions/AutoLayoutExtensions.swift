@@ -7,7 +7,7 @@
 
 import UIKit
 
-// MARK: - UIView/Autolayout
+// MARK: - Autolayoutable
 
 extension UIView {
     /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
@@ -38,9 +38,11 @@ extension UIView: Autolayoutable {
     }
 
     public enum AutoLayoutPinTarget: Int {
-        case safeArea, layoutMargins, edges
+        case edges, layoutMargins, readableContent, safeArea
     }
 }
+
+// MARK: - Extension UIView
 
 extension UIView {
 
@@ -73,7 +75,7 @@ extension UIView {
         return wrapper
     }
 
-    private func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero) {
+    private func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint) -> Void)? = nil) {
         guard let superview = superview else {
             return
         }
@@ -85,18 +87,21 @@ extension UIView {
         let topAnchorable = anchorable(for: superview, pinTarget: pinTargets.top)
         let bottomAnchorable = anchorable(for: superview, pinTarget: pinTargets.bottom)
 
-        NSLayoutConstraint.activate([
-            leadingAnchor.constraint(equalTo: leadingAnchorable.leadingAnchor, constant: insets.leading),
-            trailingAnchor.constraint(equalTo: trailingAnchorable.trailingAnchor, constant: insets.trailing),
-            topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top),
-            bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom)
-        ])
+        let leading = leadingAnchor.constraint(equalTo: leadingAnchorable.leadingAnchor, constant: insets.leading)
+        let trailing = trailingAnchor.constraint(equalTo: trailingAnchorable.trailingAnchor, constant: insets.trailing)
+        let top = topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top)
+        let bottom = bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom)
+
+        editConstraints?(top, bottom, leading, trailing)
+
+        NSLayoutConstraint.activate([leading, trailing, top, bottom])
     }
 
     private func anchorable(for view: UIView, pinTarget: UIView.AutoLayoutPinTarget) -> Anchorable {
         switch pinTarget {
         case .edges: return view
         case .layoutMargins: return view.layoutMarginsGuide
+        case .readableContent: return view.readableContentGuide
         case .safeArea: return view.safeAreaLayoutGuide
         }
     }
@@ -108,10 +113,25 @@ extension UIView {
     /// - Parameters:
     ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
     ///   - insets: Optional inset from the pinTarget. Defaults to zero.
-    public func pinToSuperview(_ pinTarget: UIView.AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero) {
-        pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets)
+    ///   - editConstraints: Allows you to modify the four constraints before they are activated. The order is: top, bottom, leading, trailing.
+    public func pinToSuperview(_ pinTarget: UIView.AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint) -> Void)? = nil) {
+        pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets, editConstraints: editConstraints)
     }
 }
+
+// MARK: - Extension NSLayoutConstraint
+
+public extension NSLayoutConstraint {
+    /// Chainable method for setting the constraint's priority.
+    /// - Parameter priority: The layout priority for this constraint.
+    /// - Returns: `self`
+    func setPriority(_ priority: UILayoutPriority) -> NSLayoutConstraint {
+        self.priority = priority
+        return self
+    }
+}
+
+// MARK: - DirectionalPinTargets/Anchorable
 
 public struct DirectionalPinTargets {
     public let leading: UIView.AutoLayoutPinTarget

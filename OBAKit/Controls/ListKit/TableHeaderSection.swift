@@ -67,12 +67,8 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
         return label
     }()
 
-    private lazy var bottomLabelAnchor: NSLayoutConstraint = {
-        let c = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor)
-        c.priority = .required - 1
+    private lazy var bottomLabelAnchor = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor).setPriority(.required - 1)
 
-        return c
-    }()
 
     override var intrinsicContentSize: CGSize {
         return self.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
@@ -83,12 +79,9 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
         backgroundColor = defaultBackgroundColor
         addSubview(textLabel)
 
-        let trailing = textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor)
-        trailing.priority = .required - 1
-
         NSLayoutConstraint.activate([
             textLabel.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
-            trailing,
+            textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor).setPriority(.required - 1),
             textLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: ThemeMetrics.compactPadding),
             bottomLabelAnchor
         ])
