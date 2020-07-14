@@ -56,28 +56,24 @@ class MapRegionManagerTests: OBATestCase {
         expect(mgr.mapView.showsTraffic).to(beTrue())
     }
 
-// This test fails inconsistently. It looks like there's another test that is polluting global
-// state and causing it to sometimes work/sometimes not work depending on the order of test execution.
-// See https://github.com/OneBusAway/OBAKit/issues/216 for more details.
+    /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
+    func test_visibleMapRect_nilRegion() {
+        let dataLoader = MockDataLoader(testName: name)
+        stubRegions(dataLoader: dataLoader)
+        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
 
-//    /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.
-//    func test_visibleMapRect_nilRegion() {
-//        let dataLoader = MockDataLoader(testName: name)
-//        stubRegions(dataLoader: dataLoader)
-//        stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
-//
-//        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-//        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
-//
-//        dataLoader.mock(data: Fixtures.loadData(file: "puget_sound_alerts.pb")) { (request) -> Bool in
-//            request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
-//        }
-//
-//        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
-//
-//        let application = Application(config: config)
-//        let mgr = MapRegionManager(application: application)
-//        expect(application.currentRegion).to(beNil())
-//        expect(mgr.lastVisibleMapRect).to(beNil())
-//    }
+        let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
+        let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
+
+        dataLoader.mock(data: Fixtures.loadData(file: "puget_sound_alerts.pb")) { (request) -> Bool in
+            request.url!.absoluteString.contains("api/gtfs_realtime/alerts-for-agency")
+        }
+
+        let config = makeConfig(locationService: locationService, bundledRegionsPath: regionsFilePath, dataLoader: dataLoader)
+
+        let application = Application(config: config)
+        let mgr = MapRegionManager(application: application)
+        expect(application.currentRegion).to(beNil())
+        expect(mgr.lastVisibleMapRect).to(beNil())
+    }
 }
