@@ -136,7 +136,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         contentView.layer.addSublayer(separator)
 
         contentView.addSubview(stackView)
-        stackView.pinToSuperview(.layoutMargins)
+        stackView.pinToSuperview(.readableContent) { $0.trailing.priority = .required - 1 }
 
         NSLayoutConstraint.activate([
             primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8)
