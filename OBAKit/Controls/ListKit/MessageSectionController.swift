@@ -117,8 +117,8 @@ final class MessageCell: BaseSelfSizingTableCell {
         let outerStack = UIStackView.verticalStack(arrangedSubviews: [topWrapper, subjectLabel, summaryLabel])
         contentView.addSubview(outerStack)
 
-        outerStack.pinToSuperview(.readableContent) { (_, _, _, trailing) in
-            trailing.priority = .required - 1
+        outerStack.pinToSuperview(.readableContent) { cx in
+            cx.trailing.priority = .required - 1
         }
 
         configureView()

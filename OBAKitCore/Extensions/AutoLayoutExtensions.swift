@@ -75,7 +75,14 @@ extension UIView {
         return wrapper
     }
 
-    private func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint) -> Void)? = nil) {
+    public struct LayoutConstraints {
+        public let top: NSLayoutConstraint
+        public let bottom: NSLayoutConstraint
+        public let leading: NSLayoutConstraint
+        public let trailing: NSLayoutConstraint
+    }
+
+    private func pinToSuperview(_ pinTargets: DirectionalPinTargets, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((LayoutConstraints) -> Void)? = nil) {
         guard let superview = superview else {
             return
         }
@@ -92,7 +99,8 @@ extension UIView {
         let top = topAnchor.constraint(equalTo: topAnchorable.topAnchor, constant: insets.top)
         let bottom = bottomAnchor.constraint(equalTo: bottomAnchorable.bottomAnchor, constant: insets.bottom)
 
-        editConstraints?(top, bottom, leading, trailing)
+        let constraints = LayoutConstraints(top: top, bottom: bottom, leading: leading, trailing: trailing)
+        editConstraints?(constraints)
 
         NSLayoutConstraint.activate([leading, trailing, top, bottom])
     }
@@ -114,7 +122,7 @@ extension UIView {
     ///   - pinTarget: Which part of the superview to pin to: edges, layout margins, or safe area.
     ///   - insets: Optional inset from the pinTarget. Defaults to zero.
     ///   - editConstraints: Allows you to modify the four constraints before they are activated. The order is: top, bottom, leading, trailing.
-    public func pinToSuperview(_ pinTarget: UIView.AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint,NSLayoutConstraint) -> Void)? = nil) {
+    public func pinToSuperview(_ pinTarget: UIView.AutoLayoutPinTarget, insets: NSDirectionalEdgeInsets = .zero, editConstraints: ((LayoutConstraints) -> Void)? = nil) {
         pinToSuperview(DirectionalPinTargets(pinTarget: pinTarget), insets: insets, editConstraints: editConstraints)
     }
 }

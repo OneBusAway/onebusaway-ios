@@ -188,8 +188,8 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
                 stopArrivalView.backgroundColor = .clear
                 contentView.addSubview(stopArrivalView)
 
-                stopArrivalView.pinToSuperview(.readableContent) { (_, _, _, trailing) in
-                    trailing.priority = .required - 1
+                stopArrivalView.pinToSuperview(.readableContent) { constraints in
+                    constraints.trailing.priority = .required - 1
                 }
             }
         }

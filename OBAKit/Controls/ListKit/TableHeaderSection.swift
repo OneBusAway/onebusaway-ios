@@ -69,7 +69,6 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     private lazy var bottomLabelAnchor = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor).setPriority(.required - 1)
 
-
     override var intrinsicContentSize: CGSize {
         return self.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
     }
