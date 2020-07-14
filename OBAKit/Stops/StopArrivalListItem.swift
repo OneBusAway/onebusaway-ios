@@ -199,6 +199,7 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
         super.init(frame: frame)
         fixiOS13AutoLayoutBug()
         contentView.layer.addSublayer(separator)
+        contentView.backgroundColor = ThemeColors.shared.systemBackground
     }
 
     required init?(coder aDecoder: NSCoder) {
