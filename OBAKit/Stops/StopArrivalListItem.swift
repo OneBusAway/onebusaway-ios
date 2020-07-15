@@ -187,7 +187,10 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
                 stopArrivalView.formatters = formatters
                 stopArrivalView.backgroundColor = .clear
                 contentView.addSubview(stopArrivalView)
-                stopArrivalView.pinToSuperview(.layoutMargins)
+
+                stopArrivalView.pinToSuperview(.readableContent) { constraints in
+                    constraints.trailing.priority = .required - 1
+                }
             }
         }
     }
@@ -196,6 +199,7 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
         super.init(frame: frame)
         fixiOS13AutoLayoutBug()
         contentView.layer.addSublayer(separator)
+        contentView.backgroundColor = ThemeColors.shared.systemBackground
     }
 
     required init?(coder aDecoder: NSCoder) {
