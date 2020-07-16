@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CocoaLumberjackSwift
 
 /// Extracts data from the user defaults of 'classic' versions of OneBusAway for transition to the new application architecture.
 public class MigrationDataExtractor: NSObject {
@@ -76,7 +75,7 @@ public class MigrationDataExtractor: NSObject {
             unarchiver.requiresSecureCoding = false
             return unarchiver
         } catch let error {
-            DDLogError("Failed to create unarchiver with error: \(error)")
+            Logger.error("Failed to create unarchiver with error: \(error)")
             return nil
         }
     }

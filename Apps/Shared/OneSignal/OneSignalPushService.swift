@@ -7,8 +7,8 @@
 
 import Foundation
 import OneSignal
-import CocoaLumberjackSwift
 import OBAKit
+import OBAKitCore
 
 /// Push notification service wrapper for OneSignal, a free push notification service provider.
 @objc(OBAOneSignalPushService)
@@ -60,7 +60,7 @@ public class OneSignalPushService: NSObject, PushServiceProvider {
                 let subscriptionStatus = state.subscriptionStatus,
                 let userID = subscriptionStatus.userId
             else {
-                DDLogError("OneSignal failed to produce a user ID. Waiting!")
+                Logger.error("OneSignal failed to produce a user ID. Waiting!")
                 return
             }
             callback(userID)

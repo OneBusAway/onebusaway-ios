@@ -10,7 +10,6 @@
 @import OBAKitCore;
 @import OBAKit;
 @import OneSignal;
-@import CocoaLumberjack;
 @import Crashlytics;
 #import "OBAFirebaseAnalytics.h"
 #import "App-Swift.h"

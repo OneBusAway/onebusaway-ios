@@ -10,7 +10,6 @@ import UIKit
 import Connectivity
 import CoreLocation
 import OBAKitCore
-import CocoaLumberjackSwift
 import SafariServices
 
 // MARK: - Protocols
@@ -136,8 +135,6 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         super.init(config: config)
 
-        configureLogging()
-
         configureAppearanceProxies()
 
         configureConnectivity()
@@ -181,17 +178,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// region transitioning from nil -> not-nil.
     public func reloadRootUserInterface() {
         delegate?.applicationReloadRootInterface(self)
-    }
-
-    // MARK: - Logging
-
-    private func configureLogging() {
-        DDLog.add(DDOSLogger.sharedInstance, with: .info)
-
-        let fileLogger: DDFileLogger = DDFileLogger()
-        fileLogger.rollingFrequency = 60 * 60 * 24 // 24 hours
-        fileLogger.logFileManager.maximumNumberOfLogFiles = 7 // 1 week.
-        DDLog.add(fileLogger, with: .info)
     }
 
     // MARK: - App Crashes
@@ -257,7 +243,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         guard let pushServiceProvider = config.pushServiceProvider else { return }
 
         #if targetEnvironment(simulator)
-            DDLogWarn("Push notifications don't work on the Simulator. Run this app on a device instead!")
+            Logger.warn("Push notifications don't work on the Simulator. Run this app on a device instead!")
             return
         #else
             self.pushService = PushService(serviceProvider: pushServiceProvider, delegate: self)

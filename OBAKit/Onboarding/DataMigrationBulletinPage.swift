@@ -8,7 +8,6 @@
 import UIKit
 import BLTNBoard
 import OBAKitCore
-import CocoaLumberjackSwift
 
 // MARK: - DataMigrationBulletinManager
 
@@ -136,7 +135,7 @@ final class DataMigrationBulletinPage: BLTNPageItem {
         dataMigrator.performMigration(forceMigration: forceMigration) { result in
             switch result {
             case .failure(let error):
-                DDLogInfo("Data Migration Error: \(error)")
+                Logger.info("Data Migration Error: \(error)")
                 let errorPage = DataMigrationErrorPage(error: error, completion: self.completion)
                 self.manager?.push(item: errorPage)
 

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CocoaLumberjackSwift
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, settings
@@ -530,7 +529,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
             return obj
         }
         catch let error {
-            DDLogError("Unable to decode \(key): \(error)")
+            Logger.error("Unable to decode \(key): \(error)")
             return nil
         }
     }

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CocoaLumberjackSwift
 
 public protocol ObacoServiceDelegate: NSObjectProtocol {
     var shouldDisplayRegionalTestAlerts: Bool { get }

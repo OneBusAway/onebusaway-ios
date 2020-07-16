@@ -9,7 +9,6 @@
 import Foundation
 import CoreLocation
 import MapKit
-import CocoaLumberjackSwift
 
 /// Loads data from a OneBusAway REST API server and returns it as model objects.
 public class RESTAPIService: APIService {

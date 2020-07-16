@@ -9,7 +9,6 @@ import UIKit
 import IGListKit
 import CoreLocation
 import OBAKitCore
-import CocoaLumberjackSwift
 
 /// The view controller that powers the Bookmarks tab of the app.
 @objc(OBABookmarksViewController)
@@ -225,7 +224,7 @@ public class BookmarksViewController: UIViewController,
             do {
                 try sections = application.userDefaults.decodeUserDefaultsObjects(type: [String: BookmarkSectionState].self, key: "toggledBookmarkSections") ?? [:]
             } catch let error {
-                DDLogError("Unable to decode toggledSections: \(error)")
+                Logger.error("Unable to decode toggledSections: \(error)")
             }
             return sections
         }
@@ -233,7 +232,7 @@ public class BookmarksViewController: UIViewController,
             do {
                 try application.userDefaults.encodeUserDefaultsObjects(newValue, key: "toggledBookmarkSections")
             } catch let error {
-                DDLogError("Unable to write toggledSections: \(error)")
+                Logger.error("Unable to write toggledSections: \(error)")
             }
         }
     }

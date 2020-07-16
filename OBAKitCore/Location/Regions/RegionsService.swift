@@ -8,7 +8,6 @@
 
 import Foundation
 import CoreLocation
-import CocoaLumberjackSwift
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate: NSObjectProtocol {
@@ -151,7 +150,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
                 return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
             }
             catch let error {
-                DDLogError("Unable to read region from user defaults: \(error)")
+                Logger.error("Unable to read region from user defaults: \(error)")
                 return nil
             }
         }
@@ -168,7 +167,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
                 notifyDelegatesRegionChanged(newValue)
             }
             catch {
-                DDLogError("Unable to write currentRegion to user defaults: \(error)")
+                Logger.error("Unable to write currentRegion to user defaults: \(error)")
             }
         }
     }
@@ -215,7 +214,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         }
         catch {
-            DDLogError("Unable to write regions to user defaults: \(error)")
+            Logger.error("Unable to write regions to user defaults: \(error)")
         }
     }
 
