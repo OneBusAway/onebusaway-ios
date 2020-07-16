@@ -7,7 +7,6 @@
 
 import Foundation
 import CoreLocation
-import CocoaLumberjackSwift
 
 /// Responsible for creating the base application 'stack': API service, regions, and everything else that makes the app run.
 ///
@@ -202,6 +201,6 @@ open class CoreApplication: NSObject,
     // MARK: - Error Handling
 
     open func displayError(_ error: Error) {
-        DDLogError("Error: \(error.localizedDescription)")
+        Logger.error("Error: \(error.localizedDescription)")
     }
 }

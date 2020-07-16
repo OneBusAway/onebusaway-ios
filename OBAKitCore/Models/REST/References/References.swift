@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CocoaLumberjackSwift
 
 public class References: NSObject, Decodable {
     public let agencies: [Agency]

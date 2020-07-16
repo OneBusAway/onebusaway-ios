@@ -9,7 +9,6 @@
 import UIKit
 import IGListKit
 import OBAKitCore
-import CocoaLumberjackSwift
 
 // swiftlint:disable cyclomatic_complexity
 

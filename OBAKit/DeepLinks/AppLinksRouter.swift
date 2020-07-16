@@ -7,7 +7,6 @@
 
 import Foundation
 import OBAKitCore
-import CocoaLumberjackSwift
 
 /// Creates deep links (i.e. Universal Links) to OBA-associated web pages.
 public class AppLinksRouter: NSObject {
@@ -101,7 +100,7 @@ public class AppLinksRouter: NSObject {
     public var showArrivalDepartureDeepLink: ((ArrivalDepartureDeepLink) -> Void)?
 
     public func route(userActivity: NSUserActivity) -> Bool {
-        DDLogInfo("AppLinksRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
+        Logger.info("AppLinksRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
 
         switch userActivity.activityType {
         case NSUserActivityTypeBrowsingWeb:

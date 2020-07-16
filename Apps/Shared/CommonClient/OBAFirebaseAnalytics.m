@@ -8,9 +8,7 @@
 #import "OBAFirebaseAnalytics.h"
 #import "Firebase.h"
 @import Crashlytics;
-@import CocoaLumberjack;
-
-static const int ddLogLevel = DDLogLevelWarning;
+@import OBAKitCore;
 
 @interface OBAFirebaseAnalytics ()
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
@@ -54,7 +52,7 @@ static const int ddLogLevel = DDLogLevelWarning;
         eventName = kFIRParameterContentType;
     }
     else {
-        DDLogError(@"Invalid call to -reportEventWithCategory: %@ label: %@ value: %@", @(event), label, value);
+        [OBALogger error:[NSString stringWithFormat:@"Invalid call to -reportEventWithCategory: %@ label: %@ value: %@", @(event), label, value]];
         return;
     }
 

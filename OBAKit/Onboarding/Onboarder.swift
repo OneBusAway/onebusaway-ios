@@ -8,7 +8,6 @@
 import Foundation
 import OBAKitCore
 import BLTNBoard
-import CocoaLumberjackSwift
 
 enum OnboardingState {
     case unknown, locationPermissionPrompt, manualRegionSelection, dataMigration, complete

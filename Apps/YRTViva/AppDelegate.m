@@ -9,7 +9,6 @@
 #import "AppDelegate.h"
 @import OBAKitCore;
 @import OBAKit;
-@import CocoaLumberjack;
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;

@@ -10,7 +10,6 @@ import UIKit
 import CoreLocation
 import MapKit
 import OBAKitCore
-import CocoaLumberjackSwift
 
 // MARK: - MapRegionDelegate
 
@@ -113,7 +112,7 @@ public class MapRegionManager: NSObject,
             do {
                 lastRect = try PropertyListDecoder().decode(MKMapRect.self, from: rawValue)
             } catch let error {
-                DDLogError("Unable to decode last visible map rect: \(error)")
+                Logger.error("Unable to decode last visible map rect: \(error)")
             }
 
             return lastRect
@@ -123,7 +122,7 @@ public class MapRegionManager: NSObject,
                 let encodedValue = try PropertyListEncoder().encode(newValue)
                 application.userDefaults.set(encodedValue, forKey: lastVisibleMapRectKey)
             } catch let error {
-                DDLogError("Unable to encode last visible map rect: \(error)")
+                Logger.error("Unable to encode last visible map rect: \(error)")
             }
         }
     }
@@ -384,7 +383,7 @@ public class MapRegionManager: NSObject,
             case is VehicleStatus:
                 notifyDelegatesShowSearchResult(response: searchResponse)
             default:
-                DDLogError("Unhandled search result object! \(result)")
+                Logger.error("Unhandled search result object! \(result)")
             }
         }
     }

@@ -9,7 +9,6 @@
 import UIKit
 import MapKit
 import FloatingPanel
-import CocoaLumberjackSwift
 import OBAKitCore
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.

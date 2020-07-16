@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import CocoaLumberjackSwift
 
 /// The core class for interacting with the OBA REST API. Treat this as an abstract class, and instead interact with its subclasses.
 ///
@@ -74,7 +73,7 @@ public class APIService: NSObject {
 
     func enqueueOperation(_ operation: Operation) {
         if let requestable = operation as? Requestable, let url = requestable.request.url {
-            DDLogInfo("Enqueuing URL: \(url.absoluteString)")
+            Logger.info("Enqueuing URL: \(url.absoluteString)")
         }
         networkQueue.addOperation(operation)
     }
