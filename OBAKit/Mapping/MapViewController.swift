@@ -465,6 +465,44 @@ public class MapViewController: UIViewController,
         }
     }
 
+    // MARK: Loading Indicator
+    lazy var loadingIndicator: UIActivityIndicatorView = {
+        let indicator: UIActivityIndicatorView
+
+        if #available(iOS 13, *) {
+            indicator = UIActivityIndicatorView(style: .medium)
+            indicator.color = ThemeColors.shared.brand
+        } else {
+            indicator = UIActivityIndicatorView(style: .gray)
+        }
+
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+
+    var loadingIndicatorTimer: Timer?
+
+    public func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager) {
+        // If loading takes more than a second, show the activity indicator.
+        loadingIndicatorTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: false) { [weak self] _ in
+            guard let self = self else { return }
+            UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
+                self.toolbar.stackView.addArrangedSubview(self.loadingIndicator)
+                self.loadingIndicator.startAnimating()
+            })
+        }
+    }
+
+    public func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager) {
+        loadingIndicatorTimer?.invalidate()
+        loadingIndicatorTimer = nil
+
+        UIView.transition(with: self.toolbar.stackView, duration: 0.25, options: .allowAnimatedContent, animations: {
+            self.toolbar.stackView.removeArrangedSubview(self.loadingIndicator)
+            self.loadingIndicator.stopAnimating()
+        })
+    }
+
     public func mapRegionManagerDismissSearch(_ manager: MapRegionManager) {
         mapPanelController.exitSearchMode()
     }
