@@ -48,10 +48,9 @@ class StatusOverlayView: UIView {
     }
 
     private lazy var statusLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .headline),
+                                        textColor: ThemeColors.shared.lightText)
         label.textAlignment = .center
-        label.font = UIFont.preferredFont(forTextStyle: .body).bold
-        label.textColor = ThemeColors.shared.lightText
         return label
     }()
 

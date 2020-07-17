@@ -209,12 +209,7 @@ class StopArrivalView: UIView {
     // MARK: - UI Builders
 
     private class func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
-        let label = UILabel.autolayoutNew()
-        label.font = .preferredFont(forTextStyle: textStyle)
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 3/4
-        label.numberOfLines = 1
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: textStyle))
         label.setContentCompressionResistancePriority(.required, for: .vertical)
 
         return label

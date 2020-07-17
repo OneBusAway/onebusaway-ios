@@ -403,16 +403,7 @@ final class StopBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         accessibilityLabel = nil
     }
 
-    let label: UILabel = {
-        let lbl = UILabel.autolayoutNew()
-        lbl.font = .preferredFont(forTextStyle: .headline)
-        lbl.numberOfLines = 0
-        lbl.adjustsFontForContentSizeCategory = true
-        lbl.adjustsFontSizeToFitWidth = true
-        lbl.minimumScaleFactor = 3/4
-
-        return lbl
-    }()
+    let label: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .headline))
 
     override init(frame: CGRect) {
         super.init(frame: frame)

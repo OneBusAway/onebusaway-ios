@@ -37,25 +37,20 @@ public class EmptyDataSetView: UIView {
 
     /// The title label. This property is exposed primarily to let you set the `text` property.
     public let titleLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
+        let label = UILabel.obaLabel(font: UIFont.preferredFont(forTextStyle: .title1).bold,
+                                        textColor: ThemeColors.shared.secondaryLabel)
         label.setContentHuggingPriority(.required, for: .vertical)
-        label.font = UIFont.preferredFont(forTextStyle: .title1).bold
-        label.numberOfLines = 0
         label.textAlignment = .center
         label.backgroundColor = .clear
-        label.textColor = ThemeColors.shared.secondaryLabel
         return label
     }()
 
     /// The body label. This property is exposed primarily to let you set the `text` property.
     public let bodyLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
+        let label = UILabel.obaLabel(textColor: ThemeColors.shared.secondaryLabel)
         label.setContentHuggingPriority(.required, for: .vertical)
-        label.numberOfLines = 0
         label.textAlignment = .center
         label.backgroundColor = .clear
-        label.textColor = ThemeColors.shared.secondaryLabel
-        label.font = UIFont.preferredFont(forTextStyle: .body)
         return label
     }()
 

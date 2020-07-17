@@ -112,12 +112,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
     // MARK: - UI Builders
     private class func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
-        let label = UILabel.autolayoutNew()
-        label.numberOfLines = 0
-        label.font = .preferredFont(forTextStyle: textStyle)
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 3/4
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: textStyle))
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setCompressionResistance(horizontal: .required, vertical: .required)
         label.setHugging(horizontal: .defaultLow, vertical: .defaultLow)

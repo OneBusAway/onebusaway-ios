@@ -53,37 +53,13 @@ final class MessageSectionData: ListViewModel, ListDiffable {
 final class MessageCell: BaseSelfSizingTableCell {
 
     // MARK: - UI
-
-    private let authorLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .headline)
-        label.adjustsFontForContentSizeCategory = true
-        return label
-    }()
-
-    private let dateLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = ThemeColors.shared.secondaryLabel
-        label.adjustsFontForContentSizeCategory = true
-        return label
-    }()
-
-    private let subjectLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .subheadline)
-        label.adjustsFontForContentSizeCategory = true
-        return label
-    }()
-
-    private let summaryLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .subheadline)
-        label.textColor = ThemeColors.shared.secondaryLabel
-        label.numberOfLines = 2
-        label.adjustsFontForContentSizeCategory = true
-        return label
-    }()
+    private let authorLabel: UILabel  = .obaLabel(font: .preferredFont(forTextStyle: .headline))
+    private let dateLabel: UILabel    = .obaLabel(font: .preferredFont(forTextStyle: .footnote),
+                                                  textColor: ThemeColors.shared.secondaryLabel)
+    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline))
+    private let summaryLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline),
+                                                  textColor: ThemeColors.shared.secondaryLabel,
+                                                  numberOfLines: 2)
 
     private var topStack: UIStackView!
 
