@@ -517,11 +517,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     // MARK: - Service Alerts
 
     public func isUnread(serviceAlert: ServiceAlert) -> Bool {
-        readAlerts[serviceAlert.uniqueishKey, default: false]
+        readAlerts[serviceAlert.id] ?? true
     }
 
     public func markRead(serviceAlert: ServiceAlert) {
-        readAlerts[serviceAlert.uniqueishKey] = true
+        readAlerts[serviceAlert.id] = false
     }
 
     private var readAlerts: [String: Bool] {

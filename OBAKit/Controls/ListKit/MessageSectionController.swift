@@ -60,6 +60,23 @@ final class MessageCell: BaseSelfSizingTableCell {
 
     // MARK: - UI
 
+    private static let unreadDotSize: CGFloat = 12.0
+
+    private let unreadDot: UIView = {
+        let view = UIView.autolayoutNew()
+        view.backgroundColor = ThemeColors.shared.brand
+        view.layer.cornerRadius = MessageCell.unreadDotSize / 2.0
+        view.setHugging(horizontal: .required, vertical: .required)
+        view.setCompressionResistance(horizontal: .required, vertical: .required)
+
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: MessageCell.unreadDotSize),
+            view.heightAnchor.constraint(equalToConstant: MessageCell.unreadDotSize)
+        ])
+
+        return view
+    }()
+
     private let authorLabel: UILabel = {
         let label = UILabel.obaLabel(font: UIFont.preferredFont(forTextStyle: .subheadline).bold, minimumScaleFactor: 0.9)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -123,6 +140,15 @@ final class MessageCell: BaseSelfSizingTableCell {
 
     private func configureView() {
         guard let data = data else { return }
+
+        if data.isUnread {
+            topStack.insertArrangedSubview(unreadDot, at: 0)
+            unreadDot.isHidden = false
+        }
+        else {
+            topStack.removeArrangedSubview(unreadDot)
+            unreadDot.isHidden = true
+        }
 
         authorLabel.text = data.author
         dateLabel.text = data.date
