@@ -141,22 +141,16 @@ final class TripStopCell: BaseSelfSizingTableCell {
     }
 
     let titleLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = .preferredFont(forTextStyle: .body)
-        label.adjustsFontForContentSizeCategory = true
-        label.numberOfLines = 0
-        label.textColor = ThemeColors.shared.label
+        let label = UILabel.obaLabel(textColor: ThemeColors.shared.label)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label
     }()
 
     let timeLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.font = .preferredFont(forTextStyle: .callout)
-        label.adjustsFontForContentSizeCategory = true
-        label.textColor = ThemeColors.shared.secondaryLabel
-        label.numberOfLines = 1
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .callout),
+                                         textColor: ThemeColors.shared.secondaryLabel,
+                                         numberOfLines: 1)
         label.setContentHuggingPriority(.required, for: .horizontal)
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         return label

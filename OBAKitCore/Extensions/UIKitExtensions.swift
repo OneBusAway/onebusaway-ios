@@ -309,6 +309,30 @@ public extension UILabel {
 
         frame.size.height = rect.height
     }
+
+    /// Creates a new autolayout `UILabel` that attempts to maintain full visibility. This means it will adjust
+    /// its font size, font scale, then font tightening to maintain visibilty. It also adapts to the user's content
+    /// size setting, provided you specify a valid `UIFont`.
+    /// - parameter font: The font to set for this label. It is recommended that you use
+    ///     `.preferredFont` so it will adjust for content size. The default is `.preferredFont(forTextStyle: .body)`.
+    /// - parameter textColor: The text color to set. The default is `.label`.
+    /// - parameter numberOfLines: The number of lines to set for this label. The default is `0`.
+    /// - parameter minimumScaleFactor: The smallest multiplier for the current font size that
+    ///     yields an acceptable font size to use when displaying the label’s text. The default is `3/4`.
+    class func obaLabel(font: UIFont = .preferredFont(forTextStyle: .body),
+                        textColor: UIColor = ThemeColors.shared.label,
+                        numberOfLines: Int = 0,
+                        minimumScaleFactor: CGFloat = 3/4) -> UILabel {
+        let label = UILabel.autolayoutNew()
+        label.font = font
+        label.textColor = textColor
+        label.numberOfLines = numberOfLines
+        label.minimumScaleFactor = minimumScaleFactor
+        label.allowsDefaultTighteningForTruncation = true
+        label.adjustsFontForContentSizeCategory = true
+        label.adjustsFontSizeToFitWidth = true
+        return label
+    }
 }
 
 // MARK: - UILayoutPriority

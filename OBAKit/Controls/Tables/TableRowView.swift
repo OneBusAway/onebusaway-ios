@@ -184,22 +184,8 @@ class TableRowView: UIView {
     fileprivate lazy var labelWrapper = labelStack.embedInWrapperView()
     lazy var labelStack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
 
-    let titleLabel = TableRowView.buildLabel()
-    let subtitleLabel: UILabel = {
-        let label = TableRowView.buildLabel()
-        label.textColor = ThemeColors.shared.secondaryLabel
-
-        return label
-    }()
-
-    private class func buildLabel() -> UILabel {
-        let label = UILabel.autolayoutNew()
-        label.font = .preferredFont(forTextStyle: .body)
-        label.adjustsFontForContentSizeCategory = true
-        label.numberOfLines = 0
-        label.backgroundColor = .clear
-        return label
-    }
+    let titleLabel: UILabel = .obaLabel()
+    let subtitleLabel: UILabel = .obaLabel(textColor: ThemeColors.shared.secondaryLabel)
 
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
