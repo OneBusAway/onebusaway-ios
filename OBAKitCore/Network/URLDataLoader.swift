@@ -2,7 +2,9 @@
 //  URLDataLoader.swift
 //  OBAKitCore
 //
-//  Created by Aaron Brethorst on 5/1/20.
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
 //
 
 import Foundation

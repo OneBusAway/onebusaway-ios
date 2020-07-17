@@ -2,8 +2,9 @@
 //  CollectionController.swift
 //  OBANext
 //
-//  Created by Aaron Brethorst on 1/13/19.
-//  Copyright © 2019 OneBusAway. All rights reserved.
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
 //
 
 import UIKit
