@@ -19,6 +19,7 @@ final class MessageSectionData: ListViewModel, ListDiffable {
     var date: String?
     var subject: String
     var summary: String?
+    var isUnread: Bool
 
     /// The maximum number of lines to display for the summary before truncation. Set to `0` for unlimited lines.
     /// - Note: A multiple of this value is used when the user's content size is set to an accessibility size.
@@ -37,14 +38,15 @@ final class MessageSectionData: ListViewModel, ListDiffable {
             return false
         }
 
-        return author == rhs.author && date == rhs.date && subject == rhs.subject && summary == rhs.summary
+        return author == rhs.author && date == rhs.date && subject == rhs.subject && summary == rhs.summary && isUnread == rhs.isUnread
     }
 
-    public init(author: String?, date: String?, subject: String, summary: String?, tapped: ListRowActionHandler?) {
+    public init(author: String?, date: String?, subject: String, summary: String?, isUnread: Bool, tapped: ListRowActionHandler?) {
         self.author = author
         self.date = date
         self.subject = subject
         self.summary = summary
+        self.isUnread = isUnread
 
         super.init(tapped: tapped)
     }

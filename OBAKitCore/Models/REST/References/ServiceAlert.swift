@@ -97,6 +97,11 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         return hasher.finalize()
     }
 
+    /// A unique-enough key representing this service alert to be used to track read status.
+    public var uniqueishKey: String {
+        return [id, createdAt.description, urlString?.value ?? ""].joined(separator: "_")
+    }
+
     // MARK: - HasReferences
 
     public func loadReferences(_ references: References) {
