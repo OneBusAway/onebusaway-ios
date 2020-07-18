@@ -147,6 +147,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
         let emptyView = EmptyDataSetView()
+        emptyView.translatesAutoresizingMaskIntoConstraints = false
         emptyView.titleLabel.text = OBALoc("nearby_stops_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby Stops controller.")
         emptyView.bodyLabel.text = OBALoc("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
 

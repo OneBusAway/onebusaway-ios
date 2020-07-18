@@ -156,6 +156,7 @@ public class BookmarksViewController: UIViewController,
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
         let emptyView = EmptyDataSetView()
+        emptyView.translatesAutoresizingMaskIntoConstraints = false
         emptyView.titleLabel.text = Strings.emptyBookmarkTitle
         emptyView.bodyLabel.text = Strings.emptyBookmarkBody
         return emptyView

@@ -144,6 +144,16 @@ public protocol UserDataStore: NSObjectProtocol {
     ///
     /// - Note: Only applies if the user is using a tab-style UI.
     var lastSelectedView: SelectedTab { get set }
+
+    // MARK: - Service Alerts
+
+    /// Lets you check whether the passed-in service has been viewed by the user or not.
+    /// - Parameter serviceAlert: The service alert to check the read status of.
+    func isUnread(serviceAlert: ServiceAlert) -> Bool
+
+    /// Lets you mark a service alert as having been read.
+    /// - Parameter serviceAlert: The service alert to mark read.
+    func markRead(serviceAlert: ServiceAlert)
 }
 
 // MARK: - Stop Preferences
@@ -174,6 +184,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
+        static let readServiceAlerts = "UserDataStore.readServiceAlerts"
         static let recentStops = "UserDataStore.recentStops"
         static let stopPreferences = "UserDataStore.stopPreferences"
     }
@@ -500,6 +511,25 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.lastSelectedView)
+        }
+    }
+
+    // MARK: - Service Alerts
+
+    public func isUnread(serviceAlert: ServiceAlert) -> Bool {
+        readAlerts[serviceAlert.id] ?? true
+    }
+
+    public func markRead(serviceAlert: ServiceAlert) {
+        readAlerts[serviceAlert.id] = false
+    }
+
+    private var readAlerts: [String: Bool] {
+        get {
+            return decodeUserDefaultsObjects(type: [String: Bool].self, key: UserDefaultsKeys.readServiceAlerts) ?? [:]
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.readServiceAlerts) // swiftlint:disable:this force_try
         }
     }
 

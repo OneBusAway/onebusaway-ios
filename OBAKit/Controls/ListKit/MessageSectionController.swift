@@ -19,6 +19,7 @@ final class MessageSectionData: ListViewModel, ListDiffable {
     var date: String?
     var subject: String
     var summary: String?
+    var isUnread: Bool
 
     /// The maximum number of lines to display for the summary before truncation. Set to `0` for unlimited lines.
     /// - Note: A multiple of this value is used when the user's content size is set to an accessibility size.
@@ -37,14 +38,15 @@ final class MessageSectionData: ListViewModel, ListDiffable {
             return false
         }
 
-        return author == rhs.author && date == rhs.date && subject == rhs.subject && summary == rhs.summary
+        return author == rhs.author && date == rhs.date && subject == rhs.subject && summary == rhs.summary && isUnread == rhs.isUnread
     }
 
-    public init(author: String?, date: String?, subject: String, summary: String?, tapped: ListRowActionHandler?) {
+    public init(author: String?, date: String?, subject: String, summary: String?, isUnread: Bool, tapped: ListRowActionHandler?) {
         self.author = author
         self.date = date
         self.subject = subject
         self.summary = summary
+        self.isUnread = isUnread
 
         super.init(tapped: tapped)
     }
@@ -54,14 +56,42 @@ final class MessageSectionData: ListViewModel, ListDiffable {
 
 final class MessageCell: BaseSelfSizingTableCell {
 
+    private let useDebugColors = false
+
     // MARK: - UI
-    private let authorLabel: UILabel  = .obaLabel(font: .preferredFont(forTextStyle: .headline))
-    private let dateLabel: UILabel    = .obaLabel(font: .preferredFont(forTextStyle: .footnote),
-                                                  textColor: ThemeColors.shared.secondaryLabel)
-    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline))
-    private let summaryLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline),
-                                                  textColor: ThemeColors.shared.secondaryLabel,
-                                                  numberOfLines: 2)
+
+    private static let unreadDotSize: CGFloat = 12.0
+
+    private let unreadDot: UIView = {
+        let view = UIView.autolayoutNew()
+        view.backgroundColor = ThemeColors.shared.brand
+        view.layer.cornerRadius = MessageCell.unreadDotSize / 2.0
+        view.setHugging(horizontal: .required, vertical: .required)
+        view.setCompressionResistance(horizontal: .required, vertical: .required)
+
+        NSLayoutConstraint.activate([
+            view.widthAnchor.constraint(equalToConstant: MessageCell.unreadDotSize),
+            view.heightAnchor.constraint(equalToConstant: MessageCell.unreadDotSize)
+        ])
+
+        return view
+    }()
+
+    private let authorLabel: UILabel = {
+        let label = UILabel.obaLabel(font: UIFont.preferredFont(forTextStyle: .subheadline).bold, minimumScaleFactor: 0.9)
+        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        return label
+    }()
+
+    private let dateLabel: UILabel = {
+        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel, minimumScaleFactor: 1.0)
+        label.setContentHuggingPriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return label
+    }()
+
+    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline), minimumScaleFactor: 0.9)
+    private let summaryLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline), textColor: ThemeColors.shared.secondaryLabel, numberOfLines: 2, minimumScaleFactor: 0.9)
 
     private var topStack: UIStackView!
 
@@ -90,13 +120,14 @@ final class MessageCell: BaseSelfSizingTableCell {
         super.init(frame: frame)
 
         self.topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
+        self.topStack.spacing = ThemeMetrics.compactPadding
         let topWrapper = topStack.embedInWrapperView()
 
         let outerStack = UIStackView.verticalStack(arrangedSubviews: [topWrapper, subjectLabel, summaryLabel])
         contentView.addSubview(outerStack)
 
-        outerStack.pinToSuperview(.readableContent) { cx in
-            cx.trailing.priority = .required - 1
+        outerStack.pinToSuperview(.readableContent) {
+            $0.trailing.priority = .required - 1
         }
 
         configureView()
@@ -109,6 +140,15 @@ final class MessageCell: BaseSelfSizingTableCell {
 
     private func configureView() {
         guard let data = data else { return }
+
+        if data.isUnread {
+            topStack.insertArrangedSubview(unreadDot, at: 0)
+            unreadDot.isHidden = false
+        }
+        else {
+            topStack.removeArrangedSubview(unreadDot)
+            unreadDot.isHidden = true
+        }
 
         authorLabel.text = data.author
         dateLabel.text = data.date
@@ -137,12 +177,14 @@ final class MessageCell: BaseSelfSizingTableCell {
         isAccessibilityElement = true
         accessibilityTraits = data.tapped == nil ? [.staticText] : [.button, .staticText]
         accessibilityLabel = data.subject
+        accessibilityValue = [data.date, data.summary].compactMap {$0}.joined(separator: ", ")
 
-        if let date = data.date {
-            accessibilityValue = "\(date), \(data.summary ?? "")"
-        }
-        else {
-            accessibilityValue = data.summary
+        if useDebugColors {
+            authorLabel.backgroundColor = .magenta
+            dateLabel.backgroundColor = .purple
+            subjectLabel.backgroundColor = .green
+            summaryLabel.backgroundColor = .red
+            contentView.backgroundColor = .yellow
         }
     }
 

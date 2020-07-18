@@ -117,6 +117,12 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         webView.setPageContent(builder.HTML)
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        application.userDataStore.markRead(serviceAlert: serviceAlert)
+    }
+
     // MARK: - WKNavigationDelegate
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

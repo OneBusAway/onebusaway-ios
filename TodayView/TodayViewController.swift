@@ -121,6 +121,7 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
 
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
         let emptyView = EmptyDataSetView(alignment: .top)
+        emptyView.translatesAutoresizingMaskIntoConstraints = false
         emptyView.titleLabel.text = Strings.emptyBookmarkTitle
         emptyView.titleLabel.font = UIFont.preferredFont(forTextStyle: .title2).bold
         emptyView.bodyLabel.text = Strings.emptyBookmarkBody

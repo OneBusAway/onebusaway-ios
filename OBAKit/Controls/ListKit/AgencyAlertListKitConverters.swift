@@ -72,7 +72,14 @@ extension AgencyAlertListKitConverters where Self: UIViewController {
             formattedDateTime = nil
         }
 
-        let rowData = MessageSectionData(author: agencyAlert.agency?.agency.name, date: formattedDateTime, subject: title, summary: agencyAlert.bodyForLocale(application.locale), tapped: tapped)
+        let rowData = MessageSectionData(
+            author: agencyAlert.agency?.agency.name,
+            date: formattedDateTime,
+            subject: title,
+            summary: agencyAlert.bodyForLocale(application.locale),
+            isUnread: false,
+            tapped: tapped
+        )
 
         rowData.object = agencyAlert
 
