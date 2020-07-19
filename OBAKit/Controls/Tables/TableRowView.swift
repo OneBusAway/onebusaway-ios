@@ -44,7 +44,7 @@ class TableRowView: UIView {
         var constraints: [NSLayoutConstraint] = [
             heightConstraint,
             heightAnchor.constraint(greaterThanOrEqualTo: contentStack.heightAnchor),
-            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor, constant: ThemeMetrics.tableRowLeadingPadding),
+            contentStackWrapper.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentStackWrapper.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStackWrapper.centerYAnchor.constraint(equalTo: centerYAnchor),
             topConstraint,
