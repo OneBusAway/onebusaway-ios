@@ -66,6 +66,7 @@ class StopArrivalView: UIView {
         let label = buildLabel(textStyle: .headline)
         label.numberOfLines = 2
         label.allowsDefaultTighteningForTruncation = true
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
 
         // Re: limiting number of lines to 2 -- there is a weird layout bug I
         // can't trace that is always setting a fixed height constraint to
@@ -78,7 +79,12 @@ class StopArrivalView: UIView {
     /// Second line in the view; contains the arrival/departure time and status relative to schedule.
     ///
     /// For example, this might contain the text `11:20 AM - arriving on time`.
-    let fullExplanationLabel = buildLabel(textStyle: .body)
+    let fullExplanationLabel: UILabel = {
+        let label = buildLabel(textStyle: .body)
+        label.setContentHuggingPriority(.defaultHigh - 1, for: .vertical)
+
+        return label
+    }()
 
     /// Accessibility feature for one-column compact view. For example, `11:20 AM`
     let accessibilityTimeLabel = buildLabel(textStyle: .subheadline)
