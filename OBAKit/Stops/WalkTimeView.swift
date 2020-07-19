@@ -21,8 +21,7 @@ class WalkTimeView: UIView {
         label.textAlignment = .right
         label.font = UIFont.preferredFont(forTextStyle: .footnote)
         label.textColor = ThemeColors.shared.lightText
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setCompressionResistance(horizontal: .required, vertical: .required)
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
         return label
     }()
@@ -30,15 +29,14 @@ class WalkTimeView: UIView {
     private lazy var triangleHeight = ThemeMetrics.padding
     private lazy var triangleVertexWidth = 1.5 * triangleHeight
 
-    private let walkerImageInset: CGFloat = 32.0
+    private let walkerImageInset: CGFloat = 0.0
 
     private let walkerImageView: UIImageView = {
         let imageView = UIImageView.autolayoutNew()
         imageView.image = Icons.walkTransport
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .white
-        imageView.setContentHuggingPriority(.required, for: .horizontal)
-        imageView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        imageView.setHugging(horizontal: .required, vertical: .defaultHigh)
 
         return imageView
     }()
