@@ -59,6 +59,7 @@ final class LoadMoreCell: SelfSizingCollectionCell {
     private lazy var loadMoreLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
+        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
         label.font = UIFont.preferredFont(forTextStyle: .body).bold
         label.textColor = ThemeColors.shared.brand
         label.text = OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button")
@@ -68,6 +69,7 @@ final class LoadMoreCell: SelfSizingCollectionCell {
     private lazy var footerLabel: UILabel = {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
+        label.setContentHuggingPriority(.defaultHigh - 1, for: .vertical)
         label.font = UIFont.preferredFont(forTextStyle: .footnote)
         label.textColor = ThemeColors.shared.secondaryLabel
         return label
