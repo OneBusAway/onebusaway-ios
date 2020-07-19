@@ -63,6 +63,8 @@ public class Strings: NSObject {
 
     public static let serviceAlert = OBALoc("common.service_alert", value: "Service Alert", comment: "A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes.")
 
+    public static let serviceAlerts = OBALoc("common.service_alerts", value: "Service Alerts", comment: "Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes.")
+
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
 
     public static let shareTrip = OBALoc("common.share_trip", value: "Share Trip", comment: "Button title for sharing the status of your trip (i.e. location, arrival time, etc.)")

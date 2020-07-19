@@ -43,9 +43,39 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
+
         view.addSubview(webView)
         webView.pinToSuperview(.edges)
+    }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        buildPageContent()
+
+        application.userDataStore.markRead(serviceAlert: serviceAlert)
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+        guard navigationAction.navigationType == .linkActivated else {
+            decisionHandler(.allow)
+            return
+        }
+
+        if let url = navigationAction.request.url {
+            let safari = SFSafariViewController(url: url)
+            application.viewRouter.present(safari, from: self)
+        }
+
+        decisionHandler(.cancel)
+    }
+
+    // MARK: - Page Content
+
+    private func buildPageContent() {
         let builder = HTMLBuilder()
         builder.append(.h1, value: serviceAlert.summary.value)
         builder.append(.p, value: application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt))
@@ -58,16 +88,16 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
             builder.append(.p, value: String(format: fmt, urlString))
         }
 
-//        if serviceAlert.consequences.count > 0 {
-//            builder.append(.h2, value: "Consequences")
-//            for c in serviceAlert.consequences {
-//                text.append("<h3>\(c.condition)</h3>")
-//                if let details = c.conditionDetails {
-//                    text.append("<p>Path: \(details.diversionPath)</p>")
-//                    text.append("<p>Stops: \(details.stopIDs.joined(separator: ", "))</p>")
-//                }
-//            }
-//        }
+        //        if serviceAlert.consequences.count > 0 {
+        //            builder.append(.h2, value: "Consequences")
+        //            for c in serviceAlert.consequences {
+        //                text.append("<h3>\(c.condition)</h3>")
+        //                if let details = c.conditionDetails {
+        //                    text.append("<p>Path: \(details.diversionPath)</p>")
+        //                    text.append("<p>Stops: \(details.stopIDs.joined(separator: ", "))</p>")
+        //                }
+        //            }
+        //        }
 
         if serviceAlert.activeWindows.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.in_effect", value: "In Effect", comment: "As in 'this is in effect/occurring' from/to"))
@@ -115,28 +145,8 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         }
 
         webView.setPageContent(builder.HTML)
-    }
 
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        application.userDataStore.markRead(serviceAlert: serviceAlert)
-    }
-
-    // MARK: - WKNavigationDelegate
-
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        guard navigationAction.navigationType == .linkActivated else {
-            decisionHandler(.allow)
-            return
-        }
-
-        if let url = navigationAction.request.url {
-            let safari = SFSafariViewController(url: url)
-            application.viewRouter.present(safari, from: self)
-        }
-
-        decisionHandler(.cancel)
+        navigationItem.rightBarButtonItem = nil
     }
 }
 
