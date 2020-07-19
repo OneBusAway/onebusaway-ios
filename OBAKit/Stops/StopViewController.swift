@@ -403,7 +403,7 @@ public class StopViewController: UIViewController,
         sections.append(stopHeaderSection)
 
         // Service Alerts
-        let serviceAlerts = serviceAlertsSection
+        let serviceAlerts = unreadServiceAlertsSection
         sections.append(contentsOf: serviceAlerts)
 
         let hiddenRoutesToggle = self.hiddenRoutesToggle
@@ -573,8 +573,10 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Service Alerts
 
-    private var serviceAlertsSection: [ListDiffable] {
-        guard let alerts = stopArrivals?.serviceAlerts else {
+    private var unreadServiceAlertsSection: [ListDiffable] {
+        let alerts = (stopArrivals?.serviceAlerts ?? []).filter { self.application.userDataStore.isUnread(serviceAlert: $0) }
+
+        guard alerts.count > 0 else {
             return []
         }
 
@@ -658,6 +660,19 @@ public class StopViewController: UIViewController,
             self.showReportProblem()
         }
         rows.append(reportProblem)
+
+        // All Service Alerts
+        if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
+            let row = TableRowData(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
+                let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
+                self.application.viewRouter.navigate(to: controller, from: self)
+            }
+            row.previewDestination = { [weak self] in
+                guard let self = self else { return nil }
+                return ServiceAlertListController(application: self.application, serviceAlerts: alerts)
+            }
+            rows.append(row)
+        }
 
         return [
             TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
