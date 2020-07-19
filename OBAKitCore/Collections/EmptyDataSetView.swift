@@ -62,8 +62,8 @@ public class EmptyDataSetView: UIView {
         let stack = UIStackView.verticalStack(arrangedSubviews: [titleLabel, bodyLabel])
         addSubview(stack)
 
-        let leading = stack.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor)
-        let trailing = stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor)
+        let leading = stack.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor)
+        let trailing = stack.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
 
         // Priorities are specified to ensure that, for the period of time when this view
         // has a width==0, we don't end up with 'unsatisfiable constraints' errors.
