@@ -17,4 +17,5 @@ targets:
           NSExtensionPointIdentifier: com.apple.intents-service
           NSExtensionAttributes:
             IntentsRestrictedWhileLocked: []
-            IntentsSupported: []
+            IntentsRestrictedWhileProtectedDataUnavailable: []
+            IntentsSupported: ["Intent"]
