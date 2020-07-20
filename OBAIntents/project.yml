@@ -2,7 +2,10 @@ targets:
   OBAIntents:
     type: app-extension
     platform: iOS
-    sources: ["."]
+    sources: [
+        ".",
+        "../Supporting Files"
+    ]
     dependencies:
       - target: OBAKitCore
       - sdk: Intents.framework
