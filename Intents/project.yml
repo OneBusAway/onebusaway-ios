@@ -1,6 +1,6 @@
 targets:
   Intents:
-    type: app-extension.intents-service
+    type: app-extension
     platform: iOS
     sources: ["."]
     dependencies:
