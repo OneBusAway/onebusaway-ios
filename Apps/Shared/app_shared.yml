@@ -27,6 +27,7 @@ targets:
       - target: OBAKitCore
       - target: OBAKit
       - target: TodayView
+      - target: Intents
       - carthage: SwiftProtobuf
     info:
       properties:

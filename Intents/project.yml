@@ -1,0 +1,19 @@
+targets:
+  Intents:
+    type: app-extension.intents-service
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: OBAKitCore
+    entitlements:
+      path: Intents.entitlements
+    info:
+      path: Info.plist
+      properties:
+        NSExtensionPrincipalClass: IntentHandler
+        NSExtension:
+          NSExtensionPrincipalClass: Intents.IntentHandler
+          NSExtensionPointIdentifier: com.apple.intents-service
+          NSExtensionAttributes:
+            IntentsRestrictedWhileLocked: []
+            IntentsSupported: []

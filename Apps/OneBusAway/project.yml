@@ -82,6 +82,26 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.TodayView
+  Intents:
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.org.onebusaway.iphone
+    info:
+      properties:
+        CFBundleDisplayName: OneBusAway
+        CFBundleShortVersionString: 20.2.0
+        OBAKitConfig:
+          AppGroup: group.org.onebusaway.iphone
+          BundledRegionsFileName: regions.json
+          DeepLinkServerBaseAddress: https://onebusaway.co
+          ExtensionURLScheme: onebusaway
+          RESTServerAPIKey: org.onebusaway.iphone
+          RegionsServerBaseAddress: https://regions.onebusaway.org
+          RegionsServerAPIPath: /regions-v3.json
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.Intents
 
 include:
   - path: Apps/Shared/app_shared.yml
@@ -90,4 +110,5 @@ include:
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
+  - path: Intents/project.yml
   - path: TodayView/project.yml
