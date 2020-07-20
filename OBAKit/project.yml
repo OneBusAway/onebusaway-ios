@@ -2,7 +2,10 @@ targets:
   OBAKit:
     type: framework
     platform: iOS
-    sources: ["."]
+    sources: [
+        ".",
+        "../OBAIntents/Intents.intentdefinition"
+    ]
     dependencies:
       - target: OBAKitCore
       - carthage: BLTNBoard
