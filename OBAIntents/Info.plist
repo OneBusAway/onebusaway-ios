@@ -32,7 +32,7 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.intents-service</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>Intents.IntentHandler</string>
+		<string>OBAIntents.IntentHandler</string>
 	</dict>
 	<key>NSExtensionPrincipalClass</key>
 	<string>IntentHandler</string>

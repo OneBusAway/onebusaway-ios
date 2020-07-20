@@ -1,10 +1,11 @@
 targets:
-  Intents:
+  OBAIntents:
     type: app-extension
     platform: iOS
     sources: ["."]
     dependencies:
       - target: OBAKitCore
+      - sdk: Intents.framework
     entitlements:
       path: Intents.entitlements
     info:
@@ -12,7 +13,7 @@ targets:
       properties:
         NSExtensionPrincipalClass: IntentHandler
         NSExtension:
-          NSExtensionPrincipalClass: Intents.IntentHandler
+          NSExtensionPrincipalClass: OBAIntents.IntentHandler
           NSExtensionPointIdentifier: com.apple.intents-service
           NSExtensionAttributes:
             IntentsRestrictedWhileLocked: []

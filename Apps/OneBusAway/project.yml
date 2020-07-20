@@ -82,7 +82,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.TodayView
-  Intents:
+  OBAIntents:
     entitlements:
       properties:
         com.apple.security.application-groups:
@@ -110,5 +110,5 @@ include:
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
-  - path: Intents/project.yml
+  - path: OBAIntents/project.yml
   - path: TodayView/project.yml
