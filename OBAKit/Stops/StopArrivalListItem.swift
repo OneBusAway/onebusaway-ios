@@ -149,7 +149,7 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
                 actions.append(alarm)
             }
 
-            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.bookmark) { _ in
+            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
                 sectionData.onAddBookmark?()
             }
             actions.append(addBookmark)

@@ -101,7 +101,8 @@ class StopAnnotationView: MKAnnotationView {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
 
         let iconFactory = delegate.iconFactory
-        image = iconFactory.buildIcon(for: stop, strokeColor: strokeColor, fillColor: fillColor)
+        let bookmarked = delegate.isStopBookmarked(stop)
+        image = iconFactory.buildIcon(for: stop, isBookmarked: bookmarked)
 
         titleLabel.text = stop.mapTitle
         subtitleLabel.text = stop.mapSubtitle
@@ -115,12 +116,6 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     // MARK: - Appearance
-
-    /// Fill color for this annotation view and its directional arrow.
-    public var fillColor: UIColor = ThemeColors.shared.stopAnnotationFillColor
-
-    /// Stroke color for this annotation view and its directional arrow.
-    public var strokeColor: UIColor = ThemeColors.shared.stopAnnotationStrokeColor
 
     /// Sets the size of the receiver, which in turn configures its bounds and the frame of its contents.
     public var annotationSize: CGFloat {
