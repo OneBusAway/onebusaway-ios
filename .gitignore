@@ -3,7 +3,8 @@ build/
 DerivedData/
 
 ## Xcodegen
-OBAKit.xcodeproj
+OBAKit.xcodeproj/*
+!OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 Apps/**/Info.plist
 Apps/**/*.entitlements
 TodayView/**/*.entitlements
