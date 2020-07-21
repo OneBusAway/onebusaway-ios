@@ -1,0 +1,19 @@
+targets:
+  OBAIntentsUI:
+    type: app-extension
+    platform: iOS
+    sources: [
+        ".",
+        "../Supporting Files"
+    ]
+    dependencies:
+      - target: OBAKitCore
+      - sdk: IntentsUI.framework
+    info:
+      path: "Info.plist"
+      properties:
+        NSExtension:
+          NSExtensionMainStoryboard: MainInterface
+          NSExtensionPointIdentifier: com.apple.intents-ui-service
+          NSExtensionAttributes:
+            IntentsSupported: ["ViewStopIntent"]
