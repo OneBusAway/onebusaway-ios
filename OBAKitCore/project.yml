@@ -4,9 +4,9 @@ targets:
     platform: iOS
     sources: ["."]
     dependencies:
-      - carthage: CocoaLumberjack
-      - carthage: CocoaLumberjackSwift
-      - carthage: SwiftProtobuf
+      - package: CocoaLumberjack
+      - package: CocoaLumberjackSwift
+      - package: SwiftProtobuf
     scheme:
       gatherCoverageData: true
     info:

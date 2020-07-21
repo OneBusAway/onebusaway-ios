@@ -6,16 +6,13 @@ targets:
     dependencies:
       - target: OBAKitCore
       - carthage: BLTNBoard
-      - carthage: CocoaLumberjack
-      - carthage: CocoaLumberjackSwift
-      - carthage: Connectivity
-      - carthage: Eureka
-      - carthage: FloatingPanel
-      - carthage: IGListDiffKit
       - carthage: IGListKit
-      - carthage: MarqueeLabel
-      - carthage: SwiftProtobuf
-      - carthage: SwipeCellKit
+      - carthage: IGListDiffKit
+      - package: Connectivity
+      - package: Eureka
+      - package: FloatingPanel
+      - package: MarqueeLabel
+      - package: SwipeCellKit
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
