@@ -39,7 +39,7 @@
     
     NSLog(@"Bundle URL: %@", [[NSBundle mainBundle] bundleURL]);
     
-    [OneSignal setLogLevel:ONE_S_LL_VERBOSE visualLevel:ONE_S_LL_ERROR];
+    [OneSignal setLogLevel:ONE_S_LL_VERBOSE visualLevel:ONE_S_LL_NONE];
     
     OneSignal.inFocusDisplayType = OSNotificationDisplayTypeInAppAlert;
     
@@ -56,11 +56,7 @@
     
     // Example block for IAM action click handler
     id inAppMessagingActionClickBlock = ^(OSInAppMessageAction *action) {
-        NSString *message = [NSString stringWithFormat:@"Click Action Occurred: clickName:%@ clickUrl:%@ firstClick:%i closesMessage:%i",
-                             action.clickName,
-                             action.clickUrl,
-                             action.firstClick,
-                             action.closesMessage];
+        NSString *message = [NSString stringWithFormat:@"Click Action Occurred: %@", [action jsonRepresentation]];
         [OneSignal onesignal_Log:ONE_S_LL_DEBUG message:message];
     };
 
