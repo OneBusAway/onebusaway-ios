@@ -25,7 +25,10 @@
  * THE SOFTWARE.
  */
 
+#import "OneSignalHelper.h"
 #import "OSInAppMessageAction.h"
+#import "OSInAppMessagePushPrompt.h"
+#import "OSInAppMessageLocationPrompt.h"
 
 @implementation OSInAppMessageAction
 
@@ -69,8 +72,71 @@
         action.closesMessage = [json[@"close"] boolValue];
     else
         action.closesMessage = true; // Default behavior
+
+    NSMutableArray *outcomes = [NSMutableArray new];
+    //TODO: when backend is ready check that key matches
+    if ([json[@"outcomes"] isKindOfClass:[NSArray class]]) {
+        NSArray *outcomesString = json[@"outcomes"];
+        
+        for (NSDictionary *outcomeJson in outcomesString) {
+            [outcomes addObject:[OSInAppMessageOutcome instanceWithJson:outcomeJson]];
+        }
+    }
+    action.outcomes = outcomes;
+    //TODO: when backend is ready check if key match
+    if (json[@"tags"]) {
+        action.tags= [OSInAppMessageTag instanceWithJson:json[@"tags"]];
+    } else {
+        action.tags = nil;
+    }
     
+    NSMutableArray<NSObject<OSInAppMessagePrompt>*> *promptActions = [NSMutableArray new];
+    //TODO: when backend is ready check if key match
+    if ([json[@"prompts"] isKindOfClass:[NSArray class]]) {
+        NSArray<NSString *> *promptActionsStrings = json[@"prompts"];
+        
+        for (NSString *prompt in promptActionsStrings) {
+            // TODO: We should refactor this string handling to enums
+            if ([prompt isEqualToString:@"push"]) {
+                [promptActions addObject:[[OSInAppMessagePushPrompt alloc] init]];
+            } else if ([prompt isEqualToString:@"location"]) {
+                [promptActions addObject:[[OSInAppMessageLocationPrompt alloc] init]];
+            }
+        }
+
+    }
+    action.promptActions = promptActions;
+
     return action;
+}
+
+- (NSDictionary *)jsonRepresentation {
+    let json = [NSMutableDictionary new];
+    
+    json[@"click_name"] = self.clickName;
+    json[@"first_click"] = @(self.firstClick);
+    json[@"closes_message"] = @(self.closesMessage);
+    
+    if (self.clickUrl)
+        json[@"click_url"] = self.clickUrl.absoluteString;
+        
+    if (self.outcomes && self.outcomes.count > 0) {
+        let *jsonOutcomes = [NSMutableArray new];
+        for (OSInAppMessageOutcome *outcome in self.outcomes) {
+            [jsonOutcomes addObject:[outcome jsonRepresentation]];
+        }
+        
+        json[@"outcomes"] = jsonOutcomes;
+    }
+    
+    if (self.tags)
+        json[@"tags"] = [self.tags jsonRepresentation];
+    
+    return json;
+}
+
+- (NSString *)description {
+    return [NSString stringWithFormat:@"OSInAppMessageAction outcome: %@ \ntag: %@ promptAction: %@", _outcomes, _tags, [_promptActions description]];
 }
 
 @end

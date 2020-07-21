@@ -1,1 +1,2 @@
 github "aaronbrethorst/IGListKit" "master"
+github "OneSignal/OneSignal-iOS-SDK" "2.14.3"
