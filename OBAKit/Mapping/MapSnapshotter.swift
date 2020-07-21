@@ -62,7 +62,7 @@ class MapSnapshotter: NSObject {
             }
 
             // Generate the stop icon.
-            let stopIcon = self.stopIconFactory.buildIcon(for: stop, strokeColor: ThemeColors.shared.stopAnnotationStrokeColor, fillColor: ThemeColors.shared.stopAnnotationFillColor)
+            let stopIcon = self.stopIconFactory.buildIcon(for: stop, isBookmarked: false)
 
             // Calculate the point at which to draw the stop icon.
             // It needs to be shifted up by 1/2 the stop icon height

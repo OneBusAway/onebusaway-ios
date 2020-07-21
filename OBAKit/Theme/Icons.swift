@@ -96,7 +96,13 @@ class Icons: NSObject {
 
     // MARK: - Bookmarks
 
+    /// An icon used to represent bookmarked stops and trips.
     public class var bookmark: UIImage {
+        imageNamed("bookmark")
+    }
+
+    /// An icon used to indicate that tapping on it will add a bookmark to the app.
+    public class var addBookmark: UIImage {
         imageNamed("favorited")
     }
 

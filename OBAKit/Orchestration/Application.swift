@@ -69,7 +69,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     lazy var viewRouter = ViewRouter(application: self)
 
     /// Responsible for creating stop 'badges' for the map.
-    lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize)
+    lazy var stopIconFactory = StopIconFactory(iconSize: ThemeMetrics.defaultMapAnnotationSize, themeColors: ThemeColors.shared)
 
     lazy var mapRegionManager = MapRegionManager(application: self)
 

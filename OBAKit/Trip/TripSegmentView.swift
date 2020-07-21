@@ -10,7 +10,7 @@
 import UIKit
 import OBAKitCore
 
-/// The line/circle adornment on the leading side of a cell on the `TripFloatingPanelController`.
+/// The line/squircle adornment on the leading side of a cell on the `TripFloatingPanelController`.
 ///
 /// Depicts if the associated stop is the user's destination or the current location of the transit vehicle.
 class TripSegmentView: UIView {

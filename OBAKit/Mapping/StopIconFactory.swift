@@ -16,23 +16,24 @@ class StopIconFactory: NSObject {
 
     private let iconSize: CGFloat
 
-    private lazy var chevronFillColor: UIColor = ThemeColors.shared.stopArrowFillColor
     private let iconCache = NSCache<NSString, UIImage>()
 
     /// Initializes a `StopIconFactory`.
     /// - Parameter iconSize: The width and height of the icons that will be generated.
-    public init(iconSize: CGFloat) {
+    /// - Parameter themeColors: A ThemeColors object.
+    public init(iconSize: CGFloat, themeColors: ThemeColors) {
         self.iconSize = iconSize
+        self.themeColors = themeColors
     }
 
     /// Creates a stop icon image.
     /// - Parameter stop: The `Stop` for which an image will be rendered.
-    /// - Parameter strokeColor: The border color of the icon.
-    /// - Parameter fillColor: The interior color of the icon.
-    public func buildIcon(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> UIImage {
+    /// - Parameter isBookmarked: Whether the stop has been bookmarked, which will result in it receiving a different visual treatment.
+    /// - Returns: An image representing `stop`.
+    public func buildIcon(for stop: Stop, isBookmarked: Bool) -> UIImage {
         // First, let's compose the cache key out of the name and orientation, then
         // see if we've already got one that matches.
-        let key = cacheKey(for: stop, strokeColor: strokeColor, fillColor: fillColor) as NSString
+        let key = cacheKey(for: stop, isBookmarked: isBookmarked) as NSString
 
         // If an image already exists, then go ahead and return it.
         if let cachedImage = iconCache.object(forKey: key) {
@@ -40,11 +41,34 @@ class StopIconFactory: NSObject {
         }
 
         // Otherwise, generate a new stop icon and add it to the cache.
-        let image = renderImage(for: stop, strokeColor: strokeColor, fillColor: fillColor)
+        let image = renderImage(for: stop, isBookmarked: isBookmarked)
         iconCache.setObject(image, forKey: key)
 
         return image
     }
+
+    // MARK: - Colors
+
+    private let themeColors: ThemeColors
+
+    private var chevronFillColor: UIColor {
+        themeColors.stopArrowFillColor
+    }
+
+    private var fillColor: UIColor {
+        themeColors.stopAnnotationFillColor
+    }
+
+    /// Stroke color for the badge and its directional arrow.
+    private var strokeColor: UIColor {
+        themeColors.stopAnnotationStrokeColor
+    }
+
+    private var bookmarkedStrokeColor: UIColor {
+        themeColors.brand
+    }
+
+    // MARK: - Sizes
 
     /// The outer gutter for the directional arrow.
     private let arrowTrackSize: CGFloat = 8.0
@@ -71,9 +95,9 @@ class StopIconFactory: NSObject {
 
     /// Draws the stop icon image.
     /// - Parameter stop: The `Stop` for which an icon will be generated.
-    /// - Parameter strokeColor: The border color.
-    /// - Parameter fillColor: The interior color.
-    private func renderImage(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> UIImage {
+    /// - Parameter isBookmarked: Whether `stop` has been bookmarked by the user.
+    /// - Returns: An image representing `stop`.
+    private func renderImage(for stop: Stop, isBookmarked: Bool) -> UIImage {
         let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
         let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
 
@@ -88,8 +112,15 @@ class StopIconFactory: NSObject {
             }
 
             self.drawBackground(color: fillColor, rect: rect, context: ctx)
-            self.drawBorder(color: strokeColor, rect: rect, context: ctx)
+
             self.drawIcon(routeType: stop.prioritizedRouteTypeForDisplay, rect: rect, context: ctx)
+
+            if isBookmarked {
+                self.drawBookmarkBadge(fillColor: bookmarkedStrokeColor, iconColor: .white, rect: rect, context: ctx)
+            }
+
+            self.drawBorder(color: strokeColor, rect: rect, context: ctx)
+
             self.drawArrowImage(direction: stop.direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
         }
     }
@@ -132,6 +163,30 @@ class StopIconFactory: NSObject {
         context.pushPop {
             let image = Icons.transportIcon(from: routeType)
             image.draw(in: rect.insetBy(dx: transportGlyphInset, dy: transportGlyphInset))
+        }
+    }
+
+    /// Draws a badge indicating this stop has been bookmarked in its bottom right corner.
+    /// - Parameters:
+    ///   - fillColor: The border and stroke colors of the badge.
+    ///   - iconColor: The color that the badge will be drawn in.
+    ///   - rect: The rectangle in which to draw.
+    ///   - context: The Core Graphics context in which drawing happens.
+    private func drawBookmarkBadge(fillColor: UIColor, iconColor: UIColor, rect: CGRect, context: CGContext) {
+        context.pushPop {
+            let badgeSize: CGFloat = 15.0
+            let miniFrame = CGRect(x: rect.midX, y: rect.midY, width: badgeSize, height: badgeSize)
+
+            fillColor.withAlphaComponent(0.95).setFill()
+
+            let corners = UIRectCorner.topLeft
+            let cornerRadii = CGSize(width: ThemeMetrics.compactCornerRadius, height: ThemeMetrics.compactCornerRadius)
+            let bezierPath = UIBezierPath(roundedRect: miniFrame, byRoundingCorners: corners, cornerRadii: cornerRadii)
+
+            bezierPath.fill()
+
+            let icon = Icons.bookmark.tinted(color: iconColor)
+            icon.draw(in: miniFrame.insetBy(dx: 1.0, dy: 1.0))
         }
     }
 
@@ -221,14 +276,13 @@ class StopIconFactory: NSObject {
 
     /// Calculates a cache key for stop icons.
     /// - Parameter stop: The `Stop`.
-    /// - Parameter strokeColor: The border color.
-    /// - Parameter fillColor: The fill color.
-    private func cacheKey(for stop: Stop, strokeColor: UIColor, fillColor: UIColor) -> String {
+    /// - Parameter isBookmarked: If `stop` has been bookmarked by the user.
+    /// - Returns: A cache key that will uniquely represent this stop with its desired visual treatment.
+    private func cacheKey(for stop: Stop, isBookmarked: Bool) -> String {
         let routeType = stop.prioritizedRouteTypeForDisplay.rawValue
+        let stopID = isBookmarked ? stop.id : "AnyStop"
         let direction = stop.direction.rawValue
-        let hexStroke = strokeColor.toHex ?? ""
-        let hexFill = fillColor.toHex ?? ""
-        let cacheKey = "\(routeType):\(direction)(\(iconSize)x\(iconSize))-\(hexStroke)-\(hexFill)"
+        let cacheKey = "\(stopID):\(routeType):\(direction)(\(iconSize)x\(iconSize))"
 
         return cacheKey
     }

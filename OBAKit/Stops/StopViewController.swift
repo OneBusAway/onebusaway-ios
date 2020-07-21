@@ -271,7 +271,7 @@ public class StopViewController: UIViewController,
 
     private lazy var refreshButton = FakeToolbar.buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
 
-    private lazy var bookmarkButton = FakeToolbar.buildToolbarButton(title: Strings.bookmark, image: Icons.bookmark, target: self, action: #selector(addBookmark(sender:)))
+    private lazy var bookmarkButton = FakeToolbar.buildToolbarButton(title: Strings.bookmark, image: Icons.addBookmark, target: self, action: #selector(addBookmark(sender:)))
 
     private lazy var filterButton = FakeToolbar.buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
 
