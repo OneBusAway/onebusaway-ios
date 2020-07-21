@@ -122,7 +122,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     @objc public weak var delegate: ApplicationDelegate?
 
     /// Reachability is responsible for determining if the user has a functioning Internet connection.
-    @objc public let reachability = Reachability()
+    @objc public let reachability = Connectivity()
 
     // MARK: - Init
 

@@ -7,7 +7,6 @@ targets:
       - target: OBAKitCore
       - carthage: IGListDiffKit
       - carthage: IGListKit
-      - carthage: SwiftProtobuf
       - sdk: NotificationCenter.framework
     entitlements:
       path: TodayView.entitlements

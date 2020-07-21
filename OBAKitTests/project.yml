@@ -5,8 +5,12 @@ targets:
     sources: ["."]
     dependencies:
       - target: App
-      - carthage: Nimble
+      - package: Nimble
     info:
       path: "Info.plist"
       properties:
         NSPrincipalClass: OBAKitTests.OBAKitTestsSetup
+packages:
+  Nimble:
+    url: https://github.com/Quick/Nimble.git
+    from: 8.0.5
