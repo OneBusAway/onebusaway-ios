@@ -1,4 +1,5 @@
 github "OneSignal/OneSignal-iOS-SDK" "2.14.3"
+github "SwipeCellKit/SwipeCellKit" "2.7.1"
 github "aaronbrethorst/IGListKit" "fe650824a847ea3024064b40965cbcdc75659682"
 github "alexaubry/BulletinBoard" "4.1.2"
 github "rwbutler/Connectivity" "3.3.4"
