@@ -71,15 +71,9 @@ packages:
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
         exactVersion: 3.6.1
-    Connectivity:
-        url: https://github.com/rwbutler/connectivity.git
-        exactVersion: 3.3.3
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 1.7.5
-    SwipeCellKit:
-        url: https://github.com/SwipeCellKit/SwipeCellKit.git
-        exactVersion: 2.7.1
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.2.1

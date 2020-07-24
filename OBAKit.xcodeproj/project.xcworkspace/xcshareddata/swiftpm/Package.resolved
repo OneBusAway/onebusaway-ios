@@ -11,15 +11,6 @@
         }
       },
       {
-        "package": "Connectivity",
-        "repositoryURL": "https://github.com/rwbutler/connectivity.git",
-        "state": {
-          "branch": null,
-          "revision": "b8ab6b1b3e1c50617cb9ce581264e5002949bd14",
-          "version": "3.3.3"
-        }
-      },
-      {
         "package": "Eureka",
         "repositoryURL": "https://github.com/xmartlabs/Eureka.git",
         "state": {
@@ -62,15 +53,6 @@
           "branch": null,
           "revision": "7790acf0a81d08429cb20375bf42a8c7d279c5fe",
           "version": "1.8.0"
-        }
-      },
-      {
-        "package": "SwipeCellKit",
-        "repositoryURL": "https://github.com/SwipeCellKit/SwipeCellKit.git",
-        "state": {
-          "branch": null,
-          "revision": "7219cad3098637176ace311510d11467dbfb9bb0",
-          "version": "2.7.1"
         }
       }
     ]

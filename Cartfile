@@ -1,3 +1,7 @@
+## Networking
+
+github "rwbutler/Connectivity" ~> 3.3.3
+
 ## UI
 
 # https://github.com/Instagram/IGListKit/releases
@@ -6,6 +10,9 @@ github "aaronbrethorst/IGListKit" "master"
 
 # https://github.com/alexaubry/BulletinBoard/releases
 github "alexaubry/BulletinBoard" ~> 4.1.0
+
+# https://github.com/SwipeCellKit/SwipeCellKit/releases
+github "SwipeCellKit/SwipeCellKit" ~> 2.7.1
 
 ## Third Party Integrations
 
