@@ -71,9 +71,6 @@ packages:
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
         exactVersion: 3.6.1
-    Connectivity:
-        url: https://github.com/rwbutler/connectivity.git
-        exactVersion: 3.3.3
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 1.7.5
