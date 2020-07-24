@@ -16,16 +16,7 @@ jobs:
     - uses: actions/cache@v2
       with:
         path: Carthage
-        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-carthage-
-
-    - uses: actions/cache@v2
-      with:
-        path: .build
-        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-spm-
+        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}-spm-${{ hashFiles('**/Package.resolved') }}
 
     - name: Install xcodegen
       run: brew install xcodegen
