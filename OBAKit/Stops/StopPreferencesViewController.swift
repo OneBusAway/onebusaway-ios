@@ -99,7 +99,7 @@ class StopPreferencesViewController: FormViewController {
         }
 
         section <<< ListCheckRow<String>(StopSort.route.rawValue) {
-            $0.tag = selectedSortTag
+            $0.tag = routesTag
             $0.title = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
             $0.selectableValue = StopSort.route.rawValue
             $0.value = preferences.sortType == .route ? StopSort.route.rawValue : nil
