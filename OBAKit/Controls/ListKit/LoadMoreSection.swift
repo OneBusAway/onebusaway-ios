@@ -54,24 +54,24 @@ final class LoadMoreCell: SelfSizingCollectionCell {
         set { footerLabel.text = newValue }
     }
 
-    // MARK: - UI
+    private var loadMoreLocalized: String {
+        return OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button")
+    }
 
-    private lazy var loadMoreLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
-        label.textAlignment = .center
-        label.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        label.font = UIFont.preferredFont(forTextStyle: .body).bold
-        label.textColor = ThemeColors.shared.brand
-        label.text = OBALoc("stop_controller.load_more_button", value: "Load More", comment: "Load More button")
-        return label
+    // MARK: - UI
+    private lazy var loadMoreLabel: ProminentButton = {
+        let button = ProminentButton(type: .system)
+        button.setTitle(loadMoreLocalized, for: .normal)
+        button.titleLabel!.font = .preferredFont(forTextStyle: .headline)
+        button.titleLabel!.adjustsFontForContentSizeCategory = true
+        button.isUserInteractionEnabled = false         // This button is only for visuals.
+
+        return button
     }()
 
     private lazy var footerLabel: UILabel = {
-        let label = UILabel.autolayoutNew()
+        let label: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
         label.textAlignment = .center
-        label.setContentHuggingPriority(.defaultHigh - 1, for: .vertical)
-        label.font = UIFont.preferredFont(forTextStyle: .footnote)
-        label.textColor = ThemeColors.shared.secondaryLabel
         return label
     }()
 
@@ -79,8 +79,16 @@ final class LoadMoreCell: SelfSizingCollectionCell {
         super.init(frame: frame)
 
         let stack = UIStackView.verticalStack(arrangedSubviews: [loadMoreLabel, footerLabel])
+        stack.spacing = ThemeMetrics.padding
+        stack.alignment = .center
         contentView.addSubview(stack)
         stack.pinToSuperview(.layoutMargins)
+
+        if #available(iOS 13, *) {
+            self.largeContentTitle = loadMoreLocalized
+            self.showsLargeContentViewer = true
+            self.addInteraction(UILargeContentViewerInteraction())
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
