@@ -119,7 +119,7 @@ final class MessageCell: BaseSelfSizingTableCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.topStack = UIStackView.horizontalStack(arrangedSubviews: [authorLabel, dateLabel])
+        self.topStack = UIStackView.horizontalStack(arrangedSubviews: [unreadDot, authorLabel, dateLabel])
         self.topStack.spacing = ThemeMetrics.compactPadding
         let topWrapper = topStack.embedInWrapperView()
 
@@ -141,19 +141,18 @@ final class MessageCell: BaseSelfSizingTableCell {
     private func configureView() {
         guard let data = data else { return }
 
-        if data.isUnread {
-            topStack.insertArrangedSubview(unreadDot, at: 0)
-            unreadDot.isHidden = false
-        }
-        else {
-            topStack.removeArrangedSubview(unreadDot)
-            unreadDot.isHidden = true
-        }
+        unreadDot.isHidden = !data.isUnread
 
         authorLabel.text = data.author
         dateLabel.text = data.date
         subjectLabel.text = data.subject
-        summaryLabel.text = data.summary
+
+        // Fixes #264. Truncate the summary text for UILabel typesetting performance.
+        if let summary = data.summary {
+            summaryLabel.text = String(summary.prefix(data.summaryNumberOfLines * 128))
+        } else {
+            summaryLabel.text = nil
+        }
 
         topStack.axis = isAccessibility ? .vertical : .horizontal
         authorLabel.numberOfLines = isAccessibility ? 3 : 1
