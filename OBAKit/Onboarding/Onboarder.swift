@@ -37,7 +37,7 @@ class Onboarder: NSObject {
 
     private lazy var bulletinManager = BLTNItemManager(rootItem: currentBulletinPage)
 
-    private var currentBulletinPage: BLTNPageItem {
+    private var currentBulletinPage: ThemedBulletinPage {
         switch state {
         case .locationPermissionPrompt: return locationPermissionItem
         case .manualRegionSelection: return regionPickerItem
