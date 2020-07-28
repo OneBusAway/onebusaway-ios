@@ -147,11 +147,9 @@ final class MessageCell: BaseSelfSizingTableCell {
         dateLabel.text = data.date
         subjectLabel.text = data.subject
 
-        // Fixes #264. Truncate the summary text for UILabel typesetting performance.
+        // Truncate the summary text for UILabel typesetting performance.
         if let summary = data.summary {
             summaryLabel.text = String(summary.prefix(data.summaryNumberOfLines * 128))
-        } else {
-            summaryLabel.text = nil
         }
 
         topStack.axis = isAccessibility ? .vertical : .horizontal
