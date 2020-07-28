@@ -48,7 +48,7 @@ final class DataMigrationBulletinManager: NSObject {
 
 // MARK: - DataMigrationBulletinPage
 
-final class DataMigrationBulletinPage: BLTNPageItem {
+final class DataMigrationBulletinPage: ThemedBulletinPage {
     private let dataMigrator: DataMigrator
     private let completion: VoidBlock
 
@@ -78,7 +78,7 @@ final class DataMigrationBulletinPage: BLTNPageItem {
         alternativeHandler = { [weak self] _ in
             guard let self = self else { return }
 
-            let card = BLTNPageItem(title: self.title)
+            let card = ThemedBulletinPage(title: self.title)
             card.descriptionText = OBALoc("data_migration_bulletin.migrate_later_text", value: "You can upgrade your data later by going to the More tab > Settings, and then tapping on the Migrate Data button.", comment: "Explanatory text that tells the user how to migrate their data later on.")
             card.isDismissable = false
 
@@ -160,7 +160,7 @@ final class DataMigrationBulletinPage: BLTNPageItem {
 
 // MARK: - DataMigrationResultPageItem
 
-final class DataMigrationResultPageItem: BLTNPageItem {
+final class DataMigrationResultPageItem: ThemedBulletinPage {
     private let dataMigrator: DataMigrator
     private let result: DataMigrationResult
     private let completion: VoidBlock
@@ -187,7 +187,7 @@ final class DataMigrationResultPageItem: BLTNPageItem {
 
 // MARK: - DataMigrationErrorPage
 
-final class DataMigrationErrorPage: BLTNPageItem {
+final class DataMigrationErrorPage: ThemedBulletinPage {
     private let error: DataMigrationError
     private let completion: VoidBlock
 

@@ -14,7 +14,7 @@ import OBAKitCore
 /// Displays a modal card UI that informs the user about a mismatch between their physical location and current `Region`.
 class RegionMismatchBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
-    private let page: BLTNPageItem
+    private let page: ThemedBulletinPage
     private let application: Application
 
     init?(application: Application) {
@@ -25,7 +25,7 @@ class RegionMismatchBulletin: NSObject {
 
         self.application = application
 
-        page = BLTNPageItem(title: OBALoc("region_mismatch_bulletin.title", value: "Change Region?", comment: "Alert title shown when there is a mismatch between the user location and selected region."))
+        page = ThemedBulletinPage(title: OBALoc("region_mismatch_bulletin.title", value: "Change Region?", comment: "Alert title shown when there is a mismatch between the user location and selected region."))
 
         let bodyFormat = OBALoc("region_mismatch_bulletin.body_fmt", value: "Your region is set to %@, but you appear to be in %@.", comment: "Formatted alert body shown when there is a mismatch between the user location and selected region. e.g. 'Your region is set to Puget Sound, but you appear to be in San Diego.'")
         page.descriptionText = String(format: bodyFormat, currentRegion.name, physicalRegion.name)

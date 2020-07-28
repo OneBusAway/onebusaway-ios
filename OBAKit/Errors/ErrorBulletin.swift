@@ -14,13 +14,13 @@ import OBAKitCore
 /// Displays a modal card UI that presents an error.
 class ErrorBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
-    private let page: BLTNPageItem
+    private let page: ThemedBulletinPage
     private let application: Application
 
     init(application: Application, message: String, image: UIImage? = nil, title: String? = nil) {
         self.application = application
 
-        page = BLTNPageItem(title: title ?? Strings.error)
+        page = ThemedBulletinPage(title: title ?? Strings.error)
 
         page.descriptionText = message
 

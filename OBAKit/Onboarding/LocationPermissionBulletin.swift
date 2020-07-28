@@ -13,7 +13,7 @@ import OBAKitCore
 
 // MARK: - LocationPermissionItem
 
-class LocationPermissionItem: BLTNPageItem, LocationServiceDelegate {
+class LocationPermissionItem: ThemedBulletinPage, LocationServiceDelegate {
     private let locationService: LocationService
     private let completion: VoidBlock
 
