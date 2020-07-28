@@ -185,7 +185,7 @@ class StopIconFactory: NSObject {
 
             bezierPath.fill()
 
-            let icon = Icons.bookmark.tinted(color: iconColor)
+            let icon = Icons.bookmarkIcon.tinted(color: iconColor)
             icon.draw(in: miniFrame.insetBy(dx: 1.0, dy: 1.0))
         }
     }

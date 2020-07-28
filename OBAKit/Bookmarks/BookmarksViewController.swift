@@ -30,6 +30,7 @@ public class BookmarksViewController: UIViewController,
 
         title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
         tabBarItem.image = Icons.bookmarksTabIcon
+        tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
     }
