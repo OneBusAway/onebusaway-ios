@@ -38,6 +38,7 @@ public class MoreViewController: UIViewController,
 
         title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab")
         tabBarItem.image = Icons.moreTabIcon
+        tabBarItem.selectedImage = Icons.moreSelectedTabIcon
 
         let contactUs = OBALoc("more_controller.contact_us", value: "Contact Us", comment: "A button to contact transit agency/developers.")
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: contactUs, style: .plain, target: self, action: #selector(showContactUsDialog(_:)))

@@ -189,18 +189,18 @@ class TripViewController: UIViewController,
         let layout: FloatingPanelLayout
         switch newCollection.horizontalSizeClass {
         case .regular:
-            layout = MapPanelLandscapeLayout(initialPosition: .half)
+            layout = MapPanelLandscapeLayout(initialPosition: .tip)
         default:
-            layout = MapPanelLayout(initialPosition: .half)
+            layout = MapPanelLayout(initialPosition: .tip)
         }
 
-        // If data is loading, limit the panel to just the tip.
+        return layout
+    }
+
+    func floatingPanelShouldBeginDragging(_ vc: FloatingPanelController) -> Bool {
+        // If data is loading, don't allow panel change.
         // If operation is nil, data has probably never loaded.
-        if self.tripDetailsOperation?.isExecuting ?? true {
-            return SinglePositionMapPanelLayout(position: .tip, positionInset: layout.insetFor(position: .tip) ?? 64)
-        } else {
-            return layout
-        }
+        return !(self.tripDetailsOperation?.isExecuting ?? true)
     }
 
     func floatingPanelDidMove(_ vc: FloatingPanelController) {
@@ -269,6 +269,7 @@ class TripViewController: UIViewController,
                 }
 
                 self.floatingPanel.surfaceView.grabberHandle.isHidden = false
+                self.floatingPanel.move(to: .half, animated: true)
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton

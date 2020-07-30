@@ -26,6 +26,7 @@ public class RecentStopsViewController: UIViewController,
 
         title = OBALoc("recent_stops_controller.title", value: "Recent", comment: "The title of the Recent Stops controller.")
         tabBarItem.image = Icons.recentTabIcon
+        tabBarItem.selectedImage = Icons.recentSelectedTabIcon
     }
 
     required init?(coder aDecoder: NSCoder) {

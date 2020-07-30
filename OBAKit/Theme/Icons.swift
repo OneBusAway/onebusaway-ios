@@ -14,25 +14,44 @@ import OBAKitCore
 class Icons: NSObject {
 
     // MARK: - Tab Icons
-
     /// The Map tab icon, for apps using a tab bar UI metaphor.
     public class var mapTabIcon: UIImage {
-        imageNamed("map")
+        configureForTabIcon(systemImage(named: "map", fallback: "map"))
+    }
+
+    /// The Map tab selected icon, for apps using a tab bar UI metaphor.
+    public class var mapSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "map.fill", fallback: "map_selected"))
     }
 
     /// The Recent tab icon, for apps using a tab bar UI metaphor.
     public class var recentTabIcon: UIImage {
-        imageNamed("recent")
+        configureForTabIcon(systemImage(named: "clock", fallback: "recent"))
+    }
+
+    /// The Recent tab selected icon, for apps using a tab bar UI metaphor.
+    public class var recentSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "clock.fill", fallback: "recent_selected"))
     }
 
     /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
     public class var bookmarksTabIcon: UIImage {
-        imageNamed("bookmarks")
+        configureForTabIcon(systemImage(named: "bookmark", fallback: "bookmark"))
+    }
+
+    /// The Bookmarks tab selected icon, for apps using a tab bar UI metaphor.
+    public class var bookmarksSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "bookmark.fill", fallback: "bookmark_selected"))
     }
 
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
-        imageNamed("more")
+        configureForTabIcon(systemImage(named: "ellipsis.circle", fallback: "more"))
+    }
+
+    /// A More tab selected icon, for apps using a tab bar UI metaphor.
+    public class var moreSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "ellipsis.circle.fill", fallback: "more_selected"))
     }
 
     // MARK: - Table Accessories
@@ -55,34 +74,39 @@ class Icons: NSObject {
 
     /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        imageNamed("chevron")
+        let image = systemImage(named: "chevron.right", fallback: "chevron")
+        if #available(iOS 13, *) {
+            return image.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+        } else {
+            return image
+        }
     }
 
     /// A checkmark icon.
     public class var checkmark: UIImage {
-        imageNamed("checkmark")
+        systemImage(named: "checkmark", fallback: "checkmark")
     }
 
     /// An 'info' (i) button
     public class var info: UIImage {
-        imageNamed("info")
+        systemImage(named: "info.circle", fallback: "info")
     }
 
     // MARK: - Actions
 
     /// A circular close button
     public class var closeCircle: UIImage {
-        imageNamed("close_circle")
+        systemImage(named: "xmark.circle.fill", fallback: "close_circle")
     }
 
     /// A refresh icon.
     public class var refresh: UIImage {
-        imageNamed("refresh")
+        configureForButtonIcon(systemImage(named: "arrow.clockwise", fallback: "refresh"))
     }
 
     /// A filter icon.
     public class var filter: UIImage {
-        imageNamed("filter")
+        configureForButtonIcon(systemImage(named: "line.horizontal.3.decrease", fallback: "filter"))
     }
 
     public class var addAlarm: UIImage {
@@ -91,19 +115,19 @@ class Icons: NSObject {
 
     /// An ellipsis (...) in a circle.
     public class var showMore: UIImage {
-        imageNamed("show_more")
+        systemImage(named: "ellipsis.circle.fill", fallback: "show_more")
     }
 
     // MARK: - Bookmarks
 
     /// An icon used to represent bookmarked stops and trips.
-    public class var bookmark: UIImage {
-        imageNamed("bookmark")
+    public class var bookmarkIcon: UIImage {
+        imageNamed("bookmark_icon")     // Use asset catalog image, don't use system image.
     }
 
     /// An icon used to indicate that tapping on it will add a bookmark to the app.
     public class var addBookmark: UIImage {
-        imageNamed("favorited")
+        systemImage(named: "bookmark.circle", fallback: "favorited")
     }
 
     // MARK: - Heading
@@ -141,7 +165,7 @@ class Icons: NSObject {
     ///
     /// The apparent size of this image is 48x48pt.
     public class var nearMe: UIImage {
-        imageNamed("near_me")
+        configureForButtonIcon(systemImage(named: "location.fill", fallback: "near_me"))
     }
 
     // MARK: - Search Icons
@@ -201,6 +225,34 @@ class Icons: NSObject {
     }
 
     // MARK: - Private Helpers
+
+    /// On iOS 13+, this applies the configuration used for generating tab bar icons. On iOS 12, this does nothing and returns its input.
+    private class func configureForTabIcon(_ image: UIImage) -> UIImage {
+        if #available(iOS 13, *) {
+            let config = UIImage.SymbolConfiguration(textStyle: .headline, scale: .medium)
+            return image.applyingSymbolConfiguration(config)!
+        } else {
+            return image
+        }
+    }
+
+    /// On iOS 13+, this applies the configuration used for generating button icons. On iOS 12, this does nothing and returns its input.
+    private class func configureForButtonIcon(_ image: UIImage) -> UIImage {
+        if #available(iOS 13, *) {
+            return image.applyingSymbolConfiguration(.init(pointSize: 16))!
+        } else {
+            return image
+        }
+    }
+
+    /// Tries to get the specified system image. If the image cannot be initialized, it will use the fallback name.
+    private static func systemImage(named systemName: String, fallback: String) -> UIImage {
+        if #available(iOS 13, *) {
+            return UIImage(systemName: systemName) ?? imageNamed(fallback)
+        } else {
+            return imageNamed(fallback)
+        }
+    }
 
     private static func imageNamed(_ name: String) -> UIImage {
         UIImage(named: name, in: Bundle(for: self), compatibleWith: nil)!
