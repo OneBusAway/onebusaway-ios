@@ -323,8 +323,8 @@ public extension UILabel {
     class func obaLabel(font: UIFont = .preferredFont(forTextStyle: .body),
                         textColor: UIColor = ThemeColors.shared.label,
                         numberOfLines: Int = 0,
-                        minimumScaleFactor: CGFloat = 3/4) -> UILabel {
-        let label = UILabel.autolayoutNew()
+                        minimumScaleFactor: CGFloat = 3/4) -> Self {
+        let label = Self.autolayoutNew()
         label.font = font
         label.textColor = textColor
         label.numberOfLines = numberOfLines
