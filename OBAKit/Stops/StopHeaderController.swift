@@ -15,12 +15,11 @@ import IGListKit
 
 class StopHeaderSection: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
-        return self
+        return self.stop.id as NSString
     }
 
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let object = object as? StopHeaderSection else { return false }
-        return self == object
+        return self.stop.isEqual(object)
     }
 
     init(stop: Stop, application: Application) {
