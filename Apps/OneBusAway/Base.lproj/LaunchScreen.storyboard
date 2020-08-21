@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14854.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
     <device id="retina4_0" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14806.4"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -22,7 +22,7 @@
                                 <items>
                                     <tabBarItem title=" " image="map" id="n5N-fp-Tuq"/>
                                     <tabBarItem title=" " image="recent" id="iPi-3C-xKn"/>
-                                    <tabBarItem title=" " image="bookmarks" id="gVO-HH-2wA"/>
+                                    <tabBarItem title=" " image="bookmark" id="gVO-HH-2wA"/>
                                     <tabBarItem title=" " image="more" id="N5w-xu-YrQ"/>
                                 </items>
                             </tabBar>
@@ -42,7 +42,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="bookmarks" width="24" height="24"/>
+        <image name="bookmark" width="24" height="24"/>
         <image name="map" width="24" height="24"/>
         <image name="more" width="24" height="24"/>
         <image name="recent" width="24" height="24"/>

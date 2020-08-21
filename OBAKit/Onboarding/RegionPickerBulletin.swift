@@ -11,7 +11,7 @@ import Foundation
 import OBAKitCore
 import BLTNBoard
 
-class RegionPickerItem: BLTNPageItem {
+class RegionPickerItem: ThemedBulletinPage {
     private let regionPicker: RegionPicker
     private let regionsService: RegionsService
 

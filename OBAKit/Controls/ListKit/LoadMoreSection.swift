@@ -96,9 +96,7 @@ final class LoadMoreCell: SelfSizingCollectionCell {
     }()
 
     private lazy var footerLabel: UILabel = {
-        let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .footnote)
-        label.textColor = ThemeColors.shared.secondaryLabel
+        let label: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
         label.textAlignment = .center
         return label
     }()

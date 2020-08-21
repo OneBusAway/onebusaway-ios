@@ -58,13 +58,16 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     let textLabel: UILabel = {
         let label = UILabel.autolayoutNew()
-        label.font = UIFont.preferredFont(forTextStyle: .footnote).bold
+        label.font = UIFont.preferredFont(forTextStyle: .headline)
         label.numberOfLines = 1
         label.accessibilityTraits = .header
         return label
     }()
 
-    private lazy var bottomLabelAnchor = textLabel.bottomAnchor.constraint(equalTo: bottomAnchor).setPriority(.required - 1)
+    private lazy var bottomLabelAnchor = textLabel.bottomAnchor
+        .constraint(greaterThanOrEqualTo: self.bottomAnchor,
+                    constant: -ThemeMetrics.compactPadding)
+        .setPriority(.required - 1)
 
     override var intrinsicContentSize: CGSize {
         return self.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
@@ -78,7 +81,8 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
         NSLayoutConstraint.activate([
             textLabel.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             textLabel.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor).setPriority(.required - 1),
-            textLabel.topAnchor.constraint(equalTo: self.topAnchor, constant: ThemeMetrics.compactPadding),
+            textLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
+            textLabel.topAnchor.constraint(greaterThanOrEqualTo: self.topAnchor, constant: ThemeMetrics.compactPadding),
             bottomLabelAnchor
         ])
 

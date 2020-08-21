@@ -36,10 +36,10 @@ extension Connectivity: ReachabilityProtocol {
 /// This class knows how to present a modal alert that tells the user that their Internet connection is compromised and unable to retrieve data.
 class ReachabilityBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
-    private let connectivityPage: BLTNPageItem
+    private let connectivityPage: ThemedBulletinPage
 
     override init() {
-        connectivityPage = BLTNPageItem(title: OBALoc("reachability_bulletin.title", value: "No Internet", comment: "Title of the alert that appears when the app can't connect to the server."))
+        connectivityPage = ThemedBulletinPage(title: OBALoc("reachability_bulletin.title", value: "No Internet", comment: "Title of the alert that appears when the app can't connect to the server."))
         bulletinManager = BLTNItemManager(rootItem: connectivityPage)
 
         super.init()

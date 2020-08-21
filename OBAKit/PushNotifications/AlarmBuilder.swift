@@ -127,7 +127,7 @@ class AlarmBuilder: NSObject {
 // MARK: - AlarmTimePickerItem
 
 /// The BLTNBoard page item that displays the alarm time picker
-class AlarmTimePickerItem: BLTNPageItem {
+class AlarmTimePickerItem: ThemedBulletinPage {
     private let arrivalDeparture: ArrivalDeparture
     let timePickerManager: AlarmTimePickerManager
 

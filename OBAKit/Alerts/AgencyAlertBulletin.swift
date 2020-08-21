@@ -15,7 +15,7 @@ import OBAKitCore
 class AgencyAlertBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
 
-    private let alertPage: BLTNPageItem
+    private let alertPage: ThemedBulletinPage
 
     public var showMoreInformationHandler: ((URL) -> Void)?
 
@@ -24,7 +24,7 @@ class AgencyAlertBulletin: NSObject {
             return nil
         }
 
-        alertPage = BLTNPageItem(title: title)
+        alertPage = ThemedBulletinPage(title: title)
         alertPage.descriptionText = agencyAlert.bodyForLocale(locale)
 
         let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)

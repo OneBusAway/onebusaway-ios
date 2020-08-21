@@ -58,6 +58,7 @@ public class MapViewController: UIViewController,
 
         title = Strings.map
         tabBarItem.image = Icons.mapTabIcon
+        tabBarItem.selectedImage = Icons.mapSelectedTabIcon
 
         // Assign delegates
         self.application.mapRegionManager.addDelegate(self)
@@ -199,7 +200,7 @@ public class MapViewController: UIViewController,
 
     private let locationButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(Icons.mapTabIcon, for: .normal)
+        button.setImage(Icons.nearMe, for: .normal)
         button.addTarget(self, action: #selector(centerMapOnUserLocationViaTap), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
