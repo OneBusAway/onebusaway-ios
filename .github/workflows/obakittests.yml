@@ -33,5 +33,9 @@ jobs:
       run: scripts/carthage_build
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
-    - name: Build OneBusAway and Test OBAKit
-      run: xcodebuild clean test -project 'OBAKit.xcodeproj' -scheme 'App' -sdk iphonesimulator -destination 'name=iPhone 11 Pro Max' -quiet
+    - name: Build OneBusAway
+      run: xcodebuild clean build-for-testing -scheme 'App' -destination 'name=iPhone 11 Pro' -quiet
+    - name: OBAKit Unit Test
+      run: xcodebuild test-without-building -only-testing:OBAKitTests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'name=iPhone 11 Pro' -quiet
+    - name: OBAKit UI Test
+      run: xcodebuild test-without-building -only-testing:OBAKitUITests -project 'OBAKit.xcodeproj' -scheme 'App' -destination 'name=iPhone 11 Pro' -quiet

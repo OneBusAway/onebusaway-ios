@@ -1,0 +1,7 @@
+targets:
+  OBAKitUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: App

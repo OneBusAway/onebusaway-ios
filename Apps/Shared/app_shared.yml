@@ -57,6 +57,9 @@ targets:
         - name: OBAKitTests
           parallelizable: false
           randomExecutionOrder: true
+        - name: OBAKitUITests
+          parallelizable: false
+          randomExecutionOrder: true
     settings:
       base:
         OTHER_LDFLAGS: -ObjC
