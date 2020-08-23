@@ -75,8 +75,8 @@ class ReferencesTests: OBATestCase {
         let situation = situations.first!
 
         let activeWindow = situation.activeWindows.first!
-        expect(activeWindow.from) == Date(timeIntervalSinceReferenceDate: 1539781200)
-        expect(activeWindow.to) == Date(timeIntervalSinceReferenceDate: 1539826200)
+        expect(activeWindow.interval) == DateInterval(start: Date(timeIntervalSince1970: 1539781200),
+                                                      end: Date(timeIntervalSince1970: 1539826200))
 
         let entity = situation.affectedEntities.first!
         expect(entity.routeID) == "MTS_10"

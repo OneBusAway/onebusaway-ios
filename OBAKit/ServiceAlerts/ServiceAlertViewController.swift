@@ -12,7 +12,7 @@ import OBAKitCore
 import WebKit
 import SafariServices
 
-// swiftlint:disable cyclomatic_complexity
+// swiftlint:disable function_body_length
 
 // Page Content Generation Flow
 // Generating HTML may take a couple of seconds, so do it in the background.
@@ -118,7 +118,10 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         builder.append(.h1, value: serviceAlert.summary.value)
         builder.append(.p, value: application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt))
         if let description = serviceAlert.situationDescription {
-            builder.append(.p, value: description.value)
+            // Some agencies may separate information using `\n`, so we try to account for that.
+            description.value.components(separatedBy: "\n").forEach {
+                builder.append(.p, value: $0)
+            }
         }
 
         if let urlString = serviceAlert.urlString?.value {
@@ -126,58 +129,73 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
             builder.append(.p, value: String(format: fmt, urlString))
         }
 
-        //        if serviceAlert.consequences.count > 0 {
-        //            builder.append(.h2, value: "Consequences")
-        //            for c in serviceAlert.consequences {
-        //                text.append("<h3>\(c.condition)</h3>")
-        //                if let details = c.conditionDetails {
-        //                    text.append("<p>Path: \(details.diversionPath)</p>")
-        //                    text.append("<p>Stops: \(details.stopIDs.joined(separator: ", "))</p>")
-        //                }
-        //            }
-        //        }
+//        if serviceAlert.consequences.count > 0 {
+//            builder.append(.h2, value: "Consequences")
+//            for c in serviceAlert.consequences {
+//                builder.append(.h3, value: c.condition)
+//                if let details = c.conditionDetails {
+//                    builder.append(.p, value: "Path: \(details.diversionPath)")
+//                    builder.append(.p, value: "Stops: \(details.stopIDs.joined(separator: ", "))")
+//                }
+//            }
+//        }
 
-        if serviceAlert.activeWindows.count > 0 {
+        // Timeframe
+        let activeWindows: [String] = serviceAlert.activeWindows
+            .map { $0.interval }
+            .sorted()
+            .compactMap { application.formatters.formattedDateRange($0) }
+
+        if activeWindows.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.in_effect", value: "In Effect", comment: "As in 'this is in effect/occurring' from/to"))
             builder.append(.ul) { b in
-                for a in self.serviceAlert.activeWindows {
-                    b.append(.li, value: self.application.formatters.formattedDateRange(from: a.from, to: a.to))
+                activeWindows.forEach {
+                    b.append(.li, value: $0)
                 }
             }
         }
 
-        if serviceAlert.affectedAgencies.count > 0 {
+        // Agencies
+        let affectedAgencies = serviceAlert.affectedAgencies.map { $0.name }.sorted()
+        if affectedAgencies.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.affected_agencies", value: "Affected Agencies", comment: "The transit agencies affected by this service alert."))
             builder.append(.ul) { b in
-                for a in self.serviceAlert.affectedAgencies {
-                    b.append(.li, value: a.name)
+                affectedAgencies.forEach {
+                    b.append(.li, value: $0)
                 }
             }
         }
 
-        if serviceAlert.affectedRoutes.count > 0 {
+        // Routes
+        let affectedRoutes = serviceAlert.affectedRoutes.map { $0.shortName }.sorted()
+        if affectedRoutes.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.affected_routes", value: "Affected Routes", comment: "The routes affected by this service alert."))
             builder.append(.ul) { b in
-                for route in self.serviceAlert.affectedRoutes {
-                    b.append(.li, value: route.shortName)
+                affectedRoutes.forEach {
+                    b.append(.li, value: $0)
                 }
             }
         }
 
-        if serviceAlert.affectedStops.count > 0 {
+        // Stops
+        let affectedStops = serviceAlert.affectedStops.map { Formatters.formattedTitle(stop: $0) }.sorted()
+        if affectedStops.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.affected_stops", value: "Affected Stops", comment: "The stops affected by this service alert."))
             builder.append(.ul) { b in
-                for stop in self.serviceAlert.affectedStops {
-                    b.append(.li, value: Formatters.formattedTitle(stop: stop))
+                affectedStops.forEach {
+                    b.append(.li, value: $0)
                 }
             }
         }
 
-        if serviceAlert.affectedTrips.count > 0 {
+        // Trips
+
+        let affectedTrips = serviceAlert.affectedTrips.map { $0.routeHeadsign }.sorted()
+        if affectedTrips.count > 0 {
             builder.append(.h2, value: OBALoc("service_alert_controller.affected_trips", value: "Affected Trips", comment: "The trips affected by this service alert."))
             builder.append(.ul) { b in
-                for trip in self.serviceAlert.affectedTrips {
-                    b.append(.li, value: trip.routeHeadsign)
+                affectedTrips.forEach {
+                    b.append(.li, value: $0)
                 }
             }
         }
