@@ -26,11 +26,22 @@ public class References: NSObject, Decodable {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        serviceAlerts = try container.decodeIfPresent([ServiceAlert].self, forKey: .alerts) ?? []
-        agencies = try container.decodeIfPresent([Agency].self, forKey: .agencies) ?? []
-        routes = try container.decodeIfPresent([Route].self, forKey: .routes) ?? []
-        stops = try container.decodeIfPresent([Stop].self, forKey: .stops) ?? []
-        trips = try container.decodeIfPresent([Trip].self, forKey: .trips) ?? []
+        // Sort entries for binary search.
+
+        let serviceAlerts = try container.decodeIfPresent([ServiceAlert].self, forKey: .alerts) ?? []
+        self.serviceAlerts = serviceAlerts.sorted(by: \.id)
+
+        let agencies = try container.decodeIfPresent([Agency].self, forKey: .agencies) ?? []
+        self.agencies = agencies.sorted(by: \.id)
+
+        let routes = try container.decodeIfPresent([Route].self, forKey: .routes) ?? []
+        self.routes = routes.sorted(by: \.id)
+
+        let stops = try container.decodeIfPresent([Stop].self, forKey: .stops) ?? []
+        self.stops = stops.sorted(by: \.id)
+
+        let trips = try container.decodeIfPresent([Trip].self, forKey: .trips) ?? []
+        self.trips = trips.sorted(by: \.id)
 
         super.init()
 
@@ -66,19 +77,15 @@ extension References {
     // MARK: - Agencies
 
     public func agencyWithID(_ id: String?) -> Agency? {
-        guard let id = id else {
-            return nil
-        }
-        return agencies.first { $0.id == id }
+        guard let id = id else { return nil }
+        return agencies.binarySearch(sortedBy: \.id, element: id)?.element
     }
 
     // MARK: - Routes
 
     public func routeWithID(_ id: String?) -> Route? {
-        guard let id = id else {
-            return nil
-        }
-        return routes.first { $0.id == id }
+        guard let id = id else { return nil }
+        return routes.binarySearch(sortedBy: \.id, element: id)?.element
     }
 
     public func routesWithIDs(_ ids: [String]) -> [Route] {
@@ -88,10 +95,8 @@ extension References {
     // MARK: - Service Alerts
 
     public func alertWithID(_ id: String?) -> ServiceAlert? {
-        guard let id = id else {
-            return nil
-        }
-        return serviceAlerts.first { $0.id == id }
+        guard let id = id else { return nil }
+        return serviceAlerts.binarySearch(sortedBy: \.id, element: id)?.element
     }
 
     public func serviceAlertsWithIDs(_ ids: [String]) -> [ServiceAlert] {
@@ -101,10 +106,8 @@ extension References {
     // MARK: - Stops
 
     public func stopWithID(_ id: String?) -> Stop? {
-        guard let id = id else {
-            return nil
-        }
-        return stops.first { $0.id == id }
+        guard let id = id else { return nil }
+        return stops.binarySearch(sortedBy: \.id, element: id)?.element
     }
 
     public func stopsWithIDs(_ ids: [String]) -> [Stop] {
@@ -114,9 +117,7 @@ extension References {
     // MARK: - Trips
 
     public func tripWithID(_ id: String?) -> Trip? {
-        guard let id = id else {
-            return nil
-        }
-        return trips.first { $0.id == id }
+        guard let id = id else { return nil }
+        return trips.binarySearch(sortedBy: \.id, element: id)?.element
     }
 }
