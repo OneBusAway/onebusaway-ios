@@ -14,6 +14,21 @@ import SafariServices
 
 // swiftlint:disable cyclomatic_complexity
 
+// Page Content Generation Flow
+// Generating HTML may take a couple of seconds, so do it in the background.
+// Method               Queue
+// ----------------------------------
+// viewDidLoad()        main
+//  ↓
+// viewDidAppear()      main
+//  ↓
+// preparePage()        background
+//  ↓
+// buildPageContent()   background
+//  ↓
+// displayPage()        main
+//  ↓
+// Done.
 final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
     lazy var webView: DocumentWebView = {
         let config = WKWebViewConfiguration()
@@ -27,6 +42,10 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     let serviceAlert: ServiceAlert
     let application: Application
+
+    let queue: DispatchQueue = .init(label: "servicealert_detail_html_builder",
+                                     qos: .userInitiated,
+                                     attributes: .concurrent)
 
     init(serviceAlert: ServiceAlert, application: Application) {
         self.serviceAlert = serviceAlert
@@ -52,7 +71,7 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        buildPageContent()
+        preparePage()
 
         application.userDataStore.markRead(serviceAlert: serviceAlert)
     }
@@ -73,7 +92,26 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
         decisionHandler(.cancel)
     }
 
+    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        self.navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        self.navigationItem.rightBarButtonItem = nil
+    }
+
     // MARK: - Page Content
+    private func preparePage() {
+        queue.async { self.buildPageContent() }
+    }
+
+    private func displayPage(contents html: String) {
+        DispatchQueue.main.async {
+            self.view.addSubview(self.webView)
+            self.webView.pinToSuperview(.edges)
+            self.webView.setPageContent(html)
+        }
+    }
 
     private func buildPageContent() {
         let builder = HTMLBuilder()
@@ -144,9 +182,7 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
             }
         }
 
-        webView.setPageContent(builder.HTML)
-
-        navigationItem.rightBarButtonItem = nil
+        displayPage(contents: builder.HTML)
     }
 }
 
