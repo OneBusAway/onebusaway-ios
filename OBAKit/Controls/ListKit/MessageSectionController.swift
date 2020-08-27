@@ -70,9 +70,11 @@ final class ServiceAlertData: NSObject {
 
 final class ServiceAlertsSectionData: NSObject, ListDiffable {
     var serviceAlerts: [ServiceAlertData]
+    var isCollapsed: Bool
 
-    public init(serviceAlertData: [ServiceAlertData]) {
+    public init(serviceAlertData: [ServiceAlertData], isCollapsed: Bool) {
         self.serviceAlerts = serviceAlertData
+        self.isCollapsed = isCollapsed
     }
 
     func diffIdentifier() -> NSObjectProtocol {
@@ -88,25 +90,102 @@ final class ServiceAlertsSectionData: NSObject, ListDiffable {
 
 protocol ServiceAlertsSectionControllerDelegate: class {
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert)
+    func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController)
 }
 
 final class ServiceAlertsSectionController: OBAListSectionController<ServiceAlertsSectionData> {
+    enum State {
+        case noServiceAlerts
+        case singleServiceAlert
+        case multipleServiceAlerts
+        case collapsedServiceAlerts
+    }
+
+    var state: State {
+        guard let sectionData = self.sectionData,
+            sectionData.serviceAlerts.count > 0 else {
+                return .noServiceAlerts
+        }
+
+        if sectionData.serviceAlerts.count == 1 {
+            // If there is only one service alert, don't show the header.
+            return .singleServiceAlert
+        } else {
+            if sectionData.isCollapsed {
+                // Only show collapsable header.
+                return .collapsedServiceAlerts
+            } else {
+                // +1 for the collapsable header.
+                return .multipleServiceAlerts
+            }
+        }
+    }
+
     weak var delegate: ServiceAlertsSectionControllerDelegate?
 
     override func numberOfItems() -> Int {
-        return sectionData?.serviceAlerts.count ?? 0
+        switch state {
+        case .noServiceAlerts:          // Don't need to show anything
+            return 0
+        case .singleServiceAlert:       // No need to show header
+            return 1
+        case .collapsedServiceAlerts:   // Only show header
+            return 1
+        case .multipleServiceAlerts:    // +1 for the header
+            return sectionData!.serviceAlerts.count + 1
+        }
     }
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {
+        switch state {
+        case .noServiceAlerts:
+            fatalError()                // uhhhhh.....
+        case .singleServiceAlert:
+            return alertCell(forServiceAlert: sectionData!.serviceAlerts[index], at: index)
+        case .collapsedServiceAlerts:
+            return headerCell(at: index)
+        case .multipleServiceAlerts:
+            if index == 0 {
+                return headerCell(at: index)
+            } else {
+                return alertCell(forServiceAlert: sectionData!.serviceAlerts[index - 1], at: index)
+            }
+        }
+    }
+
+    func headerCell(at index: Int) -> UICollectionViewCell {
+        let cell = dequeueReusableCell(type: CollapsibleHeaderCell.self, at: index)
+        cell.textLabel.text = Strings.serviceAlerts
+        cell.state = sectionData!.isCollapsed ? .closed : .open
+        return cell
+    }
+
+    func alertCell(forServiceAlert serviceAlert: ServiceAlertData, at index: Int) -> UICollectionViewCell {
         let cell = dequeueReusableCell(type: ServiceAlertCell.self, at: index)
-        cell.serviceAlert = sectionData?.serviceAlerts[index]
+        cell.serviceAlert = serviceAlert
 
         return cell
     }
 
     override func didSelectItem(at index: Int) {
-        guard let alert = sectionData?.serviceAlerts[index].serviceAlert else { return }
-        delegate?.serviceAlertsSectionController(self, didSelectAlert: alert)
+        func didTapAlert(at index: Int) {
+            guard let alert = sectionData?.serviceAlerts[index].serviceAlert else { return }
+            delegate?.serviceAlertsSectionController(self, didSelectAlert: alert)
+        }
+
+        switch state {
+        case .noServiceAlerts: return
+        case .singleServiceAlert:
+            didTapAlert(at: index)
+        case .collapsedServiceAlerts:
+            delegate?.serviceAlertsSectionControllerDidTapHeader(self)
+        case.multipleServiceAlerts:
+            if index == 0 {
+                delegate?.serviceAlertsSectionControllerDidTapHeader(self)
+            } else {
+                didTapAlert(at: index - 1)
+            }
+        }
     }
 }
 

@@ -578,7 +578,7 @@ public class StopViewController: UIViewController,
 
     private var serviceAlertsSection: ServiceAlertsSectionData? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        return sectionData(from: alerts)
+        return sectionData(from: alerts, isCollapsed: stopViewShowsServiceAlerts)
     }
 
     private var unreadServiceAlertsSection: [ListDiffable] {
@@ -718,6 +718,19 @@ public class StopViewController: UIViewController,
     }()
 
     // MARK: - ServiceAlertsSectionController methods
+    /// Whether the map view shows the direction the user is currently facing in.
+    ///
+    /// Defaults to `true`.
+    public var stopViewShowsServiceAlerts: Bool {
+        get { application.userDefaults.bool(forKey: stopViewShowsServiceAlertsKey) }
+        set { application.userDefaults.set(newValue, forKey: stopViewShowsServiceAlertsKey) }
+    }
+    private let stopViewShowsServiceAlertsKey = "stopViewShowsServiceAlerts"
+
+    func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController) {
+        stopViewShowsServiceAlerts.toggle()
+        self.collectionController.reload(animated: true)
+    }
 
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
         let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
