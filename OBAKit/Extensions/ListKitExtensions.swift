@@ -52,6 +52,7 @@ extension ListAdapterDataSource where Self: AppContext {
 
     private func sectionControllerType(for object: Any) -> (ListSectionController & OBAListSectionControllerInitializer).Type {
         switch object {
+        case is AgencyAlertsSectionData: return AgencyAlertsSectionController.self
         case is AdjacentTripSection: return AdjacentTripController.self
         case is ArrivalDepartureSectionData: return StopArrivalSectionController.self
         case is BookmarkSectionData: return BookmarkSectionController.self

@@ -13,7 +13,7 @@ import SwipeCellKit
 import OBAKitCore
 
 // MARK: - MessageSectionData
-
+@available(*, deprecated)
 final class MessageSectionData: ListViewModel, ListDiffable {
     var author: String?
     var date: String?
@@ -192,48 +192,83 @@ final class ServiceAlertsSectionController: OBAListSectionController<ServiceAler
 // MARK: - MessageCell
 
 final class ServiceAlertCell: BaseSelfSizingTableCell {
+    public enum AlertData {
+        case agency(AgencyAlertData)
+        case service(ServiceAlertData)
+
+        var subjectText: String? {
+            switch self {
+            case .service(let alert):
+                return alert.title
+            case .agency(let alert):
+                return alert.title
+            }
+        }
+
+        var subtitleText: String? {
+            switch self {
+            case .service(let alert):
+                return alert.agency
+            case .agency(let alert):
+                return alert.summary
+            }
+        }
+
+        var isUnread: Bool {
+            switch self {
+            case .service(let alert):
+                return alert.isUnread
+            case .agency(let alert):
+                return alert.isUnread
+            }
+        }
+    }
+
     private let useDebugColors = false
 
     // MARK: - UI
 
     private var contentStack: UIStackView!
-    private let unreadDot: UIImageView = {
-        let image: UIImage
-        if #available(iOS 13.0, *) {
-            image = UIImage(systemName: "exclamationmark.circle.fill")!
-        } else {
-            image = Icons.errorOutline
-        }
-
-        let view = UIImageView(image: image)
+    let imageView: UIImageView = {
+        let view = UIImageView()
         view.contentMode = .scaleAspectFit
         view.setCompressionResistance(vertical: .required)
         view.setHugging(horizontal: .defaultHigh)
+        view.tintColor = ThemeColors.shared.brand
 
         if #available(iOS 13, *) {
             view.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
         }
-        view.tintColor = ThemeColors.shared.brand
 
         return view
     }()
 
     private var textStack: UIStackView!
 
-    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
-    private let agencyLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
+    let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
+    let subtitleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
 
     private var chevronView: UIImageView!
 
     // MARK: - Data
-
-    var data: MessageSectionData? {
-        didSet {
-            configureView()
+    var serviceAlert: ServiceAlertData? {
+        get {
+            guard let data = self.data,
+                case let AlertData.service(alert) = data else {
+                return nil
+            }
+            return alert
+        }
+        set {
+            if let serviceAlert = newValue {
+                data = .service(serviceAlert)
+            } else {
+                data = nil
+            }
         }
     }
 
-    var serviceAlert: ServiceAlertData? {
+    var data: AlertData? {
         didSet {
             configureView()
         }
@@ -245,7 +280,7 @@ final class ServiceAlertCell: BaseSelfSizingTableCell {
         super.prepareForReuse()
 
         subjectLabel.text = nil
-        agencyLabel.text = nil
+        subtitleLabel.text = nil
 
         configureView()
     }
@@ -253,10 +288,10 @@ final class ServiceAlertCell: BaseSelfSizingTableCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.textStack = UIStackView.stack(axis: .vertical, distribution: .equalSpacing, arrangedSubviews: [subjectLabel, agencyLabel])
+        self.textStack = UIStackView.stack(axis: .vertical, distribution: .equalSpacing, arrangedSubviews: [subjectLabel, subtitleLabel])
         self.textStack.spacing = ThemeMetrics.compactPadding
 
-        self.contentStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .leading, arrangedSubviews: [unreadDot, textStack])
+        self.contentStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .leading, arrangedSubviews: [imageView, textStack])
         contentStack.spacing = ThemeMetrics.padding
 
         chevronView = UIImageView.autolayoutNew()
@@ -281,24 +316,23 @@ final class ServiceAlertCell: BaseSelfSizingTableCell {
     }
 
     private func configureView() {
-        guard let data = serviceAlert else { return }
-
+        guard let data = self.data else { return }
         let imageName = data.isUnread ? "exclamationmark.circle.fill" : "exclamationmark.circle"
         if #available(iOS 13, *) {
-            unreadDot.image = UIImage(systemName: imageName)
+            imageView.image = UIImage(systemName: imageName)
         }
 
-        subjectLabel.text = data.title
-        agencyLabel.text = data.agency
+        subjectLabel.text = data.subjectText
+        subtitleLabel.text = data.subtitleText
 
         contentStack.axis = isAccessibility ? .vertical : .horizontal
         contentStack.alignment = isAccessibility ? .leading : .center
 
         isAccessibilityElement = true
         accessibilityTraits = [.button, .staticText]
-        accessibilityLabel = data.title
+        accessibilityLabel = data.subjectText
         accessibilityLabel = Strings.serviceAlert
-        accessibilityValue = data.title
+        accessibilityValue = data.subtitleText
 
         if useDebugColors {
             subjectLabel.backgroundColor = .green
@@ -316,7 +350,7 @@ final class ServiceAlertCell: BaseSelfSizingTableCell {
 final class MessageSectionController: OBAListSectionController<MessageSectionData> {
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
         let cell = dequeueReusableCell(type: ServiceAlertCell.self, at: index)
-        cell.data = sectionData
+//        cell.data = sectionData
 
         return cell
     }

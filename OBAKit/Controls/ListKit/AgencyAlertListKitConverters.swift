@@ -18,7 +18,7 @@ import SafariServices
 ///         designed to work with `objects(for listAdapter:)`.
 protocol AgencyAlertListKitConverters {
     var application: Application { get }
-    func tableSections(agencyAlerts: [AgencyAlert], tapped: @escaping ListRowActionHandler) -> [MessageSectionData]
+    func tableSections(agencyAlerts: [AgencyAlert], tapped: @escaping ListRowActionHandler) -> [AgencyAlertsSectionData]
     func presentAlert(_ alert: AgencyAlert)
 }
 
@@ -32,13 +32,18 @@ extension AgencyAlertListKitConverters where Self: UIViewController {
     ///   - agencyAlerts: An array of `AgencyAlert`s.
     ///   - tapped: A tap handler, invoked when any of the `AgencyAlert`s are tapped.
     /// - Returns: A `TableSectionData` object representing the array of `AgencyAlert`s.
-    func tableSections(agencyAlerts: [AgencyAlert], tapped: @escaping ListRowActionHandler) -> [MessageSectionData] {
-        return agencyAlerts.compactMap { (agencyAlert: AgencyAlert) -> MessageSectionData? in
-            guard let row = buildTableRowData(agencyAlert: agencyAlert, tapped: tapped) else {
-                return nil
-            }
-            return row
+    func tableSections(agencyAlerts: [AgencyAlert], tapped: @escaping ListRowActionHandler) -> [AgencyAlertsSectionData] {
+        let groupedAlerts = Dictionary(grouping: agencyAlerts, by: { $0.agency?.agency.name ?? "" })
+        return groupedAlerts.map { group -> AgencyAlertsSectionData in
+            let alerts = group.value.map { AgencyAlertData(agencyAlert: $0, isUnread: false) }
+            return AgencyAlertsSectionData(agencyName: group.key, alerts: alerts, isCollapsed: false)   // TODO: fix iscollapsed
         }
+//        return agencyAlerts.compactMap { (agencyAlert: AgencyAlert) -> MessageSectionData? in
+//            guard let row = buildTableRowData(agencyAlert: agencyAlert, tapped: tapped) else {
+//                return nil
+//            }
+//            return row
+//        }
     }
 
     func presentAlert(_ alert: AgencyAlert) {
