@@ -5,9 +5,9 @@
 Make the controller conform to `AppContext` and `ListAdapterDataSource`:
 
     class ExampleViewController: UIViewController, AppContext, ListAdapterDataSource {
-        
+
         public let application: Application
-        
+
         // MARK: - IGListKit
 
         func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
@@ -52,7 +52,7 @@ You can include a refresh control with your collection view, if that matches you
         refresh.addTarget(self, action: #selector(reloadData), for: .valueChanged)
         return refresh
     }()
-    
+
     @objc private func reloadData() {
         // todo - reload data
     }
@@ -65,7 +65,7 @@ You can include a refresh control with your collection view, if that matches you
         collectionController.view.pinToSuperview(.edges)
         collectionController.collectionView.addSubview(refreshControl)
     }
-    
+
 
 # IGListKit Cells
 
@@ -110,7 +110,7 @@ Here's an example of a collection cell that implements self-sizing, a bottom sep
             contentView.backgroundColor = ThemeColors.shared.systemBackground
 
             contentView.layer.addSublayer(separator)
-            
+
             contentView.addSubview(textLabel)
             textLabel.pinToSuperview(.layoutMargins)
         }
@@ -160,13 +160,13 @@ It's important for any collection view cells that the user can interact with to 
             contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : nil
         }
     }
-    
+
 # Adding New Content Types to IGListKit
 
 To add a new content type to IGListKit, you must add three classes:
 
 * Data class
-* Section controller class 
+* Section controller class
 * Cell class
 
 and then add an entry for the data class and section controller to `ListAdapterDataSource.defaultSectionController(:)`, which is in the OBAKit project file `ListKitExtensions.swift`.
@@ -175,11 +175,11 @@ See below for a full, albeit somewhat contrived implementation of these three cl
 
     final class LabelSectionData: NSObject, ListDiffable {
         let text: String
-    
+
         init(text: String) {
             self.text = text
         }
-    
+
         func diffIdentifier() -> NSObjectProtocol {
             return self.text as NSObjectProtocol
         }
@@ -229,7 +229,7 @@ See below for a full, albeit somewhat contrived implementation of these three cl
             contentView.backgroundColor = ThemeColors.shared.systemBackground
 
             contentView.layer.addSublayer(separator)
-        
+
             contentView.addSubview(textLabel)
             textLabel.pinToSuperview(.layoutMargins)
         }
