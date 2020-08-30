@@ -33,5 +33,40 @@ jobs:
       run: scripts/carthage_build
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
-    - name: Build OneBusAway and Test OBAKit
-      run: xcodebuild clean test -project 'OBAKit.xcodeproj' -scheme 'App' -sdk iphonesimulator -destination 'name=iPhone 11 Pro Max' -quiet
+
+    # Build
+    - name: Build OneBusAway
+      run: xcodebuild clean build-for-testing 
+        -scheme 'App' 
+        -destination 'name=iPhone 11 Pro'
+        -quiet
+
+    # Unit Test
+    - name: OBAKit Unit Test
+      run: xcodebuild test-without-building 
+        -only-testing:OBAKitTests 
+        -project 'OBAKit.xcodeproj' 
+        -scheme 'App' 
+        -destination 'name=iPhone 11 Pro' 
+        -resultBundlePath OBAKitTests.xcresult
+        -quiet
+    - name: Upload OBAKitTests results
+      uses: actions/upload-artifact@v2
+      with:
+        name: OBAKitTests_xcresult
+        path: OBAKitTests.xcresult
+        
+    # UI Test
+    - name: OBAKit UI Test
+      run: xcodebuild test-without-building 
+        -only-testing:OBAKitUITests 
+        -project 'OBAKit.xcodeproj' 
+        -scheme 'App' 
+        -destination 'name=iPhone 11 Pro'
+        -resultBundlePath OBAKitUITests.xcresult
+        -quiet
+    - name: Upload OBAKitUITests results
+      uses: actions/upload-artifact@v2
+      with:
+        name: OBAKitUITests_xcresult
+        path: OBAKitUITests.xcresult
