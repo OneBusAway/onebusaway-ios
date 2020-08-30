@@ -2,12 +2,14 @@
     "author": "Aaron Brethorst",
     "author_url": "https://github.com/aaronbrethorst/OBAKit",
     "module": "OBAKit",
-    "documentation": "Guides/*.md",
+    "documentation": "Tutorials/*.md",
     "custom_categories": [
         {
-            "name": "Guides",
+            "name": "Tutorials",
             "children": [
-                "IGListKit"
+                "ContextMenus",
+                "IGListKit",
+                "WhiteLabel"
             ]
         },
         {
