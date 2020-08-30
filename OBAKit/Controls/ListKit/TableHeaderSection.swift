@@ -36,11 +36,6 @@ final class TableHeaderData: NSObject, ListDiffable {
 
 /// Section controller for a collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderSectionController: OBAListSectionController<TableHeaderData> {
-    public override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width,
-                      height: cellForItem(at: index).intrinsicContentSize.height)
-    }
-
     // MARK: - Cell
 
     override func cellForItem(at index: Int) -> UICollectionViewCell {

@@ -45,9 +45,7 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
     private func invokeCompletionHandler() {
         guard let handler = completionHandler else { return }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
+        DispatchQueue.main.async {
             if let error = self.error {
                 handler(.failure(error))
             }
@@ -58,8 +56,6 @@ public class DecodableOperation<T>: NetworkOperation where T: Decodable {
                 handler(.failure(APIError.noResponseBody))
             }
         }
-
-        completionHandler = nil
     }
 
     public func complete(completionHandler: @escaping ((Result<T, Error>) -> Void)) {

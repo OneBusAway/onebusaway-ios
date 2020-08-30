@@ -312,8 +312,9 @@ public class StopViewController: UIViewController,
             case (true, _):
                 self.displayBrokenBookmarkMessage()
             case (_, .failure(let error)):
-                self.application.displayError(error)
+                self.operationError = error
             case (false, .success(let response)):
+                self.operationError = nil
                 self.lastUpdated = Date()
                 self.stopArrivals = response.entry
                 self.refreshControl.endRefreshing()
@@ -427,8 +428,13 @@ public class StopViewController: UIViewController,
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         guard stopArrivals != nil else {
+            if let error = self.operationError {
+                let emptyDataSection = EmptyDataSetSectionData(error: error, image: nil, buttonConfig: operationRetryButton)
+                return [stopHeaderSection, emptyDataSection].compactMap { $0 }
+            } else {
+                return [stopHeaderSection].compactMap { $0 }
+            }
             // TODO: show a loading message too
-            return [stopHeaderSection].compactMap {$0}
         }
 
         if inPreviewMode {
@@ -609,9 +615,8 @@ public class StopViewController: UIViewController,
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
-        let section = LoadMoreSectionData(footerText: footerText) { [weak self] in
-            guard let self = self else { return }
-            self.loadMoreDepartures()
+        let section = LoadMoreSectionData(footerText: footerText, error: operationError) { [weak self] in
+            self?.loadMoreDepartures()
         }
 
         return section
@@ -689,8 +694,25 @@ public class StopViewController: UIViewController,
         return defaultSectionController(for: object)
     }
 
+    var operationError: Error? {
+        didSet {
+            DispatchQueue.main.async {
+                self.collectionController.reload(animated: true)
+            }
+        }
+    }
+
+    lazy var operationRetryButton = ActivityIndicatedButton.Configuration(text: "Retry", largeContentImage: Icons.refresh, showsActivityIndicatorOnTap: true) { [weak self] in
+        self?.refresh()
+    }
+
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
+        guard let error = operationError else { return nil }
+
+        let emptyView = EmptyDataSetView(alignment: .center)
+        emptyView.configure(with: error, buttonConfig: operationRetryButton)
+
+        return emptyView
     }
 
     // MARK: - Collection Controller
