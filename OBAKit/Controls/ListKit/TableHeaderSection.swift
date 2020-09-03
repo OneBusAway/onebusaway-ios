@@ -16,12 +16,11 @@ import OBAKitCore
 /// View model for a collection cell that mimics the appearance of a header in a UITableView.
 final class TableHeaderData: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
-        self as NSObjectProtocol
+        return self.title as NSString
     }
 
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
         guard let object = object as? TableHeaderData else { return false }
-
         return title == object.title
     }
 

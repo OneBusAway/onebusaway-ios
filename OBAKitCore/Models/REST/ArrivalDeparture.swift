@@ -180,6 +180,11 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     // MARK: - Helpers/Names
 
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs. Used as IGListKit diff identifier.
+    public var arrivalDepartureID: String {
+        return "stop=\(stopID),trip=\(tripID),route=\(routeID)"
+    }
+
     /// Provides the best available trip headsign.
     public var tripHeadsign: String? {
         return _tripHeadsign ?? trip.headsign
