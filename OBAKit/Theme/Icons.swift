@@ -76,7 +76,9 @@ class Icons: NSObject {
     public class var chevron: UIImage {
         let image = systemImage(named: "chevron.right", fallback: "chevron")
         if #available(iOS 13, *) {
-            return image.withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+            return image
+                .withTintColor(.systemGray, renderingMode: .alwaysOriginal)
+                .withConfiguration(UIImage.SymbolConfiguration.init(weight: .bold))
         } else {
             return image
         }
@@ -180,6 +182,15 @@ class Icons: NSObject {
 
     public class var stop: UIImage {
         imageNamed("stop")
+    }
+
+    // MARK: - Alerts
+    public class var unreadAlert: UIImage {
+        systemImage(named: "exclamationmark.circle.fill", fallback: "unread_alert")
+    }
+
+    public class var readAlert: UIImage {
+        systemImage(named: "exclamationmark.circle", fallback: "read_alert")
     }
 
     // MARK: - Transport Icons

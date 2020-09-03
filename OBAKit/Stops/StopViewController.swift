@@ -724,8 +724,15 @@ public class StopViewController: UIViewController,
 
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
         let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
-        let nc = UINavigationController(rootViewController: serviceAlertController)
-        self.present(nc, animated: true)
+
+        // On iOS 13+, use the system sheet presentation.
+        // iOS 12 does not have the sheet presentation, so just push nav stack instead.
+        if #available(iOS 13, *) {
+            let nc = UINavigationController(rootViewController: serviceAlertController)
+            self.present(nc, animated: true)
+        } else {
+            self.application.viewRouter.navigate(to: serviceAlertController, from: self)
+        }
     }
 
     // MARK: - Stop Arrival Actions
