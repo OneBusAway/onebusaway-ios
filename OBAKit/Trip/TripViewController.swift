@@ -269,7 +269,9 @@ class TripViewController: UIViewController,
                 }
 
                 self.floatingPanel.surfaceView.grabberHandle.isHidden = false
-                self.floatingPanel.move(to: .half, animated: true)
+                self.floatingPanel.show(animated: true) {
+                    self.floatingPanel.move(to: .half, animated: true)
+                }
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton
