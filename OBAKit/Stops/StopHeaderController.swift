@@ -19,7 +19,8 @@ class StopHeaderSection: NSObject, ListDiffable {
     }
 
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        return self.stop.isEqual(object)
+        guard let stopHeaderSection = object as? StopHeaderSection else { return false }
+        return self.stop.isEqual(stopHeaderSection.stop)
     }
 
     init(stop: Stop, application: Application) {

@@ -42,7 +42,7 @@ final class ArrivalDepartureSectionData: NSObject, ListDiffable {
     }
 
     public func diffIdentifier() -> NSObjectProtocol {
-        return self
+        return self.arrivalDeparture.arrivalDepartureID as NSString
     }
 
     public func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
