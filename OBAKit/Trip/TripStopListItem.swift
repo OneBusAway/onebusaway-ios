@@ -78,8 +78,7 @@ final class TripStopListItem: NSObject, ListDiffable {
             title == rhs.title &&
             date == rhs.date &&
             formattedDate == rhs.formattedDate &&
-            routeType == rhs.routeType &&
-            stop == rhs.stop
+            routeType == rhs.routeType
     }
 }
 
