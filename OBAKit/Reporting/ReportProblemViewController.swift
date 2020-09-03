@@ -18,7 +18,8 @@ import OBAKitCore
 /// - Note: This view controller expects to be presented modally.
 class ReportProblemViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, StopArrivals>,
     HasTableStyle,
-    ListAdapterDataSource {
+    ListAdapterDataSource,
+    StopArrivalSectionControllerDelegate {
 
     private let stop: Stop
 
@@ -136,15 +137,17 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
         var rows: [ListDiffable] = [TableHeaderData(title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."))]
 
         for arrDep in arrivalsAndDepartures {
-            let row = ArrivalDepartureSectionData(arrivalDeparture: arrDep) { [weak self] in
-                guard let self = self else { return }
-                let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
-                self.navigationController?.pushViewController(controller, animated: true)
-            }
+            let row = ArrivalDepartureSectionData(arrivalDeparture: arrDep)
             rows.append(row)
         }
 
         return rows
+    }
+
+    // MARK: - StopArrivalDepartureSectionControllerDelegate methods
+    func stopArrivalSectionController(_ controller: StopArrivalSectionController, didSelect arrivalDeparture: ArrivalDepartureSectionData) {
+        let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrivalDeparture.arrivalDeparture)
+        self.navigationController?.pushViewController(controller, animated: true)
     }
 
     // MARK: - Actions

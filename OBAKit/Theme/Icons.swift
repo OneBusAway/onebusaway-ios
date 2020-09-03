@@ -118,6 +118,10 @@ class Icons: NSObject {
         systemImage(named: "ellipsis.circle.fill", fallback: "show_more")
     }
 
+    public class var share: UIImage {
+        systemImage(named: "square.and.arrow.up.fill", fallback: "share")
+    }
+
     // MARK: - Bookmarks
 
     /// An icon used to represent bookmarked stops and trips.
@@ -127,7 +131,7 @@ class Icons: NSObject {
 
     /// An icon used to indicate that tapping on it will add a bookmark to the app.
     public class var addBookmark: UIImage {
-        systemImage(named: "bookmark.circle", fallback: "favorited")
+        configureForTabIcon(systemImage(named: "bookmark.fill", fallback: "favorited"))
     }
 
     // MARK: - Heading

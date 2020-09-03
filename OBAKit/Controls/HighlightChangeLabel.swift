@@ -25,16 +25,6 @@ class HighlightChangeLabel: UILabel, ArrivalDepartureDrivenUI {
         fatalError("init(coder:) has not been implemented")
     }
 
-    public override var text: String? {
-        didSet {
-            guard oldValue != text else { return }
-
-            if oldValue != nil {
-                highlightBackground()
-            }
-        }
-    }
-
     /// This is the color that is used to highlight a value change in this label.
     var highlightedBackgroundColor: UIColor = ThemeColors.shared.propertyChanged
 
