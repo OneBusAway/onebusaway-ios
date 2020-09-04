@@ -200,7 +200,32 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
             }
         }
 
-        displayPage(contents: builder.HTML)
+        let body = builder.HTML
+
+        // Insert dark mode css.
+        let document = """
+        <html>
+        <head>
+            <style>
+                body {
+                    background-color:#000;
+                    color:#fff
+                }
+                @media screen and (prefers-color-scheme:light) {
+                    body {
+                        background-color:#fff;
+                        color:#000
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            \(body)
+        </body>
+        </html>
+        """
+
+        displayPage(contents: document)
     }
 }
 
