@@ -273,7 +273,7 @@ class TripFloatingPanelController: UIViewController,
 
     private func buildServiceAlertsSections(alerts: [ServiceAlert]) -> [ListDiffable] {
         var sections = [ListDiffable]()
-        sections.append(contentsOf: sectionData(from: alerts))
+        sections.append(sectionData(from: alerts, collapsedState: .alwaysExpanded))
         sections.append(TableHeaderData(title: OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section.")))
 
         return sections

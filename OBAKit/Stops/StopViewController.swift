@@ -578,17 +578,7 @@ public class StopViewController: UIViewController,
 
     private var serviceAlertsSection: ServiceAlertsSectionData? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        return sectionData(from: alerts, isCollapsed: stopViewShowsServiceAlerts)
-    }
-
-    private var unreadServiceAlertsSection: [ListDiffable] {
-        let alerts = (stopArrivals?.serviceAlerts ?? []).filter { self.application.userDataStore.isUnread(serviceAlert: $0) }
-
-        guard alerts.count > 0 else {
-            return []
-        }
-
-        return sectionData(from: alerts)
+        return sectionData(from: alerts, collapsedState: stopViewShowsServiceAlerts ? .expanded : .collapsed)
     }
 
     // MARK: - Data/Hidden Routes Toggle

@@ -17,45 +17,26 @@ import IGListKit
 /// - Note: The data produced by methods in this protocol are specifically
 ///         designed to work with `objects(for listAdapter:)`.
 protocol SectionDataBuilders: NSObjectProtocol {
-    func sectionData(from alerts: [ServiceAlert]) -> [MessageSectionData]
+    func sectionData(from alerts: [ServiceAlert], collapsedState: ServiceAlertsSectionData.CollapsedState) -> ServiceAlertsSectionData
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler) -> TableSectionData
     func tableSection(stops: [Stop], tapped: @escaping ListRowActionHandler, deleted: ListRowActionHandler?) -> TableSectionData
 }
 
 extension SectionDataBuilders where Self: AppContext {
-
-    /// Converts an array of `Situation`s into `MessageSectionData` objects, which look like rows in Mail.app.
-    /// - Parameter alerts: The list of `Situation`s that will be converted into `MessageSectionData` objects.
-    /// - Returns: An array of `MessageSectionData` view models, suitable for returning via `ListAdapterDataSource`'s `objects(for:)` method.
-    func sectionData(from alerts: [ServiceAlert]) -> [MessageSectionData] {
-        var sections = [MessageSectionData]()
-        for serviceAlert in Set(alerts).allObjects.sorted(by: { $0.createdAt > $1.createdAt }) {
-            let formattedDate = application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt)
-            let isUnread = application.userDataStore.isUnread(serviceAlert: serviceAlert)
-            let message = MessageSectionData(author: Strings.serviceAlert,
-                                             date: formattedDate,
-                                             subject: serviceAlert.summary.value,
-                                             summary: serviceAlert.situationDescription?.value,
-                                             isUnread: isUnread) { [weak self] _ in
-                guard let self = self else { return }
-                let serviceAlertController = ServiceAlertViewController(serviceAlert: serviceAlert, application: self.application)
-                self.application.viewRouter.navigate(to: serviceAlertController, from: self)
-            }
-            sections.append(message)
-        }
-        return sections
-    }
-
-    func sectionData(from alerts: [ServiceAlert], isCollapsed: Bool) -> ServiceAlertsSectionData {
+    /// Converts an array of `ServiceAlert`s into `ServiceAlertsSectionData`.
+    /// - Parameters:
+    ///     - alerts: The list of `ServiceAlert`s that will be converted into `ServiceAlertsSectionData` objects.
+    ///     - collapsedState: Whether this section of Service Alerts is collapsed.
+    /// - Returns: A `ServiceAlertsSectionData` view model, suitable for returning via `ListAdapterDataSource`'s `objects(for:)` method.
+    func sectionData(from alerts: [ServiceAlert], collapsedState: ServiceAlertsSectionData.CollapsedState) -> ServiceAlertsSectionData {
         let uniqued = Set<ServiceAlert>(alerts)
         let sorted = uniqued.sorted { $0.createdAt > $1.createdAt }
         let data: [ServiceAlertData] = sorted.map { alert in
-            let agencies = Set<String>(alert.affectedAgencies.map { $0.name }).joined(separator: ", ")
             let isUnread = application.userDataStore.isUnread(serviceAlert: alert)
-            return ServiceAlertData(serviceAlert: alert, id: alert.id, title: alert.summary.value, agency: agencies, isUnread: isUnread)
+            return ServiceAlertData(serviceAlert: alert, isUnread: isUnread)
         }
 
-        return ServiceAlertsSectionData(serviceAlertData: data, isCollapsed: isCollapsed)
+        return ServiceAlertsSectionData(serviceAlertData: data, collapsed: collapsedState)
     }
 
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.

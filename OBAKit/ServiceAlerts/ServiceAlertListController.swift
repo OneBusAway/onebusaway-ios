@@ -67,7 +67,7 @@ final class ServiceAlertListController: UIViewController,
     // MARK: - IGListKit
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return sectionData(from: serviceAlerts)
+        return [sectionData(from: serviceAlerts, collapsedState: .alwaysExpanded)]
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
