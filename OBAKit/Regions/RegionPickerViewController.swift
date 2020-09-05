@@ -112,7 +112,6 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
         for region in sortedRegions {
             let regionID = String(region.regionIdentifier)
             section <<< ListCheckRow<String>(regionID) {
-                $0.tag = selectedRegionTag
                 $0.title = region.name
                 $0.selectableValue = regionID
                 $0.value = selectedRegionID == regionID ? regionID : nil
