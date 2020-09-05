@@ -233,9 +233,10 @@ public class MapViewController: UIViewController,
             if let forecast = forecast {
                 let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
                 weatherButton.setTitle(formattedTemp, for: .normal)
+                weatherButton.isHidden = false
             }
             else {
-                weatherButton.setTitle("—", for: .normal)
+                weatherButton.isHidden = true
             }
         }
     }
@@ -247,11 +248,9 @@ public class MapViewController: UIViewController,
         op.complete { [weak self] result in
             guard let self = self else { return }
 
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.forecast = response
+            self.forecast = try? result.get()
+            if case let .failure(error) = result {
+                Logger.error(error.localizedDescription)
             }
         }
         weatherOperation = op

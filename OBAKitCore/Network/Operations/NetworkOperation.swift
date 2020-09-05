@@ -67,16 +67,9 @@ public class NetworkOperation: AsyncOperation, Requestable {
         super.start()
 
         let task = dataLoader.dataTask(with: request) { [weak self] (data, response, error) in
-            guard
-                let self = self,
-                !self.isCancelled,
-                let response = response as? HTTPURLResponse
-            else {
-                return
-            }
+            guard let self = self, !self.isCancelled else { return }
 
-            self.set(data: data, response: response, error: error)
-
+            self.set(data: data, response: response as? HTTPURLResponse, error: error)
             self.finish()
         }
         progress.addChild(task.progress, withPendingUnitCount: 1)

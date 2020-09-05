@@ -46,15 +46,7 @@ Run `scripts/generate_project` on its own to see a list of available app targets
 
 ## White Label Support
 
-_This feature is a work in progress._
-
-To create your own app target, duplicate the `Apps/OneBusAway` directory and update all of the available variables with the ones that are relevant to your project. Here's an incomplete list of everything you will need to update:
-
-* App Icon
-* `Info.plist`
-* Entitlements file
-* `project.yml`
-* `GoogleService-Info.plist`
+To create your own app target, duplicate the `Apps/OneBusAway` directory and update all of the available variables with the ones that are relevant to your project. [Learn more about White Label support by reading the documentation on the subject](Tutorials/WhiteLabel.md).
 
 ## Internationalization and Localization
 
@@ -102,7 +94,7 @@ To translate `common.close` into a new language, add a new line below `pl`:
         comment = The verb 'to close'.
         pl = Zamknij
         de = Schließen
-        
+
 To test your changes, run the command `scripts/localize` from the command line and then launch the app (note: make sure the iOS Simulator is set to your desired language.)
 
 ## Diagnosing Problems

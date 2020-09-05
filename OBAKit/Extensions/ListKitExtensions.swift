@@ -56,6 +56,7 @@ extension ListAdapterDataSource where Self: AppContext {
         case is AdjacentTripSection: return AdjacentTripController.self
         case is ArrivalDepartureSectionData: return StopArrivalSectionController.self
         case is BookmarkSectionData: return BookmarkSectionController.self
+        case is EmptyDataSetSectionData: return EmptyDataSetSectionController.self
         case is LoadMoreSectionData: return LoadMoreSectionController.self
         case is ServiceAlertsSectionData: return ServiceAlertsSectionController.self
         case is MoreHeaderSection: return MoreHeaderSectionController.self

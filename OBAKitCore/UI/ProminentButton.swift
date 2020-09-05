@@ -8,18 +8,17 @@
 //
 
 import UIKit
-import OBAKitCore
 
 /// A button with a background color, designed to give the button more of a tappable affordance.
-class ProminentButton: UIButton {
+public class ProminentButton: UIButton {
 
-    override init(frame: CGRect) {
+    override public init(frame: CGRect) {
         prominentColor = UIColor(white: 0.5, alpha: 0.1)
         highlightLayer.backgroundColor = prominentColor.cgColor
         super.init(frame: frame)
     }
 
-    required init?(coder: NSCoder) {
+    required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -36,7 +35,7 @@ class ProminentButton: UIButton {
         return layer
     }()
 
-    override func layoutSubviews() {
+    override public func layoutSubviews() {
         super.layoutSubviews()
 
         if highlightLayer.superlayer == nil {
