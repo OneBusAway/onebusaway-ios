@@ -52,52 +52,109 @@ final class MessageSectionData: ListViewModel, ListDiffable {
     }
 }
 
+final class ServiceAlertData: NSObject {
+    let serviceAlert: ServiceAlert
+    let id: String
+    let title: String
+    let agency: String
+    let isUnread: Bool
+
+    public init(serviceAlert: ServiceAlert, id: String, title: String, agency: String, isUnread: Bool) {
+        self.serviceAlert = serviceAlert
+        self.id = id
+        self.title = title
+        self.agency = agency
+        self.isUnread = isUnread
+    }
+}
+
+final class ServiceAlertsSectionData: NSObject, ListDiffable {
+    var serviceAlerts: [ServiceAlertData]
+
+    public init(serviceAlertData: [ServiceAlertData]) {
+        self.serviceAlerts = serviceAlertData
+    }
+
+    func diffIdentifier() -> NSObjectProtocol {
+        return "ServiceAlertsSectionIdentifier" as NSString
+    }
+
+    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
+        return false // TODO: me
+        guard let object = object as? ServiceAlertsSectionData else { return false }
+//        return object.serviceAlerts == self.serviceAlerts
+    }
+}
+
+protocol ServiceAlertsSectionControllerDelegate: class {
+    func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert)
+}
+
+final class ServiceAlertsSectionController: OBAListSectionController<ServiceAlertsSectionData> {
+    weak var delegate: ServiceAlertsSectionControllerDelegate?
+
+    override func numberOfItems() -> Int {
+        return sectionData?.serviceAlerts.count ?? 0
+    }
+
+    override func cellForItem(at index: Int) -> UICollectionViewCell {
+        let cell = dequeueReusableCell(type: ServiceAlertCell.self, at: index)
+        cell.serviceAlert = sectionData?.serviceAlerts[index]
+
+        return cell
+    }
+
+    override func didSelectItem(at index: Int) {
+        guard let alert = sectionData?.serviceAlerts[index].serviceAlert else { return }
+        delegate?.serviceAlertsSectionController(self, didSelectAlert: alert)
+    }
+}
+
 // MARK: - MessageCell
 
-final class MessageCell: BaseSelfSizingTableCell {
-
+final class ServiceAlertCell: BaseSelfSizingTableCell {
     private let useDebugColors = false
 
     // MARK: - UI
 
-    private static let unreadDotSize: CGFloat = 12.0
+    private var contentStack: UIStackView!
+    private let unreadDot: UIImageView = {
+        let image: UIImage
+        if #available(iOS 13.0, *) {
+            image = UIImage(systemName: "exclamationmark.circle.fill")!
+        } else {
+            image = Icons.errorOutline
+        }
 
-    private let unreadDot: UIView = {
-        let view = UIView.autolayoutNew()
-        view.backgroundColor = ThemeColors.shared.brand
-        view.layer.cornerRadius = MessageCell.unreadDotSize / 2.0
-        view.setHugging(horizontal: .required, vertical: .required)
-        view.setCompressionResistance(horizontal: .required, vertical: .required)
+        let view = UIImageView(image: image)
+        view.contentMode = .scaleAspectFit
+        view.setCompressionResistance(vertical: .required)
+        view.setHugging(horizontal: .defaultHigh)
 
-        NSLayoutConstraint.activate([
-            view.widthAnchor.constraint(equalToConstant: MessageCell.unreadDotSize),
-            view.heightAnchor.constraint(equalToConstant: MessageCell.unreadDotSize)
-        ])
+        if #available(iOS 13, *) {
+            view.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
+        }
+        view.tintColor = ThemeColors.shared.brand
 
         return view
     }()
 
-    private let authorLabel: UILabel = {
-        let label = UILabel.obaLabel(font: UIFont.preferredFont(forTextStyle: .subheadline).bold, minimumScaleFactor: 0.9)
-        label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        return label
-    }()
+    private var textStack: UIStackView!
 
-    private let dateLabel: UILabel = {
-        let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel, minimumScaleFactor: 1.0)
-        label.setContentHuggingPriority(.required, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
-        return label
-    }()
+    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
+    private let agencyLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
 
-    private let subjectLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline), minimumScaleFactor: 0.9)
-    private let summaryLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .subheadline), textColor: ThemeColors.shared.secondaryLabel, numberOfLines: 2, minimumScaleFactor: 0.9)
-
-    private var topStack: UIStackView!
+    private var chevronView: UIImageView!
 
     // MARK: - Data
 
     var data: MessageSectionData? {
+        didSet {
+            configureView()
+        }
+    }
+
+    var serviceAlert: ServiceAlertData? {
         didSet {
             configureView()
         }
@@ -108,10 +165,8 @@ final class MessageCell: BaseSelfSizingTableCell {
     override func prepareForReuse() {
         super.prepareForReuse()
 
-        authorLabel.text = nil
-        dateLabel.text = nil
         subjectLabel.text = nil
-        summaryLabel.text = nil
+        agencyLabel.text = nil
 
         configureView()
     }
@@ -119,11 +174,19 @@ final class MessageCell: BaseSelfSizingTableCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.topStack = UIStackView.horizontalStack(arrangedSubviews: [unreadDot, authorLabel, dateLabel])
-        self.topStack.spacing = ThemeMetrics.compactPadding
-        let topWrapper = topStack.embedInWrapperView()
+        self.textStack = UIStackView.stack(axis: .vertical, distribution: .equalSpacing, arrangedSubviews: [subjectLabel, agencyLabel])
+        self.textStack.spacing = ThemeMetrics.compactPadding
 
-        let outerStack = UIStackView.verticalStack(arrangedSubviews: [topWrapper, subjectLabel, summaryLabel])
+        self.contentStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .leading, arrangedSubviews: [unreadDot, textStack])
+        contentStack.spacing = ThemeMetrics.padding
+
+        chevronView = UIImageView.autolayoutNew()
+        chevronView.image = Icons.chevron
+        chevronView.setCompressionResistance(vertical: .required)
+        chevronView.setHugging(horizontal: .defaultHigh)
+
+        let outerStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .center, arrangedSubviews: [contentStack, chevronView])
+
         contentView.addSubview(outerStack)
 
         outerStack.pinToSuperview(.readableContent) {
@@ -139,48 +202,27 @@ final class MessageCell: BaseSelfSizingTableCell {
     }
 
     private func configureView() {
-        guard let data = data else { return }
+        guard let data = serviceAlert else { return }
 
-        unreadDot.isHidden = !data.isUnread
-
-        authorLabel.text = data.author
-        dateLabel.text = data.date
-        subjectLabel.text = data.subject
-
-        // Truncate the summary text for UILabel typesetting performance.
-        if let summary = data.summary {
-            summaryLabel.text = String(summary.prefix(data.summaryNumberOfLines * 128))
+        let imageName = data.isUnread ? "exclamationmark.circle.fill" : "exclamationmark.circle"
+        if #available(iOS 13, *) {
+            unreadDot.image = UIImage(systemName: imageName)
         }
 
-        topStack.axis = isAccessibility ? .vertical : .horizontal
-        authorLabel.numberOfLines = isAccessibility ? 3 : 1
+        subjectLabel.text = data.title
+        agencyLabel.text = data.agency
 
-        let subjectNumberOfLines = data.subjectNumberOfLines
-        if subjectNumberOfLines > 0 {
-            subjectLabel.numberOfLines = isAccessibility ? subjectNumberOfLines * 3 : subjectNumberOfLines
-        }
-        else {
-            subjectLabel.numberOfLines = subjectNumberOfLines
-        }
-
-        let summaryNumberOfLines = data.summaryNumberOfLines
-        if summaryNumberOfLines > 0 {
-            summaryLabel.numberOfLines = isAccessibility ? summaryNumberOfLines * 4 : summaryNumberOfLines
-        }
-        else {
-            summaryLabel.numberOfLines = summaryNumberOfLines
-        }
+        contentStack.axis = isAccessibility ? .vertical : .horizontal
+        contentStack.alignment = isAccessibility ? .leading : .center
 
         isAccessibilityElement = true
-        accessibilityTraits = data.tapped == nil ? [.staticText] : [.button, .staticText]
-        accessibilityLabel = data.subject
-        accessibilityValue = [data.date, data.summary].compactMap {$0}.joined(separator: ", ")
+        accessibilityTraits = [.button, .staticText]
+        accessibilityLabel = data.title
+        accessibilityLabel = Strings.serviceAlert
+        accessibilityValue = data.title
 
         if useDebugColors {
-            authorLabel.backgroundColor = .magenta
-            dateLabel.backgroundColor = .purple
             subjectLabel.backgroundColor = .green
-            summaryLabel.backgroundColor = .red
             contentView.backgroundColor = .yellow
         }
     }
@@ -194,7 +236,7 @@ final class MessageCell: BaseSelfSizingTableCell {
 
 final class MessageSectionController: OBAListSectionController<MessageSectionData> {
     override public func cellForItem(at index: Int) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(type: MessageCell.self, at: index)
+        let cell = dequeueReusableCell(type: ServiceAlertCell.self, at: index)
         cell.data = sectionData
 
         return cell

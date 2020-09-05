@@ -46,6 +46,18 @@ extension SectionDataBuilders where Self: AppContext {
         return sections
     }
 
+    func sectionData(from alerts: [ServiceAlert]) -> ServiceAlertsSectionData {
+        let uniqued = Set<ServiceAlert>(alerts)
+        let sorted = uniqued.sorted { $0.createdAt > $1.createdAt }
+        let data: [ServiceAlertData] = sorted.map { alert in
+            let agencies = Set<String>(alert.affectedAgencies.map { $0.name }).joined(separator: ", ")
+            let isUnread = application.userDataStore.isUnread(serviceAlert: alert)
+            return ServiceAlertData(serviceAlert: alert, id: alert.id, title: alert.summary.value, agency: agencies, isUnread: isUnread)
+        }
+
+        return ServiceAlertsSectionData(serviceAlertData: data)
+    }
+
     /// Converts an array of `Stop`s into a `TableSectionData` object, which can be displayed by IGListKit.
     ///
     /// - Note: The data produced by this method is specifically designed to work with `objects(for listAdapter:)`.

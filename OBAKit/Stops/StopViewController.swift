@@ -29,6 +29,7 @@ public class StopViewController: UIViewController,
     ModalDelegate,
     Previewable,
     SectionDataBuilders,
+    ServiceAlertsSectionControllerDelegate,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -403,15 +404,17 @@ public class StopViewController: UIViewController,
         sections.append(stopHeaderSection)
 
         // Service Alerts
-        let serviceAlerts = unreadServiceAlertsSection
-        sections.append(contentsOf: serviceAlerts)
+        let serviceAlerts = serviceAlertsSection
+        sections.append(serviceAlerts)
 
         let hiddenRoutesToggle = self.hiddenRoutesToggle
         sections.append(hiddenRoutesToggle)
 
         // When we are displaying service alerts, we should also show a header for the section.
         // However, don't show a header if a segmented control for toggling hidden routes is visible.
-        if serviceAlerts.count > 0, hiddenRoutesToggle == nil {
+        if let alertsSection = serviceAlerts,
+            alertsSection.serviceAlerts.count > 0,
+            hiddenRoutesToggle == nil {
             sections.append(TableHeaderData(title: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")))
         }
 
@@ -573,6 +576,11 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Service Alerts
 
+    private var serviceAlertsSection: ServiceAlertsSectionData? {
+        guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
+        return sectionData(from: alerts)
+    }
+
     private var unreadServiceAlertsSection: [ListDiffable] {
         let alerts = (stopArrivals?.serviceAlerts ?? []).filter { self.application.userDataStore.isUnread(serviceAlert: $0) }
 
@@ -686,7 +694,13 @@ public class StopViewController: UIViewController,
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
+        let controller = defaultSectionController(for: object)
+
+        if let serviceAlertsController = controller as? ServiceAlertsSectionController {
+            serviceAlertsController.delegate = self
+        }
+
+        return controller
     }
 
     public func emptyView(for listAdapter: ListAdapter) -> UIView? {
@@ -702,6 +716,14 @@ public class StopViewController: UIViewController,
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
         return refreshControl
     }()
+
+    // MARK: - ServiceAlertsSectionController methods
+
+    func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
+        let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
+        let nc = UINavigationController(rootViewController: serviceAlertController)
+        self.present(nc, animated: true)
+    }
 
     // MARK: - Stop Arrival Actions
 
