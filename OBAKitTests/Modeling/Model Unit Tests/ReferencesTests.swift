@@ -45,10 +45,12 @@ class ReferencesTests: OBATestCase {
     // MARK: - Routes
 
     func test_routes_success() {
-        let routes = references.routes
-        expect(routes.count) == 16
+        // Make sure routes are being sorted by their IDs for binary searching.
+        let expectedRoutes = ["Hillsborough Area Regional Transit_1", "Hillsborough Area Regional Transit_12", "Hillsborough Area Regional Transit_14", "Hillsborough Area Regional Transit_16", "Hillsborough Area Regional Transit_18", "Hillsborough Area Regional Transit_2", "Hillsborough Area Regional Transit_21", "Hillsborough Area Regional Transit_33", "Hillsborough Area Regional Transit_39", "Hillsborough Area Regional Transit_400", "Hillsborough Area Regional Transit_41", "Hillsborough Area Regional Transit_45", "Hillsborough Area Regional Transit_5", "Hillsborough Area Regional Transit_57", "Hillsborough Area Regional Transit_6", "Hillsborough Area Regional Transit_9"]
 
-        let route = routes.first!
+        expect(self.references.routes.map { $0.id }).to(equal(expectedRoutes), description: "Make sure routes are sorted by their IDs for binary searching")
+
+        let route = self.references.routes.first!
         expect(route.agencyID) == "Hillsborough Area Regional Transit"
         expect(route.agency.name) == "Hillsborough Area Regional Transit"
         expect(route.color).to(beCloseTo(UIColor(red: (9.0 / 255.0), green: (52.0 / 255.0), blue: (109.0 / 255.0), alpha: 1.0)))
@@ -73,8 +75,8 @@ class ReferencesTests: OBATestCase {
         let situation = situations.first!
 
         let activeWindow = situation.activeWindows.first!
-        expect(activeWindow.from) == Date(timeIntervalSinceReferenceDate: 1539781200)
-        expect(activeWindow.to) == Date(timeIntervalSinceReferenceDate: 1539826200)
+        expect(activeWindow.interval) == DateInterval(start: Date(timeIntervalSince1970: 1539781200),
+                                                      end: Date(timeIntervalSince1970: 1539826200))
 
         let entity = situation.affectedEntities.first!
         expect(entity.routeID) == "MTS_10"
@@ -102,12 +104,16 @@ class ReferencesTests: OBATestCase {
     // MARK: - Stops
 
     func test_stops_success() {
-        let references = self.references!
-        let stops = references.stops
+        // Make sure stops are being sorted by their IDs for binary searching.
+        let expectedOrder = ["Hillsborough Area Regional Transit_1513", "Hillsborough Area Regional Transit_2601", "Hillsborough Area Regional Transit_2625", "Hillsborough Area Regional Transit_3113", "Hillsborough Area Regional Transit_3114", "Hillsborough Area Regional Transit_3432", "Hillsborough Area Regional Transit_4301", "Hillsborough Area Regional Transit_4493", "Hillsborough Area Regional Transit_454", "Hillsborough Area Regional Transit_4547", "Hillsborough Area Regional Transit_455", "Hillsborough Area Regional Transit_4604", "Hillsborough Area Regional Transit_4677", "Hillsborough Area Regional Transit_6497", "Hillsborough Area Regional Transit_6499", "Hillsborough Area Regional Transit_6528", "Hillsborough Area Regional Transit_6592", "Hillsborough Area Regional Transit_683", "Hillsborough Area Regional Transit_6902", "Hillsborough Area Regional Transit_698", "Hillsborough Area Regional Transit_6990", "Hillsborough Area Regional Transit_7434", "Hillsborough Area Regional Transit_7581", "Hillsborough Area Regional Transit_7703", "Hillsborough Area Regional Transit_7924", "Hillsborough Area Regional Transit_928"]
 
-        expect(stops.count) == 26
+        expect(self.references.stops.map { $0.id }).to(equal(expectedOrder), description: "Make sure stops are sorted by their IDs for binary searching")
 
-        let stop = stops.first!
+        guard let stop = self.references.stopWithID("Hillsborough Area Regional Transit_6497") else {
+            fail("Failed to find stop with stopID: \"Hillsborough Area Regional Transit_6497\"")
+            return
+        }
+
         expect(stop.code) == "6497"
         expect(stop.direction) == .unknown
         expect(stop.id) == "Hillsborough Area Regional Transit_6497"
@@ -124,11 +130,15 @@ class ReferencesTests: OBATestCase {
     // MARK: - Trips
 
     func test_trips_success() {
-        let trips = self.references!.trips
+        // Make sure stops are being sorted by their IDs for binary searching.
+        let expectedTrips = ["Hillsborough Area Regional Transit_101412", "Hillsborough Area Regional Transit_101445", "Hillsborough Area Regional Transit_102332", "Hillsborough Area Regional Transit_102333", "Hillsborough Area Regional Transit_102381", "Hillsborough Area Regional Transit_102382", "Hillsborough Area Regional Transit_102675", "Hillsborough Area Regional Transit_102676", "Hillsborough Area Regional Transit_102677", "Hillsborough Area Regional Transit_98479", "Hillsborough Area Regional Transit_98522", "Hillsborough Area Regional Transit_98523", "Hillsborough Area Regional Transit_98683", "Hillsborough Area Regional Transit_98684", "Hillsborough Area Regional Transit_98715", "Hillsborough Area Regional Transit_98716", "Hillsborough Area Regional Transit_98870", "Hillsborough Area Regional Transit_98902", "Hillsborough Area Regional Transit_99282", "Hillsborough Area Regional Transit_99283", "Hillsborough Area Regional Transit_99312", "Hillsborough Area Regional Transit_99313", "Hillsborough Area Regional Transit_99494", "Hillsborough Area Regional Transit_99495", "Hillsborough Area Regional Transit_99538", "Hillsborough Area Regional Transit_99539", "Hillsborough Area Regional Transit_99872", "Hillsborough Area Regional Transit_99873", "Hillsborough Area Regional Transit_99904", "Hillsborough Area Regional Transit_99905"]
 
-        expect(trips.count) == 30
+        expect(self.references.trips.map { $0.id }).to(equal(expectedTrips), description: "Make sure trips are sorted by their IDs for binary searching")
 
-        let trip = trips.first!
+        guard let trip = self.references.tripWithID("Hillsborough Area Regional Transit_99283") else {
+            fail("Failed to find trip with tripID: \"Hillsborough Area Regional Transit_99283\"")
+            return
+        }
 
         expect(trip.blockID) == "Hillsborough Area Regional Transit_288317"
         expect(trip.direction).to(beNil())

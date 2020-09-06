@@ -319,11 +319,11 @@ public extension UILabel {
     /// - parameter textColor: The text color to set. The default is `.label`.
     /// - parameter numberOfLines: The number of lines to set for this label. The default is `0`.
     /// - parameter minimumScaleFactor: The smallest multiplier for the current font size that
-    ///     yields an acceptable font size to use when displaying the label’s text. The default is `3/4`.
+    ///     yields an acceptable font size to use when displaying the label’s text. The default is `1`, which means the font won't scale by default.
     class func obaLabel(font: UIFont = .preferredFont(forTextStyle: .body),
                         textColor: UIColor = ThemeColors.shared.label,
                         numberOfLines: Int = 0,
-                        minimumScaleFactor: CGFloat = 3/4) -> Self {
+                        minimumScaleFactor: CGFloat = 1) -> Self {
         let label = Self.autolayoutNew()
         label.font = font
         label.textColor = textColor

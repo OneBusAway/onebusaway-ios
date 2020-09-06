@@ -22,6 +22,7 @@ protocol MapPanelDelegate: NSObjectProtocol {
 class MapFloatingPanelController: VisualEffectViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
+    AgencyAlertsSectionControllerDelegate,
     AppContext,
     ListAdapterDataSource,
     RegionsServiceDelegate,
@@ -72,6 +73,8 @@ class MapFloatingPanelController: VisualEffectViewController,
     public lazy var collectionController = CollectionController(application: application, dataSource: self)
 
     var scrollView: UIScrollView { collectionController.collectionView }
+
+    var highSeverityAlertCollapsedSections: [String] = []
 
     // MARK: - UI/Search
 
@@ -206,15 +209,8 @@ class MapFloatingPanelController: VisualEffectViewController,
 
         let highSeverityAlerts = application.alertsStore.recentHighSeverityAlerts
         if highSeverityAlerts.count > 0 {
-            let alertSections = tableSections(agencyAlerts: Array(highSeverityAlerts.prefix(2))) { [weak self] model in
-                guard
-                    let self = self,
-                    let alert = model.object as? AgencyAlert
-                else { return }
-
-                self.presentAlert(alert)
-            }
-            sections.append(contentsOf: alertSections)
+            let section = tableSections(agencyAlerts: highSeverityAlerts, collapsedSections: highSeverityAlertCollapsedSections)
+            sections.append(contentsOf: section)
         }
 
         if stops.count > 0 {
@@ -234,6 +230,9 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let sectionController = defaultSectionController(for: object)
+        if let alertController = sectionController as? AgencyAlertsSectionController {
+            alertController.delegate = self
+        }
         return sectionController
     }
 
@@ -244,6 +243,22 @@ class MapFloatingPanelController: VisualEffectViewController,
         else {
             return nearbyModeEmptyView
         }
+    }
+
+    // MARK: - AgencyAlertsSectionControllerDelegate methods
+    func agencyAlertsSectionController(_ controller: AgencyAlertsSectionController, didSelectAlert alert: AgencyAlert) {
+        self.presentAlert(alert)
+    }
+
+    func agencyAlertsSectionControllerDidTapHeader(_ controller: AgencyAlertsSectionController) {
+        let agency = controller.sectionData!.agencyName
+        if let index = highSeverityAlertCollapsedSections.firstIndex(of: agency) {
+            highSeverityAlertCollapsedSections.remove(at: index)
+        } else {
+            highSeverityAlertCollapsedSections.append(agency)
+        }
+
+        self.collectionController.reload(animated: true)
     }
 }
 

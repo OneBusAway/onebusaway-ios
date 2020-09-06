@@ -78,6 +78,10 @@ public class Formatters: NSObject {
         return formatter
     }()
 
+    public func formattedDateRange(_ interval: DateInterval) -> String? {
+        return dateIntervalFormatter.string(from: interval)
+    }
+
     public func formattedDateRange(from: Date, to: Date) -> String {
         return dateIntervalFormatter.string(from: from, to: to)
     }

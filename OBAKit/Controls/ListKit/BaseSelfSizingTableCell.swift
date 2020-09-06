@@ -16,6 +16,7 @@ import OBAKitCore
 /// Use this as the base class for all of your collection cells that don't require support for swiping.
 class BaseSelfSizingTableCell: SelfSizingCollectionCell, Separated {
     var separator = tableCellSeparatorLayer()
+    var shouldHighlightOnTap: Bool = true
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -37,10 +38,11 @@ class BaseSelfSizingTableCell: SelfSizingCollectionCell, Separated {
         }
     }
 
-    var highlightedBackgroundColor = ThemeColors.shared.systemBackground
+    var highlightedBackgroundColor = ThemeColors.shared.highlightedBackgroundColor
 
     override var isHighlighted: Bool {
         didSet {
+            guard shouldHighlightOnTap else { return }
             contentView.backgroundColor = isHighlighted ? highlightedBackgroundColor : normalBackgroundColor
         }
     }

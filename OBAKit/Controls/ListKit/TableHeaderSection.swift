@@ -103,7 +103,7 @@ final class TableHeaderCell: SelfSizingCollectionCell, Separated {
 
     // MARK: - Visual Effect Background
 
-    private let defaultBackgroundColor = ThemeColors.shared.secondaryBackgroundColor
+    private let defaultBackgroundColor = ThemeColors.shared.systemFill
 
     var hasVisualEffectBackground: Bool = false {
         didSet {

@@ -219,14 +219,18 @@ final class TableSectionController: OBAListSectionController<TableSectionData>, 
     }
 
     // MARK: - Context Menu
-
     @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = self.sectionData else { return nil }
         let tableRow = sectionData.rows[indexPath.item]
 
+        // Check if there is a destination, but don't initialize it yet.
+        guard let destination = tableRow.previewDestination else { return nil }
+
         return UIContextMenuConfiguration(identifier: nil, previewProvider: {
-            guard let controller = tableRow.previewDestination?() else { return nil }
+            // Try initializing the destination view controller. If it doesn't work,
+            // it will gracefully return `nil`.
+            let controller = destination()
             if let previewable = controller as? Previewable {
                 previewable.enterPreviewMode()
             }

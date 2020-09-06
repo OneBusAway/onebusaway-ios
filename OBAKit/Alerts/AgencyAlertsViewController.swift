@@ -16,9 +16,12 @@ class AgencyAlertsViewController: UIViewController,
     AgencyAlertsDelegate,
     AgencyAlertListKitConverters,
     AppContext,
-    ListAdapterDataSource {
+    ListAdapterDataSource,
+    AgencyAlertsSectionControllerDelegate {
     public let application: Application
     private let alertsStore: AgencyAlertsStore
+
+    var collapsedSections: [String] = []
 
     // MARK: - Init
 
@@ -70,6 +73,7 @@ class AgencyAlertsViewController: UIViewController,
     func agencyAlertsUpdated() {
         collectionController.reload(animated: false)
         refreshControl.endRefreshing()
+        navigationItem.rightBarButtonItem = nil
     }
 
     // MARK: - Data Loading
@@ -77,26 +81,43 @@ class AgencyAlertsViewController: UIViewController,
     @objc private func reloadServerData() {
         alertsStore.checkForUpdates()
         refreshControl.beginRefreshing()
+        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
     }
 
     // MARK: - IGListKit
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return tableSections(agencyAlerts: alertsStore.agencyAlerts) { [weak self] model in
-            guard
-                let self = self,
-                let alert = model.object as? AgencyAlert
-            else { return }
-
-            self.presentAlert(alert)
-        }
+        return tableSections(agencyAlerts: alertsStore.agencyAlerts, collapsedSections: collapsedSections)
     }
 
     func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
+        let controller = defaultSectionController(for: object)
+
+        if let agencyAlertsSectionController = controller as? AgencyAlertsSectionController {
+            agencyAlertsSectionController.delegate = self
+        }
+
+        return controller
     }
 
     func emptyView(for listAdapter: ListAdapter) -> UIView? {
         return nil
+    }
+
+    // MARK: - AgencyAlertsSectionControllerDelegate methods
+
+    func agencyAlertsSectionController(_ controller: AgencyAlertsSectionController, didSelectAlert alert: AgencyAlert) {
+        self.presentAlert(alert)
+    }
+
+    func agencyAlertsSectionControllerDidTapHeader(_ controller: AgencyAlertsSectionController) {
+        let agency = controller.sectionData!.agencyName
+        if let index = collapsedSections.firstIndex(of: agency) {
+            collapsedSections.remove(at: index)
+        } else {
+            collapsedSections.append(agency)
+        }
+
+        self.collectionController.reload(animated: true)
     }
 }

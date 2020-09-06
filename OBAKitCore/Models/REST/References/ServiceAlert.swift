@@ -16,14 +16,14 @@ import Foundation
 /// - Note: The JSON data structure from which a `ServiceAlert` is created is called a "Situation". However, the feature
 ///         is referred to as a "Service Alert" pretty much everywhere else, and that is why it is referred to as such here.
 public class ServiceAlert: NSObject, Decodable, HasReferences {
-    public let activeWindows: [TimeWindow]
+    public let activeWindows: Set<TimeWindow>
 
     public let affectedEntities: [AffectedEntity]
 
-    public private(set) var affectedAgencies = [Agency]()
-    public private(set) var affectedRoutes = [Route]()
-    public private(set) var affectedStops = [Stop]()
-    public private(set) var affectedTrips = [Trip]()
+    public private(set) var affectedAgencies: Set<Agency> = []
+    public private(set) var affectedRoutes: Set<Route> = []
+    public private(set) var affectedStops: Set<Stop> = []
+    public private(set) var affectedTrips: Set<Trip> = []
 
     public let consequences: [Consequence]
     public let createdAt: Date
@@ -52,7 +52,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
     public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        activeWindows = try container.decode([TimeWindow].self, forKey: .activeWindows)
+        activeWindows = try container.decode(Set<TimeWindow>.self, forKey: .activeWindows)
         affectedEntities = try container.decode([AffectedEntity].self, forKey: .affectedEntities)
         consequences = try container.decode([Consequence].self, forKey: .consequences)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -100,18 +100,22 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
     // MARK: - HasReferences
 
     public func loadReferences(_ references: References) {
-        affectedAgencies = affectedEntities.compactMap { references.agencyWithID($0.agencyID) }
-        affectedRoutes = affectedEntities.compactMap { references.routeWithID($0.routeID) }
-        affectedStops = affectedEntities.compactMap { references.stopWithID($0.stopID) }
-        affectedTrips = affectedEntities.compactMap { references.tripWithID($0.tripID) }
+        affectedAgencies = Set<Agency>(affectedEntities.compactMap { references.agencyWithID($0.agencyID) })
+        affectedRoutes = Set<Route>(affectedEntities.compactMap { references.routeWithID($0.routeID) })
+        affectedStops = Set<Stop>(affectedEntities.compactMap { references.stopWithID($0.stopID) })
+        affectedTrips = Set<Trip>(affectedEntities.compactMap { references.tripWithID($0.tripID) })
     }
 
     // MARK: - TimeWindow
 
     /// The range of `Date`s in which a `ServiceAlert` is in effect.
-    public class TimeWindow: NSObject, Decodable {
+    public class TimeWindow: NSObject, Decodable, Comparable {
         public let from: Date
         public let to: Date
+
+        public var interval: DateInterval {
+            return DateInterval(start: from, end: to)
+        }
 
         enum CodingKeys: String, CodingKey {
             case from, to
@@ -119,13 +123,17 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
 
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            from = Date(timeIntervalSinceReferenceDate: TimeInterval(try container.decode(Int.self, forKey: .from)))
-            to = Date(timeIntervalSinceReferenceDate: TimeInterval(try container.decode(Int.self, forKey: .to)))
+            from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))
+            to = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .to)))
         }
 
         public override func isEqual(_ object: Any?) -> Bool {
             guard let rhs = object as? TimeWindow else { return false }
             return from == rhs.from && to == rhs.to
+        }
+
+        public static func < (lhs: ServiceAlert.TimeWindow, rhs: ServiceAlert.TimeWindow) -> Bool {
+            return lhs.interval < rhs.interval
         }
 
         override public var hash: Int {
@@ -134,6 +142,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
             hasher.combine(to)
             return hasher.finalize()
         }
+        
     }
 
     // MARK: - AffectedEntity
