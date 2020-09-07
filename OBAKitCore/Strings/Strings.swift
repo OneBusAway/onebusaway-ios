@@ -67,6 +67,8 @@ public class Strings: NSObject {
 
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
 
+    public static let share = OBALoc("common.share", value: "Share", comment: "A verb referring to sharing something generic.")
+
     public static let shareTrip = OBALoc("common.share_trip", value: "Share Trip", comment: "Button title for sharing the status of your trip (i.e. location, arrival time, etc.)")
 
     public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")

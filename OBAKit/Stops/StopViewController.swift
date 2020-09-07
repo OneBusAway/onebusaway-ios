@@ -11,6 +11,7 @@ import UIKit
 import IGListKit
 import OBAKitCore
 import CoreLocation
+import SwipeCellKit
 
 // swiftlint:disable file_length
 
@@ -29,7 +30,7 @@ public class StopViewController: UIViewController,
     ModalDelegate,
     Previewable,
     SectionDataBuilders,
-    ServiceAlertsSectionControllerDelegate,
+    StopArrivalSectionControllerDelegate,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -491,37 +492,7 @@ public class StopViewController: UIViewController,
 
     private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        let highlight = shouldHighlight(arrivalDeparture: arrivalDeparture)
-
-        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable, highlightOnAppearance: highlight) { [weak self] in
-            guard let self = self else { return }
-            self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
-        }
-
-        data.previewDestination = { [weak self] in
-            guard let self = self else { return nil }
-            return TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
-        }
-
-        data.onCreateAlarm = { [weak self] in
-            guard let self = self else { return }
-            self.addAlarm(arrivalDeparture: arrivalDeparture)
-        }
-
-        data.onAddBookmark = { [weak self] in
-            guard let self = self else { return }
-            self.addBookmark(arrivalDeparture: arrivalDeparture)
-        }
-
-        data.onShareTrip = { [weak self] in
-            guard let self = self else { return }
-            self.shareTripStatus(arrivalDeparture: arrivalDeparture)
-        }
-
-        data.onShowOptions = { [weak self] view, frame in
-            guard let self = self else { return }
-            self.showMoreOptions(arrivalDeparture: arrivalDeparture, sourceView: view, sourceFrame: frame)
-        }
+        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
 
         return data
     }
@@ -534,6 +505,84 @@ public class StopViewController: UIViewController,
     //           lifecycle of a StopViewController is ever measured in days or weeks, then we should
     //           revisit this decision.
 
+    // MARK: - StopArrivalSectionControllerDelegate methods
+    func stopArrivalSectionController(_ controller: StopArrivalSectionController, didSelect arrivalDeparture: ArrivalDepartureSectionData) {
+        self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture.arrivalDeparture, from: self)
+    }
+
+    func stopArrivalSectionController(_ controller: StopArrivalSectionController, swipeActionsFor arrivalDeparture: ArrivalDepartureSectionData) -> [SwipeAction]? {
+        var actions: [SwipeAction] = []
+
+        let bookmarkAction = SwipeAction(style: .default, title: Strings.bookmark) { (_, _) in
+            self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+        }
+        bookmarkAction.backgroundColor = ThemeColors.shared.brand
+        bookmarkAction.font = UIFont.preferredFont(forTextStyle: .caption1)
+        bookmarkAction.image = Icons.addBookmark
+        actions.append(bookmarkAction)
+
+        if arrivalDeparture.isAlarmAvailable {
+            let addAlarm = SwipeAction(style: .default, title: Strings.alarm) { (_, _) in
+                self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+            }
+            addAlarm.backgroundColor = ThemeColors.shared.blue
+            addAlarm.font = UIFont.preferredFont(forTextStyle: .caption1)
+            addAlarm.image = Icons.addAlarm
+            actions.append(addAlarm)
+        }
+
+        if application.features.deepLinking == .running {
+            let shareAction = SwipeAction(style: .default, title: Strings.share) { _, _ in
+                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+            }
+
+            shareAction.backgroundColor = UIColor.purple
+            shareAction.font = UIFont.preferredFont(forTextStyle: .caption1)
+            shareAction.image = Icons.share
+            actions.append(shareAction)
+        }
+
+        return actions
+    }
+
+    @available(iOS 13, *)
+    func stopArrivalSectionController(_ controller: StopArrivalSectionController, contextMenuConfigurationFor arrivalDeparture: ArrivalDepartureSectionData) -> UIContextMenuConfiguration? {
+        let previewProvider = { [weak self] () -> UIViewController? in
+            guard let self = self else { return nil }
+            let controller = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture.arrivalDeparture)
+            controller.enterPreviewMode()
+            return controller
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider) { _ in
+            var actions = [UIAction]()
+
+            if arrivalDeparture.isAlarmAvailable {
+                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
+                    self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+                }
+                actions.append(alarm)
+            }
+
+            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
+                self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+            }
+            actions.append(addBookmark)
+
+            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+            }
+            actions.append(shareTrip)
+
+            // Create and return a UIMenu with all of the actions as children
+            return UIMenu(title: arrivalDeparture.arrivalDeparture.routeShortName, children: actions)
+        }
+    }
+
+    func stopArrivalSectionController(_ controller: StopArrivalSectionController, shouldHighlightOnAppearance arrivalDeparture: ArrivalDepartureSectionData) -> Bool {
+        return shouldHighlight(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+    }
+    
     /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
     ///
     /// This is used to indicate whether the departure time for the `ArrivalDeparture` object has changed.
@@ -691,8 +740,8 @@ public class StopViewController: UIViewController,
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
         let controller = defaultSectionController(for: object)
 
-        if let serviceAlertsController = controller as? ServiceAlertsSectionController {
-            serviceAlertsController.delegate = self
+        if let stopArrSection = controller as? StopArrivalSectionController {
+            stopArrSection.delegate = self
         }
 
         return controller
