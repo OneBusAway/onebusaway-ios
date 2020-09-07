@@ -15,7 +15,7 @@ import CoreLocation
 /// IGListKit section data class that displays a `WalkTimeView`.
 final class WalkTimeSectionData: NSObject, ListDiffable {
     func diffIdentifier() -> NSObjectProtocol {
-        return self
+        return "WalkTimeSectionData_Identifier" as NSString
     }
 
     func isEqual(toDiffableObject object: ListDiffable?) -> Bool {

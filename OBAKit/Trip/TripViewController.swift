@@ -269,7 +269,9 @@ class TripViewController: UIViewController,
                 }
 
                 self.floatingPanel.surfaceView.grabberHandle.isHidden = false
-                self.floatingPanel.move(to: .half, animated: true)
+                self.floatingPanel.show(animated: true) {
+                    self.floatingPanel.move(to: .half, animated: true)
+                }
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton
@@ -336,7 +338,7 @@ class TripViewController: UIViewController,
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
 
-        floatingPanel.show(animated: true) {
+        floatingPanel.move(to: .half, animated: true) {
             self.mapView.setCenter(stopTime.stop.coordinate, animated: true)
             self.tripDetailsController.highlightStopInList(stopTime.stop)
         }

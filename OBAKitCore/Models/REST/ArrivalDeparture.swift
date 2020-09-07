@@ -140,9 +140,17 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
         numberOfStopsAway = try container.decode(Int.self, forKey: .numberOfStopsAway)
         predicted = try container.decode(Bool.self, forKey: .predicted)
 
-        predictedArrival = ModelHelpers.nilifyEpochDate((try container.decode(Date.self, forKey: .predictedArrival)))
+        if let predictedArrivalDate = try container.decodeIfPresent(Date.self, forKey: .predictedArrival) {
+            predictedArrival = ModelHelpers.nilifyEpochDate(predictedArrivalDate)
+        } else {
+            predictedArrival = nil
+        }
 
-        predictedDeparture = ModelHelpers.nilifyEpochDate((try container.decode(Date.self, forKey: .predictedDeparture)))
+        if let predictedDepartureDate = try container.decodeIfPresent(Date.self, forKey: .predictedDeparture) {
+            predictedDeparture = ModelHelpers.nilifyEpochDate(predictedDepartureDate)
+        } else {
+            predictedDeparture = nil
+        }
 
         routeID = try container.decode(RouteID.self, forKey: .routeID)
 
@@ -179,6 +187,11 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
     }
 
     // MARK: - Helpers/Names
+
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs. Used as IGListKit diff identifier.
+    public var arrivalDepartureID: String {
+        return "stop=\(stopID),trip=\(tripID),route=\(routeID)"
+    }
 
     /// Provides the best available trip headsign.
     public var tripHeadsign: String? {

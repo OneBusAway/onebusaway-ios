@@ -31,7 +31,7 @@ public class TripConvertible: NSObject {
     }
 
     public var tripStatus: TripStatus? {
-        return arrivalDeparture?.tripStatus ?? vehicleStatus!.tripStatus
+        return arrivalDeparture?.tripStatus ?? vehicleStatus?.tripStatus
     }
 
     public var trip: Trip {
