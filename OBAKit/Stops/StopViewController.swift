@@ -582,7 +582,7 @@ public class StopViewController: UIViewController,
     func stopArrivalSectionController(_ controller: StopArrivalSectionController, shouldHighlightOnAppearance arrivalDeparture: ArrivalDepartureSectionData) -> Bool {
         return shouldHighlight(arrivalDeparture: arrivalDeparture.arrivalDeparture)
     }
-    
+
     /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
     ///
     /// This is used to indicate whether the departure time for the `ArrivalDeparture` object has changed.

@@ -142,7 +142,6 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
             hasher.combine(to)
             return hasher.finalize()
         }
-        
     }
 
     // MARK: - AffectedEntity

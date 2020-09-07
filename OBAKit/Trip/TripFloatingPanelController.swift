@@ -138,7 +138,7 @@ class TripFloatingPanelController: UIViewController,
             self.separatorView.isHidden = false
             self.stopArrivalView.normalInfoStack.forEach { $0.isHidden = isAccessibility }
             self.stopArrivalView.accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
-        case .hidden: break
+        case .hidden: fallthrough
         @unknown default: break
         }
     }

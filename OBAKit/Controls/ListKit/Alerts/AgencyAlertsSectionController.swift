@@ -116,7 +116,6 @@ final class AgencyAlertsSectionController: OBAListSectionController<AgencyAlerts
         return cell
     }
 
-    
     override func didSelectItem(at index: Int) {
         if index == 0 {
             delegate?.agencyAlertsSectionControllerDidTapHeader(self)
