@@ -9,13 +9,7 @@ import UIKit
 
 extension UIActivityIndicatorView {
     static func asNavigationItem() -> UIBarButtonItem {
-        let style: UIActivityIndicatorView.Style
-        if #available(iOS 13.0, *) {
-            style = .medium
-        } else {
-            style = .gray
-        }
-        let indicator = UIActivityIndicatorView(style: style)
+        let indicator = UIActivityIndicatorView(style: .medium)
         indicator.startAnimating()
 
         return UIBarButtonItem(customView: indicator)

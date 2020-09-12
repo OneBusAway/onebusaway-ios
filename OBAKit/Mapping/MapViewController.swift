@@ -94,10 +94,8 @@ public class MapViewController: UIViewController,
             mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
         ])
 
-        if #available(iOS 13, *) {
-            mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
-        }
-
+        mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
+     
         floatingPanel.addPanel(toParent: self)
 
         view.insertSubview(toolbar, aboveSubview: mapView)
@@ -410,11 +408,9 @@ public class MapViewController: UIViewController,
     }
 
     func mapRegionManager(_ manager: MapRegionManager, customize stopAnnotationView: StopAnnotationView) {
-        if #available(iOS 13.0, *) {
-            if stopAnnotationView.interactions.count == 0 {
-                let interaction = UIContextMenuInteraction(delegate: self)
-                stopAnnotationView.addInteraction(interaction)
-            }
+        if stopAnnotationView.interactions.count == 0 {
+            let interaction = UIContextMenuInteraction(delegate: self)
+            stopAnnotationView.addInteraction(interaction)
         }
     }
 
@@ -470,12 +466,8 @@ public class MapViewController: UIViewController,
     lazy var loadingIndicator: UIActivityIndicatorView = {
         let indicator: UIActivityIndicatorView
 
-        if #available(iOS 13, *) {
-            indicator = UIActivityIndicatorView(style: .medium)
-            indicator.color = ThemeColors.shared.brand
-        } else {
-            indicator = UIActivityIndicatorView(style: .gray)
-        }
+        indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = ThemeColors.shared.brand
 
         indicator.hidesWhenStopped = true
         return indicator
@@ -567,7 +559,6 @@ public class MapViewController: UIViewController,
 
     // MARK: - Context Menus
 
-    @available(iOS 13.0, *)
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
         guard
             let annotationView = interaction.view as? MKAnnotationView,
@@ -583,7 +574,6 @@ public class MapViewController: UIViewController,
         return UIContextMenuConfiguration(identifier: nil, previewProvider: previewController, actionProvider: nil)
     }
 
-    @available(iOS 13.0, *)
     public func contextMenuInteraction(_ interaction: UIContextMenuInteraction, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
         guard let viewController = animator.previewViewController else { return }
 
@@ -596,7 +586,6 @@ public class MapViewController: UIViewController,
         }
     }
 
-    @available(iOS 13, *)
     public func largeContentViewerInteraction(_ interaction: UILargeContentViewerInteraction, didEndOn item: UILargeContentViewerItem?, at point: CGPoint) {
         if mapStatusView.frame.contains(point) {
             didTapMapStatus(interaction)

@@ -74,14 +74,9 @@ class Icons: NSObject {
 
     /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        let image = systemImage(named: "chevron.right", fallback: "chevron")
-        if #available(iOS 13, *) {
-            return image
+        return systemImage(named: "chevron.right", fallback: "chevron")
                 .withTintColor(.systemGray, renderingMode: .alwaysOriginal)
                 .withConfiguration(UIImage.SymbolConfiguration.init(weight: .bold))
-        } else {
-            return image
-        }
     }
 
     /// A checkmark icon.
@@ -241,32 +236,20 @@ class Icons: NSObject {
 
     // MARK: - Private Helpers
 
-    /// On iOS 13+, this applies the configuration used for generating tab bar icons. On iOS 12, this does nothing and returns its input.
+    /// This applies the configuration used for generating tab bar icons.
     private class func configureForTabIcon(_ image: UIImage) -> UIImage {
-        if #available(iOS 13, *) {
-            let config = UIImage.SymbolConfiguration(textStyle: .headline, scale: .medium)
-            return image.applyingSymbolConfiguration(config)!
-        } else {
-            return image
-        }
+        let config = UIImage.SymbolConfiguration(textStyle: .headline, scale: .medium)
+        return image.applyingSymbolConfiguration(config)!
     }
 
-    /// On iOS 13+, this applies the configuration used for generating button icons. On iOS 12, this does nothing and returns its input.
+    /// This applies the configuration used for generating button icons.
     private class func configureForButtonIcon(_ image: UIImage) -> UIImage {
-        if #available(iOS 13, *) {
-            return image.applyingSymbolConfiguration(.init(pointSize: 16))!
-        } else {
-            return image
-        }
+        return image.applyingSymbolConfiguration(.init(pointSize: 16))!
     }
 
     /// Tries to get the specified system image. If the image cannot be initialized, it will use the fallback name.
     private static func systemImage(named systemName: String, fallback: String) -> UIImage {
-        if #available(iOS 13, *) {
-            return UIImage(systemName: systemName) ?? imageNamed(fallback)
-        } else {
-            return imageNamed(fallback)
-        }
+        return UIImage(systemName: systemName) ?? imageNamed(fallback)
     }
 
     private static func imageNamed(_ name: String) -> UIImage {

@@ -133,7 +133,6 @@ public class CollectionController: UIViewController, UICollectionViewDelegate {
 
     // MARK: - UICollectionViewDelegate
 
-    @available(iOS 13.0, *)
     public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         guard let provider = listAdapter.sectionController(forSection: indexPath.section) as? ContextMenuProvider else {
             return nil
@@ -142,7 +141,6 @@ public class CollectionController: UIViewController, UICollectionViewDelegate {
         return provider.contextMenuConfiguration(forItemAt: indexPath)
     }
 
-     @available(iOS 13.0, *)
      public func collectionView(_ collectionView: UICollectionView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
         guard
             let viewController = animator.previewViewController,

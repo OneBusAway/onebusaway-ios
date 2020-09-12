@@ -40,12 +40,6 @@ final class EmptyDataSetSectionData: NSObject, ListDiffable {
             return
         }
 
-        // And the target is iOS 13+...
-        guard #available(iOS 13, *) else {
-            self.init(alignment: .center, title: nil, body: error.localizedDescription, image: image, buttonConfig: buttonConfig)
-            return
-        }
-
         // Then, add an icon if applicable.
         var icon: UIImage?
         switch error {

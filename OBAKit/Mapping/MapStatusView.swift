@@ -135,17 +135,13 @@ class MapStatusView: UIView {
         switch state {
         case .locationServicesUnavailable, .locationServicesOff, .notDetermined:
             setHidden = false
-            if #available(iOS 13.0, *) {
-                setImage = UIImage(systemName: "location.slash")!
-                setLargeImage = UIImage(systemName: "location.slash.fill")!
-            }
+            setImage = UIImage(systemName: "location.slash")!
+            setLargeImage = UIImage(systemName: "location.slash.fill")!
             setLabel = "Location services unavailable"
         case .impreciseLocation:
             setHidden = false
-            if #available(iOS 13.0, *) {
-                setImage = UIImage(systemName: "location.circle")!
-                setLargeImage = UIImage(systemName: "location.circle.fill")!
-            }
+            setImage = UIImage(systemName: "location.circle")!
+            setLargeImage = UIImage(systemName: "location.circle.fill")!
             setLabel = "Precise location unavailable"
         case .locationServicesOn:
             setHidden = true
@@ -155,10 +151,7 @@ class MapStatusView: UIView {
             self.stackView.isHidden = setHidden
             self.iconView.image = setImage
             self.detailLabel.text = setLabel
-
-            if #available(iOS 13.0, *) {
-                self.largeContentImage = setLargeImage
-            }
+            self.largeContentImage = setLargeImage
 
             self.layoutIfNeeded()
         }

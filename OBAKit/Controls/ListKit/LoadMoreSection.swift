@@ -117,11 +117,9 @@ final class LoadMoreCell: SelfSizingCollectionCell {
         contentView.addSubview(stack)
         stack.pinToSuperview(.layoutMargins)
 
-        if #available(iOS 13, *) {
-            self.largeContentTitle = LoadMoreCell.loadMoreLocalized
-            self.showsLargeContentViewer = true
-            self.addInteraction(UILargeContentViewerInteraction())
-        }
+        self.largeContentTitle = LoadMoreCell.loadMoreLocalized
+        self.showsLargeContentViewer = true
+        self.addInteraction(UILargeContentViewerInteraction())
 
         configureView()
     }

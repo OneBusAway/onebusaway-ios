@@ -273,7 +273,6 @@ final class BookmarkSectionController: OBAListSectionController<BookmarkSectionD
 
     // MARK: - Context Menus
 
-    @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = sectionData else { return nil }
         if hasTitleRow && indexPath.row == 0 { return nil }
