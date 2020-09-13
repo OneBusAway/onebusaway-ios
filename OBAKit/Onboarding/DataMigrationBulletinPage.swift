@@ -100,7 +100,7 @@ final class DataMigrationBulletinPage: ThemedBulletinPage {
     // MARK: - Progress Indicator
 
     private lazy var activityIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .gray)
+        let indicator = UIActivityIndicatorView(style: .medium)
         indicator.translatesAutoresizingMaskIntoConstraints = false
         indicator.hidesWhenStopped = true
 

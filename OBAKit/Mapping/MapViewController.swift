@@ -95,7 +95,7 @@ public class MapViewController: UIViewController,
         ])
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
-     
+
         floatingPanel.addPanel(toParent: self)
 
         view.insertSubview(toolbar, aboveSubview: mapView)

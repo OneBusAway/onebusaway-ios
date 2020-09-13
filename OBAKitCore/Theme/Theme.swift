@@ -9,8 +9,6 @@
 
 import UIKit
 
-// swiftlint:disable function_body_length
-
 public class ThemeMetrics: NSObject {
 
     public static let accessibilityPadding: CGFloat = 16.0
