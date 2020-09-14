@@ -155,3 +155,51 @@ public class EmptyDataSetView: UIView {
         self.button.config = buttonConfig
     }
 }
+
+// MARK: - Preview
+#if DEBUG
+import SwiftUI
+struct EmptyDataSetView_Previews: PreviewProvider {
+    static var previews: some View {
+        Group {
+            Group {
+                centerAlignment
+                    .previewDisplayName("Light mode")
+
+                centerAlignment
+                    .background(Color.black)
+                    .environment(\.colorScheme, .dark)
+                    .previewDisplayName("Dark mode")
+            }.previewDisplayName("Color scheme")
+
+            centerAlignment
+                .environment(\.sizeCategory, .accessibilityLarge)
+                .previewDisplayName("Accessibility Large")
+
+            topAlignment
+                .previewDisplayName("Top alignment")
+        }
+        .previewLayout(.sizeThatFits)
+    }
+
+    static var centerAlignment: some View {
+        UIViewPreview {
+            let view = EmptyDataSetView(alignment: .center)
+            view.imageView.image = UIImage(systemName: "flame.fill")
+            view.titleLabel.text = "Get rid of tab bar"
+            view.bodyLabel.text = "In my quest for the very best accessibility, one change I made is defaulting the map drawer to be full screen when the user is in voiceover. The map is difficult (in my experience) to navigate in voiceover and it is more helpful to provide a list of data instead of the map."
+            return view
+        }
+    }
+
+    static var topAlignment: some View {
+        UIViewPreview {
+            let view = EmptyDataSetView(alignment: .top)
+            view.imageView.image = UIImage(systemName: "flame.fill")
+            view.titleLabel.text = "Get rid of tab bar"
+            view.bodyLabel.text = "In my quest for the very best accessibility, one change I made is defaulting the map drawer to be full screen when the user is in voiceover. The map is difficult (in my experience) to navigate in voiceover and it is more helpful to provide a list of data instead of the map."
+            return view
+        }
+    }
+}
+#endif
