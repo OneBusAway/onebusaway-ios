@@ -18,6 +18,7 @@ class LocationServiceTests: XCTestCase {
     // MARK: - Authorization
 
     func test_authorization_defaultValueIsNotDetermined() {
+        XCFail("faksljdfhla")
         let service = LocationService(userDefaults: UserDefaults(), locationManager: LocationManagerMock())
 
         expect(service.authorizationStatus) == .notDetermined
