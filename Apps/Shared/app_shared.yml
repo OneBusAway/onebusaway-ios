@@ -9,11 +9,11 @@ settings:
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
 
 options:
-  minimumXcodeGenVersion: 2.10
+  minimumXcodeGenVersion: 2.17
   generateEmptyDirectories: true
   groupSortPosition: top
-  deploymentTarget: 
-    iOS: "12.4"
+  deploymentTarget:
+    iOS: "13.6"
 
 ############
 # App
