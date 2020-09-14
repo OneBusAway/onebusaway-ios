@@ -122,7 +122,9 @@ public class ThemeColors: NSObject {
     }
 
     public init(bundle: Bundle, traitCollection: UITraitCollection?) {
-        brand = UIColor(named: "brand", in: bundle, compatibleWith: traitCollection)!
+        brand = UIColor(named: "brand", in: bundle, compatibleWith: traitCollection) ??
+            UIColor(red: 0.471, green: 0.667, blue: 0.212, alpha: 1.0)  // fallback for swiftui previews
+
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
         departureEarly = .systemRed
