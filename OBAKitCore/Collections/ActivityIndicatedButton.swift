@@ -60,23 +60,15 @@ public class ActivityIndicatedButton: UIView {
         button.setTitleColor(ThemeColors.shared.brand, for: .normal)
         button.addTarget(self, action: #selector(buttonDidTap), for: .touchUpInside)
 
-        if #available(iOS 13, *) {
-            button.scalesLargeContentImage = true
-            button.showsLargeContentViewer = true
-            button.addInteraction(UILargeContentViewerInteraction())
-        }
+        button.scalesLargeContentImage = true
+        button.showsLargeContentViewer = true
+        button.addInteraction(UILargeContentViewerInteraction())
 
         return button
     }()
 
     fileprivate let activityIndicator: UIActivityIndicatorView = {
-        let activityIndicator: UIActivityIndicatorView
-        if #available(iOS 13.0, *) {
-            activityIndicator = UIActivityIndicatorView(style: .medium)
-        } else {
-            activityIndicator = UIActivityIndicatorView(style: .gray)
-        }
-
+        let activityIndicator = UIActivityIndicatorView(style: .medium)
         activityIndicator.hidesWhenStopped = true
         return activityIndicator
     }()
@@ -128,9 +120,7 @@ public class ActivityIndicatedButton: UIView {
         self.isHidden = self.config == nil
 
         self.button.setTitle(config?.text, for: .normal)
-        if #available(iOS 13.0, *) {
-            self.button.largeContentImage = config?.largeContentImage
-        }
+        self.button.largeContentImage = config?.largeContentImage
 
         self.layoutIfNeeded()
     }

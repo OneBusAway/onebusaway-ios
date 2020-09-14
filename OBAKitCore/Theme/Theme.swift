@@ -9,8 +9,6 @@
 
 import UIKit
 
-// swiftlint:disable function_body_length
-
 public class ThemeMetrics: NSObject {
 
     public static let accessibilityPadding: CGFloat = 16.0
@@ -127,73 +125,37 @@ public class ThemeColors: NSObject {
         brand = UIColor(named: "brand", in: bundle, compatibleWith: traitCollection)!
         mapSnapshotOverlayColor = UIColor(white: 0.0, alpha: 0.4)
 
-        if #available(iOS 13, *) {
-            departureEarly = .systemRed
-            departureEarlyBackground = .systemRed
+        departureEarly = .systemRed
+        departureEarlyBackground = .systemRed
 
-            departureOnTime = .systemGreen
-            departureOnTimeBackground = .systemGreen
+        departureOnTime = .systemGreen
+        departureOnTimeBackground = .systemGreen
 
-            departureUnknown = .label
-            departureUnknownBackground = .systemGray
+        departureUnknown = .label
+        departureUnknownBackground = .systemGray
 
-            departureLate = .systemBlue
-            departureLateBackground = .systemBlue
+        departureLate = .systemBlue
+        departureLateBackground = .systemBlue
 
-            gray = .systemGray
-            green = .systemGreen
-            blue = .systemBlue
-            groupedTableBackground = .systemGroupedBackground
-            groupedTableRowBackground = .white
-            systemBackground = .systemBackground
-            mapText = .label
-            label = .label
-            secondaryLabel = .secondaryLabel
-            separator = .separator
-            highlightedBackgroundColor = .systemFill
-            secondaryBackgroundColor = .secondarySystemBackground
-            propertyChanged = .systemYellow
+        gray = .systemGray
+        green = .systemGreen
+        blue = .systemBlue
+        groupedTableBackground = .systemGroupedBackground
+        groupedTableRowBackground = .white
+        systemBackground = .systemBackground
+        mapText = .label
+        label = .label
+        secondaryLabel = .secondaryLabel
+        separator = .separator
+        highlightedBackgroundColor = .systemFill
+        secondaryBackgroundColor = .secondarySystemBackground
+        propertyChanged = .systemYellow
 
-            stopAnnotationFillColor = .systemBackground
-            stopAnnotationStrokeColor = .label
-            stopArrowFillColor = .systemRed
-            systemFill = .systemFill
-            lightText = .white
-            errorColor = .systemRed
-        }
-        else {
-            departureEarly = UIColor(hex: "fc3f3b")!
-            departureEarlyBackground = departureEarly
-
-            departureOnTime = UIColor(hex: "16771a")!
-            departureOnTimeBackground = departureOnTime
-
-            departureUnknown = .black
-            departureUnknownBackground = .darkGray
-
-            departureLate = UIColor(hex: "0082f8")!
-            departureLateBackground = departureLate
-
-            gray = .gray
-            green = .green
-            blue = .blue
-            groupedTableBackground = .groupTableViewBackground
-            groupedTableRowBackground = .white
-            systemBackground = .white
-            mapText = UIColor(r: 42, g: 44, b: 47)
-            label = .black
-            secondaryLabel = .darkGray
-            separator = UIColor(red: 200 / 255.0, green: 199 / 255.0, blue: 204 / 255.0, alpha: 1)
-            highlightedBackgroundColor = UIColor(white: 0.9, alpha: 1)
-            secondaryBackgroundColor = UIColor(white: 0.9, alpha: 1)
-            propertyChanged = UIColor(r: 255, g: 255, b: 128)
-
-            stopAnnotationFillColor = .white
-            stopAnnotationStrokeColor = .black
-            stopArrowFillColor = .red
-            systemFill = UIColor(white: 0.9, alpha: 1)
-            lightText = .white
-            errorColor = .red
-        }
+        stopAnnotationFillColor = .systemBackground
+        stopAnnotationStrokeColor = .label
+        stopArrowFillColor = .systemRed
+        systemFill = .systemFill
+        lightText = .white
+        errorColor = .systemRed
     }
 }

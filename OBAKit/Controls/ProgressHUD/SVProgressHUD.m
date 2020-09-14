@@ -14,6 +14,9 @@
 #import "SVProgressAnimatedView.h"
 #import "SVRadialGradientLayer.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
 NSString * const SVProgressHUDDidReceiveTouchEventNotification = @"SVProgressHUDDidReceiveTouchEventNotification";
 NSString * const SVProgressHUDDidTouchDownInsideNotification = @"SVProgressHUDDidTouchDownInsideNotification";
 NSString * const SVProgressHUDWillDisappearNotification = @"SVProgressHUDWillDisappearNotification";
@@ -1569,3 +1572,5 @@ static const CGFloat SVProgressHUDLabelSpacing = 8.0f;
 }
 
 @end
+
+#pragma clang diagnostic pop

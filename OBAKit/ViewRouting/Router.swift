@@ -49,10 +49,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         popoverSourceFrame: CGRect? = nil,
         popoverBarButtonItem: UIBarButtonItem? = nil
     ) {
-        if #available(iOS 13.0, *) {
-            presentedController.isModalInPresentation = isModal
-        }
-
+        presentedController.isModalInPresentation = isModal
         if isPopover, let popover = presentedController.popoverPresentationController {
             if let popoverSourceFrame = popoverSourceFrame {
                 popover.sourceRect = popoverSourceFrame

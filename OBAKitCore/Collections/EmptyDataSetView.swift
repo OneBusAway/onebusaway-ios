@@ -58,10 +58,7 @@ public class EmptyDataSetView: UIView {
         let imageView = UIImageView.autolayoutNew()
         imageView.tintColor = EmptyDataSetView.DefaultColor
         imageView.contentMode = .scaleAspectFit
-
-        if #available(iOS 13.0, *) {
-            imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(scale: .large)
-        }
+        imageView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(scale: .large)
 
         return imageView
     }()

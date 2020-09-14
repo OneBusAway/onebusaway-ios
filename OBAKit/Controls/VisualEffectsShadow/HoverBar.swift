@@ -114,10 +114,8 @@ class HoverBarPassThroughView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
-        if #available(iOS 13.0, *) {
-            if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-                transition(to: traitCollection.userInterfaceStyle)
-            }
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            transition(to: traitCollection.userInterfaceStyle)
         }
     }
 
@@ -133,16 +131,10 @@ class HoverBarPassThroughView: UIView {
     }
 
     fileprivate func lazyVisualEffectView() -> UIVisualEffectView {
-
         // The "system thin" material automatically adapts to changes to the `UIUserInterfaceStyle`.
         // The only we need to do here is show/ hide the shadow.
-        let blurEffect: UIBlurEffect
+        let blurEffect = UIBlurEffect(style: .systemThinMaterial)
 
-        if #available(iOS 13.0, *) {
-            blurEffect = UIBlurEffect(style: .systemThinMaterial)
-        } else {
-            blurEffect = UIBlurEffect(style: .regular)
-        }
         let view = UIVisualEffectView(effect: blurEffect)
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = Properties.cornerRadius

@@ -219,7 +219,6 @@ final class TableSectionController: OBAListSectionController<TableSectionData>, 
     }
 
     // MARK: - Context Menu
-    @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = self.sectionData else { return nil }
         let tableRow = sectionData.rows[indexPath.item]

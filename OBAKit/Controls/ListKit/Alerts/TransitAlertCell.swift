@@ -34,10 +34,7 @@ final class TransitAlertCell: BaseSelfSizingTableCell {
         view.setCompressionResistance(vertical: .required)
         view.setHugging(horizontal: .defaultHigh)
         view.tintColor = ThemeColors.shared.brand
-
-        if #available(iOS 13, *) {
-            view.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
-        }
+        view.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
 
         return view
     }()

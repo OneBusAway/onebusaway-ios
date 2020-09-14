@@ -108,7 +108,6 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
 
     // MARK: - Context Menu
 
-    @available(iOS 13.0, *)
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
         guard let sectionData = self.sectionData else { return nil }
         return delegate?.stopArrivalSectionController(self, contextMenuConfigurationFor: sectionData)

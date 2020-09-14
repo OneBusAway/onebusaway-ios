@@ -41,10 +41,7 @@ class MapSnapshotter: NSObject {
         options.region = MapHelpers.coordinateRegionWith(center: stop.coordinate, zoomLevel: zoomLevel, size: size)
         options.scale = scale
         options.mapType = mapType
-
-        if #available(iOS 13.0, *) {
-            options.traitCollection = traitCollection
-        }
+        options.traitCollection = traitCollection
 
         return options
     }

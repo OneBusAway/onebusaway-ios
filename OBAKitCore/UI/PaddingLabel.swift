@@ -59,12 +59,7 @@ public class PaddingLabel: UILabel {
     }
 
     func configure() {
-        let isHighContrast: Bool
-        if #available(iOS 13, *) {
-            isHighContrast = traitCollection.accessibilityContrast == .high
-        } else {
-            isHighContrast = false
-        }
+        let isHighContrast = traitCollection.accessibilityContrast == .high
 
         if let backgroundColor = self.backgroundColor {
             self.layer.borderWidth = isHighContrast ? 4.0 : 0.0

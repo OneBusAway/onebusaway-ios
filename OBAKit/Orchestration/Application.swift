@@ -311,7 +311,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// Provides access the topmost view controller in the app, if one exists.
     private var topViewController: UIViewController? {
-        delegate?.uiApplication?.keyWindow?.topViewController
+        delegate?.uiApplication?.windows.first?.topViewController
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {

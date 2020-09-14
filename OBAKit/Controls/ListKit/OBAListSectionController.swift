@@ -23,7 +23,6 @@ protocol Previewable: NSObjectProtocol {
     func exitPreviewMode()
 }
 
-@available(iOS 13.0, *)
 protocol ContextMenuProvider {
     func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration?
 }
