@@ -16,42 +16,42 @@ class Icons: NSObject {
     // MARK: - Tab Icons
     /// The Map tab icon, for apps using a tab bar UI metaphor.
     public class var mapTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "map", fallback: "map"))
+        configureForTabIcon(systemImage(named: "map"))
     }
 
     /// The Map tab selected icon, for apps using a tab bar UI metaphor.
     public class var mapSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "map.fill", fallback: "map_selected"))
+        configureForTabIcon(systemImage(named: "map.fill"))
     }
 
     /// The Recent tab icon, for apps using a tab bar UI metaphor.
     public class var recentTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock", fallback: "recent"))
+        configureForTabIcon(systemImage(named: "clock"))
     }
 
     /// The Recent tab selected icon, for apps using a tab bar UI metaphor.
     public class var recentSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "clock.fill", fallback: "recent_selected"))
+        configureForTabIcon(systemImage(named: "clock.fill"))
     }
 
     /// The Bookmarks tab icon, for apps using a tab bar UI metaphor.
     public class var bookmarksTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark", fallback: "bookmark"))
+        configureForTabIcon(systemImage(named: "bookmark"))
     }
 
     /// The Bookmarks tab selected icon, for apps using a tab bar UI metaphor.
     public class var bookmarksSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark.fill", fallback: "bookmark_selected"))
+        configureForTabIcon(systemImage(named: "bookmark.fill"))
     }
 
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle", fallback: "more"))
+        configureForTabIcon(systemImage(named: "ellipsis.circle"))
     }
 
     /// A More tab selected icon, for apps using a tab bar UI metaphor.
     public class var moreSelectedTabIcon: UIImage {
-        configureForTabIcon(systemImage(named: "ellipsis.circle.fill", fallback: "more_selected"))
+        configureForTabIcon(systemImage(named: "ellipsis.circle.fill"))
     }
 
     // MARK: - Table Accessories
@@ -74,36 +74,36 @@ class Icons: NSObject {
 
     /// A right-pointing chevron arrow, like the kind used as a disclosure indicator on a table cell.
     public class var chevron: UIImage {
-        return systemImage(named: "chevron.right", fallback: "chevron")
+        return systemImage(named: "chevron.right")
                 .withTintColor(.systemGray, renderingMode: .alwaysOriginal)
                 .withConfiguration(UIImage.SymbolConfiguration.init(weight: .bold))
     }
 
     /// A checkmark icon.
     public class var checkmark: UIImage {
-        systemImage(named: "checkmark", fallback: "checkmark")
+        systemImage(named: "checkmark")
     }
 
     /// An 'info' (i) button
     public class var info: UIImage {
-        systemImage(named: "info.circle", fallback: "info")
+        systemImage(named: "info.circle")
     }
 
     // MARK: - Actions
 
     /// A circular close button
     public class var closeCircle: UIImage {
-        systemImage(named: "xmark.circle.fill", fallback: "close_circle")
+        systemImage(named: "xmark.circle.fill")
     }
 
     /// A refresh icon.
     public class var refresh: UIImage {
-        configureForButtonIcon(systemImage(named: "arrow.clockwise", fallback: "refresh"))
+        configureForButtonIcon(systemImage(named: "arrow.clockwise"))
     }
 
     /// A filter icon.
     public class var filter: UIImage {
-        configureForButtonIcon(systemImage(named: "line.horizontal.3.decrease", fallback: "filter"))
+        configureForButtonIcon(systemImage(named: "line.horizontal.3.decrease"))
     }
 
     public class var addAlarm: UIImage {
@@ -112,11 +112,11 @@ class Icons: NSObject {
 
     /// An ellipsis (...) in a circle.
     public class var showMore: UIImage {
-        systemImage(named: "ellipsis.circle.fill", fallback: "show_more")
+        systemImage(named: "ellipsis.circle.fill")
     }
 
     public class var share: UIImage {
-        systemImage(named: "square.and.arrow.up.fill", fallback: "share")
+        systemImage(named: "square.and.arrow.up.fill")
     }
 
     // MARK: - Bookmarks
@@ -128,7 +128,7 @@ class Icons: NSObject {
 
     /// An icon used to indicate that tapping on it will add a bookmark to the app.
     public class var addBookmark: UIImage {
-        configureForTabIcon(systemImage(named: "bookmark.fill", fallback: "favorited"))
+        configureForTabIcon(systemImage(named: "bookmark.fill"))
     }
 
     // MARK: - Heading
@@ -159,14 +159,14 @@ class Icons: NSObject {
 
     /// An image used to represent an error condition.
     public class var errorOutline: UIImage {
-        imageNamed("error_outline")
+        systemImage(named: "exclamationmark.circle")
     }
 
     /// A larger version of the navigation arrow icon used for the map tab.
     ///
     /// The apparent size of this image is 48x48pt.
     public class var nearMe: UIImage {
-        configureForButtonIcon(systemImage(named: "location.fill", fallback: "near_me"))
+        configureForButtonIcon(systemImage(named: "location.fill"))
     }
 
     // MARK: - Search Icons
@@ -185,11 +185,11 @@ class Icons: NSObject {
 
     // MARK: - Alerts
     public class var unreadAlert: UIImage {
-        systemImage(named: "exclamationmark.circle.fill", fallback: "unread_alert")
+        systemImage(named: "exclamationmark.circle.fill")
     }
 
     public class var readAlert: UIImage {
-        systemImage(named: "exclamationmark.circle", fallback: "read_alert")
+        systemImage(named: "exclamationmark.circle")
     }
 
     // MARK: - Transport Icons
@@ -247,9 +247,8 @@ class Icons: NSObject {
         return image.applyingSymbolConfiguration(.init(pointSize: 16))!
     }
 
-    /// Tries to get the specified system image. If the image cannot be initialized, it will use the fallback name.
-    private static func systemImage(named systemName: String, fallback: String) -> UIImage {
-        return UIImage(systemName: systemName) ?? imageNamed(fallback)
+    private static func systemImage(named systemName: String) -> UIImage {
+        return UIImage(systemName: systemName)!
     }
 
     private static func imageNamed(_ name: String) -> UIImage {
