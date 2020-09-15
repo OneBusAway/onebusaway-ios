@@ -18,7 +18,7 @@ targets:
         name: OneSignal
         group: OneBusAway
     dependencies:
-      - carthage: OneSignal
+      - package: OneSignal
     entitlements:
       path: Apps/OneBusAway/OneBusAway.entitlements
       properties:
