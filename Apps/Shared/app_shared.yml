@@ -67,10 +67,10 @@ targets:
 packages:
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.1
+        exactVersion: 3.6.2
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.1
+        exactVersion: 3.6.2
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.2.1
