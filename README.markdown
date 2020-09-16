@@ -6,7 +6,7 @@ OBAKit is a rewrite of OneBusAway for iOS from the ground up. The codebase is ex
 
 To get started, you will need the following pieces of software installed on your computer:
 
-1. [Xcode 11.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software about which it may prompt you.
+1. [Xcode 12.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software about which it may prompt you.
 2. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen and Carthage.
 3. [XcodeGen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
 4. [Carthage](https://github.com/Carthage/Carthage) - Manages third-party dependencies.
@@ -16,7 +16,7 @@ To get started, you will need the following pieces of software installed on your
 
 Once you have these pieces of software installed, clone the OneBusAway app repository on GitHub. (After this rewrite becomes the official version of the app, it will be in the OneBusAway GitHub repository; for now ask Aaron for an invitation.)
 
-    # Make sure you have Xcode 11.x and Homebrew installed.
+    # Make sure you have Xcode 12.x and Homebrew installed.
     xcode-select --install
     brew install xcodegen
     brew install carthage
@@ -233,10 +233,10 @@ These are third party libraries directly included inside of this project.
 
 <details>
     <summary>Includes SVProgressHUD by Sam Vermette, Tobias Tiemerding and contributors.</summary>
-    
+
     ```
     v2.2.6, plus Dark Mode support.
-    
+
     MIT License
 
     Copyright (c) 2011-2018 Sam Vermette, Tobias Tiemerding and contributors.
