@@ -8,7 +8,8 @@
 //
 
 import UIKit
-import Connectivity
+import Combine
+import Hyperconnectivity
 import CoreLocation
 import OBAKitCore
 import SafariServices
@@ -121,9 +122,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// The application delegate object.
     @objc public weak var delegate: ApplicationDelegate?
 
-    /// Reachability is responsible for determining if the user has a functioning Internet connection.
-    @objc public let reachability = Connectivity()
-
     // MARK: - Init
 
     /// Creates a new `Application` object.
@@ -131,14 +129,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     @objc public init(config: AppConfig) {
         self.config = config
 
-        connectivity = config.connectivity
         analytics = config.analytics
 
         super.init(config: config)
 
         configureAppearanceProxies()
-
-        configureConnectivity()
     }
 
     // MARK: - Onboarding
@@ -205,34 +200,32 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Reachability
 
-    /// Provides information on the current status of the app's network connection
-    ///
-    /// In other words, it answers the following questions:
-    /// 1. Is the network (WiFi or Cellular) currently working?
-    /// 2. Is the server working?
-    public let connectivity: ReachabilityProtocol
-
     private var reachabilityBulletin: ReachabilityBulletin?
 
-    /// This method must only be called once when the `Application` object is first created.
+    private var hyperconnectivityCancellable: AnyCancellable?
+
+    /// This may be called repeatedly as the app goes in and out of the foreground.
     private func configureConnectivity() {
-        connectivity.connected { [weak self] _ in
-            guard let self = self else { return }
-            self.reachabilityBulletin?.dismiss()
-        }
+        hyperconnectivityCancellable?.cancel()
 
-        connectivity.disconnected { [weak self] reach in
-            guard
-                let self = self,
-                let app = self.delegate?.uiApplication
-            else { return }
+        hyperconnectivityCancellable = Hyperconnectivity.Publisher()
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
+            .sink(receiveValue: { [weak self] result in
+                guard let self = self else { return }
+                if result.isConnected {
+                    self.reachabilityBulletin?.dismiss()
+                }
+                else {
+                    guard let app = self.delegate?.uiApplication else { return }
 
-            if self.reachabilityBulletin == nil {
-                self.reachabilityBulletin = ReachabilityBulletin()
-            }
+                    if self.reachabilityBulletin == nil {
+                        self.reachabilityBulletin = ReachabilityBulletin()
+                    }
 
-            self.reachabilityBulletin?.showStatus(reach.status, in: app)
-        }
+                    self.reachabilityBulletin?.showStatus(result, in: app)
+                }
+            })
     }
 
     // MARK: - Push Notifications
@@ -330,7 +323,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             locationService.startUpdates()
         }
 
-        connectivity.startNotifier(queue: .main)
+        configureConnectivity()
         alertsStore.checkForUpdates()
     }
 
@@ -339,7 +332,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             locationService.stopUpdates()
         }
 
-        connectivity.stopNotifier()
+        hyperconnectivityCancellable?.cancel()
     }
 
     public var isIdleTimerDisabled: Bool {

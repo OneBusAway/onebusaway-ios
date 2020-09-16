@@ -10,28 +10,8 @@
 import Foundation
 import UIKit
 import BLTNBoard
-import Connectivity
+import Hyperconnectivity
 import OBAKitCore
-
-public typealias ReachabilityCallback = (ReachabilityProtocol) -> Void
-
-public protocol ReachabilityProtocol {
-    func connected(_ callback: @escaping ReachabilityCallback)
-    func disconnected(_ callback: @escaping ReachabilityCallback)
-    func startNotifier(queue: DispatchQueue)
-    func stopNotifier()
-    var status: ConnectivityStatus { get }
-}
-
-extension Connectivity: ReachabilityProtocol {
-    public func connected(_ callback: @escaping ReachabilityCallback) {
-        whenConnected = { callback($0) }
-    }
-
-    public func disconnected(_ callback: @escaping ReachabilityCallback) {
-        whenDisconnected = { callback($0) }
-    }
-}
 
 /// This class knows how to present a modal alert that tells the user that their Internet connection is compromised and unable to retrieve data.
 class ReachabilityBulletin: NSObject {
@@ -55,22 +35,18 @@ class ReachabilityBulletin: NSObject {
         bulletinManager.edgeSpacing = .compact
     }
 
-    func showStatus(_ status: ConnectivityStatus, in application: UIApplication) {
-        let validStatuses: [ConnectivityStatus] = [.connectedViaWiFiWithoutInternet, .connectedViaCellularWithoutInternet, .notConnected]
-
-        guard validStatuses.contains(status) else {
+    func showStatus(_ status: ConnectivityResult, in application: UIApplication) {
+        guard !status.isConnected else {
             return
         }
 
-        switch status {
-        case .connectedViaWiFiWithoutInternet:
+        switch status.connection {
+        case .wifi:
             connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.wifi_no_internet", value: "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.", comment: "Reachability bulletin for a WiFi network that can't access the Internet.")
-        case .connectedViaCellularWithoutInternet:
+        case .cellular:
             connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.cellular_no_internet", value: "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.", comment: "Reachability bulletin for a cellular connection that can't access the Internet.")
-        case .notConnected:
-            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
         default:
-            connectivityPage.descriptionText = nil
+            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
         }
 
         bulletinManager.showBulletin(in: application)

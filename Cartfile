@@ -1,7 +1,3 @@
-## Networking
-
-github "rwbutler/Connectivity" ~> 3.3.3
-
 ## UI
 
 # https://github.com/Instagram/IGListKit/releases

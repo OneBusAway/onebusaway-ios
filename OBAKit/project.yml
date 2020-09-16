@@ -8,7 +8,7 @@ targets:
       - carthage: BLTNBoard
       - carthage: IGListKit
       - carthage: IGListDiffKit
-      - carthage: Connectivity
+      - package: Hyperconnectivity
       - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel

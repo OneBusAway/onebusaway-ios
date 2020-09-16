@@ -29,6 +29,15 @@
         }
       },
       {
+        "package": "Hyperconnectivity",
+        "repositoryURL": "https://github.com/rwbutler/Hyperconnectivity.git",
+        "state": {
+          "branch": null,
+          "revision": "000171e456c3ea26a2a6fed6b7f363b131862221",
+          "version": "1.1.0"
+        }
+      },
+      {
         "package": "MarqueeLabel",
         "repositoryURL": "https://github.com/cbpowell/MarqueeLabel.git",
         "state": {

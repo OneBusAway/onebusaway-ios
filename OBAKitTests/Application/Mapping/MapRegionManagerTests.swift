@@ -30,8 +30,7 @@ class MapRegionManagerTests: OBATestCase {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsPath,
             regionsAPIPath: regionsPath,
-            dataLoader: dataLoader,
-            connectivity: MockConnectivity()
+            dataLoader: dataLoader
         )
     }
 
