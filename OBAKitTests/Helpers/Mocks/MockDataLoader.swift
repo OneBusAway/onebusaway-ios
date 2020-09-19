@@ -23,6 +23,24 @@ class MockTask: URLSessionDataTask {
     override var progress: Progress {
         return Progress()
     }
+
+    private var closure: (Data?, URLResponse?, Error?) -> Void
+    private let mockResponse: MockDataResponse
+
+    init(mockResponse: MockDataResponse, closure: @escaping (Data?, URLResponse?, Error?) -> Void) {
+        self.mockResponse = mockResponse
+        self.closure = closure
+    }
+
+    // We override the 'resume' method and simply call our closure
+    // instead of actually resuming any task.
+    override func resume() {
+        closure(mockResponse.data, mockResponse.urlResponse, mockResponse.error)
+    }
+
+    override func cancel() {
+        // nop
+    }
 }
 
 class MockDataLoader: NSObject, URLDataLoader {
@@ -35,14 +53,11 @@ class MockDataLoader: NSObject, URLDataLoader {
     }
 
     func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
-
         guard let response = matchResponse(to: request) else {
             fatalError("\(testName): Missing response to URL: \(request.url!)")
         }
 
-        completionHandler(response.data, response.urlResponse, response.error)
-
-        return MockTask()
+        return MockTask(mockResponse: response, closure: completionHandler)
     }
 
     // MARK: - Response Mapping

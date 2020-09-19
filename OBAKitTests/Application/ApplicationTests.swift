@@ -50,12 +50,9 @@ class TestRegionsServiceDelegate: NSObject, RegionsServiceDelegate {
 
 class ApplicationTests: OBATestCase {
     var queue: OperationQueue!
-    var mockConnectivity: MockConnectivity!
 
     override func setUp() {
         super.setUp()
-
-        mockConnectivity = MockConnectivity()
 
         queue = OperationQueue()
         queue.maxConcurrentOperationCount = 1
@@ -72,7 +69,7 @@ class ApplicationTests: OBATestCase {
     func configureAuthorizedObjects() -> (MockAuthorizedLocationManager, LocationService, AppConfig) {
         let locManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: MockDataLoader(testName: name), connectivity: mockConnectivity)
+        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: MockDataLoader(testName: name))
 
         return (locManager, locationService, config)
     }
@@ -141,7 +138,7 @@ class ApplicationTests: OBATestCase {
         let locManager = LocationManagerMock()
         let locationService = LocationService(userDefaults: userDefaults, locationManager: locManager)
 
-        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader, connectivity: mockConnectivity)
+        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())
 
@@ -163,7 +160,7 @@ class ApplicationTests: OBATestCase {
 
         let locManager = AuthorizableLocationManagerMock(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
         let locationService = LocationService(userDefaults: UserDefaults(), locationManager: locManager)
-        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader, connectivity: mockConnectivity)
+        let config = AppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, analytics: AnalyticsMock(), queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
         let appDelegate = TestAppDelegate()
 
         expect(locationService.isLocationUseAuthorized).to(beFalse())

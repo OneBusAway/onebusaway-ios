@@ -67,16 +67,19 @@ targets:
 packages:
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.1
+        exactVersion: 3.6.2
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.1
+        exactVersion: 3.6.2
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
-        exactVersion: 5.2.1
+        exactVersion: 5.3.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 1.7.5
+    Hyperconnectivity:
+        url: https://github.com/rwbutler/Hyperconnectivity.git
+        exactVersion: 1.1.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.0.2

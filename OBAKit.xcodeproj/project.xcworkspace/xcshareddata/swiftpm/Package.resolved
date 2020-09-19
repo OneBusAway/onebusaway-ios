@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/xmartlabs/Eureka.git",
         "state": {
           "branch": null,
-          "revision": "9a30ae436ec9e9fcb8b3eb1bdfd95e95989d6ca5",
-          "version": "5.2.1"
+          "revision": "9fe153d2be663621d4f53196bf1b7effb83d7017",
+          "version": "5.3.0"
         }
       },
       {
@@ -26,6 +26,15 @@
           "branch": null,
           "revision": "e4548b26bd28a271f8aa52e04f64bb2401d5e5a7",
           "version": "1.7.5"
+        }
+      },
+      {
+        "package": "Hyperconnectivity",
+        "repositoryURL": "https://github.com/rwbutler/Hyperconnectivity.git",
+        "state": {
+          "branch": null,
+          "revision": "000171e456c3ea26a2a6fed6b7f363b131862221",
+          "version": "1.1.0"
         }
       },
       {

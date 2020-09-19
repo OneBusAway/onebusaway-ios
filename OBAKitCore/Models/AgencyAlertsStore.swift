@@ -169,20 +169,14 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         alerts.allObjects.sorted { ($0.startDate ?? Date.distantPast) > ($1.startDate ?? Date.distantPast) }
     }
 
-    private var alerts = Set<AgencyAlert>() {
-        didSet {
-            notifyDelegatesAlertsUpdated()
-        }
-    }
+    private var alerts: Set<AgencyAlert> = []
 
     private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert]) {
-        queue.addOperation { [weak self] in
-            guard let self = self else { return }
-
-            for alert in agencyAlerts {
-                self.alerts.insert(alert)
-            }
+        for alert in agencyAlerts {
+            self.alerts.insert(alert)
         }
+
+        self.notifyDelegatesAlertsUpdated()
     }
 
     /// Deletes all local data. Useful in preparation for changing the region.
