@@ -30,6 +30,7 @@ public class StopViewController: UIViewController,
     ModalDelegate,
     Previewable,
     SectionDataBuilders,
+    ServiceAlertsSectionControllerDelegate,
     StopArrivalSectionControllerDelegate,
     StopPreferencesDelegate {
 
@@ -742,6 +743,8 @@ public class StopViewController: UIViewController,
 
         if let stopArrSection = controller as? StopArrivalSectionController {
             stopArrSection.delegate = self
+        } else if let alertsSection = controller as? ServiceAlertsSectionController {
+            alertsSection.delegate = self
         }
 
         return controller
