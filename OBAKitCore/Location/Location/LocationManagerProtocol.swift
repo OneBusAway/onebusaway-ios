@@ -17,6 +17,9 @@ public protocol LocationManager {
 
     func requestWhenInUseAuthorization()
 
+    @available(iOS 14, *)
+    func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String)
+
     /// Replaces the CLLocationManager class func of the same name. This is used
     /// to facilitate easier testing on a per-instance basis instead of having
     /// to try to mock class functions.
@@ -26,6 +29,9 @@ public protocol LocationManager {
     /// to facilitate easier testing on a per-instance basis instead of having
     /// to try to mock class functions.
     var isLocationServicesEnabled: Bool { get }
+
+    @available(iOS 14, *)
+    var accuracyAuthorization: CLAccuracyAuthorization { get }
 
     // MARK: - Location
 

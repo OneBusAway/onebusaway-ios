@@ -527,10 +527,23 @@ public class MapRegionManager: NSObject,
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
-        case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
+        case is MKUserLocation: return self.userLocationAnnotationReuseIdentifier
         case is Region: return MKMapView.reuseIdentifier(for: MKMarkerAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         default: return nil
+        }
+    }
+
+    // On iOS 14, use the default MKUserLocationView because it will display imprecise locations elegantly.
+    private var userLocationAnnotationReuseIdentifier: String? {
+        if #available(iOS 14, *) {
+            if application.locationService.accuracyAuthorization == .reducedAccuracy {
+                return nil      // Use the default MKUserLocationView when imprecise location.
+            } else {
+                return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
+            }
+        } else {
+            return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
         }
     }
 
@@ -566,7 +579,13 @@ public class MapRegionManager: NSObject,
 
 extension MapRegionManager: LocationServiceDelegate {
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
+        // "reset" this property to change the user location annotation view as needed.
+        mapView.showsUserLocation = false
         mapView.showsUserLocation = service.isLocationUseAuthorized
+    }
+
+    public func locationService(_ service: LocationService, locationChanged location: CLLocation) {
+        // nop.
     }
 
     public func locationService(_ service: LocationService, headingChanged heading: CLHeading?) {

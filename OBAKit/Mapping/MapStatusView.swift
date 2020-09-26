@@ -31,8 +31,7 @@ class MapStatusView: UIView {
         /// iOS 14+ Location services is enabled, but is set to imprecise location for this application.
         case impreciseLocation
 
-        init(_ authStatus: CLAuthorizationStatus) {
-            // TODO: Handle imprecise locations in iOS 14.
+        init(_ authStatus: CLAuthorizationStatus, isImprecise: Bool = false) {
             switch authStatus {
             case .notDetermined:
                 self = .notDetermined
@@ -41,7 +40,7 @@ class MapStatusView: UIView {
             case .denied:
                 self = .locationServicesOff
             case .authorizedAlways, .authorizedWhenInUse:
-                self = .locationServicesOn
+                self = isImprecise ? .impreciseLocation : .locationServicesOn
             @unknown default:
                 self = .locationServicesUnavailable
             }
@@ -123,14 +122,24 @@ class MapStatusView: UIView {
     }
 
     // MARK: - State changes
+    func state(for service: LocationService) -> State {
+        if #available(iOS 14, *) {
+            return .init(service.authorizationStatus,
+                           isImprecise: service.accuracyAuthorization == .reducedAccuracy)
+        } else {
+            return .init(service.authorizationStatus)
+        }
+    }
 
-    func configure(for auth: CLAuthorizationStatus) {
+    func configure(with service: LocationService) {
+        self.configure(for: state(for: service))
+    }
+
+    func configure(for state: State) {
         var setHidden: Bool
         var setImage: UIImage?
         var setLargeImage: UIImage?
         var setLabel: String?
-
-        let state = State(auth)
 
         switch state {
         case .locationServicesUnavailable, .locationServicesOff, .notDetermined:
