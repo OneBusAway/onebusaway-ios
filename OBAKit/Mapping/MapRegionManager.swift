@@ -514,6 +514,7 @@ public class MapRegionManager: NSObject,
 
         if self.userLocationAnnotationView == nil, let userLocation = annotationView as? PulsingAnnotationView {
             userLocation.headingImageView.isHidden = !mapViewShowsHeading
+            userLocation.canShowCallout = true
             self.userLocationAnnotationView = userLocation
         }
 
