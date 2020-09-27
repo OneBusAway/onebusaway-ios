@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/SCENEE/FloatingPanel.git",
         "state": {
           "branch": null,
-          "revision": "e4548b26bd28a271f8aa52e04f64bb2401d5e5a7",
-          "version": "1.7.5"
+          "revision": "ca7596e1cae161415f54059a8c44b82c95724160",
+          "version": "1.7.6"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "7790acf0a81d08429cb20375bf42a8c7d279c5fe",
-          "version": "1.8.0"
+          "revision": "0279688c9fc5a40028e1b5bb0cb56534a45a6020",
+          "version": "1.12.0"
         }
       }
     ]

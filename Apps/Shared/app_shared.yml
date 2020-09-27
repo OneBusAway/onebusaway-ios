@@ -78,7 +78,7 @@ packages:
         exactVersion: 5.3.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 1.7.5
+        exactVersion: 1.7.6
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0
@@ -90,4 +90,4 @@ packages:
         minorVersion: 2.15.3
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.8.0
+        minorVersion: 1.12.0
