@@ -40,6 +40,8 @@ targets:
           - comgooglemaps
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
         NSLocationWhenInUseUsageDescription: Show your location on the map
+        NSLocationTemporaryUsageDescriptionDictionary:
+          MapStatusView: Show your location on the map
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities:
           - armv7

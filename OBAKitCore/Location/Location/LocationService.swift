@@ -108,10 +108,6 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
     /// The current authorization state of the app.
     public private(set) var authorizationStatus: CLAuthorizationStatus {
         didSet {
-            guard authorizationStatus != oldValue else {
-                return
-            }
-
             notifyDelegatesAuthorizationChanged(authorizationStatus)
 
             if isLocationUseAuthorized {
@@ -147,9 +143,19 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
         locationManager.requestWhenInUseAuthorization()
     }
 
+    @available(iOS 14, *)
+    @objc public func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String) {
+        locationManager.requestTemporaryFullAccuracyAuthorization(withPurposeKey: purposeKey)
+    }
+
     /// Answers the question of whether the device GPS can be consulted for location data.
     public var isLocationUseAuthorized: Bool {
         return locationManager.isLocationServicesEnabled && authorizationStatus == .authorizedWhenInUse
+    }
+
+    @available(iOS 14, *)
+    public var accuracyAuthorization: CLAccuracyAuthorization {
+        return locationManager.accuracyAuthorization
     }
 
     // MARK: - State Management
@@ -202,8 +208,14 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Delegate
 
+    @available(iOS, introduced: 7.0, deprecated: 13.0)
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         authorizationStatus = status
+    }
+
+    @available(iOS 14, *)
+    public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        authorizationStatus = manager.authorizationStatus
     }
 
     public var successiveLocationComparisonWindow: TimeInterval = 60.0

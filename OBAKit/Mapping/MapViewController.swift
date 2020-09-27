@@ -85,7 +85,7 @@ public class MapViewController: UIViewController,
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
-        mapStatusView.configure(for: application.locationService.authorizationStatus)
+        mapStatusView.configure(with: application.locationService)
         mapStatusView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapMapStatus)))
         view.addSubview(mapStatusView)
         NSLayoutConstraint.activate([
@@ -158,12 +158,18 @@ public class MapViewController: UIViewController,
         let userLocation = mapRegionManager.mapView.userLocation
         guard userLocation.isValid else { return }
 
-        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: 17, animated: true)
+        var zoomLevel = 17
+
+        if #available(iOS 14.0, *), application.locationService.accuracyAuthorization == .reducedAccuracy {
+            zoomLevel = 11
+        }
+
+        mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: zoomLevel, animated: true)
     }
 
     @objc func didTapMapStatus(_ sender: Any) {
         guard isLoadedAndOnScreen else { return }
-        let mapStatusViewState = MapStatusView.State(application.locationService.authorizationStatus)
+        let mapStatusViewState = mapStatusView.state(for: application.locationService)
         guard let alert = MapStatusView.alert(for: mapStatusViewState) else { return }
 
         var keepLocationOffButton: UIAlertAction {
@@ -188,6 +194,11 @@ public class MapViewController: UIViewController,
             alert.addAction(keepLocationOffButton)
         case .impreciseLocation:
             alert.addAction(goToSettingsButton)
+            if #available(iOS 14, *) {
+                alert.addAction(title: OBALoc("locationservices_alert_request_precise_location_once.button", value: "Allow Once", comment: "")) { _ in
+                    self.application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "MapStatusView")
+                }
+            }
             alert.addAction(title: OBALoc("locationservices_alert_keep_precise_location_off.button", value: "Keep Precise Location Off", comment: ""), handler: nil)
         case .locationServicesUnavailable, .locationServicesOn:
             // We shouldn't hit this state, but if we do, that's OK.
@@ -552,7 +563,7 @@ public class MapViewController: UIViewController,
     }
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
-        mapStatusView.configure(for: status)
+        mapStatusView.configure(with: service)
         layoutMapMargins()
         locationButton.isHidden = !service.isLocationUseAuthorized
     }
