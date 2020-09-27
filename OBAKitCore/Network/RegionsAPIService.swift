@@ -14,7 +14,7 @@ public class RegionsAPIService: APIService {
 
     public func getRegions(apiPath: String) -> DecodableOperation<RESTAPIResponse<[Region]>> {
         let url = URLBuilder.generateURL(path: apiPath)
-        let operation = DecodableOperation(type: RESTAPIResponse<[Region]>.self, decoder: JSONDecoder.RESTDecoder, URL: url, dataLoader: dataLoader)
+        let operation = DecodableOperation(type: RESTAPIResponse<[Region]>.self, decoder: JSONDecoder.RESTDecoder(), URL: url, dataLoader: dataLoader)
         enqueueOperation(operation)
         return operation
     }

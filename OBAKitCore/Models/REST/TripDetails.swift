@@ -50,6 +50,8 @@ public class TripDetails: NSObject, Decodable, HasReferences {
     /// Contains any active `ServiceAlert` elements that currently apply to the trip.
     public private(set) var serviceAlerts = [ServiceAlert]()
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case frequency
         case tripID = "tripId"
@@ -85,12 +87,13 @@ public class TripDetails: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         trip = references.tripWithID(tripID)!
         previousTrip = references.tripWithID(previousTripID)
         nextTrip = references.tripWithID(nextTripID)
         serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-        stopTimes.loadReferences(references)
-        status?.loadReferences(references)
+        stopTimes.loadReferences(references, regionIdentifier: regionIdentifier)
+        status?.loadReferences(references, regionIdentifier: regionIdentifier)
+        self.regionIdentifier = regionIdentifier
     }
 }

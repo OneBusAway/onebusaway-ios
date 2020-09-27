@@ -38,6 +38,8 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
     let stopIDs: [String]
     public private(set) var stops: [Stop]!
 
+    public private(set) var regionIdentifier: Int?
+
     public let stopGroupings: [StopGrouping]
 
     private enum CodingKeys: String, CodingKey {
@@ -58,10 +60,11 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         route = references.routeWithID(routeID)!
         stops = references.stopsWithIDs(stopIDs)
-        stopGroupings.loadReferences(references)
+        stopGroupings.loadReferences(references, regionIdentifier: regionIdentifier)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - Nested Types
@@ -72,6 +75,8 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
         public let ordered: Bool
         public let groupingType: String
         public let stopGroups: [StopGroup]
+
+        public private(set) var regionIdentifier: Int?
 
         private enum CodingKeys: String, CodingKey {
             case ordered
@@ -86,8 +91,9 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
             stopGroups = try container.decode([StopGroup].self, forKey: .stopGroups)
         }
 
-        public func loadReferences(_ references: References) {
-            stopGroups.loadReferences(references)
+        public func loadReferences(_ references: References, regionIdentifier: Int?) {
+            stopGroups.loadReferences(references, regionIdentifier: regionIdentifier)
+            self.regionIdentifier = regionIdentifier
         }
     }
 
@@ -101,6 +107,8 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
 
         let stopIDs: [String]
         public private(set) var stops = [Stop]()
+
+        public private(set) var regionIdentifier: Int?
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -125,8 +133,9 @@ public class StopsForRoute: NSObject, Decodable, HasReferences {
             stopIDs = try container.decode([String].self, forKey: .stopIDs)
         }
 
-        public func loadReferences(_ references: References) {
+        public func loadReferences(_ references: References, regionIdentifier: Int?) {
             stops = references.stopsWithIDs(stopIDs)
+            self.regionIdentifier = regionIdentifier
         }
     }
 }

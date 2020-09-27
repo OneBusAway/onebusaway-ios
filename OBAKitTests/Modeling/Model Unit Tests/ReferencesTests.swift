@@ -18,10 +18,12 @@ import CoreLocation
 class ReferencesTests: OBATestCase {
     var references: References!
 
+    let tampaRegionIdentifier = 0
+
     override func setUp() {
         super.setUp()
         let data = Fixtures.loadData(file: "references.json")
-        references = try! JSONDecoder.RESTDecoder.decode(References.self, from: data)
+        references = try! JSONDecoder.RESTDecoder(regionIdentifier: tampaRegionIdentifier).decode(References.self, from: data)
     }
 
     // MARK: - Agencies
@@ -61,13 +63,14 @@ class ReferencesTests: OBATestCase {
         expect(route.textColor).to(beCloseTo(UIColor.white))
         expect(route.routeType) == .bus
         expect(route.routeURL) == URL(string: "http://www.gohart.org/routes/hart/01.html")!
+        expect(route.regionIdentifier) == 0
     }
 
     // MARK: - Service Alerts
 
     func test_serviceAlerts_success() {
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
-        let response = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
+        let response = try! JSONDecoder.RESTDecoder().decode(RESTAPIResponse<ArrivalDeparture>.self, from: data)
         let situations = response.references!.serviceAlerts
 
         expect(situations.count) == 1

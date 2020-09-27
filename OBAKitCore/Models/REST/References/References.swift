@@ -16,6 +16,10 @@ public class References: NSObject, Decodable {
     public let stops: [Stop]
     public let trips: [Trip]
 
+    static var regionIdentifierUserInfoKey: CodingUserInfoKey {
+        return CodingUserInfoKey(rawValue: "regionIdentifier")!
+    }
+
     // MARK: - Initialization
 
     private enum CodingKeys: String, CodingKey {
@@ -45,28 +49,33 @@ public class References: NSObject, Decodable {
 
         super.init()
 
+        let regionIdentifier = decoder.userInfo[References.regionIdentifierUserInfoKey] as? Int
+
         // depends: Agency, Route, Stop, Trip
-        serviceAlerts.loadReferences(self)
+        serviceAlerts.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Agency
-        routes.loadReferences(self)
+        routes.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Route
-        stops.loadReferences(self)
-        trips.loadReferences(self)
+        stops.loadReferences(self, regionIdentifier: regionIdentifier)
+        trips.loadReferences(self, regionIdentifier: regionIdentifier)
     }
 }
 
 // MARK: - HasReferences
 
 public protocol HasReferences {
-    func loadReferences(_ references: References)
+    func loadReferences(_ references: References, regionIdentifier: Int?)
+    var regionIdentifier: Int? { get }
 }
 
 extension Array: HasReferences where Element: HasReferences {
-    public func loadReferences(_ references: References) {
+    public var regionIdentifier: Int? { first?.regionIdentifier }
+
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         for elt in self {
-            elt.loadReferences(references)
+            elt.loadReferences(references, regionIdentifier: regionIdentifier)
         }
     }
 }

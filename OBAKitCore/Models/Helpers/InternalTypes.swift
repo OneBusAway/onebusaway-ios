@@ -42,8 +42,11 @@ extension JSONDecoder {
         return decoder
     }
 
-    class var RESTDecoder: JSONDecoder {
+    class func RESTDecoder(regionIdentifier: Int? = nil) -> JSONDecoder {
         let decoder = JSONDecoder()
+        if let regionIdentifier = regionIdentifier {
+            decoder.userInfo = [References.regionIdentifierUserInfoKey: regionIdentifier]
+        }
         decoder.dateDecodingStrategy = .millisecondsSince1970
         return decoder
     }

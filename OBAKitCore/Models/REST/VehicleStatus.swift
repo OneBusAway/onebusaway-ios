@@ -39,6 +39,8 @@ public class VehicleStatus: NSObject, Decodable, HasReferences {
     /// Provides additional status information for the vehicle's trip.
     public let tripStatus: TripStatus
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case vehicleID = "vehicleId"
         case lastUpdateTime = "lastUpdateTime"
@@ -71,8 +73,9 @@ public class VehicleStatus: NSObject, Decodable, HasReferences {
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
     }
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         trip = references.tripWithID(tripID)
-        tripStatus.loadReferences(references)
+        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
+        self.regionIdentifier = regionIdentifier
     }
 }

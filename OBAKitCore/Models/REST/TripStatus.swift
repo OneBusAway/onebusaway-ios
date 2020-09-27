@@ -133,6 +133,8 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     /// If real-time arrival info is available, this lists the id of the transit vehicle currently running the trip.
     public let vehicleID: String?
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case activeTripID = "activeTripId"
         case blockTripSequence
@@ -189,11 +191,12 @@ public class TripStatus: NSObject, Decodable, HasReferences {
         vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         activeTrip = references.tripWithID(activeTripID)!
         closestStop = references.stopWithID(closestStopID)!
         nextStop = references.stopWithID(nextStopID)
         serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - Equality
@@ -201,31 +204,32 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? TripStatus else { return false }
         return
-            activeTripID == rhs.activeTripID &&
             activeTrip == rhs.activeTrip &&
+            activeTripID == rhs.activeTripID &&
             blockTripSequence == rhs.blockTripSequence &&
-            closestStopID == rhs.closestStopID &&
             closestStop == rhs.closestStop &&
+            closestStopID == rhs.closestStopID &&
             closestStopTimeOffset == rhs.closestStopTimeOffset &&
             distanceAlongTrip == rhs.distanceAlongTrip &&
             frequency == rhs.frequency &&
+            isRealTime == rhs.isRealTime &&
             lastKnownDistanceAlongTrip == rhs.lastKnownDistanceAlongTrip &&
             lastKnownLocation == rhs.lastKnownLocation &&
             lastKnownOrientation == rhs.lastKnownOrientation &&
             lastLocationUpdateTime == rhs.lastLocationUpdateTime &&
             lastUpdate == rhs.lastUpdate &&
-            nextStopID == rhs.nextStopID &&
             nextStop == rhs.nextStop &&
+            nextStopID == rhs.nextStopID &&
             nextStopTimeOffset == rhs.nextStopTimeOffset &&
             orientation == rhs.orientation &&
             phase == rhs.phase &&
             position == rhs.position &&
-            isRealTime == rhs.isRealTime &&
+            regionIdentifier == rhs.regionIdentifier &&
             scheduleDeviation == rhs.scheduleDeviation &&
             scheduledDistanceAlongTrip == rhs.scheduledDistanceAlongTrip &&
+            serviceAlerts == rhs.serviceAlerts &&
             serviceDate == rhs.serviceDate &&
             situationIDs == rhs.situationIDs &&
-            serviceAlerts == rhs.serviceAlerts &&
             statusModifier == rhs.statusModifier &&
             totalDistanceAlongTrip == rhs.totalDistanceAlongTrip &&
             vehicleID == rhs.vehicleID
@@ -233,31 +237,32 @@ public class TripStatus: NSObject, Decodable, HasReferences {
 
     override public var hash: Int {
         var hasher = Hasher()
-        hasher.combine(activeTripID)
         hasher.combine(activeTrip)
+        hasher.combine(activeTripID)
         hasher.combine(blockTripSequence)
-        hasher.combine(closestStopID)
         hasher.combine(closestStop)
+        hasher.combine(closestStopID)
         hasher.combine(closestStopTimeOffset)
         hasher.combine(distanceAlongTrip)
         hasher.combine(frequency)
+        hasher.combine(isRealTime)
         hasher.combine(lastKnownDistanceAlongTrip)
         hasher.combine(lastKnownLocation)
         hasher.combine(lastKnownOrientation)
         hasher.combine(lastLocationUpdateTime)
         hasher.combine(lastUpdate)
-        hasher.combine(nextStopID)
         hasher.combine(nextStop)
+        hasher.combine(nextStopID)
         hasher.combine(nextStopTimeOffset)
         hasher.combine(orientation)
         hasher.combine(phase)
         hasher.combine(position)
-        hasher.combine(isRealTime)
+        hasher.combine(regionIdentifier)
         hasher.combine(scheduleDeviation)
         hasher.combine(scheduledDistanceAlongTrip)
+        hasher.combine(serviceAlerts)
         hasher.combine(serviceDate)
         hasher.combine(situationIDs)
-        hasher.combine(serviceAlerts)
         hasher.combine(statusModifier)
         hasher.combine(totalDistanceAlongTrip)
         hasher.combine(vehicleID)

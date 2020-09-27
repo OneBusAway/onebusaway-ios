@@ -15,6 +15,7 @@ public class AgencyWithCoverage: NSObject, Decodable, HasReferences {
     public let agencyID: String
     public var agency: Agency!
     public let region: MKCoordinateRegion
+    public private(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
         case agencyID = "agencyId"
@@ -36,13 +37,15 @@ public class AgencyWithCoverage: NSObject, Decodable, HasReferences {
         region = MKCoordinateRegion(center: coordinate, latitudinalMeters: latSpan, longitudinalMeters: lonSpan)
     }
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         agency = references.agencyWithID(agencyID)
+        self.regionIdentifier = regionIdentifier
     }
 
     public override var debugDescription: String {
         var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
         descriptionBuilder.add(key: "agency", value: agency)
+        descriptionBuilder.add(key: "regionIdentifier", value: regionIdentifier)
         return descriptionBuilder.description
     }
 }

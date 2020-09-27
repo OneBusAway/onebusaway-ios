@@ -244,7 +244,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     private static func bundledRegions(path: String) -> [Region] {
         let data = try! NSData(contentsOfFile: path) as Data
-        let response = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<[Region]>.self, from: data)
+        let response = try! JSONDecoder.RESTDecoder().decode(RESTAPIResponse<[Region]>.self, from: data)
         return response.list
     }
 
@@ -257,7 +257,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public func updateRegionsList(forceUpdate: Bool = false) {
         // only update once per week, unless forceUpdate is true.
         if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
-           abs(lastUpdatedAt.timeIntervalSinceNow) < 604800,
+           abs(lastUpdatedAt.timeIntervalSinceNow) < 604800, // Seconds in a day.
            !forceUpdate
         { // swiftlint:disable:this opening_brace
             notifyDelegatesRegionListUpdateCancelled()

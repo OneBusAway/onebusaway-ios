@@ -69,8 +69,10 @@ public class RESTAPIResponse<T>: CoreRESTAPIResponse where T: Decodable {
 
         references = try dataContainer.decodeIfPresent(References.self, forKey: .references)
 
+        let regionIdentifier = decoder.userInfo[References.regionIdentifierUserInfoKey] as? Int
+
         if let list = list as? HasReferences, let references = references {
-            list.loadReferences(references)
+            list.loadReferences(references, regionIdentifier: regionIdentifier)
         }
 
         limitExceeded = try dataContainer.decodeIfPresent(Bool.self, forKey: .limitExceeded)
