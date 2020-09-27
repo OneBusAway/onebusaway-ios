@@ -12,7 +12,7 @@ targets:
     info:
       path: "Info.plist"
       properties:
-        CFBundleShortVersionString: 20.2.0
+        CFBundleShortVersionString: 20.3.0
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true

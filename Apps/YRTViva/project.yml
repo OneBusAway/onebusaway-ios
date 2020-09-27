@@ -38,7 +38,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ca.yrt.YRTVIVA-iphone
-        MARKETING_VERSION: 20.2.0
+        MARKETING_VERSION: 20.3.0
   TodayView:
     sources: ["Apps/YRTViva/Assets.xcassets"]
     entitlements:
@@ -48,7 +48,7 @@ targets:
     info:
       properties:
         CFBundleDisplayName: YRTViva
-        CFBundleShortVersionString: 20.2.0
+        CFBundleShortVersionString: 20.3.0
         OBAKitConfig:
           AppDevelopersEmailAddress: transitinfo@york.ca
           AppGroup: group.ca.yrt.YRTVIVA-iphone
