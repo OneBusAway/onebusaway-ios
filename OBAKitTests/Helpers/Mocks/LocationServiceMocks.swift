@@ -21,12 +21,22 @@ public class LocationManagerMock: NSObject, LocationManager {
 
     public func requestWhenInUseAuthorization() { }
 
+    @available(iOS 14, *)
+    public func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String) {
+        // nop.
+    }
+
     public var authorizationStatus: CLAuthorizationStatus {
         return .notDetermined
     }
 
     public var isLocationServicesEnabled: Bool {
         return true
+    }
+
+    @available(iOS 14, *)
+    public var accuracyAuthorization: CLAccuracyAuthorization {
+        return .fullAccuracy
     }
 
     public func startUpdatingLocation() {

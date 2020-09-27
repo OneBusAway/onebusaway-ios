@@ -30,6 +30,11 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
         // nop, already authorized.
     }
 
+    @available(iOS 14, *)
+    func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String) {
+        // nop.
+    }
+
     public var location: CLLocation? {
         didSet {
             let locations = [location].compactMap {$0}
@@ -46,8 +51,12 @@ class MockAuthorizedLocationManager: NSObject, LocationManager {
     }
 
     var authorizationStatus: CLAuthorizationStatus = .authorizedWhenInUse
-
     var isLocationServicesEnabled: Bool = true
+
+    @available(iOS 14, *)
+    var accuracyAuthorization: CLAccuracyAuthorization {
+        return .fullAccuracy
+    }
 
     func startUpdatingLocation() {
         updatingLocation = true
