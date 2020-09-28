@@ -12,7 +12,7 @@ import UIKit
 
 public typealias RouteID = String
 
-public class Route: NSObject, Codable, HasReferences {
+public class Route: NSObject, Identifiable, Codable, HasReferences {
 
     let agencyID: String
     public var agency: Agency!

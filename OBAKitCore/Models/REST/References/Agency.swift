@@ -9,7 +9,7 @@
 
 import Foundation
 
-public class Agency: NSObject, Codable {
+public class Agency: NSObject, Identifiable, Codable {
     public let disclaimer: String?
     public let email: String?
     public let fareURL: URL?

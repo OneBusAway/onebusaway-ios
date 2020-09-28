@@ -11,7 +11,10 @@ import Foundation
 import CoreLocation
 
 /// The `tripStatus` element captures information about the current status of a transit vehicle serving a trip. It is returned as a sub-element in a number of REST API calls.
-public class TripStatus: NSObject, Decodable, HasReferences {
+public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return self.activeTripID
+    }
 
     /// the trip id of the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
     let activeTripID: String

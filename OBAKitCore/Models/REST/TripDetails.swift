@@ -9,7 +9,10 @@
 
 import Foundation
 
-public class TripDetails: NSObject, Decodable, HasReferences {
+public class TripDetails: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return self.tripID
+    }
 
     /// Captures information about a trip that uses frequency-based scheduling.
     /// Frequency-based scheduling is where a trip doesn’t have specifically

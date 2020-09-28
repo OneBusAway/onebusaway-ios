@@ -11,7 +11,7 @@ import Foundation
 
 public typealias TripIdentifier = String
 
-public class ArrivalDeparture: NSObject, Decodable, HasReferences {
+public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences {
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool
@@ -188,8 +188,8 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     // MARK: - Helpers/Names
 
-    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs. Used as IGListKit diff identifier.
-    public var arrivalDepartureID: String {
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
+    public var id: String {
         return "stop=\(stopID),trip=\(tripID),route=\(routeID)"
     }
 

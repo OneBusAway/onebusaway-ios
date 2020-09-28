@@ -19,7 +19,10 @@ import MapKit
 /// “stop groupings” that are used to group the stops into useful collections. Currently, the main
 /// grouping provided organizes the set of stops by direction of travel for the route. Finally,
 /// this method also returns a set of polylines that can be used to draw the path traveled by the route.
-public class StopsForRoute: NSObject, Decodable, HasReferences {
+public class StopsForRoute: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return routeID
+    }
 
     let routeID: String
     public private(set) var route: Route!

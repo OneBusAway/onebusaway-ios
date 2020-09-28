@@ -45,7 +45,7 @@ public enum StopLocationType: Int, Decodable {
     }
 }
 
-public class Stop: NSObject, Codable, HasReferences {
+public class Stop: NSObject, Identifiable, Codable, HasReferences {
 
     /// The stop_code field contains a short piece of text or a number that uniquely identifies the stop for passengers.
     ///

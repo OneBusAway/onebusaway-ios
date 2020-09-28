@@ -11,7 +11,7 @@ import Foundation
 
 /// A wrapper around a Protocol Buffer alert object. ProtoBuf is somewhat unpleasant to use directly,
 /// and so this class offers some Swifty niceties on top of its jank.
-public class AgencyAlert: NSObject {
+public class AgencyAlert: NSObject, Identifiable {
     private let alert: TransitRealtime_Alert
     public let id: String
 
