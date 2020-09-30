@@ -15,8 +15,24 @@ import MapKit
 public class RESTAPIService: APIService {
     lazy var URLBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
 
+    private let regionIdentifier: Int
+
+    /// Creates a new instance of `RESTAPIService`.
+    /// - Parameters:
+    ///   - baseURL: The base URL for the service you will be using.
+    ///   - apiKey: The API key for the service you will be using. Passed along as `key` in query params.
+    ///   - uuid: A unique, anonymous user ID.
+    ///   - appVersion: The version of the app making the request.
+    ///   - networkQueue: The queue on which all network operations will be performed.
+    ///   - dataLoader: The object used to perform network operations. A protocol facade is provided here to simplify testing.
+    ///   - regionIdentifier: The unique ID of the `Region` that this service object is tied to.
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, networkQueue: OperationQueue, dataLoader: URLDataLoader, regionIdentifier: Int) {
+        self.regionIdentifier = regionIdentifier
+        super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: dataLoader)
+    }
+
     private func buildOperation<T>(type: T.Type, URL: URL) -> DecodableOperation<T> where T: Decodable {
-        return DecodableOperation(type: type, decoder: JSONDecoder.RESTDecoder, URL: URL, dataLoader: dataLoader)
+        return DecodableOperation(type: type, decoder: JSONDecoder.RESTDecoder(regionIdentifier: regionIdentifier), URL: URL, dataLoader: dataLoader)
     }
 
     // MARK: - Vehicle with ID

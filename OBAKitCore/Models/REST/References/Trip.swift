@@ -59,6 +59,8 @@ public class Trip: NSObject, Decodable, HasReferences {
     /// Use this field to distinguish between different patterns of service in the same route.
     public let headsign: String?
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case blockID = "blockId"
         case direction
@@ -88,8 +90,9 @@ public class Trip: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         route = references.routeWithID(routeID)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - Route Descriptions
@@ -111,6 +114,7 @@ public class Trip: NSObject, Decodable, HasReferences {
             direction == rhs.direction &&
             headsign == rhs.headsign &&
             id == rhs.id &&
+            regionIdentifier == rhs.regionIdentifier &&
             routeID == rhs.routeID &&
             routeShortName == rhs.routeShortName &&
             serviceID == rhs.serviceID &&
@@ -125,6 +129,7 @@ public class Trip: NSObject, Decodable, HasReferences {
         hasher.combine(direction)
         hasher.combine(headsign)
         hasher.combine(id)
+        hasher.combine(regionIdentifier)
         hasher.combine(routeID)
         hasher.combine(routeShortName)
         hasher.combine(serviceID)

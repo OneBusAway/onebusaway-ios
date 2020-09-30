@@ -35,6 +35,8 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
     public let summary: TranslatedString
     public let urlString: TranslatedString?
 
+    public private(set) var regionIdentifier: Int?
+
     enum CodingKeys: String, CodingKey {
         case activeWindows
         case affectedEntities = "allAffects"
@@ -75,6 +77,7 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
             situationDescription == rhs.situationDescription &&
             id == rhs.id &&
             publicationWindows == rhs.publicationWindows &&
+            regionIdentifier == rhs.regionIdentifier &&
             reason == rhs.reason &&
             severity == rhs.severity &&
             summary == rhs.summary &&
@@ -87,11 +90,12 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
         hasher.combine(affectedEntities)
         hasher.combine(consequences)
         hasher.combine(createdAt)
-        hasher.combine(situationDescription)
         hasher.combine(id)
         hasher.combine(publicationWindows)
         hasher.combine(reason)
+        hasher.combine(regionIdentifier)
         hasher.combine(severity)
+        hasher.combine(situationDescription)
         hasher.combine(summary)
         hasher.combine(urlString)
         return hasher.finalize()
@@ -99,11 +103,12 @@ public class ServiceAlert: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         affectedAgencies = Set<Agency>(affectedEntities.compactMap { references.agencyWithID($0.agencyID) })
         affectedRoutes = Set<Route>(affectedEntities.compactMap { references.routeWithID($0.routeID) })
         affectedStops = Set<Stop>(affectedEntities.compactMap { references.stopWithID($0.stopID) })
         affectedTrips = Set<Trip>(affectedEntities.compactMap { references.tripWithID($0.tripID) })
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - TimeWindow

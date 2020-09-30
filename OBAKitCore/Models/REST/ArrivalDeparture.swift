@@ -100,6 +100,8 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
     /// The ID of the arriving transit vehicle
     public let vehicleID: String?
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case arrivalEnabled
         case blockTripSequence
@@ -178,12 +180,13 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         route = references.routeWithID(routeID)!
         serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
         trip = references.tripWithID(tripID)!
-        tripStatus?.loadReferences(references)
+        tripStatus?.loadReferences(references, regionIdentifier: regionIdentifier)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - Helpers/Names
@@ -312,10 +315,6 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
 
     // MARK: - Equality and Hashing
 
-    // TODO: Implement isEqual and hash on Trip and TripStatus,
-    // and add those members back in to the methods below.
-    // https://github.com/aaronbrethorst/OBAKit/issues/116
-
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? ArrivalDeparture else { return false }
         return
@@ -329,6 +328,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
             predicted == rhs.predicted &&
             predictedArrival == rhs.predictedArrival &&
             predictedDeparture == rhs.predictedDeparture &&
+            regionIdentifier == rhs.regionIdentifier &&
             routeID == rhs.routeID &&
             route == rhs.route &&
             _routeLongName == rhs._routeLongName &&
@@ -362,6 +362,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
         hasher.combine(predicted)
         hasher.combine(predictedArrival)
         hasher.combine(predictedDeparture)
+        hasher.combine(regionIdentifier)
         hasher.combine(routeID)
         hasher.combine(route)
         hasher.combine(_routeLongName)
@@ -397,6 +398,7 @@ public class ArrivalDeparture: NSObject, Decodable, HasReferences {
         builder.add(key: "predicted", value: predicted)
         builder.add(key: "predictedArrival", value: predictedArrival)
         builder.add(key: "predictedDeparture", value: predictedDeparture)
+        builder.add(key: "regionIdentifier", value: regionIdentifier)
         builder.add(key: "routeID", value: routeID)
         builder.add(key: "scheduledArrival", value: scheduledArrival)
         builder.add(key: "scheduledDeparture", value: scheduledDeparture)

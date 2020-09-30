@@ -128,7 +128,11 @@ public class RecentStopsViewController: UIViewController,
     }
 
     private var stopsSection: [ListDiffable] {
-        let stops = application.userDataStore.recentStops
+        guard let currentRegion = application.currentRegion else {
+            return []
+        }
+
+        let stops = application.userDataStore.recentStops.filter { $0.regionIdentifier == currentRegion.regionIdentifier }
         guard stops.count > 0 else {
             return []
         }

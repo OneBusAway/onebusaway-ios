@@ -52,7 +52,7 @@ class Fixtures {
 
     class func loadRESTAPIPayload<T>(type: T.Type, fileName: String) throws -> T where T: Decodable {
         let data = loadData(file: fileName)
-        let apiResponse = try! JSONDecoder.RESTDecoder.decode(RESTAPIResponse<T>.self, from: data)
+        let apiResponse = try! JSONDecoder.RESTDecoder().decode(RESTAPIResponse<T>.self, from: data)
         return apiResponse.list
     }
 

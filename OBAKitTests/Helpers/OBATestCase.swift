@@ -84,6 +84,8 @@ open class OBATestCase: XCTestCase {
 
     // MARK: - Network/REST API Service
 
+    let pugetSoundRegionIdentifier = 1
+
     var host: String { "www.example.com" }
 
     var baseURL: URL { URL(string: "https://\(host)")! }
@@ -97,7 +99,8 @@ open class OBATestCase: XCTestCase {
             uuid: uuid,
             appVersion: appVersion,
             networkQueue: networkQueue ?? OperationQueue(),
-            dataLoader: dataLoader ?? MockDataLoader(testName: name)
+            dataLoader: dataLoader ?? MockDataLoader(testName: name),
+            regionIdentifier: pugetSoundRegionIdentifier
         )
     }
 

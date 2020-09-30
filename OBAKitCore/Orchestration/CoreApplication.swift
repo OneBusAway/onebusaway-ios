@@ -112,7 +112,7 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader)
+        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
     }
 
     // MARK: - Obaco

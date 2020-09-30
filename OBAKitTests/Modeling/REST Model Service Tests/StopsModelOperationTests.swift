@@ -48,11 +48,10 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.location.coordinate.longitude).to(beCloseTo(-122.312164))
         expect(stop.locationType) == .stop
         expect(stop.name) == "15th Ave NE & NE Campus Pkwy"
-
         expect(stop.routes.count) == 12
         expect(stop.routes.first!.id) == "1_100059"     // Test that routes get sorted by ID.
-
         expect(stop.wheelchairBoarding) == .unknown
+        expect(stop.regionIdentifier) == pugetSoundRegionIdentifier
     }
 
     func testLoading_coordinate_success() {

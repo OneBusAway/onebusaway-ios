@@ -121,6 +121,8 @@ public class Stop: NSObject, Codable, HasReferences {
     /// Denotes the availability of wheelchair boarding at this stop.
     public let wheelchairBoarding: WheelchairBoarding
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case code
         case direction
@@ -129,6 +131,7 @@ public class Stop: NSObject, Codable, HasReferences {
         case lon
         case locationType
         case name
+        case regionIdentifier
         case routes
         case routeIDs = "routeIds"
         case wheelchairBoarding
@@ -150,7 +153,7 @@ public class Stop: NSObject, Codable, HasReferences {
 
         routeIDs = try container.decode([String].self, forKey: .routeIDs)
 
-        if let encodedRoutes = try? container.decodeIfPresent([Route].self, forKey: .routes) {
+        if let encodedRoutes = try container.decodeIfPresent([Route].self, forKey: .routes) {
             // If we are decoding a Stop that has been serialized internally (e.g. as
             // part of a Recent Stops list), then it should contain a list of routes.
             // However, if we are decoding data from the REST API, then it will not
@@ -159,7 +162,9 @@ public class Stop: NSObject, Codable, HasReferences {
             routes = encodedRoutes
         }
 
-        wheelchairBoarding = (try? container.decodeIfPresent(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
+        regionIdentifier = try container.decodeIfPresent(Int.self, forKey: .regionIdentifier)
+
+        wheelchairBoarding = (try container.decodeIfPresent(WheelchairBoarding.self, forKey: .wheelchairBoarding)) ?? .unknown
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -172,14 +177,16 @@ public class Stop: NSObject, Codable, HasReferences {
         try container.encode(locationType.rawValue, forKey: .locationType)
         try container.encode(name, forKey: .name)
         try container.encode(routeIDs, forKey: .routeIDs)
+        try container.encodeIfPresent(regionIdentifier, forKey: .regionIdentifier)
         try container.encodeIfPresent(routes, forKey: .routes)
         try container.encode(wheelchairBoarding.rawValue, forKey: .wheelchairBoarding)
     }
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         routes = references.routesWithIDs(routeIDs)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - CustomDebugStringConvertible
@@ -203,6 +210,7 @@ public class Stop: NSObject, Codable, HasReferences {
             location.coordinate.longitude == rhs.location.coordinate.longitude &&
             locationType == rhs.locationType &&
             name == rhs.name &&
+            regionIdentifier == rhs.regionIdentifier &&
             routeIDs == rhs.routeIDs &&
             wheelchairBoarding == rhs.wheelchairBoarding
     }
@@ -216,6 +224,7 @@ public class Stop: NSObject, Codable, HasReferences {
         hasher.combine(location.coordinate.longitude)
         hasher.combine(locationType)
         hasher.combine(name)
+        hasher.combine(regionIdentifier)
         hasher.combine(routeIDs)
         hasher.combine(wheelchairBoarding)
         return hasher.finalize()

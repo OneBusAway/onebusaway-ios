@@ -26,17 +26,20 @@ public class Route: NSObject, Codable, HasReferences {
     public let routeType: RouteType
     public let routeURL: URL?
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case agency
         case agencyID = "agencyId"
         case color
-        case routeDescription = "description"
         case id
         case longName
-        case shortName
-        case textColor
+        case regionIdentifier
+        case routeDescription = "description"
         case routeType = "type"
         case routeURL = "url"
+        case shortName
+        case textColor
     }
 
     public required init(from decoder: Decoder) throws {
@@ -45,11 +48,12 @@ public class Route: NSObject, Codable, HasReferences {
         agencyID = try container.decode(String.self, forKey: .agencyID)
 
         // If we are decoding a Route that has been serialized internally (e.g. as
-        // part of a Recent Stops list), then it should contain an agency.
+        // part of a Recent Stops list), then it should contain an agency and a regionIdentifier.
         // However, if we are decoding data from the REST API, then it will not
-        // have routes at this time. Instead, the agency will be loaded via the
-        // `loadReferences()` method call, which is part of the HasReferences protocol.
-        agency = try? container.decodeIfPresent(Agency.self, forKey: .agency)
+        // have an agency or a regionIdentifier at this time. Instead, this data will be loaded
+        // via `HasReferences.loadReferences()`.
+        agency = try container.decodeIfPresent(Agency.self, forKey: .agency)
+        regionIdentifier = try container.decodeIfPresent(Int.self, forKey: .regionIdentifier)
 
         color = UIColor(hex: String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .color)))
 
@@ -66,6 +70,7 @@ public class Route: NSObject, Codable, HasReferences {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(agencyID, forKey: .agencyID)
         try container.encode(agency, forKey: .agency)
+        try container.encodeIfPresent(regionIdentifier, forKey: .regionIdentifier)
         try container.encodeIfPresent(color?.toHex, forKey: .color)
         try container.encodeIfPresent(routeDescription, forKey: .routeDescription)
         try container.encode(id, forKey: .id)
@@ -78,14 +83,19 @@ public class Route: NSObject, Codable, HasReferences {
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         agency = references.agencyWithID(agencyID)
+        self.regionIdentifier = regionIdentifier
     }
 
     // MARK: - CustomDebugStringConvertible
 
     public override var debugDescription: String {
-        return String(format: "%@({id: %@, name: %@})", super.debugDescription, id, shortName)
+        var builder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
+        builder.add(key: "id", value: id)
+        builder.add(key: "regionIdentifier", value: regionIdentifier)
+        builder.add(key: "shortName", value: shortName)
+        return builder.description
     }
 
     // MARK: - Equatable and Hashable
@@ -98,6 +108,7 @@ public class Route: NSObject, Codable, HasReferences {
         return
             agencyID == rhs.agencyID &&
             color == rhs.color &&
+            regionIdentifier == rhs.regionIdentifier &&
             routeDescription == rhs.routeDescription &&
             id == rhs.id &&
             longName == rhs.longName &&
@@ -111,6 +122,7 @@ public class Route: NSObject, Codable, HasReferences {
         var hasher = Hasher()
         hasher.combine(agencyID)
         hasher.combine(color)
+        hasher.combine(regionIdentifier)
         hasher.combine(routeDescription)
         hasher.combine(id)
         hasher.combine(longName)

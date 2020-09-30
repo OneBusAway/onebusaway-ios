@@ -20,7 +20,7 @@ public class APIService: NSObject {
     let defaultQueryItems: [URLQueryItem]
     let dataLoader: URLDataLoader
 
-    /// Creates a new instance of APIService.
+    /// Creates a new instance of `APIService`.
     /// - Parameters:
     ///   - baseURL: The base URL for the service you will be using.
     ///   - apiKey: The API key for the service you will be using. Passed along as `key` in query params.

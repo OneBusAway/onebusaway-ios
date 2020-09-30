@@ -42,6 +42,8 @@ public class StopArrivals: NSObject, Decodable, HasReferences {
     /// The stop to which this object refers.
     public var stop: Stop!
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case arrivalsAndDepartures
         case nearbyStopIDs = "nearbyStopIds"
@@ -58,10 +60,11 @@ public class StopArrivals: NSObject, Decodable, HasReferences {
         stopID = try container.decode(StopID.self, forKey: .stopID)
     }
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         nearbyStops = references.stopsWithIDs(nearbyStopIDs)
         _serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
-        arrivalsAndDepartures.loadReferences(references)
+        arrivalsAndDepartures.loadReferences(references, regionIdentifier: regionIdentifier)
+        self.regionIdentifier = regionIdentifier
     }
 }

@@ -34,6 +34,8 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         }
     }
 
+    public private(set) var regionIdentifier: Int?
+
     private enum CodingKeys: String, CodingKey {
         case arrival = "arrivalTime"
         case departure = "departureTime"
@@ -54,6 +56,7 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         return
             arrival == rhs.arrival &&
             departure == rhs.departure &&
+            regionIdentifier == rhs.regionIdentifier &&
             stopID == rhs.stopID
     }
 
@@ -61,11 +64,13 @@ public class TripStopTime: NSObject, Decodable, HasReferences {
         var hasher = Hasher()
         hasher.combine(arrival)
         hasher.combine(departure)
+        hasher.combine(regionIdentifier)
         hasher.combine(stopID)
         return hasher.finalize()
     }
 
-    public func loadReferences(_ references: References) {
+    public func loadReferences(_ references: References, regionIdentifier: Int?) {
         stop = references.stopWithID(stopID)!
+        self.regionIdentifier = regionIdentifier
     }
 }
