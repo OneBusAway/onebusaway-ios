@@ -61,7 +61,12 @@ extension TripStatus: MKAnnotation {
     }
 
     public var title: String? {
-        activeTrip.routeShortName
+        guard let vehicleID = vehicleID else {
+            return OBALoc("trip_status_annotation.vehicle_id_unavailable", value: "Vehicle ID Unavailable", comment: "Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID.")
+        }
+
+        let fmt = OBALoc("trip_status_annotation.title_fmt", value: "Vehicle ID: %@", comment: "A formatted string for displaying a vehicle's ID on the trip status map. e.g. 'Vehicle ID: 12345'")
+        return String(format: fmt, vehicleID)
     }
 }
 

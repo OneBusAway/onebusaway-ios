@@ -55,7 +55,7 @@ public class TripStatus: NSObject, Decodable, HasReferences {
     public let lastKnownOrientation: CLLocationDirection
 
     /// The last known real-time location update from the transit vehicle. This is different
-    /// from lastUpdateTime in that it reflects the last know location update. An update from
+    /// from lastUpdateTime in that it reflects the last known location update. An update from
     /// a vehicle might not contain location info, which means this field will not be updated.
     /// Will be zero if we haven't had a location update from the vehicle.
     public let lastLocationUpdateTime: Int
