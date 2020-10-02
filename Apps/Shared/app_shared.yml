@@ -67,6 +67,9 @@ targets:
         OTHER_LDFLAGS: -ObjC
 
 packages:
+    BLTNBoard:
+        url: https://github.com/alexaubry/BulletinBoard.git
+        revision: 69a7bd2
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
         exactVersion: 3.6.2
