@@ -385,12 +385,10 @@ class TripViewController: UIViewController,
         if let annotationView = annotationView as? PulsingVehicleAnnotationView {
             vehicleAnnotationView = annotationView
         }
-
-        if let annotationView = annotationView as? PulsingAnnotationView {
+        else if let annotationView = annotationView as? PulsingAnnotationView {
             userLocationAnnotationView = annotationView
         }
-
-        if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
+        else if let view = annotationView as? MinimalStopAnnotationView, let arrivalDeparture = tripConvertible.arrivalDeparture {
             view.selectedArrivalDeparture = arrivalDeparture
 
             if let stopTime = annotation as? TripStopTime {
