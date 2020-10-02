@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "BLTNBoard",
+        "repositoryURL": "https://github.com/alexaubry/BulletinBoard.git",
+        "state": {
+          "branch": "69a7bd2",
+          "revision": "69a7bd2620ec374743f4d288730321b21a576225",
+          "version": null
+        }
+      },
+      {
         "package": "CocoaLumberjack",
         "repositoryURL": "https://github.com/CocoaLumberjack/CocoaLumberjack.git",
         "state": {

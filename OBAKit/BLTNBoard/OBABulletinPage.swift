@@ -17,11 +17,6 @@ class ThemedBulletinPage: BLTNPageItem {
         customizeAppearance()
     }
 
-    override init() {
-        super.init()
-        customizeAppearance()
-    }
-
     private func customizeAppearance() {
         appearance.actionButtonColor = ThemeColors.shared.brand
         appearance.alternativeButtonTitleColor = ThemeColors.shared.brand

@@ -135,7 +135,8 @@ class AlarmTimePickerItem: ThemedBulletinPage {
         self.arrivalDeparture = arrivalDeparture
         self.timePickerManager = AlarmTimePickerManager(arrivalDeparture: arrivalDeparture)
 
-        super.init()
+        let title = OBALoc("alarm_time_picker.title", value: "Add Reminder", comment: "Title of the Alarm Time Picker page.")
+        super.init(title: title)
 
         descriptionText = OBALoc("alarm_time_picker.description", value: "Remind me when this vehicle will depart in:", comment: "Explains what the Alarm Time Picker page does.")
         isDismissable = true
