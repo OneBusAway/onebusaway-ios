@@ -361,6 +361,10 @@ public class MapViewController: UIViewController,
         // Don't allow the status overlay to be shown when the
         // Floating Panel is fully open because it looks weird.
         statusOverlay.isHidden = vc.position == .full
+
+        if mapPanelController.inSearchMode && (vc.position == .hidden || vc.position == .tip) {
+            mapPanelController.exitSearchMode()
+        }
     }
 
     // MARK: - Modal Delegate
@@ -474,6 +478,7 @@ public class MapViewController: UIViewController,
     }
 
     // MARK: Loading Indicator
+
     lazy var loadingIndicator: UIActivityIndicatorView = {
         let indicator: UIActivityIndicatorView
 
