@@ -89,9 +89,9 @@ public class SearchManager: NSObject {
 
         let op = apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
         op.completionBlock = { [weak self] in
-            guard let self = self else { return }
-
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
+            DispatchQueue.main.async {
+                self?.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
+            }
         }
     }
 
