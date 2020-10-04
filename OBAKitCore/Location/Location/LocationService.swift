@@ -208,7 +208,7 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Delegate
 
-    @available(iOS, introduced: 7.0, deprecated: 13.0)
+    @available(iOS, introduced: 4.2, deprecated: 14.0)
     public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         authorizationStatus = status
     }
