@@ -70,7 +70,11 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [searchBar, collectionController.view])
 
-    public lazy var collectionController = CollectionController(application: application, dataSource: self)
+    public lazy var collectionController: CollectionController = {
+        let controller = CollectionController(application: application, dataSource: self)
+        controller.collectionView.showsVerticalScrollIndicator = false
+        return controller
+    }()
 
     var scrollView: UIScrollView { collectionController.collectionView }
 
