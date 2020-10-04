@@ -14,6 +14,6 @@ class OBAKitTestsSetup: NSObject {
     override init() {
         super.init()
 
-        Nimble.AsyncDefaults.Timeout = 5.0
+        Nimble.AsyncDefaults.timeout = .seconds(5)
     }
 }
