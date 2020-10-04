@@ -43,7 +43,7 @@ public func beCloseTo(_ expectedValue: UIColor) -> Predicate<UIColor> {
 
         return PredicateResult(
             bool: haveEqualRGBValues(actualValue, expectedValue),
-            message: .expectedCustomValueTo(errorMessage, "<\(stringify(actualValue))>")
+            message: .expectedCustomValueTo(errorMessage, actual: "<\(stringify(actualValue))>")
         )
     }
 }

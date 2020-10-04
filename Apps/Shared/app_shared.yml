@@ -72,10 +72,10 @@ packages:
         revision: 69a7bd2
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.2
+        exactVersion: 3.7.0
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.6.2
+        exactVersion: 3.7.0
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.3.0
@@ -87,7 +87,7 @@ packages:
         exactVersion: 1.1.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
-        exactVersion: 4.0.2
+        exactVersion: 4.0.3
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
         minorVersion: 2.15.3
