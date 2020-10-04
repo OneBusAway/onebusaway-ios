@@ -48,4 +48,3 @@ class OBAListViewRow: UICollectionViewCell, OBAListContentConfigurable {
         self.data = TableRowData(title: config.text, attributedTitle: config.attributedText, subtitle: config.secondaryText, style: style, accessoryType: config.accessoryType, tapped: nil)
     }
 }
-

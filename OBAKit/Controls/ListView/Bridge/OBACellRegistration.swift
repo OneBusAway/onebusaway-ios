@@ -21,7 +21,3 @@ struct OBACellRegistration<Cell, Item> where Cell: UICollectionViewCell {
         self.handler = handler
     }
 }
-
-protocol OBAListCellViewModel {
-    func listView(_ listView: OBAListView, cellForItemAtIndex indexPath: IndexPath) -> UICollectionViewCell
-}

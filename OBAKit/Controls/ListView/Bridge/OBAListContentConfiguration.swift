@@ -7,7 +7,7 @@
 
 import UIKit
 
-public struct OBAListContentConfiguration {
+public struct OBAListContentConfiguration: Hashable, Equatable {
     public enum Appearance {
         case `default`
         case subtitle
@@ -16,16 +16,17 @@ public struct OBAListContentConfiguration {
         case header
     }
 
-    public var image: UIImage?
-    public var text: String?
-    public var attributedText: NSAttributedString?
-    public var secondaryText: String?
-    public var secondaryAttributedText: NSAttributedString?
+    public var image: UIImage? = nil
+    public var text: String? = nil
+    public var attributedText: NSAttributedString? = nil
+    public var secondaryText: String? = nil
+    public var secondaryAttributedText: NSAttributedString? = nil
 
-    public var appearance: Appearance
+    public var appearance: Appearance = .default
 
-    public var accessoryType: UITableViewCell.AccessoryType
+    public var accessoryType: UITableViewCell.AccessoryType = .none
 
+    // MARK: - Bridge
     @available(iOS 14, *)
     public var listContentConfiguration: UIListContentConfiguration {
         var config: UIListContentConfiguration
@@ -54,4 +55,3 @@ public struct OBAListContentConfiguration {
         }
     }
 }
-
