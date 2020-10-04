@@ -11,7 +11,7 @@ import Foundation
 
 /// Represents a collection of `Bookmark`s. For instance, the user might have groups named "To Work" and "To Home".
 @objc(OBABookmarkGroup)
-public class BookmarkGroup: NSObject, Codable {
+public class BookmarkGroup: NSObject, Identifiable, Codable {
 
     /// The user-facing name of the group.
     public var name: String

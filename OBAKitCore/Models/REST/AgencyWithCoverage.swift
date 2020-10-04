@@ -11,7 +11,11 @@ import Foundation
 import CoreLocation
 import MapKit
 
-public class AgencyWithCoverage: NSObject, Decodable, HasReferences {
+public class AgencyWithCoverage: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return agencyID
+    }
+
     public let agencyID: String
     public var agency: Agency!
     public let region: MKCoordinateRegion

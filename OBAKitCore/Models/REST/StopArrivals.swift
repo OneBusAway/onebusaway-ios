@@ -9,7 +9,10 @@
 
 import Foundation
 
-public class StopArrivals: NSObject, Decodable, HasReferences {
+public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return self.stopID
+    }
 
     /// Upcoming and just-passed vehicle arrivals and departures.
     public let arrivalsAndDepartures: [ArrivalDeparture]

@@ -9,7 +9,7 @@
 
 import Foundation
 
-public class Trip: NSObject, Decodable, HasReferences {
+public class Trip: NSObject, Identifiable, Decodable, HasReferences {
     /// The block_id field identifies the block to which the trip belongs.
     ///
     /// A block consists of a single trip or many sequential trips made using

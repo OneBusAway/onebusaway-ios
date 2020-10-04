@@ -15,7 +15,7 @@ import Foundation
 ///
 /// - Note: The JSON data structure from which a `ServiceAlert` is created is called a "Situation". However, the feature
 ///         is referred to as a "Service Alert" pretty much everywhere else, and that is why it is referred to as such here.
-public class ServiceAlert: NSObject, Decodable, HasReferences {
+public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
     public let activeWindows: Set<TimeWindow>
 
     public let affectedEntities: [AffectedEntity]

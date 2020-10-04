@@ -10,7 +10,7 @@
 import Foundation
 
 /// This is a bookmark for a `Stop` or a trip.
-@objc(OBABookmark) public class Bookmark: NSObject, Codable {
+@objc(OBABookmark) public class Bookmark: NSObject, Identifiable, Codable {
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
     public var groupID: UUID?

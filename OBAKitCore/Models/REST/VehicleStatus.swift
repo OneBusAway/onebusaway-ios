@@ -10,7 +10,10 @@
 import Foundation
 import CoreLocation
 
-public class VehicleStatus: NSObject, Decodable, HasReferences {
+public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
+    public var id: String {
+        return self.vehicleID
+    }
 
     /// The id of the vehicle
     public let vehicleID: String
