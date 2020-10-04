@@ -87,7 +87,7 @@ packages:
         exactVersion: 1.1.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
-        exactVersion: 4.0.2
+        exactVersion: 4.0.3
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
         minorVersion: 2.15.3
