@@ -227,7 +227,25 @@ class TripViewController: UIViewController,
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
-    private var currentTripStatus: TripStatus?
+
+    private var currentTripStatus: TripStatus? {
+        didSet {
+            guard let currentTripStatus = currentTripStatus else {
+                vehicleAnnotation = nil
+                return
+            }
+
+            if let vehicleAnnotation = vehicleAnnotation {
+                vehicleAnnotation.tripStatus = currentTripStatus
+            }
+            else {
+                vehicleAnnotation = VehicleAnnotation(tripStatus: currentTripStatus)
+                self.mapView.addAnnotation(vehicleAnnotation!)
+            }
+
+            updateTitleView()
+        }
+    }
 
     private func loadTripDetails(isProgrammatic: Bool) {
         guard let apiService = application.restAPIService else {
@@ -252,15 +270,7 @@ class TripViewController: UIViewController,
                 self.tripDetailsController.tripDetails = response.entry
                 self.mapView.updateAnnotations(with: response.entry.stopTimes)
 
-                if let currentTripStatus = self.currentTripStatus {
-                    self.mapView.removeAnnotation(currentTripStatus)
-                    self.currentTripStatus = nil
-                }
-
-                if let tripStatus = response.entry.status {
-                    self.currentTripStatus = tripStatus
-                    self.mapView.addAnnotation(tripStatus)
-                }
+                self.currentTripStatus = response.entry.status
 
                 // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
                 var annotationsToShow = self.mapView.annotations
@@ -405,7 +415,9 @@ class TripViewController: UIViewController,
     }
 
     private var userLocationAnnotationView: PulsingAnnotationView?
+
     private var vehicleAnnotationView: PulsingAnnotationView?
+    private var vehicleAnnotation: VehicleAnnotation?
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
@@ -440,9 +452,9 @@ class TripViewController: UIViewController,
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
+        case is VehicleAnnotation: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
         case is TripStopTime: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
-        case is TripStatus: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         default: return nil
         }
     }
