@@ -54,7 +54,17 @@ class MapRegionManagerTests: OBATestCase {
 
         expect(mgr.mapView).toNot(beNil())
         expect(mgr.mapView.showsScale).to(beTrue())
+
+        // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
+        // where the console spews hundreds of error messages that read:
+        // "Compiler error: Invalid library file"
+        //
+        // https://stackoverflow.com/a/63176707
+        #if targetEnvironment(simulator)
+        expect(mgr.mapView.showsTraffic).to(beFalse())
+        #else
         expect(mgr.mapView.showsTraffic).to(beTrue())
+        #endif
     }
 
     /// When `currentRegion` is nil, `visibleMapRect` also returns `nil`.

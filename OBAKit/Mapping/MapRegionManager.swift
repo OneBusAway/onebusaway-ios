@@ -66,7 +66,18 @@ public class MapRegionManager: NSObject,
     ///
     /// `true` by default.
     public var mapViewShowsTraffic: Bool {
-        get { application.userDefaults.bool(forKey: mapViewShowsTrafficKey) }
+        get {
+            // Disable traffic in the Simulator to work around a bug in Xcode 11 and 12
+            // where the console spews hundreds of error messages that read:
+            // "Compiler error: Invalid library file"
+            //
+            // https://stackoverflow.com/a/63176707
+            #if targetEnvironment(simulator)
+            return false
+            #else
+            application.userDefaults.bool(forKey: mapViewShowsTrafficKey)
+            #endif
+        }
         set {
             application.userDefaults.set(newValue, forKey: mapViewShowsTrafficKey)
             mapView.showsTraffic = newValue

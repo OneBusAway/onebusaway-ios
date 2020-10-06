@@ -53,12 +53,15 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
 
     override var annotation: MKAnnotation? {
         didSet {
-            guard let annotation = annotation as? TripStatus else { return }
+            guard
+                let annotation = annotation as? VehicleAnnotation,
+                let tripStatus = annotation.tripStatus
+            else { return }
 
-            updateHeading(tripStatus: annotation)
+            updateHeading(tripStatus: tripStatus)
 
-            routeType = annotation.activeTrip.route.routeType
-            isRealTime = annotation.isRealTime
+            routeType = tripStatus.activeTrip.route.routeType
+            isRealTime = tripStatus.isRealTime
         }
     }
 

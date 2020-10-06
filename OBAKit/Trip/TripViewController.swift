@@ -74,7 +74,7 @@ class TripViewController: UIViewController,
         view.addSubview(mapView)
         mapView.pinToSuperview(.edges)
 
-        loadData()
+        loadData(isProgrammatic: true)
 
         if !isBeingPreviewed {
             floatingPanel.addPanel(toParent: self)
@@ -227,9 +227,27 @@ class TripViewController: UIViewController,
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
-    private var currentTripStatus: TripStatus?
 
-    private func loadTripDetails() {
+    private var currentTripStatus: TripStatus? {
+        didSet {
+            guard let currentTripStatus = currentTripStatus else {
+                vehicleAnnotation = nil
+                return
+            }
+
+            if let vehicleAnnotation = vehicleAnnotation {
+                vehicleAnnotation.tripStatus = currentTripStatus
+            }
+            else {
+                vehicleAnnotation = VehicleAnnotation(tripStatus: currentTripStatus)
+                self.mapView.addAnnotation(vehicleAnnotation!)
+            }
+
+            updateTitleView()
+        }
+    }
+
+    private func loadTripDetails(isProgrammatic: Bool) {
         guard let apiService = application.restAPIService else {
             return
         }
@@ -252,21 +270,15 @@ class TripViewController: UIViewController,
                 self.tripDetailsController.tripDetails = response.entry
                 self.mapView.updateAnnotations(with: response.entry.stopTimes)
 
-                if let currentTripStatus = self.currentTripStatus {
-                    self.mapView.removeAnnotation(currentTripStatus)
-                    self.currentTripStatus = nil
-                }
-
-                if let tripStatus = response.entry.status {
-                    self.currentTripStatus = tripStatus
-                    self.mapView.addAnnotation(tripStatus)
-                }
+                self.currentTripStatus = response.entry.status
 
                 // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
                 var annotationsToShow = self.mapView.annotations
-                annotationsToShow.removeAll(where: { $0.coordinate.longitude == 0 && $0.coordinate.latitude == 0 })
+                annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
 
-                self.mapView.showAnnotations(annotationsToShow, animated: true)
+                if !self.mapView.hasBeenTouched {
+                    self.mapView.showAnnotations(annotationsToShow, animated: true)
+                }
 
                 if let arrivalDeparture = self.tripConvertible.arrivalDeparture {
                     let userDestinationStopTime = response.entry.stopTimes.filter { $0.stopID == arrivalDeparture.stopID }.first
@@ -274,8 +286,11 @@ class TripViewController: UIViewController,
                 }
 
                 self.floatingPanel.surfaceView.grabberHandle.isHidden = false
-                self.floatingPanel.show(animated: true) {
-                    self.floatingPanel.move(to: .half, animated: true)
+
+                if isProgrammatic && !self.mapView.hasBeenTouched {
+                    self.floatingPanel.show(animated: true) {
+                        self.floatingPanel.move(to: .half, animated: true)
+                    }
                 }
             }
 
@@ -293,7 +308,7 @@ class TripViewController: UIViewController,
     private var shapeOperation: DecodableOperation<RESTAPIResponse<PolylineEntity>>?
     private var routePolyline: MKPolyline?
 
-    private func loadMapPolyline() {
+    private func loadMapPolyline(isProgrammatic: Bool) {
         guard
             let apiService = application.restAPIService,
             routePolyline == nil // No need to reload the polyline if we already have it
@@ -314,7 +329,9 @@ class TripViewController: UIViewController,
                 guard let polyline = response.entry.polyline else { return }
                 self.routePolyline = polyline
                 self.mapView.addOverlay(polyline)
-                self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
+                if !self.mapView.hasBeenTouched {
+                    self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
+                }
             }
         }
 
@@ -324,28 +341,53 @@ class TripViewController: UIViewController,
     // MARK: - Load Data
 
     @objc private func refresh(_ sender: Any) {
-        loadData()
+        loadData(isProgrammatic: false)
     }
 
-    private func loadData() {
-        loadTripDetails()
-        loadMapPolyline()
+    private func loadData(isProgrammatic: Bool) {
+        loadTripDetails(isProgrammatic: isProgrammatic)
+        loadMapPolyline(isProgrammatic: isProgrammatic)
     }
 
     // MARK: - Map View
 
-    private lazy var mapView: MKMapView = {
-        let map = MKMapView.autolayoutNew()
+    /// A subclass of MKMapView that tells you if it has ever been touched by the user.
+    class TouchesMapView: MKMapView {
+
+        /// True if the user touched the map and false otherwise.
+        var hasBeenTouched = false
+
+        override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+            hasBeenTouched = true
+            super.touchesBegan(touches, with: event)
+        }
+    }
+
+    private lazy var mapView: TouchesMapView = {
+        let map = TouchesMapView.autolayoutNew()
         map.delegate = self
         return map
     }()
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard let stopTime = view.annotation as? TripStopTime else { return }
+        guard
+            let stopTime = view.annotation as? TripStopTime,
+            let selectedAnnotation = mapView.selectedAnnotations.first as? TripStopTime,
+            stopTime != selectedAnnotation
+        else { return }
 
-        floatingPanel.move(to: .half, animated: true) {
-            self.mapView.setCenter(stopTime.stop.coordinate, animated: true)
+        func mapViewAnnotationSelectionComplete() {
+            if !self.mapView.hasBeenTouched {
+                self.mapView.setCenter(stopTime.stop.coordinate, animated: true)
+            }
             self.tripDetailsController.highlightStopInList(stopTime.stop)
+        }
+
+        if self.mapView.hasBeenTouched {
+            mapViewAnnotationSelectionComplete()
+        }
+        else {
+            floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
         }
     }
 
@@ -373,7 +415,9 @@ class TripViewController: UIViewController,
     }
 
     private var userLocationAnnotationView: PulsingAnnotationView?
+
     private var vehicleAnnotationView: PulsingAnnotationView?
+    private var vehicleAnnotation: VehicleAnnotation?
 
     public func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
         guard let reuseIdentifier = reuseIdentifier(for: annotation) else {
@@ -408,9 +452,9 @@ class TripViewController: UIViewController,
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
+        case is VehicleAnnotation: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         case is MKUserLocation: return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
         case is TripStopTime: return MKMapView.reuseIdentifier(for: MinimalStopAnnotationView.self)
-        case is TripStatus: return MKMapView.reuseIdentifier(for: PulsingVehicleAnnotationView.self)
         default: return nil
         }
     }
