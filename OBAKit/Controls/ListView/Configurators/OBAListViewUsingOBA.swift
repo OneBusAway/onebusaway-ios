@@ -18,12 +18,17 @@ struct OBAListViewUsingOBA: OBAListViewConfigurator {
     }
 
     func registerCells(_ listView: OBAListView) {
-        listView.register(OBAListViewRow.self, forCellWithReuseIdentifier: OBAListViewRow.ReuseIdentifier)
+        OBAListRowCell.allRows.forEach {
+            listView.register($0, forCellWithReuseIdentifier: $0.ReuseIdentifier)
+        }
     }
 
     func createDataSource(_ listView: OBAListView) -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
         return UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: listView) { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: OBAListViewRow.ReuseIdentifier, for: indexPath) as? OBAListViewRow else { return nil }
+            let config = item.listViewConfigurationForThisItem(listView)
+            let cellType = OBAListRowCell.row(for: config)
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellType.ReuseIdentifier, for: indexPath) as? OBAListRowCell else { return nil }
+
             cell.configure(with: item.listViewConfigurationForThisItem(listView))
             return cell
         }

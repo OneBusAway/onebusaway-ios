@@ -46,12 +46,4 @@ public struct OBAListContentConfiguration: Hashable, Equatable {
 
         return config
     }
-
-    public static var Cell: OBAListContentConfigurable.Type {
-        if #available(iOS 14, *) {
-            return UICollectionViewListCell.self
-        } else {
-            return OBAListViewRow.self
-        }
-    }
 }
