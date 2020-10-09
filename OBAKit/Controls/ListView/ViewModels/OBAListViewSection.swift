@@ -6,6 +6,11 @@
 //
 
 public struct OBAListViewSection: Hashable {
+    public enum CollapseState {
+        case collapsed
+        case expanded
+    }
+
     /// eye deeeee
     public var id: String
 
@@ -19,6 +24,10 @@ public struct OBAListViewSection: Hashable {
     public var hasHeader: Bool {
         return title != nil
     }
+
+    /// If `collapseState` is `nil`, this section won't display a collapsible button and won't collapse.
+    /// - important: To avoid confusing `UICollectionView` animations, this value is not checked for equality.
+    public var collapseState: CollapseState?
 
     public init<ViewModel: OBAListViewItem>(id: String, title: String? = nil, contents: [ViewModel]) {
         self.id = id

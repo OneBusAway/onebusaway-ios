@@ -9,6 +9,10 @@ protocol OBAListViewDataSource: class {
     func items(for listView: OBAListView) -> [OBAListViewSection]
 }
 
+protocol OBAListViewDelegate: class {
+    func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
+}
+
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
 /// There are two separate `OBAListViewConfigurator`s under-the-hood. One is for iOS 14+, the other
@@ -22,6 +26,7 @@ protocol OBAListViewDataSource: class {
 /// subfolder for examples.
 public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
+    weak var obaDelegate: OBAListViewDelegate?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
     public init() {
@@ -41,7 +46,6 @@ public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDel
         )
         sectionHeader.pinToVisibleBounds = true
         section.boundarySupplementaryItems = [sectionHeader]
-        
         let layout = UICollectionViewCompositionalLayout(section: section)
 
         super.init(frame: .zero, collectionViewLayout: layout)
@@ -112,13 +116,24 @@ public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDel
 
         snapshot.appendSections(sections)
         for section in sections {
-            snapshot.appendItems(section.contents, toSection: section)
+            if let collapsedState = section.collapseState {
+                switch collapsedState {
+                case .collapsed:
+                    snapshot.deleteItems(section.contents)
+                case .expanded:
+                    snapshot.appendItems(section.contents, toSection: section)
+                }
+            } else {
+                snapshot.appendItems(section.contents, toSection: section)
+            }
         }
 
         self.diffableDataSource.apply(snapshot)
     }
 
-    public func didTap(_ listRowHeader: OBAListRowHeaderSupplementaryView, section: OBAListViewSection) {
+    public func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection) {
+        obaDelegate?.didTap(headerView, section: section)
+        print("tapped \(section)")
     }
 }
 

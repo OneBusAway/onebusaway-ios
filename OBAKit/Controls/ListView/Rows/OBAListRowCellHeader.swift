@@ -27,7 +27,7 @@ public class OBAListRowCellHeader: OBAListRowView {
 
 // MARK: - UICollectionReusableView
 public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
-    func didTap(_ listRowHeader: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
+    func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
 }
 
 public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
@@ -37,7 +37,20 @@ public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
     public weak var delegate: OBAListRowHeaderSupplementaryViewDelegate?
     public var section: OBAListViewSection? {
         didSet {
-            headerView.titleLabel.text = section?.title
+            guard let section = section else { return }
+
+            if let collapseState = section.collapseState {
+                let image: UIImage
+
+                switch collapseState {
+                case .collapsed:    image = UIImage(systemName: "chevron.right.circle.fill")!
+                case .expanded:     image = UIImage(systemName: "chevron.down.circle.fill")!
+                }
+
+                headerView.configuration = OBAListContentConfiguration(image: image, text: section.title, appearance: .header)
+            } else {
+                headerView.configuration = OBAListContentConfiguration(text: section.title, appearance: .header)
+            }
         }
     }
 
