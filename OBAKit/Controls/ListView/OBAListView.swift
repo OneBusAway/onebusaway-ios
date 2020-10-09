@@ -15,15 +15,8 @@ protocol OBAListViewDelegate: class {
 
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
-/// There are two separate `OBAListViewConfigurator`s under-the-hood. One is for iOS 14+, the other
-/// is for iOS 13.  iOS 14 uses `UICollectionLayoutListConfiguration` because its user experience
-/// is much better than our custom table view-like implementation. The purpose of `OBAList` is to abstract
-/// this platform-specific code away from the rest of the application.
-///
-/// This architecture prepares us for the deprecation of our custom implementation when we drop iOS 13.
-///
-/// There are a number of "bridging" models that mimic iOS 14 functionality for iOS 13. See the `Bridge`
-/// subfolder for examples.
+/// To set data in the List View, call `applyData()`. To supply data, conform to `OBAListViewDataSource`.
+/// `applyData()` calls `OBAListViewDataSource.items(:_)`.
 public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
     weak var obaDelegate: OBAListViewDelegate?

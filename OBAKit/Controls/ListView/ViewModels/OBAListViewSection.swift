@@ -44,11 +44,3 @@ public struct OBAListViewSection: Hashable {
             lhs.contents == rhs.contents
     }
 }
-
-struct OBAListViewSectionHeader: OBAListViewItem {
-    var title: String
-
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListContentConfiguration(text: title, appearance: .header)
-    }
-}

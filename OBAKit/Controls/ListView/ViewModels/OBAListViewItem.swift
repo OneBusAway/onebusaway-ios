@@ -6,7 +6,6 @@
 //
 
 public protocol OBAListViewItem: Hashable {
-//    var contentView: OBAContentView.Type { get }
     var contentConfiguration: OBAContentConfiguration { get }
 }
 
