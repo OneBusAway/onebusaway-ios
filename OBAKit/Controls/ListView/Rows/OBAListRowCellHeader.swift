@@ -25,6 +25,45 @@ public class OBAListRowCellHeader: OBAListRowView {
     }
 }
 
+// MARK: - UICollectionReusableView
+public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
+    func didTap(_ listRowHeader: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
+}
+
+public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
+    static let ReuseIdentifier: String = "OBAListRowHeaderSupplementaryView_ReuseIdentifier"
+
+    // MARK: - Properties to set
+    public weak var delegate: OBAListRowHeaderSupplementaryViewDelegate?
+    public var section: OBAListViewSection? {
+        didSet {
+            headerView.titleLabel.text = section?.title
+        }
+    }
+
+    // MARK: - UI
+    fileprivate var headerView: OBAListRowCellHeader = OBAListRowCellHeader(frame: .zero)
+
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        addSubview(headerView)
+        headerView.pinToSuperview(.edges)
+
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didTap))
+        addGestureRecognizer(tapGestureRecognizer)
+    }
+
+    @objc func didTap(_ sender: UITapGestureRecognizer) {
+        guard let section = section else { return }
+        self.delegate?.didTap(self, section: section)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
 // MARK: - Preview
 #if DEBUG
 import SwiftUI

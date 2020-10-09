@@ -20,7 +20,7 @@ protocol OBAListViewDataSource: class {
 ///
 /// There are a number of "bridging" models that mimic iOS 14 functionality for iOS 13. See the `Bridge`
 /// subfolder for examples.
-public class OBAListView: UICollectionView {
+public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
@@ -29,6 +29,19 @@ public class OBAListView: UICollectionView {
         let item = NSCollectionLayoutItem(layoutSize: size)
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
         let section = NSCollectionLayoutSection(group: group)
+
+        let headerFooterSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(40)
+        )
+        let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerFooterSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        sectionHeader.pinToVisibleBounds = true
+        section.boundarySupplementaryItems = [sectionHeader]
+        
         let layout = UICollectionViewCompositionalLayout(section: section)
 
         super.init(frame: .zero, collectionViewLayout: layout)
@@ -43,6 +56,10 @@ public class OBAListView: UICollectionView {
         self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellSubtitle>.self)
         self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellValue>.self)
         self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellHeader>.self)
+
+        self.register(OBAListRowHeaderSupplementaryView.self,
+                      forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                      withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier)
     }
 
     required init?(coder: NSCoder) {
@@ -50,7 +67,7 @@ public class OBAListView: UICollectionView {
     }
 
     func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
-        return UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) {
+        let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) {
             (collectionView, indexPath, item) -> UICollectionViewCell? in
             let config = item.contentConfiguration
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
@@ -64,6 +81,23 @@ public class OBAListView: UICollectionView {
 
             return obaView
         }
+
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            guard kind == UICollectionView.elementKindSectionHeader,
+                  let view = collectionView.dequeueReusableSupplementaryView(
+                    ofKind: kind,
+                    withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier,
+                    for: indexPath) as? OBAListRowHeaderSupplementaryView
+            else { return nil }
+
+            let section = dataSource.snapshot().sectionIdentifiers[indexPath.section]
+            view.delegate = self
+            view.section = section
+
+            return view
+        }
+
+        return dataSource
     }
 
     // MARK: - CELL REGISTRATION
@@ -78,10 +112,13 @@ public class OBAListView: UICollectionView {
 
         snapshot.appendSections(sections)
         for section in sections {
-            snapshot.appendItems(section.listViewItems, toSection: section)
+            snapshot.appendItems(section.contents, toSection: section)
         }
 
         self.diffableDataSource.apply(snapshot)
+    }
+
+    public func didTap(_ listRowHeader: OBAListRowHeaderSupplementaryView, section: OBAListViewSection) {
     }
 }
 

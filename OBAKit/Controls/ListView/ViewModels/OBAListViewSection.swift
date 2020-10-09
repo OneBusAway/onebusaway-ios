@@ -16,17 +16,6 @@ public struct OBAListViewSection: Hashable {
     /// The items in this section.
     public var contents: [AnyOBAListViewItem]
 
-    /// Inserts the title as the first item for a header view, provided `title != nil`.
-    public var listViewItems: [AnyOBAListViewItem] {
-        if let title = title {
-            var items = self.contents
-            items.insert(AnyOBAListViewItem(OBAListViewSectionHeader(title: title)), at: 0)
-            return items
-        } else {
-            return contents
-        }
-    }
-
     public var hasHeader: Bool {
         return title != nil
     }
