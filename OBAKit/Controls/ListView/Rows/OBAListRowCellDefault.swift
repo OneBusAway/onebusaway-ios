@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
-public class OBAListRowCellDefault: OBAListRowCell {
+public class OBAListRowCellDefault: OBAListRowView {
     static let ReuseIdentifier: String = "OBAListRowCellDefault_ReuseIdentifier"
 
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))

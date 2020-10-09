@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
-public protocol ReuseIdentifierProviding: class {
+public protocol ReuseIdentifierProviding: UICollectionViewCell {
     static var ReuseIdentifier: String { get }
 }
 

@@ -5,9 +5,7 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
-import UIKit
-
-public struct OBAListContentConfiguration: Hashable, Equatable {
+public struct OBAListContentConfiguration: OBAContentConfiguration, Hashable, Equatable {
     public enum Appearance {
         case `default`
         case subtitle
@@ -26,24 +24,12 @@ public struct OBAListContentConfiguration: Hashable, Equatable {
 
     public var accessoryType: UITableViewCell.AccessoryType = .none
 
-    // MARK: - Bridge
-    @available(iOS 14, *)
-    public var listContentConfiguration: UIListContentConfiguration {
-        var config: UIListContentConfiguration
-
+    public var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         switch appearance {
-        case .default:   config = .cell()
-        case .subtitle:  config = .subtitleCell()
-        case .value:     config = .valueCell()
-        case .header:    config = .plainHeader()
+        case .default:  return OBAListViewCell<OBAListRowCellDefault>.self
+        case .subtitle: return OBAListViewCell<OBAListRowCellSubtitle>.self
+        case .value:    return OBAListViewCell<OBAListRowCellValue>.self
+        case .header:   return OBAListViewCell<OBAListRowCellHeader>.self
         }
-
-        config.image = image
-        config.text = text
-        config.attributedText = attributedText
-        config.secondaryText = secondaryText
-        config.secondaryAttributedText = secondaryAttributedText
-
-        return config
     }
 }

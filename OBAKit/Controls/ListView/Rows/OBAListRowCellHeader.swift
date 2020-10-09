@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-public class OBAListRowCellHeader: OBAListRowCell {
+public class OBAListRowCellHeader: OBAListRowView {
     static let ReuseIdentifier: String = "OBAListRowCellDefault_ReuseIdentifier"
 
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))

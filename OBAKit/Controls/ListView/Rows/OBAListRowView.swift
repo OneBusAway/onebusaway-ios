@@ -1,13 +1,113 @@
 //
-//  OBAListRowCell.swift
+//  OBAListRowView.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/4/20.
 //
 
+import SwipeCellKit
 import OBAKitCore
 
-/// OBAListRowCell provides the basics of a tableview-like cell. To
+// MARK: - Collection View Cell
+
+class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBAContentView, ReuseIdentifierProviding, Separated {
+    fileprivate let kUseDebugColors = false
+
+    fileprivate var tableRowView: ListRowType! {
+        didSet {
+            if kUseDebugColors {
+                tableRowView.backgroundColor = .green
+            }
+
+            contentView.addSubview(tableRowView)
+            NSLayoutConstraint.activate([
+                tableRowView.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
+                tableRowView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
+                tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
+                tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                tableRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+            ])
+
+            self.accessibilityElements = [tableRowView!]
+        }
+    }
+
+    // MARK: - Initialization
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        self.tableRowView = ListRowType.autolayoutNew()
+        contentView.addSubview(self.tableRowView)
+        self.tableRowView.pinToSuperview(.edges)
+
+        fixiOS13AutoLayoutBug()
+
+        contentView.layer.addSublayer(separator)
+
+        if kUseDebugColors {
+            backgroundColor = .red
+            contentView.backgroundColor = .magenta
+        }
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Data
+    func apply(_ config: OBAContentConfiguration) {
+        tableRowView.apply(config)
+    }
+
+    // MARK: - Style
+
+    public var style: CollectionController.TableCollectionStyle = .plain {
+        didSet {
+            contentView.backgroundColor = defaultBackgroundColor
+        }
+    }
+
+    public var defaultBackgroundColor: UIColor? {
+        if style == .plain {
+            return nil
+        }
+        else {
+            return ThemeColors.shared.groupedTableRowBackground
+        }
+    }
+
+    // MARK: - UICollectionViewCell
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+//        tableRowView.prepareForReuse()
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : defaultBackgroundColor
+        }
+    }
+
+    // MARK: - Separator
+
+    /// When true, the cell will extend the separator all the way to its leading edge.
+    public var collapseLeftInset: Bool = false
+
+    let separator = tableCellSeparatorLayer()
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        let inset: CGFloat? = collapseLeftInset ? 0 : nil
+        layoutSeparator(leftSeparatorInset: inset)
+    }
+}
+
+// MARK: - UIView
+
+/// OBAListRowView provides the basics of a tableview-like cell. To
 /// implement, subclass this. Make style-specific UIs by overriding
 /// `makeUserView()`. For best results, make sure your
 /// `userView` also adapts to content size changes.
@@ -35,7 +135,7 @@ import OBAKitCore
 /// |+----------------------------------------------+|
 /// +------------------------------------------------+
 /// ```
-public class OBAListRowCell: UICollectionViewCell, OBAListContentConfigurable {
+public class OBAListRowView: UIView, OBAContentView {
     var configuration: OBAListContentConfiguration = .init() {
         didSet {
             self.configureView()
@@ -64,7 +164,6 @@ public class OBAListRowCell: UICollectionViewCell, OBAListContentConfigurable {
         self.contentStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .leading, arrangedSubviews: [imageView, userView])
         contentStack.spacing = ThemeMetrics.padding
 
-
         accessoryView = UIImageView.autolayoutNew()
         accessoryView.setCompressionResistance(vertical: .required)
         accessoryView.setHugging(horizontal: .defaultHigh)
@@ -88,8 +187,9 @@ public class OBAListRowCell: UICollectionViewCell, OBAListContentConfigurable {
         configureView()
     }
 
-    public func configure(with config: OBAListContentConfiguration) {
-        self.configuration = config
+    public func apply(_ config: OBAContentConfiguration) {
+        guard let listContentConfiguration = (config as? OBAListContentConfiguration) else { return }
+        self.configuration = listContentConfiguration
     }
 
     func makeUserView() -> UIView {
@@ -118,36 +218,10 @@ public class OBAListRowCell: UICollectionViewCell, OBAListContentConfigurable {
             accessoryImage = nil
         }
         self.accessoryView.image = accessoryImage
-
-//        isAccessibilityElement = true
-//        accessibilityTraits = [.button, .staticText]
-//        accessibilityLabel = configuration.text
-//        accessibilityLabel = Strings.serviceAlert
-//        accessibilityValue = configuration.secondaryText
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-}
-
-extension OBAListRowCell {
-    static var allRows: [OBAListRowCell.Type] {
-        return [
-            OBAListRowCellDefault.self,
-            OBAListRowCellSubtitle.self,
-            OBAListRowCellValue.self,
-            OBAListRowCellHeader.self
-        ]
-    }
-
-    static func row(for config: OBAListContentConfiguration) -> OBAListRowCell.Type {
-        switch config.appearance {
-        case .default:  return OBAListRowCellDefault.self
-        case .subtitle: return OBAListRowCellSubtitle.self
-        case .value:    return OBAListRowCellValue.self
-        case .header:   return OBAListRowCellHeader.self
-        }
     }
 }
 
@@ -161,19 +235,19 @@ struct OBAListRowView_Previews: PreviewProvider {
 
     static var defaultRow: OBAListRowCellDefault {
         let row = OBAListRowCellDefault()
-        row.configure(with: configuration)
+        row.apply(configuration)
         return row
     }
 
     static var subtitleRow: OBAListRowCellSubtitle {
         let row = OBAListRowCellSubtitle()
-        row.configure(with: configuration)
+        row.apply(configuration)
         return row
     }
 
     static var valueRow: OBAListRowCellValue {
         let row = OBAListRowCellValue()
-        row.configure(with: configuration)
+        row.apply(configuration)
         return row
     }
 

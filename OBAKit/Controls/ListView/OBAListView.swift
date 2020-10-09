@@ -5,6 +5,10 @@
 //  Created by Alan Chu on 9/30/20.
 //
 
+protocol OBAListViewDataSource: class {
+    func items(for listView: OBAListView) -> [OBAListViewSection]
+}
+
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
 /// There are two separate `OBAListViewConfigurator`s under-the-hood. One is for iOS 14+, the other
@@ -17,43 +21,60 @@
 /// There are a number of "bridging" models that mimic iOS 14 functionality for iOS 13. See the `Bridge`
 /// subfolder for examples.
 public class OBAListView: UICollectionView {
-    fileprivate var underlyingConfigurator: OBAListViewConfigurator
+    weak var obaDataSource: OBAListViewDataSource?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
-    public convenience init() {
-        let configurator: OBAListViewConfigurator
-        if #available(iOS 14, *) {
-            configurator = OBAListViewUsingListConfiguration()
-        } else {
-            configurator = OBAListViewUsingOBA()
-        }
+    public init() {
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
+        let item = NSCollectionLayoutItem(layoutSize: size)
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
+        let section = NSCollectionLayoutSection(group: group)
+        let layout = UICollectionViewCompositionalLayout(section: section)
 
-        self.init(configurator: configurator)
-    }
+        super.init(frame: .zero, collectionViewLayout: layout)
 
-    init(configurator: OBAListViewConfigurator) {
-        self.underlyingConfigurator = configurator
-        super.init(frame: .zero, collectionViewLayout: configurator.createLayout())
-
-        self.underlyingConfigurator.registerCells(self)
-        self.diffableDataSource = configurator.createDataSource(self)
-        self.dataSource = self.diffableDataSource
+        self.diffableDataSource = createDataSource()
+        self.dataSource = diffableDataSource
 
         self.backgroundColor = .systemBackground
+
+        // Register default rows.
+        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellDefault>.self)
+        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellSubtitle>.self)
+        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellValue>.self)
+        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellHeader>.self)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// - precondition: The `id` of each `OBAListViewSection` must be unique.
-    public func sectionsForList() -> [OBAListViewSection] {
-        fatalError("OBAListView.sectionsForList() called, without a proper implementation.")
+    func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
+        return UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) {
+            (collectionView, indexPath, item) -> UICollectionViewCell? in
+            let config = item.contentConfiguration
+            let reuseIdentifier = config.obaContentView.ReuseIdentifier
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+
+            guard let obaView = cell as? (UICollectionViewCell & OBAContentView) else {
+                fatalError("You are trying to use a cell in OBAListView that doesn't conform to OBAContentView.")
+            }
+
+            obaView.apply(config)
+
+            return obaView
+        }
     }
 
+    // MARK: - CELL REGISTRATION
+    func register(reuseIdentifierProviding view: ReuseIdentifierProviding.Type) {
+        self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
+    }
+
+    // MARK: - DATA SOURCE
     public func applyData() {
         var snapshot = NSDiffableDataSourceSnapshot<OBAListViewSection, AnyOBAListViewItem>()
-        let sections = self.sectionsForList()
+        let sections = self.obaDataSource?.items(for: self) ?? []
 
         snapshot.appendSections(sections)
         for section in sections {
@@ -71,21 +92,12 @@ import OBAKitCore
 
 struct OBAListView_Previews: PreviewProvider {
     private static let personsListView = PersonsListView()
-    private static let fallbackListView = PersonsListView(configurator: OBAListViewUsingOBA())
-
     static var previews: some View {
         Group {
             UIViewPreview {
                 personsListView
             }
             .onAppear { personsListView.applyData() }
-            .previewDisplayName("iOS 14+")
-
-            UIViewPreview {
-                fallbackListView
-            }
-            .onAppear { fallbackListView.applyData() }
-            .previewDisplayName("iOS 13")
         }
     }
 }
@@ -94,14 +106,24 @@ private struct Person: OBAListViewItem {
     var name: String
     var address: String
 
-    func listViewConfigurationForThisItem(_ listView: OBAListView) -> OBAListContentConfiguration {
+    var contentConfiguration: OBAContentConfiguration {
         return OBAListContentConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .none)
     }
 }
 
-private class PersonsListView: OBAListView {
-    override func sectionsForList() -> [OBAListViewSection] {
-        [
+private class PersonsListView: OBAListView, OBAListViewDataSource {
+    override init() {
+        super.init()
+        self.obaDataSource = self
+        self.register(reuseIdentifierProviding: DEBUG_CustomContentCell.self)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return [
             OBAListViewSection(id: "1", title: "B", contents: [
                 Person(name: "Bo", address: "123 Main St"),
                 Person(name: "Bob", address: "456 Broadway"),
@@ -111,6 +133,11 @@ private class PersonsListView: OBAListView {
                 Person(name: "Ca", address: "193 Lochmere Ln"),
                 Person(name: "Cab", address: "anywhere u want"),
                 Person(name: "Cabby", address: "huh")
+            ]),
+            OBAListViewSection(id: "3", title: "Custom Content", contents: [
+                DEBUG_CustomContent(text: "Item A"),
+                DEBUG_CustomContent(text: "Item Bee"),
+                DEBUG_CustomContent(text: "Item See")
             ])
         ]
     }

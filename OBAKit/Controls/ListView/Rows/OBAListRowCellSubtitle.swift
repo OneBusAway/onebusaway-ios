@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
-public class OBAListRowCellSubtitle: OBAListRowCell {
+public class OBAListRowCellSubtitle: OBAListRowView {
     static let ReuseIdentifier: String = "OBAListRowCellSubtitle_ReuseIdentifier"
     private var textStack: UIStackView!
 

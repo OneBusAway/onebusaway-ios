@@ -50,7 +50,7 @@ public struct OBAListViewSection: Hashable {
 struct OBAListViewSectionHeader: OBAListViewItem {
     var title: String
 
-    func listViewConfigurationForThisItem(_ listView: OBAListView) -> OBAListContentConfiguration {
-        return .init(text: title)
+    var contentConfiguration: OBAContentConfiguration {
+        return OBAListContentConfiguration(text: title, appearance: .header)
     }
 }

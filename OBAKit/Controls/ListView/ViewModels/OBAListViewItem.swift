@@ -6,22 +6,23 @@
 //
 
 public protocol OBAListViewItem: Hashable {
-    func listViewConfigurationForThisItem(_ listView: OBAListView) -> OBAListContentConfiguration
+//    var contentView: OBAContentView.Type { get }
+    var contentConfiguration: OBAContentConfiguration { get }
 }
 
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
-    private let _listConfigurationForThisItem: (_ listView: OBAListView) -> OBAListContentConfiguration
+    private let _contentConfiguration: () -> OBAContentConfiguration
     private let _hash: (_ hasher: inout Hasher) -> Void
 
     public init<OBAViewModel: OBAListViewItem>(_ listCellViewModel: OBAViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
-        self._listConfigurationForThisItem = listCellViewModel.listViewConfigurationForThisItem
+        self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._hash = listCellViewModel.hash
     }
 
-    public func listViewConfigurationForThisItem(_ listView: OBAListView) -> OBAListContentConfiguration {
-        return _listConfigurationForThisItem(listView)
+    public var contentConfiguration: OBAContentConfiguration {
+        return _contentConfiguration()
     }
 
     public func hash(into hasher: inout Hasher) {
