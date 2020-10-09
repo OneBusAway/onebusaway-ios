@@ -208,13 +208,9 @@ public class OBAListRowView: UIView, OBAContentView {
             accessoryImage = UIImage(systemName: "checkmark")
         case .detailButton:
             accessoryImage = UIImage(systemName: "info.circle")
-        case .detailDisclosureButton:
-            accessoryImage = UIImage(systemName: "info.circle")
         case .disclosureIndicator:
             accessoryImage = UIImage(systemName: "chevron.right")
         case .none:
-            accessoryImage = nil
-        @unknown default:
             accessoryImage = nil
         }
         self.accessoryView.image = accessoryImage

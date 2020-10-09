@@ -14,15 +14,19 @@ public struct OBAListContentConfiguration: OBAContentConfiguration, Hashable, Eq
         case header
     }
 
+    public enum Accessory {
+        case checkmark
+        case detailButton
+        case disclosureIndicator
+        case none
+    }
+
     public var image: UIImage? = nil
     public var text: String? = nil
-    public var attributedText: NSAttributedString? = nil
     public var secondaryText: String? = nil
-    public var secondaryAttributedText: NSAttributedString? = nil
 
     public var appearance: Appearance = .default
-
-    public var accessoryType: UITableViewCell.AccessoryType = .none
+    public var accessoryType: Accessory = .none
 
     public var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         switch appearance {
