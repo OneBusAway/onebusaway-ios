@@ -10,6 +10,7 @@ protocol OBAListViewDataSource: class {
 }
 
 protocol OBAListViewDelegate: class {
+    func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem)
     func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
 }
 
@@ -17,7 +18,7 @@ protocol OBAListViewDelegate: class {
 ///
 /// To set data in the List View, call `applyData()`. To supply data, conform to `OBAListViewDataSource`.
 /// `applyData()` calls `OBAListViewDataSource.items(:_)`.
-public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDelegate {
+public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
     weak var obaDelegate: OBAListViewDelegate?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
@@ -45,6 +46,7 @@ public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDel
 
         self.diffableDataSource = createDataSource()
         self.dataSource = diffableDataSource
+        self.delegate = self
 
         self.backgroundColor = .systemBackground
 
@@ -100,6 +102,12 @@ public class OBAListView: UICollectionView, OBAListRowHeaderSupplementaryViewDel
     // MARK: - CELL REGISTRATION
     func register(reuseIdentifierProviding view: ReuseIdentifierProviding.Type) {
         self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
+    }
+
+    // MARK: - Delegate methods
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
+        self.obaDelegate?.didSelect(self, item: item)
     }
 
     // MARK: - DATA SOURCE

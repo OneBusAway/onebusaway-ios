@@ -9,15 +9,23 @@ public protocol OBAListViewItem: Hashable {
     var contentConfiguration: OBAContentConfiguration { get }
 }
 
+/// To attempt to cast into an `OBAListViewItem`, call `as(:_)`.
+///
+/// Example:
+/// ```swift
+/// guard let person = AnyOBAListViewItem.as(Person.self) else { return }
+/// ```
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
     private let _contentConfiguration: () -> OBAContentConfiguration
     private let _hash: (_ hasher: inout Hasher) -> Void
+    private let _type: Any
 
     public init<OBAViewModel: OBAListViewItem>(_ listCellViewModel: OBAViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
         self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._hash = listCellViewModel.hash
+        self._type = listCellViewModel
     }
 
     public var contentConfiguration: OBAContentConfiguration {
@@ -30,6 +38,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public static func == (lhs: AnyOBAListViewItem, rhs: AnyOBAListViewItem) -> Bool {
         return lhs._anyEquatable == rhs._anyEquatable
+    }
+
+    func `as`<OBAViewModel: OBAListViewItem>(_ expectedType: OBAViewModel.Type) -> OBAViewModel? {
+        return self._type as? OBAViewModel
     }
 }
 
