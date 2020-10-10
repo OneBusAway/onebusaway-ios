@@ -13,22 +13,22 @@ import OBAKitCore
 class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBAContentView, ReuseIdentifierProviding, Separated {
     fileprivate let kUseDebugColors = false
 
-    fileprivate var tableRowView: ListRowType! {
+    var listRowView: ListRowType! {
         didSet {
             if kUseDebugColors {
-                tableRowView.backgroundColor = .green
+                listRowView.backgroundColor = .green
             }
 
-            contentView.addSubview(tableRowView)
+            contentView.addSubview(listRowView)
             NSLayoutConstraint.activate([
-                tableRowView.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
-                tableRowView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
-                tableRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                tableRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-                tableRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+                listRowView.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
+                listRowView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
+                listRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
+                listRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+                listRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
             ])
 
-            self.accessibilityElements = [tableRowView!]
+            self.accessibilityElements = [listRowView!]
         }
     }
 
@@ -37,9 +37,9 @@ class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBA
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        self.tableRowView = ListRowType.autolayoutNew()
-        contentView.addSubview(self.tableRowView)
-        self.tableRowView.pinToSuperview(.edges)
+        self.listRowView = ListRowType.autolayoutNew()
+        contentView.addSubview(self.listRowView)
+        self.listRowView.pinToSuperview(.edges)
 
         fixiOS13AutoLayoutBug()
 
@@ -57,7 +57,7 @@ class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBA
 
     // MARK: - Data
     func apply(_ config: OBAContentConfiguration) {
-        tableRowView.apply(config)
+        listRowView.apply(config)
     }
 
     // MARK: - Style

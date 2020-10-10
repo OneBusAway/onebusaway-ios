@@ -21,6 +21,11 @@ public struct OBAListViewSection: Hashable {
     /// The items in this section.
     public var contents: [AnyOBAListViewItem]
 
+    public var listViewSectionHeader: AnyOBAListViewItem? {
+        guard let title = title else { return nil }
+        return AnyOBAListViewItem(OBAListViewSectionHeader(title: title))
+    }
+
     public var hasHeader: Bool {
         return title != nil
     }
@@ -42,5 +47,12 @@ public struct OBAListViewSection: Hashable {
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {
         return lhs.title == rhs.title &&
             lhs.contents == rhs.contents
+    }
+}
+
+struct OBAListViewSectionHeader: OBAListViewItem {
+    var title: String
+    var contentConfiguration: OBAContentConfiguration {
+        return OBAListContentConfiguration(text: title, appearance: .header)
     }
 }

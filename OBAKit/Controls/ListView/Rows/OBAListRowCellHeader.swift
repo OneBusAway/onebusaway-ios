@@ -10,6 +10,25 @@ import OBAKitCore
 public class OBAListRowCellHeader: OBAListRowView {
     static let ReuseIdentifier: String = "OBAListRowCellDefault_ReuseIdentifier"
 
+    public var section: OBAListViewSection? {
+        didSet {
+            guard let section = section else { return }
+
+            if let collapseState = section.collapseState {
+                let image: UIImage
+
+                switch collapseState {
+                case .collapsed:    image = UIImage(systemName: "chevron.right.circle.fill")!
+                case .expanded:     image = UIImage(systemName: "chevron.down.circle.fill")!
+                }
+
+                self.configuration = OBAListContentConfiguration(image: image, text: section.title, appearance: .header)
+            } else {
+                self.configuration = OBAListContentConfiguration(text: section.title, appearance: .header)
+            }
+        }
+    }
+
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
 
     override func makeUserView() -> UIView {
@@ -27,7 +46,7 @@ public class OBAListRowCellHeader: OBAListRowView {
 
 // MARK: - UICollectionReusableView
 public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
-    func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
+    func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection)
 }
 
 public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
@@ -36,22 +55,8 @@ public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
     // MARK: - Properties to set
     public weak var delegate: OBAListRowHeaderSupplementaryViewDelegate?
     public var section: OBAListViewSection? {
-        didSet {
-            guard let section = section else { return }
-
-            if let collapseState = section.collapseState {
-                let image: UIImage
-
-                switch collapseState {
-                case .collapsed:    image = UIImage(systemName: "chevron.right.circle.fill")!
-                case .expanded:     image = UIImage(systemName: "chevron.down.circle.fill")!
-                }
-
-                headerView.configuration = OBAListContentConfiguration(image: image, text: section.title, appearance: .header)
-            } else {
-                headerView.configuration = OBAListContentConfiguration(text: section.title, appearance: .header)
-            }
-        }
+        get { headerView.section }
+        set { headerView.section = newValue }
     }
 
     // MARK: - UI
@@ -69,7 +74,7 @@ public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
 
     @objc func didTap(_ sender: UITapGestureRecognizer) {
         guard let section = section else { return }
-        self.delegate?.didTap(self, section: section)
+        self.delegate?.didTap(self.headerView, section: section)
     }
 
     required init?(coder: NSCoder) {

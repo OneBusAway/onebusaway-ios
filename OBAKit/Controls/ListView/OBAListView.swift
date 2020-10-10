@@ -11,7 +11,7 @@ protocol OBAListViewDataSource: class {
 
 protocol OBAListViewDelegate: class {
     func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem)
-    func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection)
+    func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection)
 }
 
 /// Displays information as a vertical-scrolling list, a la TableView.
@@ -23,24 +23,21 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
     weak var obaDelegate: OBAListViewDelegate?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
-    public init() {
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
-        let item = NSCollectionLayoutItem(layoutSize: size)
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
-        let section = NSCollectionLayoutSection(group: group)
+    fileprivate let usingFallbackLayout: Bool
 
-        let headerFooterSize = NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(40)
-        )
-        let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: headerFooterSize,
-            elementKind: UICollectionView.elementKindSectionHeader,
-            alignment: .top
-        )
-        sectionHeader.pinToVisibleBounds = true
-        section.boundarySupplementaryItems = [sectionHeader]
-        let layout = UICollectionViewCompositionalLayout(section: section)
+    public init(usingFallbackLayout fallbackLayout: Bool = false) {
+        self.usingFallbackLayout = fallbackLayout
+
+        let layout: UICollectionViewLayout
+        if #available(iOS 14, *) {
+            if fallbackLayout {
+                layout = OBAListView.createCustomLayout()
+            } else {
+                layout = OBAListView.createListLayout()
+            }
+        } else {
+            layout = OBAListView.createCustomLayout()
+        }
 
         super.init(frame: .zero, collectionViewLayout: layout)
 
@@ -107,14 +104,95 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
     // MARK: - Delegate methods
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
-        self.obaDelegate?.didSelect(self, item: item)
+
+        if let _ = item.as(OBAListViewSectionHeader.self) {
+            guard let cell = collectionView.cellForItem(at: indexPath) as? OBAListViewCell<OBAListRowCellHeader> else { return }
+            self.obaDelegate?.didTap(cell.listRowView, section: diffableDataSource.snapshot().sectionIdentifiers[indexPath.section])
+        } else {
+            self.obaDelegate?.didSelect(self, item: item)
+        }
     }
 
-    // MARK: - DATA SOURCE
-    public func applyData() {
-        var snapshot = NSDiffableDataSourceSnapshot<OBAListViewSection, AnyOBAListViewItem>()
-        let sections = self.obaDataSource?.items(for: self) ?? []
+    // MARK: - Layout configuration
 
+    @available(iOS 14, *)
+    static func createListLayout() -> UICollectionViewLayout {
+        var config = UICollectionLayoutListConfiguration(appearance: .plain)
+        config.headerMode = .firstItemInSection
+        config.showsSeparators = false
+        return UICollectionViewCompositionalLayout.list(using: config)
+    }
+
+    @available(iOS, deprecated: 14, renamed: "createListLayout")
+    static func createCustomLayout() -> UICollectionViewLayout {
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
+        let item = NSCollectionLayoutItem(layoutSize: size)
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
+        let section = NSCollectionLayoutSection(group: group)
+
+        let headerFooterSize = NSCollectionLayoutSize(
+            widthDimension: .fractionalWidth(1.0),
+            heightDimension: .estimated(40)
+        )
+        let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
+            layoutSize: headerFooterSize,
+            elementKind: UICollectionView.elementKindSectionHeader,
+            alignment: .top
+        )
+        sectionHeader.pinToVisibleBounds = true
+        section.boundarySupplementaryItems = [sectionHeader]
+        section.visibleItemsInvalidationHandler = { (visibleItems, scrollOffset, layoutEnvironment) in
+            print(visibleItems)
+        }
+
+        let layout = UICollectionViewCompositionalLayout(section: section)
+        return layout
+    }
+
+
+    // MARK: - Data source
+
+    public func applyData() {
+        let sections = self.obaDataSource?.items(for: self) ?? []
+        if #available(iOS 14, *) {
+            if usingFallbackLayout {
+                self.applyDataUsingFallback(sections: sections)
+            } else {
+                self.applyDataUsingSectionSnapshot(sections: sections)
+            }
+        } else {
+            self.applyDataUsingFallback(sections: sections)
+        }
+    }
+
+    // MARK: Platform specific
+    @available(iOS 14, *)
+    private func applyDataUsingSectionSnapshot(sections: [OBAListViewSection]) {
+        for section in sections {
+            var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<AnyOBAListViewItem>()
+            if let sectionHeader = section.listViewSectionHeader {
+                sectionSnapshot.append([sectionHeader])
+                sectionSnapshot.append(section.contents, to: sectionHeader)
+
+                if let collapsedState = section.collapseState {
+                    switch collapsedState {
+                    case .collapsed:
+                        sectionSnapshot.collapse([sectionHeader])
+                    case .expanded:
+                        sectionSnapshot.expand([sectionHeader])
+                    }
+                }
+            } else {
+                sectionSnapshot.append(section.contents)
+            }
+
+            diffableDataSource.apply(sectionSnapshot, to: section)
+        }
+    }
+
+    @available(iOS, deprecated: 14, renamed: "applyDataUsingSectionSnapshot")
+    private func applyDataUsingFallback(sections: [OBAListViewSection]) {
+        var snapshot = NSDiffableDataSourceSnapshot<OBAListViewSection, AnyOBAListViewItem>()
         snapshot.appendSections(sections)
         for section in sections {
             if let collapsedState = section.collapseState {
@@ -132,9 +210,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         self.diffableDataSource.apply(snapshot)
     }
 
-    public func didTap(_ headerView: OBAListRowHeaderSupplementaryView, section: OBAListViewSection) {
+
+    public func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
         obaDelegate?.didTap(headerView, section: section)
-        print("tapped \(section)")
     }
 }
 
@@ -144,7 +222,7 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListView_Previews: PreviewProvider {
-    private static let personsListView = PersonsListView()
+    private static let personsListView = PersonsListView(fallbackLayout: false)
     static var previews: some View {
         Group {
             UIViewPreview {
@@ -165,8 +243,8 @@ private struct Person: OBAListViewItem {
 }
 
 private class PersonsListView: OBAListView, OBAListViewDataSource {
-    override init() {
-        super.init()
+    init(fallbackLayout: Bool) {
+        super.init(usingFallbackLayout: fallbackLayout)
         self.obaDataSource = self
         self.register(reuseIdentifierProviding: DEBUG_CustomContentCell.self)
     }
