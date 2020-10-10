@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 9/30/20.
 //
 
+import SwipeCellKit
+
 protocol OBAListViewDataSource: class {
     func items(for listView: OBAListView) -> [OBAListViewSection]
 }
@@ -18,7 +20,7 @@ protocol OBAListViewDelegate: class {
 ///
 /// To set data in the List View, call `applyData()`. To supply data, conform to `OBAListViewDataSource`.
 /// `applyData()` calls `OBAListViewDataSource.items(:_)`.
-public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
     weak var obaDelegate: OBAListViewDelegate?
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
@@ -73,6 +75,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
                 fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
             }
 
+            obaView.delegate = self
             obaView.apply(config)
 
             return obaView
@@ -101,15 +104,26 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
 
         if let _ = item.as(OBAListViewSectionHeader.self) {
-            guard let cell = collectionView.cellForItem(at: indexPath) as? OBAListViewCell<OBAListRowCellHeader> else { return }
+            guard let cell = collectionView.cellForItem(at: indexPath) as? OBAListRowCell<OBAListRowCellHeader> else { return }
             self.obaDelegate?.didTap(cell.listRowView, section: diffableDataSource.snapshot().sectionIdentifiers[indexPath.section])
         } else {
             self.obaDelegate?.didSelect(self, item: item)
         }
     }
 
-    // MARK: - Layout configuration
+    public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
+        guard collectionView == self else { return nil }
+        guard let item = self.diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
 
+        switch orientation {
+        case .left:
+            return item.leadingSwipeActions?.map { $0.swipeAction }
+        case .right:
+            return item.trailingSwipeActions?.map { $0.swipeAction }
+        }
+    }
+
+    // MARK: - Layout configuration
     @available(iOS 14, *)
     static func createListLayout() -> UICollectionViewLayout {
         var config = UICollectionLayoutListConfiguration(appearance: .plain)

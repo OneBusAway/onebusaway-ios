@@ -11,12 +11,49 @@ public protocol OBAListViewItem: Hashable {
 
     static var customCellType: OBAListViewCell.Type? { get }
 
+    /// Actions to display on the leading side of the cell.
+    var leadingActions: [OBAListViewAction<Self>]? { get }
+
+    /// Actions to display on the trailing side of the cell.
+    var trailingActions: [OBAListViewAction<Self>]? { get }
+
+    /// Do not implement this yourself, specify actions using `var leadingActions: [OBAListViewAction<_>]`.
+    /// The default implementation takes `leadingActions` and sets the `item` property to self.
+    var leadingSwipeActions: [OBAListViewAction<Self>]? { get }
+
+    /// Do not implement this yourself, specify actions using `var trailingActions: [OBAListViewAction<_>]`.
+    /// The default implementation takes `leadingActions` and sets the `item` property to self.
+    var trailingSwipeActions: [OBAListViewAction<Self>]? { get }
 }
 
 // MARK: Default implementations
 extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
         return nil
+    }
+
+    public var leadingActions: [OBAListViewAction<Self>]? {
+        return nil
+    }
+
+    public var trailingActions: [OBAListViewAction<Self>]? {
+        return nil
+    }
+
+    public var leadingSwipeActions: [OBAListViewAction<Self>]? {
+        return leadingActions?.map {
+            var action = $0
+            action.item = self
+            return action
+        }
+    }
+
+    public var trailingSwipeActions: [OBAListViewAction<Self>]? {
+        return trailingActions?.map {
+            var action = $0
+            action.item = self
+            return action
+        }
     }
 }
 
@@ -31,13 +68,46 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
     private let _contentConfiguration: () -> OBAContentConfiguration
     private let _hash: (_ hasher: inout Hasher) -> Void
+
+    private let _leadingActions: () -> [OBAListViewAction<AnyOBAListViewItem>]?
+    private let _trailingActions: () -> [OBAListViewAction<AnyOBAListViewItem>]?
     private let _type: Any
 
-    public init<OBAViewModel: OBAListViewItem>(_ listCellViewModel: OBAViewModel) {
+    public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
         self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._hash = listCellViewModel.hash
         self._type = listCellViewModel
+
+        self._leadingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingSwipeActions) }
+        self._trailingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.trailingSwipeActions) }
+    }
+
+    fileprivate static func typeEraseActions<ViewModel: OBAListViewItem>(_ actions: [OBAListViewAction<ViewModel>]?) -> [OBAListViewAction<AnyOBAListViewItem>]? {
+        return actions?.map { (typedItem: OBAListViewAction<ViewModel>) -> OBAListViewAction<AnyOBAListViewItem> in
+            let typeErased: AnyOBAListViewItem?
+            if let item = typedItem.item {
+                typeErased = AnyOBAListViewItem(item)
+            } else {
+                typeErased = nil
+            }
+
+            let typeErasedClosure: ((AnyOBAListViewItem) -> Void)?
+            if let typedClosure = typedItem.handler {
+                typeErasedClosure = { (anyItem: AnyOBAListViewItem) in
+                    typedClosure(anyItem.as(ViewModel.self)!)
+                }
+            } else {
+                typeErasedClosure = nil
+            }
+
+            return OBAListViewAction(style: typedItem.style,
+                                     title: typedItem.title,
+                                     image: typedItem.image,
+                                     backgroundColor: typedItem.backgroundColor,
+                                     item: typeErased,
+                                     handler: typeErasedClosure)
+        }
     }
 
     public static var customCellType: OBAListViewCell.Type? {
@@ -46,6 +116,14 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public var contentConfiguration: OBAContentConfiguration {
         return _contentConfiguration()
+    }
+
+    public var leadingActions: [OBAListViewAction<AnyOBAListViewItem>]? {
+        return _leadingActions()
+    }
+
+    public var trailingActions: [OBAListViewAction<AnyOBAListViewItem>]? {
+        return _trailingActions()
     }
 
     public func hash(into hasher: inout Hasher) {

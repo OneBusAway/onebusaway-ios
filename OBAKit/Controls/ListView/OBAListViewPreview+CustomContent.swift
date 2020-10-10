@@ -16,6 +16,14 @@ struct DEBUG_CustomContent: OBAListViewItem {
         return DEBUG_CustomContentCell.self
     }
 
+    var trailingActions: [OBAListViewAction<DEBUG_CustomContent>]? {
+        let action = OBAListViewAction<DEBUG_CustomContent>(style: .normal, title: "Hello", image: nil, backgroundColor: .systemPurple, handler: { item in
+            print(item)
+        })
+
+        return [action]
+    }
+
     var contentConfiguration: OBAContentConfiguration {
         return DEBUG_CustomContentConfiguration(text: text)
     }
