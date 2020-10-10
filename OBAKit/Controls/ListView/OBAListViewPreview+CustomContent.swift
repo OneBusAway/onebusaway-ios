@@ -12,6 +12,10 @@ import Foundation
 struct DEBUG_CustomContent: OBAListViewItem {
     var text: String
 
+    static var customCellType: OBAListViewCell.Type? {
+        return DEBUG_CustomContentCell.self
+    }
+
     var contentConfiguration: OBAContentConfiguration {
         return DEBUG_CustomContentConfiguration(text: text)
     }
@@ -25,7 +29,7 @@ struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
     }
 }
 
-class DEBUG_CustomContentCell: UICollectionViewCell, OBAContentView, ReuseIdentifierProviding {
+class DEBUG_CustomContentCell: OBAListViewCell {
     var customContentView: DEBUG_CustomContentView!
 
     override init(frame: CGRect) {
@@ -39,7 +43,7 @@ class DEBUG_CustomContentCell: UICollectionViewCell, OBAContentView, ReuseIdenti
         fatalError("init(coder:) has not been implemented")
     }
 
-    func apply(_ config: OBAContentConfiguration) {
+    override func apply(_ config: OBAContentConfiguration) {
         customContentView.apply(config)
     }
 }

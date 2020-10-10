@@ -48,10 +48,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         self.backgroundColor = .systemBackground
 
         // Register default rows.
-        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellDefault>.self)
-        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellSubtitle>.self)
-        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellValue>.self)
-        self.register(reuseIdentifierProviding: OBAListViewCell<OBAListRowCellHeader>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellDefault>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellSubtitle>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellValue>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellHeader>.self)
 
         self.register(OBAListRowHeaderSupplementaryView.self,
                       forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
@@ -69,8 +69,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
 
-            guard let obaView = cell as? (UICollectionViewCell & OBAContentView) else {
-                fatalError("You are trying to use a cell in OBAListView that doesn't conform to OBAContentView.")
+            guard let obaView = cell as? OBAListViewCell else {
+                fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
             }
 
             obaView.apply(config)
@@ -94,11 +94,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         }
 
         return dataSource
-    }
-
-    // MARK: - CELL REGISTRATION
-    func register(reuseIdentifierProviding view: ReuseIdentifierProviding.Type) {
-        self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
     }
 
     // MARK: - Delegate methods
@@ -149,9 +144,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         return layout
     }
 
-
     // MARK: - Data source
-
     public func applyData() {
         let sections = self.obaDataSource?.items(for: self) ?? []
         if #available(iOS 14, *) {
@@ -210,6 +203,19 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRow
         self.diffableDataSource.apply(snapshot)
     }
 
+    // MARK: - Helpers
+    func register(reuseIdentifierProviding view: ReuseIdentifierProviding.Type) {
+        self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
+    }
+
+    func register<Item: OBAListViewItem>(listViewItem: Item.Type) {
+        guard let cellType = listViewItem.customCellType else {
+            Logger.warn("You asked OBAListView to register \(String(describing: listViewItem)), but it doesn't have a customCellType.")
+            return
+        }
+
+        self.register(reuseIdentifierProviding: cellType)
+    }
 
     public func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
         obaDelegate?.didTap(headerView, section: section)

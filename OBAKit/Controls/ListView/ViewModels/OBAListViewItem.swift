@@ -5,10 +5,22 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+// MARK: - OBAListViewItem
 public protocol OBAListViewItem: Hashable {
     var contentConfiguration: OBAContentConfiguration { get }
+
+    static var customCellType: OBAListViewCell.Type? { get }
+
 }
 
+// MARK: Default implementations
+extension OBAListViewItem {
+    public static var customCellType: OBAListViewCell.Type? {
+        return nil
+    }
+}
+
+// MARK: - Type erase OBAListViewItem
 /// To attempt to cast into an `OBAListViewItem`, call `as(:_)`.
 ///
 /// Example:
@@ -26,6 +38,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._hash = listCellViewModel.hash
         self._type = listCellViewModel
+    }
+
+    public static var customCellType: OBAListViewCell.Type? {
+        fatalError("Illegal. You cannot get the customCellType of AnyOBAListViewItem.")
     }
 
     public var contentConfiguration: OBAContentConfiguration {

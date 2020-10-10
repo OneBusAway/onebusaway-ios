@@ -10,7 +10,7 @@ import OBAKitCore
 
 // MARK: - Collection View Cell
 
-class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBAContentView, ReuseIdentifierProviding, Separated {
+class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
     fileprivate let kUseDebugColors = false
 
     var listRowView: ListRowType! {
@@ -56,7 +56,7 @@ class OBAListViewCell<ListRowType: OBAListRowView>: SwipeCollectionViewCell, OBA
     }
 
     // MARK: - Data
-    func apply(_ config: OBAContentConfiguration) {
+    override func apply(_ config: OBAContentConfiguration) {
         listRowView.apply(config)
     }
 

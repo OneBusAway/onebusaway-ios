@@ -30,10 +30,10 @@ public struct OBAListContentConfiguration: OBAContentConfiguration, Hashable, Eq
 
     public var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         switch appearance {
-        case .default:  return OBAListViewCell<OBAListRowCellDefault>.self
-        case .subtitle: return OBAListViewCell<OBAListRowCellSubtitle>.self
-        case .value:    return OBAListViewCell<OBAListRowCellValue>.self
-        case .header:   return OBAListViewCell<OBAListRowCellHeader>.self
+        case .default:  return OBAListRowCell<OBAListRowCellDefault>.self
+        case .subtitle: return OBAListRowCell<OBAListRowCellSubtitle>.self
+        case .value:    return OBAListRowCell<OBAListRowCellValue>.self
+        case .header:   return OBAListRowCell<OBAListRowCellHeader>.self
         }
     }
 }
