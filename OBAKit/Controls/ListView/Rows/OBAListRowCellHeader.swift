@@ -22,9 +22,9 @@ public class OBAListRowCellHeader: OBAListRowView {
                 case .expanded:     image = UIImage(systemName: "chevron.down.circle.fill")!
                 }
 
-                self.configuration = OBAListContentConfiguration(image: image, text: section.title, appearance: .header)
+                self.configuration = OBAListRowConfiguration(image: image, text: section.title, appearance: .header)
             } else {
-                self.configuration = OBAListContentConfiguration(text: section.title, appearance: .header)
+                self.configuration = OBAListRowConfiguration(text: section.title, appearance: .header)
             }
         }
     }
@@ -50,7 +50,7 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowCellHeader_Previews: PreviewProvider {
-    static let configuration = OBAListContentConfiguration(image: UIImage(systemName: "person.circle.fill"), text: "Privacy Settings", appearance: .header, accessoryType: .none)
+    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.circle.fill"), text: "Privacy Settings", appearance: .header, accessoryType: .none)
 
     static var previews: some View {
         Group {

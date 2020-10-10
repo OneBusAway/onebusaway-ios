@@ -171,7 +171,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
             elementKind: UICollectionView.elementKindSectionFooter,
             alignment: .bottom
         )
-        sectionFooter.pinToVisibleBounds = false
 
         section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
 
@@ -244,7 +243,7 @@ private struct Person: OBAListViewItem {
     var address: String
 
     var contentConfiguration: OBAContentConfiguration {
-        return OBAListContentConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .none)
+        return OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .none)
     }
 
     func hash(into hasher: inout Hasher) {

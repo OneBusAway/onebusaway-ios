@@ -27,7 +27,7 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowCellDefault_Previews: PreviewProvider {
-    static let configuration = OBAListContentConfiguration(image: UIImage(systemName: "person.fill"), text: "title text", appearance: .default, accessoryType: .none)
+    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: "title text", appearance: .default, accessoryType: .none)
 
     static var previews: some View {
         Group {

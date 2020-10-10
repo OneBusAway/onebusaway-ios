@@ -136,7 +136,7 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
 /// +------------------------------------------------+
 /// ```
 public class OBAListRowView: UIView, OBAContentView {
-    var configuration: OBAListContentConfiguration = .init() {
+    var configuration: OBAListRowConfiguration = .init() {
         didSet {
             self.configureView()
         }
@@ -188,7 +188,7 @@ public class OBAListRowView: UIView, OBAContentView {
     }
 
     public func apply(_ config: OBAContentConfiguration) {
-        guard let listContentConfiguration = (config as? OBAListContentConfiguration) else { return }
+        guard let listContentConfiguration = (config as? OBAListRowConfiguration) else { return }
         self.configuration = listContentConfiguration
     }
 
@@ -227,7 +227,7 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowView_Previews: PreviewProvider {
-    static let configuration = OBAListContentConfiguration(image: UIImage(systemName: "person.fill"), text: "name", secondaryText: "address", appearance: .subtitle, accessoryType: .disclosureIndicator)
+    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: "name", secondaryText: "address", appearance: .subtitle, accessoryType: .disclosureIndicator)
 
     static var defaultRow: OBAListRowCellDefault {
         let row = OBAListRowCellDefault()

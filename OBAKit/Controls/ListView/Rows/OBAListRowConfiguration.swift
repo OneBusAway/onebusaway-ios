@@ -1,11 +1,11 @@
 //
-//  OBAListContentConfiguration.swift
+//  OBAListRowConfiguration.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/2/20.
 //
 
-public struct OBAListContentConfiguration: OBAContentConfiguration, Hashable, Equatable {
+public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equatable {
     public enum Appearance {
         case `default`
         case subtitle

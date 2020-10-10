@@ -53,6 +53,6 @@ public struct OBAListViewSection: Hashable {
 struct OBAListViewSectionHeader: OBAListViewItem {
     var title: String
     var contentConfiguration: OBAContentConfiguration {
-        return OBAListContentConfiguration(text: title, appearance: .header)
+        return OBAListRowConfiguration(text: title, appearance: .header)
     }
 }
