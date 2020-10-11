@@ -18,6 +18,12 @@ public class OBAListRowCellDefault: OBAListRowView {
     override func configureView() {
         super.configureView()
         titleLabel.text = configuration.text
+        titleLabel.configure(with: configuration.textConfig)
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
     }
 }
 

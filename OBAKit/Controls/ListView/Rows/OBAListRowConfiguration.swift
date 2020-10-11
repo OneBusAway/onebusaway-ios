@@ -25,6 +25,9 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
     public var text: String? = nil
     public var secondaryText: String? = nil
 
+    public var textConfig: OBALabelConfiguration = .init()
+    public var secondaryTextConfig: OBALabelConfiguration = .init(textColor: .secondaryLabel)
+
     public var appearance: Appearance = .default
     public var accessoryType: Accessory = .none
 
@@ -35,5 +38,17 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case .value:    return OBAListRowCell<OBAListRowCellValue>.self
         case .header:   return OBAListRowCell<OBAListRowCellHeader>.self
         }
+    }
+}
+
+public struct OBALabelConfiguration: Hashable, Equatable {
+    var textColor: UIColor = .label
+    var numberOfLines: Int = 0
+}
+
+extension UILabel {
+    func configure(with config: OBALabelConfiguration) {
+        self.textColor = config.textColor
+        self.numberOfLines = config.numberOfLines
     }
 }

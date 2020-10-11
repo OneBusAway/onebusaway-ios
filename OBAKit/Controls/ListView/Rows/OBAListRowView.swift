@@ -78,10 +78,9 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
     }
 
     // MARK: - UICollectionViewCell
-
     override func prepareForReuse() {
         super.prepareForReuse()
-//        tableRowView.prepareForReuse()
+        listRowView.prepareForReuse()
     }
 
     override var isHighlighted: Bool {
@@ -144,32 +143,39 @@ public class OBAListRowView: UIView, OBAContentView {
 
     // MARK: - UI
     var contentStack: UIStackView!
-    let imageView: UIImageView = {
-        let view = UIImageView()
-        view.contentMode = .scaleAspectFit
-        view.setCompressionResistance(vertical: .required)
-        view.setHugging(horizontal: .defaultHigh)
-        view.tintColor = ThemeColors.shared.brand
-        view.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
-
-        return view
-    }()
 
     var userView: UIView!
+    var imageView: UIImageView!
     private var accessoryView: UIImageView!
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.userView = makeUserView()
-        self.contentStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .leading, arrangedSubviews: [imageView, userView])
-        contentStack.spacing = ThemeMetrics.padding
+
+        imageView = UIImageView.autolayoutNew()
+        imageView.contentMode = .scaleAspectFit
+        imageView.setCompressionResistance(horizontal: .required, vertical: .required)
+        imageView.setHugging(horizontal: .required)
+        imageView.tintColor = ThemeColors.shared.brand
+        imageView.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .headline))
 
         accessoryView = UIImageView.autolayoutNew()
-        accessoryView.setCompressionResistance(vertical: .required)
-        accessoryView.setHugging(horizontal: .defaultHigh)
+        accessoryView.setCompressionResistance(horizontal: .required, vertical: .required)
+        accessoryView.setHugging(horizontal: .required)
         accessoryView.backgroundColor = .clear
+        accessoryView.tintColor = ThemeColors.shared.brand
+        accessoryView.preferredSymbolConfiguration = .init(font: .preferredFont(forTextStyle: .body))
 
-        let outerStack = UIStackView.stack(axis: .horizontal, distribution: .fill, alignment: .center, arrangedSubviews: [contentStack, accessoryView])
+        userView = makeUserView()
+        userView.setCompressionResistance(vertical: .defaultLow)
+
+        contentStack = UIStackView.stack(
+            axis: .horizontal,
+            distribution: .fill,
+            alignment: .center,
+            arrangedSubviews: [imageView, userView])
+        contentStack.spacing = ThemeMetrics.padding
+
+        let outerStack = UIStackView.stack(axis: .horizontal, distribution: .fillProportionally, alignment: .center, arrangedSubviews: [contentStack, accessoryView])
         outerStack.spacing = ThemeMetrics.padding
         outerStack.backgroundColor = .clear
 
@@ -214,6 +220,11 @@ public class OBAListRowView: UIView, OBAContentView {
             accessoryImage = nil
         }
         self.accessoryView.image = accessoryImage
+    }
+
+    func prepareForReuse() {
+        self.imageView.image = nil
+        self.accessoryView.image = nil
     }
 
     required init?(coder aDecoder: NSCoder) {

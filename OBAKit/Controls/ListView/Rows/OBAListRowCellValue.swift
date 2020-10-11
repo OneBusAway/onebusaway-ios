@@ -25,9 +25,18 @@ public class OBAListRowCellValue: OBAListRowView {
     override func configureView() {
         super.configureView()
         titleLabel.text = configuration.text
+        titleLabel.configure(with: configuration.textConfig)
+
         subtitleLabel.text = configuration.secondaryText
+        subtitleLabel.configure(with: configuration.secondaryTextConfig)
 
         textStack.axis = isAccessibility ? .vertical : .horizontal
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        subtitleLabel.text = nil
     }
 }
 

@@ -13,7 +13,7 @@ public class OBAListRowCellSubtitle: OBAListRowView {
     let subtitleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
 
     override func makeUserView() -> UIView {
-        self.textStack = UIStackView.stack(axis: .vertical, distribution: .fill, arrangedSubviews: [titleLabel, subtitleLabel])
+        self.textStack = UIStackView.stack(axis: .vertical, distribution: .equalSpacing, arrangedSubviews: [titleLabel, subtitleLabel])
 
         return self.textStack
     }
@@ -21,7 +21,16 @@ public class OBAListRowCellSubtitle: OBAListRowView {
     override func configureView() {
         super.configureView()
         titleLabel.text = configuration.text
+        titleLabel.configure(with: configuration.textConfig)
+
         subtitleLabel.text = configuration.secondaryText
+        subtitleLabel.configure(with: configuration.secondaryTextConfig)
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        titleLabel.text = nil
+        subtitleLabel.text = nil
     }
 }
 
