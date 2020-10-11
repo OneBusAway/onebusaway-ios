@@ -6,13 +6,15 @@
 //
 
 public struct OBAListViewSection: Hashable {
+    public typealias ID = String
     public enum CollapseState {
         case collapsed
         case expanded
     }
 
-    /// eye deeeee
-    public var id: String
+    /// The identifier of this section.
+    /// - important: In a given `OBAListView`, this ID must be unique.
+    public var id: ID
 
     /// A localized title that displays in the section header.
     /// If you do not want to display a section header, set this to `nil`.
@@ -20,11 +22,6 @@ public struct OBAListViewSection: Hashable {
 
     /// The items in this section.
     public var contents: [AnyOBAListViewItem]
-
-    public var listViewSectionHeader: AnyOBAListViewItem? {
-        guard let title = title else { return nil }
-        return AnyOBAListViewItem(OBAListViewSectionHeader(title: title))
-    }
 
     public var hasHeader: Bool {
         return title != nil

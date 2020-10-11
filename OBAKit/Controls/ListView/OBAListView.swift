@@ -7,15 +7,6 @@
 
 import SwipeCellKit
 
-protocol OBAListViewDataSource: class {
-    func items(for listView: OBAListView) -> [OBAListViewSection]
-}
-
-protocol OBAListViewDelegate: class {
-    func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem)
-    func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection)
-}
-
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
 /// To set data in the List View, call `applyData()`. To supply data, conform to `OBAListViewDataSource`.
@@ -85,11 +76,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     // MARK: - Supplementary views
-    func headerView(collectionView: UICollectionView,
-                    of kind: String,
-                    at indexPath: IndexPath,
-                    dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>)
-    -> UICollectionReusableView? {
+    func headerView(
+        collectionView: UICollectionView,
+        of kind: String,
+        at indexPath: IndexPath,
+        dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>
+    ) -> UICollectionReusableView? {
         guard kind == UICollectionView.elementKindSectionHeader,
               let view = collectionView.dequeueReusableSupplementaryView(
                 ofKind: kind,
@@ -104,21 +96,14 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         return view
     }
 
-    func footerView(collectionView: UICollectionView,
-                    of kind: String,
-                    at indexPath: IndexPath,
-                    dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>)
-    -> UICollectionReusableView? {
-        guard kind == UICollectionView.elementKindSectionFooter,
-              let view = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier,
-                for: indexPath) as? OBAListViewSeparatorSupplementaryView
-        else { return nil }
-
-        return view
+    func footerView(
+        collectionView: UICollectionView,
+        of kind: String,
+        at indexPath: IndexPath,
+        dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>
+    ) -> UICollectionReusableView? {
+        return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier, for: indexPath)
     }
-
 
     // MARK: - Delegate methods
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
@@ -216,7 +201,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     public func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
-        obaDelegate?.didTap(headerView, section: section)
+        obaDelegate?.didTap(self, headerView: headerView, section: section)
     }
 }
 
