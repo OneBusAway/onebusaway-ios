@@ -25,6 +25,10 @@ public class OBAListRowCellSubtitle: OBAListRowView {
 
         subtitleLabel.text = configuration.secondaryText
         subtitleLabel.configure(with: configuration.secondaryTextConfig)
+
+        isAccessibilityElement = true
+        accessibilityLabel = configuration.text
+        accessibilityValue = configuration.secondaryText
     }
 
     override func prepareForReuse() {

@@ -41,6 +41,10 @@ public class OBAListRowCellHeader: OBAListRowView {
         self.backgroundColor = UIColor.secondarySystemBackground
 
         titleLabel.text = configuration.text
+
+        isAccessibilityElement = true
+        accessibilityLabel = configuration.text
+        accessibilityTraits = .header
     }
 }
 

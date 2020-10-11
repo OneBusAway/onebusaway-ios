@@ -203,8 +203,6 @@ public class OBAListRowView: UIView, OBAContentView {
     }
     
     func configureView() {
-        imageView.image = configuration.image
-
         contentStack.axis = isAccessibility ? .vertical : .horizontal
         contentStack.alignment = isAccessibility ? .leading : .center
 
@@ -219,7 +217,12 @@ public class OBAListRowView: UIView, OBAContentView {
         case .none:
             accessoryImage = nil
         }
-        self.accessoryView.image = accessoryImage
+
+        accessoryView.image = accessoryImage
+        accessoryView.isHidden = accessoryView.image == nil
+
+        imageView.image = configuration.image
+        imageView.isHidden = imageView.image == nil
     }
 
     func prepareForReuse() {

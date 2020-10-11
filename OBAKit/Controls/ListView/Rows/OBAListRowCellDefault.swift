@@ -19,6 +19,9 @@ public class OBAListRowCellDefault: OBAListRowView {
         super.configureView()
         titleLabel.text = configuration.text
         titleLabel.configure(with: configuration.textConfig)
+
+        isAccessibilityElement = true
+        accessibilityLabel = configuration.text
     }
 
     override func prepareForReuse() {
