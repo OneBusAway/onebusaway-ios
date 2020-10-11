@@ -12,7 +12,7 @@ targets:
       - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel
-      - carthage: SwipeCellKit
+      - package: SwipeCellKit
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
