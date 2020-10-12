@@ -60,6 +60,16 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
         dataLoader.loadData()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        locationManager.startUpdatingLocation()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        locationManager.stopUpdatingLocation()
+    }
+
     // MARK: - NotificationCenter
 
     func widgetActiveDisplayModeDidChange(_ activeDisplayMode: NCWidgetDisplayMode, withMaximumSize maxSize: CGSize) {
@@ -104,7 +114,19 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
     // MARK: ListAdapterDataSource
 
     func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return bestAvailableBookmarks.compactMap { bm -> BookmarkArrivalData? in
+        let currentLocation = locationService.currentLocation
+
+        return bestAvailableBookmarks.sorted { (b1, b2) -> Bool in
+            if let currentLocation = currentLocation {
+                let c1 = b1.stop.location.coordinate
+                let c2 = b2.stop.location.coordinate
+                return c1.distance(from: currentLocation.coordinate) < c2.distance(from: currentLocation.coordinate)
+            }
+            else {
+                return b1.name < b2.name
+            }
+        }
+        .compactMap { bm -> BookmarkArrivalData? in
             var arrDeps = [ArrivalDeparture]()
 
             if let key = TripBookmarkKey(bookmark: bm) {
@@ -127,6 +149,8 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
         return emptyView
     }
 }
+
+// MARK: - TodaySectionController
 
 final class TodaySectionController: ListSectionController {
 

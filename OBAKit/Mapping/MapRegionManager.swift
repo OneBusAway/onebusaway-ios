@@ -75,7 +75,7 @@ public class MapRegionManager: NSObject,
             #if targetEnvironment(simulator)
             return false
             #else
-            application.userDefaults.bool(forKey: mapViewShowsTrafficKey)
+            return application.userDefaults.bool(forKey: mapViewShowsTrafficKey)
             #endif
         }
         set {
