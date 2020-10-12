@@ -15,18 +15,12 @@ public protocol OBAListViewItem: Hashable {
     var onSelectAction: OBAListViewAction<Self>? { get }
 
     /// Contextual actions to display on the leading side of the cell.
+    /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var leadingContextualActions: [OBAListViewContextualAction<Self>]? { get }
 
     /// Contextual actions to display on the trailing side of the cell.
+    /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var trailingContextualActions: [OBAListViewContextualAction<Self>]? { get }
-
-    /// Do not implement this yourself, specify actions using `var leadingActions: [OBAListViewAction<_>]`.
-    /// The default implementation takes `leadingActions` and sets the `item` property to self.
-    var leadingSwipeActions: [OBAListViewContextualAction<Self>]? { get }
-
-    /// Do not implement this yourself, specify actions using `var trailingActions: [OBAListViewAction<_>]`.
-    /// The default implementation takes `leadingActions` and sets the `item` property to self.
-    var trailingSwipeActions: [OBAListViewContextualAction<Self>]? { get }
 }
 
 // MARK: Default implementations
@@ -41,22 +35,6 @@ extension OBAListViewItem {
 
     public var trailingContextualActions: [OBAListViewContextualAction<Self>]? {
         return nil
-    }
-
-    public var leadingSwipeActions: [OBAListViewContextualAction<Self>]? {
-        return leadingContextualActions?.map {
-            var action = $0
-            action.item = self
-            return action
-        }
-    }
-
-    public var trailingSwipeActions: [OBAListViewContextualAction<Self>]? {
-        return trailingContextualActions?.map {
-            var action = $0
-            action.item = self
-            return action
-        }
     }
 }
 
@@ -73,8 +51,8 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _hash: (_ hasher: inout Hasher) -> Void
 
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
-    private let _leadingActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
-    private let _trailingActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
+    private let _leadingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
+    private let _trailingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _type: Any
 
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
@@ -84,8 +62,8 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         self._type = listCellViewModel
 
         self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
-        self._leadingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingSwipeActions) }
-        self._trailingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.trailingSwipeActions) }
+        self._leadingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingContextualActions) }
+        self._trailingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.trailingContextualActions) }
     }
 
     fileprivate static func typeEraseAction<ViewModel: OBAListViewItem>(
@@ -138,12 +116,12 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         return _onSelectAction()
     }
 
-    public var leadingActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
-        return _leadingActions()
+    public var leadingContextualActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
+        return _leadingContextualActions()
     }
 
-    public var trailingActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
-        return _trailingActions()
+    public var trailingContextualActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
+        return _trailingContextualActions()
     }
 
     public func hash(into hasher: inout Hasher) {

@@ -116,11 +116,17 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         guard collectionView == self else { return nil }
         guard let item = self.diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
 
+        func setItem(on action: OBAListViewContextualAction<AnyOBAListViewItem>) -> OBAListViewContextualAction<AnyOBAListViewItem> {
+            var newAction = action
+            newAction.item = item
+            return newAction
+        }
+
         switch orientation {
         case .left:
-            return item.leadingSwipeActions?.map { $0.swipeAction }
+            return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
         case .right:
-            return item.trailingSwipeActions?.map { $0.swipeAction }
+            return item.trailingContextualActions?.map { setItem(on: $0).swipeAction }
         }
     }
 
