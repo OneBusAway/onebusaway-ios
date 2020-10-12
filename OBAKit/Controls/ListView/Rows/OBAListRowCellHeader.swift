@@ -54,7 +54,11 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowCellHeader_Previews: PreviewProvider {
-    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.circle.fill"), text: "Privacy Settings", appearance: .header, accessoryType: .none)
+    static let configuration = OBAListRowConfiguration(
+        image: UIImage(systemName: "person.circle.fill"),
+        text: "Privacy Settings",
+        appearance: .header,
+        accessoryType: .none)
 
     static var previews: some View {
         Group {

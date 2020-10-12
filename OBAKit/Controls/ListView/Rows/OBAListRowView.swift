@@ -241,7 +241,12 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowView_Previews: PreviewProvider {
-    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: "name", secondaryText: "address", appearance: .subtitle, accessoryType: .disclosureIndicator)
+    static let configuration = OBAListRowConfiguration(
+        image: UIImage(systemName: "person.fill"),
+        text: "name",
+        secondaryText: "address",
+        appearance: .subtitle,
+        accessoryType: .disclosureIndicator)
 
     static var defaultRow: OBAListRowCellDefault {
         let row = OBAListRowCellDefault()

@@ -44,7 +44,13 @@ import SwiftUI
 import OBAKitCore
 
 struct OBAListRowCellSubtitle_Previews: PreviewProvider {
-    static let configuration = OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: "name", secondaryText: "address", appearance: .subtitle, accessoryType: .none)
+    static let configuration = OBAListRowConfiguration(
+        image: UIImage(systemName: "person.fill"),
+        text: "name",
+        secondaryText: "address",
+        appearance: .subtitle,
+        accessoryType: .none)
+
     static var previews: some View {
         Group {
             UIViewPreview {
