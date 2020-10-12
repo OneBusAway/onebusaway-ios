@@ -13,11 +13,19 @@ class OBAListViewSeparatorSupplementaryView: UICollectionReusableView {
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
-
-        self.layer.backgroundColor = UIColor.secondarySystemBackground.cgColor
+        configureView()
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        configureView()
+    }
+
+    func configureView() {
+        self.layer.backgroundColor = UIColor.secondarySystemBackground.cgColor
     }
 }

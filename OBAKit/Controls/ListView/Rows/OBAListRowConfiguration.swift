@@ -43,12 +43,17 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
 
 public struct OBALabelConfiguration: Hashable, Equatable {
     var textColor: UIColor = .label
+
+    /// The number of lines when the content size is a standard size, aka `UITraitEnvironment.isAccessibility` is `false`.
     var numberOfLines: Int = 0
+
+    /// The number of lines when the content size is an accessibility size, aka `UITraitEnvironment.isAccessibility` is `true`.
+    var accessibilityNumberOfLines: Int = 0
 }
 
 extension UILabel {
     func configure(with config: OBALabelConfiguration) {
         self.textColor = config.textColor
-        self.numberOfLines = config.numberOfLines
+        self.numberOfLines = isAccessibility ? config.accessibilityNumberOfLines : config.numberOfLines
     }
 }
