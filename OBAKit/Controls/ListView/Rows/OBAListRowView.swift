@@ -248,20 +248,20 @@ struct OBAListRowView_Previews: PreviewProvider {
         appearance: .subtitle,
         accessoryType: .disclosureIndicator)
 
-    static var defaultRow: OBAListRowCellDefault {
-        let row = OBAListRowCellDefault()
+    static var defaultRow: OBAListRowViewDefault {
+        let row = OBAListRowViewDefault()
         row.apply(configuration)
         return row
     }
 
-    static var subtitleRow: OBAListRowCellSubtitle {
-        let row = OBAListRowCellSubtitle()
+    static var subtitleRow: OBAListRowViewSubtitle {
+        let row = OBAListRowViewSubtitle()
         row.apply(configuration)
         return row
     }
 
-    static var valueRow: OBAListRowCellValue {
-        let row = OBAListRowCellValue()
+    static var valueRow: OBAListRowViewValue {
+        let row = OBAListRowViewValue()
         row.apply(configuration)
         return row
     }

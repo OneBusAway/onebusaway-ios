@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/11/20.
 //
 
-protocol OBAListViewDataSource: class {
+public protocol OBAListViewDataSource: class {
     /// The sections you provide must have unique IDs.
     /// # Example implementation
     /// ```swift

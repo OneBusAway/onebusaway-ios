@@ -1,12 +1,12 @@
 //
-//  OBAListRowCellDefault.swift
+//  OBAListRowViewDefault.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/4/20.
 //
 
-public class OBAListRowCellDefault: OBAListRowView {
-    static let ReuseIdentifier: String = "OBAListRowCellDefault_ReuseIdentifier"
+public class OBAListRowViewDefault: OBAListRowView {
+    static let ReuseIdentifier: String = "OBAListRowViewDefault_ReuseIdentifier"
 
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
 
@@ -35,7 +35,7 @@ public class OBAListRowCellDefault: OBAListRowView {
 import SwiftUI
 import OBAKitCore
 
-struct OBAListRowCellDefault_Previews: PreviewProvider {
+struct OBAListRowViewDefault_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.fill"),
         text: "title text",
@@ -45,14 +45,14 @@ struct OBAListRowCellDefault_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             UIViewPreview {
-                let view = OBAListRowCellDefault(frame: .zero)
+                let view = OBAListRowViewDefault(frame: .zero)
                 view.configuration = configuration
                 return view
             }
             .previewLayout(.fixed(width: 384, height: 44))
 
             UIViewPreview {
-                let view = OBAListRowCellDefault(frame: .zero)
+                let view = OBAListRowViewDefault(frame: .zero)
                 view.configuration = configuration
                 return view
             }

@@ -7,14 +7,15 @@
 
 /// To add collapsible sections to `OBAListView`, conform to `OBAListViewCollapsibleSectionsDelegate`.
 /// Then, set `OBAListView.collapsibleSectionsDelegate`.
-protocol OBAListViewCollapsibleSectionsDelegate: class {
+public protocol OBAListViewCollapsibleSectionsDelegate: class {
     /// Required. A list of collapsed sections.
     var collapsedSections: Set<OBAListViewSection.ID> { get set }
 
     /// Optional. Provide taptic feedback when the user collapses a section.
     var selectionFeedbackGenerator: UISelectionFeedbackGenerator? { get }
 
-    /// Optional. Default implementation returns `true`.
+    /// Optional. Lets OBAListView if you want to exclude sections from being collapsible.
+    /// Default implementation returns `true`.
     func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool
 
     /// Tells the delegate that the header for a section was tapped by the user.
@@ -23,7 +24,7 @@ protocol OBAListViewCollapsibleSectionsDelegate: class {
     ///     - headerView: The header view that was selected. Due to the nature of `OBAListView`'s
     ///         handling of header views, you should update the view directly in this method.
     ///     - section: The section data.
-    func didTap(_ listView: OBAListView, headerView: OBAListRowCellHeader, section: OBAListViewSection)
+    func didTap(_ listView: OBAListView, headerView: OBAListRowViewHeader, section: OBAListViewSection)
 
     /// A helper function that handles toggling the collapsed states of sections. This method also updates the provided `headerView`.
     ///
@@ -33,28 +34,32 @@ protocol OBAListViewCollapsibleSectionsDelegate: class {
     /// - If `section.id` does not exists in `collapsedSection`, then it is added, the section view
     ///   model is updated, and the model is passed to the header view to update its UI.
     ///
-    /// # Example usage
-    /// Use in `didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection)`.
+    /// ## Example usage
+    /// Use in `didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection)`.
     /// For example:
     /// ```swift
-    /// func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
+    /// func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection) {
     ///     handleSectionCollapsibleState(didTapHeader: &headerView, forSection: section, collapsedSections: &collapsedSections)
     ///     self.dataSource.apply()
     /// }
     /// ```
+    /// - parameters:
+    ///     - header: The header view that is going to be collapsed/expanded.
+    ///     - section: The section view model that was selected
+    ///     - collapsedSections: The pointer to the collapsed sections of the current list view.
     func handleSectionCollapsibleState(
-        didTapHeader header: OBAListRowCellHeader,
+        didTapHeader header: OBAListRowViewHeader,
         forSection section: OBAListViewSection,
         collapsedSections: inout Set<OBAListViewSection.ID>)
 }
 
 // MARK: Default implementations
 extension OBAListViewCollapsibleSectionsDelegate {
-    func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
+    public func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
         return true
     }
 
-    func didTap(_ listView: OBAListView, headerView: OBAListRowCellHeader, section: OBAListViewSection) {
+    public func didTap(_ listView: OBAListView, headerView: OBAListRowViewHeader, section: OBAListViewSection) {
         guard canCollapseSection(listView, section: section) else { return }
 
         handleSectionCollapsibleState(
@@ -62,14 +67,14 @@ extension OBAListViewCollapsibleSectionsDelegate {
             forSection: section,
             collapsedSections: &collapsedSections)
 
-        // TODO: Animate changes. As it stands, the fade animation is really confusing.
+        // TODO: Animate changes. If we do animate changes right now, the fade animation is really confusing.
         listView.applyData(animated: false)
 
         selectionFeedbackGenerator?.selectionChanged()
     }
 
-    func handleSectionCollapsibleState(
-        didTapHeader header: OBAListRowCellHeader,
+    public func handleSectionCollapsibleState(
+        didTapHeader header: OBAListRowViewHeader,
         forSection section: OBAListViewSection,
         collapsedSections: inout Set<OBAListViewSection.ID>) {
 
@@ -82,6 +87,7 @@ extension OBAListViewCollapsibleSectionsDelegate {
             collapsedSections.insert(section.id)
         }
 
+        // Update the view with the new state
         header.section = modifiedSection
     }
 }

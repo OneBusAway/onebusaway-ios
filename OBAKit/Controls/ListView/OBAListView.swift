@@ -9,11 +9,14 @@ import SwipeCellKit
 
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
-/// To set data in the List View, call `applyData()`. To supply data, conform to `OBAListViewDataSource`.
-/// `applyData()` calls `OBAListViewDataSource.items(:_)`.
+/// The default cells are available for use out of the box, however you'll need to register other custom cells
+/// that your list may use. For convenience, use `register(listViewItem: _)` to ensure that the cells
+/// you register is OBAListViewCell. All cells used in OBAListView must be OBAListViewCell.
+///
+/// Data is provided via `obaDataSource.items(:_)`. To apply the data, call `applyData()`.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
-    weak var obaDataSource: OBAListViewDataSource?
-    weak var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
+    weak public var obaDataSource: OBAListViewDataSource?
+    weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
@@ -27,10 +30,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.backgroundColor = .systemBackground
 
         // Register default rows.
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellDefault>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellSubtitle>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellValue>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowCellHeader>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewDefault>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewSubtitle>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewValue>.self)
+        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewHeader>.self)
 
         self.register(OBAListRowHeaderSupplementaryView.self,
                       forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
@@ -116,6 +119,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         guard collectionView == self else { return nil }
         guard let item = self.diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
 
+        // The action closure passes a copy of the view model, so we need to include that.
         func setItem(on action: OBAListViewContextualAction<AnyOBAListViewItem>) -> OBAListViewContextualAction<AnyOBAListViewItem> {
             var newAction = action
             newAction.item = item
@@ -209,7 +213,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
     }
 
-    func register<Item: OBAListViewItem>(listViewItem: Item.Type) {
+    /// Registers a custom cell type as defined by the view model.
+    /// - Parameter listViewItem: The view model with a custom cell to register.
+    public func register<Item: OBAListViewItem>(listViewItem: Item.Type) {
         guard let cellType = listViewItem.customCellType else {
             Logger.warn("You asked OBAListView to register \(String(describing: listViewItem)), but it doesn't have a customCellType.")
             return
@@ -218,7 +224,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.register(reuseIdentifierProviding: cellType)
     }
 
-    public func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
+    public func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection) {
         collapsibleSectionsDelegate?.didTap(self, headerView: headerView, section: section)
     }
 }

@@ -82,7 +82,7 @@ class AgencyAlertsViewController: UIViewController,
         navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
     }
 
-    // MARK: - IGListKit
+    // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
         return alertsStore.listViewSections(onSelectAction: { [weak self] alert in

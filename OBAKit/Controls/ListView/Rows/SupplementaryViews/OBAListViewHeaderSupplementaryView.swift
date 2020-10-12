@@ -7,7 +7,7 @@
 
 // MARK: - UICollectionReusableView
 public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
-    func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection)
+    func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection)
 }
 
 public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
@@ -21,7 +21,7 @@ public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
     }
 
     // MARK: - UI
-    fileprivate var headerView: OBAListRowCellHeader = OBAListRowCellHeader(frame: .zero)
+    fileprivate var headerView: OBAListRowViewHeader = OBAListRowViewHeader(frame: .zero)
 
     public override init(frame: CGRect) {
         super.init(frame: frame)

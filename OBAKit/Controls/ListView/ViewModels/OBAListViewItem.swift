@@ -9,16 +9,17 @@
 public protocol OBAListViewItem: Hashable {
     var contentConfiguration: OBAContentConfiguration { get }
 
+    /// Optional. If your item doesn't use OBAListRowView, you define the custom view type here.
     static var customCellType: OBAListViewCell.Type? { get }
 
-    /// Action to perform when you select this item.
+    /// Optional. Action to perform when you select this item.
     var onSelectAction: OBAListViewAction<Self>? { get }
 
-    /// Contextual actions to display on the leading side of the cell.
+    /// Optional. Contextual actions to display on the leading side of the cell.
     /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var leadingContextualActions: [OBAListViewContextualAction<Self>]? { get }
 
-    /// Contextual actions to display on the trailing side of the cell.
+    /// Optional. Contextual actions to display on the trailing side of the cell.
     /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var trailingContextualActions: [OBAListViewContextualAction<Self>]? { get }
 }
@@ -39,11 +40,11 @@ extension OBAListViewItem {
 }
 
 // MARK: - Type erase OBAListViewItem
-/// To attempt to cast into an `OBAListViewItem`, call `as(:_)`.
+/// A type-erased OBAListViewItem.
 ///
-/// Example:
+/// To attempt to cast into an `OBAListViewItem`, call `as(:_)`. For example:
 /// ```swift
-/// guard let person = AnyOBAListViewItem.as(Person.self) else { return }
+/// let person: Person? = AnyOBAListViewItem.as(Person.self)
 /// ```
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable

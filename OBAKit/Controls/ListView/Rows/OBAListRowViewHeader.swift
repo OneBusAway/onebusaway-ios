@@ -1,5 +1,5 @@
 //
-//  OBAListRowCellHeader.swift
+//  OBAListRowViewHeader.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/4/20.
@@ -7,8 +7,8 @@
 
 import OBAKitCore
 
-public class OBAListRowCellHeader: OBAListRowView {
-    static let ReuseIdentifier: String = "OBAListRowCellDefault_ReuseIdentifier"
+public class OBAListRowViewHeader: OBAListRowView {
+    static let ReuseIdentifier: String = "OBAListRowViewHeader_ReuseIdentifier"
 
     public var section: OBAListViewSection? {
         didSet {
@@ -53,7 +53,7 @@ public class OBAListRowCellHeader: OBAListRowView {
 import SwiftUI
 import OBAKitCore
 
-struct OBAListRowCellHeader_Previews: PreviewProvider {
+struct OBAListRowViewHeader_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.circle.fill"),
         text: "Privacy Settings",
@@ -63,14 +63,14 @@ struct OBAListRowCellHeader_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             UIViewPreview {
-                let view = OBAListRowCellHeader(frame: .zero)
+                let view = OBAListRowViewHeader(frame: .zero)
                 view.configuration = configuration
                 return view
             }
             .previewLayout(.fixed(width: 384, height: 44))
 
             UIViewPreview {
-                let view = OBAListRowCellHeader(frame: .zero)
+                let view = OBAListRowViewHeader(frame: .zero)
                 view.configuration = configuration
                 return view
             }

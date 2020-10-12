@@ -1,23 +1,19 @@
 //
-//  OBAListRowCellValue.swift
+//  OBAListRowViewSubtitle.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/4/20.
 //
 
-public class OBAListRowCellValue: OBAListRowView {
-    static let ReuseIdentifier: String = "OBAListRowCellValue_ReuseIdentifier"
-
+public class OBAListRowViewSubtitle: OBAListRowView {
+    static let ReuseIdentifier: String = "OBAListRowViewSubtitle_ReuseIdentifier"
     private var textStack: UIStackView!
 
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
-    let subtitleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body), textColor: ThemeColors.shared.secondaryLabel)
+    let subtitleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .footnote), textColor: ThemeColors.shared.secondaryLabel)
 
     override func makeUserView() -> UIView {
-        titleLabel.textAlignment = .left
-        subtitleLabel.textAlignment = .right
-
-        self.textStack = UIStackView.stack(axis: .horizontal, distribution: .fill, arrangedSubviews: [titleLabel, subtitleLabel])
+        self.textStack = UIStackView.stack(axis: .vertical, distribution: .equalSpacing, arrangedSubviews: [titleLabel, subtitleLabel])
 
         return self.textStack
     }
@@ -29,8 +25,6 @@ public class OBAListRowCellValue: OBAListRowView {
 
         subtitleLabel.text = configuration.secondaryText
         subtitleLabel.configure(with: configuration.secondaryTextConfig)
-
-        textStack.axis = isAccessibility ? .vertical : .horizontal
 
         isAccessibilityElement = true
         accessibilityLabel = configuration.text
@@ -49,30 +43,22 @@ public class OBAListRowCellValue: OBAListRowView {
 import SwiftUI
 import OBAKitCore
 
-struct OBAListRowCellValue_Previews: PreviewProvider {
+struct OBAListRowViewSubtitle_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.fill"),
         text: "name",
         secondaryText: "address",
-        appearance: .value,
+        appearance: .subtitle,
         accessoryType: .none)
 
     static var previews: some View {
         Group {
             UIViewPreview {
-                let view = OBAListRowCellValue()
+                let view = OBAListRowViewSubtitle()
                 view.configuration = configuration
                 return view
             }
             .previewLayout(.fixed(width: 384, height: 44))
-
-            UIViewPreview {
-                let view = OBAListRowCellValue()
-                view.configuration = configuration
-                return view
-            }
-            .environment(\.sizeCategory, .accessibilityLarge)
-            .previewLayout(.sizeThatFits)
         }
     }
 }
