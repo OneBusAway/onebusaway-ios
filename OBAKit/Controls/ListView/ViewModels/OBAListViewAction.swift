@@ -7,16 +7,19 @@
 
 import SwipeCellKit
 
+public typealias OBAListViewAction<Item: OBAListViewItem> = (Item) -> Void
+
 // This needs to be declared by itself. If you declare it under OBAListViewAction,
 // it makes it a generic and messes things up.
-public enum OBAListViewActionStyle {
+public enum OBAListViewContextualActionStyle {
     case destructive
     case normal
 }
 
-public struct OBAListViewAction<Item: OBAListViewItem> {
+/// An action to display when the user swipes a list view row.
+public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     /// The style applied to the action button.
-    public var style: OBAListViewActionStyle = .normal
+    public var style: OBAListViewContextualActionStyle = .normal
 
     /// The title of the action button.
     public var title: String? = nil
@@ -36,7 +39,7 @@ public struct OBAListViewAction<Item: OBAListViewItem> {
     public var hidesWhenSelected: Bool = false
 
     public var item: Item? = nil
-    public var handler: ((Item) -> Void)? = nil
+    public var handler: OBAListViewAction<Item>? = nil
 
     public var swipeAction: SwipeAction {
         let style: SwipeActionStyle

@@ -29,11 +29,11 @@ public class OBAListRowCellHeader: OBAListRowView {
         }
     }
 
-    let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
+    let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .headline))
 
     override func makeUserView() -> UIView {
         // wrap in stack view to fix layout spacing
-        return UIStackView(arrangedSubviews: [titleLabel])
+        return UIStackView.stack(distribution: .equalSpacing, arrangedSubviews: [titleLabel])
     }
 
     override func configureView() {

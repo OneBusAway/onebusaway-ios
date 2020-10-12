@@ -1,40 +1,23 @@
 //
-//  OBAListViewProtocols.swift
+//  OBAListViewCollapsibleSectionsDelegate.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/11/20.
 //
 
-protocol OBAListViewDataSource: class {
-    /// The sections you provide must have unique IDs.
-    /// # Example implementation
-    /// ```swift
-    /// func items(for listView: OBAListView) -> [OBAListViewSection] {
-    ///     return [
-    ///         OBAListViewSection(id: "contacts", title: "Contacts", contents: [
-    ///             Person(name: "Bob"),
-    ///             Person(name: "Job"),
-    ///             Person(name: "Cob")
-    ///         ]),
-    ///         OBAListViewSection(id: "addresses", title: "Addresses", contents: [
-    ///             Address(street: "616 Battery St", city: "Seattle"),
-    ///             Address(street: "NE 8th St & Bellevue Way", city: "Bellevue")
-    ///         ])
-    ///     ]
-    /// }
-    /// ```
-    /// - parameter listView: The list view that is requesting the items.
-    func items(for listView: OBAListView) -> [OBAListViewSection]
-}
+/// To add collapsible sections to `OBAListView`, conform to `OBAListViewCollapsibleSectionsDelegate`.
+/// Then, set `OBAListView.collapsibleSectionsDelegate`.
+protocol OBAListViewCollapsibleSectionsDelegate: class {
+    /// Required. A list of collapsed sections.
+    var collapsedSections: Set<OBAListViewSection.ID> { get set }
 
-protocol OBAListViewDelegate: class {
-    /// Tells the delegate that the item was selected by the user.
-    /// - parameters:
-    ///     - listView: The list view where the item was selected.
-    ///     - item: The item that was selected.
-    func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem)
+    /// Optional. Provide taptic feedback when the user collapses a section.
+    var selectionFeedbackGenerator: UISelectionFeedbackGenerator? { get }
 
-    /// Tells the delegate that the header for the section was tapped by the user.
+    /// Optional. Default implementation returns `true`.
+    func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool
+
+    /// Tells the delegate that the header for a section was tapped by the user.
     /// - parameters:
     ///     - listView: The list view where the section was tapped.
     ///     - headerView: The header view that was selected. Due to the nature of `OBAListView`'s
@@ -62,27 +45,41 @@ protocol OBAListViewDelegate: class {
     func handleSectionCollapsibleState(
         didTapHeader header: OBAListRowCellHeader,
         forSection section: OBAListViewSection,
-        collapsedSections: inout [OBAListViewSection.ID])
+        collapsedSections: inout Set<OBAListViewSection.ID>)
 }
 
-// MARK: Default implementation
-extension OBAListViewDelegate {
-    func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
-        // nop.
+// MARK: Default implementations
+extension OBAListViewCollapsibleSectionsDelegate {
+    func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
+        return true
+    }
+
+    func didTap(_ listView: OBAListView, headerView: OBAListRowCellHeader, section: OBAListViewSection) {
+        guard canCollapseSection(listView, section: section) else { return }
+
+        handleSectionCollapsibleState(
+            didTapHeader: headerView,
+            forSection: section,
+            collapsedSections: &collapsedSections)
+
+        // TODO: Animate changes. As it stands, the fade animation is really confusing.
+        listView.applyData(animated: false)
+
+        selectionFeedbackGenerator?.selectionChanged()
     }
 
     func handleSectionCollapsibleState(
         didTapHeader header: OBAListRowCellHeader,
         forSection section: OBAListViewSection,
-        collapsedSections: inout [OBAListViewSection.ID]) {
+        collapsedSections: inout Set<OBAListViewSection.ID>) {
 
         var modifiedSection: OBAListViewSection = section
         if collapsedSections.contains(section.id) {
             modifiedSection.collapseState = .expanded
-            collapsedSections.removeAll { $0 == section.id }
+            collapsedSections.remove(section.id)
         } else {
             modifiedSection.collapseState = .collapsed
-            collapsedSections.append(section.id)
+            collapsedSections.insert(section.id)
         }
 
         header.section = modifiedSection

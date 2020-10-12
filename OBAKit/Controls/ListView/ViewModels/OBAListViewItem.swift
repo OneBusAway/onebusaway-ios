@@ -11,19 +11,22 @@ public protocol OBAListViewItem: Hashable {
 
     static var customCellType: OBAListViewCell.Type? { get }
 
-    /// Actions to display on the leading side of the cell.
-    var leadingActions: [OBAListViewAction<Self>]? { get }
+    /// Action to perform when you select this item.
+    var onSelectAction: OBAListViewAction<Self>? { get }
 
-    /// Actions to display on the trailing side of the cell.
-    var trailingActions: [OBAListViewAction<Self>]? { get }
+    /// Contextual actions to display on the leading side of the cell.
+    var leadingContextualActions: [OBAListViewContextualAction<Self>]? { get }
+
+    /// Contextual actions to display on the trailing side of the cell.
+    var trailingContextualActions: [OBAListViewContextualAction<Self>]? { get }
 
     /// Do not implement this yourself, specify actions using `var leadingActions: [OBAListViewAction<_>]`.
     /// The default implementation takes `leadingActions` and sets the `item` property to self.
-    var leadingSwipeActions: [OBAListViewAction<Self>]? { get }
+    var leadingSwipeActions: [OBAListViewContextualAction<Self>]? { get }
 
     /// Do not implement this yourself, specify actions using `var trailingActions: [OBAListViewAction<_>]`.
     /// The default implementation takes `leadingActions` and sets the `item` property to self.
-    var trailingSwipeActions: [OBAListViewAction<Self>]? { get }
+    var trailingSwipeActions: [OBAListViewContextualAction<Self>]? { get }
 }
 
 // MARK: Default implementations
@@ -32,24 +35,24 @@ extension OBAListViewItem {
         return nil
     }
 
-    public var leadingActions: [OBAListViewAction<Self>]? {
+    public var leadingContextualActions: [OBAListViewContextualAction<Self>]? {
         return nil
     }
 
-    public var trailingActions: [OBAListViewAction<Self>]? {
+    public var trailingContextualActions: [OBAListViewContextualAction<Self>]? {
         return nil
     }
 
-    public var leadingSwipeActions: [OBAListViewAction<Self>]? {
-        return leadingActions?.map {
+    public var leadingSwipeActions: [OBAListViewContextualAction<Self>]? {
+        return leadingContextualActions?.map {
             var action = $0
             action.item = self
             return action
         }
     }
 
-    public var trailingSwipeActions: [OBAListViewAction<Self>]? {
-        return trailingActions?.map {
+    public var trailingSwipeActions: [OBAListViewContextualAction<Self>]? {
+        return trailingContextualActions?.map {
             var action = $0
             action.item = self
             return action
@@ -69,8 +72,9 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _contentConfiguration: () -> OBAContentConfiguration
     private let _hash: (_ hasher: inout Hasher) -> Void
 
-    private let _leadingActions: () -> [OBAListViewAction<AnyOBAListViewItem>]?
-    private let _trailingActions: () -> [OBAListViewAction<AnyOBAListViewItem>]?
+    private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
+    private let _leadingActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
+    private let _trailingActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _type: Any
 
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
@@ -79,12 +83,30 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         self._hash = listCellViewModel.hash
         self._type = listCellViewModel
 
+        self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
         self._leadingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingSwipeActions) }
         self._trailingActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.trailingSwipeActions) }
     }
 
-    fileprivate static func typeEraseActions<ViewModel: OBAListViewItem>(_ actions: [OBAListViewAction<ViewModel>]?) -> [OBAListViewAction<AnyOBAListViewItem>]? {
-        return actions?.map { (typedItem: OBAListViewAction<ViewModel>) -> OBAListViewAction<AnyOBAListViewItem> in
+    fileprivate static func typeEraseAction<ViewModel: OBAListViewItem>(
+        _ action: OBAListViewAction<ViewModel>?
+    ) -> OBAListViewAction<AnyOBAListViewItem>? {
+        let typeErasedClosure: OBAListViewAction<AnyOBAListViewItem>?
+        if let typedClosure = action {
+            typeErasedClosure = { (anyItem: AnyOBAListViewItem) in
+                typedClosure(anyItem.as(ViewModel.self)!)
+            }
+        } else {
+            typeErasedClosure = nil
+        }
+
+        return typeErasedClosure
+    }
+
+    fileprivate static func typeEraseActions<ViewModel: OBAListViewItem>(
+        _ actions: [OBAListViewContextualAction<ViewModel>]?
+    ) -> [OBAListViewContextualAction<AnyOBAListViewItem>]? {
+        return actions?.map { (typedItem: OBAListViewContextualAction<ViewModel>) -> OBAListViewContextualAction<AnyOBAListViewItem> in
             let typeErased: AnyOBAListViewItem?
             if let item = typedItem.item {
                 typeErased = AnyOBAListViewItem(item)
@@ -92,21 +114,15 @@ public struct AnyOBAListViewItem: OBAListViewItem {
                 typeErased = nil
             }
 
-            let typeErasedClosure: ((AnyOBAListViewItem) -> Void)?
-            if let typedClosure = typedItem.handler {
-                typeErasedClosure = { (anyItem: AnyOBAListViewItem) in
-                    typedClosure(anyItem.as(ViewModel.self)!)
-                }
-            } else {
-                typeErasedClosure = nil
-            }
+            let typeErasedAction = typeEraseAction(typedItem.handler)
 
-            return OBAListViewAction(style: typedItem.style,
-                                     title: typedItem.title,
-                                     image: typedItem.image,
-                                     backgroundColor: typedItem.backgroundColor,
-                                     item: typeErased,
-                                     handler: typeErasedClosure)
+            return OBAListViewContextualAction(
+                style: typedItem.style,
+                title: typedItem.title,
+                image: typedItem.image,
+                backgroundColor: typedItem.backgroundColor,
+                item: typeErased,
+                handler: typeErasedAction)
         }
     }
 
@@ -118,11 +134,15 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         return _contentConfiguration()
     }
 
-    public var leadingActions: [OBAListViewAction<AnyOBAListViewItem>]? {
+    public var onSelectAction: OBAListViewAction<AnyOBAListViewItem>? {
+        return _onSelectAction()
+    }
+
+    public var leadingActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
         return _leadingActions()
     }
 
-    public var trailingActions: [OBAListViewAction<AnyOBAListViewItem>]? {
+    public var trailingActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {
         return _trailingActions()
     }
 

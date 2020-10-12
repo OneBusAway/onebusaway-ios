@@ -13,7 +13,8 @@ import SwipeCellKit
 /// `applyData()` calls `OBAListViewDataSource.items(:_)`.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
     weak var obaDataSource: OBAListViewDataSource?
-    weak var obaDelegate: OBAListViewDelegate?
+    weak var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
+
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
     public init() {
@@ -108,13 +109,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     // MARK: - Delegate methods
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
-
-        if let _ = item.as(OBAListViewSectionHeader.self) {
-            guard let cell = collectionView.cellForItem(at: indexPath) as? OBAListRowCell<OBAListRowCellHeader> else { return }
-            self.obaDelegate?.didTap(cell.listRowView, section: diffableDataSource.snapshot().sectionIdentifiers[indexPath.section])
-        } else {
-            self.obaDelegate?.didSelect(self, item: item)
-        }
+        item.onSelectAction?(item)
     }
 
     public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
@@ -136,6 +131,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
         let section = NSCollectionLayoutSection(group: group)
 
+        // Section headers
         let headerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .estimated(40)
@@ -147,6 +143,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         )
         sectionHeader.pinToVisibleBounds = true
 
+        // Section footers, a thin line is used to animate a fake cell movement
         let footerSize = NSCollectionLayoutSize(
             widthDimension: .fractionalWidth(1.0),
             heightDimension: .estimated(2)
@@ -156,19 +153,34 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
             elementKind: UICollectionView.elementKindSectionFooter,
             alignment: .bottom
         )
-
         section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
 
         let layout = UICollectionViewCompositionalLayout(section: section)
+
         return layout
     }
 
     // MARK: - Data source
-    public func applyData() {
-        let sections = self.obaDataSource?.items(for: self) ?? []
+    public func applyData(animated: Bool = false) {
+        var sections = self.obaDataSource?.items(for: self) ?? []
+        if let collapsibleDelegate = self.collapsibleSectionsDelegate {
+            // Add collapsed state to the section, if it is allowed to collapse.
+            sections = sections.map { section in
+                var newSection = section
+                if collapsibleDelegate.canCollapseSection(self, section: section) {
+                    newSection.collapseState = collapsibleDelegate.collapsedSections.contains(newSection.id) ? .collapsed : .expanded
+                } else {
+                    newSection.collapseState = nil
+                }
+                return newSection
+            }
+        }
+
         var snapshot = NSDiffableDataSourceSnapshot<OBAListViewSection, AnyOBAListViewItem>()
         snapshot.appendSections(sections)
         for section in sections {
+            // If the section is collapsible, account for its state.
+            // Otherwise, show all items.
             if let collapsedState = section.collapseState {
                 switch collapsedState {
                 case .collapsed:
@@ -182,7 +194,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
 
         DispatchQueue.main.async {
-            self.diffableDataSource.apply(snapshot)
+            self.diffableDataSource.apply(snapshot, animatingDifferences: animated)
         }
     }
 
@@ -201,7 +213,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     public func didTap(_ headerView: OBAListRowCellHeader, section: OBAListViewSection) {
-        obaDelegate?.didTap(self, headerView: headerView, section: section)
+        collapsibleSectionsDelegate?.didTap(self, headerView: headerView, section: section)
     }
 }
 
@@ -222,20 +234,6 @@ struct OBAListView_Previews: PreviewProvider {
     }
 }
 
-private struct Person: OBAListViewItem {
-    var id: UUID = UUID()
-    var name: String
-    var address: String
-
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .none)
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
-
 private class PersonsListView: OBAListView, OBAListViewDataSource {
     override init() {
         super.init()
@@ -250,14 +248,14 @@ private class PersonsListView: OBAListView, OBAListViewDataSource {
     func items(for listView: OBAListView) -> [OBAListViewSection] {
         return [
             OBAListViewSection(id: "1", title: "B", contents: [
-                Person(name: "Bo", address: "123 Main St"),
-                Person(name: "Bob", address: "456 Broadway"),
-                Person(name: "Bobby", address: "asdfasdkfjad")
+                DEBUG_Person(name: "Bo", address: "123 Main St"),
+                DEBUG_Person(name: "Bob", address: "456 Broadway"),
+                DEBUG_Person(name: "Bobby", address: "asdfasdkfjad")
             ]),
             OBAListViewSection(id: "2", title: "C", contents: [
-                Person(name: "Ca", address: "193 Lochmere Ln"),
-                Person(name: "Cab", address: "anywhere u want"),
-                Person(name: "Cabby", address: "huh")
+                DEBUG_Person(name: "Ca", address: "193 Lochmere Ln"),
+                DEBUG_Person(name: "Cab", address: "anywhere u want"),
+                DEBUG_Person(name: "Cabby", address: "huh")
             ]),
             OBAListViewSection(id: "3", title: "Custom Content", contents: [
                 DEBUG_CustomContent(text: "Item A"),

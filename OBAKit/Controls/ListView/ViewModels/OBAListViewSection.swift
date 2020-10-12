@@ -48,8 +48,20 @@ public struct OBAListViewSection: Hashable {
 }
 
 struct OBAListViewSectionHeader: OBAListViewItem {
+    var id: String
     var title: String
+
+    var onSelectAction: OBAListViewAction<OBAListViewSectionHeader>? = nil
+
     var contentConfiguration: OBAContentConfiguration {
         return OBAListRowConfiguration(text: title, appearance: .header)
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: OBAListViewSectionHeader, rhs: OBAListViewSectionHeader) -> Bool {
+        return lhs.title == rhs.title
     }
 }

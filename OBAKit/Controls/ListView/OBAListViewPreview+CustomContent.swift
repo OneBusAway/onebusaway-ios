@@ -9,15 +9,37 @@ import Foundation
 
 #if DEBUG
 
+struct DEBUG_Person: OBAListViewItem {
+    var id: UUID = UUID()
+    var name: String
+    var address: String
+
+    var onSelectAction: OBAListViewAction<DEBUG_Person>? = nil
+
+    var contentConfiguration: OBAContentConfiguration {
+        return OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .disclosureIndicator)
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: DEBUG_Person, rhs: DEBUG_Person) -> Bool {
+        return lhs.name == rhs.name &&
+            lhs.address == rhs.address
+    }
+}
+
 struct DEBUG_CustomContent: OBAListViewItem {
     var text: String
+    var onSelectAction: OBAListViewAction<DEBUG_CustomContent>? = nil
 
     static var customCellType: OBAListViewCell.Type? {
         return DEBUG_CustomContentCell.self
     }
 
-    var trailingActions: [OBAListViewAction<DEBUG_CustomContent>]? {
-        let action = OBAListViewAction<DEBUG_CustomContent>(style: .normal, title: "Hello", image: nil, backgroundColor: .systemPurple, handler: { item in
+    var trailingContextualActions: [OBAListViewContextualAction<DEBUG_CustomContent>]? {
+        let action = OBAListViewContextualAction<DEBUG_CustomContent>(style: .normal, title: "Hello", image: nil, backgroundColor: .systemPurple, handler: { item in
             print(item)
         })
 
@@ -26,6 +48,14 @@ struct DEBUG_CustomContent: OBAListViewItem {
 
     var contentConfiguration: OBAContentConfiguration {
         return DEBUG_CustomContentConfiguration(text: text)
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(text)
+    }
+
+    static func == (lhs: DEBUG_CustomContent, rhs: DEBUG_CustomContent) -> Bool {
+        return lhs.text == rhs.text
     }
 }
 
