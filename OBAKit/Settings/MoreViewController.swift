@@ -7,33 +7,32 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import UIKit
-import IGListKit
-import SafariServices
 import MessageUI
 import OBAKitCore
+import SafariServices
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
 @objc(OBAMoreViewController)
-public class MoreViewController: UIViewController,
+public class MoreViewController:
+    UIViewController,
     AppContext,
     FarePaymentsDelegate,
-    HasTableStyle,
-    ListAdapterDataSource,
+    OBAListViewDataSource,
     MFMailComposeViewControllerDelegate,
     RegionsServiceDelegate {
 
-    /// The OBA application object
+    // MARK: - Stores
     public let application: Application
 
     /// A helper object that crafts support emails or alerts when the user's email client isn't configured properly.
     private lazy var contactUsHelper = ContactUsHelper(application: application)
 
-    /// Creates a Settings controller
-    /// - Parameter application: The OBA application object
-    init(application: Application) {
-        self.application = application
+    // MARK: - UI elements
+    var listView = OBAListView()
 
+    // MARK: - Init
+    public init(application: Application) {
+        self.application = application
         super.init(nibName: nil, bundle: nil)
 
         title = OBALoc("more_controller.title", value: "More", comment: "Title of the More tab")
@@ -47,53 +46,43 @@ public class MoreViewController: UIViewController,
         application.regionsService.addDelegate(self)
     }
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
+    // MARK: - UIViewController
     public override func viewDidLoad() {
         super.viewDidLoad()
 
+        listView.obaDataSource = self
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+
+        self.listView.register(listViewItem: MoreHeaderItem.self)
+        self.listView.applyData(animated: false)
     }
 
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        collectionController.reload(animated: false)
+    // MARK: - Sections
+    public func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return [
+            headerSection,
+            debugSection,
+            updatesAndAlertsSection,
+            myLocationSection,
+            aboutSection
+        ].compactMap { $0 }
     }
 
-    // MARK: - IGListKit
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
-
-    var tableStyle: CollectionController.TableCollectionStyle { .grouped }
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var sections = [ListDiffable]()
-        sections.append(moreHeaderSection)
-        sections.append(contentsOf: debugSection)
-        sections.append(contentsOf: updatesAndAlertsSection)
-        sections.append(contentsOf: myLocationSection)
-        sections.append(contentsOf: aboutSection)
-        return sections
+    // MARK: Header section
+    var headerSection: OBAListViewSection {
+        return OBAListViewSection(id: "header", contents: [MoreHeaderItem(onSelectAction: { _ in self.toggleDebug() })])
     }
 
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
-    }
-
-    // MARK: - Header Section
-
-    private lazy var moreHeaderSection = MoreHeaderSection { [weak self] in
-        guard let self = self else { return }
-
+    func toggleDebug() {
         self.application.userDataStore.debugMode.toggle()
-        self.collectionController.reload(animated: true)
+        self.listView.applyData()
 
         let title: String
         if self.application.userDataStore.debugMode {
@@ -107,6 +96,122 @@ public class MoreViewController: UIViewController,
         self.present(alert, animated: true, completion: nil)
     }
 
+    // MARK: Updates and alerts section
+    var updatesAndAlertsSection: OBAListViewSection {
+        let header = OBALoc(
+            "more_controller.updates_and_alerts.header",
+            value: "Updates and Alerts",
+            comment: "Updates and Alerts header text")
+
+        let row = OBALoc(
+            "more_controller.alerts_for_region",
+            value: "Alerts",
+            comment: "Alerts for region row in the More controller")
+
+        return OBAListViewSection(id: "updates_and_alerts", title: header, contents: [
+            OBAListRowView.DefaultViewModel(title: row, onSelectAction: { (model) in
+                self.application.viewRouter.navigate(to: AgencyAlertsViewController(application: self.application), from: self)
+            })
+        ])
+    }
+
+    // MARK: My location section
+    var myLocationSection: OBAListViewSection {
+        var contents: [AnyOBAListViewItem] = []
+
+        contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { _ in
+            let regionPicker = RegionPickerViewController(application: self.application)
+            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
+            self.application.viewRouter.present(nav, from: self)
+        }).typeErased)
+
+        if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
+            contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), onSelectAction: { _ in
+                self.logRowTapAnalyticsEvent(name: "Pay Fare")
+                self.farePayments.beginFarePaymentsWorkflow()
+            }).typeErased)
+        }
+
+        contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), onSelectAction: { _ in
+            self.logRowTapAnalyticsEvent(name: "Show Agencies")
+            let agencies = AgenciesViewController(application: self.application)
+            self.application.viewRouter.navigate(to: agencies, from: self)
+        }).typeErased)
+
+        return OBAListViewSection(id: "my_location", title: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller."), contents: contents)
+    }
+
+    // MARK: About section
+    var aboutSection: OBAListViewSection {
+        let header = OBALoc(
+            "more_controller.about_app",
+            value: "About this App",
+            comment: "Header for a section that shows the user information about this app.")
+
+        return OBAListViewSection(id: "about", title: header, contents: [
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.credits_row_title",
+                    value: "Credits",
+                    comment: "Credits - like who should get credit for creating this."),
+                onSelectAction: { _ in
+                    let credits = CreditsViewController(application: self.application)
+                    self.application.viewRouter.navigate(to: credits, from: self)
+                }),
+
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.privacy_row_title",
+                    value: "Privacy Policy",
+                    comment: "A link to the app's Privacy Policy"),
+                onSelectAction: { _ in
+                    guard let url = Bundle.main.privacyPolicyURL else { return }
+                    let safari = SFSafariViewController(url: url)
+                    self.application.viewRouter.present(safari, from: self)
+                }),
+
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.weather_credits_row",
+                    value: "Weather forecasts powered by Dark Sky",
+                    comment: "Weather forecast attribution"),
+                onSelectAction: { _ in
+                    self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
+                })
+        ])
+    }
+
+    // MARK: Debug section
+    var debugSection: OBAListViewSection? {
+        guard application.userDataStore.debugMode else { return nil }
+        var contents: [AnyOBAListViewItem] = []
+        if application.shouldShowCrashButton {
+            let crashApp = OBALoc(
+                "more_controller.debug_section.crash_row",
+                value: "Crash the App",
+                comment: "Title for a button that will crash the app.")
+
+            contents.append(OBAListRowView.DefaultViewModel(title: crashApp, onSelectAction: { _ in
+                self.application.performTestCrash()
+            }).typeErased)
+        }
+
+        let pushIDTitle = OBALoc(
+            "more_controller.debug_section.push_id.title",
+            value: "Push ID",
+            comment: "Title for the Push Notification ID row in the More Controller")
+
+        let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+
+        contents.append(OBAListRowView.ValueViewModel(title: pushIDTitle, subtitle: pushID, onSelectAction: { _ in
+            if let pushID = self.application.pushService?.pushUserID {
+                UIPasteboard.general.string = pushID
+            }
+        }).typeErased)
+
+        return OBAListViewSection(id: "debug", title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"), contents: contents)
+    }
+
     // MARK: - Actions
 
     @objc func showSettings() {
@@ -115,59 +220,7 @@ public class MoreViewController: UIViewController,
         application.viewRouter.present(navigation, from: self)
     }
 
-    // MARK: - Regional Alerts Section
-
-    private var updatesAndAlertsSection: [ListDiffable] {
-        let tableRow = TableRowData(title: OBALoc("more_controller.alerts_for_region", value: "Alerts", comment: "Alerts for region row in the More controller"), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            let alertsController = AgencyAlertsViewController(application: self.application)
-            self.application.viewRouter.navigate(to: alertsController, from: self)
-        }
-
-        return [
-            TableHeaderData(title: OBALoc("more_controller.updates_and_alerts.header", value: "Updates and Alerts", comment: "Updates and Alerts header text")),
-            TableSectionData(row: tableRow)
-        ]
-    }
-
-    // MARK: - My Location Section
-
-    private var myLocationSection: [ListDiffable] {
-        var rows = [TableRowData]()
-
-        let picker = TableRowData(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), value: application.currentRegion?.name, accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            let regionPicker = RegionPickerViewController(application: self.application)
-            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
-            self.application.viewRouter.present(nav, from: self)
-        }
-        rows.append(picker)
-
-        if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
-            let payMyFare = TableRowData(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), accessoryType: .none) { [weak self] _ in
-                guard let self = self else { return }
-                self.logRowTapAnalyticsEvent(name: "Pay Fare")
-                self.farePayments.beginFarePaymentsWorkflow()
-            }
-            rows.append(payMyFare)
-        }
-
-        let agencies = TableRowData(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            self.logRowTapAnalyticsEvent(name: "Show Agencies")
-            let agencies = AgenciesViewController(application: self.application)
-            self.application.viewRouter.navigate(to: agencies, from: self)
-        }
-        rows.append(agencies)
-
-        return [
-            TableHeaderData(title: OBALoc("more_controller.my_location.header", value: "My Location", comment: "'My Location' section header on the 'More' controller.")),
-            TableSectionData(rows: rows)
-        ]
-    }
-
     // MARK: - Contact Us Button
-
     func presentEmailFeedbackForm(target: EmailTarget) {
         guard let composer = contactUsHelper.buildMailComposer(target: target) else {
             let alert = contactUsHelper.buildCantSendEmailAlert(target: target)
@@ -215,76 +268,6 @@ public class MoreViewController: UIViewController,
         )
     }
 
-    // MARK: - About Section
-
-    private var aboutSection: [ListDiffable] {
-        var rows = [TableRowData]()
-
-        let credits = TableRowData(title: OBALoc("more_controller.credits_row_title", value: "Credits", comment: "Credits - like who should get credit for creating this."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            let credits = CreditsViewController(application: self.application)
-            self.application.viewRouter.navigate(to: credits, from: self)
-        }
-        rows.append(credits)
-
-        let privacy = TableRowData(title: OBALoc("more_controller.privacy_row_title", value: "Privacy Policy", comment: "A link to the app's Privacy Policy"), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard
-                let self = self,
-                let url = Bundle.main.privacyPolicyURL
-            else { return }
-
-            let safari = SFSafariViewController(url: url)
-            self.application.viewRouter.present(safari, from: self)
-        }
-        rows.append(privacy)
-
-        // Weather
-        let weather = TableRowData(title: OBALoc("more_controller.weather_credits_row", value: "Weather forecasts powered by Dark Sky", comment: "Weather forecast attribution"), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
-        }
-        rows.append(weather)
-
-        return [
-            TableHeaderData(title: OBALoc("more_controller.about_app", value: "About this App", comment: "Header for a section that shows the user information about this app.")),
-            TableSectionData(rows: rows)
-        ]
-    }
-
-    // MARK: - Debug Section
-
-    private var debugSection: [ListDiffable] {
-        guard application.userDataStore.debugMode else {
-            return []
-        }
-
-        var rows = [TableRowData]()
-
-        // Crash Row
-        if application.shouldShowCrashButton {
-            let crashRow = TableRowData(title: OBALoc("more_controller.debug_section.crash_row", value: "Crash the App", comment: "Title for a button that will crash the app."), accessoryType: .none) { [weak self] _ in
-                guard let self = self else { return }
-                self.application.performTestCrash()
-            }
-            rows.append(crashRow)
-        }
-
-        // Push ID Row
-        let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-        let pushIDRow = TableRowData(title: OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller"), value: pushID, accessoryType: .none) { [weak self] _ in
-            guard let self = self else { return }
-            if let pushID = self.application.pushService?.pushUserID {
-                UIPasteboard.general.string = pushID
-            }
-        }
-        rows.append(pushIDRow)
-
-        return [
-            TableHeaderData(title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers")),
-            TableSectionData(rows: rows)
-        ]
-    }
-
     // MARK: - Fare Payments
 
     private lazy var farePayments = FarePayments(application: application, delegate: self)
@@ -300,7 +283,7 @@ public class MoreViewController: UIViewController,
     // MARK: - Regions Service Delegate
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        collectionController.reload(animated: false)
+        self.listView.applyData()
     }
 
     // MARK: - Private Helpers
