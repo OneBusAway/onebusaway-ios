@@ -21,7 +21,7 @@ public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
     }
 
     // MARK: - UI
-    fileprivate var headerView: OBAListRowViewHeader = OBAListRowViewHeader(frame: .zero)
+    fileprivate var headerView: OBAListRowViewHeader = OBAListRowViewHeader.autolayoutNew()
 
     public override init(frame: CGRect) {
         super.init(frame: frame)

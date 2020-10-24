@@ -22,6 +22,8 @@ public protocol OBAListViewItem: Hashable {
     /// Optional. Contextual actions to display on the trailing side of the cell.
     /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var trailingContextualActions: [OBAListViewContextualAction<Self>]? { get }
+
+    var typeErased: AnyOBAListViewItem { get }
 }
 
 // MARK: Default implementations
@@ -36,6 +38,10 @@ extension OBAListViewItem {
 
     public var trailingContextualActions: [OBAListViewContextualAction<Self>]? {
         return nil
+    }
+
+    public var typeErased: AnyOBAListViewItem {
+        return AnyOBAListViewItem(self)
     }
 }
 

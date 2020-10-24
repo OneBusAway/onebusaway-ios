@@ -45,6 +45,8 @@ public class OBAListRowViewHeader: OBAListRowView {
         isAccessibilityElement = true
         accessibilityLabel = configuration.text
         accessibilityTraits = .header
+
+        self.layoutIfNeeded()
     }
 }
 

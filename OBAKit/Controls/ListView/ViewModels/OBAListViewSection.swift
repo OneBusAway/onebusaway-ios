@@ -34,7 +34,7 @@ public struct OBAListViewSection: Hashable {
     public init<ViewModel: OBAListViewItem>(id: String, title: String? = nil, contents: [ViewModel]) {
         self.id = id
         self.title = title
-        self.contents = contents.map { AnyOBAListViewItem($0) }
+        self.contents = contents.map { $0.typeErased }
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -44,6 +44,47 @@ public struct OBAListViewSection: Hashable {
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {
         return lhs.title == rhs.title &&
             lhs.contents == rhs.contents
+    }
+
+    // MARK: - UICollectionView
+    var sectionLayout: NSCollectionLayoutSection {
+        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
+        let item = NSCollectionLayoutItem(layoutSize: size)
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
+        let section = NSCollectionLayoutSection(group: group)
+
+        // Only include supplementary views with headers
+        if hasHeader {
+            // Section headers
+            let headerSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .estimated(100)
+            )
+            let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: headerSize,
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
+            )
+            sectionHeader.pinToVisibleBounds = true
+
+            if collapseState != nil {
+                // Section footers, a thin line is used to animate a fake cell movement
+                let footerSize = NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1.0),
+                    heightDimension: .estimated(2)
+                )
+                let sectionFooter = NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: footerSize,
+                    elementKind: UICollectionView.elementKindSectionFooter,
+                    alignment: .bottom
+                )
+                section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
+            } else {
+                section.boundarySupplementaryItems = [sectionHeader]
+            }
+        }
+
+        return section
     }
 }
 

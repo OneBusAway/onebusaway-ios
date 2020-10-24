@@ -21,8 +21,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
 
     public init() {
-        super.init(frame: .zero, collectionViewLayout: OBAListView.createLayout())
-
+        super.init(frame: .zero, collectionViewLayout: UICollectionViewLayout())            // Load dummy layout first...
+        self.collectionViewLayout = createLayout()                                          // Then, load real layout because we need to reference self.
         self.diffableDataSource = createDataSource()
         self.dataSource = diffableDataSource
         self.delegate = self
@@ -135,39 +135,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     // MARK: - Layout configuration
-    static func createLayout() -> UICollectionViewLayout {
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
-        let item = NSCollectionLayoutItem(layoutSize: size)
-        let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
-        let section = NSCollectionLayoutSection(group: group)
-
-        // Section headers
-        let headerSize = NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(40)
-        )
-        let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: headerSize,
-            elementKind: UICollectionView.elementKindSectionHeader,
-            alignment: .top
-        )
-        sectionHeader.pinToVisibleBounds = true
-
-        // Section footers, a thin line is used to animate a fake cell movement
-        let footerSize = NSCollectionLayoutSize(
-            widthDimension: .fractionalWidth(1.0),
-            heightDimension: .estimated(2)
-        )
-        let sectionFooter = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: footerSize,
-            elementKind: UICollectionView.elementKindSectionFooter,
-            alignment: .bottom
-        )
-        section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
-
-        let layout = UICollectionViewCompositionalLayout(section: section)
-
-        return layout
+    func createLayout() -> UICollectionViewLayout {
+        return UICollectionViewCompositionalLayout { (section, environment) -> NSCollectionLayoutSection? in
+            return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
+        }
     }
 
     // MARK: - Data source
