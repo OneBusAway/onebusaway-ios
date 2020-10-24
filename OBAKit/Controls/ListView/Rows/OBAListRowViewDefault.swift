@@ -30,6 +30,30 @@ public class OBAListRowViewDefault: OBAListRowView {
     }
 }
 
+// MARK: - Default ViewModel for convenience
+extension OBAListRowView {
+    public struct DefaultViewModel: OBAListViewItem {
+        public let id: UUID = UUID()
+        public var title: String
+        public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
+
+        public var onSelectAction: OBAListViewAction<DefaultViewModel>?
+
+        public var contentConfiguration: OBAContentConfiguration {
+            return OBAListRowConfiguration(text: title, appearance: .default, accessoryType: accessoryType)
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
+
+        public static func == (lhs: DefaultViewModel, rhs: DefaultViewModel) -> Bool {
+            return lhs.title == rhs.title &&
+                lhs.accessoryType == rhs.accessoryType
+        }
+    }
+}
+
 // MARK: - Preview
 #if DEBUG
 import SwiftUI

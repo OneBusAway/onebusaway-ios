@@ -38,6 +38,32 @@ public class OBAListRowViewSubtitle: OBAListRowView {
     }
 }
 
+// MARK: - Default ViewModel for convenience
+extension OBAListRowView {
+    public struct SubtitleViewModel: OBAListViewItem {
+        public let id: UUID = UUID()
+        public var title: String
+        public var subtitle: String?
+        public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
+
+        public var onSelectAction: OBAListViewAction<SubtitleViewModel>?
+
+        public var contentConfiguration: OBAContentConfiguration {
+            return OBAListRowConfiguration(text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: accessoryType)
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
+
+        public static func == (lhs: SubtitleViewModel, rhs: SubtitleViewModel) -> Bool {
+            return lhs.title == rhs.title &&
+                lhs.subtitle == rhs.subtitle &&
+                lhs.accessoryType == rhs.accessoryType
+        }
+    }
+}
+
 // MARK: - Preview
 #if DEBUG
 import SwiftUI
