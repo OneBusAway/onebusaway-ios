@@ -6,7 +6,7 @@
 //
 
 public class OBAListRowViewValue: OBAListRowView {
-    static let ReuseIdentifier: String = "OBAListRowViewValue_ReuseIdentifier"
+    static let ReuseIdentifier = "OBAListRowViewValue_ReuseIdentifier"
 
     private var textStack: UIStackView!
 
@@ -46,6 +46,8 @@ public class OBAListRowViewValue: OBAListRowView {
 
 // MARK: - Default ViewModel for convenience
 extension OBAListRowView {
+    /// For convenience, if you are tracking data separately from the view model or you are displaying UI with no data,
+    /// you can use this view model to define a `value` appearance list row.
     public struct ValueViewModel: OBAListViewItem {
         public let id: UUID = UUID()
         public var title: String

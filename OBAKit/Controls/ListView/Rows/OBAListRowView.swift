@@ -10,6 +10,7 @@ import OBAKitCore
 
 // MARK: - Collection View Cell
 
+/// A recreation of the default `UITableView` cells (or `UIListContentConfiguration`).
 class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
     fileprivate let kUseDebugColors = false
 

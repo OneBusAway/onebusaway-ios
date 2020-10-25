@@ -6,6 +6,9 @@
 //
 
 // MARK: - OBAListViewItem
+/// A view model that provides the necessary implementation to compare the identity and equality of
+/// two view models for `OBAListView`. Also, defines list row actions, such as what to
+/// do when the user taps the row.
 public protocol OBAListViewItem: Hashable {
     var contentConfiguration: OBAContentConfiguration { get }
 

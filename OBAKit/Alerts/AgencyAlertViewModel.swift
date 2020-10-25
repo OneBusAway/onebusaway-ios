@@ -8,12 +8,15 @@
 import OBAKitCore
 
 extension AgencyAlert {
+    /// The view model used for displaying `AgencyAlert` in an `OBAListView`.
     struct ListViewModel: OBAListViewItem {
         let id: String
         let title: String
         let body: String
         let localizedURL: URL?
 
+        /// Truncated summary for UILabel performance. Agencies often provide long
+        /// summaries, which causes poor UI performance for us. See #264 & #266.
         var subtitle: String { return String(body.prefix(256)) }
         var onSelectAction: OBAListViewAction<ListViewModel>?
 

@@ -6,12 +6,16 @@
 //
 
 // MARK: - UICollectionReusableView
+
+/// Respond to user actions on the header view.
 public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
     func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection)
 }
 
+/// The view for displaying `OBAListRowViewHeader` as a `UICollectionView` supplementary header.
+/// To respond to user actions on the header view, set `delegate`.
 public class OBAListRowHeaderSupplementaryView: UICollectionReusableView {
-    static let ReuseIdentifier: String = "OBAListRowHeaderSupplementaryView_ReuseIdentifier"
+    static let ReuseIdentifier = "OBAListRowHeaderSupplementaryView_ReuseIdentifier"
 
     // MARK: - Properties to set
     public weak var delegate: OBAListRowHeaderSupplementaryViewDelegate?

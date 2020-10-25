@@ -9,11 +9,19 @@ import SwipeCellKit
 
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
-/// The default cells are available for use out of the box, however you'll need to register other custom cells
-/// that your list may use. For convenience, use `register(listViewItem: _)` to ensure that the cells
-/// you register is OBAListViewCell. All cells used in OBAListView must be OBAListViewCell.
+/// ## Providing Data
+/// Data is provided via `obaDataSource.items(:_)`.Then, apply the data using `applyData()`.
 ///
-/// Data is provided via `obaDataSource.items(:_)`. To apply the data, call `applyData()`.
+/// ## Custom cells
+/// Default cells are available for use without additional configuration, however you'll need to register other
+/// custom cells that your list may use. Use `register(listViewItem: _)` to ensure that the cells
+/// you register has an `OBAListViewItem` view model and has a custom `OBAListViewCell` type.
+///
+/// A requirement of OBAListView is that cells must be an `OBAListViewCell`.
+///
+/// ## Collapsible Sections
+/// To support collapsible sections, set `collapsibleSectionsDelegate`. The delegate will allow you
+/// to specify which sections can collapse and respond to collapse/expand actions.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
     weak public var obaDataSource: OBAListViewDataSource?
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?

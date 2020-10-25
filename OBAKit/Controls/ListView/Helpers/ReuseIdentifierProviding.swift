@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
+/// Implements a common `ReuseIdentifier` property for recycling `UICollectionViewCell`s.
 public protocol ReuseIdentifierProviding: UICollectionViewCell {
     static var ReuseIdentifier: String { get }
 }

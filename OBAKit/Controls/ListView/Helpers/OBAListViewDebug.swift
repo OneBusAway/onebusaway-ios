@@ -5,10 +5,16 @@
 //  Created by Alan Chu on 10/8/20.
 //
 
+#if DEBUG
 import Foundation
 
-#if DEBUG
+// About this file:
+// Sample data to use with SwiftUI previews. You can also use these
+// as an example guide when implementing OBAListView.
 
+// MARK: - Default cell contents implementation
+
+/// Sample view model, using the default `OBAListRowConfiguration` to display cell contents.
 struct DEBUG_Person: OBAListViewItem {
     var id: UUID = UUID()
     var name: String
@@ -30,6 +36,9 @@ struct DEBUG_Person: OBAListViewItem {
     }
 }
 
+// MARK: - Custom cell contents implementation
+
+/// Sample view model, using a custom cell for its content.
 struct DEBUG_CustomContent: OBAListViewItem {
     var text: String
     var onSelectAction: OBAListViewAction<DEBUG_CustomContent>?
@@ -39,8 +48,13 @@ struct DEBUG_CustomContent: OBAListViewItem {
     }
 
     var trailingContextualActions: [OBAListViewContextualAction<DEBUG_CustomContent>]? {
-        let action = OBAListViewContextualAction<DEBUG_CustomContent>(style: .normal, title: "Hello", image: nil, backgroundColor: .systemPurple, handler: { item in
-            print(item)
+        let action = OBAListViewContextualAction<DEBUG_CustomContent>(
+            style: .normal,
+            title: "Hello",
+            image: nil,
+            backgroundColor: .systemPurple,
+            handler: { item in
+                print(item)
         })
 
         return [action]
@@ -59,6 +73,7 @@ struct DEBUG_CustomContent: OBAListViewItem {
     }
 }
 
+/// Sample custom content configuration.
 struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
     var text: String
 
@@ -67,6 +82,8 @@ struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
     }
 }
 
+/// Sample custom content cell implementation using `OBAListViewCell`. Note: `OBAListView`
+/// requires its cells to be an `OBAListViewCell`.
 class DEBUG_CustomContentCell: OBAListViewCell {
     var customContentView: DEBUG_CustomContentView!
 
@@ -86,6 +103,7 @@ class DEBUG_CustomContentCell: OBAListViewCell {
     }
 }
 
+/// Sample content view, this is used in `CustomContentCell`, above.
 class DEBUG_CustomContentView: UIView, OBAContentView {
     var label: UILabel!
     override init(frame: CGRect) {

@@ -5,12 +5,22 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
+/// The content configuration view model for `OBAListRowCell`.
+///
+/// The `appearance` property governs what data may be shown. For example, the `default`
+/// appearance will gracefully ignore the `secondaryText` property since it only has one label view.
 public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equatable {
     public enum Appearance {
+        /// The default look of a list row.
         case `default`
+
+        /// A list row with subtitle text.
         case subtitle
+
+        /// A list row with side-by-side value text.
         case value
 
+        /// A list row with a background to visually separate sections.
         case header
     }
 
@@ -41,6 +51,9 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
     }
 }
 
+/// A view model defining `UILabel` properties.
+/// 
+/// Technical Note: This may be expanded in the future, as needed.
 public struct OBALabelConfiguration: Hashable, Equatable {
     var textColor: UIColor = .label
 
@@ -52,6 +65,7 @@ public struct OBALabelConfiguration: Hashable, Equatable {
 }
 
 extension UILabel {
+    /// A helper method for configuring a `UILabel` to use `OBALabelConfiguration`.
     func configure(with config: OBALabelConfiguration) {
         self.textColor = config.textColor
         self.numberOfLines = isAccessibility ? config.accessibilityNumberOfLines : config.numberOfLines

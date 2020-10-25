@@ -5,6 +5,15 @@
 //  Created by Alan Chu on 10/3/20.
 //
 
+/// A section view model for `OBAListView`. `OBAListView` uses `OBAListViewSection` to
+/// define list sections and to "normalize" item data. It also provides a number of other convenience properties.
+///
+/// ## Title
+/// To add a header to the section, set `title` to non-`nil`. To hide the header, set `title` to nil.
+///
+/// ## Collapsible sections
+/// Set `collapseState` to a non-`nil` value. Note, `OBAListView` will also need to have collapsible
+/// section implementation to properly function.
 public struct OBAListViewSection: Hashable {
     public typealias ID = String
     public enum CollapseState {
@@ -47,6 +56,12 @@ public struct OBAListViewSection: Hashable {
     }
 
     // MARK: - UICollectionView
+
+    /// The layout defining this section's layout with full width cells.
+    ///
+    /// Although you can override this with your own implementation, you may want to consider creating
+    /// a separate `UICollectionView` as `OBAListView` is supposed to be a list view, akin to
+    /// `UITableView`.
     var sectionLayout: NSCollectionLayoutSection {
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
         let item = NSCollectionLayoutItem(layoutSize: size)
@@ -85,24 +100,5 @@ public struct OBAListViewSection: Hashable {
         }
 
         return section
-    }
-}
-
-struct OBAListViewSectionHeader: OBAListViewItem {
-    var id: String
-    var title: String
-
-    var onSelectAction: OBAListViewAction<OBAListViewSectionHeader>?
-
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListRowConfiguration(text: title, appearance: .header)
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    static func == (lhs: OBAListViewSectionHeader, rhs: OBAListViewSectionHeader) -> Bool {
-        return lhs.title == rhs.title
     }
 }

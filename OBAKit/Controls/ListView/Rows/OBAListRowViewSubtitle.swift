@@ -6,7 +6,7 @@
 //
 
 public class OBAListRowViewSubtitle: OBAListRowView {
-    static let ReuseIdentifier: String = "OBAListRowViewSubtitle_ReuseIdentifier"
+    static let ReuseIdentifier = "OBAListRowViewSubtitle_ReuseIdentifier"
     private var textStack: UIStackView!
 
     let titleLabel: UILabel = .obaLabel(font: .preferredFont(forTextStyle: .body))
@@ -40,6 +40,8 @@ public class OBAListRowViewSubtitle: OBAListRowView {
 
 // MARK: - Default ViewModel for convenience
 extension OBAListRowView {
+    /// For convenience, if you are tracking data separately from the view model or you are displaying UI with no data,
+    /// you can use this view model to define a `subtitle` appearance list row.
     public struct SubtitleViewModel: OBAListViewItem {
         public let id: UUID = UUID()
         public var title: String
