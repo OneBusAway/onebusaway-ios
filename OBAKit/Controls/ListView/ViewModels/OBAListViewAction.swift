@@ -6,7 +6,6 @@
 //
 
 import OBAKitCore
-import SwipeCellKit
 
 public typealias OBAListViewAction<Item: OBAListViewItem> = (Item) -> Void
 

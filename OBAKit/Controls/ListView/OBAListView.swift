@@ -5,8 +5,6 @@
 //  Created by Alan Chu on 9/30/20.
 //
 
-import SwipeCellKit
-
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///
 /// ## Providing Data

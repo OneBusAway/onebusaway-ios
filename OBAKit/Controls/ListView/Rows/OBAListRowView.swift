@@ -5,7 +5,6 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
-import SwipeCellKit
 import OBAKitCore
 
 // MARK: - Collection View Cell
