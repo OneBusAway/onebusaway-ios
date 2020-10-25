@@ -22,7 +22,7 @@ extension AgencyAlertsStore {
                 return viewModel
             }
 
-            let alerts = Set(viewModels).allObjects // remove duplicates
+            let alerts = Set(viewModels).allObjects.sorted(by: \.title) // remove duplicates
             return OBAListViewSection(id: "agency_alerts_\(group.key)", title: group.key, contents: alerts)
         }.sorted(by: \.id)
     }

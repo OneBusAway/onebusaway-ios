@@ -27,8 +27,8 @@ class AgencyAlertsViewController: UIViewController,
     var collapsedSections: Set<String> = []
 
     // MARK: - UI elements
-    var listView = OBAListView()
-    var refreshControl = UIRefreshControl()
+    let listView = OBAListView()
+    let refreshControl = UIRefreshControl()
 
     // MARK: - Init
     public init(application: Application) {
@@ -59,11 +59,8 @@ class AgencyAlertsViewController: UIViewController,
         listView.pinToSuperview(.edges)
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-    }
 
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        self.reloadServerData()
+        reloadServerData()
     }
 
     // MARK: - Agency Alerts Delegate
@@ -92,7 +89,7 @@ class AgencyAlertsViewController: UIViewController,
 
     func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem) {
         guard let agencyAlert = item.as(AgencyAlert.ListViewModel.self) else { return }
-        self.presentAlert(agencyAlert)
+        presentAlert(agencyAlert)
     }
 
     func presentAlert(_ alert: AgencyAlert.ListViewModel) {

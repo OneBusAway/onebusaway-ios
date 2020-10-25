@@ -9,10 +9,10 @@ import OBAKitCore
 
 extension AgencyAlert {
     struct ListViewModel: OBAListViewItem {
-        var id: String
-        var title: String
-        var body: String
-        var localizedURL: URL?
+        let id: String
+        let title: String
+        let body: String
+        let localizedURL: URL?
 
         var subtitle: String { return String(body.prefix(256)) }
         var onSelectAction: OBAListViewAction<ListViewModel>?
