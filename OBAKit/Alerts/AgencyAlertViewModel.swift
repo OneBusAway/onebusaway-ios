@@ -24,7 +24,7 @@ extension AgencyAlert {
                 appearance: .subtitle,
                 accessoryType: .disclosureIndicator)
 
-            config.image = UIImage(systemName: "exclamationmark.circle")?.applyingSymbolConfiguration(.init(textStyle: .body))
+            config.image = Icons.readAlert.applyingSymbolConfiguration(.init(textStyle: .body))
             config.textConfig.numberOfLines = 2
             config.secondaryTextConfig.numberOfLines = 3
 

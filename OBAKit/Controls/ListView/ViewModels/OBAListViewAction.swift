@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 10/10/20.
 //
 
+import OBAKitCore
 import SwipeCellKit
 
 public typealias OBAListViewAction<Item: OBAListViewItem> = (Item) -> Void
@@ -29,10 +30,10 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
 
     // MARK: Colors
     /// The text color of the action button.
-    public var textColor: UIColor = .white
+    public var textColor: UIColor = ThemeColors.shared.lightText
 
     /// The background color of the action button.
-    public var backgroundColor: UIColor = .systemBlue
+    public var backgroundColor: UIColor = ThemeColors.shared.blue
 
     // MARK: Behaviors
     /// A Boolean value that determines whether the actions menu is automatically hidden upon selection.
