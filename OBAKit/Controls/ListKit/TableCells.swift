@@ -9,7 +9,6 @@
 
 import UIKit
 import IGListKit
-import SwipeCellKit
 import OBAKitCore
 
 // MARK: - TableRowCell

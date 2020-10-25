@@ -11,7 +11,6 @@ import UIKit
 import IGListKit
 import OBAKitCore
 import CoreLocation
-import SwipeCellKit
 
 // swiftlint:disable file_length
 

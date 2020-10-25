@@ -9,6 +9,8 @@
 import UIKit
 import OBAKitCore
 
+// swiftlint:disable unused_closure_parameter
+
 /// An overlay view placed on top of a map to offer status text to the user, like
 /// if they need to zoom in to see stops on the map, or if their search query returned no results.
 class StatusOverlayView: UIView {
@@ -118,7 +120,7 @@ class StatusOverlayView: UIView {
         let animator = UIViewPropertyAnimator(duration: UIView.inheritedAnimationDuration, curve: .easeInOut) { [weak self] in
             self?.statusOverlay.alpha = 0.0
         }
-        animator.addCompletion { [weak self] _ in
+        animator.addCompletion { [weak self] (complete: Bool) in
             self?.statusOverlay.isHidden = true
         }
         animator.startAnimation()

@@ -10,7 +10,6 @@
 import UIKit
 import IGListKit
 import OBAKitCore
-import SwipeCellKit
 
 enum BookmarkSectionState: String, Codable {
     case open, closed
