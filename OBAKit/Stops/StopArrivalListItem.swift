@@ -10,7 +10,6 @@
 import IGListKit
 import UIKit
 import OBAKitCore
-import SwipeCellKit
 
 // MARK: - View Model
 

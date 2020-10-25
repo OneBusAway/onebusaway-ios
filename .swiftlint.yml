@@ -1,10 +1,11 @@
 disabled_rules:
   - function_parameter_count
   - identifier_name
-  - statement_position
   - line_length
-  - todo
   - private_over_fileprivate
+  - statement_position
+  - todo
+  - trailing_comma
   # - colon
   # - comma
   # - control_statement
@@ -16,8 +17,6 @@ included: # paths to include during linting. `--path` is ignored if present.
   # - Source
 excluded: # paths to ignore during linting. Takes precedence over `included`.
   - Carthage
-  - OBAKitCore/Models/Helpers/DictionaryCoding
-  - OBAKitTests/Modeling/DictionaryCodingTests
   - OBAKitCore/Models/Protobuf/gtfs-realtime.pb.swift
 force_try:
   excluded:

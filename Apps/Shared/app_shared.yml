@@ -94,6 +94,3 @@ packages:
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.12.0
-    SwipeCellKit:
-        url: https://github.com/SwipeCellKit/SwipeCellKit.git
-        minorVersion: 2.7.1
