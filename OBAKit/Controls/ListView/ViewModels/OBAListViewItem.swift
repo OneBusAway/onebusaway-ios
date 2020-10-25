@@ -151,10 +151,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 private extension Equatable { typealias EqualSelf = Self }
 
 /// Existential wrapper around Equatable.
-private struct AnyEquatable : Equatable {
+private struct AnyEquatable: Equatable {
     let value: Any
     let isEqual: (AnyEquatable) -> Bool
-    init<T : Equatable>(_ value: T) {
+    init<T: Equatable>(_ value: T) {
         self.value = value
         self.isEqual = {r in
             guard let other = r.value as? T.EqualSelf else { return false }

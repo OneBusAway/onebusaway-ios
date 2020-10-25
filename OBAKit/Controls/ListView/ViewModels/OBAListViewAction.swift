@@ -22,15 +22,15 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     public var style: OBAListViewContextualActionStyle = .normal
 
     /// The title of the action button.
-    public var title: String? = nil
+    public var title: String?
 
     /// The image used for the action button.
-    public var image: UIImage? = nil
+    public var image: UIImage?
 
     // MARK: Colors
     /// The text color of the action button.
     public var textColor: UIColor = .white
-    
+
     /// The background color of the action button.
     public var backgroundColor: UIColor = .systemBlue
 
@@ -38,8 +38,8 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     /// A Boolean value that determines whether the actions menu is automatically hidden upon selection.
     public var hidesWhenSelected: Bool = false
 
-    public var item: Item? = nil
-    public var handler: OBAListViewAction<Item>? = nil
+    public var item: Item?
+    public var handler: OBAListViewAction<Item>?
 
     public var swipeAction: SwipeAction {
         let style: SwipeActionStyle
@@ -48,7 +48,7 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
         case .normal: style = .default
         }
 
-        let action = SwipeAction(style: style, title: title) { (action, indexPath) in
+        let action = SwipeAction(style: style, title: title) { _, _ in
             guard let handler = self.handler, let item = self.item else { return }
             handler(item)
         }

@@ -13,8 +13,7 @@ import SafariServices
 
 /// Provides access to OneBusAway Settings (Region configuration, etc.)
 @objc(OBAMoreViewController)
-public class MoreViewController:
-    UIViewController,
+public class MoreViewController: UIViewController,
     AppContext,
     FarePaymentsDelegate,
     OBAListViewDataSource,
@@ -109,7 +108,7 @@ public class MoreViewController:
             comment: "Alerts for region row in the More controller")
 
         return OBAListViewSection(id: "updates_and_alerts", title: header, contents: [
-            OBAListRowView.DefaultViewModel(title: row, onSelectAction: { (model) in
+            OBAListRowView.DefaultViewModel(title: row, onSelectAction: { _ in
                 self.application.viewRouter.navigate(to: AgencyAlertsViewController(application: self.application), from: self)
             })
         ])

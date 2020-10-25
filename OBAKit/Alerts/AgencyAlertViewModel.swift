@@ -15,7 +15,7 @@ extension AgencyAlert {
         var localizedURL: URL?
 
         var subtitle: String { return String(body.prefix(256)) }
-        var onSelectAction: OBAListViewAction<ListViewModel>? = nil
+        var onSelectAction: OBAListViewAction<ListViewModel>?
 
         var contentConfiguration: OBAContentConfiguration {
             var config = OBAListRowConfiguration(

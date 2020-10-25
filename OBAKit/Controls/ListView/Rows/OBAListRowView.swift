@@ -201,7 +201,7 @@ public class OBAListRowView: UIView, OBAContentView {
     func makeUserView() -> UIView {
         fatalError("makeUserView() not implemented.")
     }
-    
+
     func configureView() {
         contentStack.axis = isAccessibility ? .vertical : .horizontal
         contentStack.alignment = isAccessibility ? .leading : .center

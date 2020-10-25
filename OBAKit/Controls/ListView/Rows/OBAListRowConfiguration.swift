@@ -21,9 +21,9 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case none
     }
 
-    public var image: UIImage? = nil
-    public var text: String? = nil
-    public var secondaryText: String? = nil
+    public var image: UIImage?
+    public var text: String?
+    public var secondaryText: String?
 
     public var textConfig: OBALabelConfiguration = .init()
     public var secondaryTextConfig: OBALabelConfiguration = .init(textColor: .secondaryLabel)

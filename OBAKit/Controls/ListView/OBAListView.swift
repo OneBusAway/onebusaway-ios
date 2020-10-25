@@ -50,8 +50,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     // MARK: - Data source
 
     func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
-        let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) {
-            (collectionView, indexPath, item) -> UICollectionViewCell? in
+        let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
             let config = item.contentConfiguration
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
@@ -136,7 +135,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Layout configuration
     func createLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { (section, environment) -> NSCollectionLayoutSection? in
+        return UICollectionViewCompositionalLayout { section, _ -> NSCollectionLayoutSection? in
             return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
         }
     }

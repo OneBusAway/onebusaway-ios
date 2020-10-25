@@ -92,7 +92,7 @@ struct OBAListViewSectionHeader: OBAListViewItem {
     var id: String
     var title: String
 
-    var onSelectAction: OBAListViewAction<OBAListViewSectionHeader>? = nil
+    var onSelectAction: OBAListViewAction<OBAListViewSectionHeader>?
 
     var contentConfiguration: OBAContentConfiguration {
         return OBAListRowConfiguration(text: title, appearance: .header)

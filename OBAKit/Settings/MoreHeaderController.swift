@@ -21,7 +21,7 @@ struct MoreHeaderItem: OBAListViewItem {
         return MoreHeaderItemContentConfiguration()
     }
 
-    var onSelectAction: OBAListViewAction<MoreHeaderItem>? = nil
+    var onSelectAction: OBAListViewAction<MoreHeaderItem>?
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)

@@ -14,7 +14,7 @@ struct DEBUG_Person: OBAListViewItem {
     var name: String
     var address: String
 
-    var onSelectAction: OBAListViewAction<DEBUG_Person>? = nil
+    var onSelectAction: OBAListViewAction<DEBUG_Person>?
 
     var contentConfiguration: OBAContentConfiguration {
         return OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: name, secondaryText: address, appearance: .subtitle, accessoryType: .disclosureIndicator)
@@ -32,7 +32,7 @@ struct DEBUG_Person: OBAListViewItem {
 
 struct DEBUG_CustomContent: OBAListViewItem {
     var text: String
-    var onSelectAction: OBAListViewAction<DEBUG_CustomContent>? = nil
+    var onSelectAction: OBAListViewAction<DEBUG_CustomContent>?
 
     static var customCellType: OBAListViewCell.Type? {
         return DEBUG_CustomContentCell.self
