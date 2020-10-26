@@ -9,53 +9,37 @@
 
 import UIKit
 import OBAKitCore
-import IGListKit
 
-// MARK: - MoreHeaderSection
+struct MoreHeaderItem: OBAListViewItem {
+    let id: UUID = UUID()
 
-final class MoreHeaderSection: NSObject, ListDiffable {
-    func diffIdentifier() -> NSObjectProtocol {
-        return self
+    static var customCellType: OBAListViewCell.Type? {
+        return MoreHeaderViewCell.self
     }
 
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let object = object as? MoreHeaderSection else { return false }
-        return self == object
+    var contentConfiguration: OBAContentConfiguration {
+        return MoreHeaderItemContentConfiguration()
     }
 
-    init(callback: @escaping VoidBlock) {
-        self.callback = callback
+    var onSelectAction: OBAListViewAction<MoreHeaderItem>?
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 
-    fileprivate let callback: VoidBlock
-}
-
-// MARK: MoreHeaderSectionController
-
-final class MoreHeaderSectionController: OBAListSectionController<MoreHeaderSection> {
-    override func sizeForItem(at index: Int) -> CGSize {
-        // the height of 200 is semi-arbitrary, and was determined by playing around
-        // looking for a height that doesn't cause the collection view to be misaligned
-        // when it first appears on screen.
-        return CGSize(width: collectionContext!.containerSize.width, height: 200)
-    }
-
-    override func cellForItem(at index: Int) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(type: MoreHeaderCollectionCell.self, at: index)
-        cell.section = sectionData
-        return cell
+    static func == (lhs: MoreHeaderItem, rhs: MoreHeaderItem) -> Bool {
+        return lhs.id == rhs.id
     }
 }
 
-// MARK: - MoreHeaderCollectionCell
+struct MoreHeaderItemContentConfiguration: OBAContentConfiguration {
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return MoreHeaderViewCell.self
+    }
+}
 
-final class MoreHeaderCollectionCell: SelfSizingCollectionCell {
+final class MoreHeaderViewCell: OBAListViewCell {
     let moreHeader = MoreHeaderView.autolayoutNew()
-
-    var section: MoreHeaderSection? {
-        set { moreHeader.section = newValue }
-        get { moreHeader.section }
-    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -63,17 +47,17 @@ final class MoreHeaderCollectionCell: SelfSizingCollectionCell {
         moreHeader.pinToSuperview(.edges)
     }
 
-    required init?(coder aDecoder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func apply(_ config: OBAContentConfiguration) {
+        // nop.
     }
 }
 
 // MARK: - MoreHeaderView
-
 final class MoreHeaderView: UIView {
-
-    var section: MoreHeaderSection?
-
     private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [
         topPaddingView,
         headerImageView,
@@ -136,18 +120,9 @@ final class MoreHeaderView: UIView {
 
         addSubview(stackView)
         stackView.pinToSuperview(.layoutMargins)
-
-        let debugTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(enableDebugMode))
-        debugTapRecognizer.numberOfTapsRequired = 8
-        headerImageView.isUserInteractionEnabled = true
-        headerImageView.addGestureRecognizer(debugTapRecognizer)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    @objc private func enableDebugMode() {
-        section?.callback()
     }
 }

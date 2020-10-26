@@ -8,26 +8,31 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
+import SafariServices
 
 /// Displays `AgencyAlert` objects loaded from a Protobuf feed.
 class AgencyAlertsViewController: UIViewController,
     AgencyAlertsDelegate,
-    AgencyAlertListKitConverters,
     AppContext,
-    ListAdapterDataSource,
-    AgencyAlertsSectionControllerDelegate {
+    OBAListViewCollapsibleSectionsDelegate,
+    OBAListViewDataSource {
+
+    // MARK: - Stores
     public let application: Application
     private let alertsStore: AgencyAlertsStore
 
-    var collapsedSections: [String] = []
+    // MARK: - UI state
+    let selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
+    var collapsedSections: Set<String> = []
+
+    // MARK: - UI elements
+    let listView = OBAListView()
+    let refreshControl = UIRefreshControl()
 
     // MARK: - Init
-
     public init(application: Application) {
         self.application = application
-
         self.alertsStore = application.alertsStore
 
         super.init(nibName: nil, bundle: nil)
@@ -42,36 +47,26 @@ class AgencyAlertsViewController: UIViewController,
     }
 
     // MARK: - UIViewController
-
     public override func viewDidLoad() {
         super.viewDidLoad()
 
+        refreshControl.addTarget(self, action: #selector(reloadServerData), for: .valueChanged)
+
+        listView.obaDataSource = self
+        listView.collapsibleSectionsDelegate = self
+        listView.refreshControl = refreshControl
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
-        collectionController.collectionView.addSubview(refreshControl)
+
+        reloadServerData()
     }
-
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-
-        collectionController.reload(animated: false)
-    }
-
-    // MARK: - Data and Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
-
-    private lazy var refreshControl: UIRefreshControl = {
-        let refresh = UIRefreshControl()
-        refresh.addTarget(self, action: #selector(reloadServerData), for: .valueChanged)
-        return refresh
-    }()
 
     // MARK: - Agency Alerts Delegate
 
     func agencyAlertsUpdated() {
-        collectionController.reload(animated: false)
+        listView.applyData(animated: false)
         refreshControl.endRefreshing()
         navigationItem.rightBarButtonItem = nil
     }
@@ -84,40 +79,27 @@ class AgencyAlertsViewController: UIViewController,
         navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
     }
 
-    // MARK: - IGListKit
+    // MARK: - List data
 
-    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return tableSections(agencyAlerts: alertsStore.agencyAlerts, collapsedSections: collapsedSections)
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return alertsStore.listViewSections(onSelectAction: { [weak self] alert in
+            self?.presentAlert(alert)
+        })
     }
 
-    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let controller = defaultSectionController(for: object)
-
-        if let agencyAlertsSectionController = controller as? AgencyAlertsSectionController {
-            agencyAlertsSectionController.delegate = self
-        }
-
-        return controller
+    func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem) {
+        guard let agencyAlert = item.as(AgencyAlert.ListViewModel.self) else { return }
+        presentAlert(agencyAlert)
     }
 
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
-    }
-
-    // MARK: - AgencyAlertsSectionControllerDelegate methods
-
-    func agencyAlertsSectionController(_ controller: AgencyAlertsSectionController, didSelectAlert alert: AgencyAlert) {
-        self.presentAlert(alert)
-    }
-
-    func agencyAlertsSectionControllerDidTapHeader(_ controller: AgencyAlertsSectionController) {
-        let agency = controller.sectionData!.agencyName
-        if let index = collapsedSections.firstIndex(of: agency) {
-            collapsedSections.remove(at: index)
+    func presentAlert(_ alert: AgencyAlert.ListViewModel) {
+        if let url = alert.localizedURL {
+            let safari = SFSafariViewController(url: url)
+            application.viewRouter.present(safari, from: self, isModal: true)
         } else {
-            collapsedSections.append(agency)
+            let title = alert.title
+            let body = alert.body
+            AlertPresenter.showDismissableAlert(title: title, message: body, presentingController: self)
         }
-
-        self.collectionController.reload(animated: true)
     }
 }
