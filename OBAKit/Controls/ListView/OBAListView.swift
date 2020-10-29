@@ -21,10 +21,22 @@
 /// To support collapsible sections, set `collapsibleSectionsDelegate`. The delegate will allow you
 /// to specify which sections can collapse and respond to collapse/expand actions.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+
+    /// The view type for `EmptyData`.
+    /// To use the standard view, provide the view model. OBAListView will handle the view lifecycle.
+    /// If you use a custom view, you are responsible for managing it.
+    public enum EmptyData {
+        case standard(StandardEmptyDataViewModel)
+        case custom(UIView)
+    }
+
     weak public var obaDataSource: OBAListViewDataSource?
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
+
+    /// Cache EmptyDataSetView if we need to reuse it during fast updates.
+    fileprivate var standardEmptyDataView: EmptyDataSetView?
 
     public init() {
         super.init(frame: .zero, collectionViewLayout: UICollectionViewLayout())            // Load dummy layout first...
@@ -55,7 +67,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Data source
 
-    func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
+    fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
         let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
             let config = item.contentConfiguration
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
@@ -85,7 +97,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     // MARK: - Supplementary views
-    func headerView(
+    fileprivate func headerView(
         collectionView: UICollectionView,
         of kind: String,
         at indexPath: IndexPath,
@@ -105,7 +117,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         return view
     }
 
-    func footerView(
+    fileprivate func footerView(
         collectionView: UICollectionView,
         of kind: String,
         at indexPath: IndexPath,
@@ -140,7 +152,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     // MARK: - Layout configuration
-    func createLayout() -> UICollectionViewLayout {
+    fileprivate func createLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { section, _ -> NSCollectionLayoutSection? in
             return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
         }
@@ -149,6 +161,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     // MARK: - Data source
     public func applyData(animated: Bool = false) {
         var sections = self.obaDataSource?.items(for: self) ?? []
+        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
+
         if let collapsibleDelegate = self.collapsibleSectionsDelegate {
             // Add collapsed state to the section, if it is allowed to collapse.
             sections = sections.map { section in
@@ -182,6 +196,40 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         DispatchQueue.main.async {
             self.diffableDataSource.apply(snapshot, animatingDifferences: animated)
         }
+    }
+
+    fileprivate func emptyDataConfiguration(isEmpty: Bool) {
+        guard isEmpty, let emptyData = self.obaDataSource?.emptyData(for: self) else {
+            self.backgroundView?.isHidden = true
+            return
+        }
+
+        self.backgroundView?.removeFromSuperview()
+        self.backgroundView = nil
+
+        let view: UIView
+        switch emptyData {
+        case .standard(let viewModel):
+            let emptyDataView: EmptyDataSetView
+            if let existing = self.standardEmptyDataView,
+               existing.alignment == viewModel.alignment {
+                emptyDataView = existing
+            } else {
+                emptyDataView = EmptyDataSetView(alignment: viewModel.alignment)
+            }
+
+            emptyDataView.apply(viewModel)
+
+            self.standardEmptyDataView = emptyDataView
+
+            view = emptyDataView
+        case .custom(let custom):
+            custom.translatesAutoresizingMaskIntoConstraints = true
+            view = custom
+        }
+
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        self.backgroundView = view
     }
 
     // MARK: - Helpers

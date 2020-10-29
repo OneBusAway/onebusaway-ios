@@ -51,7 +51,7 @@ public class EmptyDataSetView: UIView {
 
     /// Configuration for the button. Set to `nil` to hide the button. See `ButtonConfig.init` for additional details.
     // MARK: - UI
-    fileprivate let alignment: EmptyDataSetAlignment
+    public let alignment: EmptyDataSetAlignment
 
     fileprivate lazy var imageViewHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: 64)
     public let imageView: UIImageView = {

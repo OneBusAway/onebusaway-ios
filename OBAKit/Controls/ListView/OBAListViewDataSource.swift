@@ -25,4 +25,13 @@ public protocol OBAListViewDataSource: class {
     /// ```
     /// - parameter listView: The list view that is requesting the items.
     func items(for listView: OBAListView) -> [OBAListViewSection]
+
+    /// Optional. The view to use as the collection view background when the list is empty.
+    func emptyData(for listView: OBAListView) -> OBAListView.EmptyData?
+}
+
+// MARK: - Default implementation
+
+extension OBAListViewDataSource {
+    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? { return nil }
 }
