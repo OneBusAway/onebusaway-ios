@@ -40,6 +40,12 @@ public struct OBAListViewSection: Hashable {
     /// - important: To avoid confusing `UICollectionView` animations, this value is not checked for equality.
     public var collapseState: CollapseState?
 
+    /// Provide an optional custom section layout.
+    ///
+    /// Instead of creating a custom layout, you may want to consider creating a separate
+    /// `UICollectionView` as `OBAListView` is supposed to be a list view, akin to `UITableView`.
+    public var customSectionLayout: NSCollectionLayoutSection?
+
     public init<ViewModel: OBAListViewItem>(id: String, title: String? = nil, contents: [ViewModel]) {
         self.id = id
         self.title = title
@@ -58,11 +64,11 @@ public struct OBAListViewSection: Hashable {
     // MARK: - UICollectionView
 
     /// The layout defining this section's layout with full width cells.
-    ///
-    /// Although you can override this with your own implementation, you may want to consider creating
-    /// a separate `UICollectionView` as `OBAListView` is supposed to be a list view, akin to
-    /// `UITableView`.
     var sectionLayout: NSCollectionLayoutSection {
+        if let custom = self.customSectionLayout {
+            return custom
+        }
+
         let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(44))
         let item = NSCollectionLayoutItem(layoutSize: size)
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: size, subitem: item, count: 1)
