@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+import OBAKitCore
+
 public class OBAListRowViewSubtitle: OBAListRowView {
     static let ReuseIdentifier = "OBAListRowViewSubtitle_ReuseIdentifier"
     private var textStack: UIStackView!
