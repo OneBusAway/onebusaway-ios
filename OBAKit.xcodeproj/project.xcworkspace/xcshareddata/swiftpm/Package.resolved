@@ -5,9 +5,9 @@
         "package": "BLTNBoard",
         "repositoryURL": "https://github.com/alexaubry/BulletinBoard.git",
         "state": {
-          "branch": "69a7bd2",
-          "revision": "69a7bd2620ec374743f4d288730321b21a576225",
-          "version": null
+          "branch": null,
+          "revision": "e8ba81d25e41e5d24d6a4f404ed28443d728723b",
+          "version": "5.0.0"
         }
       },
       {
@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/xmartlabs/Eureka.git",
         "state": {
           "branch": null,
-          "revision": "9fe153d2be663621d4f53196bf1b7effb83d7017",
-          "version": "5.3.0"
+          "revision": "ae025915335f02e7277ed5446b4de002bab05866",
+          "version": "5.3.1"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/cbpowell/MarqueeLabel.git",
         "state": {
           "branch": null,
-          "revision": "d548621d5d6a45294dfdd12fce4d3a47de30a51e",
-          "version": "4.0.3"
+          "revision": "d92fe1583dbf43fa3b70229a49fa7da6b36750d4",
+          "version": "4.0.5"
         }
       },
       {
@@ -87,8 +87,8 @@
         "repositoryURL": "https://github.com/OneSignal/OneSignal-iOS-SDK.git",
         "state": {
           "branch": null,
-          "revision": "e762b39aba93cfe357d24ceb5534d93bc148b363",
-          "version": "2.15.3"
+          "revision": "be54eb1a2c10b22b56d4706f3d5851fc3d57376f",
+          "version": "2.15.4"
         }
       },
       {
@@ -105,8 +105,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "0279688c9fc5a40028e1b5bb0cb56534a45a6020",
-          "version": "1.12.0"
+          "revision": "426bef0ddfdc6449b7bd1418baafad6bbc56110b",
+          "version": "1.13.0"
         }
       }
     ]
