@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+import OBAKitCore
+
 public class OBAListRowViewValue: OBAListRowView {
     static let ReuseIdentifier = "OBAListRowViewValue_ReuseIdentifier"
 
