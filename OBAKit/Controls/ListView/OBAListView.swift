@@ -47,7 +47,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     fileprivate var lastUsedContextMenu: (identifier: String, actions: OBAListViewMenuActions)?
 
     /// Cache EmptyDataSetView if we need to reuse it during fast updates.
-    fileprivate var standardEmptyDataView: EmptyDataSetView?
+    fileprivate lazy var standardEmptyDataView: EmptyDataSetView = EmptyDataSetView()
 
     public init() {
         super.init(frame: .zero, collectionViewLayout: UICollectionViewLayout())            // Load dummy layout first...
@@ -235,24 +235,14 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
 
         self.backgroundView?.removeFromSuperview()
+        self.backgroundView?.isHidden = false
         self.backgroundView = nil
 
         let view: UIView
         switch emptyData {
         case .standard(let viewModel):
-            let emptyDataView: EmptyDataSetView
-            if let existing = self.standardEmptyDataView,
-               existing.alignment == viewModel.alignment {
-                emptyDataView = existing
-            } else {
-                emptyDataView = EmptyDataSetView(alignment: viewModel.alignment)
-            }
-
-            emptyDataView.apply(viewModel)
-
-            self.standardEmptyDataView = emptyDataView
-
-            view = emptyDataView
+            self.standardEmptyDataView.apply(viewModel)
+            view = self.standardEmptyDataView
         case .custom(let custom):
             custom.translatesAutoresizingMaskIntoConstraints = true
             view = custom

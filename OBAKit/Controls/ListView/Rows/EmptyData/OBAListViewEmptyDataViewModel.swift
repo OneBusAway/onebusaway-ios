@@ -67,6 +67,6 @@ extension EmptyDataSetView {
         imageView.image = viewModel.image
 
         button.config = viewModel.buttonConfig
-        layoutIfNeeded()
+        layoutView()
     }
 }
