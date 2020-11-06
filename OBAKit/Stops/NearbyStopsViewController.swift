@@ -13,8 +13,8 @@ import CoreLocation
 import OBAKitCore
 
 class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIResponse<[Stop]>>, [Stop]>,
-    ListAdapterDataSource,
     SectionDataBuilders,
+    OBAListViewDataSource,
     UISearchResultsUpdating {
 
     private let coordinate: CLLocationCoordinate2D
@@ -23,9 +23,11 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
         didSet {
             guard oldValue != searchFilter else { return }
             let animated = searchFilter != nil
-            collectionController.reload(animated: animated)
+            listView.applyData(animated: animated)
         }
     }
+
+    private let listView = OBAListView()
 
     // MARK: - Init
 
@@ -45,29 +47,32 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+        listView.obaDataSource = self
 
         configureSearchController()
     }
 
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    func startLoading() {
+        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
+    }
 
-        collectionController.reload(animated: false)
+    func finishLoading() {
+        navigationItem.rightBarButtonItem = nil
     }
 
     // MARK: - Operation Controller Overrides
-
     override func loadData() -> DecodableOperation<RESTAPIResponse<[Stop]>>? {
         guard let apiService = application.restAPIService else { return nil }
 
-        SVProgressHUD.show()
-
+        startLoading()
         let op = apiService.getStops(coordinate: coordinate)
         op.complete { [weak self] result in
-            SVProgressHUD.dismiss()
             guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.finishLoading()
+            }
 
             switch result {
             case .failure(let error):
@@ -82,11 +87,10 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 
     override func updateUI() {
         searchFilter = nil
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     // MARK: - Search
-
     private lazy var searchController = UISearchController(searchResultsController: nil)
 
     func updateSearchResults(for searchController: UISearchController) {
@@ -101,15 +105,8 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
     }
 
     // MARK: - Data and Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
-
-    // MARK: - ListAdapterDataSource
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        guard let data = data, data.count > 0 else {
-            return []
-        }
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        guard let data = data, data.count > 0 else { return [] }
 
         let filter = String.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
 
@@ -124,36 +121,50 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
             directions[stop.direction] = list
         }
 
-        let tapHandler = { (vm: ListViewModel) -> Void in
-            guard let stop = vm.object as? Stop else { return }
-            self.application.viewRouter.navigateTo(stop: stop, from: self)
+        let tapHandler = { (vm: NearbyStopViewModel) -> Void in
+            self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
-        var sections: [ListDiffable] = []
-        for dir in directions.keys {
-            let stops = directions[dir] ?? []
-            let section = tableSection(stops: stops, tapped: tapHandler, deleted: nil)
-            let header = TableHeaderData(title: Formatters.adjectiveFormOfCardinalDirection(dir) ?? "")
-            sections.append(contentsOf: [header, section])
+        return directions.keys.map { direction -> OBAListViewSection in
+            let stops = directions[direction] ?? []
+            let cells = stops.map { NearbyStopViewModel(stop: $0, onSelectAction: tapHandler) }
+            let header = Formatters.adjectiveFormOfCardinalDirection(direction) ?? ""
+            return OBAListViewSection(id: "\(direction.rawValue)", title: header, contents: cells)
         }
-
-        return sections
     }
 
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let sectionController = createSectionController(for: object)
-        return sectionController
+    func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        let title = OBALoc("nearby_stops_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby Stops controller.")
+        let body = OBALoc("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
+
+        return .standard(.init(title: title, body: body))
+    }
+}
+
+struct NearbyStopViewModel: OBAListViewItem {
+    let stopID: String
+    let title: String
+    let subtitle: String
+
+    let onSelectAction: OBAListViewAction<NearbyStopViewModel>?
+
+    var contentConfiguration: OBAContentConfiguration {
+        return OBAListRowConfiguration(text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: .disclosureIndicator)
     }
 
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        let emptyView = EmptyDataSetView()
-        emptyView.titleLabel.text = OBALoc("nearby_stops_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby Stops controller.")
-        emptyView.bodyLabel.text = OBALoc("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
+    init(stop: Stop, onSelectAction: @escaping OBAListViewAction<NearbyStopViewModel>) {
+        self.onSelectAction = onSelectAction
 
-        return emptyView
+        self.stopID = stop.id
+        self.title = Formatters.formattedTitle(stop: stop)
+        self.subtitle = Formatters.formattedRoutes(stop.routes)
     }
 
-    private func createSectionController(for object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(stopID)
+    }
+
+    static func == (lhs: NearbyStopViewModel, rhs: NearbyStopViewModel) -> Bool {
+        return lhs.title == rhs.title && lhs.subtitle == rhs.subtitle
     }
 }
