@@ -10,24 +10,23 @@
 import UIKit
 import MapKit
 import Contacts
-import IGListKit
 import SafariServices
 import OBAKitCore
 
 class MapItemViewController: VisualEffectViewController,
     AppContext,
-    ListAdapterDataSource,
+    OBAListViewDataSource,
     Scrollable {
 
     /// The OBA application object
     let application: Application
 
     lazy var titleView = FloatingPanelTitleView.autolayoutNew()
+    let listView = OBAListView()
 
-    var scrollView: UIScrollView { collectionController.collectionView }
+    var scrollView: UIScrollView { listView }
 
     private let mapItem: MKMapItem
-
     public weak var delegate: ModalDelegate?
 
     init(application: Application, mapItem: MKMapItem, delegate: ModalDelegate?) {
@@ -50,82 +49,59 @@ class MapItemViewController: VisualEffectViewController,
         titleView.titleLabel.text = mapItem.name ?? ""
         titleView.closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        prepareChildController(collectionController) {
-            let stack = UIStackView.verticalStack(arrangedSubviews: [
-                titleView, collectionController.view
-            ])
-            visualEffectView.contentView.addSubview(stack)
-            stack.pinToSuperview(.edges)
-        }
+        listView.obaDataSource = self
+        listView.showsVerticalScrollIndicator = false
+        listView.backgroundColor = .clear
+
+        let stack = UIStackView.verticalStack(arrangedSubviews: [titleView, listView])
+        visualEffectView.contentView.addSubview(stack)
+
+        let insets = NSDirectionalEdgeInsets(top: ThemeMetrics.padding, leading: 0, bottom: 0, trailing: 0)
+        stack.pinToSuperview(.edges, insets: insets)
+
+        listView.applyData()
     }
 
-    // MARK: - IGListKit
+    // MARK: - OBAListView
 
-    private var aboutSection: [ListDiffable] {
-        var rows = [TableRowData]()
-
+    private var aboutSection: OBAListViewSection {
+        var rows: [AnyOBAListViewItem] = []
         if let address = mapItem.placemark.postalAddress {
             let formattedAddress = CNPostalAddressFormatter.string(from: address, style: .mailingAddress)
-            let row = TableRowData(title: formattedAddress, accessoryType: .none) { [weak self] _ in
-                guard let self = self else { return }
+            let row = OBAListRowView.DefaultViewModel(title: formattedAddress, accessoryType: .none) { _ in
                 self.mapItem.openInMaps(launchOptions: nil)
             }
-            rows.append(row)
+            rows.append(row.typeErased)
         }
 
         if let phone = mapItem.phoneNumber, let url = URL(phoneNumber: phone) {
-            let row = TableRowData(title: phone, accessoryType: .none) { [weak self] _ in
-                guard let self = self else { return }
+            let row = OBAListRowView.DefaultViewModel(title: phone, accessoryType: .none) { _ in
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(row)
+            rows.append(row.typeErased)
         }
 
         if let url = mapItem.url {
-            let row = TableRowData(title: url.absoluteString, accessoryType: .none) { [weak self] _ in
-                guard let self = self else { return }
+            let row = OBAListRowView.DefaultViewModel(title: url.absoluteString, accessoryType: .none) { _ in
                 let safari = SFSafariViewController(url: url)
                 self.application.viewRouter.present(safari, from: self)
             }
-            rows.append(row)
+            rows.append(row.typeErased)
         }
 
-        return [
-            TableHeaderData(title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header")),
-            TableSectionData(rows: rows)
-        ]
+        return OBAListViewSection(id: "about", title: OBALoc("map_item_controller.about_header", value: "About", comment: "about section header"), contents: rows)
     }
 
-    private var moreSection: [ListDiffable] {
-        let row = TableRowData(title: OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
+    private var moreSection: OBAListViewSection {
+        let row = OBAListRowView.DefaultViewModel(title: OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."), accessoryType: .disclosureIndicator) { _ in
             let nearbyStops = NearbyStopsViewController(coordinate: self.mapItem.placemark.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyStops, from: self)
         }
-        return [
-            TableHeaderData(title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header")),
-            TableSectionData(row: row)
-        ]
+
+        return OBAListViewSection(id: "more", title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"), contents: [row])
     }
 
-    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var sections = [ListDiffable]()
-        sections.append(contentsOf: aboutSection)
-        sections.append(contentsOf: moreSection)
-        return sections
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return [aboutSection, moreSection]
     }
-
-    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
-    }
-
-    private lazy var collectionController: CollectionController = {
-        let controller = CollectionController(application: application, dataSource: self)
-        controller.collectionView.showsVerticalScrollIndicator = false
-        return controller
-    }()
 }
