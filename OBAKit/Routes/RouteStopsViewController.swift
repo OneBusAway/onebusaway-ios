@@ -12,23 +12,21 @@ import MapKit
 import Contacts
 import SafariServices
 import OBAKitCore
-import IGListKit
 
 class RouteStopsViewController: VisualEffectViewController,
     AppContext,
-    ListAdapterDataSource,
+    OBAListViewDataSource,
     Scrollable {
 
     /// The OBA application object
     let application: Application
 
-    lazy var titleView = FloatingPanelTitleView.autolayoutNew()
-
-    var scrollView: UIScrollView { collectionController.collectionView }
-
+    weak var delegate: ModalDelegate?
     private let stopsForRoute: StopsForRoute
 
-    public weak var delegate: ModalDelegate?
+    private let titleView = FloatingPanelTitleView.autolayoutNew()
+    private let listView = OBAListView()
+    var scrollView: UIScrollView { listView }
 
     init(application: Application, stopsForRoute: StopsForRoute, delegate: ModalDelegate?) {
         self.application = application
@@ -51,40 +49,31 @@ class RouteStopsViewController: VisualEffectViewController,
         titleView.subtitleLabel.text = stopsForRoute.route.longName
         titleView.closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
-        prepareChildController(collectionController) {
-            let stack = UIStackView.verticalStack(arrangedSubviews: [
-                titleView, collectionController.view
-            ])
-            visualEffectView.contentView.addSubview(stack)
-            stack.pinToSuperview(.edges)
-        }
+        listView.obaDataSource = self
+        listView.showsVerticalScrollIndicator = false
+        listView.backgroundColor = nil
+
+        let stack = UIStackView.verticalStack(arrangedSubviews: [titleView, listView])
+        visualEffectView.contentView.addSubview(stack)
+        stack.pinToSuperview(.edges)
     }
 
-    // MARK: - IGListKit
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        listView.applyData()
+    }
 
-    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        let rows = stopsForRoute.stops.map { stop -> TableRowData in
-            return TableRowData(title: stop.name, subtitle: Formatters.adjectiveFormOfCardinalDirection(stop.direction) ?? "", accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                self.application.viewRouter.navigateTo(stop: stop, from: self)
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        let rows = stopsForRoute.stops!.map { stop -> OBAListRowView.SubtitleViewModel in
+            let title = stop.name
+            let subtitle = Formatters.adjectiveFormOfCardinalDirection(stop.direction) ?? ""
+            let stopID = stop.id
+
+            return OBAListRowView.SubtitleViewModel(title: title, subtitle: subtitle, accessoryType: .disclosureIndicator) { _ in
+                self.application.viewRouter.navigateTo(stopID: stopID, from: self)
             }
         }
 
-        return [TableSectionData(rows: rows)]
+        return [OBAListViewSection(id: "stops", contents: rows)]
     }
-
-    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
-    }
-
-    private lazy var collectionController: CollectionController = {
-        let controller = CollectionController(application: application, dataSource: self)
-        controller.collectionView.showsVerticalScrollIndicator = false
-        controller.collectionView.backgroundColor = nil
-        return controller
-    }()
 }
