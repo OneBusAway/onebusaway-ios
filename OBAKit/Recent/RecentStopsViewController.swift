@@ -142,7 +142,7 @@ public class RecentStopsViewController: UIViewController,
         }
 
         let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
-        return OBAListViewSection(id: "recent_stops", title: title, contents: rows)
+        return OBAListViewSection(id: "recent_stops", title: title, contents: Set(rows).allObjects)
     }
 
     // MARK: - OBAListView
