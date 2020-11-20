@@ -18,6 +18,9 @@ public protocol OBAListViewItem: Hashable {
     /// Optional. Action to perform when you select this item.
     var onSelectAction: OBAListViewAction<Self>? { get }
 
+    /// Optional. Action to perform when you delete this item.
+    var onDeleteAction: OBAListViewAction<Self>? { get }
+
     /// Optional. Contextual actions to display on the leading side of the cell.
     /// There is no need to set `item` for your actions, `OBAListView` will automatically set `item`.
     var leadingContextualActions: [OBAListViewContextualAction<Self>]? { get }
@@ -32,6 +35,10 @@ public protocol OBAListViewItem: Hashable {
 // MARK: Default implementations
 extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
+        return nil
+    }
+
+    public var onDeleteAction: OBAListViewAction<Self>? {
         return nil
     }
 
@@ -61,6 +68,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _hash: (_ hasher: inout Hasher) -> Void
 
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
+    private let _onDeleteAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _leadingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _trailingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _type: Any
@@ -72,6 +80,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         self._type = listCellViewModel
 
         self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
+        self._onDeleteAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onDeleteAction) }
         self._leadingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingContextualActions) }
         self._trailingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.trailingContextualActions) }
     }
@@ -124,6 +133,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public var onSelectAction: OBAListViewAction<AnyOBAListViewItem>? {
         return _onSelectAction()
+    }
+
+    public var onDeleteAction: OBAListViewAction<AnyOBAListViewItem>? {
+        return _onDeleteAction()
     }
 
     public var leadingContextualActions: [OBAListViewContextualAction<AnyOBAListViewItem>]? {

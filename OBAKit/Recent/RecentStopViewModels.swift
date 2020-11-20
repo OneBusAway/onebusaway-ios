@@ -22,25 +22,12 @@ extension RecentStopsViewController {
                 accessoryType: .disclosureIndicator)
         }
 
-        var trailingContextualActions: [OBAListViewContextualAction<StopViewModel>]? {
-            guard let onDeleteAction = self.onDeleteAction else { return nil }
-            return [OBAListViewContextualAction<StopViewModel>(
-                style: .destructive,
-                title: Strings.delete,
-                image: UIImage(systemName: "trash"),
-                textColor: .white,
-                backgroundColor: .systemRed,
-                hidesWhenSelected: false) { (viewModel) in
-                onDeleteAction(viewModel)
-            }]
-        }
-
         let onSelectAction: OBAListViewAction<StopViewModel>?
-        let onDeleteAction: ((StopViewModel) -> Void)?
+        let onDeleteAction: OBAListViewAction<StopViewModel>?
 
         init(withStop stop: Stop,
-             onSelect selectAction: ((StopViewModel) -> Void)?,
-             onDelete deleteAction: ((StopViewModel) -> Void)?) {
+             onSelect selectAction: OBAListViewAction<StopViewModel>?,
+             onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
             self.name = stop.name
             self.subtitle = stop.subtitle
 
@@ -72,25 +59,12 @@ extension RecentStopsViewController {
                 accessoryType: .disclosureIndicator)
         }
 
-        var trailingContextualActions: [OBAListViewContextualAction<AlarmViewModel>]? {
-            guard let onDeleteAction = self.onDeleteAction else { return nil }
-            return [OBAListViewContextualAction<AlarmViewModel>(
-                style: .destructive,
-                title: Strings.delete,
-                image: UIImage(systemName: "trash"),
-                textColor: .white,
-                backgroundColor: .systemRed,
-                hidesWhenSelected: false) { (viewModel) in
-                onDeleteAction(viewModel)
-            }]
-        }
-
         let onSelectAction: OBAListViewAction<AlarmViewModel>?
-        let onDeleteAction: ((AlarmViewModel) -> Void)?
+        let onDeleteAction: OBAListViewAction<AlarmViewModel>?
 
         init?(withAlarm alarm: Alarm,
-              onSelect selectAction: ((AlarmViewModel) -> Void)?,
-              onDelete deleteAction: ((AlarmViewModel) -> Void)?) {
+              onSelect selectAction: OBAListViewAction<AlarmViewModel>?,
+              onDelete deleteAction: OBAListViewAction<AlarmViewModel>?) {
             guard let deepLink = alarm.deepLink else { return nil }
             self.alarm = alarm
             self.deepLink = deepLink

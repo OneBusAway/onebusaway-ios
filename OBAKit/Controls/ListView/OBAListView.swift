@@ -162,7 +162,23 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         case .left:
             return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
         case .right:
-            return item.trailingContextualActions?.map { setItem(on: $0).swipeAction }
+            let items = item.trailingContextualActions ?? []
+            var swipeActions = items.map { setItem(on: $0).swipeAction }
+
+            if let deleteAction = item.onDeleteAction {
+                // Hides "Delete" text if the cell is less than 64 units tall.
+                let cellSize = collectionView.cellForItem(at: indexPath)?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
+                let isCellCompact = cellSize < 64
+                let swipeActionText = isCellCompact ? nil : Strings.delete
+                let deleteSwipeAction = SwipeAction(style: .destructive, title: swipeActionText) { (action, _) in
+                    action.fulfill(with: .delete)
+                    deleteAction(item)
+                }
+                deleteSwipeAction.image = Icons.delete
+                swipeActions.append(deleteSwipeAction)
+            }
+
+            return swipeActions.isEmpty ? nil : swipeActions
         }
     }
 

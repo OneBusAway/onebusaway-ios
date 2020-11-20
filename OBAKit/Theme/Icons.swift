@@ -119,6 +119,10 @@ class Icons: NSObject {
         systemImage(named: "square.and.arrow.up.fill")
     }
 
+    public class var delete: UIImage {
+        systemImage(named: "trash.fill")
+    }
+
     // MARK: - Bookmarks
 
     /// An icon used to represent bookmarked stops and trips.
