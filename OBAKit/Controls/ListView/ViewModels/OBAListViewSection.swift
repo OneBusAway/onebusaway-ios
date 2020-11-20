@@ -21,17 +21,19 @@ public struct OBAListViewSection: Hashable {
         case expanded
     }
 
-    /// The identifier of this section.
-    /// - important: In a given `OBAListView`, this ID must be unique.
-    public var id: ID
+    /// A unique section identifier for tracking the section itself.
+    public let id: ID
 
-    /// A localized title that displays in the section header.
-    /// If you do not want to display a section header, set this to `nil`.
-    public var title: String?
+    /// An optional localized title to display on the section header. If this is set to `nil`, then a section
+    /// header will not display. Setting this to any non-nil value, including an empty string, will display a
+    /// section header.
+    public let title: String?
 
-    /// The items in this section.
-    public var contents: [AnyOBAListViewItem]
+    /// The items of this section. As with `UICollectionViewDiffableDataSource`, the items you
+    /// provide must have unique item identifiers.
+    public let contents: [AnyOBAListViewItem]
 
+    /// Indicates whether this section should display a section header, which is dependent on the value of `title`.
     public var hasHeader: Bool {
         return title != nil
     }
@@ -46,10 +48,25 @@ public struct OBAListViewSection: Hashable {
     /// `UICollectionView` as `OBAListView` is supposed to be a list view, akin to `UITableView`.
     public var customSectionLayout: NSCollectionLayoutSection?
 
+    /// OBAListViewSection is a level-one section on OBAListView.
+    /// - parameters:
+    ///     - id:       A unique section identifier for tracking the section itself.
+    ///     - title:    An optional localized title to display on the section header.
+    ///                 If this is set to `nil`, then a section header will not display.
+    ///                 Setting this to any non-nil value, including an empty string, will display a section header.
+    ///     - contents: The items of this section. As with `UICollectionViewDiffableDataSource`, the items you
+    ///                 provide must have unique item identifiers.
     public init<ViewModel: OBAListViewItem>(id: String, title: String? = nil, contents: [ViewModel]) {
         self.id = id
         self.title = title
         self.contents = contents.map { $0.typeErased }
+
+        #if DEBUG
+        // This is helpful to track down where item identifiers are being set.
+        // Since this condition is potentially expensive, only run it in DEBUG mode.
+        assert(Set(self.contents).count == self.contents.count,
+               "The OBAListViewSection contents you provided have one or more of the same item identifier. This will cause a crash with UICollectionView later on!")
+        #endif
     }
 
     public func hash(into hasher: inout Hasher) {

@@ -20,6 +20,10 @@
 /// ## Collapsible Sections
 /// To support collapsible sections, set `collapsibleSectionsDelegate`. The delegate will allow you
 /// to specify which sections can collapse and respond to collapse/expand actions.
+///
+/// ## Context Menus
+/// To support context menus, set `contextMenuDelegate`. The delegate will allow you to provide menu
+/// actions based on the selected item. For more info, refer to `OBAListViewMenuActions`.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
 
     /// The view type for `EmptyData`.
@@ -137,7 +141,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier, for: indexPath)
     }
 
-    // MARK: - Delegate methods
+    // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
         item.onSelectAction?(item)
@@ -162,6 +166,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
     }
 
+    // MARK: - Context menu configuration
     public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
         guard let item = self.diffableDataSource.itemIdentifier(for: indexPath),
              let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }

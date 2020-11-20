@@ -20,6 +20,9 @@ import OBAKitCore
 /// instance of the preview view controller in your parent view controller when `previewProvider` is called.
 /// Then, configure `performPreviewAction` to push that preview view controller to the navigation stack.
 ///
+/// `OBAListViewMenuActions` supports the `Previewable` protocol, so it will automatically
+/// `enterPreviewMode()` when the user is previewing.
+///
 /// ## Configuration for menu actions
 /// `contextMenuProvider` will provide a list of `suggestedActions` that you may include in your
 /// menu, "UIKit collects these actions from responders in the current responder chain. You are not required
