@@ -16,6 +16,7 @@ class AgencyAlertsViewController: UIViewController,
     AgencyAlertsDelegate,
     AppContext,
     OBAListViewCollapsibleSectionsDelegate,
+    OBAListViewContextMenuDelegate,
     OBAListViewDataSource {
 
     // MARK: - Stores
@@ -54,6 +55,7 @@ class AgencyAlertsViewController: UIViewController,
 
         listView.obaDataSource = self
         listView.collapsibleSectionsDelegate = self
+        listView.contextMenuDelegate = self
         listView.refreshControl = refreshControl
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -79,6 +81,63 @@ class AgencyAlertsViewController: UIViewController,
         navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
     }
 
+    func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
+        guard let alert = item.as(AgencyAlert.ListViewModel.self) else { return nil }
+
+        let preview: OBAListViewMenuActions.PreviewProvider = {
+            return self.previewAlert(alert)
+        }
+
+        let performPreview: VoidBlock = {
+            self.performPreviewActionAlert(alert)
+        }
+
+        let menuProvider: OBAListViewMenuActions.MenuProvider = { _ in
+            guard let copyLink = self.copyLink(alert) else { return nil }
+            return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [copyLink])
+        }
+
+        return OBAListViewMenuActions(previewProvider: preview, performPreviewAction: performPreview, contextMenuProvider: menuProvider)
+    }
+
+    // MARK: - Preview
+
+    var previewingVC: (identifier: String, vc: UIViewController)?
+
+    func previewAlert(_ alert: AgencyAlert.ListViewModel) -> UIViewController? {
+        let viewController: UIViewController
+        if let url = alert.localizedURL {
+            viewController = SFSafariViewController(url: url)
+        } else {
+            viewController = AgencyAlertDetailViewController(alert)
+        }
+
+        self.previewingVC = (alert.id, viewController)
+        return viewController
+    }
+
+    func performPreviewActionAlert(_ alert: AgencyAlert.ListViewModel) {
+        if let previewingVC = self.previewingVC, previewingVC.identifier == alert.id {
+            if previewingVC.vc is AgencyAlertDetailViewController {
+                application.viewRouter.navigate(to: previewingVC.vc, from: self)
+            } else {
+                application.viewRouter.present(previewingVC.vc, from: self, isModal: true)
+            }
+        } else {
+            presentAlert(alert)
+        }
+    }
+
+    // MARK: - Menu actions
+
+    func copyLink(_ alert: AgencyAlert.ListViewModel) -> UIAction? {
+        guard let url = alert.localizedURL else { return nil }
+        let copyLink = OBALoc("copy_link.title", value: "Copy Link", comment: "Copy a link to the user's clipboard")
+        return UIAction(title: copyLink, image: UIImage(systemName: "link")) { _ in
+            UIPasteboard.general.string = url.absoluteString
+        }
+    }
+
     // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
@@ -97,9 +156,7 @@ class AgencyAlertsViewController: UIViewController,
             let safari = SFSafariViewController(url: url)
             application.viewRouter.present(safari, from: self, isModal: true)
         } else {
-            let title = alert.title
-            let body = alert.body
-            AlertPresenter.showDismissableAlert(title: title, message: body, presentingController: self)
+            application.viewRouter.navigate(to: AgencyAlertDetailViewController(alert), from: self)
         }
     }
 }
