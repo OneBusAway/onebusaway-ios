@@ -30,10 +30,21 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         case custom(UIView)
     }
 
+    // MARK: - Features (delegates)
+    /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
+
+    /// Optional. Implement `OBAListViewCollapsibleSectionsDelegate` to add support for collapsible sections for this list view.
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
+    /// Optional. Implement `OBAListViewContextMenuDelegate` to add support for context menus for this list view.
+    weak public var contextMenuDelegate: OBAListViewContextMenuDelegate?
+
+    // MARK: - Private properties
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
+
+    /// Cache the last used context menu for handling "perform preview action".
+    fileprivate var lastUsedContextMenu: (identifier: String, actions: OBAListViewMenuActions)?
 
     /// Cache EmptyDataSetView if we need to reuse it during fast updates.
     fileprivate var standardEmptyDataView: EmptyDataSetView?
@@ -148,6 +159,25 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
             return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
         case .right:
             return item.trailingContextualActions?.map { setItem(on: $0).swipeAction }
+        }
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let item = self.diffableDataSource.itemIdentifier(for: indexPath),
+             let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
+
+        // Add uuid so in `willPerformPreviewActionForMenuWith`, we can independently
+        // verify (without using index paths that may change) that the user did
+        // intend to perform on this specific menu.
+        let id = UUID().uuidString
+        self.lastUsedContextMenu = (id, config)
+        return config.contextMenuConfiguration(identifier: id)
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        guard let menuAction = self.lastUsedContextMenu, menuAction.identifier == configuration.identifier as? String else { return }
+        animator.addCompletion {
+            menuAction.actions.performPreviewAction?()
         }
     }
 
