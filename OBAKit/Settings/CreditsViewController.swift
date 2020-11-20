@@ -13,8 +13,9 @@ import WebKit
 import OBAKitCore
 
 /// Displays the app's third party credits.
-class CreditsViewController: UIViewController, AppContext, ListAdapterDataSource {
+class CreditsViewController: UIViewController, AppContext, OBAListViewDataSource {
 
+    let listView = OBAListView()
     let application: Application
 
     private let credits: [String: Any]
@@ -41,8 +42,11 @@ class CreditsViewController: UIViewController, AppContext, ListAdapterDataSource
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+        listView.obaDataSource = self
+        listView.applyData()
     }
 
     // MARK: - Actions
@@ -53,30 +57,15 @@ class CreditsViewController: UIViewController, AppContext, ListAdapterDataSource
         application.viewRouter.navigate(to: viewer, from: self)
     }
 
-    // MARK: - IGListKit
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: .plain)
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var rows = [TableRowData]()
-
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        var items: [OBAListRowView.DefaultViewModel] = []
         for key in credits.keys.localizedCaseInsensitiveSort() {
-            let row = TableRowData(title: key, accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
+            items.append(OBAListRowView.DefaultViewModel(title: key, onSelectAction: { _ in
                 self.navigateTo(key: key)
-            }
-            rows.append(row)
+            }))
         }
 
-        return [TableSectionData(rows: rows)]
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
+        return [OBAListViewSection(id: "credits", contents: items)]
     }
 }
 

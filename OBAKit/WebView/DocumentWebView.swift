@@ -41,28 +41,35 @@ class DocumentWebView: WKWebView {
                             font-family: system, -apple-system, "Helvetica Neue", Helvetica, sans-serif;
                             padding: 8px;
                             overflow-x: hidden;
+                            background-color:#000;
+                            color:#fff;
                         }
 
-                    code, pre {
-                        max-width: 300px;
-                        overflow-x: hidden;
-                    }
+                        @media screen and (prefers-color-scheme:light) {
+                            body {
+                                background-color:#fff;
+                                color:#000;
+                            }
+                        }
 
-                    code h1 {
-                        font-size: 14px;
-                    }
+                        code, pre {
+                            max-width: 300px;
+                            overflow-x: hidden;
+                        }
 
-                    h1 {
-                        font-size: 18px;
-                    }
+                        code h1 {
+                            font-size: 14px;
+                        }
 
-                    h2 {
-                        font-size: 14px;
-                    }
+                        h1 {
+                            font-size: 18px;
+                        }
+
+                        h2 {
+                            font-size: 14px;
+                        }
                     </style>
-                    <title>
-                    </title>
-                    </head>
+            </head>
             <body>
                 {{{oba_page_content}}}
             </body>
