@@ -19,6 +19,12 @@ public class EmptyDataSetView: UIView {
     // MARK: - Constants
     fileprivate static let DefaultColor = ThemeColors.shared.secondaryLabel
 
+    var topConstraint: NSLayoutConstraint!
+    var leadingConstraint: NSLayoutConstraint!
+    var trailingConstraint: NSLayoutConstraint!
+    var bottomConstraint: NSLayoutConstraint!
+    var centerYConstraint: NSLayoutConstraint!
+
     // MARK: - Properties
     /// The font used on the title label.
     @objc public dynamic var titleLabelFont: UIFont {
@@ -51,7 +57,11 @@ public class EmptyDataSetView: UIView {
 
     /// Configuration for the button. Set to `nil` to hide the button. See `ButtonConfig.init` for additional details.
     // MARK: - UI
-    fileprivate let alignment: EmptyDataSetAlignment
+    public var alignment: EmptyDataSetAlignment = .center {
+        didSet {
+            layoutView()
+        }
+    }
 
     fileprivate lazy var imageViewHeightConstraint = imageView.heightAnchor.constraint(equalToConstant: 64)
     public let imageView: UIImageView = {
@@ -99,7 +109,6 @@ public class EmptyDataSetView: UIView {
     // MARK: - Initializers
 
     public init(alignment: EmptyDataSetAlignment = .center) {
-        self.alignment = alignment
         super.init(frame: .zero)
 
         addSubview(stackView)
@@ -114,22 +123,17 @@ public class EmptyDataSetView: UIView {
 
         // Bottom constraint to ensure content doesn't continue flowing past the bottom
         // because it might not be a scroll view.
-        let top = stackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor)
-        let leading = stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor)
-        let trailing = stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
-        let bottom = stackView.bottomAnchor.constraint(lessThanOrEqualTo: layoutMarginsGuide.bottomAnchor)
-        let centerY = stackView.centerYAnchor.constraint(equalTo: layoutMarginsGuide.centerYAnchor)
-
-        let isCentered = alignment == .center
-        top.priority        = isCentered ? .defaultLow : .required
-        centerY.priority    = isCentered ? .required : .defaultLow
-        bottom.priority     = isCentered ? .defaultLow : .required
+        self.topConstraint = stackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor)
+        self.leadingConstraint = stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor)
+        self.trailingConstraint = stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor)
+        self.bottomConstraint = stackView.bottomAnchor.constraint(lessThanOrEqualTo: layoutMarginsGuide.bottomAnchor)
+        self.centerYConstraint = stackView.centerYAnchor.constraint(equalTo: layoutMarginsGuide.centerYAnchor)
 
         // Priorities necessary here when width==0 in the very beginning.
-        leading.priority    = .defaultHigh
-        trailing.priority   = .defaultHigh
+        leadingConstraint.priority    = .defaultHigh
+        trailingConstraint.priority   = .defaultHigh
 
-        NSLayoutConstraint.activate([top, leading, trailing, bottom, centerY])
+        NSLayoutConstraint.activate([topConstraint, leadingConstraint, trailingConstraint, bottomConstraint, centerYConstraint])
 
         layoutView()
     }
@@ -138,9 +142,15 @@ public class EmptyDataSetView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    fileprivate func layoutView() {
+    public func layoutView() {
         let isAccessibility = traitCollection.preferredContentSizeCategory.isAccessibilityCategory
         imageViewHeightConstraint.constant = isAccessibility ? 96 : 64
+
+        let isCentered = alignment == .center
+        topConstraint.priority        = isCentered ? .defaultLow : .required
+        centerYConstraint.priority    = isCentered ? .required : .defaultLow
+        bottomConstraint.priority     = isCentered ? .defaultLow : .required
+
         layoutIfNeeded()
     }
 
@@ -184,7 +194,7 @@ struct EmptyDataSetView_Previews: PreviewProvider {
 
     static var centerAlignment: some View {
         UIViewPreview {
-            let view = EmptyDataSetView(alignment: .center)
+            let view = EmptyDataSetView()
             view.imageView.image = UIImage(systemName: "flame.fill")
             view.titleLabel.text = "Get rid of tab bar"
             view.bodyLabel.text = "In my quest for the very best accessibility, one change I made is defaulting the map drawer to be full screen when the user is in voiceover. The map is difficult (in my experience) to navigate in voiceover and it is more helpful to provide a list of data instead of the map."
@@ -194,7 +204,8 @@ struct EmptyDataSetView_Previews: PreviewProvider {
 
     static var topAlignment: some View {
         UIViewPreview {
-            let view = EmptyDataSetView(alignment: .top)
+            let view = EmptyDataSetView()
+            view.alignment = .top
             view.imageView.image = UIImage(systemName: "flame.fill")
             view.titleLabel.text = "Get rid of tab bar"
             view.bodyLabel.text = "In my quest for the very best accessibility, one change I made is defaulting the map drawer to be full screen when the user is in voiceover. The map is difficult (in my experience) to navigate in voiceover and it is more helpful to provide a list of data instead of the map."

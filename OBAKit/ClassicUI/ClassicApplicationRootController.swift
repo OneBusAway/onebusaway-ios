@@ -12,6 +12,13 @@ import OBAKitCore
 
 @objc(OBAClassicApplicationRootController)
 public class ClassicApplicationRootController: UITabBarController {
+    public enum Page: Int {
+        case map = 0
+        case recentStops
+        case bookmarks
+        case more
+    }
+
     private let application: Application
 
     @objc public init(application: Application) {
@@ -23,6 +30,8 @@ public class ClassicApplicationRootController: UITabBarController {
         self.moreController = MoreViewController(application: application)
 
         super.init(nibName: nil, bundle: nil)
+
+        self.application.viewRouter.rootController = self
 
         let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
         let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController)
@@ -57,5 +66,10 @@ public class ClassicApplicationRootController: UITabBarController {
         }
 
         application.userDataStore.lastSelectedView = selectedTab
+    }
+
+    func navigate(to destination: Page) {
+        navigationController?.popToViewController(self, animated: true)
+        selectedIndex = destination.rawValue
     }
 }

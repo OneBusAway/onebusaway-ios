@@ -8,15 +8,11 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
 import MapKit
 
-// swiftlint:disable cyclomatic_complexity
-
-public class SearchResultsController: UIViewController, AppContext, ListAdapterDataSource {
-    public lazy var collectionController = CollectionController(application: application, dataSource: self)
-    var scrollView: UIScrollView { collectionController.collectionView }
+public class SearchResultsController: UIViewController, AppContext, OBAListViewDataSource {
+    var scrollView: UIScrollView { listView }
 
     private weak var delegate: ModalDelegate?
 
@@ -24,6 +20,7 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
 
     private let searchResponse: SearchResponse
 
+    private let listView = OBAListView()
     private let titleView = StackedTitleView.autolayoutNew()
 
     public init(searchResponse: SearchResponse, application: Application, delegate: ModalDelegate?) {
@@ -35,6 +32,10 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
         title = OBALoc("search_results_controller.title", value: "Search Results", comment: "The title of the Search Results controller.")
         titleView.titleLabel.text = title
         titleView.subtitleLabel.text = subtitleText(from: searchResponse)
+
+        listView.obaDataSource = self
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -45,12 +46,14 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
         super.viewDidLoad()
 
         navigationItem.titleView = titleView
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+    }
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.close, style: .plain, target: self, action: #selector(close))
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        listView.applyData()
     }
 
     // MARK: - Actions
@@ -76,71 +79,75 @@ public class SearchResultsController: UIViewController, AppContext, ListAdapterD
         return String(format: subtitleFormat, searchResponse.request.query)
     }
 
-    // MARK: - ListAdapterDataSource
+    // MARK: - Rows
 
-    private func tableRowData(from item: Any) -> TableRowData? {
-        let row: TableRowData
+    private func row(for mapItem: MKMapItem, tapHandler: VoidBlock?) -> AnyOBAListViewItem? {
+        guard let name = mapItem.name else { return nil }
+        return OBAListRowView.DefaultViewModel(title: name, accessoryType: .none) { _ in
+            tapHandler?()
+        }.typeErased
+    }
 
-        let tapHandler: ListRowActionHandler = { [weak self] _ in
+    private func row(for route: Route, tapHandler: VoidBlock?) -> AnyOBAListViewItem? {
+        return OBAListRowView.SubtitleViewModel(title: route.shortName, subtitle: route.agency.name, accessoryType: .none) { _ in
+            tapHandler?()
+        }.typeErased
+    }
+
+    private func row(for stop: Stop, tapHandler: VoidBlock?) -> AnyOBAListViewItem? {
+        return OBAListRowView.DefaultViewModel(title: stop.name, accessoryType: .none) { _ in
+            tapHandler?()
+        }.typeErased
+    }
+
+    private func row(for agencyVehicle: AgencyVehicle) -> AnyOBAListViewItem? {
+        guard let vehicleID = agencyVehicle.vehicleID, application.restAPIService != nil else { return nil }
+        return OBAListRowView.SubtitleViewModel(title: vehicleID, subtitle: agencyVehicle.agencyName, accessoryType: .none) { _ in
+            self.didSelectAgencyVehicle(vehicleID: vehicleID)
+        }.typeErased
+    }
+
+    private func didSelectAgencyVehicle(vehicleID: String) {
+        guard let apiService = application.restAPIService else { return }
+        let op = apiService.getVehicle(vehicleID)
+        op.complete { [weak self] result in
             guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                let response = SearchResponse(response: self.searchResponse, substituteResult: response.entry)
+                self.application.mapRegionManager.searchResponse = response
+                self.delegate?.dismissModalController(self)
+            }
+        }
+    }
+
+    private func listViewItem(for item: Any) -> AnyOBAListViewItem? {
+        let tapHandler: VoidBlock = {
             let mgr = self.application.mapRegionManager
             mgr.searchResponse = SearchResponse(response: self.searchResponse, substituteResult: item)
             self.delegate?.dismissModalController(self)
         }
 
         switch item {
-        case let item as MKMapItem:
-            if let name = item.name {
-                row = TableRowData(title: name, accessoryType: .none, tapped: tapHandler)
-            }
-            else {
-                return nil
-            }
-        case let item as Route:
-            row = TableRowData(title: item.shortName, subtitle: item.agency.name, accessoryType: .none, tapped: tapHandler)
-        case let item as Stop:
-            row = TableRowData(title: item.name, accessoryType: .none, tapped: tapHandler)
-        case let item as AgencyVehicle:
-            guard
-                let vehicleID = item.vehicleID,
-                let apiService = application.restAPIService
-            else {
-                return nil
-            }
-            row = TableRowData(title: vehicleID, subtitle: item.agencyName, accessoryType: .none) { [weak self] _ in
-                let op = apiService.getVehicle(vehicleID)
-                op.complete { [weak self] result in
-                    guard let self = self else { return }
-
-                    switch result {
-                    case .failure(let error):
-                        self.application.displayError(error)
-                    case .success(let response):
-                        let response = SearchResponse(response: self.searchResponse, substituteResult: response.entry)
-                        self.application.mapRegionManager.searchResponse = response
-                        self.delegate?.dismissModalController(self)
-                    }
-                }
-            }
-
+        case let mapItem as MKMapItem:
+            return row(for: mapItem, tapHandler: tapHandler)
+        case let route as Route:
+            return row(for: route, tapHandler: tapHandler)
+        case let stop as Stop:
+            return row(for: stop, tapHandler: tapHandler)
+        case let vehicle as AgencyVehicle:
+            return row(for: vehicle)
         default:
             return nil
         }
-
-        return row
     }
 
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        let rows = searchResponse.results.compactMap { tableRowData(from: $0) }
-        let tableSection = TableSectionData(rows: rows)
-        return [tableSection]
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
+    // MARK: - OBAListView
+    public func items(for listView: OBAListView) -> [OBAListViewSection] {
+        let rows = searchResponse.results.compactMap { listViewItem(for: $0) }
+        return [OBAListViewSection(id: "results", contents: rows)]
     }
 }

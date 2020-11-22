@@ -22,11 +22,38 @@ import OBAKitCore
 /// ## Collapsible Sections
 /// To support collapsible sections, set `collapsibleSectionsDelegate`. The delegate will allow you
 /// to specify which sections can collapse and respond to collapse/expand actions.
+///
+/// ## Context Menus
+/// To support context menus, set `contextMenuDelegate`. The delegate will allow you to provide menu
+/// actions based on the selected item. For more info, refer to `OBAListViewMenuActions`.
 public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+
+    /// The view type for `EmptyData`.
+    /// To use the standard view, provide the view model. OBAListView will handle the view lifecycle.
+    /// If you use a custom view, you are responsible for managing it.
+    public enum EmptyData {
+        case standard(StandardEmptyDataViewModel)
+        case custom(UIView)
+    }
+
+    // MARK: - Features (delegates)
+    /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
+
+    /// Optional. Implement `OBAListViewCollapsibleSectionsDelegate` to add support for collapsible sections for this list view.
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
+    /// Optional. Implement `OBAListViewContextMenuDelegate` to add support for context menus for this list view.
+    weak public var contextMenuDelegate: OBAListViewContextMenuDelegate?
+
+    // MARK: - Private properties
     fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
+
+    /// Cache the last used context menu for handling "perform preview action".
+    fileprivate var lastUsedContextMenu: (identifier: String, actions: OBAListViewMenuActions)?
+
+    /// Cache EmptyDataSetView if we need to reuse it during fast updates.
+    fileprivate lazy var standardEmptyDataView: EmptyDataSetView = EmptyDataSetView()
 
     public init() {
         super.init(frame: .zero, collectionViewLayout: UICollectionViewLayout())            // Load dummy layout first...
@@ -57,7 +84,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Data source
 
-    func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
+    fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
         let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
             let config = item.contentConfiguration
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
@@ -87,7 +114,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     }
 
     // MARK: - Supplementary views
-    func headerView(
+    fileprivate func headerView(
         collectionView: UICollectionView,
         of kind: String,
         at indexPath: IndexPath,
@@ -107,7 +134,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         return view
     }
 
-    func footerView(
+    fileprivate func footerView(
         collectionView: UICollectionView,
         of kind: String,
         at indexPath: IndexPath,
@@ -116,7 +143,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier, for: indexPath)
     }
 
-    // MARK: - Delegate methods
+    // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
         item.onSelectAction?(item)
@@ -137,12 +164,48 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         case .left:
             return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
         case .right:
-            return item.trailingContextualActions?.map { setItem(on: $0).swipeAction }
+            let items = item.trailingContextualActions ?? []
+            var swipeActions = items.map { setItem(on: $0).swipeAction }
+
+            if let deleteAction = item.onDeleteAction {
+                // Hides "Delete" text if the cell is less than 64 units tall.
+                let cellSize = collectionView.cellForItem(at: indexPath)?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
+                let isCellCompact = cellSize < 64
+                let swipeActionText = isCellCompact ? nil : Strings.delete
+                let deleteSwipeAction = SwipeAction(style: .destructive, title: swipeActionText) { (action, _) in
+                    action.fulfill(with: .delete)
+                    deleteAction(item)
+                }
+                deleteSwipeAction.image = Icons.delete
+                swipeActions.append(deleteSwipeAction)
+            }
+
+            return swipeActions.isEmpty ? nil : swipeActions
+        }
+    }
+
+    // MARK: - Context menu configuration
+    public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let item = self.diffableDataSource.itemIdentifier(for: indexPath),
+             let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
+
+        // Add uuid so in `willPerformPreviewActionForMenuWith`, we can independently
+        // verify (without using index paths that may change) that the user did
+        // intend to perform on this specific menu.
+        let id = UUID().uuidString
+        self.lastUsedContextMenu = (id, config)
+        return config.contextMenuConfiguration(identifier: id)
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration, animator: UIContextMenuInteractionCommitAnimating) {
+        guard let menuAction = self.lastUsedContextMenu, menuAction.identifier == configuration.identifier as? String else { return }
+        animator.addCompletion {
+            menuAction.actions.performPreviewAction?()
         }
     }
 
     // MARK: - Layout configuration
-    func createLayout() -> UICollectionViewLayout {
+    fileprivate func createLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { section, _ -> NSCollectionLayoutSection? in
             return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
         }
@@ -151,6 +214,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     // MARK: - Data source
     public func applyData(animated: Bool = false) {
         var sections = self.obaDataSource?.items(for: self) ?? []
+        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
+
         if let collapsibleDelegate = self.collapsibleSectionsDelegate {
             // Add collapsed state to the section, if it is allowed to collapse.
             sections = sections.map { section in
@@ -184,6 +249,30 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         DispatchQueue.main.async {
             self.diffableDataSource.apply(snapshot, animatingDifferences: animated)
         }
+    }
+
+    fileprivate func emptyDataConfiguration(isEmpty: Bool) {
+        guard isEmpty, let emptyData = self.obaDataSource?.emptyData(for: self) else {
+            self.backgroundView?.isHidden = true
+            return
+        }
+
+        self.backgroundView?.removeFromSuperview()
+        self.backgroundView?.isHidden = false
+        self.backgroundView = nil
+
+        let view: UIView
+        switch emptyData {
+        case .standard(let viewModel):
+            self.standardEmptyDataView.apply(viewModel)
+            view = self.standardEmptyDataView
+        case .custom(let custom):
+            custom.translatesAutoresizingMaskIntoConstraints = true
+            view = custom
+        }
+
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        self.backgroundView = view
     }
 
     // MARK: - Helpers

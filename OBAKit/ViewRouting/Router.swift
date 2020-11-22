@@ -25,6 +25,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     private let application: Application
 
+    var rootController: ClassicApplicationRootController?
+
     public init(application: Application) {
         self.application = application
         super.init()
@@ -93,6 +95,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         guard shouldNavigate(from: fromController, to: .arrivalDeparture(arrivalDeparture)) else { return }
         let tripController = TripViewController(application: application, arrivalDeparture: arrivalDeparture)
         navigate(to: tripController, from: fromController)
+    }
+
+    public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
+        guard let rootController = self.rootController else { return }
+        rootController.navigate(to: page)
     }
 
     // MARK: - Helpers
