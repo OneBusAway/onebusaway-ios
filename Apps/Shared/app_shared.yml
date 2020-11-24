@@ -53,6 +53,7 @@ targets:
     preBuildScripts:
       - name: Versioning
         script: "${PROJECT_DIR}/scripts/version"
+        runOnlyWhenInstalling: true         # For SwiftUI Xcode Previews.
     scheme:
       gatherCoverageData: true
       testTargets:
