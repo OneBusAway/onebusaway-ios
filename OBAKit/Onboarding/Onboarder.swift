@@ -27,8 +27,8 @@ class Onboarder: NSObject {
     }
 
     func show(in application: UIApplication) {
-        // Don’t show another RegionPickerBulletin if one already exists and is being presented.
-        guard !bulletinManager.isShowingBulletin else { return }
+        // Don’t show another RegionPickerBulletin if one already exists, is being presented, or doesn't need to be shown.
+        guard onboardingRequired, !bulletinManager.isShowingBulletin else { return }
 
         bulletinManager.showBulletin(in: application)
     }
@@ -42,8 +42,7 @@ class Onboarder: NSObject {
         case .locationPermissionPrompt: return locationPermissionItem
         case .manualRegionSelection: return regionPickerItem
         case .dataMigration: return dataMigrationItem
-        default:
-            fatalError()
+        case .complete, .unknown: fatalError()
         }
     }
 
