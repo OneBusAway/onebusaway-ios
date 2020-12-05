@@ -36,6 +36,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         case custom(UIView)
     }
 
+    public var formatters: Formatters?
+
     // MARK: - Features (delegates)
     /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
@@ -86,7 +88,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
         let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            let config = item.contentConfiguration
+            var config = item.contentConfiguration
+            config.formatters = self.formatters
+
             let reuseIdentifier = config.obaContentView.ReuseIdentifier
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
 

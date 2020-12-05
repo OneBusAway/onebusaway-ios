@@ -6,6 +6,7 @@
 //
 
 #if DEBUG
+import OBAKitCore
 import Foundation
 
 // About this file:
@@ -75,6 +76,7 @@ struct DEBUG_CustomContent: OBAListViewItem {
 
 /// Sample custom content configuration.
 struct DEBUG_CustomContentConfiguration: OBAContentConfiguration {
+    var formatters: Formatters?
     var text: String
 
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {

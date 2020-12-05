@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
+import OBAKitCore
+
 /// The content configuration view model for `OBAListRowCell`.
 ///
 /// The `appearance` property governs what data may be shown. For example, the `default`
@@ -30,6 +32,8 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case disclosureIndicator
         case none
     }
+
+    public var formatters: Formatters?
 
     public var image: UIImage?
     public var text: String?
