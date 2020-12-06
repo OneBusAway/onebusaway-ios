@@ -46,7 +46,7 @@ import IGListKit
 /// ## Standard → Accessibility:
 /// - Display accessibility labels
 /// - stackView becomes vertical stack; minutesStack becomes horizontal stack.
-final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separated {
+final class TripBookmarkTableCell: OBAListViewCell {
 
     // MARK: - Info Label Stack
     public let routeHeadsignLabel = buildLabel(textStyle: .headline)
@@ -129,7 +129,6 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         fixiOS13AutoLayoutBug()
 
         contentView.backgroundColor = ThemeColors.shared.systemBackground
-        contentView.layer.addSublayer(separator)
 
         contentView.addSubview(stackView)
         stackView.pinToSuperview(.readableContent) { $0.trailing.priority = .required - 1 }
@@ -148,10 +147,13 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
 
     // MARK: - Data
 
-    func configureView(with data: BookmarkArrivalData, formatters: Formatters) {
-        routeHeadsignLabel.text = data.bookmark.name
+    override func apply(_ config: OBAContentConfiguration) {
+        guard let config = config as? BookmarkArrivalContentConfiguration else { return }
+        routeHeadsignLabel.text = config.viewModel.name
 
-        guard let arrivalDepartures = data.arrivalDepartures else { return }
+        guard let arrivalDepartures = config.viewModel.arrivalDepartures,
+              let formatters = config.formatters else { return }
+
         if let arrivalDeparture = arrivalDepartures.first {
             fullExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: arrivalDeparture)
             accessibilityTimeLabel.text = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
@@ -193,8 +195,8 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         update(view: secondaryMinutesLabel, withDataAtIndex: 1)
         update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
 
-        accessibilityLabel = formatters.accessibilityLabel(for: data)
-        accessibilityValue = formatters.accessibilityValue(for: data)
+        accessibilityLabel = formatters.accessibilityLabel(for: config.viewModel)
+        accessibilityValue = formatters.accessibilityValue(for: config.viewModel)
     }
 
     func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
@@ -208,20 +210,7 @@ final class TripBookmarkTableCell: SwipeCollectionViewCell, SelfSizing, Separate
         }
     }
 
-    // MARK: - Separator
-
-    let separator = tableCellSeparatorLayer()
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layoutSeparator()
-    }
-
     // MARK: - UICollectionViewCell Overrides
-
-    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        return calculateLayoutAttributesFitting(layoutAttributes)
-    }
 
     override func prepareForReuse() {
         super.prepareForReuse()
