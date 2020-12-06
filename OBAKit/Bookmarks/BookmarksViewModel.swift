@@ -44,25 +44,12 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
         return BookmarkArrivalContentConfiguration(viewModel: self)
     }
 
-    var trailingContextualActions: [OBAListViewContextualAction<BookmarkArrivalViewModel>]? {
-        guard let onEdit = onEditAction else { return nil }
-
-        let editAction = OBAListViewContextualAction<BookmarkArrivalViewModel>(
-            style: .normal,
-            title: Strings.edit,
-            handler: onEdit)
-
-        return [editAction]
-    }
-
     var onSelectAction: OBAListViewAction<BookmarkArrivalViewModel>?
     var onDeleteAction: OBAListViewAction<BookmarkArrivalViewModel>?
-    var onEditAction: OBAListViewAction<BookmarkArrivalViewModel>?
 
     init(bookmark: Bookmark,
          arrivalDepartures: [ArrivalDeparture]?,
-         onSelect: OBAListViewAction<BookmarkArrivalViewModel>?,
-         onEdit: OBAListViewAction<BookmarkArrivalViewModel>?) {
+         onSelect: OBAListViewAction<BookmarkArrivalViewModel>?) {
         self.bookmark = bookmark
         self.bookmarkID = bookmark.id
         self.name = bookmark.name
@@ -78,7 +65,6 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
         self.arrivalDepartures = arrivalDepartures
 
         self.onSelectAction = onSelect
-        self.onEditAction = onEdit
     }
 
     func hash(into hasher: inout Hasher) {

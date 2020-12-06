@@ -124,7 +124,7 @@ public class BookmarksViewController: UIViewController,
         return refresh
     }()
 
-    // MARK: - IGListKit
+    // MARK: - List view
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
         var sections = application.userDataStore.bookmarkGroups.compactMap { listSection(group: $0, title: $0.name) }
 
@@ -149,12 +149,7 @@ public class BookmarksViewController: UIViewController,
                 arrDeps = dataLoader.dataForKey(key)
             }
 
-            let viewModel = BookmarkArrivalViewModel(
-                bookmark: bookmark,
-                arrivalDepartures: arrDeps,
-                onSelect: onSelectBookmark,
-                onEdit: onEditBookmark)
-
+            let viewModel = BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
             return viewModel
         }
 
@@ -175,14 +170,7 @@ public class BookmarksViewController: UIViewController,
         application.viewRouter.navigateTo(stop: viewModel.bookmark.stop, from: self, bookmark: viewModel.bookmark)
     }
 
-    func onEditBookmark(_ viewModel: BookmarkArrivalViewModel) {
-        let bookmark = viewModel.bookmark
-        let bookmarkEditor = EditBookmarkViewController(application: application, stop: bookmark.stop, bookmark: bookmark, delegate: self)
-        let navigation = UINavigationController(rootViewController: bookmarkEditor)
-        application.viewRouter.present(navigation, from: self)
-    }
-
-    private func deleteAction(for viewModel: BookmarkArrivalViewModel) -> UIMenu? {
+    private func deleteAction(for viewModel: BookmarkArrivalViewModel) -> UIMenu {
         let bookmark = viewModel.bookmark
         let title = OBALoc("bookmarks_controller.delete_bookmark.actionsheet.title", value: "Delete Bookmark", comment: "The title to display to confirm the user's action to delete a bookmark.")
 
@@ -206,12 +194,21 @@ public class BookmarksViewController: UIViewController,
         return UIMenu(title: title, image: Icons.delete, options: .destructive, children: [deleteConfirmation])
     }
 
+    private func editAction(for viewModel: BookmarkArrivalViewModel) -> UIAction {
+        return UIAction(title: Strings.edit, image: UIImage(systemName: "square.and.pencil")) { _ in
+            let bookmark = viewModel.bookmark
+            let bookmarkEditor = EditBookmarkViewController(application: self.application, stop: bookmark.stop, bookmark: bookmark, delegate: self)
+            let navigation = UINavigationController(rootViewController: bookmarkEditor)
+            self.application.viewRouter.present(navigation, from: self)
+        }
+    }
+
     var currentPreviewingViewController: UIViewController?
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         guard let item = item.as(BookmarkArrivalViewModel.self) else { return nil }
 
         let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
-            let children: [UIMenuElement] = [self.deleteAction(for: item)].compactMap { $0 }
+            let children: [UIMenuElement] = [self.editAction(for: item), self.deleteAction(for: item)]
             return UIMenu(title: item.name, children: children)
         }
 
