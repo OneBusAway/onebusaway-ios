@@ -174,7 +174,7 @@ public class BookmarksViewController: UIViewController,
         let bookmark = viewModel.bookmark
         let title = OBALoc("bookmarks_controller.delete_bookmark.actionsheet.title", value: "Delete Bookmark", comment: "The title to display to confirm the user's action to delete a bookmark.")
 
-        let deleteConfirmation = UIAction(title: "Confirm Delete", image: Icons.delete, attributes: .destructive) { _ in
+        let deleteConfirmation = UIAction(title: Strings.confirmDelete, image: Icons.delete, attributes: .destructive) { _ in
             // Report remove bookmark event to analytics
             if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
                 self.application.analytics?.reportEvent?(
