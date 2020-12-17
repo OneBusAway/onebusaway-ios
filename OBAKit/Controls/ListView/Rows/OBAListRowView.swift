@@ -23,9 +23,8 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
             NSLayoutConstraint.activate([
                 listRowView.leadingAnchor.constraint(equalTo: contentView.readableContentGuide.leadingAnchor),
                 listRowView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
-                listRowView.topAnchor.constraint(equalTo: contentView.topAnchor),
-                listRowView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-                listRowView.heightAnchor.constraint(greaterThanOrEqualToConstant: 40.0)
+                listRowView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+                listRowView.bottomAnchor.constraint(greaterThanOrEqualTo: contentView.bottomAnchor)
             ])
 
             self.accessibilityElements = [listRowView!]
@@ -148,6 +147,8 @@ public class OBAListRowView: UIView, OBAContentView {
     var imageView: UIImageView!
     private var accessoryView: UIImageView!
 
+    lazy var rowHeightConstraint: NSLayoutConstraint = heightAnchor.constraint(greaterThanOrEqualToConstant: configuration.minimumCellHeight)
+
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -186,6 +187,8 @@ public class OBAListRowView: UIView, OBAContentView {
         }
 
         configureView()
+
+        NSLayoutConstraint.activate([rowHeightConstraint])
     }
 
     public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -223,6 +226,8 @@ public class OBAListRowView: UIView, OBAContentView {
 
         imageView.image = configuration.image
         imageView.isHidden = imageView.image == nil
+
+        rowHeightConstraint.constant = configuration.minimumCellHeight
     }
 
     func prepareForReuse() {

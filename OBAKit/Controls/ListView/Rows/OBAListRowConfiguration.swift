@@ -49,6 +49,15 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case .header:   return OBAListRowCell<OBAListRowViewHeader>.self
         }
     }
+
+    public var minimumCellHeight: CGFloat {
+        switch appearance {
+        case .header:
+            return 0
+        case .default, .subtitle, .value:
+            return 44.0
+        }
+    }
 }
 
 /// A view model defining `UILabel` properties.
