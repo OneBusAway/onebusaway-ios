@@ -93,8 +93,7 @@ class AgencyAlertsViewController: UIViewController,
         }
 
         let menuProvider: OBAListViewMenuActions.MenuProvider = { _ in
-            guard let copyLink = self.copyLink(alert) else { return nil }
-            return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [copyLink])
+            return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [self.shareAlertAction(alert)])
         }
 
         return OBAListViewMenuActions(previewProvider: preview, performPreviewAction: performPreview, contextMenuProvider: menuProvider)
@@ -129,12 +128,19 @@ class AgencyAlertsViewController: UIViewController,
     }
 
     // MARK: - Menu actions
+    /// Returns a UIAction that presents a `UIActivityViewController` for sharing the URL
+    /// (or title and body, if no URL) of the provided alert.
+    func shareAlertAction(_ alert: AgencyAlert.ListViewModel) -> UIAction {
+        let activityItems: [Any]
+        if let url = alert.localizedURL {
+            activityItems = [url]
+        } else {
+            activityItems = [alert.title, alert.body]
+        }
 
-    func copyLink(_ alert: AgencyAlert.ListViewModel) -> UIAction? {
-        guard let url = alert.localizedURL else { return nil }
-        let copyLink = OBALoc("copy_link.title", value: "Copy Link", comment: "Copy a link to the user's clipboard")
-        return UIAction(title: copyLink, image: UIImage(systemName: "link")) { _ in
-            UIPasteboard.general.string = url.absoluteString
+        return UIAction(title: Strings.share, image: Icons.share) { [weak self] _ in
+            let vc = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+            self?.present(vc, animated: true, completion: nil)
         }
     }
 

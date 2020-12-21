@@ -116,6 +116,10 @@ class Icons: NSObject {
     }
 
     public class var share: UIImage {
+        systemImage(named: "square.and.arrow.up")
+    }
+
+    public class var shareFill: UIImage {
         systemImage(named: "square.and.arrow.up.fill")
     }
 
