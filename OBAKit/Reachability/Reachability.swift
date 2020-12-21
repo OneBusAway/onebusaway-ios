@@ -49,6 +49,7 @@ class ReachabilityBulletin: NSObject {
             connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
         }
 
+        dismiss()
         bulletinManager.showBulletin(in: application)
     }
 
