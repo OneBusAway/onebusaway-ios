@@ -30,10 +30,12 @@ class StopIconFactory: NSObject {
     /// - Parameter stop: The `Stop` for which an image will be rendered.
     /// - Parameter isBookmarked: Whether the stop has been bookmarked, which will result in it receiving a different visual treatment.
     /// - Returns: An image representing `stop`.
-    public func buildIcon(for stop: Stop, isBookmarked: Bool) -> UIImage {
+    public func buildIcon(for stop: Stop, isBookmarked: Bool, traits: UITraitCollection) -> UIImage {
+        let isDarkMode = traits.userInterfaceStyle == .dark
+
         // First, let's compose the cache key out of the name and orientation, then
         // see if we've already got one that matches.
-        let key = cacheKey(for: stop, isBookmarked: isBookmarked) as NSString
+        let key = cacheKey(for: stop, isBookmarked: isBookmarked, isDarkMode: isDarkMode) as NSString
 
         // If an image already exists, then go ahead and return it.
         if let cachedImage = iconCache.object(forKey: key) {
@@ -57,6 +59,10 @@ class StopIconFactory: NSObject {
 
     private var fillColor: UIColor {
         themeColors.stopAnnotationFillColor
+    }
+
+    private var transportIconColor: UIColor {
+        themeColors.label
     }
 
     /// Stroke color for the badge and its directional arrow.
@@ -98,6 +104,11 @@ class StopIconFactory: NSObject {
     /// - Parameter isBookmarked: Whether `stop` has been bookmarked by the user.
     /// - Returns: An image representing `stop`.
     private func renderImage(for stop: Stop, isBookmarked: Bool) -> UIImage {
+        return renderIcon(routeType: stop.prioritizedRouteTypeForDisplay, direction: stop.direction, isBookmarked: isBookmarked)
+    }
+
+    /// Draws a stop icon image with the specified properties.
+    func renderIcon(routeType: Route.RouteType, direction: Direction, isBookmarked: Bool) -> UIImage {
         let imageBounds = CGRect(x: 0, y: 0, width: iconSize, height: iconSize)
         let rect = imageBounds.insetBy(dx: arrowTrackSize, dy: arrowTrackSize)
 
@@ -113,7 +124,7 @@ class StopIconFactory: NSObject {
 
             self.drawBackground(color: fillColor, rect: rect, context: ctx)
 
-            self.drawIcon(routeType: stop.prioritizedRouteTypeForDisplay, rect: rect, context: ctx)
+            self.drawIcon(routeType: routeType, rect: rect, context: ctx)
 
             if isBookmarked {
                 self.drawBookmarkBadge(fillColor: bookmarkedStrokeColor, iconColor: .white, rect: rect, context: ctx)
@@ -121,7 +132,7 @@ class StopIconFactory: NSObject {
 
             self.drawBorder(color: strokeColor, rect: rect, context: ctx)
 
-            self.drawArrowImage(direction: stop.direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
+            self.drawArrowImage(direction: direction, strokeColor: strokeColor, rect: imageBounds, context: ctx)
         }
     }
 
@@ -161,7 +172,7 @@ class StopIconFactory: NSObject {
     /// - Parameter context: The Core Graphics context in which drawing happens.
     private func drawIcon(routeType: Route.RouteType, rect: CGRect, context: CGContext) {
         context.pushPop {
-            let image = Icons.transportIcon(from: routeType)
+            let image = Icons.transportIcon(from: routeType).tinted(color: transportIconColor)
             image.draw(in: rect.insetBy(dx: transportGlyphInset, dy: transportGlyphInset))
         }
     }
@@ -278,11 +289,12 @@ class StopIconFactory: NSObject {
     /// - Parameter stop: The `Stop`.
     /// - Parameter isBookmarked: If `stop` has been bookmarked by the user.
     /// - Returns: A cache key that will uniquely represent this stop with its desired visual treatment.
-    private func cacheKey(for stop: Stop, isBookmarked: Bool) -> String {
+    private func cacheKey(for stop: Stop, isBookmarked: Bool, isDarkMode: Bool) -> String {
         let routeType = stop.prioritizedRouteTypeForDisplay.rawValue
         let stopID = isBookmarked ? stop.id : "AnyStop"
+        let appearanceStyle = isDarkMode ? "dark" : "light"
         let direction = stop.direction.rawValue
-        let cacheKey = "\(stopID):\(routeType):\(direction)(\(iconSize)x\(iconSize))"
+        let cacheKey = "\(stopID):\(routeType):\(direction)(\(iconSize)x\(iconSize)):\(appearanceStyle)"
 
         return cacheKey
     }

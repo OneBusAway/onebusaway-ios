@@ -102,7 +102,7 @@ class StopAnnotationView: MKAnnotationView {
 
         let iconFactory = delegate.iconFactory
         let bookmarked = delegate.isStopBookmarked(stop)
-        image = iconFactory.buildIcon(for: stop, isBookmarked: bookmarked)
+        image = iconFactory.buildIcon(for: stop, isBookmarked: bookmarked, traits: self.traitCollection)
 
         titleLabel.text = stop.mapTitle
         subtitleLabel.text = stop.mapSubtitle
@@ -113,6 +113,17 @@ class StopAnnotationView: MKAnnotationView {
         detailLabel.text = stop.subtitle
 
         detailCalloutAccessoryView = detailLabel
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        guard
+            let stop = annotation as? Stop,
+            let delegate = delegate
+        else { return }
+
+        image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
     }
 
     // MARK: - Appearance
