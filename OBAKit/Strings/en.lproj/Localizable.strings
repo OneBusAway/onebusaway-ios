@@ -28,9 +28,6 @@
 /* Title of the Alarm Time Picker page. */
 "alarm_time_picker.title" = "Add Reminder";
 
-/* The message to display to confirm the user's action to delete a bookmark, includes a placeholder to display the bookmark's name. */
-"bookmarks_controller.delete_bookmark.actionsheet.message" = "Are you sure you want to delete %@?";
-
 /* The title to display to confirm the user's action to delete a bookmark. */
 "bookmarks_controller.delete_bookmark.actionsheet.title" = "Delete Bookmark";
 
@@ -306,6 +303,9 @@
 
 /* Body for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.body" = "Transit stops that you view in the app will appear here.";
+
+/* The button title for taking the user to the map view to find stops. */
+"recent_stops.empty_set.button" = "Find Stops on Maps";
 
 /* Title for the empty set indicator on the Recent Stops controller. */
 "recent_stops.empty_set.title" = "No Recent Stops";

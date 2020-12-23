@@ -32,6 +32,7 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleLocalizations:
           - en
+          - es
           - pl
         LSApplicationQueriesSchemes:
           - fb

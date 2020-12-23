@@ -34,6 +34,9 @@
 /* The verb 'to close'. */
 "common.close" = "Close";
 
+/* Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item. */
+"common.confirmdelete" = "Confirm Delete";
+
 /* The verb 'to continue'. */
 "common.continue" = "Continue";
 
