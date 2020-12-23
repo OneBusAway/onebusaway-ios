@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-twine generate-all-localization-files Translations/OBAKitCore.txt OBAKitCore/Strings --format apple
-
-twine generate-all-localization-files Translations/OBAKit.txt OBAKit/Strings --format apple
-
-twine generate-all-localization-files Translations/InfoPlist.txt Apps/OneBusAway --format apple --file-name InfoPlist.strings

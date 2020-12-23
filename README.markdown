@@ -52,50 +52,7 @@ To create your own app target, duplicate the `Apps/OneBusAway` directory and upd
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
 
-We are using [Twine](https://github.com/scelis/twine) to manage localization. See the `Translations` folder for the three files that need to be updated in order to localize the app: `InfoPlist.txt`, `OBAKit.txt` and `OBAKitCore.txt`.
-
-### How to Add a New Localizable String
-
-If you need to add a new string to one of the frameworks, please do the following:
-
-1. Use the function `OBALoc` instead of `NSLocalizedString`. Search the codebase for examples of the syntax and include a useful comment.
-2. Run the script `scripts/extract_strings` from the Terminal. (note: it will respond with some warnings; these are normal and can be ignored.)
-3. Clean up the new 'uncategorized' string table entries that have been added to the Twine localization files (make sure they get alphabetized, and the 'uncategorized' header is removed.)
-4. Run the script `scripts/localize` to reduce the amount of churn in the Localizable.strings files, and to make sure temporary placeholder strings are generated for the languages supported by the app.
-5. Open an issue documenting the need for new localized strings, including links to file lines that show which strings need to be translated.
-
-### How to Translate a String in the App
-
-Currently, the app is configured to work in English and Polish. To translate a string in a supported language that is currently not localized, for example, into Polish:
-
-1. Open `Translations/OBAKitCore.txt` and `Translations/OBAKit.txt`.
-2. Add translations for the strings on lines beginning with `pl = `
-3. To test your changes, run the command `scripts/localize` from the command line and then launch the app (note: make sure the iOS Simulator is set to your desired language.)
-
-Read on for how to add a new language or dialect.
-
-### How to Add a New Language or Dialect
-
-To translate the app into another language or dialect, you will first need to find the Language ID for your desired localization target. Start by reading through Apple's [documentation on Language IDs](https://developer.apple.com/library/archive/documentation/MacOSX/Conceptual/BPInternational/LanguageandLocaleIDs/LanguageandLocaleIDs.html#//apple_ref/doc/uid/10000171i-CH15), and determine if you need to choose just a language designator, or a language designator plus a region designator.
-
-For example, if you wanted to add Standard German to the app, you would specify the Language ID `de`, or to add Argentinian Spanish, you would specify the Language ID `es-AR`.
-
-Once you know the Language ID that you will need to use, you must open the `Translations` directory in the root of the project. Each `.txt` file contained in there contains many string entries that need to be translated into your desired Language ID. For instance, here's the entry for the English verb "Close":
-
-    [common.close]
-        en = Close
-        comment = The verb 'to close'.
-        pl = Zamknij
-
-To translate `common.close` into a new language, add a new line below `pl`:
-
-    [common.close]
-        en = Close
-        comment = The verb 'to close'.
-        pl = Zamknij
-        de = Schließen
-
-To test your changes, run the command `scripts/localize` from the command line and then launch the app (note: make sure the iOS Simulator is set to your desired language.)
+We are using Transifex to localize OneBusAway. You can help out by visiting [the OBA page on Transifex](https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/).
 
 ## Diagnosing Problems
 
