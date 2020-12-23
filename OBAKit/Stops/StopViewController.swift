@@ -538,7 +538,7 @@ public class StopViewController: UIViewController,
 
             shareAction.backgroundColor = UIColor.purple
             shareAction.font = UIFont.preferredFont(forTextStyle: .caption1)
-            shareAction.image = Icons.share
+            shareAction.image = Icons.shareFill
             actions.append(shareAction)
         }
 

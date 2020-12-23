@@ -42,6 +42,12 @@ targets:
           - co.bytemark.tgt
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
+          NSExceptionDomains: {
+            "onebusaway.co": {
+                NSIncludesSubdomains: true,
+                NSExceptionAllowsInsecureHTTPLoads: true
+            }
+          }
         NSHumanReadableCopyright: © Open Transit Software Foundation
         NSUserActivityTypes:
           - org.onebusaway.iphone.user_activity.stop
