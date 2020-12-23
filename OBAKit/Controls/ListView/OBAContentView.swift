@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 10/8/20.
 //
 
+import OBAKitCore
 import Foundation
 
 /// A view that updates it content based on an `OBAContentConfiguration`.
@@ -25,6 +26,10 @@ public protocol OBAContentView: class {
 
 /// A view model outlining the properties of an `OBAContentView`.
 public protocol OBAContentConfiguration {
+    /// Implementation note: You will need to define a formatters object, but you do not need to specify a value.
+    /// OBAListView will automatically set this to its own `Formatter` object.
+    var formatters: Formatters? { get set }
+
     /// Provides the type of the content view cell using this configuration.
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type { get }
 }

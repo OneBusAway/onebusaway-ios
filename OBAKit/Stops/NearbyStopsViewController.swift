@@ -110,7 +110,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 
         let filter = String.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
 
-        var directions = [Direction: [Stop]]()
+        var directions: [Direction: [Stop]] = [:]
 
         for stop in data {
             if !stop.matchesQuery(filter) {
@@ -125,7 +125,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
             self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
-        return directions.keys.map { direction -> OBAListViewSection in
+        return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in
             let stops = directions[direction] ?? []
             let cells = stops.map { NearbyStopViewModel(stop: $0, onSelectAction: tapHandler) }
             let header = Formatters.adjectiveFormOfCardinalDirection(direction) ?? ""

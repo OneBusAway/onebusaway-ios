@@ -33,6 +33,7 @@ struct MoreHeaderItem: OBAListViewItem {
 }
 
 struct MoreHeaderItemContentConfiguration: OBAContentConfiguration {
+    public var formatters: Formatters?
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         return MoreHeaderViewCell.self
     }

@@ -8,11 +8,11 @@
 import OBAKitCore
 
 extension Formatters {
-    /// Generates a localized label ideal for Voiceover describing the provided `BookmarkArrivalData`.
+    /// Generates a localized label ideal for Voiceover describing the provided `BookmarkArrivalViewModel`.
     /// As the method name suggests, this value is best used for the `UIAccessibility.accessibilityLabel` property.
-    /// - parameter bookmarkArrivalData: The `BookmarkArrivalData` to describe.
-    /// - returns: A localized Voiceover label describing the provided `BookmarkArrivalData`.
-    func accessibilityLabel(for bookmarkArrivalData: BookmarkArrivalData) -> String {
+    /// - parameter bookmarkArrivalData: The `BookmarkArrivalViewModel` to describe.
+    /// - returns: A localized Voiceover label describing the provided `BookmarkArrivalViewModel`.
+    func accessibilityLabel(for bookmarkArrivalData: BookmarkArrivalViewModel) -> String {
         let bookmark = bookmarkArrivalData.bookmark
         let stringFormat: String
         if bookmark.isTripBookmark {
@@ -26,11 +26,11 @@ extension Formatters {
         return String(format: stringFormat, bookmark.name)
     }
 
-    /// Generates a localized string value ideal for Voiceover describing the provided `BookmarkArrivalData`.
+    /// Generates a localized string value ideal for Voiceover describing the provided `BookmarkArrivalViewModel`.
     /// As the method name suggests, this value is best used for the `UIAccessibility.accessibilityValue` property.
-    /// - parameter bookmarkArrivalData: The `BookmarkArrivalData` to describe.
-    /// - returns: A localized Voiceover value describing the provided `BookmarkArrivalData`.
-    func accessibilityValue(for bookmarkArrivalData: BookmarkArrivalData) -> String? {
+    /// - parameter bookmarkArrivalData: The `BookmarkArrivalViewModel` to describe.
+    /// - returns: A localized Voiceover value describing the provided `BookmarkArrivalViewModel`.
+    func accessibilityValue(for bookmarkArrivalData: BookmarkArrivalViewModel) -> String? {
         guard bookmarkArrivalData.bookmark.isTripBookmark else { return nil }
 
         guard let arrivalDepartures = bookmarkArrivalData.arrivalDepartures,

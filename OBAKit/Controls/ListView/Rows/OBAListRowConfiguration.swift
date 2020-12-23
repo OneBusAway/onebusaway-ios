@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/2/20.
 //
 
+import OBAKitCore
+
 /// The content configuration view model for `OBAListRowCell`.
 ///
 /// The `appearance` property governs what data may be shown. For example, the `default`
@@ -31,6 +33,8 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case none
     }
 
+    public var formatters: Formatters?
+
     public var image: UIImage?
     public var text: String?
     public var secondaryText: String?
@@ -47,6 +51,15 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case .subtitle: return OBAListRowCell<OBAListRowViewSubtitle>.self
         case .value:    return OBAListRowCell<OBAListRowViewValue>.self
         case .header:   return OBAListRowCell<OBAListRowViewHeader>.self
+        }
+    }
+
+    public var minimumCellHeight: CGFloat {
+        switch appearance {
+        case .header:
+            return 0
+        case .default, .subtitle, .value:
+            return 44.0
         }
     }
 }

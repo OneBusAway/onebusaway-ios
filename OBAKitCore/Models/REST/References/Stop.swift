@@ -23,8 +23,12 @@ public enum WheelchairBoarding: String, Decodable {
     }
 }
 
-public enum Direction: Int {
+public enum Direction: Int, Comparable {
     case n, ne, e, se, s, sw, w, nw, unknown
+
+    public static func < (lhs: Direction, rhs: Direction) -> Bool {
+        return lhs.rawValue < rhs.rawValue
+    }
 }
 
 public enum StopLocationType: Int, Decodable {

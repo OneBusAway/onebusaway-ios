@@ -159,7 +159,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     private func addRow(for group: BookmarkGroup, to section: SelectableSection<ListCheckRow<String>>) {
         let uuid = group.id.uuidString
         section <<< ListCheckRow<String>(uuid) {
-            $0.tag = selectedGroupTag
+            $0.tag = uuid
             $0.title = group.name
             $0.selectableValue = uuid
         }
