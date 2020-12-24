@@ -28,14 +28,14 @@ public class EmptyDataSetView: UIView {
     // MARK: - Properties
     /// The font used on the title label.
     @objc public dynamic var titleLabelFont: UIFont {
-        set { titleLabel.font = newValue }
         get { titleLabel.font }
+        set { titleLabel.font = newValue }
     }
 
     /// The font used on the body label.
     @objc public dynamic var bodyLabelFont: UIFont {
-        set { bodyLabel.font = newValue }
         get { bodyLabel.font }
+        set { bodyLabel.font = newValue }
     }
 
     /// The tint color used on the image view. If this is nil, it will default to using `textColor`.
@@ -47,12 +47,12 @@ public class EmptyDataSetView: UIView {
 
     /// The text color used for the title and body labels. Also used by `imageView` if `imageTintColor` is `nil`.
     @objc public dynamic var textColor: UIColor {
+        get { return titleLabel.textColor }
         set {
             titleLabel.textColor = newValue
             bodyLabel.textColor = newValue
             imageView.tintColor = imageTintColor ?? textColor
         }
-        get { return titleLabel.textColor }
     }
 
     /// Configuration for the button. Set to `nil` to hide the button. See `ButtonConfig.init` for additional details.

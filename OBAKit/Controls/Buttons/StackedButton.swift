@@ -16,12 +16,12 @@ class StackedButton: UIControl {
     let kDebugColors = false
 
     public var title: String? {
+        get {
+            return textLabel.text
+        }
         set {
             textLabel.text = newValue
             accessibilityLabel = newValue
-        }
-        get {
-            return textLabel.text
         }
     }
 

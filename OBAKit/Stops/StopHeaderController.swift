@@ -55,8 +55,8 @@ class StopHeaderCollectionCell: SelfSizingCollectionCell {
     let stopHeader = StopHeaderView.autolayoutNew()
 
     var section: StopHeaderSection? {
-        set { stopHeader.section = newValue }
         get { stopHeader.section }
+        set { stopHeader.section = newValue }
     }
 
     override init(frame: CGRect) {
