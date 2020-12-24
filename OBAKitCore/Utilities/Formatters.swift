@@ -229,7 +229,7 @@ public class Formatters: NSObject {
         }
         else if minutes < 0 {
             let str = OBALoc("formatters.deviation.arrival_past_early_fmt", value: "arrived %d min early", comment: "Format string for describing an early arrival schedule deviation. e.g. Arrived 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
-            return String(format: str, minutes)
+            return String(format: str, abs(minutes))
         }
         else {
             return OBALoc("formatters.deviation.arrival_past_on_time", value: "arrived on time", comment: "Describes an on-time arrival. e.g. arrived on time.")
@@ -243,7 +243,7 @@ public class Formatters: NSObject {
         }
         else if minutes < 0 {
             let str = OBALoc("formatters.deviation.departure_past_early_fmt", value: "departed %d min early", comment: "Format string for describing an early departure schedule deviation. e.g. Departed 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
-            return String(format: str, minutes)
+            return String(format: str, abs(minutes))
         }
         else {
             return OBALoc("formatters.deviation.departure_past_on_time", value: "departed on time", comment: "Describes an on-time departure. e.g. departed on time.")
@@ -257,7 +257,7 @@ public class Formatters: NSObject {
         }
         else if minutes < 0 {
             let str = OBALoc("formatters.deviation.arrival_future_early_fmt", value: "arrives %d min early", comment: "Format string for describing an early future arrival schedule deviation. e.g. arrives 3 min early. Note that the abbrevation for 'minutes' should make sense for both singular and plural forms.")
-            return String(format: str, -minutes)
+            return String(format: str, abs(minutes))
         }
         else {
             return OBALoc("formatters.deviation.arrival_future_on_time", value: "arrives on time", comment: "Describes an on-time arrival. e.g. arrives on time.")
