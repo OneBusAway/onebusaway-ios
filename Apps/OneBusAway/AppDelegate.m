@@ -11,7 +11,7 @@
 @import OBAKitCore;
 @import OBAKit;
 @import OneSignal;
-@import Crashlytics;
+#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 #import "OBAFirebaseAnalytics.h"
 #import "App-Swift.h"
 
@@ -86,7 +86,10 @@
 }
 
 - (void)performTestCrash {
-    [Crashlytics.sharedInstance crash];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-value"
+    @[][1];
+#pragma clang diagnostic pop
 }
 
 - (void)setIdleTimerDisabled:(BOOL)idleTimerDisabled {
