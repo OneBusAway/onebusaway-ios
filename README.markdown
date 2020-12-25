@@ -7,26 +7,23 @@ OBAKit is a rewrite of OneBusAway for iOS from the ground up. The codebase is ex
 To get started, you will need the following pieces of software installed on your computer:
 
 1. [Xcode 12.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software about which it may prompt you.
-2. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen and Carthage.
-3. [XcodeGen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
-4. [Carthage](https://github.com/Carthage/Carthage) - Manages third-party dependencies.
-5. [SwiftLint](https://github.com/realm/SwiftLint) - A tool to enforce Swift style and conventions.
-6. [Ruby](https://www.ruby-lang.org/) - _This should already be installed on your Mac_. A dynamic, open source programming language with a focus on simplicity and productivity.
-7. [RVM](https://rvm.io) - _Optional, but very helpful_. RVM is a command-line tool which allows you to easily install, manage, and work with multiple Ruby environments from interpreters to sets of gems.
+1. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen.
+1. [XcodeGen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
+1. [SwiftLint](https://github.com/realm/SwiftLint) - A tool to enforce Swift style and conventions.
+1. [Ruby](https://www.ruby-lang.org/) - _This should already be installed on your Mac_. A dynamic, open source programming language with a focus on simplicity and productivity.
+1. [RVM](https://rvm.io) - _Optional, but very helpful_. RVM is a command-line tool which allows you to easily install, manage, and work with multiple Ruby environments from interpreters to sets of gems.
 
 Once you have these pieces of software installed, clone the OneBusAway app repository on GitHub. (After this rewrite becomes the official version of the app, it will be in the OneBusAway GitHub repository; for now ask Aaron for an invitation.)
 
     # Make sure you have Xcode 12.x and Homebrew installed.
     xcode-select --install
     brew install xcodegen
-    brew install carthage
     brew install swiftlint
     # open the directory with the app code
     cd OBAKit
     # note: depending on your system configuration, you may need to run this command with sudo, i.e. sudo gem install bundler
     gem install bundler
     bundle install
-    scripts/carthage_build
     scripts/generate_project OneBusAway
     open OBAKit.xcodeproj
 
@@ -53,36 +50,6 @@ To create your own app target, duplicate the `Apps/OneBusAway` directory and upd
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
 
 We are using Transifex to localize OneBusAway. You can help out by visiting [the OBA page on Transifex](https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/).
-
-## Diagnosing Problems
-
-### Command Line Errors?
-
-If the `xcode-select --install` command results in an error message that the command line tools are already installed, you can verify that you have the latest version by typing the command `softwareupdate --list` to check whether any software should be updated; then if need be use `softwareupdate --install <project>` to  update it.
-
-If the `carthage build --platform iOS` command gives an error claiming that it is unable to find utility "xcodebuild" because it is not a developer tool or in PATH, this should fix it:
-
-```bash
-sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-```
-
-Or see this github issue for other potential solutions: https://github.com/nodejs/node-gyp/issues/569
-
-### Swift Compiler Errors?
-
-If you see errors that look like this when you compile:
-
-```bash
-error: module compiled with Swift 4.0 cannot be imported in Swift 4.0.3: /onebusaway/OBAKit/../Carthage/Build/iOS/PromiseKit.framework/Modules/PromiseKit.swiftmodule/x86_64.swiftmodule
-```
-
-this is happening because the project's Carthage frameworks were compiled with an older version of the Swift compiler than the one you have on your computer. To fix, recompile the Carthage dependencies with this command from the command line:
-
-```bash
-carthage build --platform iOS --no-use-binaries
-```
-
-After Carthage finishes, we recommend cleaning your project and possibly deleting all of your build artifacts.
 
 ## Objective-C Compatibility
 

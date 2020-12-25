@@ -16,14 +16,6 @@ jobs:
         xcode-version: latest-stable
     - uses: actions/checkout@v2
 
-    # Use cache for Carthage (saves up to 12 minutes on incremental builds). If the Cartfile has changed,
-    # such as an updated dependency, it will trigger a rebuild of all dependencies.
-    - uses: actions/cache@v2
-      with:
-        path: Carthage
-        key: ${{ runner.os }}-carthage-${{ hashFiles('**/Cartfile.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-carthage-
     - uses: actions/cache@v2
       with:
         path: .build
@@ -32,25 +24,23 @@ jobs:
           ${{ runner.os }}-spm-
     - name: Install xcodegen
       run: brew install xcodegen
-    - name: Build Carthage
-      run: scripts/carthage_build
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
     # Build
     - name: Build OneBusAway
-      run: xcodebuild clean build-for-testing 
-        -scheme 'App' 
+      run: xcodebuild clean build-for-testing
+        -scheme 'App'
         -destination 'name=iPhone 11 Pro'
         -quiet
 
     # Unit Test
     - name: OBAKit Unit Test
-      run: xcodebuild test-without-building 
-        -only-testing:OBAKitTests 
-        -project 'OBAKit.xcodeproj' 
-        -scheme 'App' 
-        -destination 'name=iPhone 11 Pro' 
+      run: xcodebuild test-without-building
+        -only-testing:OBAKitTests
+        -project 'OBAKit.xcodeproj'
+        -scheme 'App'
+        -destination 'name=iPhone 11 Pro'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
     - name: Upload OBAKitTests results
@@ -58,13 +48,13 @@ jobs:
       with:
         name: OBAKitTests_xcresult
         path: OBAKitTests.xcresult
-        
+
     # UI Test
     - name: OBAKit UI Test
-      run: xcodebuild test-without-building 
-        -only-testing:OBAKitUITests 
-        -project 'OBAKit.xcodeproj' 
-        -scheme 'App' 
+      run: xcodebuild test-without-building
+        -only-testing:OBAKitUITests
+        -project 'OBAKit.xcodeproj'
+        -scheme 'App'
         -destination 'name=iPhone 11 Pro'
         -resultBundlePath OBAKitUITests.xcresult
         -quiet

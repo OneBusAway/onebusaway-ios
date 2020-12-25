@@ -19,7 +19,6 @@ included: # paths to include during linting. `--path` is ignored if present.
   - OBAKitCore
   - TodayView
 excluded: # paths to ignore during linting. Takes precedence over `included`.
-  - Carthage
   - OBAKit/SwipeCellKit
   - OBAKitCore/Models/Protobuf/gtfs-realtime.pb.swift
 force_try:

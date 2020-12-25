@@ -6,8 +6,7 @@ targets:
     dependencies:
       - target: OBAKitCore
       - package: BLTNBoard
-      - carthage: IGListKit
-      - carthage: IGListDiffKit
+      - package: IGListKit
       - package: Hyperconnectivity
       - package: Eureka
       - package: FloatingPanel
@@ -29,7 +28,6 @@ targets:
             LD_RUNPATH_SEARCH_PATHS:
               - "$(inherited)"
               - "@executable_path/Frameworks"
-              - "$(PROJECT_DIR)/Carthage/Build/iOS"     # Fix for missing framework in Xcode Previews
           Release:
             LD_RUNPATH_SEARCH_PATHS:
               - "$(inherited)"
