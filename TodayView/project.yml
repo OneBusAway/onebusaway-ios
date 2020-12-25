@@ -5,8 +5,7 @@ targets:
     sources: ["."]
     dependencies:
       - target: OBAKitCore
-      - carthage: IGListDiffKit
-      - carthage: IGListKit
+      - package: IGListKit
       - sdk: NotificationCenter.framework
     entitlements:
       path: TodayView.entitlements
