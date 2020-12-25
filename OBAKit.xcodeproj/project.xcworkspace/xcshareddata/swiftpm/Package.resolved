@@ -2,6 +2,24 @@
   "object": {
     "pins": [
       {
+        "package": "abseil",
+        "repositoryURL": "https://github.com/firebase/abseil-cpp-SwiftPM.git",
+        "state": {
+          "branch": null,
+          "revision": "05d8107f2971a37e6c77245b7c4c6b0a7e97bc99",
+          "version": "0.20200225.0"
+        }
+      },
+      {
+        "package": "BoringSSL-GRPC",
+        "repositoryURL": "https://github.com/firebase/boringssl-SwiftPM.git",
+        "state": {
+          "branch": null,
+          "revision": "7bcafa2660bc58715c39637494550d1ed7cd7229",
+          "version": "0.0.7"
+        }
+      },
+      {
         "package": "BLTNBoard",
         "repositoryURL": "https://github.com/alexaubry/BulletinBoard.git",
         "state": {
@@ -47,12 +65,39 @@
         }
       },
       {
+        "package": "Firebase",
+        "repositoryURL": "https://github.com/firebase/firebase-ios-sdk.git",
+        "state": {
+          "branch": null,
+          "revision": "c67d97dc802aafe5474042156dce828e1c4145ca",
+          "version": "7.3.1"
+        }
+      },
+      {
         "package": "FloatingPanel",
         "repositoryURL": "https://github.com/SCENEE/FloatingPanel.git",
         "state": {
           "branch": null,
           "revision": "ca7596e1cae161415f54059a8c44b82c95724160",
           "version": "1.7.6"
+        }
+      },
+      {
+        "package": "gRPC",
+        "repositoryURL": "https://github.com/firebase/grpc-SwiftPM.git",
+        "state": {
+          "branch": null,
+          "revision": "91b62619e6c83bc5f1b99d9d60fe46b2862d3a5a",
+          "version": "1.28.2"
+        }
+      },
+      {
+        "package": "GTMSessionFetcher",
+        "repositoryURL": "https://github.com/google/gtm-session-fetcher.git",
+        "state": {
+          "branch": null,
+          "revision": "91ed3d188eb95705fef3c249453b81f32dc557d1",
+          "version": "1.5.0"
         }
       },
       {
@@ -65,12 +110,30 @@
         }
       },
       {
+        "package": "leveldb",
+        "repositoryURL": "https://github.com/firebase/leveldb.git",
+        "state": {
+          "branch": null,
+          "revision": "fa1f25f296a766e5a789c4dacd4798dea798b2c2",
+          "version": "1.22.1"
+        }
+      },
+      {
         "package": "MarqueeLabel",
         "repositoryURL": "https://github.com/cbpowell/MarqueeLabel.git",
         "state": {
           "branch": null,
           "revision": "d92fe1583dbf43fa3b70229a49fa7da6b36750d4",
           "version": "4.0.5"
+        }
+      },
+      {
+        "package": "nanopb",
+        "repositoryURL": "https://github.com/firebase/nanopb.git",
+        "state": {
+          "branch": null,
+          "revision": "8119dfe5631f2616d11e50ead95448d12e816062",
+          "version": "2.30906.0"
         }
       },
       {
@@ -89,6 +152,15 @@
           "branch": null,
           "revision": "be54eb1a2c10b22b56d4706f3d5851fc3d57376f",
           "version": "2.15.4"
+        }
+      },
+      {
+        "package": "Promises",
+        "repositoryURL": "https://github.com/google/promises.git",
+        "state": {
+          "branch": null,
+          "revision": "d8accebc8fa32f57196df191e733f946e955c549",
+          "version": "1.2.11"
         }
       },
       {

@@ -7,6 +7,7 @@ name: OBAKit
 settings:
   base:
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+    CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
 
 options:
   minimumXcodeGenVersion: 2.17

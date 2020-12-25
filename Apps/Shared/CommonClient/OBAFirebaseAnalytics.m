@@ -8,8 +8,9 @@
 //
 
 #import "OBAFirebaseAnalytics.h"
-#import "Firebase.h"
-@import Crashlytics;
+#import <FirebaseCore/FirebaseCore.h>
+#import <FirebaseAnalytics/FirebaseAnalytics.h>
+#import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 @import OBAKitCore;
 
 @interface OBAFirebaseAnalytics ()
