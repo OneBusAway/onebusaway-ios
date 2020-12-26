@@ -13,7 +13,8 @@ jobs:
     steps:
     - uses: maxim-lobanov/setup-xcode@master
       with:
-        xcode-version: latest-stable
+        xcode-version: '12.2'
+        # xcode-version: latest-stable
     - uses: actions/checkout@v2
 
     - uses: actions/cache@v2
