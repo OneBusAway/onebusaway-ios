@@ -104,15 +104,21 @@ public class AppLinksRouter: NSObject {
     public func route(userActivity: NSUserActivity) -> Bool {
         Logger.info("AppLinksRouter.route: \(userActivity.activityType) - \(String(describing: userActivity.webpageURL))")
 
-        switch userActivity.activityType {
-        case NSUserActivityTypeBrowsingWeb:
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb {
             guard let url = userActivity.webpageURL else {
                 return false
             }
             return route(url: url)
-        case application.userActivityBuilder.stopActivityType:
+        }
+
+        guard let userActivityBuilder = application.userActivityBuilder else {
+            return false
+        }
+
+        switch userActivity.activityType {
+        case userActivityBuilder.stopActivityType:
             return routeStop(userActivity: userActivity)
-        case application.userActivityBuilder.tripActivityType:
+        case userActivityBuilder.tripActivityType:
             return routeTrip(userActivity: userActivity)
         default:
             return false

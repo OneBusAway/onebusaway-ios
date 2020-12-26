@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 /// Displays information as a vertical-scrolling list, a la TableView.
 ///

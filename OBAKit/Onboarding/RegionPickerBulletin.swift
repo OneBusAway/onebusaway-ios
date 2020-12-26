@@ -10,6 +10,7 @@
 import Foundation
 import OBAKitCore
 import BLTNBoard
+import UIKit
 
 class RegionPickerItem: ThemedBulletinPage {
     private let regionPicker: RegionPicker

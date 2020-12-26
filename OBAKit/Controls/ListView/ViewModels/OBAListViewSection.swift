@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/3/20.
 //
 
+import UIKit
+
 /// A section view model for `OBAListView`. `OBAListView` uses `OBAListViewSection` to
 /// define list sections and to "normalize" item data. It also provides a number of other convenience properties.
 ///

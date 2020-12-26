@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 /// The content configuration view model for `OBAListRowCell`.
 ///

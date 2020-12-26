@@ -8,6 +8,7 @@
 //
 
 import FloatingPanel
+import UIKit
 
 /// A layout object used with `FloatingPanel` on `MapViewController`.
 final class MapPanelLayout: NSObject, FloatingPanelLayout {

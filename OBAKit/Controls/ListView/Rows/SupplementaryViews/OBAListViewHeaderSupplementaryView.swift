@@ -5,6 +5,8 @@
 //  Created by Alan Chu on 10/10/20.
 //
 
+import UIKit
+
 // MARK: - UICollectionReusableView
 
 /// Respond to user actions on the header view.

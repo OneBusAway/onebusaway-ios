@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 /// A footer view displaying a separator line. Useful for faking a cell row collapse animation.
 class OBAListViewSeparatorSupplementaryView: UICollectionReusableView {

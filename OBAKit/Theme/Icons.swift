@@ -260,6 +260,14 @@ class Icons: NSObject {
     }
 
     private static func imageNamed(_ name: String) -> UIImage {
-        UIImage(named: name, in: Bundle(for: self), compatibleWith: nil)!
+        UIImage(named: name, in: resourceBundle, compatibleWith: nil)!
+    }
+
+    private class var resourceBundle: Bundle {
+        #if SWIFT_PACKAGE
+        return Bundle.module
+        #else
+        return Bundle(for: self)
+        #endif
     }
 }

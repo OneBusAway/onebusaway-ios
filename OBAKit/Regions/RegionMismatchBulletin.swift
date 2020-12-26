@@ -10,6 +10,7 @@
 import Foundation
 import BLTNBoard
 import OBAKitCore
+import UIKit
 
 /// Displays a modal card UI that informs the user about a mismatch between their physical location and current `Region`.
 class RegionMismatchBulletin: NSObject {

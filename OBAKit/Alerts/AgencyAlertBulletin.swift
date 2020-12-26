@@ -10,6 +10,7 @@
 import Foundation
 import BLTNBoard
 import OBAKitCore
+import UIKit
 
 /// Displays a modal card UI that informs the user about high severity `AgencyAlert`s.
 class AgencyAlertBulletin: NSObject {
