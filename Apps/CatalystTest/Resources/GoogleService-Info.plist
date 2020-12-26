@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1083736323923-a3abfviki4fcbm734vbfceejcivrvbv2.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1083736323923-a3abfviki4fcbm734vbfceejcivrvbv2</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1083736323923-qd76unb2g5sulp8ohg9q737tklkhiq06.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCTHUpEj78_yvkz3dMqqL9WfFsUsxU2TKc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1083736323923</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>org.onebusaway.iphone</string>
+	<key>PROJECT_ID</key>
+	<string>api-project-1083736323923</string>
+	<key>STORAGE_BUCKET</key>
+	<string>api-project-1083736323923.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1083736323923:ios:749ddfdebff5fdfb</string>
+	<key>DATABASE_URL</key>
+	<string>https://api-project-1083736323923.firebaseio.com</string>
+</dict>
+</plist>
