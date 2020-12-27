@@ -13,6 +13,7 @@ import Hyperconnectivity
 import CoreLocation
 import OBAKitCore
 import SafariServices
+import MapKit
 
 // MARK: - Protocols
 

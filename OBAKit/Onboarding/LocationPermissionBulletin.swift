@@ -10,6 +10,7 @@
 import Foundation
 import BLTNBoard
 import OBAKitCore
+import CoreLocation
 
 // MARK: - LocationPermissionItem
 

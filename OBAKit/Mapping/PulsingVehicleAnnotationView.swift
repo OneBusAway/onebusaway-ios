@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import MapKit
 
 /// A map annotation view that represents the location and heading of a vehicle (bus, train, etc.)
 class PulsingVehicleAnnotationView: PulsingAnnotationView {
