@@ -97,11 +97,11 @@ public class Application: CoreApplication, PushServiceDelegate {
                 let apiService = self.restAPIService
             else { return }
 
-            SVProgressHUD.show()
+            ProgressHUD.show()
 
             let op = apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
             op.complete { [weak self] result in
-                SVProgressHUD.dismiss()
+                ProgressHUD.dismiss()
 
                 guard
                     let self = self,

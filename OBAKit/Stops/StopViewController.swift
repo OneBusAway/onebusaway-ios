@@ -850,18 +850,18 @@ public class StopViewController: UIViewController,
     }
 
     func alarmBuilderStartedRequest(_ alarmBuilder: AlarmBuilder) {
-        SVProgressHUD.show()
+        ProgressHUD.show()
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, alarmCreated alarm: Alarm) {
         application.userDataStore.add(alarm: alarm)
 
         let message = OBALoc("stop_controller.alarm_created_message", value: "Alarm created", comment: "A message that appears when a user's alarm is created.")
-        SVProgressHUD.showSuccessAndDismiss(message: message)
+        ProgressHUD.showSuccessAndDismiss(message: message)
     }
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
-        SVProgressHUD.dismiss()
+        ProgressHUD.dismiss()
         AlertPresenter.show(error: error, presentingController: self)
     }
 
@@ -883,7 +883,7 @@ public class StopViewController: UIViewController,
     func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
         viewController.dismiss(animated: true) {
             let msg = isNewBookmark ? OBALoc("stops_controller.created_new_bookmark", value: "Added Bookmark", comment: "Message displayed when a new bookmark is created.") : OBALoc("stops_controller.updated_bookmark", value: "Updated Bookmark", comment: "Message displayed an existing bookmark is updated.")
-            SVProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
+            ProgressHUD.showSuccessAndDismiss(message: msg, dismissAfter: 1.0)
         }
     }
 

@@ -124,7 +124,7 @@ class StopProblemViewController: FormViewController {
 
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         let op = apiService.getStopProblem(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
         op.complete { [weak self] result in
@@ -133,10 +133,10 @@ class StopProblemViewController: FormViewController {
             switch result {
             case .failure(let error):
                 AlertPresenter.show(error: error, presentingController: self)
-                SVProgressHUD.dismiss()
+                ProgressHUD.dismiss()
             case .success:
                 self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
-                SVProgressHUD.showSuccessAndDismiss()
+                ProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
             }
         }
