@@ -1,5 +1,5 @@
 //
-//  SVProgressHUDExtensions.swift
+//  ProgressHUDExtensions.swift
 //  OBAKit
 //
 //  Copyright © Open Transit Software Foundation
@@ -9,12 +9,14 @@
 
 import UIKit
 
-extension SVProgressHUD {
+extension ProgressHUD {
     /// Displays the 'success' indicator with an optional message, and then dismisses the HUD `dismissAfter` seconds later.
     /// - Parameter message: Optional message to show the user. Defaults to `nil`.
     /// - Parameter dismissAfter: How many seconds until the HUD should be dismissed. Defaults to `3.0`.
     class func showSuccessAndDismiss(message: String? = nil, dismissAfter: TimeInterval = 3.0) {
-        SVProgressHUD.showSuccess(withStatus: message)
-        SVProgressHUD.dismiss(withDelay: dismissAfter)
+        ProgressHUD.showSuccess(message, image: nil, interaction: false)
+        DispatchQueue.main.asyncAfter(deadline: .now() + dismissAfter) {
+            ProgressHUD.dismiss()
+        }
     }
 }

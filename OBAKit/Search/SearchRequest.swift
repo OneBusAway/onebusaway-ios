@@ -138,11 +138,11 @@ public class SearchManager: NSObject {
     private func searchVehicleID(request: SearchRequest) {
         guard let obacoService = application.obacoService else { return }
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         let op = obacoService.getVehicles(matching: request.query)
         op.complete { [weak self] result in
-            SVProgressHUD.dismiss()
+            ProgressHUD.dismiss()
             guard let self = self else { return }
 
             switch result {

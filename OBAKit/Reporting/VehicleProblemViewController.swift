@@ -163,7 +163,7 @@ class VehicleProblemViewController: FormViewController {
             location: location
         )
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         op.complete { [weak self] result in
 
@@ -171,11 +171,11 @@ class VehicleProblemViewController: FormViewController {
 
             switch result {
             case .failure(let error):
-                SVProgressHUD.dismiss()
+                ProgressHUD.dismiss()
                 AlertPresenter.show(error: error, presentingController: self)
             case .success:
                 self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
-                SVProgressHUD.showSuccessAndDismiss()
+                ProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
             }
         }

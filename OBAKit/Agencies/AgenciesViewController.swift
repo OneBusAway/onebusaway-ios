@@ -30,11 +30,11 @@ class AgenciesViewController: OperationController<DecodableOperation<RESTAPIResp
     override func loadData() -> DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>? {
         guard let apiService = application.restAPIService else { return nil }
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         let op = apiService.getAgenciesWithCoverage()
         op.complete { [weak self] result in
-            SVProgressHUD.dismiss()
+            ProgressHUD.dismiss()
             guard let self = self else { return }
 
             switch result {

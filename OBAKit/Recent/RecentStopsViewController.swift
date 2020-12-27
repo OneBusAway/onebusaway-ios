@@ -74,7 +74,7 @@ public class RecentStopsViewController: UIViewController,
     func onSelectAlarm(_ viewModel: AlarmViewModel) {
         guard let apiService = self.application.restAPIService else { return }
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         let deepLink = viewModel.deepLink
         let op = apiService.getTripArrivalDepartureAtStop(
@@ -85,7 +85,7 @@ public class RecentStopsViewController: UIViewController,
             stopSequence: deepLink.stopSequence)
 
         op.complete { [weak self] result in
-            SVProgressHUD.dismiss()
+            ProgressHUD.dismiss()
 
             guard let self = self else { return }
 

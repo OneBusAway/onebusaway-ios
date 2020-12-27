@@ -92,14 +92,14 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         pushService.requestPushID { [weak self] userPushID in
             guard let self = self else { return }
 
             let op = modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
             op.complete { [weak self] result in
-                SVProgressHUD.dismiss()
+                ProgressHUD.dismiss()
                 guard let self = self else { return }
 
                 switch result {

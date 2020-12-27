@@ -185,17 +185,17 @@ Version 2.7.1 / https://github.com/SwipeCellKit/SwipeCellKit/commit/6d632bdf1b73
   ```
 </details>
 
-## SVProgressHUD
+## ProgressHUD
 
 <details>
-    <summary>Includes SVProgressHUD by Sam Vermette, Tobias Tiemerding and contributors.</summary>
+    <summary>Includes ProgressHUD by Related Code.</summary>
 
     ```
-    v2.2.6, plus Dark Mode support.
+    v13.4
 
     MIT License
 
-    Copyright (c) 2011-2018 Sam Vermette, Tobias Tiemerding and contributors.
+    Copyright (c) 2020 Related Code.
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal

@@ -64,11 +64,11 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
     override func loadData() -> DecodableOperation<RESTAPIResponse<StopArrivals>>? {
         guard let apiService = application.restAPIService else { return nil }
 
-        SVProgressHUD.show()
+        ProgressHUD.show()
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
         op.complete { [weak self] result in
-            SVProgressHUD.dismiss()
+            ProgressHUD.dismiss()
 
             guard let self = self else { return }
 
