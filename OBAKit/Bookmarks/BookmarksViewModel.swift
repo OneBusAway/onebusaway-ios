@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 11/25/20.
 //
 
+import Foundation
 import OBAKitCore
 
 struct BookmarkArrivalContentConfiguration: OBAContentConfiguration {

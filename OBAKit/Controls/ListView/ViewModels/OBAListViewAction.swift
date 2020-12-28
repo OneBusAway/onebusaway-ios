@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 public typealias OBAListViewAction<Item: OBAListViewItem> = (Item) -> Void
 

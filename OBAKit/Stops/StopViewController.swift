@@ -288,9 +288,11 @@ public class StopViewController: UIViewController,
     /// Creates and assigns an `NSUserActivity` object corresponding to this stop.
     private func beginUserActivity() {
         guard let stop = stop,
-              let region = application.regionsService.currentRegion else { return }
+              let region = application.regionsService.currentRegion,
+              let userActivityBuilder = application.userActivityBuilder
+        else { return }
 
-        self.userActivity = application.userActivityBuilder.userActivity(for: stop, region: region)
+        self.userActivity = userActivityBuilder.userActivity(for: stop, region: region)
     }
 
     // MARK: - Data Loading

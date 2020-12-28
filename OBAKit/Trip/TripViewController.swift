@@ -104,7 +104,7 @@ class TripViewController: UIViewController,
     private func beginUserActivity() {
         guard
             let region = application.regionsService.currentRegion,
-            let activity = application.userActivityBuilder.userActivity(for: tripConvertible, region: region)
+            let activity = application.userActivityBuilder?.userActivity(for: tripConvertible, region: region)
         else {
             return
         }

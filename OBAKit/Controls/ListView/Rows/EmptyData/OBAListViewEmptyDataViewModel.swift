@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 extension OBAListView {
     /// The standard empty data view model, applicable to most cases.

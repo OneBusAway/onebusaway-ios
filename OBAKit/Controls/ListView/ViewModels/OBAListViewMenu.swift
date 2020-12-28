@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 /// The configuration for adding context menus to `OBAListView` items.
 ///

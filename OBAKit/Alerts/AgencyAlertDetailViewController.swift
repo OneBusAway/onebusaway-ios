@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import UIKit
 
 class AgencyAlertDetailViewController: UIViewController {
     private let viewModel: AgencyAlert.ListViewModel

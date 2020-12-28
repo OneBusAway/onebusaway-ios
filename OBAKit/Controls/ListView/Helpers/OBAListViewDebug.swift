@@ -5,9 +5,11 @@
 //  Created by Alan Chu on 10/8/20.
 //
 
-#if DEBUG
 import OBAKitCore
 import Foundation
+import UIKit
+
+#if DEBUG
 
 // About this file:
 // Sample data to use with SwiftUI previews. You can also use these

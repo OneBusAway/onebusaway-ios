@@ -8,7 +8,9 @@
 //
 
 import Eureka
+import Foundation
 import OBAKitCore
+import UIKit
 
 class SettingsViewController: FormViewController {
     private let application: Application

@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import Foundation
 
 extension AgencyAlert {
     /// The view model used for displaying `AgencyAlert` in an `OBAListView`.

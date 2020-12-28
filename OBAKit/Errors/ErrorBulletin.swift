@@ -10,6 +10,7 @@
 import Foundation
 import BLTNBoard
 import OBAKitCore
+import UIKit
 
 /// Displays a modal card UI that presents an error.
 class ErrorBulletin: NSObject {
