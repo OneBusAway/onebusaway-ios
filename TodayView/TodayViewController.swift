@@ -1,21 +1,24 @@
 //
 //  TodayViewController.swift
-//  TodayView
+//  OneBusAway Today
 //
-//  Copyright © Open Transit Software Foundation
-//  This source code is licensed under the Apache 2.0 license found in the
-//  LICENSE file in the root directory of this source tree.
+//  Created by Aaron Brethorst on 10/5/17.
+//  Copyright © 2017 OneBusAway. All rights reserved.
 //
 
 import UIKit
+import CoreLocation
 import NotificationCenter
 import OBAKitCore
-import CoreLocation
-import IGListKit
 
-class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDelegate, ListAdapterDataSource {
+let kMinutes: UInt = 60
 
+class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProviding {
     // MARK: - App Context
+    private let formatters = Formatters(
+        locale: Locale.autoupdatingCurrent,
+        calendar: Calendar.autoupdatingCurrent,
+        themeColors: ThemeColors.shared)
 
     private let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
     private lazy var locationManager = CLLocationManager()
@@ -28,11 +31,13 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
     }()
 
     // MARK: - Bookmarks
-
+    var bookmarkViewsMap: [Bookmark: TodayRowView] = [:]
     private lazy var dataLoader = BookmarkDataLoader(application: app, delegate: self)
 
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
-        adapter.performUpdates(animated: false)
+        refreshControl.stopRefreshing()
+        rebuildUI()
+        lastUpdatedAt = Date()
     }
 
     private var bestAvailableBookmarks: [Bookmark] {
@@ -43,150 +48,232 @@ class TodayViewController: UIViewController, NCWidgetProviding, BookmarkDataDele
         return bookmarks
     }
 
-    // MARK: - UIViewController
+    private let outerStackView: UIStackView = TodayViewController.buildStackView()
 
+    private lazy var frontMatterStack: UIStackView = {
+        let stack = TodayViewController.buildStackView()
+        stack.addArrangedSubview(refreshControl)
+        stack.addArrangedSubview(errorTitleLabel)
+        stack.addArrangedSubview(errorDescriptionLabel)
+        return stack
+    }()
+
+    private lazy var frontMatterWrapper: UIView = {
+        return frontMatterStack.embedInWrapperView()
+    }()
+
+    private let bookmarkStackView: UIStackView = TodayViewController.buildStackView()
+    private lazy var bookmarkWrapper: UIView = {
+        return bookmarkStackView.embedInWrapperView()
+    }()
+
+    private lazy var errorTitleLabel: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.font = UIFont.preferredFont(forTextStyle: .body).bold
+        label.text = Strings.error
+        label.isHidden = true
+        return label
+    }()
+
+    private lazy var errorDescriptionLabel: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.font = .preferredFont(forTextStyle: .body)
+        label.text = OBALoc("today_screen.inexplicable_error", value: "Oops, you've run into a problem that we didn't think could occur. Please contact us with any information about how you ended up in this situation. Sorry!", comment: "")
+        label.isHidden = true
+        return label
+    }()
+
+    private lazy var refreshControl: TodayRefreshView = {
+        let refresh = TodayRefreshView.autolayoutNew()
+        refresh.lastUpdatedAt = lastUpdatedAt
+        refresh.addTarget(self, action: #selector(beginRefreshing), for: .touchUpInside)
+        return refresh
+    }()
+
+    private lazy var spacerView: UIView = {
+        let spacer = UIView.autolayoutNew()
+        spacer.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        return spacer
+    }()
+
+    // MARK: - Init/View Controller Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        adapter.collectionView = collectionView
-        adapter.dataSource = self
-
-        view.addSubview(collectionView)
-        collectionView.pinToSuperview(.edges)
-
-        // Enables the 'Show More' button in the widget interface
         extensionContext?.widgetLargestAvailableDisplayMode = .expanded
 
-        dataLoader.loadData()
+        outerStackView.addArrangedSubview(frontMatterWrapper)
+        outerStackView.addArrangedSubview(bookmarkWrapper)
+        outerStackView.addArrangedSubview(spacerView)
+
+        self.view.addSubview(outerStackView)
+
+        let insets = NSDirectionalEdgeInsets(top: ThemeMetrics.compactPadding, leading: 10, bottom: ThemeMetrics.compactPadding, trailing: -10)
+        outerStackView.pinToSuperview(.edges, insets: insets)
+
+        rebuildUI()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        locationManager.startUpdatingLocation()
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        locationManager.stopUpdatingLocation()
-    }
-
-    // MARK: - NotificationCenter
-
-    func widgetActiveDisplayModeDidChange(_ activeDisplayMode: NCWidgetDisplayMode, withMaximumSize maxSize: CGSize) {
-        switch activeDisplayMode {
-        case .compact:
-            // The compact view is a fixed size.
-            preferredContentSize = maxSize
-        case .expanded:
-            let height = CGFloat(bestAvailableBookmarks.count) * 55.0
-            preferredContentSize = CGSize(width: maxSize.width, height: min(height, maxSize.height))
-        @unknown default:
-            preconditionFailure("Unexpected value for activeDisplayMode.")
+    // MARK: - UI Construction
+    private func rebuildUI() {
+        for v in bookmarkStackView.arrangedSubviews {
+            bookmarkStackView.removeArrangedSubview(v)
+            v.removeFromSuperview()
         }
-    }
 
-    func widgetPerformUpdate(completionHandler: @escaping (NCUpdateResult) -> Void) {
-        dataLoader.loadData()
-        completionHandler(.newData)
-    }
+        bookmarkViewsMap.removeAll()
 
-    // MARK: - List Kit
+        displayErrorMessagesIfAppropriate()
 
-    lazy var adapter: ListAdapter = {
-        return ListAdapter(updater: ListAdapterUpdater(), viewController: self)
-    }()
-
-    let collectionView: UICollectionView = {
-        let collectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: UICollectionViewFlowLayout())
-        collectionView.translatesAutoresizingMaskIntoConstraints = false
-        collectionView.backgroundColor = .clear
-        return collectionView
-    }()
-
-    // MARK: - Bookmark Actions
-
-    private func didSelectBookmark(_ bookmark: Bookmark) {
-        let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
-        let url = router.encode(stopID: bookmark.stopID, regionID: bookmark.regionIdentifier)
-        extensionContext!.open(url, completionHandler: nil)
-    }
-
-    // MARK: ListAdapterDataSource
-
-    func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        let currentLocation = locationService.currentLocation
-
-        return bestAvailableBookmarks.sorted { (b1, b2) -> Bool in
-            if let currentLocation = currentLocation {
-                let c1 = b1.stop.location.coordinate
-                let c2 = b2.stop.location.coordinate
-                return c1.distance(from: currentLocation.coordinate) < c2.distance(from: currentLocation.coordinate)
-            }
-            else {
-                return b1.name < b2.name
-            }
-        }
-        .compactMap { bm -> BookmarkArrivalData? in
-            var arrDeps = [ArrivalDeparture]()
+        for (idx, bm) in bestAvailableBookmarks.enumerated() {
+            let view = viewForBookmark(bm, index: idx)
+            bookmarkStackView.addArrangedSubview(view)
+            bookmarkViewsMap[bm] = view
 
             if let key = TripBookmarkKey(bookmark: bm) {
-                arrDeps = dataLoader.dataForKey(key)
+                view.departures = dataLoader.dataForKey(key)
+            }
+        }
+
+        layoutBookmarkVisibility()
+    }
+
+    private func viewForBookmark(_ bookmark: Bookmark, index: Int) -> TodayRowView {
+        let v = TodayRowView(frame: .zero, formatters: formatters)
+        v.translatesAutoresizingMaskIntoConstraints = false
+        v.addGestureRecognizer(UITapGestureRecognizer.init(target: self, action: #selector(TodayViewController.bookmarkTapped(sender:))))
+        v.bookmark = bookmark
+        v.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        v.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+
+        return v
+    }
+
+    private func displayErrorMessagesIfAppropriate() {
+        if bestAvailableBookmarks.isEmpty {
+            let title = OBALoc("today_screen.no_data_title", value: "No Bookmarks", comment: "The empty data set title for the Today View widget.")
+            let description = OBALoc("today_screen.no_data_description", value: "Add bookmarks to Today View Bookmarks to see them here.", comment: "The empty data set description for the Today View widget.")
+            showErrorMessage(title: title, description: description)
+        } else if app.currentRegion == nil {
+            showErrorMessage(title: Strings.error, description: OBALoc("today_screen.no_region_description", value: "We don't know where you're located. Please choose a region in OneBusAway.", comment: ""))
+        } else {
+            errorTitleLabel.isHidden = true
+            errorDescriptionLabel.isHidden = true
+        }
+    }
+
+    private func showErrorMessage(title: String, description: String) {
+        errorTitleLabel.isHidden = false
+        errorDescriptionLabel.isHidden = false
+
+        errorTitleLabel.text = title
+        errorDescriptionLabel.text = description
+    }
+
+    @objc func bookmarkTapped(sender: UITapGestureRecognizer?) {
+        guard let sender = sender,
+              let rowView = sender.view as? TodayRowView,
+              let bookmark = rowView.bookmark else {
+            return
+        }
+
+        let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
+        let url = router.encode(stopID: bookmark.stopID, regionID: bookmark.regionIdentifier)
+
+        extensionContext?.open(url, completionHandler: nil)
+    }
+
+    private static func buildStackView() -> UIStackView {
+        let stack = UIStackView()
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .vertical
+        stack.spacing = ThemeMetrics.compactPadding
+
+        return stack
+    }
+
+    // MARK: - NCWidgetProviding methods
+    func widgetPerformUpdate(completionHandler: @escaping (NCUpdateResult) -> Void) {
+        rebuildUI()
+        reloadData(completionHandler)
+    }
+
+    func widgetActiveDisplayModeDidChange(_ activeDisplayMode: NCWidgetDisplayMode, withMaximumSize maxSize: CGSize) {
+        layoutBookmarkVisibility()
+    }
+
+    /// Resposible for calculating how many bookmarks can fit into the widget's size.
+    func layoutBookmarkVisibility() {
+        guard let extensionContext = self.extensionContext else { return }
+        let displayMode = extensionContext.widgetActiveDisplayMode
+        let maximumSize = extensionContext.widgetMaximumSize(for: displayMode)
+
+        // Calculate the number of bookmarks to display given the display mode.
+        // This varies depending on the number of lines the bookmark name is using.
+
+        let padding = ThemeMetrics.padding
+        let frontMatterSize = self.frontMatterWrapper.systemLayoutSizeFitting(maximumSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .defaultHigh)
+        let heightAvailableForBookmarks = maximumSize.height - frontMatterSize.height - padding
+
+        var numberOfBookmarksToDisplay: Int = 0
+        if displayMode == .compact {
+            // Calculate the number of rows we can fit into the height available for bookmarks.
+            var usedHeight: CGFloat = 0.0
+            for view in bookmarkStackView.arrangedSubviews {
+                let layoutSize = view.systemLayoutSizeFitting(maximumSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .defaultHigh)
+
+                guard layoutSize.height + usedHeight < heightAvailableForBookmarks else { break }
+                numberOfBookmarksToDisplay += 1
+                usedHeight += layoutSize.height
+            }
+        } else {
+            // We don't need to calculate how many bookmarks to fit.
+            numberOfBookmarksToDisplay = bookmarkStackView.arrangedSubviews.count
+        }
+
+        // Apply visibility of which bookmarks to display.
+        for (index, row) in bookmarkStackView.arrangedSubviews.enumerated() {
+            row.isHidden = index >= numberOfBookmarksToDisplay
+        }
+
+        let bookmarksSize = self.bookmarkWrapper.systemLayoutSizeFitting(maximumSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .defaultHigh)
+
+        self.preferredContentSize = CGSize(width: frontMatterSize.width, height: frontMatterSize.height + bookmarksSize.height + padding)
+    }
+
+    // MARK: - Refresh Control UI
+
+    @objc private func beginRefreshing() {
+        reloadData(nil)
+    }
+
+    private func reloadData(_ completionHandler: ((NCUpdateResult) -> Void)?) {
+        if bestAvailableBookmarks.isEmpty {
+            completionHandler?(NCUpdateResult.noData)
+            return
+        }
+
+        refreshControl.beginRefreshing()
+        dataLoader.loadData()
+    }
+
+    // MARK: - Last Updated Section
+    private static let lastUpdatedAtUserDefaultsKey = "lastUpdatedAtUserDefaultsKey"
+    var lastUpdatedAt: Date? {
+        get {
+            guard let defaultsDate = self.app.userDefaults.value(forKey: TodayViewController.lastUpdatedAtUserDefaultsKey) else {
+                return nil
             }
 
-            return BookmarkArrivalData(bookmark: bm, arrivalDepartures: arrDeps, selected: didSelectBookmark(_:))
+            return defaultsDate as? Date
         }
-    }
-
-    func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return TodaySectionController(formatters: app.formatters)
-    }
-
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        let emptyView = EmptyDataSetView(alignment: .top)
-        emptyView.titleLabel.text = Strings.emptyBookmarkTitle
-        emptyView.titleLabel.font = UIFont.preferredFont(forTextStyle: .title2).bold
-        emptyView.bodyLabel.text = Strings.emptyBookmarkBody
-        return emptyView
-    }
-}
-
-// MARK: - TodaySectionController
-
-final class TodaySectionController: ListSectionController {
-
-    private var object: BookmarkArrivalData?
-    private let formatters: Formatters
-
-    init(formatters: Formatters) {
-        self.formatters = formatters
-        super.init()
-    }
-
-    override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: 55)
-    }
-
-    override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard
-            let context = collectionContext,
-            let cell = context.dequeueReusableCell(of: TodayArrivalCell.self, for: self, at: index) as? TodayArrivalCell,
-            let object = object
-        else {
-            fatalError()
+        set(val) {
+            self.app.userDefaults.setValue(val, forKey: TodayViewController.lastUpdatedAtUserDefaultsKey)
+            refreshControl.lastUpdatedAt = val
         }
-
-        cell.setData(bookmarkArrivalData: object, formatters: formatters)
-
-        return cell
-    }
-
-    override func didSelectItem(at index: Int) {
-        guard let object = object else { return }
-        object.selected(object.bookmark)
-    }
-
-    public override func didUpdate(to object: Any) {
-        precondition(object is BookmarkArrivalData)
-        self.object = object as? BookmarkArrivalData
     }
 }
