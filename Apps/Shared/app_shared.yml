@@ -35,6 +35,7 @@ targets:
           - en
           - es
           - pl
+        ITSAppUsesNonExemptEncryption: false
         LSApplicationQueriesSchemes:
           - fb
           - twitter
