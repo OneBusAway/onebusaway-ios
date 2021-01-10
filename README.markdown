@@ -1,7 +1,14 @@
 # OBAKit
 
-OBAKit is a rewrite of OneBusAway for iOS from the ground up. The codebase is explicitly designed to be easy to understand, test, and maintain. This is the foundation of OneBusAway's second decade of life on Apple platforms.
+<img src="WebResources/OBAKit-Logo-Web.png" alt="OBAKit">
 
+OBAKit is a total rewrite of OneBusAway for iOS in the Swift programming language.
+
+## Purpose and Goals
+
+* This codebase is built as a set of reusable frameworks, which can be used to make new apps or augment existing apps on a wide variety of platforms.
+* This codebase is meant to provide an easy way for transit agencies to create their own custom-branded transit apps without needing to fork the OneBusAway source code.
+* This codebase is intended to be easy to understand, test, and maintain. We try to emphasize clarity over cleverness, even at the risk of being somewhat more verbose at times.
 ## Quick Start
 
 To get started, you will need the following pieces of software installed on your computer:
