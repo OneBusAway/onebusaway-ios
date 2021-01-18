@@ -119,7 +119,12 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
         public let to: Date
 
         public var interval: DateInterval {
-            return DateInterval(start: from, end: to)
+            // Sometimes, `to` is equal to 1970, which will mess this up.
+            if to < from {
+                return DateInterval(start: from, end: from)
+            } else {
+                return DateInterval(start: from, end: to)
+            }
         }
 
         enum CodingKeys: String, CodingKey {
