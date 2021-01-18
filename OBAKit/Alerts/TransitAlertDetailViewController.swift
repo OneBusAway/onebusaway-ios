@@ -1,5 +1,5 @@
 //
-//  AgencyAlertDetailViewController.swift
+//  TransitAlertDetailViewController.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 10/31/20.
@@ -8,12 +8,12 @@
 import OBAKitCore
 import UIKit
 
-class AgencyAlertDetailViewController: UIViewController {
-    private let viewModel: AgencyAlert.ListViewModel
+class TransitAlertDetailViewController: UIViewController {
+    private let transitAlert: TransitAlertViewModel
     private let webView = DocumentWebView()
 
-    init(_ agencyAlert: AgencyAlert.ListViewModel) {
-        self.viewModel = agencyAlert
+    init(_ transitAlert: TransitAlertViewModel) {
+        self.transitAlert = transitAlert
         super.init(nibName: nil, bundle: nil)
 
         self.title = Strings.serviceAlert
@@ -26,9 +26,12 @@ class AgencyAlertDetailViewController: UIViewController {
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(webView)
 
+        let title = transitAlert.title(forLocale: .current) ?? Strings.serviceAlert
+        let body = transitAlert.body(forLocale: .current) ?? "No additional details available."
+
         let html = """
-        <h1>\(viewModel.title)</h1>
-        <p>\(viewModel.subtitle)</p>
+        <h1>\(title)</h1>
+        <p>\(body)</p>
         """
 
         webView.setPageContent(html)

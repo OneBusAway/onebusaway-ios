@@ -9,7 +9,7 @@ import IGListKit
 import OBAKitCore
 
 // MARK: - Data models
-
+@available(*, deprecated, message: "Use OBAListView")
 final class AgencyAlertData: TransitAlertData, Equatable {
     let agencyAlert: AgencyAlert
 
@@ -28,9 +28,19 @@ final class AgencyAlertData: TransitAlertData, Equatable {
     }()
 
     // MARK: - TransitAlertData
-    var subjectText: String? { self.title }
-    var subtitleText: String? { self.truncatedSummary }
     let isUnread: Bool
+
+    func title(forLocale locale: Locale) -> String? {
+        return agencyAlert.titleForLocale(locale)
+    }
+
+    func body(forLocale locale: Locale) -> String? {
+        return agencyAlert.bodyForLocale(locale)
+    }
+
+    func url(forLocale locale: Locale) -> URL? {
+        return agencyAlert.URLForLocale(locale)
+    }
 
     // MARK: - Initializers
     init(agencyAlert: AgencyAlert, isUnread: Bool) {

@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import SafariServices
 
 /// Provides an standard interface for navigating between view controllers that works
 /// regardless of how inter-controller navigation is designed to work in the app.
@@ -21,6 +22,7 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         case stop(Stop)
         case stopID(String)
         case arrivalDeparture(ArrivalDeparture)
+        case transitAlert(TransitAlertViewModel)
     }
 
     private let application: Application
@@ -100,6 +102,17 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     public func rootNavigateTo(page: ClassicApplicationRootController.Page) {
         guard let rootController = self.rootController else { return }
         rootController.navigate(to: page)
+    }
+
+    public func navigateTo(alert: TransitAlertViewModel, locale: Locale = .current, from fromController: UIViewController) {
+        guard shouldNavigate(from: fromController, to: .transitAlert(alert)) else { return }
+
+        if let url = alert.url(forLocale: locale) {
+            let safari = SFSafariViewController(url: url)
+            present(safari, from: fromController, isModal: true)
+        } else {
+            navigate(to: TransitAlertDetailViewController(alert), from: fromController)
+        }
     }
 
     // MARK: - Helpers

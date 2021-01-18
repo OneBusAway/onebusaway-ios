@@ -13,11 +13,11 @@ extension AgencyAlertsStore {
     /// - Parameters:
     ///   - onSelectAction: The optional closure to perform when the user selects the alert in `OBAListView`.
     /// - Returns: An array of `[OBAListViewSection]` grouped by Agency name. The sections provided will have a `agency_alert` prefix for its section ID.
-    func listViewSections(onSelectAction: OBAListViewAction<AgencyAlert.ListViewModel>? = nil) -> [OBAListViewSection] {
+    func listViewSections(onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil) -> [OBAListViewSection] {
         let groupedAlerts = Dictionary(grouping: agencyAlerts, by: { $0.agency?.agency.name ?? "" })
         return groupedAlerts.map { group -> OBAListViewSection in
-            let viewModels = group.value.map { alert -> AgencyAlert.ListViewModel in
-                var viewModel = alert.listViewModel
+            let viewModels = group.value.map { alert -> TransitAlertDataListViewModel in
+                var viewModel = TransitAlertDataListViewModel(alert, forLocale: .current)
                 viewModel.onSelectAction = onSelectAction
                 return viewModel
             }
