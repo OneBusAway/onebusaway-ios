@@ -38,16 +38,31 @@ public class AgencyAlert: NSObject, Identifiable {
 
     // MARK: - Localized Content Accessors
 
+    @available(*, deprecated, renamed: "title(forLocale:)")
     public func titleForLocale(_ locale: Locale) -> String? {
+        return title(forLocale: locale)
+    }
+
+    @available(*, deprecated, renamed: "body(forLocale:)")
+    public func bodyForLocale(_ locale: Locale) -> String? {
+        return body(forLocale: locale)
+    }
+
+    @available(*, deprecated, renamed: "url(forLocale:)")
+    public func URLForLocale(_ locale: Locale) -> URL? {
+        return url(forLocale: locale)
+    }
+
+    public func title(forLocale locale: Locale) -> String? {
         return title(language: selectLanguageCode(locale: locale)) ?? title(language: defaultLanguageCode)
     }
 
-    public func bodyForLocale(_ locale: Locale) -> String? {
+    public func body(forLocale locale: Locale) -> String? {
         return body(language: selectLanguageCode(locale: locale)) ?? body(language: defaultLanguageCode)
     }
 
-    public func URLForLocale(_ locale: Locale) -> URL? {
-        return url(language: selectLanguageCode(locale: locale)) ?? url(language: defaultLanguageCode)
+    public func url(forLocale locale: Locale) -> URL? {
+        url(language: selectLanguageCode(locale: locale)) ?? url(language: defaultLanguageCode)
     }
 
     private func selectLanguageCode(locale: Locale) -> String {
