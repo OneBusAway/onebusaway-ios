@@ -61,7 +61,15 @@ public struct OBAListViewSection: Hashable {
     public init<ViewModel: OBAListViewItem>(id: String, title: String? = nil, contents: [ViewModel]) {
         self.id = id
         self.title = title
-        self.contents = contents.map { $0.typeErased }
+
+        // If the contents provided are already type-erased, we don't want to type-erase it again.
+        self.contents = contents.map { item in
+            if let typeErased = item as? AnyOBAListViewItem {
+                return typeErased
+            } else {
+                return item.typeErased
+            }
+        }
 
         #if DEBUG
         // This is helpful to track down where item identifiers are being set.
