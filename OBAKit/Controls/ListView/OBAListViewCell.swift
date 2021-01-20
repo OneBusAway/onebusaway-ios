@@ -8,7 +8,12 @@
 import OBAKitCore
 
 /// The base cell for all `OBAListView` cells.
-public class OBAListViewCell: SwipeCollectionViewCell, ReuseIdentifierProviding, OBAContentView {
+public class OBAListViewCell:
+    SwipeCollectionViewCell,
+    ReuseIdentifierProviding,
+    Separated,
+    OBAContentView {
+
     public func apply(_ config: OBAContentConfiguration) {
         // nop.
     }
@@ -25,4 +30,29 @@ public class OBAListViewCell: SwipeCollectionViewCell, ReuseIdentifierProviding,
 
         layer.add(flash, forKey: nil)
     }
+
+    // MARK: - Initialization
+    override public init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.layer.addSublayer(separator)
+    }
+
+    public required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Separator
+
+    /// When true, the cell will extend the separator all the way to its leading edge.
+    public var collapseLeftInset: Bool = false
+
+    public let separator = tableCellSeparatorLayer()
+
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+
+        let inset: CGFloat? = collapseLeftInset ? 0 : nil
+        layoutSeparator(leftSeparatorInset: inset)
+    }
+
 }
