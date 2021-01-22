@@ -306,7 +306,11 @@ public class MapViewController: UIViewController,
         let top = mapStatusView.frame.height - view.safeAreaInsets.top
         let bottom = panelViewHeight + ThemeMetrics.compactPadding
 
-        self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: top, leading: 0, bottom: bottom, trailing: 0)
+        if traitCollection.horizontalSizeClass == .regular {
+            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: top, leading: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, trailing: 0)
+        } else {
+            self.mapRegionManager.mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: top, leading: 0, bottom: bottom, trailing: 0)
+        }
     }
 
     // MARK: - Floating Panel Controller

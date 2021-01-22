@@ -33,6 +33,8 @@ final class MapPanelLayout: NSObject, FloatingPanelLayout {
 
 /// A layout object used with `FloatingPanel` on `MapViewController`.
 final class MapPanelLandscapeLayout: FloatingPanelLayout {
+    static let WidthSize: CGFloat = 291
+
     init(initialPosition: FloatingPanelPosition) {
         self.initialPosition = initialPosition
     }
@@ -55,7 +57,7 @@ final class MapPanelLandscapeLayout: FloatingPanelLayout {
     public func prepareLayout(surfaceView: UIView, in view: UIView) -> [NSLayoutConstraint] {
         return [
             surfaceView.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 8.0),
-            surfaceView.widthAnchor.constraint(equalToConstant: 291)
+            surfaceView.widthAnchor.constraint(equalToConstant: MapPanelLandscapeLayout.WidthSize)
         ]
     }
 
