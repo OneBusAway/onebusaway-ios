@@ -13,9 +13,26 @@ import OBAKitCore
 
 fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
 
-// MARK: - View Model
+struct TripStopListItemRowConfiguration: OBAContentConfiguration {
+    var viewModel: TripStopViewModel
+    var formatters: Formatters?
 
-final class TripStopListItem: NSObject, ListDiffable {
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return TripStopCell.self
+    }
+}
+
+struct TripStopViewModel: OBAListViewItem {
+    var contentConfiguration: OBAContentConfiguration {
+        return TripStopListItemRowConfiguration(viewModel: self)
+    }
+
+    static var customCellType: OBAListViewCell.Type? {
+        return TripStopCell.self
+    }
+
+    var onSelectAction: OBAListViewAction<TripStopViewModel>?
+
     /// Is this where the vehicle on the trip is currently located?
     let isCurrentVehicleLocation: Bool
 
@@ -28,16 +45,17 @@ final class TripStopListItem: NSObject, ListDiffable {
     /// The `Date` at which the vehicle will arrive/depart this trip stop.
     let date: Date
 
-    /// A formatted representation of `date`
-    let formattedDate: String
-
     /// The route type which will be used to determine the image to display.
     let routeType: Route.RouteType
 
     /// The `Stop` referred to by this object.
     let stop: Stop
 
-    init(stopTime: TripStopTime, arrivalDeparture: ArrivalDeparture?, formatters: Formatters) {
+    let stopTime: TripStopTime
+
+    init(stopTime: TripStopTime, arrivalDeparture: ArrivalDeparture?, onSelectAction: OBAListViewAction<TripStopViewModel>?) {
+        self.stopTime = stopTime
+
         stop = stopTime.stop
 
         if let arrivalDeparture = arrivalDeparture {
@@ -55,61 +73,22 @@ final class TripStopListItem: NSObject, ListDiffable {
         }
 
         title = stopTime.stop.name
-
         date = stopTime.arrivalDate
-        formattedDate = formatters.timeFormatter.string(from: date)
-
         routeType = stopTime.stop.prioritizedRouteTypeForDisplay
+
+        self.onSelectAction = onSelectAction
     }
 
-    // MARK: - ListDiffable
-
-    func diffIdentifier() -> NSObjectProtocol {
-        return stop.id as NSString
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(stop.id)
     }
 
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let rhs = object as? TripStopListItem else {
-            return false
-        }
-
-        return isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
-            isUserDestination == rhs.isUserDestination &&
-            title == rhs.title &&
-            date == rhs.date &&
-            formattedDate == rhs.formattedDate &&
-            routeType == rhs.routeType
-    }
-}
-
-// MARK: - Controller
-
-final class TripStopSectionController: OBAListSectionController<TripStopListItem> {
-    override func sizeForItem(at index: Int) -> CGSize {
-        return CGSize(width: collectionContext!.containerSize.width, height: tripStopCellMinimumHeight)
-    }
-
-    override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let sectionData = sectionData else { fatalError() }
-
-        let cell = dequeueReusableCell(type: TripStopCell.self, at: index)
-        cell.titleLabel.text = sectionData.title
-        cell.timeLabel.text = sectionData.formattedDate
-        cell.tripSegmentView.routeType = sectionData.routeType
-        cell.tripSegmentView.setDestinationStatus(user: sectionData.isUserDestination, vehicle: sectionData.isCurrentVehicleLocation)
-
-        return cell
-    }
-
-    override func didSelectItem(at index: Int) {
-        super.didSelectItem(at: index)
-
-        guard
-            let tripStopListItem = sectionData,
-            let appContext = viewController as? AppContext
-        else { return }
-
-        appContext.application.viewRouter.navigateTo(stop: tripStopListItem.stop, from: appContext)
+    static func == (lhs: TripStopViewModel, rhs: TripStopViewModel) -> Bool {
+        return lhs.isCurrentVehicleLocation == rhs.isCurrentVehicleLocation &&
+            lhs.isUserDestination == rhs.isUserDestination &&
+            lhs.title == rhs.title &&
+            lhs.date == rhs.date &&
+            lhs.routeType == rhs.routeType
     }
 }
 
@@ -130,7 +109,7 @@ final class TripStopSectionController: OBAListSectionController<TripStopListItem
 /// [ |  7:25PM                    ]
 /// [ |                            ]
 /// ```
-final class TripStopCell: BaseSelfSizingTableCell {
+final class TripStopCell: OBAListViewCell {
     static let tripSegmentImageWidth: CGFloat = 40.0
 
     override func prepareForReuse() {
@@ -211,6 +190,34 @@ final class TripStopCell: BaseSelfSizingTableCell {
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    // MARK: - Cell configurations
+    override func apply(_ config: OBAContentConfiguration) {
+        if let tripStopConfig = config as? TripStopListItemRowConfiguration {
+            apply(tripStopListItemConfiguration: tripStopConfig)
+        } else if let adjacentTripConfig = config as? AdjacentTripRowConfiguration {
+            apply(adjacentTripConfiguration: adjacentTripConfig)
+        }
+    }
+
+    private func apply(tripStopListItemConfiguration config: TripStopListItemRowConfiguration) {
+        titleLabel.text = config.viewModel.title
+        timeLabel.text = config.formatters?.timeFormatter.string(from: config.viewModel.date) ?? ""
+        tripSegmentView.routeType = config.viewModel.routeType
+        tripSegmentView.setDestinationStatus(user: config.viewModel.isUserDestination, vehicle: config.viewModel.isCurrentVehicleLocation)
+    }
+
+    private func apply(adjacentTripConfiguration config: AdjacentTripRowConfiguration) {
+        let titleFormat: String
+        if config.order == .previous {
+            titleFormat = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
+        } else {
+            titleFormat = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
+        }
+
+        titleLabel.text = String(format: titleFormat, config.routeHeadsign)
+        tripSegmentView.adjacentTripOrder = config.order
+    }
 
     override func layoutSubviews() {
         super.layoutSubviews()

@@ -166,7 +166,7 @@ class TripViewController: UIViewController,
         didSet {
             guard oldValue != self.showTripDetails else { return }
             UIView.animate(withDuration: 0.1) {
-                self.tripDetailsController.collectionController.view.alpha = self.showTripDetails ? 1.0 : 0.0
+                self.tripDetailsController.setListVisibility(isVisible: self.showTripDetails)
             }
         }
     }
@@ -369,12 +369,11 @@ class TripViewController: UIViewController,
         return map
     }()
 
+    public var skipNextStopTimeHighlight = false
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard
-            let stopTime = view.annotation as? TripStopTime,
-            let selectedAnnotation = mapView.selectedAnnotations.first as? TripStopTime,
-            stopTime != selectedAnnotation
-        else { return }
+        guard let stopTime = view.annotation as? TripStopTime else { return }
+        defer { skipNextStopTimeHighlight = false }
+        guard !skipNextStopTimeHighlight else { return }
 
         func mapViewAnnotationSelectionComplete() {
             if !self.mapView.hasBeenTouched {
@@ -385,9 +384,12 @@ class TripViewController: UIViewController,
 
         if self.mapView.hasBeenTouched {
             mapViewAnnotationSelectionComplete()
-        }
-        else {
-            floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
+        } else {
+            if traitCollection.horizontalSizeClass == .regular {
+                floatingPanel.move(to: .full, animated: true, completion: mapViewAnnotationSelectionComplete)
+            } else {
+                floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
+            }
         }
     }
 
