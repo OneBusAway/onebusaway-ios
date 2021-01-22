@@ -8,7 +8,6 @@
 //
 
 import Eureka
-import IGListKit
 import WebKit
 import OBAKitCore
 

@@ -13,8 +13,7 @@ import OBAKitCore
 import FloatingPanel
 
 /// Displays a list of stops for the trip corresponding to an `ArrivalDeparture` object.
-class TripFloatingPanelController:
-    UIViewController,
+class TripFloatingPanelController: UIViewController,
     AppContext,
     OBAListViewDataSource,
     OBAListViewCollapsibleSectionsDelegate,

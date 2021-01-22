@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
 
 fileprivate let tripStopCellMinimumHeight: CGFloat = 48.0
