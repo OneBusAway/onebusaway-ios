@@ -111,7 +111,10 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
             let safari = SFSafariViewController(url: url)
             present(safari, from: fromController, isModal: true)
         } else {
-            navigate(to: TransitAlertDetailViewController(alert), from: fromController)
+            let detailView = TransitAlertDetailViewController(alert)
+            detailView.isModalInPresentation = true
+            let view = UINavigationController(rootViewController: detailView)
+            present(view, from: fromController, isModal: true)
         }
     }
 
