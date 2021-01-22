@@ -297,9 +297,38 @@ class TripFloatingPanelController:
 
     // MARK: - TripStop actions
     private func viewOnMapAction(for viewModel: TripStopViewModel) -> UIAction {
-        return UIAction(title: "Show on Map", image: UIImage(systemName: "mappin.circle")) { _ in
+        return UIAction(title: OBALoc("trip_details_controller.show_on_map", value: "Show on Map", comment: "Button that moves the map to focus on the selected stop"), image: UIImage(systemName: "mappin.circle")) { _ in
             self.showOnMap(viewModel)
         }
+    }
+
+    private func getWalkingDirections(for viewModel: TripStopViewModel) -> UIMenuElement? {
+        let appleMapsAction: UIAction?
+        if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: viewModel.stop.coordinate) {
+            appleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { _ in
+                self.application.open(appleMapsURL, options: [:], completionHandler: nil)
+            }
+        } else {
+            appleMapsAction = nil
+        }
+
+        let googleMapsAction: UIAction?
+        #if !targetEnvironment(simulator)
+        if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: viewModel.stop.coordinate) {
+            googleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { _ in
+                self.application.open(googleMapsURL, options: [:], completionHandler: nil)
+            }
+        } else {
+            googleMapsAction = nil
+        }
+        #else
+        googleMapsAction = nil
+        #endif
+
+        let actions = [appleMapsAction, googleMapsAction].compactMap { $0 }
+        guard !actions.isEmpty else { return nil }
+
+        return UIMenu(title: OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), image: UIImage(systemName: "figure.walk"), children: actions)
     }
 
     var currentPreviewingViewController: UIViewController?
@@ -307,7 +336,12 @@ class TripFloatingPanelController:
         guard let tripStop = item.as(TripStopViewModel.self) else { return nil }
 
         let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
-            return UIMenu(title: tripStop.title, children: [self.viewOnMapAction(for: tripStop)])
+            let menuActions = [
+                self.viewOnMapAction(for: tripStop),
+                self.getWalkingDirections(for: tripStop)
+            ].compactMap { $0 }
+
+            return UIMenu(title: tripStop.title, children: menuActions)
         }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { () -> UIViewController? in
