@@ -295,7 +295,9 @@ class TripFloatingPanelController: UIViewController,
     }
 
     // MARK: - TripStop actions
-    private func viewOnMapAction(for viewModel: TripStopViewModel) -> UIAction {
+    private func viewOnMapAction(for viewModel: TripStopViewModel) -> UIAction? {
+        guard parentTripViewController != nil else { return nil }
+
         return UIAction(title: OBALoc("trip_details_controller.show_on_map", value: "Show on Map", comment: "Button that moves the map to focus on the selected stop"), image: UIImage(systemName: "mappin.circle")) { _ in
             self.showOnMap(viewModel)
         }
