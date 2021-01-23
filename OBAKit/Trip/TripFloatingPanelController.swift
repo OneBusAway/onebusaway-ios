@@ -96,6 +96,7 @@ class TripFloatingPanelController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
+        listView.formatters = application.formatters
         listView.obaDataSource = self
         listView.collapsibleSectionsDelegate = self
         listView.contextMenuDelegate = self
