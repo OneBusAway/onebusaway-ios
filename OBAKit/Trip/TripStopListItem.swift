@@ -104,7 +104,7 @@ struct TripStopViewModel: OBAListViewItem {
 /// ```
 /// [ |                            ]
 /// [ |  15th                      ]
-/// [ O  & Galer                 > ]
+/// [ O  & Galer                   ] <- no accessory
 /// [ |  7:25PM                    ]
 /// [ |                            ]
 /// ```
@@ -232,5 +232,6 @@ final class TripStopCell: OBAListViewCell {
     func layoutAccessibility() {
         self.textLabelsStack.axis = isAccessibility ? .vertical : .horizontal
         self.textLabelSpacerView.isHidden = isAccessibility
+        self.accessoryImageView.isHidden = isAccessibility
     }
 }
