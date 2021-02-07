@@ -21,12 +21,12 @@ class AgencyAlertBulletin: NSObject {
     public var showMoreInformationHandler: ((URL) -> Void)?
 
     init?(agencyAlert: AgencyAlert, locale: Locale) {
-        guard let title = agencyAlert.titleForLocale(locale) else {
+        guard let title = agencyAlert.title(forLocale: locale) else {
             return nil
         }
 
         alertPage = ThemedBulletinPage(title: title)
-        alertPage.descriptionText = agencyAlert.bodyForLocale(locale)
+        alertPage.descriptionText = agencyAlert.body(forLocale: locale)
 
         let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)
         alertPage.image = squircleRenderer.drawImageOnRoundedRect(Icons.errorOutline)
@@ -35,7 +35,7 @@ class AgencyAlertBulletin: NSObject {
 
         super.init()
 
-        if let url = agencyAlert.URLForLocale(locale) {
+        if let url = agencyAlert.url(forLocale: locale) {
             alertPage.actionButtonTitle = Strings.learnMore
             alertPage.actionHandler = { [weak self] _ in
                 guard let self = self else { return }
