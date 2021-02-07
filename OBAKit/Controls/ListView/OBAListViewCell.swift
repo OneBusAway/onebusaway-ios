@@ -7,6 +7,8 @@
 
 import OBAKitCore
 
+// swiftlint:disable colon
+
 /// The base cell for all `OBAListView` cells.
 public class OBAListViewCell:
     SwipeCollectionViewCell,

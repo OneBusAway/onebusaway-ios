@@ -42,12 +42,12 @@ extension AgencyAlertListKitConverters where Self: UIViewController {
     }
 
     func presentAlert(_ alert: AgencyAlert) {
-        if let url = alert.URLForLocale(application.locale) {
+        if let url = alert.url(forLocale: application.locale) {
             let safari = SFSafariViewController(url: url)
             application.viewRouter.present(safari, from: self, isModal: true)
         } else {
-            let title = alert.titleForLocale(application.locale)
-            let body = alert.bodyForLocale(application.locale)
+            let title = alert.title(forLocale: application.locale)
+            let body = alert.body(forLocale: application.locale)
             AlertPresenter.showDismissableAlert(title: title, message: body, presentingController: self)
         }
     }

@@ -15,7 +15,7 @@ final class AgencyAlertData: TransitAlertData, Equatable {
 
     // MARK: - Properties
     var id: String { agencyAlert.id }
-    var title: String? { agencyAlert.titleForLocale(Locale.current) }
+    var title: String? { agencyAlert.title(forLocale: Locale.current) }
     var agencyID: String { agencyAlert.agencyID }
     var isHighSeverity: Bool { agencyAlert.isHighSeverity }
 
@@ -23,7 +23,7 @@ final class AgencyAlertData: TransitAlertData, Equatable {
     /// summaries, which causes poor UI performance for us. See #264 & #266.
     /// To access the full summary, use `agencyAlert.bodyForLocale(:_)` instead.
     lazy var truncatedSummary: String? = {
-        guard let body = self.agencyAlert.bodyForLocale(Locale.current) else { return nil }
+        guard let body = self.agencyAlert.body(forLocale: Locale.current) else { return nil }
         return String(body.prefix(192))
     }()
 
@@ -31,15 +31,15 @@ final class AgencyAlertData: TransitAlertData, Equatable {
     let isUnread: Bool
 
     func title(forLocale locale: Locale) -> String? {
-        return agencyAlert.titleForLocale(locale)
+        return agencyAlert.title(forLocale: locale)
     }
 
     func body(forLocale locale: Locale) -> String? {
-        return agencyAlert.bodyForLocale(locale)
+        return agencyAlert.body(forLocale: locale)
     }
 
     func url(forLocale locale: Locale) -> URL? {
-        return agencyAlert.URLForLocale(locale)
+        return agencyAlert.url(forLocale: locale)
     }
 
     // MARK: - Initializers
