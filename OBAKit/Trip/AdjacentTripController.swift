@@ -17,60 +17,32 @@ enum AdjacentTripOrder {
     case previous, next
 }
 
-final class AdjacentTripSection: NSObject, ListDiffable {
-    let order: AdjacentTripOrder
-    let trip: Trip
-    let selected: VoidBlock
+struct AdjacentTripRowConfiguration: OBAContentConfiguration {
+    var order: AdjacentTripOrder
+    var routeHeadsign: String
 
-    init(trip: Trip, order: AdjacentTripOrder, selected: @escaping VoidBlock) {
-        self.trip = trip
-        self.order = order
-        self.selected = selected
-    }
+    var formatters: Formatters?
 
-    // MARK: - ListDiffable
-
-    func diffIdentifier() -> NSObjectProtocol {
-        return self
-    }
-
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let rhs = object as? AdjacentTripSection else {
-            return false
-        }
-
-        return order == rhs.order && trip == rhs.trip
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return TripStopCell.self
     }
 }
 
-// MARK: - Controller
+struct AdjacentTripItem: OBAListViewItem {
+    let order: AdjacentTripOrder
+    let trip: Trip
+    var onSelectAction: OBAListViewAction<AdjacentTripItem>?
 
-final class AdjacentTripController: OBAListSectionController<AdjacentTripSection> {
-
-    override func cellForItem(at index: Int) -> UICollectionViewCell {
-        guard let sectionData = sectionData else { fatalError() }
-
-        let cell = dequeueReusableCell(type: TripStopCell.self, at: index)
-
-        let titleFormat: String
-        if sectionData.order == .previous {
-            titleFormat = OBALoc("trip_details_controller.starts_as_fmt", value: "Starts as %@", comment: "Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle")
-        }
-        else {
-            titleFormat = OBALoc("trip_details_controller.continues_as_fmt", value: "Continues as %@", comment: "Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle")
-        }
-
-        cell.titleLabel.text = String(format: titleFormat, sectionData.trip.routeHeadsign)
-        cell.tripSegmentView.adjacentTripOrder = sectionData.order
-
-        return cell
+    var contentConfiguration: OBAContentConfiguration {
+        return AdjacentTripRowConfiguration(order: order, routeHeadsign: trip.routeHeadsign)
     }
 
-    override func didSelectItem(at index: Int) {
-        super.didSelectItem(at: index)
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(trip.id)
+    }
 
-        guard let object = sectionData else { return }
-
-        object.selected()
+    static func == (lhs: AdjacentTripItem, rhs: AdjacentTripItem) -> Bool {
+        return lhs.order == rhs.order &&
+            lhs.trip == rhs.trip
     }
 }

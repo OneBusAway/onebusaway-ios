@@ -50,7 +50,7 @@ class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIR
         listView.pinToSuperview(.edges)
     }
 
-    // MARK: - IGListKit
+    // MARK: - OBAListView
     let listView = OBAListView()
     var error: Error?
 

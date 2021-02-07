@@ -33,9 +33,9 @@ class ObacoAlertModelTests: OBATestCase {
                 expect(first.startDate) == Date.fromComponents(year: 2018, month: 10, day: 09, hour: 15, minute: 01, second: 00)
                 expect(first.endDate) == Date.fromComponents(year: 2018, month: 10, day: 09, hour: 23, minute: 01, second: 00)
 
-                expect(first.URLForLocale(locale)!.absoluteString) == "https://m.soundtransit.org/node/19133"
-                expect(first.titleForLocale(locale)!) == "Sounder Lakewood-Seattle - Delay - #1514 (7:20 am TAC dep)  20 minutes at Auburn Station due to a medical emergency"
-                expect(first.bodyForLocale(locale)!.starts(with: "Sounder south line train #1514 (7:20 a.m. Tacoma departure)")).to(beTrue())
+                expect(first.url(forLocale: locale)!.absoluteString) == "https://m.soundtransit.org/node/19133"
+                expect(first.title(forLocale: locale)!) == "Sounder Lakewood-Seattle - Delay - #1514 (7:20 am TAC dep)  20 minutes at Auburn Station due to a medical emergency"
+                expect(first.body(forLocale: locale)!.starts(with: "Sounder south line train #1514 (7:20 a.m. Tacoma departure)")).to(beTrue())
                 done()
             }
         }

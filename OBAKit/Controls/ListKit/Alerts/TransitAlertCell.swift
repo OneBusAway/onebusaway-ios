@@ -8,12 +8,17 @@
 import UIKit
 import OBAKitCore
 
-protocol TransitAlertData {
-    var subjectText: String? { get }
-    var subtitleText: String? { get }
+@available(*, deprecated, renamed: "TransitAlertViewModel")
+public protocol TransitAlertData {
+    var id: String { get }
     var isUnread: Bool { get }
+
+    func title(forLocale locale: Locale) -> String?
+    func body(forLocale locale: Locale) -> String?
+    func url(forLocale locale: Locale) -> URL?
 }
 
+@available(*, deprecated, message: "Use OBAListView")
 final class TransitAlertCell: BaseSelfSizingTableCell {
     private let useDebugColors = false
 
@@ -102,8 +107,8 @@ final class TransitAlertCell: BaseSelfSizingTableCell {
 
         imageView.image = data.isUnread ? Icons.unreadAlert : Icons.readAlert
 
-        titleLabel.text = data.subjectText
-        subtitleLabel.text = data.subtitleText
+        titleLabel.text = data.title(forLocale: .current)
+        subtitleLabel.text = data.body(forLocale: .current)
 
         if titleNumberOfLines > 0 {
             titleLabel.numberOfLines = isAccessibility ? titleNumberOfLines * 3 : titleNumberOfLines
@@ -124,9 +129,9 @@ final class TransitAlertCell: BaseSelfSizingTableCell {
 
         isAccessibilityElement = true
         accessibilityTraits = [.button, .staticText]
-        accessibilityLabel = data.subjectText
+        accessibilityLabel = data.title(forLocale: .current)
         accessibilityLabel = Strings.serviceAlert
-        accessibilityValue = data.subtitleText
+        accessibilityValue = data.body(forLocale: .current)
 
         if useDebugColors {
             titleLabel.backgroundColor = .green

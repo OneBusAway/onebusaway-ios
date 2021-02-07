@@ -9,6 +9,7 @@ import UIKit
 import IGListKit
 import OBAKitCore
 
+@available(*, deprecated, message: "Use OBAListView")
 final class ServiceAlertData: TransitAlertData, Equatable {
     let serviceAlert: ServiceAlert
 
@@ -24,9 +25,20 @@ final class ServiceAlertData: TransitAlertData, Equatable {
     }()
 
     // MARK: - TransitAlertData
-    var subjectText: String? { title }
-    var subtitleText: String? { agency }
     let isUnread: Bool
+
+    func title(forLocale locale: Locale) -> String? {
+        return title
+    }
+
+    func body(forLocale locale: Locale) -> String? {
+        return agency
+    }
+
+    func url(forLocale locale: Locale) -> URL? {
+        guard let url = serviceAlert.urlString else { return nil }
+        return URL(string: url.value)
+    }
 
     // MARK: - Initializers
     public init(serviceAlert: ServiceAlert, isUnread: Bool) {
@@ -36,8 +48,8 @@ final class ServiceAlertData: TransitAlertData, Equatable {
 
     // MARK: - Equatable methods
     static func == (lhs: ServiceAlertData, rhs: ServiceAlertData) -> Bool {
-        return lhs.subjectText == rhs.subjectText
-            && lhs.subtitleText == rhs.subtitleText
+        return lhs.title == rhs.title
+            && lhs.agency == rhs.agency
             && lhs.isUnread == rhs.isUnread
     }
 }

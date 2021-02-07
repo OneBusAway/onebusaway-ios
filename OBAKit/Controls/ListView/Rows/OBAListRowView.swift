@@ -10,7 +10,7 @@ import OBAKitCore
 // MARK: - Collection View Cell
 
 /// A recreation of the default `UITableView` cells (or `UIListContentConfiguration`).
-class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
+class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell {
     fileprivate let kUseDebugColors = false
 
     var listRowView: ListRowType! {
@@ -86,20 +86,6 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell, Separated {
         didSet {
             contentView.backgroundColor = isHighlighted ? ThemeColors.shared.highlightedBackgroundColor : defaultBackgroundColor
         }
-    }
-
-    // MARK: - Separator
-
-    /// When true, the cell will extend the separator all the way to its leading edge.
-    public var collapseLeftInset: Bool = false
-
-    let separator = tableCellSeparatorLayer()
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        let inset: CGFloat? = collapseLeftInset ? 0 : nil
-        layoutSeparator(leftSeparatorInset: inset)
     }
 }
 

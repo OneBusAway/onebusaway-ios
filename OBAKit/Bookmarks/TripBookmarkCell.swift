@@ -9,7 +9,6 @@
 
 import UIKit
 import OBAKitCore
-import IGListKit
 
 /// This view displays the information of a `Bookmark`. If the bookmark is a trip, then it will display route,
 /// headsign, and predicted arrival/departure times.

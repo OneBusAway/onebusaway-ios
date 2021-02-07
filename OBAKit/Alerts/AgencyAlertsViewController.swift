@@ -82,7 +82,7 @@ class AgencyAlertsViewController: UIViewController,
     }
 
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
-        guard let alert = item.as(AgencyAlert.ListViewModel.self) else { return nil }
+        guard let alert = item.as(TransitAlertDataListViewModel.self) else { return nil }
 
         let preview: OBAListViewMenuActions.PreviewProvider = {
             return self.previewAlert(alert)
@@ -103,21 +103,21 @@ class AgencyAlertsViewController: UIViewController,
 
     var previewingVC: (identifier: String, vc: UIViewController)?
 
-    func previewAlert(_ alert: AgencyAlert.ListViewModel) -> UIViewController? {
+    func previewAlert(_ alert: TransitAlertDataListViewModel) -> UIViewController? {
         let viewController: UIViewController
         if let url = alert.localizedURL {
             viewController = SFSafariViewController(url: url)
         } else {
-            viewController = AgencyAlertDetailViewController(alert)
+            viewController = TransitAlertDetailViewController(alert.transitAlert)
         }
 
         self.previewingVC = (alert.id, viewController)
         return viewController
     }
 
-    func performPreviewActionAlert(_ alert: AgencyAlert.ListViewModel) {
+    func performPreviewActionAlert(_ alert: TransitAlertDataListViewModel) {
         if let previewingVC = self.previewingVC, previewingVC.identifier == alert.id {
-            if previewingVC.vc is AgencyAlertDetailViewController {
+            if previewingVC.vc is TransitAlertDetailViewController {
                 application.viewRouter.navigate(to: previewingVC.vc, from: self)
             } else {
                 application.viewRouter.present(previewingVC.vc, from: self, isModal: true)
@@ -130,7 +130,7 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - Menu actions
     /// Returns a UIAction that presents a `UIActivityViewController` for sharing the URL
     /// (or title and body, if no URL) of the provided alert.
-    func shareAlertAction(_ alert: AgencyAlert.ListViewModel) -> UIAction {
+    func shareAlertAction(_ alert: TransitAlertDataListViewModel) -> UIAction {
         let activityItems: [Any]
         if let url = alert.localizedURL {
             activityItems = [url]
@@ -153,16 +153,11 @@ class AgencyAlertsViewController: UIViewController,
     }
 
     func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem) {
-        guard let agencyAlert = item.as(AgencyAlert.ListViewModel.self) else { return }
+        guard let agencyAlert = item.as(TransitAlertDataListViewModel.self) else { return }
         presentAlert(agencyAlert)
     }
 
-    func presentAlert(_ alert: AgencyAlert.ListViewModel) {
-        if let url = alert.localizedURL {
-            let safari = SFSafariViewController(url: url)
-            application.viewRouter.present(safari, from: self, isModal: true)
-        } else {
-            application.viewRouter.navigate(to: AgencyAlertDetailViewController(alert), from: self)
-        }
+    func presentAlert(_ alert: TransitAlertDataListViewModel) {
+        application.viewRouter.navigateTo(alert: alert.transitAlert, from: self)
     }
 }

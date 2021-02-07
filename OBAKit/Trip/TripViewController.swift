@@ -166,7 +166,7 @@ class TripViewController: UIViewController,
         didSet {
             guard oldValue != self.showTripDetails else { return }
             UIView.animate(withDuration: 0.1) {
-                self.tripDetailsController.collectionController.view.alpha = self.showTripDetails ? 1.0 : 0.0
+                self.tripDetailsController.setListVisibility(isVisible: self.showTripDetails)
             }
         }
     }
@@ -217,8 +217,12 @@ class TripViewController: UIViewController,
 
         // We don't need to set the map view's margins if the drawer will take up the whole screen.
         if vc.position != .full {
-            let drawerHeight = vc.layout.insetFor(position: vc.position) ?? 0
-            mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
+            if traitCollection.horizontalSizeClass == .regular {
+                mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: MapPanelLandscapeLayout.WidthSize + ThemeMetrics.padding, bottom: 0, trailing: 0)
+            } else {
+                let drawerHeight = vc.layout.insetFor(position: vc.position) ?? 0
+                mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
+            }
         }
 
         self.tripDetailsController.configureView(for: vc.position)
@@ -369,12 +373,11 @@ class TripViewController: UIViewController,
         return map
     }()
 
+    public var skipNextStopTimeHighlight = false
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-        guard
-            let stopTime = view.annotation as? TripStopTime,
-            let selectedAnnotation = mapView.selectedAnnotations.first as? TripStopTime,
-            stopTime != selectedAnnotation
-        else { return }
+        guard let stopTime = view.annotation as? TripStopTime else { return }
+        defer { skipNextStopTimeHighlight = false }
+        guard !skipNextStopTimeHighlight else { return }
 
         func mapViewAnnotationSelectionComplete() {
             if !self.mapView.hasBeenTouched {
@@ -385,9 +388,12 @@ class TripViewController: UIViewController,
 
         if self.mapView.hasBeenTouched {
             mapViewAnnotationSelectionComplete()
-        }
-        else {
-            floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
+        } else {
+            if traitCollection.horizontalSizeClass == .regular {
+                floatingPanel.move(to: .full, animated: true, completion: mapViewAnnotationSelectionComplete)
+            } else {
+                floatingPanel.move(to: .half, animated: true, completion: mapViewAnnotationSelectionComplete)
+            }
         }
     }
 

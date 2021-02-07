@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import CoreLocation
 import OBAKitCore
 
