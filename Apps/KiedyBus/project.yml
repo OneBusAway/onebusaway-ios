@@ -51,7 +51,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
-        MARKETING_VERSION: 20.3.0
+        MARKETING_VERSION: 21.1.0
   TodayView:
     sources: ["Apps/KiedyBus/Assets.xcassets"]
     entitlements:
@@ -61,7 +61,7 @@ targets:
     info:
       properties:
         CFBundleDisplayName: KiedyBus
-        CFBundleShortVersionString: 20.3.0
+        CFBundleShortVersionString: 21.1.0
         OBAKitConfig:
           AppGroup: group.pl.kiedybus.iphone
           BundledRegionsFileName: regions.json
