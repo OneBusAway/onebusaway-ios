@@ -43,7 +43,9 @@ struct SegmentedControlItem: OBAListViewItem {
     }
 
     static func == (lhs: SegmentedControlItem, rhs: SegmentedControlItem) -> Bool {
-        return lhs.segments == rhs.segments && lhs.initialSelectedIndex == rhs.initialSelectedIndex
+        return lhs.id == rhs.id &&
+            lhs.segments == rhs.segments &&
+            lhs.initialSelectedIndex == rhs.initialSelectedIndex
     }
 }
 

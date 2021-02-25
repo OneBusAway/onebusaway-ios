@@ -57,7 +57,8 @@ struct ArrivalDepartureItem: OBAListViewItem {
     }
 
     static func == (lhs: ArrivalDepartureItem, rhs: ArrivalDepartureItem) -> Bool {
-        return lhs.routeID == rhs.routeID &&
+        return lhs.identifier == rhs.identifier &&
+            lhs.routeID == rhs.routeID &&
             lhs.stopID == rhs.stopID &&
             lhs.name == rhs.name &&
             lhs.scheduledDate == rhs.scheduledDate &&

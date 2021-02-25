@@ -761,9 +761,8 @@ public class StopViewController: UIViewController,
 
     var operationError: Error? {
         didSet {
-            DispatchQueue.main.async {
+            if operationError?.localizedDescription != oldValue?.localizedDescription {
                 self.listView.applyData(animated: true)
-//                self.collectionController.reload(animated: true)
             }
         }
     }

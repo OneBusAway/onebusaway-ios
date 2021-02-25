@@ -19,15 +19,17 @@ struct StopArrivalWalkItem: OBAListViewItem {
     }
     var onSelectAction: OBAListViewAction<StopArrivalWalkItem>?
 
+    let id: String
     let distance: CLLocationDistance
     let timeToWalk: TimeInterval
 
     static func == (lhs: StopArrivalWalkItem, rhs: StopArrivalWalkItem) -> Bool {
-        return lhs.distance == rhs.distance && lhs.timeToWalk == rhs.timeToWalk
+        return lhs.id == rhs.id &&
+            lhs.distance == rhs.distance &&
+            lhs.timeToWalk == rhs.timeToWalk
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(distance)
-        hasher.combine(timeToWalk)
+        hasher.combine(id)
     }
 }
