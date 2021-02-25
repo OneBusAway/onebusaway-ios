@@ -160,6 +160,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: ArrivalDepartureItem.self)
         listView.register(listViewItem: SegmentedControlItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
+        listView.register(listViewItem: MessageButtonItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -403,6 +404,7 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection?] = []
         sections.append(hiddenRoutesToggle)
         sections.append(contentsOf: stopArrivalsSections)
+        sections.append(loadMoreSection)
         return sections.compactMap({ $0 })
     }
 
@@ -438,7 +440,7 @@ public class StopViewController: UIViewController,
 
 //        sections.append(contentsOf: stopArrivalsSections)
 
-        sections.append(loadMoreSection)
+//        sections.append(loadMoreSection)
 
         // More Options
         sections.append(contentsOf: moreOptions)
@@ -667,16 +669,16 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Load More
 
-    private var loadMoreSection: ListDiffable {
+    private var loadMoreSection: OBAListViewSection {
         let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
-        let section = LoadMoreSectionData(footerText: footerText, error: operationError) { [weak self] in
+        let item = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", error: operationError, footerText: footerText, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.loadMoreDepartures()
         }
 
-        return section
+        return OBAListViewSection(id: "load_more_section", contents: [item])
     }
 
     // MARK: - Data/More Options
