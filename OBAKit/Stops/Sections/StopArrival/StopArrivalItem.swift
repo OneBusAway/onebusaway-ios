@@ -154,21 +154,21 @@ struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
         switch (viewModel.arrivalDepartureStatus,
                 viewModel.temporalState,
                 viewModel.scheduleStatus == .unknown) {
-            // Is a past event, regardless of realtime data availability.
-            case (.arriving, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt", value: "arrived %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already arrived, regardless of realtime data availability."))
-            case (.departing, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departed_x_minutes_ago_fmt", value: "departed %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already departed, regardless of realtime data availability."))
+        // Is a past event, regardless of realtime data availability.
+        case (.arriving, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt", value: "arrived %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already arrived, regardless of realtime data availability."))
+        case (.departing, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departed_x_minutes_ago_fmt", value: "departed %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already departed, regardless of realtime data availability."))
 
-            // Is a current event, regardless of realtime data availability.
-            case (.arriving, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_arriving_now", value: "arriving now!", comment: "VoiceOver text describing a route that is arriving now, regardless of realtime data availability.")
-            case (.departing, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_departing_now", value: "departing now!", comment: "VoiceOver text describing a route that is departing now, regardless of realtime data availability.")
+        // Is a current event, regardless of realtime data availability.
+        case (.arriving, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_arriving_now", value: "arriving now!", comment: "VoiceOver text describing a route that is arriving now, regardless of realtime data availability.")
+        case (.departing, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_departing_now", value: "departing now!", comment: "VoiceOver text describing a route that is departing now, regardless of realtime data availability.")
 
-            // Has realtime data and is a future event.
-            case (.arriving, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arriving_in_x_minutes", value: "arriving in %d minutes at %@.", comment: "VoiceOver text describing a future arrival that is based off realtime data."))
-            case (.departing, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departing_in_x_minutes_fmt", value: "departing in %d minutes at %@.", comment: "VoiceOver text describing a future departure that is based off realtime data."))
+        // Has realtime data and is a future event.
+        case (.arriving, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arriving_in_x_minutes", value: "arriving in %d minutes at %@.", comment: "VoiceOver text describing a future arrival that is based off realtime data."))
+        case (.departing, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departing_in_x_minutes_fmt", value: "departing in %d minutes at %@.", comment: "VoiceOver text describing a future departure that is based off realtime data."))
 
-            // No realtime data and is a future event.
-            case (.arriving, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt", value: "scheduled to arrive in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to arrive (no realtime data was available)."))
-            case (.departing, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt", value: "scheduled to depart in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"))
+        // No realtime data and is a future event.
+        case (.arriving, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt", value: "scheduled to arrive in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to arrive (no realtime data was available)."))
+        case (.departing, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt", value: "scheduled to depart in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"))
         }
 
         return scheduleStatus
