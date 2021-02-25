@@ -479,16 +479,10 @@ public class StopViewController: UIViewController,
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
-            addWalkTimeRow(to: &items)
-            sections = [sectionForGroup(groupRoute: nil, items: items)]
+            sections = [sectionForGroup(groupRoute: nil, arrDeps: arrDeps)]
         } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-            sections = groups.map { group -> OBAListViewSection in
-                var items = group.arrivalDepartures.map { arrivalDepartureItem(for: $0).typeErased }
-                addWalkTimeRow(to: &items)
-                return sectionForGroup(groupRoute: group.route, items: items)
-            }
+            sections = groups.map { sectionForGroup(groupRoute: $0.route, arrDeps: $0.arrivalDepartures) }
         }
 
         return sections
@@ -499,7 +493,7 @@ public class StopViewController: UIViewController,
         return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
     }
 
-    func sectionForGroup(groupRoute: Route?, items: [AnyOBAListViewItem]) -> OBAListViewSection {
+    func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
         if let groupRoute = groupRoute {
@@ -510,6 +504,8 @@ public class StopViewController: UIViewController,
             sectionName = nil
         }
 
+        var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
+        addWalkTimeRow(to: &items)
         return OBAListViewSection(id: sectionID, title: sectionName, contents: items)
     }
 
