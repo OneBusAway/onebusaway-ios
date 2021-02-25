@@ -208,17 +208,21 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The object used to determine the schedule deviation.
     /// - Returns: A formatted string representing the schedule deviation.
     public func formattedScheduleDeviation(for arrivalDeparture: ArrivalDeparture) -> String {
-        switch (arrivalDeparture.temporalState, arrivalDeparture.arrivalDepartureStatus) {
+        return formattedScheduleDeviation(temporalState: arrivalDeparture.temporalState, status: arrivalDeparture.arrivalDepartureStatus, scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+    }
+
+    public func formattedScheduleDeviation(temporalState: TemporalState, status: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {
+        switch (temporalState, status) {
         case (.past, .arriving):
-            return explanationOfDeviationForPastArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForPastArrival(minutes: scheduleDeviation)
         case (.past, .departing):
-            return explanationOfDeviationForPastDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForPastDeparture(minutes: scheduleDeviation)
         case (_, .arriving):
-            return explanationOfDeviationForFutureArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForFutureArrival(minutes: scheduleDeviation)
         case (_, .departing):
             fallthrough // swiftlint:disable:this no_fallthrough_only
         default:
-            return explanationOfDeviationForFutureDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForFutureDeparture(minutes: scheduleDeviation)
         }
     }
 
@@ -286,11 +290,15 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
     /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
     public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
-        switch arrivalDeparture.temporalState {
+        return shortFormattedTime(untilMinutes: arrivalDeparture.arrivalDepartureMinutes, temporalState: arrivalDeparture.temporalState)
+    }
+
+    public func shortFormattedTime(untilMinutes: Int, temporalState: TemporalState) -> String {
+        switch temporalState {
         case .present: return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         default:
             let formatString = OBALoc("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
-            return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
+            return String(format: formatString, untilMinutes)
         }
     }
 

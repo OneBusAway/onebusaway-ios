@@ -228,6 +228,30 @@ class StopArrivalView: UIView {
         return wrapper
     }
 
+    func configureView(for contentConfiguration: ArrivalDepartureContentConfiguration) {
+        if deemphasizePastEvents {
+            alpha = contentConfiguration.viewModel.temporalState == .past ? 0.5 : 1.0
+        }
+
+        routeHeadsignLabel.text = contentConfiguration.viewModel.name
+        fullExplanationLabel.attributedText = contentConfiguration.fullAttributedExplaination
+
+        minutesLabel.text = contentConfiguration.untilMinutesText
+        minutesLabel.textColor = contentConfiguration.colorForScheduleStatus
+        accessibilityTimeLabel.text = contentConfiguration.accessibilityTimeLabelText
+        accessibilityScheduleDeviationLabel.text = contentConfiguration.accessibilityScheduleDeviationText
+
+        accessibilityLabel = contentConfiguration.accessibilityLabel
+        accessibilityValue = contentConfiguration.accessibilityValue
+        accessibilityTraits = [.button, .updatesFrequently]
+        isAccessibilityElement = true
+
+        normalInfoStack.forEach { $0.isHidden = isAccessibility }
+        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
+
+        infoStack.spacing = isAccessibility ? ThemeMetrics.padding : 0
+    }
+
     func configureView(for traitCollection: UITraitCollection) {
         guard let arrivalDeparture = arrivalDeparture else { return }
 

@@ -72,7 +72,7 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
         guard let object = sectionData else { fatalError() }
 
         let cell = dequeueReusableCell(type: StopArrivalCell.self, at: index)
-        cell.formatters = formatters
+//        cell.formatters = formatters
         cell.delegate = self
         cell.arrivalDeparture = object.arrivalDeparture
         return cell
@@ -115,7 +115,7 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
 
 // MARK: - View
 
-final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
+final class StopArrivalCell: OBAListViewCell {
     var arrivalDeparture: ArrivalDeparture? {
         didSet {
             guard let arrivalDeparture = arrivalDeparture else { return }
@@ -130,48 +130,38 @@ final class StopArrivalCell: SwipeCollectionViewCell, SelfSizing, Separated {
         set { _ = newValue }
     }
 
-    var formatters: Formatters! {
-        didSet {
-            if stopArrivalView == nil {
-                stopArrivalView = StopArrivalView.autolayoutNew()
-                stopArrivalView.formatters = formatters
-                stopArrivalView.backgroundColor = .clear
-                contentView.addSubview(stopArrivalView)
-
-                stopArrivalView.pinToSuperview(.readableContent) { constraints in
-                    constraints.trailing.priority = .required - 1
-                }
-            }
-        }
-    }
+//    var formatters: Formatters! {
+//        didSet {
+//            if stopArrivalView == nil {
+//
+//            }
+//        }
+//    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         fixiOS13AutoLayoutBug()
-        contentView.layer.addSublayer(separator)
         contentView.backgroundColor = ThemeColors.shared.systemBackground
+
+        stopArrivalView = StopArrivalView.autolayoutNew()
+//        stopArrivalView.formatters = formatters
+        stopArrivalView.backgroundColor = .clear
+        contentView.addSubview(stopArrivalView)
+
+        stopArrivalView.pinToSuperview(.readableContent) { constraints in
+            constraints.trailing.priority = .required - 1
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Separator
-
-    let separator = tableCellSeparatorLayer()
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        layoutSeparator()
-    }
-
-    // MARK: - Self Sizing
-
-    override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
-        return calculateLayoutAttributesFitting(layoutAttributes)
-    }
-
     // MARK: - UI
+    override func apply(_ config: OBAContentConfiguration) {
+        guard let config = config as? ArrivalDepartureContentConfiguration else { return }
+        stopArrivalView.configureView(for: config)
+    }
 
     func highlightMinutes() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in

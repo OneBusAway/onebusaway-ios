@@ -156,6 +156,9 @@ public class StopViewController: UIViewController,
 
         listView.obaDataSource = self
         listView.formatters = application.formatters
+
+        listView.register(listViewItem: ArrivalDepartureItem.self)
+
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
         listView.addSubview(refreshControl)
