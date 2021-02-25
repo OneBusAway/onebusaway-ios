@@ -158,6 +158,7 @@ public class StopViewController: UIViewController,
         listView.formatters = application.formatters
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
+        listView.register(listViewItem: SegmentedControlItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -398,7 +399,10 @@ public class StopViewController: UIViewController,
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return stopArrivalsSections
+        var sections: [OBAListViewSection?] = []
+        sections.append(hiddenRoutesToggle)
+        sections.append(contentsOf: stopArrivalsSections)
+        return sections.compactMap({ $0 })
     }
 
     // MARK: - IGListKit
@@ -422,9 +426,6 @@ public class StopViewController: UIViewController,
         // Service Alerts
         let serviceAlerts = serviceAlertsSection
         sections.append(serviceAlerts)
-
-        let hiddenRoutesToggle = self.hiddenRoutesToggle
-        sections.append(hiddenRoutesToggle)
 
         // When we are displaying service alerts, we should also show a header for the section.
         // However, don't show a header if a segmented control for toggling hidden routes is visible.
@@ -647,7 +648,7 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Hidden Routes Toggle
 
-    private var hiddenRoutesToggle: ListDiffable? {
+    private var hiddenRoutesToggle: OBAListViewSection? {
         guard stopPreferences.hasHiddenRoutes else { return nil }
 
         // If we have hidden routes, then show the hide/show filter toggle.
@@ -657,11 +658,10 @@ public class StopViewController: UIViewController,
         ]
 
         let selectedIndex = isListFiltered ? 1 : 0
-        let toggleSection = ToggleSectionData(segments: segments, selectedIndex: selectedIndex) { [weak self] _ in
-            guard let self = self else { return }
-            self.isListFiltered.toggle()
+        let toggleItem = SegmentedControlItem(id: "hidden_routes_toggle", segments: segments, initialSelectedIndex: selectedIndex) { [weak self] _ in
+            self?.isListFiltered.toggle()
         }
-        return toggleSection
+        return OBAListViewSection(id: "hidden_routes_toggle_section", title: nil, contents: [toggleItem])
     }
 
     // MARK: - Data/Load More
