@@ -10,13 +10,13 @@ import CoreLocation
 
 struct StopArrivalWalkItem: OBAListViewItem {
     var contentConfiguration: OBAContentConfiguration {
-        let config = OBAListRowConfiguration(
-            text: "\(distance) meters",
-            secondaryText: "\(timeToWalk) seconds",
-            appearance: .value,
-            accessoryType: .none)
-        return config
+        return StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk)
     }
+
+    static var customCellType: OBAListViewCell.Type? {
+        return StopArrivalWalkCell.self
+    }
+
     var onSelectAction: OBAListViewAction<StopArrivalWalkItem>?
 
     let id: String
@@ -31,5 +31,40 @@ struct StopArrivalWalkItem: OBAListViewItem {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+    }
+}
+
+struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
+    var distance: CLLocationDistance
+    var timeToWalk: TimeInterval
+    var formatters: Formatters?
+
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return StopArrivalWalkCell.self
+    }
+}
+
+class StopArrivalWalkCell: OBAListViewCell {
+    override var showsSeparator: Bool {
+        return false
+    }
+
+    let walkTimeView = WalkTimeView.autolayoutNew()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+
+        contentView.addSubview(walkTimeView)
+        walkTimeView.pinToSuperview(.edges)
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError()
+    }
+
+    override func apply(_ config: OBAContentConfiguration) {
+        guard let config = config as? StopArrivalWalkContentConfiguration else { return }
+        walkTimeView.formatters = config.formatters
+        walkTimeView.set(distance: config.distance, timeToWalk: config.timeToWalk)
     }
 }

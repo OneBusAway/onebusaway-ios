@@ -36,7 +36,10 @@ public class OBAListViewCell:
     // MARK: - Initialization
     override public init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.layer.addSublayer(separator)
+
+        if showsSeparator {
+            contentView.layer.addSublayer(separator)
+        }
     }
 
     public required init?(coder aDecoder: NSCoder) {
@@ -48,6 +51,12 @@ public class OBAListViewCell:
     /// When true, the cell will extend the separator all the way to its leading edge.
     public var collapseLeftInset: Bool = false
 
+    /// Whether or not to show the separator. To change this, override this value.
+    /// This option only applies during cell initialization, so mutating this property will have no effect.
+    public var showsSeparator: Bool {
+        return true
+    }
+
     public let separator = tableCellSeparatorLayer()
 
     public override func layoutSubviews() {
@@ -56,5 +65,4 @@ public class OBAListViewCell:
         let inset: CGFloat? = collapseLeftInset ? 0 : nil
         layoutSeparator(leftSeparatorInset: inset)
     }
-
 }

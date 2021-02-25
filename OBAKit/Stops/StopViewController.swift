@@ -159,6 +159,7 @@ public class StopViewController: UIViewController,
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
         listView.register(listViewItem: SegmentedControlItem.self)
+        listView.register(listViewItem: StopArrivalWalkItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
