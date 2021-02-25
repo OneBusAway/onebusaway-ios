@@ -25,7 +25,6 @@ public class StopViewController: UIViewController,
     AppContext,
     BookmarkEditorDelegate,
     Idleable,
-    ListAdapterDataSource,
     OBAListViewDataSource,
     ModalDelegate,
     Previewable,
@@ -401,71 +400,44 @@ public class StopViewController: UIViewController,
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
+//        guard stopArrivals != nil else {
+//            if let error = self.operationError {
+//                let emptyDataSection = EmptyDataSetSectionData(error: error, image: nil, buttonConfig: operationRetryButton)
+//                return [stopHeaderSection, emptyDataSection].compactMap { $0 }
+//            } else {
+//                return [stopHeaderSection].compactMap { $0 }
+//            }
+//            // TODO: show a loading message too
+//        }
+
+        if inPreviewMode {
+            return itemsForPreviewMode()
+        } else {
+            return itemsForRegularMode()
+        }
+    }
+
+    private func itemsForRegularMode() -> [OBAListViewSection] {
         var sections: [OBAListViewSection?] = []
-        sections.append(hiddenRoutesToggle)
-        sections.append(contentsOf: stopArrivalsSections)
+
+        let serviceAlerts = serviceAlertsSection
+        let hiddenRoutes = hiddenRoutesToggle
+
+        // When we are displaying service alerts, we should also show a header
+        // for the section. However, don't show a header if a segmented control
+        // for toggling hidden routes is visible.
+        let showArrivalsHeader = serviceAlertsSection != nil && hiddenRoutes == nil
+
+        sections.append(serviceAlerts)
+        sections.append(hiddenRoutes)
+        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
         sections.append(loadMoreSection)
         sections.append(moreOptions)
         return sections.compactMap({ $0 })
     }
 
-    // MARK: - IGListKit
-
-    /// Generates a collection of `ListDiffable` objects that should be displayed in a Context Menu preview mode.
-    private func objectsForPreviewMode() -> [ListDiffable] {
-        var sections = [ListDiffable?]()
-        sections.append(stopHeaderSection)
-//        sections.append(contentsOf: stopArrivalsSections)
-        return sections.compactMap { $0 }
-    }
-
-    /// Generates a collection of `ListDiffable` objects that should be displayed during non-preview use of the view controller.
-    ///
-    /// In other words, this method generates the regular set of `ListDiffable` objects that the user would want to see when
-    /// directly viewing this view controller, as opposed to looking at it through a Context Menu preview.
-    private func objectsForRegularMode() -> [ListDiffable] {
-        var sections = [ListDiffable?]()
-        sections.append(stopHeaderSection)
-
-        // Service Alerts
-        let serviceAlerts = serviceAlertsSection
-        sections.append(serviceAlerts)
-
-        // When we are displaying service alerts, we should also show a header for the section.
-        // However, don't show a header if a segmented control for toggling hidden routes is visible.
-        if let alertsSection = serviceAlerts,
-            alertsSection.serviceAlerts.count > 0,
-            hiddenRoutesToggle == nil {
-            sections.append(TableHeaderData(title: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")))
-        }
-
-//        sections.append(contentsOf: stopArrivalsSections)
-
-//        sections.append(loadMoreSection)
-
-        // More Options
-//        sections.append(contentsOf: moreOptions)
-
-        return sections.compactMap { $0 }
-    }
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        guard stopArrivals != nil else {
-            if let error = self.operationError {
-                let emptyDataSection = EmptyDataSetSectionData(error: error, image: nil, buttonConfig: operationRetryButton)
-                return [stopHeaderSection, emptyDataSection].compactMap { $0 }
-            } else {
-                return [stopHeaderSection].compactMap { $0 }
-            }
-            // TODO: show a loading message too
-        }
-
-        if inPreviewMode {
-            return objectsForPreviewMode()
-        }
-        else {
-            return objectsForRegularMode()
-        }
+    private func itemsForPreviewMode() -> [OBAListViewSection] {
+        return stopArrivalsSection(showSectionHeaders: false)
     }
 
     // MARK: - Data/Stop Header
@@ -476,7 +448,7 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Stop Arrivals
-    private var stopArrivalsSections: [OBAListViewSection] {
+    func stopArrivalsSection(showSectionHeaders: Bool) -> [OBAListViewSection] {
         guard let stopArrivals = self.stopArrivals else { return [] }
         var sections: [OBAListViewSection] = []
 
@@ -487,10 +459,11 @@ public class StopViewController: UIViewController,
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            sections = [sectionForGroup(groupRoute: nil, arrDeps: arrDeps)]
+            sections = [sectionForGroup(groupRoute: nil, showSectionHeader: showSectionHeaders, arrDeps: arrDeps)]
         } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-            sections = groups.map { sectionForGroup(groupRoute: $0.route, arrDeps: $0.arrivalDepartures) }
+            // Regardless of the provided `showSectionHeader`, if stops are grouped by route, we will always show the section header.
+            sections = groups.map { sectionForGroup(groupRoute: $0.route, showSectionHeader: true, arrDeps: $0.arrivalDepartures) }
         }
 
         return sections
@@ -501,15 +474,15 @@ public class StopViewController: UIViewController,
         return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
     }
 
-    func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
+    func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
         if let groupRoute = groupRoute {
             sectionID = "stop_arrivals_\(groupRoute.id)"
-            sectionName = groupRoute.longName ?? groupRoute.shortName
+            sectionName = showSectionHeader ? (groupRoute.longName ?? groupRoute.shortName) : nil
         } else {
             sectionID = "stop_arrivals"
-            sectionName = nil
+            sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
         }
 
         var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
@@ -645,9 +618,11 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Service Alerts
 
-    private var serviceAlertsSection: ServiceAlertsSectionData? {
+    private var serviceAlertsSection: OBAListViewSection? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        return sectionData(from: alerts, collapsedState: stopViewShowsServiceAlerts ? .expanded : .collapsed)
+        let items = alerts.map { TransitAlertDataListViewModel($0, forLocale: .current) }
+
+        return OBAListViewSection(id: "service_alerts", title: Strings.serviceAlerts, contents: items)
     }
 
     // MARK: - Data/Hidden Routes Toggle
@@ -740,29 +715,11 @@ public class StopViewController: UIViewController,
         }
 
         return OBAListViewSection(id: "more_options_section", title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), contents: items)
-
-//        return [
-//            TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
-//            TableSectionData(rows: rows)
-//        ]
     }
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
         listView.applyData(animated: false)
-//        collectionController.reload(animated: false)
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let controller = defaultSectionController(for: object)
-
-        if let stopArrSection = controller as? StopArrivalSectionController {
-            stopArrSection.delegate = self
-        } else if let alertsSection = controller as? ServiceAlertsSectionController {
-            alertsSection.delegate = self
-        }
-
-        return controller
     }
 
     var operationError: Error? {
@@ -788,7 +745,6 @@ public class StopViewController: UIViewController,
 
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
-//    private lazy var collectionController = CollectionController(application: application, dataSource: self)
 
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
@@ -808,7 +764,6 @@ public class StopViewController: UIViewController,
 
     func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController) {
         stopViewShowsServiceAlerts.toggle()
-//        self.collectionController.reload(animated: true)
     }
 
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
