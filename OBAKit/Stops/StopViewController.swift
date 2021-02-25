@@ -26,6 +26,7 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     Idleable,
     ListAdapterDataSource,
+    OBAListViewDataSource,
     ModalDelegate,
     Previewable,
     SectionDataBuilders,
@@ -152,9 +153,12 @@ public class StopViewController: UIViewController,
         installSwipeOptionsNudge()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
-        collectionController.collectionView.addSubview(refreshControl)
+
+        listView.obaDataSource = self
+        listView.formatters = application.formatters
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+        listView.addSubview(refreshControl)
 
         view.addSubview(fakeToolbar)
 
@@ -168,10 +172,10 @@ public class StopViewController: UIViewController,
             fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
-        var inset = collectionController.collectionView.contentInset
+        var inset = listView.contentInset
         inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-        collectionController.collectionView.contentInset = inset
-        collectionController.collectionView.scrollIndicatorInsets = inset
+        listView.contentInset = inset
+        listView.scrollIndicatorInsets = inset
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -207,18 +211,18 @@ public class StopViewController: UIViewController,
             return
         }
 
-        collectionController.onReload = { [weak self] in
-            guard let self = self else { return }
-            for cell in self.collectionController.collectionView.sortedVisibleCells {
-                if let cell = cell as? StopArrivalCell,
-                   let arrDep = cell.arrivalDeparture,
-                   arrDep.temporalState != .past {
-                    self.showSwipeOptionsNudge(on: cell)
-                    self.collectionController.onReload = nil
-                    return
-                }
-            }
-        }
+//        collectionController.onReload = { [weak self] in
+//            guard let self = self else { return }
+//            for cell in self.collectionController.collectionView.sortedVisibleCells {
+//                if let cell = cell as? StopArrivalCell,
+//                   let arrDep = cell.arrivalDeparture,
+//                   arrDep.temporalState != .past {
+//                    self.showSwipeOptionsNudge(on: cell)
+//                    self.collectionController.onReload = nil
+//                    return
+//                }
+//            }
+//        }
     }
 
     private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
@@ -389,13 +393,18 @@ public class StopViewController: UIViewController,
         self.errorBulletin?.show(in: uiApp)
     }
 
+    // MARK: - OBAListView
+    public func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return stopArrivalsSections
+    }
+
     // MARK: - IGListKit
 
     /// Generates a collection of `ListDiffable` objects that should be displayed in a Context Menu preview mode.
     private func objectsForPreviewMode() -> [ListDiffable] {
         var sections = [ListDiffable?]()
         sections.append(stopHeaderSection)
-        sections.append(contentsOf: stopArrivalsSections)
+//        sections.append(contentsOf: stopArrivalsSections)
         return sections.compactMap { $0 }
     }
 
@@ -422,7 +431,7 @@ public class StopViewController: UIViewController,
             sections.append(TableHeaderData(title: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")))
         }
 
-        sections.append(contentsOf: stopArrivalsSections)
+//        sections.append(contentsOf: stopArrivalsSections)
 
         sections.append(loadMoreSection)
 
@@ -459,44 +468,49 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Stop Arrivals
-
-    private var stopArrivalsSections: [ListDiffable] {
-        guard let stopArrivals = stopArrivals else { return [] }
+    private var stopArrivalsSections: [OBAListViewSection] {
+        guard let stopArrivals = self.stopArrivals else { return [] }
+        var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
             let arrDeps: [ArrivalDeparture]
             if isListFiltered {
                 arrDeps = stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences)
-            }
-            else {
+            } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            let arrDepRows: [ArrivalDepartureSectionData] = arrDeps.map {
-                buildArrivalDepartureSectionData(arrivalDeparture: $0)
-            }
-            return addWalkTimeRow(to: arrDepRows)
-        }
-        else {
+            var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
+            addWalkTimeRow(to: &items)
+            sections = [sectionForGroup(groupRoute: nil, items: items)]
+        } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-
-            var rows = [ListDiffable]()
-
-            for g in groups {
-                rows.append(TableHeaderData(title: g.route.longName ?? g.route.shortName))
-                let arrDepRows = g.arrivalDepartures.map {
-                    buildArrivalDepartureSectionData(arrivalDeparture: $0)
-                }
-                rows.append(contentsOf: addWalkTimeRow(to: arrDepRows))
+            sections = groups.map { group -> OBAListViewSection in
+                var items = group.arrivalDepartures.map { arrivalDepartureItem(for: $0).typeErased }
+                addWalkTimeRow(to: &items)
+                return sectionForGroup(groupRoute: group.route, items: items)
             }
-            return rows
         }
+
+        return sections
     }
 
-    private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
+    private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
+        return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
+    }
 
-        return data
+    func sectionForGroup(groupRoute: Route?, items: [AnyOBAListViewItem]) -> OBAListViewSection {
+        let sectionID: String
+        let sectionName: String?
+        if let groupRoute = groupRoute {
+            sectionID = "stop_arrivals_\(groupRoute.id)"
+            sectionName = groupRoute.longName ?? groupRoute.shortName
+        } else {
+            sectionID = "stop_arrivals"
+            sectionName = nil
+        }
+
+        return OBAListViewSection(id: sectionID, title: sectionName, contents: items)
     }
 
     /// Tracks arrival/departure times for `ArrivalDeparture`s.
@@ -602,32 +616,26 @@ public class StopViewController: UIViewController,
         return highlight
     }
 
-    private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, arrivalDepartureSections: [ArrivalDepartureSectionData]) -> Int? {
-        for (idx, elt) in arrivalDepartureSections.enumerated() {
-            let interval = elt.arrivalDeparture.arrivalDepartureDate.timeIntervalSinceNow
-            if interval >= walkTimeInterval {
-                return idx
-            }
+    private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, items: [AnyOBAListViewItem]) -> Int? {
+        for (idx, elt) in items.enumerated() {
+            guard let arrDep = elt.as(ArrivalDepartureItem.self) else { continue }
+            let interval = arrDep.scheduledDate.timeIntervalSinceNow
+            if interval >= walkTimeInterval { return idx }
         }
         return nil
     }
 
-    private func addWalkTimeRow(to arrivalDepartureSections: [ArrivalDepartureSectionData]) -> [ListDiffable] {
-        guard
-            arrivalDepartureSections.count > 0,
-            let currentLocation = application.locationService.currentLocation,
-            let stopLocation = stop?.location,
-            let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
-        else { return arrivalDepartureSections }
+    private func addWalkTimeRow(to items: inout [AnyOBAListViewItem]) {
+        guard items.count > 0,
+              let currentLocation = application.locationService.currentLocation,
+              let stopLocation = stop?.location,
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
+        else { return }
 
-        if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, arrivalDepartureSections: arrivalDepartureSections) {
-            var sections = [ListDiffable](arrivalDepartureSections)
-            let walkTimeSection = WalkTimeSectionData(distance: currentLocation.distance(from: stopLocation), timeToWalk: walkingTime)
-            sections.insert(walkTimeSection, at: insertionIndex)
-            return sections
-        }
-        else {
-            return arrivalDepartureSections
+        if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
+            let distance = currentLocation.distance(from: stopLocation)
+            let walkItem = StopArrivalWalkItem(onSelectAction: nil, distance: distance, timeToWalk: walkingTime).typeErased
+            items.insert(walkItem, at: insertionIndex)
         }
     }
 
@@ -736,7 +744,8 @@ public class StopViewController: UIViewController,
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
-        collectionController.reload(animated: false)
+        listView.applyData(animated: false)
+//        collectionController.reload(animated: false)
     }
 
     public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
@@ -754,7 +763,8 @@ public class StopViewController: UIViewController,
     var operationError: Error? {
         didSet {
             DispatchQueue.main.async {
-                self.collectionController.reload(animated: true)
+                self.listView.applyData(animated: true)
+//                self.collectionController.reload(animated: true)
             }
         }
     }
@@ -773,8 +783,8 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
+    private lazy var listView = OBAListView()
+//    private lazy var collectionController = CollectionController(application: application, dataSource: self)
 
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
@@ -794,7 +804,7 @@ public class StopViewController: UIViewController,
 
     func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController) {
         stopViewShowsServiceAlerts.toggle()
-        self.collectionController.reload(animated: true)
+//        self.collectionController.reload(animated: true)
     }
 
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
