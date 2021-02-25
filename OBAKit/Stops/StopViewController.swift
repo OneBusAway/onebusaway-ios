@@ -405,6 +405,7 @@ public class StopViewController: UIViewController,
         sections.append(hiddenRoutesToggle)
         sections.append(contentsOf: stopArrivalsSections)
         sections.append(loadMoreSection)
+        sections.append(moreOptions)
         return sections.compactMap({ $0 })
     }
 
@@ -443,7 +444,7 @@ public class StopViewController: UIViewController,
 //        sections.append(loadMoreSection)
 
         // More Options
-        sections.append(contentsOf: moreOptions)
+//        sections.append(contentsOf: moreOptions)
 
         return sections.compactMap { $0 }
     }
@@ -637,8 +638,8 @@ public class StopViewController: UIViewController,
 
         if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
             let distance = currentLocation.distance(from: stopLocation)
-            let walkItem = StopArrivalWalkItem(onSelectAction: nil, distance: distance, timeToWalk: walkingTime).typeErased
-            items.insert(walkItem, at: insertionIndex)
+            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime)
+            items.insert(walkItem.typeErased, at: insertionIndex)
         }
     }
 
@@ -683,18 +684,18 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/More Options
 
-    private var moreOptions: [ListDiffable] {
-        var rows = [TableRowData]()
+    private var moreOptions: OBAListViewSection {
+        var items: [AnyOBAListViewItem] = []
 
         if let stop = stop {
-            let nearbyStops = TableRowData(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let nearbyStops = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
                 let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
                 self.application.viewRouter.navigate(to: nearbyController, from: self)
             }
-            rows.append(nearbyStops)
+            items.append(nearbyStops.typeErased)
 
-            let appleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
                     let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate)
@@ -702,10 +703,10 @@ public class StopViewController: UIViewController,
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(appleMaps)
+            items.append(appleMaps.typeErased)
 
             #if !targetEnvironment(simulator)
-            let googleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
                     let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
@@ -714,34 +715,36 @@ public class StopViewController: UIViewController,
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(googleMaps)
+            items.append(googleMaps.typeErased)
             #endif
         }
 
         // Report Problem
-        let reportProblem = TableRowData(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            self.showReportProblem()
+        let reportProblem = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
+            self?.showReportProblem()
         }
-        rows.append(reportProblem)
+        items.append(reportProblem.typeErased)
 
         // All Service Alerts
         if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
-            let row = TableRowData(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
+            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
                 let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
                 self.application.viewRouter.navigate(to: controller, from: self)
             }
-            row.previewDestination = { [weak self] in
-                guard let self = self else { return nil }
-                return ServiceAlertListController(application: self.application, serviceAlerts: alerts)
-            }
-            rows.append(row)
+            // TODO: obalistview preview destination
+//            row.previewDestination = { [weak self] in
+//                guard let self = self else { return nil }
+//                return ServiceAlertListController(application: self.application, serviceAlerts: alerts)
+//            }
+            items.append(row.typeErased)
         }
 
-        return [
-            TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
-            TableSectionData(rows: rows)
-        ]
+        return OBAListViewSection(id: "more_options_section", title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), contents: items)
+
+//        return [
+//            TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
+//            TableSectionData(rows: rows)
+//        ]
     }
 
     /// Call this method after data has been reloaded in this controller
