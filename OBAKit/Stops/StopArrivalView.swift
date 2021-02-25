@@ -206,10 +206,11 @@ class StopArrivalView: UIView {
 
     private var _notificationCenter: NotificationCenter! {
         didSet {
-            _notificationCenter.addObserver(self,
-                                            selector: #selector(contentSizeDidChange),
-                                            name: UIContentSizeCategory.didChangeNotification,
-                                            object: nil)
+            _notificationCenter.addObserver(
+                self,
+                selector: #selector(contentSizeDidChange),
+                name: UIContentSizeCategory.didChangeNotification,
+                object: nil)
         }
     }
 
@@ -229,7 +230,7 @@ class StopArrivalView: UIView {
     }
 
     func configureView(for contentConfiguration: ArrivalDepartureContentConfiguration) {
-        if deemphasizePastEvents {
+        if contentConfiguration.deemphasizePastEvents {
             alpha = contentConfiguration.viewModel.temporalState == .past ? 0.5 : 1.0
         }
 
@@ -240,16 +241,14 @@ class StopArrivalView: UIView {
         minutesLabel.textColor = contentConfiguration.colorForScheduleStatus
         accessibilityTimeLabel.text = contentConfiguration.accessibilityTimeLabelText
         accessibilityScheduleDeviationLabel.text = contentConfiguration.accessibilityScheduleDeviationText
+        accessibilityRelativeTimeBadge.configure(contentConfiguration.departureTimeBadgeConfiguration)
 
         accessibilityLabel = contentConfiguration.accessibilityLabel
         accessibilityValue = contentConfiguration.accessibilityValue
         accessibilityTraits = [.button, .updatesFrequently]
         isAccessibilityElement = true
 
-        normalInfoStack.forEach { $0.isHidden = isAccessibility }
-        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
-
-        infoStack.spacing = isAccessibility ? ThemeMetrics.padding : 0
+        layoutAccessibilityElements()
     }
 
     func configureView(for traitCollection: UITraitCollection) {
@@ -283,6 +282,10 @@ class StopArrivalView: UIView {
         accessibilityTraits = [.button, .updatesFrequently]
         isAccessibilityElement = true
 
+        layoutAccessibilityElements()
+    }
+
+    private func layoutAccessibilityElements() {
         normalInfoStack.forEach { $0.isHidden = isAccessibility }
         accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
 
@@ -290,6 +293,6 @@ class StopArrivalView: UIView {
     }
 
     @objc func contentSizeDidChange(_ notification: Notification) {
-        configureView(for: traitCollection)
+        layoutAccessibilityElements()
     }
 }
