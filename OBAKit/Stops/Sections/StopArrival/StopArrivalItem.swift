@@ -34,7 +34,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     let isAlarmAvailable: Bool
 
-    init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool) {
+    init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool, onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
         self.identifier = arrivalDeparture.id
         self.routeID = arrivalDeparture.routeID
         self.stopID = arrivalDeparture.stopID
@@ -50,6 +50,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
 
         self.isAlarmAvailable = isAlarmAvailable
+        self.onSelectAction = onSelectAction
     }
 
     func hash(into hasher: inout Hasher) {

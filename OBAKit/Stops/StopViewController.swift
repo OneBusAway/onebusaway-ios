@@ -30,7 +30,6 @@ public class StopViewController: UIViewController,
     Previewable,
     SectionDataBuilders,
     ServiceAlertsSectionControllerDelegate,
-    StopArrivalSectionControllerDelegate,
     StopPreferencesDelegate {
 
     public let application: Application
@@ -471,7 +470,7 @@ public class StopViewController: UIViewController,
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
+        return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable, onSelectAction: didSelectArrivalDepartureItem)
     }
 
     func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
@@ -498,9 +497,11 @@ public class StopViewController: UIViewController,
     //           lifecycle of a StopViewController is ever measured in days or weeks, then we should
     //           revisit this decision.
 
-    // MARK: - StopArrivalSectionControllerDelegate methods
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, didSelect arrivalDeparture: ArrivalDepartureSectionData) {
-        self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture.arrivalDeparture, from: self)
+    func didSelectArrivalDepartureItem(_ selectedItem: ArrivalDepartureItem) {
+        guard let selectedArrivalDeparture = stopArrivals?.arrivalsAndDepartures.filter({ $0.id == selectedItem.identifier }).first else {
+            return
+        }
+        self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
     }
 
     func stopArrivalSectionController(_ controller: StopArrivalSectionController, swipeActionsFor arrivalDeparture: ArrivalDepartureSectionData) -> [SwipeAction]? {
