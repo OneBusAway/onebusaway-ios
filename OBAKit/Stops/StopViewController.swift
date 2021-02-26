@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
 import CoreLocation
 
@@ -26,10 +25,10 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     Idleable,
     OBAListViewDataSource,
+    OBAListViewContextMenuDelegate,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    SectionDataBuilders,
     StopPreferencesDelegate {
 
     /// The available sections in this view controller.
@@ -172,6 +171,7 @@ public class StopViewController: UIViewController,
         view.backgroundColor = ThemeColors.shared.systemBackground
 
         listView.obaDataSource = self
+        listView.contextMenuDelegate = self
         listView.collapsibleSectionsDelegate = self
         listView.formatters = application.formatters
 
@@ -527,8 +527,12 @@ public class StopViewController: UIViewController,
     //           lifecycle of a StopViewController is ever measured in days or weeks, then we should
     //           revisit this decision.
 
+    func arrivalDeparture(forViewModel viewModel: ArrivalDepartureItem) -> ArrivalDeparture? {
+        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.identifier }).first
+    }
+
     func didSelectArrivalDepartureItem(_ selectedItem: ArrivalDepartureItem) {
-        guard let selectedArrivalDeparture = stopArrivals?.arrivalsAndDepartures.filter({ $0.id == selectedItem.identifier }).first else {
+        guard let selectedArrivalDeparture = arrivalDeparture(forViewModel: selectedItem) else {
             return
         }
         self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
@@ -569,7 +573,61 @@ public class StopViewController: UIViewController,
         return actions
     }
 
-    @available(iOS 13, *)
+    private func stopArrivalContextMenu(_ viewModel: ArrivalDepartureItem) -> OBAListViewMenuActions {
+        let preview: OBAListViewMenuActions.PreviewProvider = {
+            return self.previewStopArrival(viewModel)
+        }
+
+        let performPreview: VoidBlock = {
+            self.performPreviewStopArrival(viewModel)
+        }
+
+        let menuProvider: OBAListViewMenuActions.MenuProvider = { _ in
+            var actions = [UIAction]()
+
+            if viewModel.isAlarmAvailable {
+                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
+                    self.addAlarm(viewModel: viewModel)
+                }
+                actions.append(alarm)
+            }
+
+            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
+                self.addBookmark(viewModel: viewModel)
+            }
+            actions.append(addBookmark)
+
+            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
+                self.shareTripStatus(viewModel: viewModel)
+            }
+            actions.append(shareTrip)
+
+            // Create and return a UIMenu with all of the actions as children
+            return UIMenu(title: viewModel.name, children: actions)
+        }
+
+        return OBAListViewMenuActions(previewProvider: preview, performPreviewAction: performPreview, contextMenuProvider: menuProvider)
+    }
+
+    private func previewStopArrival(_ viewModel: ArrivalDepartureItem) -> UIViewController? {
+        guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return nil }
+        let vc = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
+        self.previewingVC = (arrivalDeparture.id, vc)
+        return vc
+    }
+
+    private func performPreviewStopArrival(_ viewModel: ArrivalDepartureItem) {
+        if let previewingVC = self.previewingVC,
+           previewingVC.identifier == viewModel.identifier,
+           let tripVC = previewingVC.vc as? TripViewController {
+            tripVC.exitPreviewMode()
+            application.viewRouter.navigate(to: tripVC, from: self)
+        } else {
+            guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return }
+            application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
+        }
+    }
+
     func stopArrivalSectionController(_ controller: StopArrivalSectionController, contextMenuConfigurationFor arrivalDeparture: ArrivalDepartureSectionData) -> UIContextMenuConfiguration? {
         let previewProvider = { [weak self] () -> UIViewController? in
             guard let self = self else { return nil }
@@ -774,14 +832,14 @@ public class StopViewController: UIViewController,
         self?.refresh()
     }
 
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        guard let error = operationError else { return nil }
-
-        let emptyView = EmptyDataSetView(alignment: .center)
-        emptyView.configure(with: error, buttonConfig: operationRetryButton)
-
-        return emptyView
-    }
+//    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+//        guard let error = operationError else { return nil }
+//
+//        let emptyView = EmptyDataSetView(alignment: .center)
+//        emptyView.configure(with: error, buttonConfig: operationRetryButton)
+//
+//        return emptyView
+//    }
 
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
@@ -809,6 +867,14 @@ public class StopViewController: UIViewController,
     // Helper.
     func listViewSection<Item: OBAListViewItem>(for section: ListSections, title: String?, items: [Item]) -> OBAListViewSection {
         return OBAListViewSection(id: section.sectionID, title: title, contents: items)
+    }
+
+    var previewingVC: (identifier: String, vc: UIViewController)?
+    public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
+        if let arrDepItem = item.as(ArrivalDepartureItem.self) {
+            return stopArrivalContextMenu(arrDepItem)
+        }
+        return nil
     }
 
     // MARK: - ServiceAlertsSectionController methods
@@ -874,6 +940,11 @@ public class StopViewController: UIViewController,
 
     private var alarmBuilder: AlarmBuilder?
 
+    func addAlarm(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        addAlarm(arrivalDeparture: arrivalDeparture)
+    }
+
     func addAlarm(arrivalDeparture: ArrivalDeparture) {
         alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
         alarmBuilder?.showBulletin(above: self)
@@ -896,6 +967,10 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Bookmarks
+    private func addBookmark(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        addBookmark(arrivalDeparture: arrivalDeparture)
+    }
 
     private func addBookmark(arrivalDeparture: ArrivalDeparture) {
         let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
@@ -918,6 +993,10 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
+    func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        shareTripStatus(arrivalDeparture: arrivalDeparture)
+    }
 
     func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
         guard

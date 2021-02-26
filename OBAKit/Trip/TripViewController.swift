@@ -127,7 +127,10 @@ class TripViewController: UIViewController,
 
         if isViewLoaded, floatingPanel.parent == nil {
             floatingPanel.addPanel(toParent: self)
+            floatingPanel.move(to: .half, animated: true)
         }
+
+        tripDetailsController.listView.applyData()
     }
 
     // MARK: - Idle Timer
@@ -214,6 +217,9 @@ class TripViewController: UIViewController,
 
     func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
         showTripDetails = vc.position != .tip
+        tripDetailsController.configureView(for: vc.position)
+
+        guard !isBeingPreviewed else { return }
 
         // We don't need to set the map view's margins if the drawer will take up the whole screen.
         if vc.position != .full {
@@ -224,8 +230,6 @@ class TripViewController: UIViewController,
                 mapView.directionalLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: 0, bottom: drawerHeight, trailing: 0)
             }
         }
-
-        self.tripDetailsController.configureView(for: vc.position)
     }
 
     // MARK: - Trip Details Data

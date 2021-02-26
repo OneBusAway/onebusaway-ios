@@ -158,7 +158,7 @@ class TripFloatingPanelController: UIViewController,
     }
 
     // MARK: - UI
-    private lazy var listView = OBAListView()
+    var listView = OBAListView()
     private static let ServiceAlertsSectionID = "service_alerts"
 
     var collapsedSections: Set<OBAListViewSection.ID> = []
