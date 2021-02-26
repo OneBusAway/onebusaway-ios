@@ -528,7 +528,12 @@ public class StopViewController: UIViewController,
             sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
         }
 
-        var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
+        let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
+
+        // Sometimes stopArrivals will respond with duplicate entries, so get rid of them.
+        var items = Set(arrDepItems)
+            .sorted(by: \.arrivalDepartureDate)
+            .map { $0.typeErased }
         addWalkTimeRow(to: &items)
 
         return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
