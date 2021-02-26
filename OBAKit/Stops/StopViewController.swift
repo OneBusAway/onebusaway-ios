@@ -26,11 +26,30 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     Idleable,
     OBAListViewDataSource,
+    OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
     SectionDataBuilders,
-    ServiceAlertsSectionControllerDelegate,
     StopPreferencesDelegate {
+
+    /// The available sections in this view controller.
+    enum ListSections {
+        case stopHeader
+        case serviceAlerts
+        case hiddenRoutesToggle
+        case arrivalDepartures(suffix: String)
+        case loadMoreButton
+        case moreOptions
+
+        var sectionID: String {
+            switch self {
+            case .arrivalDepartures(let suffix):
+                return "section_arrival_departures_\(suffix)"
+            default:
+                return "section_\(self)"
+            }
+        }
+    }
 
     public let application: Application
 
@@ -153,12 +172,14 @@ public class StopViewController: UIViewController,
         view.backgroundColor = ThemeColors.shared.systemBackground
 
         listView.obaDataSource = self
+        listView.collapsibleSectionsDelegate = self
         listView.formatters = application.formatters
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
         listView.register(listViewItem: SegmentedControlItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: MessageButtonItem.self)
+        listView.register(listViewItem: StopHeaderItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -180,6 +201,10 @@ public class StopViewController: UIViewController,
         inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
         listView.contentInset = inset
         listView.scrollIndicatorInsets = inset
+
+        if !stopViewShowsServiceAlerts {
+            collapsedSections = [ListSections.serviceAlerts.sectionID]
+        }
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -427,6 +452,7 @@ public class StopViewController: UIViewController,
         // for toggling hidden routes is visible.
         let showArrivalsHeader = serviceAlertsSection != nil && hiddenRoutes == nil
 
+        sections.append(stopHeaderSection)
         sections.append(serviceAlerts)
         sections.append(hiddenRoutes)
         sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
@@ -436,14 +462,17 @@ public class StopViewController: UIViewController,
     }
 
     private func itemsForPreviewMode() -> [OBAListViewSection] {
-        return stopArrivalsSection(showSectionHeaders: false)
+        var sections: [OBAListViewSection?] = []
+        sections.append(stopHeaderSection)
+        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: false))
+        return sections.compactMap { $0 }
     }
 
     // MARK: - Data/Stop Header
-
-    private var stopHeaderSection: StopHeaderSection? {
+    private var stopHeaderSection: OBAListViewSection? {
         guard let stop = stop else { return nil }
-        return StopHeaderSection(stop: stop, application: application)
+        let item = StopHeaderItem(stop: stop, application: application)
+        return listViewSection(for: .stopHeader, title: nil, items: [item])
     }
 
     // MARK: - Data/Stop Arrivals
@@ -477,16 +506,17 @@ public class StopViewController: UIViewController,
         let sectionID: String
         let sectionName: String?
         if let groupRoute = groupRoute {
-            sectionID = "stop_arrivals_\(groupRoute.id)"
+            sectionID = groupRoute.id
             sectionName = showSectionHeader ? (groupRoute.longName ?? groupRoute.shortName) : nil
         } else {
-            sectionID = "stop_arrivals"
+            sectionID = "all"
             sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
         }
 
         var items = arrDeps.map { arrivalDepartureItem(for: $0).typeErased }
         addWalkTimeRow(to: &items)
-        return OBAListViewSection(id: sectionID, title: sectionName, contents: items)
+
+        return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
     }
 
     /// Tracks arrival/departure times for `ArrivalDeparture`s.
@@ -621,9 +651,17 @@ public class StopViewController: UIViewController,
 
     private var serviceAlertsSection: OBAListViewSection? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        let items = alerts.map { TransitAlertDataListViewModel($0, forLocale: .current) }
+        let items = alerts.map { TransitAlertDataListViewModel($0, forLocale: .current, onSelectAction: didSelectAlert) }
 
-        return OBAListViewSection(id: "service_alerts", title: Strings.serviceAlerts, contents: items)
+        let sectionTitle: String
+        if alerts.count == 1 {
+            sectionTitle = Strings.serviceAlert
+        } else {
+            // Indicate how many service alerts there are.
+            sectionTitle = "\(Strings.serviceAlerts) (\(alerts.count))"
+        }
+
+        return listViewSection(for: .serviceAlerts, title: sectionTitle, items: items)
     }
 
     // MARK: - Data/Hidden Routes Toggle
@@ -641,7 +679,8 @@ public class StopViewController: UIViewController,
         let toggleItem = SegmentedControlItem(id: "hidden_routes_toggle", segments: segments, initialSelectedIndex: selectedIndex) { [weak self] _ in
             self?.isListFiltered.toggle()
         }
-        return OBAListViewSection(id: "hidden_routes_toggle_section", title: nil, contents: [toggleItem])
+
+        return listViewSection(for: .hiddenRoutesToggle, title: nil, items: [toggleItem])
     }
 
     // MARK: - Data/Load More
@@ -655,7 +694,7 @@ public class StopViewController: UIViewController,
             self?.loadMoreDepartures()
         }
 
-        return OBAListViewSection(id: "load_more_section", contents: [item])
+        return listViewSection(for: .loadMoreButton, title: nil, items: [item])
     }
 
     // MARK: - Data/More Options
@@ -715,7 +754,7 @@ public class StopViewController: UIViewController,
             items.append(row.typeErased)
         }
 
-        return OBAListViewSection(id: "more_options_section", title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), contents: items)
+        return listViewSection(for: .moreOptions, title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), items: items)
     }
 
     /// Call this method after data has been reloaded in this controller
@@ -746,12 +785,31 @@ public class StopViewController: UIViewController,
 
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
+    public var collapsedSections: Set<OBAListViewSection.ID> = [] {
+        didSet {
+            didCollapseSection()
+        }
+    }
+    public var selectionFeedbackGenerator: UISelectionFeedbackGenerator?
 
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
         return refreshControl
     }()
+
+    public func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
+        return section.id == ListSections.serviceAlerts.sectionID
+    }
+
+    func didCollapseSection() {
+        self.stopViewShowsServiceAlerts = !collapsedSections.contains(ListSections.serviceAlerts.sectionID)
+    }
+
+    // Helper.
+    func listViewSection<Item: OBAListViewItem>(for section: ListSections, title: String?, items: [Item]) -> OBAListViewSection {
+        return OBAListViewSection(id: section.sectionID, title: title, contents: items)
+    }
 
     // MARK: - ServiceAlertsSectionController methods
     /// Whether the map view shows the direction the user is currently facing in.
@@ -763,8 +821,8 @@ public class StopViewController: UIViewController,
     }
     private let stopViewShowsServiceAlertsKey = "stopViewShowsServiceAlerts"
 
-    func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController) {
-        stopViewShowsServiceAlerts.toggle()
+    func didSelectAlert(_ viewModel: TransitAlertDataListViewModel) {
+        application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
     }
 
     func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
