@@ -54,7 +54,6 @@ extension ListAdapterDataSource where Self: AppContext {
         switch object {
         case is AgencyAlertsSectionData: return AgencyAlertsSectionController.self
         case is ArrivalDepartureSectionData: return StopArrivalSectionController.self
-        case is EmptyDataSetSectionData: return EmptyDataSetSectionController.self
         case is ServiceAlertsSectionData: return ServiceAlertsSectionController.self
         case is TableHeaderData: return TableHeaderSectionController.self
         case is TableSectionData: return TableSectionController.self

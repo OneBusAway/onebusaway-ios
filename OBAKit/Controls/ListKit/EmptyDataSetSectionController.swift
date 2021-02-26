@@ -7,24 +7,35 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-import IGListKit
 import OBAKitCore
 
-final class EmptyDataSetSectionData: NSObject, ListDiffable {
+struct EmptyDataSetItem: OBAListViewItem {
+    var contentConfiguration: OBAContentConfiguration {
+        return EmptyDataSetContentConfiguration(viewModel: self)
+    }
+
+    static var customCellType: OBAListViewCell.Type? {
+        return EmptyDataSetCell.self
+    }
+    var onSelectAction: OBAListViewAction<EmptyDataSetItem>?
+
     // MARK: - Properties
-    let alignment: EmptyDataSetView.EmptyDataSetAlignment
-    let title: String?
-    let body: String?
-    let image: UIImage?
-    let buttonConfig: ActivityIndicatedButton.Configuration?
+    var id: String
+    var alignment: EmptyDataSetView.EmptyDataSetAlignment
+    var title: String?
+    var body: String?
+    var image: UIImage?
+    var buttonConfig: ActivityIndicatedButton.Configuration?
 
     // MARK: - Initializers
-    init(alignment: EmptyDataSetView.EmptyDataSetAlignment = .top,
+    init(id: String,
+         alignment: EmptyDataSetView.EmptyDataSetAlignment = .top,
          title: String?,
          body: String?,
          image: UIImage? = nil,
          buttonConfig: ActivityIndicatedButton.Configuration? = nil) {
 
+        self.id = id
         self.alignment = alignment
         self.title = title
         self.body = body
@@ -33,10 +44,10 @@ final class EmptyDataSetSectionData: NSObject, ListDiffable {
     }
 
     /// This initializer may set a relevant image depending on the error, only if `image == nil`.
-    convenience init(error: Error, image: UIImage? = nil, buttonConfig: ActivityIndicatedButton.Configuration? = nil) {
+    init(id: String, error: Error, image: UIImage? = nil, buttonConfig: ActivityIndicatedButton.Configuration? = nil) {
         // If no image is specified...
         guard image == nil else {
-            self.init(alignment: .center, title: nil, body: error.localizedDescription, image: image, buttonConfig: buttonConfig)
+            self.init(id: id, alignment: .center, title: nil, body: error.localizedDescription, image: image, buttonConfig: buttonConfig)
             return
         }
 
@@ -56,47 +67,46 @@ final class EmptyDataSetSectionData: NSObject, ListDiffable {
             break
         }
 
-        self.init(alignment: .center, title: nil, body: error.localizedDescription, image: icon, buttonConfig: buttonConfig)
+        self.init(id: id, alignment: .center, title: nil, body: error.localizedDescription, image: icon, buttonConfig: buttonConfig)
     }
 
-    // MARK: - ListDiffable methods
-    func diffIdentifier() -> NSObjectProtocol {
-        return "EmptyDataSetSectionData" as NSString
+    func hash(into hasher: inout Hasher) {
+        hasher.combine("EmptyDataSetItem")
     }
 
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let object = object as? EmptyDataSetSectionData else { return false }
-        return alignment == object.alignment &&
-            title == object.title &&
-            body == object.body &&
-            image == object.image &&
-            buttonConfig == object.buttonConfig
+    static func == (_ lhs: EmptyDataSetItem, _ rhs: EmptyDataSetItem) -> Bool {
+        return lhs.alignment == rhs.alignment &&
+            lhs.title == rhs.title &&
+            lhs.body == rhs.body &&
+            lhs.image == rhs.image &&
+            lhs.buttonConfig == rhs.buttonConfig
     }
 }
 
-final class EmptyDataSetSectionController: OBAListSectionController<EmptyDataSetSectionData> {
-    override public func cellForItem(at index: Int) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(type: EmptyDataSetCell.self, at: index)
-        cell.configure(with: sectionData!)
-
-        return cell
+struct EmptyDataSetContentConfiguration: OBAContentConfiguration {
+    var formatters: Formatters?
+    var viewModel: EmptyDataSetItem
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return EmptyDataSetCell.self
     }
 }
 
-final class EmptyDataSetCell: SelfSizingCollectionCell {
+final class EmptyDataSetCell: OBAListViewCell {
     var emptyDataView = EmptyDataSetView()
 
-    func configure(with sectionData: EmptyDataSetSectionData) {
+    override func apply(_ config: OBAContentConfiguration) {
+        guard let config = config as? EmptyDataSetContentConfiguration else { return }
+
         emptyDataView.removeFromSuperview()
-        emptyDataView = EmptyDataSetView(alignment: sectionData.alignment)
+        emptyDataView = EmptyDataSetView(alignment: config.viewModel.alignment)
         emptyDataView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(emptyDataView)
         emptyDataView.pinToSuperview(.readableContent)
 
-        emptyDataView.titleLabel.text = sectionData.title
-        emptyDataView.bodyLabel.text = sectionData.body
-        emptyDataView.imageView.image = sectionData.image
+        emptyDataView.titleLabel.text = config.viewModel.title
+        emptyDataView.bodyLabel.text = config.viewModel.body
+        emptyDataView.imageView.image = config.viewModel.image
 
-        emptyDataView.button.config = sectionData.buttonConfig
+        emptyDataView.button.config = config.viewModel.buttonConfig
     }
 }

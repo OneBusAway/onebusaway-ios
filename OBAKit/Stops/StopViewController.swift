@@ -34,6 +34,7 @@ public class StopViewController: UIViewController,
     /// The available sections in this view controller.
     enum ListSections {
         case stopHeader
+        case emptyData
         case serviceAlerts
         case hiddenRoutesToggle
         case arrivalDepartures(suffix: String)
@@ -180,6 +181,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
+        listView.register(listViewItem: EmptyDataSetItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -347,7 +349,8 @@ public class StopViewController: UIViewController,
 
             switch (broken, result) {
             case (true, _):
-                self.displayBrokenBookmarkMessage()
+                self.isBrokenBookmark = true
+                self.listView.applyData()
             case (_, .failure(let error)):
                 self.operationError = error
             case (false, .success(let response)):
@@ -408,31 +411,21 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Broken Bookmarks
-
-    private var errorBulletin: ErrorBulletin?
-
-    /// Displays an alert telling the user their bookmark may be broken and need to be recreated.
-    private func displayBrokenBookmarkMessage() {
-        guard let uiApp = self.application.delegate?.uiApplication else {
-            return
-        }
-
-        let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
-        self.errorBulletin = ErrorBulletin(application: self.application, message: message)
-        self.errorBulletin?.show(in: uiApp)
-    }
+    private var isBrokenBookmark: Bool = false
 
     // MARK: - OBAListView
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-//        guard stopArrivals != nil else {
-//            if let error = self.operationError {
-//                let emptyDataSection = EmptyDataSetSectionData(error: error, image: nil, buttonConfig: operationRetryButton)
-//                return [stopHeaderSection, emptyDataSection].compactMap { $0 }
-//            } else {
-//                return [stopHeaderSection].compactMap { $0 }
-//            }
-//            // TODO: show a loading message too
-//        }
+        if isBrokenBookmark { return [] }
+
+        guard stopArrivals != nil else {
+            if let error = self.operationError {
+                let emptyDataItem = EmptyDataSetItem(id: "empty_data", error: error, image: nil, buttonConfig: operationRetryButton)
+                return [stopHeaderSection, listViewSection(for: .emptyData, title: nil, items: [emptyDataItem])].compactMap { $0 }
+            } else {
+                return [stopHeaderSection].compactMap { $0 }
+            }
+            // TODO: show a loading message too
+        }
 
         if inPreviewMode {
             return itemsForPreviewMode()
@@ -466,6 +459,21 @@ public class StopViewController: UIViewController,
         sections.append(stopHeaderSection)
         sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: false))
         return sections.compactMap { $0 }
+    }
+
+    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        if isBrokenBookmark {
+            let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+
+            let bookmarkBrokenImage = UIImage(systemName: "bookmark.slash.fill")?.withTintColor(.systemRed)    // iOS 14+ only.
+            return .standard(.init(alignment: .center, title: "Broken Bookmark", body: message, image: bookmarkBrokenImage, buttonConfig: .none))
+        }
+
+        if let error = self.operationError {
+            return .standard(.init(error: error))
+        }
+
+        return nil
     }
 
     // MARK: - Data/Stop Header
