@@ -9,14 +9,12 @@
 
 import UIKit
 import OBAKitCore
-import IGListKit
 
 /// Displays a list of `ServiceAlert` objects.
 final class ServiceAlertListController: UIViewController,
     AppContext,
-    ListAdapterDataSource,
-    Previewable,
-    SectionDataBuilders {
+    OBAListViewDataSource,
+    Previewable {
 
     private let serviceAlerts: [ServiceAlert]
 
@@ -40,14 +38,15 @@ final class ServiceAlertListController: UIViewController,
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+
+        listView.obaDataSource = self
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     // MARK: - Previewable
@@ -60,21 +59,16 @@ final class ServiceAlertListController: UIViewController,
         // nop.
     }
 
-    // MARK: - Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
+    // MARK: - ListView
+    private let listView = OBAListView()
 
     // MARK: - IGListKit
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return [sectionData(from: serviceAlerts, collapsedState: .alwaysExpanded)]
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, forLocale: .current, onSelectAction: onSelectAlert)}
+        return [OBAListViewSection(id: "alerts", contents: items)]
     }
 
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        nil
+    func onSelectAlert(_ viewModel: TransitAlertDataListViewModel) {
+        application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
     }
 }

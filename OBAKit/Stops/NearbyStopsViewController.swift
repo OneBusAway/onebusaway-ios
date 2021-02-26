@@ -12,7 +12,6 @@ import CoreLocation
 import OBAKitCore
 
 class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIResponse<[Stop]>>, [Stop]>,
-    SectionDataBuilders,
     OBAListViewDataSource,
     UISearchResultsUpdating {
 
