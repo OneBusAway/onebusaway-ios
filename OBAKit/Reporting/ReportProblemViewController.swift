@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
 
 /// The 'hub' view controller for reporting problems about stops and trips.
@@ -17,9 +16,7 @@ import OBAKitCore
 ///
 /// - Note: This view controller expects to be presented modally.
 class ReportProblemViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, StopArrivals>,
-    HasTableStyle,
-    ListAdapterDataSource,
-    StopArrivalSectionControllerDelegate {
+    OBAListViewDataSource {
 
     private let stop: Stop
 
@@ -49,15 +46,16 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
 
         view.backgroundColor = ThemeColors.shared.groupedTableBackground
 
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+        listView.obaDataSource = self
+        listView.formatters = application.formatters
+        listView.register(listViewItem: ArrivalDepartureItem.self)
+
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
     }
 
     // MARK: - Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self, style: tableStyle)
-
-    public let tableStyle = CollectionController.TableCollectionStyle.grouped
+    let listView = OBAListView()
 
     // MARK: - OperationController
 
@@ -83,70 +81,45 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
     }
 
     override func updateUI() {
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     // MARK: - IGListKit
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var sections = [ListDiffable]()
-
-        sections.append(contentsOf: stopProblemSection)
-
-        if let vehicleProblemSections = vehicleProblemSections {
-            sections.append(contentsOf: vehicleProblemSections)
-        }
-
-        return sections
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        return nil
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return [stopProblemSection, vehicleProblemSection].compactMap { $0 }
     }
 
     // MARK: - Data Sections
 
-    private var stopProblemSection: [ListDiffable] {
+    private var stopProblemSection: OBAListViewSection {
         let fmt = OBALoc(
             "report_problem_controller.report_stop_problem_fmt",
             value: "Report a problem with the stop at %@",
             comment: "Report a problem with the stop at {Stop Name}"
         )
 
-        let row = TableRowData(title: String(format: fmt, stop.name), accessoryType: .disclosureIndicator) { [weak self] _ in
+        let row = OBAListRowView.DefaultViewModel(title: String(format: fmt, stop.name), accessoryType: .disclosureIndicator) { [weak self] _ in
             guard let self = self else { return }
             let stopProblemController = StopProblemViewController(application: self.application, stop: self.stop)
             self.navigationController?.pushViewController(stopProblemController, animated: true)
         }
 
-        return [
-            TableHeaderData(title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller.")),
-            TableSectionData(row: row)
-        ]
+        return OBAListViewSection(id: "stop_problem_section", title: OBALoc("report_problem_controller.stop_problem.header", value: "Problem with the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: [row])
     }
 
-    private var vehicleProblemSections: [ListDiffable]? {
+    private var vehicleProblemSection: OBAListViewSection? {
         guard let arrivalsAndDepartures = data?.arrivalsAndDepartures, arrivalsAndDepartures.count > 0 else {
             return nil
         }
 
-        var rows: [ListDiffable] = [TableHeaderData(title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."))]
+        let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, isDeepLinkingAvailable: false, onSelectAction: onSelectArrivalDeparture) }
 
-        for arrDep in arrivalsAndDepartures {
-            let row = ArrivalDepartureSectionData(arrivalDeparture: arrDep)
-            rows.append(row)
-        }
-
-        return rows
+        return OBAListViewSection(id: "vehicle_problem_section", title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: rows)
     }
 
-    // MARK: - StopArrivalDepartureSectionControllerDelegate methods
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, didSelect arrivalDeparture: ArrivalDepartureSectionData) {
-        let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrivalDeparture.arrivalDeparture)
+    func onSelectArrivalDeparture(_ arrivalDepartureItem: ArrivalDepartureItem) {
+        guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.identifier }) else { return }
+        let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
         self.navigationController?.pushViewController(controller, animated: true)
     }
 
