@@ -499,7 +499,14 @@ public class StopViewController: UIViewController,
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        return ArrivalDepartureItem(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable, onSelectAction: didSelectArrivalDepartureItem)
+        return ArrivalDepartureItem(
+            arrivalDeparture: arrivalDeparture,
+            isAlarmAvailable: alarmAvailable,
+            isDeepLinkingAvailable: application.features.deepLinking == .running,
+            onSelectAction: didSelectArrivalDepartureItem,
+            alarmAction: addAlarm,
+            bookmarkAction: addBookmark,
+            shareAction: shareTripStatus)
     }
 
     func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
@@ -536,41 +543,6 @@ public class StopViewController: UIViewController,
             return
         }
         self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
-    }
-
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, swipeActionsFor arrivalDeparture: ArrivalDepartureSectionData) -> [SwipeAction]? {
-        var actions: [SwipeAction] = []
-
-        let bookmarkAction = SwipeAction(style: .default, title: Strings.bookmark) { (_, _) in
-            self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-        }
-        bookmarkAction.backgroundColor = ThemeColors.shared.brand
-        bookmarkAction.font = UIFont.preferredFont(forTextStyle: .caption1)
-        bookmarkAction.image = Icons.addBookmark
-        actions.append(bookmarkAction)
-
-        if arrivalDeparture.isAlarmAvailable {
-            let addAlarm = SwipeAction(style: .default, title: Strings.alarm) { (_, _) in
-                self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-            addAlarm.backgroundColor = ThemeColors.shared.blue
-            addAlarm.font = UIFont.preferredFont(forTextStyle: .caption1)
-            addAlarm.image = Icons.addAlarm
-            actions.append(addAlarm)
-        }
-
-        if application.features.deepLinking == .running {
-            let shareAction = SwipeAction(style: .default, title: Strings.share) { _, _ in
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-
-            shareAction.backgroundColor = UIColor.purple
-            shareAction.font = UIFont.preferredFont(forTextStyle: .caption1)
-            shareAction.image = Icons.shareFill
-            actions.append(shareAction)
-        }
-
-        return actions
     }
 
     private func stopArrivalContextMenu(_ viewModel: ArrivalDepartureItem) -> OBAListViewMenuActions {
@@ -626,43 +598,6 @@ public class StopViewController: UIViewController,
             guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return }
             application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
         }
-    }
-
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, contextMenuConfigurationFor arrivalDeparture: ArrivalDepartureSectionData) -> UIContextMenuConfiguration? {
-        let previewProvider = { [weak self] () -> UIViewController? in
-            guard let self = self else { return nil }
-            let controller = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            controller.enterPreviewMode()
-            return controller
-        }
-
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider) { _ in
-            var actions = [UIAction]()
-
-            if arrivalDeparture.isAlarmAvailable {
-                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
-                    self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-                }
-                actions.append(alarm)
-            }
-
-            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
-                self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-            actions.append(addBookmark)
-
-            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-            actions.append(shareTrip)
-
-            // Create and return a UIMenu with all of the actions as children
-            return UIMenu(title: arrivalDeparture.arrivalDeparture.routeShortName, children: actions)
-        }
-    }
-
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, shouldHighlightOnAppearance arrivalDeparture: ArrivalDepartureSectionData) -> Bool {
-        return shouldHighlight(arrivalDeparture: arrivalDeparture.arrivalDeparture)
     }
 
     /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
@@ -804,11 +739,6 @@ public class StopViewController: UIViewController,
                 let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
                 self.application.viewRouter.navigate(to: controller, from: self)
             }
-            // TODO: obalistview preview destination
-//            row.previewDestination = { [weak self] in
-//                guard let self = self else { return nil }
-//                return ServiceAlertListController(application: self.application, serviceAlerts: alerts)
-//            }
             items.append(row.typeErased)
         }
 

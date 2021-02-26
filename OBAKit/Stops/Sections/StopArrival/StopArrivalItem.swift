@@ -18,6 +18,10 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     var onSelectAction: OBAListViewAction<ArrivalDepartureItem>?
 
+    var alarmAction: OBAListViewAction<ArrivalDepartureItem>?
+    var bookmarkAction: OBAListViewAction<ArrivalDepartureItem>?
+    var shareAction: OBAListViewAction<ArrivalDepartureItem>?
+
     let identifier: String
     let routeID: RouteID
     let stopID: StopID
@@ -33,8 +37,61 @@ struct ArrivalDepartureItem: OBAListViewItem {
     let arrivalDepartureMinutes: Int
 
     let isAlarmAvailable: Bool
+    let isDeepLinkingAvailable: Bool
 
-    init(arrivalDeparture: ArrivalDeparture, isAlarmAvailable: Bool, onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
+    var trailingContextualActions: [OBAListViewContextualAction<ArrivalDepartureItem>]? {
+        var actions: [OBAListViewContextualAction<ArrivalDepartureItem>] = []
+
+        if let bookmarkAction = self.bookmarkAction {
+            let bookmarkAction = OBAListViewContextualAction(
+                style: .normal,
+                title: Strings.bookmark,
+                image: Icons.addBookmark,
+                backgroundColor: ThemeColors.shared.brand,
+                hidesWhenSelected: true,
+                item: self,
+                handler: bookmarkAction)
+
+            actions.append(bookmarkAction)
+        }
+
+        if isAlarmAvailable, let alarmAction = self.alarmAction {
+            let alarmAction = OBAListViewContextualAction(
+                style: .normal,
+                title: Strings.alarm,
+                image: Icons.addAlarm,
+                backgroundColor: ThemeColors.shared.blue,
+                hidesWhenSelected: true,
+                item: self,
+                handler: alarmAction)
+
+            actions.append(alarmAction)
+        }
+
+        if isDeepLinkingAvailable, let shareAction = self.shareAction {
+            let shareAction = OBAListViewContextualAction(
+                style: .normal,
+                title: Strings.share,
+                image: Icons.shareFill,
+                backgroundColor: UIColor.purple,
+                hidesWhenSelected: true,
+                item: self,
+                handler: shareAction)
+
+            actions.append(shareAction)
+        }
+
+        return actions
+    }
+
+    init(arrivalDeparture: ArrivalDeparture,
+         isAlarmAvailable: Bool,
+         isDeepLinkingAvailable: Bool,
+         onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
+         alarmAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
+         bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
+         shareAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
+
         self.identifier = arrivalDeparture.id
         self.routeID = arrivalDeparture.routeID
         self.stopID = arrivalDeparture.stopID
@@ -50,7 +107,12 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
 
         self.isAlarmAvailable = isAlarmAvailable
+        self.isDeepLinkingAvailable = isDeepLinkingAvailable
         self.onSelectAction = onSelectAction
+
+        self.alarmAction = alarmAction
+        self.bookmarkAction = bookmarkAction
+        self.shareAction = shareAction
     }
 
     func hash(into hasher: inout Hasher) {
