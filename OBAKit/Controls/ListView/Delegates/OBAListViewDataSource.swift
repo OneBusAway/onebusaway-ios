@@ -6,7 +6,10 @@
 //
 
 public protocol OBAListViewDataSource: class {
-    /// The sections you provide must have unique IDs.
+    /// Asks the data source for the items to display in the list.
+    /// - precondition: The section identifiers must be unique, and the item identifiers in each section
+    /// must be unique across all sections.
+    ///
     /// # Example implementation
     /// ```swift
     /// func items(for listView: OBAListView) -> [OBAListViewSection] {
@@ -24,9 +27,30 @@ public protocol OBAListViewDataSource: class {
     /// }
     /// ```
     /// - parameter listView: The list view that is requesting the items.
+    /// - returns: The items to display on the list view.
     func items(for listView: OBAListView) -> [OBAListViewSection]
 
     /// Optional. The view to use as the collection view background when the list is empty.
+    /// # Example ViewModel implementation
+    /// The following example displays an empty data view using a view model.
+    /// ```swift
+    /// func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+    ///     let viewModel = OBAListView.StandardEmptyDataViewModel(
+    ///         title: "No bookmarks",
+    ///         body: "Bookmark your frequent trips and stops to quick access them here")
+    ///     return .standard(viewModel)
+    /// }
+    /// ```
+    ///
+    /// # Example Custom implementation
+    /// The following examples display a custom UIView as the empty data. Note that you are responsible for
+    /// managing the lifecycle of the view yourself. See `OBAListView.EmptyData` documentation for additional details.
+    /// ```swift
+    /// lazy var emptyDataView: UIView = CustomEmptyDataView()
+    /// func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+    ///     return .custom(emptyDataView)
+    /// }
+    /// ```
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData?
 }
 
