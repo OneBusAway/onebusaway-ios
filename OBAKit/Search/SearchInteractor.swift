@@ -24,6 +24,12 @@ protocol SearchDelegate: NSObjectProtocol {
 /// experience does not provide an easy path for building out a separate search view controller. Thus, in order to avoid having
 /// to duplicate the data elements in order to provide different search experiences, `SearchInteractor` was born.
 class SearchInteractor: NSObject {
+    enum ListSection: String {
+        case recentStops
+        case bookmarks
+        case quickSearch
+    }
+
     private let userDataStore: UserDataStore
     public weak var delegate: SearchDelegate?
 
@@ -35,52 +41,52 @@ class SearchInteractor: NSObject {
         self.delegate = delegate
     }
 
-    func searchModeObjects(text: String?, listAdapter: ListAdapter) -> [ListDiffable] {
+    func searchModeObjects(text: String?) -> [OBAListViewSection] {
         guard
             let searchText = text?.trimmingCharacters(in: .whitespacesAndNewlines),
             searchText.count > 0
         else { return [] }
 
-        var sections: [ListDiffable] = []
+        var sections: [OBAListViewSection?] = []
 
-        sections.append(contentsOf: quickSearchSection(searchText: searchText))
-        sections.append(contentsOf: buildRecentStopsSection(searchText: searchText))
-        sections.append(contentsOf: buildBookmarksSection(searchText: searchText))
+        sections.append(quickSearchSection(searchText: searchText))
+        sections.append(buildRecentStopsSection(searchText: searchText))
+        sections.append(buildBookmarksSection(searchText: searchText))
 
-        return sections
+        return sections.compactMap { $0 }
     }
 
     // MARK: - Private
+    private func listSection<Item: OBAListViewItem>(for section: ListSection, title: String? = nil, contents: [Item]) -> OBAListViewSection {
+        return OBAListViewSection(id: section.rawValue, title: title, contents: contents)
+    }
 
-    private func buildRecentStopsSection(searchText: String) -> [ListDiffable] {
+    private func buildRecentStopsSection(searchText: String) -> OBAListViewSection? {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
-            TableRowData(title: stop.name, accessoryType: .disclosureIndicator) { _ in
+            OBAListRowView.DefaultViewModel(title: stop.name, accessoryType: .disclosureIndicator) { _ in
                 self.delegate?.searchInteractor(self, showStop: stop)
             }
         }
 
         guard recentStops.count > 0 else {
-            return []
+            return nil
         }
 
-        return [TableHeaderData(title: Strings.recentStops), TableSectionData(rows: recentStops)]
+        return listSection(for: .recentStops, title: Strings.recentStops, contents: recentStops)
     }
 
-    private func buildBookmarksSection(searchText: String) -> [ListDiffable] {
+    private func buildBookmarksSection(searchText: String) -> OBAListViewSection? {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
-            TableRowData(title: bookmark.name, accessoryType: .disclosureIndicator) { _ in
+            OBAListRowView.DefaultViewModel(title: bookmark.name, accessoryType: .disclosureIndicator) { _ in
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
             }
         }
 
         guard bookmarks.count > 0 else {
-            return []
+            return nil
         }
 
-        return [
-            TableHeaderData(title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header")),
-            TableSectionData(rows: bookmarks)
-        ]
+        return listSection(for: .bookmarks, title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), contents: bookmarks)
     }
 
     // MARK: - Private/Quick Search
@@ -88,7 +94,7 @@ class SearchInteractor: NSObject {
     private func quickSearchLabel(prefix: String, searchText: String) -> NSAttributedString {
         let string = NSMutableAttributedString(string: "\(prefix) ")
         let boldFont = UIFont.preferredFont(forTextStyle: .body).bold
-        let boldSearchText = NSAttributedString(string: searchText, attributes: [NSAttributedString.Key.font: boldFont])
+        let boldSearchText = NSAttributedString(string: searchText, attributes: [.font: boldFont])
         string.append(boldSearchText)
 
         return string
@@ -96,7 +102,7 @@ class SearchInteractor: NSObject {
 
     /// Creates a Quick Search section
     /// - Parameter searchText: The text that the user is searching for
-    private func quickSearchSection(searchText: String) -> [ListDiffable] {
+    private func quickSearchSection(searchText: String) -> OBAListViewSection {
         var quickSearchTypes: [(SearchType, String, UIImage)] = [
             (.route, OBALoc("search_interactor.quick_search.route_prefix", value: "Route:", comment: "Quick search prefix for Route."), Icons.route),
             (.address, OBALoc("search_interactor.quick_search.address_prefix", value: "Address:", comment: "Quick search prefix for Address."), Icons.place),
@@ -107,25 +113,23 @@ class SearchInteractor: NSObject {
             quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."), Icons.busTransport))
         }
 
-        var rows = [TableRowData]()
+        var items: [OBAListRowView.DefaultViewModel] = []
 
         let badgeRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.brand, badgeSize: 20.0)
 
         for (searchType, title, image) in quickSearchTypes {
-            let row = TableRowData(attributedTitle: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
+            var item = OBAListRowView.DefaultViewModel(title: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
                 let request = SearchRequest(query: searchText, type: searchType)
                 self.delegate?.performSearch(request: request)
             }
 
-            row.image = badgeRenderer.drawImageOnRoundedRect(image)
-            row.imageSize = badgeRenderer.badgeSize
-            rows.append(row)
+            item.image = badgeRenderer.drawImageOnRoundedRect(image)
+
+//            row.imageSize = badgeRenderer.badgeSize
+            items.append(item)
         }
 
-        return [
-            TableHeaderData(title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search")),
-            TableSectionData(rows: rows)
-        ]
+        return listSection(for: .quickSearch, title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"), contents: items)
     }
 }

@@ -21,7 +21,7 @@ protocol MapPanelDelegate: NSObjectProtocol {
 /// This is the view controller that powers the drawer on the `MapViewController`.
 class MapFloatingPanelController: VisualEffectViewController,
     AgencyAlertsDelegate,
-    AgencyAlertListKitConverters,
+    AgencyAlertListViewConverters,
     AgencyAlertsSectionControllerDelegate,
     AppContext,
     ListAdapterDataSource,
@@ -186,12 +186,12 @@ class MapFloatingPanelController: VisualEffectViewController,
     // MARK: - ListAdapterDataSource (Data Loading)
 
     public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        if inSearchMode {
-            return searchInteractor.searchModeObjects(text: searchBar.text, listAdapter: listAdapter)
-        }
-        else {
+//        if inSearchMode {
+//            return searchInteractor.searchModeObjects(text: searchBar.text, listAdapter: listAdapter)
+//        }
+//        else {
             return nearbyModeObjects(for: listAdapter)
-        }
+//        }
     }
 
     // MARK: - Nearby Mode
@@ -208,10 +208,10 @@ class MapFloatingPanelController: VisualEffectViewController,
         var sections: [ListDiffable] = []
 
         let highSeverityAlerts = application.alertsStore.recentHighSeverityAlerts
-        if highSeverityAlerts.count > 0 {
-            let section = tableSections(agencyAlerts: highSeverityAlerts, collapsedSections: highSeverityAlertCollapsedSections)
-            sections.append(contentsOf: section)
-        }
+//        if highSeverityAlerts.count > 0 {
+//            let section = tableSections(agencyAlerts: highSeverityAlerts, collapsedSections: highSeverityAlertCollapsedSections)
+//            sections.append(contentsOf: section)
+//        }
 
         if stops.count > 0 {
             let section = tableSection(stops: Array(stops.prefix(5))) { [weak self] vm in
@@ -247,7 +247,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     // MARK: - AgencyAlertsSectionControllerDelegate methods
     func agencyAlertsSectionController(_ controller: AgencyAlertsSectionController, didSelectAlert alert: AgencyAlert) {
-        self.presentAlert(alert)
+//        self.presentAlert(alert)
     }
 
     func agencyAlertsSectionControllerDidTapHeader(_ controller: AgencyAlertsSectionController) {

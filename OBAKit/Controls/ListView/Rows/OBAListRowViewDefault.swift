@@ -40,13 +40,14 @@ extension OBAListRowView {
     /// you can use this view model to define a `default` appearance list row.
     public struct DefaultViewModel: OBAListViewItem {
         public let id: UUID = UUID()
+        public var image: UIImage?
         public var title: OBAListRowConfiguration.LabelText
         public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
 
         public var onSelectAction: OBAListViewAction<DefaultViewModel>?
 
         public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(text: title, appearance: .default, accessoryType: accessoryType)
+            return OBAListRowConfiguration(image: image, text: title, appearance: .default, accessoryType: accessoryType)
         }
 
         public init(title: String, accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator, onSelectAction: OBAListViewAction<DefaultViewModel>? = nil) {

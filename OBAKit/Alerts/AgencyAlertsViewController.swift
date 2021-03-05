@@ -14,6 +14,7 @@ import SafariServices
 /// Displays `AgencyAlert` objects loaded from a Protobuf feed.
 class AgencyAlertsViewController: UIViewController,
     AgencyAlertsDelegate,
+    AgencyAlertListViewConverters,
     AppContext,
     OBAListViewCollapsibleSectionsDelegate,
     OBAListViewContextMenuDelegate,
@@ -147,17 +148,6 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return alertsStore.listViewSections(onSelectAction: { [weak self] alert in
-            self?.presentAlert(alert)
-        })
-    }
-
-    func didSelect(_ listView: OBAListView, item: AnyOBAListViewItem) {
-        guard let agencyAlert = item.as(TransitAlertDataListViewModel.self) else { return }
-        presentAlert(agencyAlert)
-    }
-
-    func presentAlert(_ alert: TransitAlertDataListViewModel) {
-        application.viewRouter.navigateTo(alert: alert.transitAlert, from: self)
+        return tableSections(agencyAlerts: alertsStore.agencyAlerts)
     }
 }
