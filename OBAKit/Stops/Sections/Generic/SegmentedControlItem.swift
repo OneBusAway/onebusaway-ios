@@ -58,7 +58,7 @@ struct SegmentedControlContentConfiguration: OBAContentConfiguration {
     }
 }
 
-class SegmentedControlCell: OBAListViewCell {
+final class SegmentedControlCell: OBAListViewCell {
     typealias OnValidChangedHandler = (Int) -> Void
 
     var onValueChangedHandler: OnValidChangedHandler?
@@ -68,6 +68,10 @@ class SegmentedControlCell: OBAListViewCell {
         control.addTarget(self, action: #selector(valueChanged(_:)), for: .valueChanged)
         return control
     }()
+
+    override var showsSeparator: Bool {
+        return false
+    }
 
     override func prepareForReuse() {
         super.prepareForReuse()

@@ -547,6 +547,8 @@ public class StopViewController: UIViewController,
         return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.identifier }).first
     }
 
+    // MARK: Actions
+
     func didSelectArrivalDepartureItem(_ selectedItem: ArrivalDepartureItem) {
         guard let selectedArrivalDeparture = arrivalDeparture(forViewModel: selectedItem) else {
             return
@@ -782,12 +784,12 @@ public class StopViewController: UIViewController,
 
     // MARK: - Collection Controller
     private lazy var listView = OBAListView()
+    public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
     public var collapsedSections: Set<OBAListViewSection.ID> = [] {
         didSet {
             didCollapseSection()
         }
     }
-    public var selectionFeedbackGenerator: UISelectionFeedbackGenerator?
 
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
@@ -803,11 +805,15 @@ public class StopViewController: UIViewController,
         self.stopViewShowsServiceAlerts = !collapsedSections.contains(ListSections.serviceAlerts.sectionID)
     }
 
-    // Helper.
+    /// Helper for creating stop view controller sections. There are a lot of sections in stopviewcontroller,
+    /// so sections must be defined in StopViewController.ListSections for safety.
     func listViewSection<Item: OBAListViewItem>(for section: ListSections, title: String?, items: [Item]) -> OBAListViewSection {
         return OBAListViewSection(id: section.sectionID, title: title, contents: items)
     }
 
+    /// The view controller currently being previewed (via context menu).
+    /// The identifier is a string (ideally a `UUID`) used when the user commits the context menu to ensure
+    /// that the `previewingVC` is actually the view controller that the user committed to.
     var previewingVC: (identifier: String, vc: UIViewController)?
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         if let arrDepItem = item.as(ArrivalDepartureItem.self) {
@@ -834,34 +840,6 @@ public class StopViewController: UIViewController,
         let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
         let nc = UINavigationController(rootViewController: serviceAlertController)
         self.present(nc, animated: true)
-    }
-
-    // MARK: - Stop Arrival Actions
-
-    public func showMoreOptions(arrivalDeparture: ArrivalDeparture, sourceView: UIView?, sourceFrame: CGRect?) {
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        actionSheet.addAction(title: Strings.addBookmark) { [weak self] _ in
-            guard let self = self else { return }
-            self.addBookmark(arrivalDeparture: arrivalDeparture)
-        }
-
-        if application.features.deepLinking == .running {
-            actionSheet.addAction(title: Strings.shareTrip) { [weak self] _ in
-                guard let self = self else { return }
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture)
-            }
-        }
-
-        actionSheet.addAction(UIAlertAction.cancelAction)
-
-        application.viewRouter.present(
-            actionSheet,
-            from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
-            popoverSourceView: sourceView,
-            popoverSourceFrame: sourceFrame
-        )
     }
 
     // MARK: - Alarms

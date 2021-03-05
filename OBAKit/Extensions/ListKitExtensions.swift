@@ -53,12 +53,10 @@ extension ListAdapterDataSource where Self: AppContext {
     private func sectionControllerType(for object: Any) -> (ListSectionController & OBAListSectionControllerInitializer).Type {
         switch object {
         case is AgencyAlertsSectionData: return AgencyAlertsSectionController.self
-        case is ArrivalDepartureSectionData: return StopArrivalSectionController.self
         case is ServiceAlertsSectionData: return ServiceAlertsSectionController.self
         case is TableHeaderData: return TableHeaderSectionController.self
         case is TableSectionData: return TableSectionController.self
         case is ToggleSectionData: return ToggleSectionController.self
-        case is WalkTimeSectionData: return WalkTimeSectionController.self
         default:
             fatalError("You are trying to render \(object), which doesn't have a SectionController mapped to it. This is a mistake!")
         }
