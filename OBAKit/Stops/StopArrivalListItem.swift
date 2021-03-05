@@ -116,6 +116,7 @@ final class StopArrivalSectionController: OBAListSectionController<ArrivalDepart
 // MARK: - View
 
 final class StopArrivalCell: OBAListViewCell {
+    @available(*, deprecated, message: "Use view models instead")
     var arrivalDeparture: ArrivalDeparture? {
         didSet {
             guard let arrivalDeparture = arrivalDeparture else { return }
@@ -123,6 +124,7 @@ final class StopArrivalCell: OBAListViewCell {
         }
     }
 
+    private var highlightTimeOnDisplay: Bool = false
     private var stopArrivalView: StopArrivalView!
 
     override var accessibilityElements: [Any]? {
@@ -160,7 +162,15 @@ final class StopArrivalCell: OBAListViewCell {
     // MARK: - UI
     override func apply(_ config: OBAContentConfiguration) {
         guard let config = config as? ArrivalDepartureContentConfiguration else { return }
+        highlightTimeOnDisplay = config.viewModel.highlightTimeOnDisplay
         stopArrivalView.configureView(for: config)
+    }
+
+    override func willDisplayCell(in listView: OBAListView) {
+        if highlightTimeOnDisplay {
+            stopArrivalView.minutesLabel.highlightBackground()
+            highlightTimeOnDisplay = false
+        }
     }
 
     func highlightMinutes() {

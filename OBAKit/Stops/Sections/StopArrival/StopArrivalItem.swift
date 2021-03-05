@@ -39,6 +39,9 @@ struct ArrivalDepartureItem: OBAListViewItem {
     let isAlarmAvailable: Bool
     let isDeepLinkingAvailable: Bool
 
+    /// Whether to highlight the time (to indicate a change) when this item is displayed on the list.
+    let highlightTimeOnDisplay: Bool
+
     var trailingContextualActions: [OBAListViewContextualAction<ArrivalDepartureItem>]? {
         var actions: [OBAListViewContextualAction<ArrivalDepartureItem>] = []
 
@@ -87,6 +90,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
     init(arrivalDeparture: ArrivalDeparture,
          isAlarmAvailable: Bool,
          isDeepLinkingAvailable: Bool,
+         highlightTimeOnDisplay: Bool = false,
          onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          alarmAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
@@ -108,8 +112,9 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
         self.isAlarmAvailable = isAlarmAvailable
         self.isDeepLinkingAvailable = isDeepLinkingAvailable
-        self.onSelectAction = onSelectAction
+        self.highlightTimeOnDisplay = highlightTimeOnDisplay
 
+        self.onSelectAction = onSelectAction
         self.alarmAction = alarmAction
         self.bookmarkAction = bookmarkAction
         self.shareAction = shareAction

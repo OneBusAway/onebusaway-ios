@@ -507,10 +507,13 @@ public class StopViewController: UIViewController,
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
+        let deepLinkingAvailable = application.features.deepLinking == .running
+        let highlightTimeOnDisplay = shouldHighlight(arrivalDeparture: arrivalDeparture)
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
-            isDeepLinkingAvailable: application.features.deepLinking == .running,
+            isDeepLinkingAvailable: deepLinkingAvailable,
+            highlightTimeOnDisplay: highlightTimeOnDisplay,
             onSelectAction: didSelectArrivalDepartureItem,
             alarmAction: addAlarm,
             bookmarkAction: addBookmark,
