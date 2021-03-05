@@ -16,6 +16,21 @@ public class OBAListViewCell:
     Separated,
     OBAContentView {
 
+    // MARK: - Initialization
+    override public init(frame: CGRect) {
+        super.init(frame: frame)
+
+        if showsSeparator {
+            contentView.layer.addSublayer(separator)
+        }
+    }
+
+    public required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Events
+
     public func apply(_ config: OBAContentConfiguration) {
         // nop.
     }
@@ -33,17 +48,10 @@ public class OBAListViewCell:
         layer.add(flash, forKey: nil)
     }
 
-    // MARK: - Initialization
-    override public init(frame: CGRect) {
-        super.init(frame: frame)
-
-        if showsSeparator {
-            contentView.layer.addSublayer(separator)
-        }
-    }
-
-    public required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    /// OBAListView calls this method when it is about to display this cell.
+    /// - parameter listView: The OBAListView that is about to display this cell.
+    public func willDisplayCell(in listView: OBAListView) {
+        // nop.
     }
 
     // MARK: - Separator

@@ -280,6 +280,11 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.backgroundView = view
     }
 
+    // MARK: - Delegate
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
+        (cell as? OBAListViewCell)?.willDisplayCell(in: self)
+    }
+
     // MARK: - Helpers
     func register(reuseIdentifierProviding view: ReuseIdentifierProviding.Type) {
         self.register(view, forCellWithReuseIdentifier: view.ReuseIdentifier)
