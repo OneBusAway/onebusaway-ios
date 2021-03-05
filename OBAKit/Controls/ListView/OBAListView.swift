@@ -43,6 +43,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     /// The source of truth for this list view.
     weak public var obaDataSource: OBAListViewDataSource?
 
+    /// The delegate of this list view.
+    weak public var obaDelegate: OBAListViewDelegate?
+
     /// Optional. Implement `OBAListViewCollapsibleSectionsDelegate` to add support for collapsible sections for this list view.
     weak public var collapsibleSectionsDelegate: OBAListViewCollapsibleSectionsDelegate?
 
@@ -252,7 +255,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
 
         DispatchQueue.main.async {
-            self.diffableDataSource.apply(snapshot, animatingDifferences: animated)
+            self.diffableDataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.obaDelegate?.didApplyData(self)
+                }
+            }
         }
     }
 

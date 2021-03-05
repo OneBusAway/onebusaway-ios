@@ -25,6 +25,7 @@ public class StopViewController: UIViewController,
     BookmarkEditorDelegate,
     Idleable,
     OBAListViewDataSource,
+    OBAListViewDelegate,
     OBAListViewContextMenuDelegate,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
@@ -167,10 +168,9 @@ public class StopViewController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        installSwipeOptionsNudge()
-
         view.backgroundColor = ThemeColors.shared.systemBackground
 
+        listView.obaDelegate = self
         listView.obaDataSource = self
         listView.contextMenuDelegate = self
         listView.collapsibleSectionsDelegate = self
@@ -232,53 +232,24 @@ public class StopViewController: UIViewController,
     public var idleTimerFailsafe: Timer?
 
     // MARK: - Options Nudge
-
-    /// This method will set up a UI affordance for showing the user how they can swipe on a stop arrival cell to see more options.
-    ///
-    /// If the user has already seen the nudge, as determined by user defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
-    /// will be displayed one second after the stop data finishes loading.
-    private func installSwipeOptionsNudge() {
-        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
-            return
-        }
-
-//        collectionController.onReload = { [weak self] in
-//            guard let self = self else { return }
-//            for cell in self.collectionController.collectionView.sortedVisibleCells {
-//                if let cell = cell as? StopArrivalCell,
-//                   let arrDep = cell.arrivalDeparture,
-//                   arrDep.temporalState != .past {
-//                    self.showSwipeOptionsNudge(on: cell)
-//                    self.collectionController.onReload = nil
-//                    return
-//                }
-//            }
-//        }
-    }
-
     private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
-        guard
-            let presentationWindow = view.window,
-            let arrivalDeparture = cell.arrivalDeparture
-        else { return }
+        guard let presentationWindow = view.window else { return }
 
         application.userDefaults.set(false, forKey: UserDefaultsKeys.shouldShowArrivalNudge)
 
         let frame = cell.convert(cell.bounds, to: presentationWindow)
 
         let locText: String
-
-        if canCreateAlarm(for: arrivalDeparture) {
+        if cell.canCreateAlarmForArrivalDeparture {
             locText = OBALoc("stop_controller.swipe_spotlight_text.with_alarm", value: "Swipe on a row to view more options, including adding alarms.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms.")
-        }
-        else {
+        } else {
             locText = OBALoc("stop_controller.swipe_spotlight_text.without_alarm", value: "Swipe on a row to view more options.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms.")
         }
 
         let text = NSAttributedString(string: locText, attributes: [
-            NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .title1),
-            NSAttributedString.Key.foregroundColor: UIColor.white,
-            NSAttributedString.Key.shadow: NSShadow()
+            .font: UIFont.preferredFont(forTextStyle: .title1),
+            .foregroundColor: UIColor.white,
+            .shadow: NSShadow()
         ])
 
         let spotlight = AwesomeSpotlight(rect: frame, attributedText: text)
@@ -474,6 +445,28 @@ public class StopViewController: UIViewController,
         }
 
         return nil
+    }
+
+
+    public func didApplyData(_ listView: OBAListView) {
+        // This method will set up a UI affordance for showing the user how
+        // they can swipe on a stop arrival cell to see more options.
+        //
+        // If the user has already seen the nudge, as determined by user
+        // defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
+        // will be displayed one second after the stop data finishes loading.
+
+        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
+            return
+        }
+
+        for cell in listView.sortedVisibleCells {
+            if let cell = cell as? StopArrivalCell,
+               !cell.isShowingPastArrivalDeparture {
+                self.showSwipeOptionsNudge(on: cell)
+                return
+            }
+        }
     }
 
     // MARK: - Data/Stop Header
