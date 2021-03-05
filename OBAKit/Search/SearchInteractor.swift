@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import IGListKit
 import OBAKitCore
 
 protocol SearchDelegate: NSObjectProtocol {

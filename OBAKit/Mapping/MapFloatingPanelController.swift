@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import FloatingPanel
 import OBAKitCore
 

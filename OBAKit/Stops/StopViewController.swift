@@ -836,12 +836,6 @@ public class StopViewController: UIViewController,
         application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
     }
 
-    func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
-        let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
-        let nc = UINavigationController(rootViewController: serviceAlertController)
-        self.present(nc, animated: true)
-    }
-
     // MARK: - Alarms
 
     private func canCreateAlarm(for arrivalDeparture: ArrivalDeparture) -> Bool {

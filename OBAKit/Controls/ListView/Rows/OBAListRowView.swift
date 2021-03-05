@@ -11,6 +11,10 @@ import OBAKitCore
 
 /// A recreation of the default `UITableView` cells (or `UIListContentConfiguration`).
 class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell {
+    enum Style {
+        case plain, grouped
+    }
+
     fileprivate let kUseDebugColors = false
 
     var listRowView: ListRowType! {
@@ -61,7 +65,7 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell {
 
     // MARK: - Style
 
-    public var style: CollectionController.TableCollectionStyle = .plain {
+    public var style: Style = .plain {
         didSet {
             contentView.backgroundColor = defaultBackgroundColor
         }
@@ -70,8 +74,7 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell {
     public var defaultBackgroundColor: UIColor? {
         if style == .plain {
             return nil
-        }
-        else {
+        } else {
             return ThemeColors.shared.groupedTableRowBackground
         }
     }

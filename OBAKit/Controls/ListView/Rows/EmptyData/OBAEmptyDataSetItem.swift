@@ -1,5 +1,5 @@
 //
-//  EmptyDataSetSectionController.swift
+//  OBAEmptyDataSetItem.swift
 //  OBAKitCore
 //
 //  Copyright © Open Transit Software Foundation
