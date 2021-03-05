@@ -25,12 +25,12 @@ struct SegmentedControlItem: OBAListViewItem {
         }
     }
 
-    var onValueChanged: SegmentedControlCell.OnValidChangedHandler?
+    var onValueChanged: SegmentedControlCell.OnValueChangedHandler?
     var id: String
     var segments: [String]
     var initialSelectedIndex: Int
 
-    init(id: String, segments: [String], initialSelectedIndex: Int = 0, onValueChanged: SegmentedControlCell.OnValidChangedHandler?) {
+    init(id: String, segments: [String], initialSelectedIndex: Int = 0, onValueChanged: SegmentedControlCell.OnValueChangedHandler?) {
         self.id = id
         self.segments = segments
         self.initialSelectedIndex = initialSelectedIndex
@@ -59,9 +59,9 @@ struct SegmentedControlContentConfiguration: OBAContentConfiguration {
 }
 
 final class SegmentedControlCell: OBAListViewCell {
-    typealias OnValidChangedHandler = (Int) -> Void
+    typealias OnValueChangedHandler = (Int) -> Void
 
-    var onValueChangedHandler: OnValidChangedHandler?
+    var onValueChangedHandler: OnValueChangedHandler?
 
     lazy var segmentedControl: UISegmentedControl = {
         let control = UISegmentedControl.autolayoutNew()
