@@ -16,8 +16,8 @@ extension RecentStopsViewController {
 
         var contentConfiguration: OBAContentConfiguration {
             return OBAListRowConfiguration(
-                text: name,
-                secondaryText: subtitle,
+                text: .string(name),
+                secondaryText: .string(subtitle),
                 appearance: .subtitle,
                 accessoryType: .disclosureIndicator)
         }
@@ -54,7 +54,7 @@ extension RecentStopsViewController {
 
         var contentConfiguration: OBAContentConfiguration {
             return OBAListRowConfiguration(
-                text: title,
+                text: .string(title),
                 appearance: .subtitle,
                 accessoryType: .disclosureIndicator)
         }

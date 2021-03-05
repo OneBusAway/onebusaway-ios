@@ -17,11 +17,15 @@ public class OBAListRowViewDefault: OBAListRowView {
 
     override func configureView() {
         super.configureView()
-        titleLabel.text = configuration.text
+        titleLabel.setText(configuration.text)
         titleLabel.configure(with: configuration.textConfig)
 
         isAccessibilityElement = true
-        accessibilityLabel = configuration.text
+        if case let .string(string) = configuration.text {
+            accessibilityLabel = string
+        } else {
+            accessibilityLabel = nil
+        }
     }
 
     override func prepareForReuse() {
@@ -36,13 +40,25 @@ extension OBAListRowView {
     /// you can use this view model to define a `default` appearance list row.
     public struct DefaultViewModel: OBAListViewItem {
         public let id: UUID = UUID()
-        public var title: String
+        public var title: OBAListRowConfiguration.LabelText
         public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
 
         public var onSelectAction: OBAListViewAction<DefaultViewModel>?
 
         public var contentConfiguration: OBAContentConfiguration {
             return OBAListRowConfiguration(text: title, appearance: .default, accessoryType: accessoryType)
+        }
+
+        public init(title: String, accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator, onSelectAction: OBAListViewAction<DefaultViewModel>? = nil) {
+            self.title = .string(title)
+            self.accessoryType = accessoryType
+            self.onSelectAction = onSelectAction
+        }
+
+        public init(title: NSAttributedString, accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator, onSelectAction: OBAListViewAction<DefaultViewModel>? = nil) {
+            self.title = .attributed(title)
+            self.accessoryType = accessoryType
+            self.onSelectAction = onSelectAction
         }
 
         public func hash(into hasher: inout Hasher) {
@@ -64,9 +80,30 @@ import OBAKitCore
 struct OBAListRowViewDefault_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.fill"),
-        text: "title text",
+        text: .string("title text"),
         appearance: .default,
         accessoryType: .none)
+
+    static let attributedConfiguration = OBAListRowConfiguration(
+        image: UIImage(systemName: "person.fill"),
+        text: .attributed(attributedStringExample),
+        appearance: .default,
+        accessoryType: .none)
+
+    static var attributedStringExample: NSAttributedString {
+        let font = UIFont(name: "Zapfino", size: 32)!
+        let shadow = NSShadow()
+        shadow.shadowColor = UIColor.red
+        shadow.shadowBlurRadius = 5
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.white,
+            .shadow: shadow
+        ]
+
+        return NSAttributedString(string: "Zapfino", attributes: attributes)
+    }
 
     static var previews: some View {
         Group {
@@ -76,6 +113,13 @@ struct OBAListRowViewDefault_Previews: PreviewProvider {
                 return view
             }
             .previewLayout(.fixed(width: 384, height: 44))
+
+            UIViewPreview {
+                let view = OBAListRowViewDefault(frame: .zero)
+                view.configuration = attributedConfiguration
+                return view
+            }
+            .previewLayout(.sizeThatFits)
 
             UIViewPreview {
                 let view = OBAListRowViewDefault(frame: .zero)

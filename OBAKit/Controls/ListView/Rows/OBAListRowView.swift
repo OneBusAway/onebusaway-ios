@@ -234,8 +234,8 @@ import OBAKitCore
 struct OBAListRowView_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.fill"),
-        text: "name",
-        secondaryText: "address",
+        text: .string("name"),
+        secondaryText: .string("address"),
         appearance: .subtitle,
         accessoryType: .disclosureIndicator)
 

@@ -23,8 +23,8 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
 
     var contentConfiguration: OBAContentConfiguration {
         var config = OBAListRowConfiguration(
-            text: title,
-            secondaryText: subtitle,
+            text: .string(title),
+            secondaryText: .string(subtitle),
             appearance: .subtitle,
             accessoryType: .disclosureIndicator)
 
