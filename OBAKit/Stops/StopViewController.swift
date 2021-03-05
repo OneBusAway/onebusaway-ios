@@ -926,7 +926,10 @@ public class StopViewController: UIViewController,
         let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
 
         let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-        application.viewRouter.present(activityController, from: self, isModal: true)
+
+        // Use self.presnt because when using application.viewRouter.present(:_),
+        // it disables UIActivityViewController's "tap anywhere to dismiss".
+        self.present(activityController, animated: true)
     }
 
     // MARK: - Actions
