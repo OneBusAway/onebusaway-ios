@@ -21,6 +21,7 @@ import CoreLocation
 /// particular vehicle, and report problems with a trip.
 public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
+    AgencyAlertListViewConverters,
     AppContext,
     BookmarkEditorDelegate,
     Idleable,
@@ -447,7 +448,6 @@ public class StopViewController: UIViewController,
         return nil
     }
 
-
     public func didApplyData(_ listView: OBAListView) {
         // This method will set up a UI affordance for showing the user how
         // they can swipe on a stop arrival cell to see more options.
@@ -527,7 +527,7 @@ public class StopViewController: UIViewController,
         let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
 
         // Sometimes stopArrivals will respond with duplicate entries, so get rid of them.
-        var items = Set(arrDepItems)
+        var items = arrDepItems.uniqued
             .sorted(by: \.arrivalDepartureDate)
             .map { $0.typeErased }
         addWalkTimeRow(to: &items)
@@ -655,17 +655,7 @@ public class StopViewController: UIViewController,
 
     private var serviceAlertsSection: OBAListViewSection? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        let items = alerts.map { TransitAlertDataListViewModel($0, forLocale: .current, onSelectAction: didSelectAlert) }
-
-        let sectionTitle: String
-        if alerts.count == 1 {
-            sectionTitle = Strings.serviceAlert
-        } else {
-            // Indicate how many service alerts there are.
-            sectionTitle = "\(Strings.serviceAlerts) (\(alerts.count))"
-        }
-
-        return listViewSection(for: .serviceAlerts, title: sectionTitle, items: items)
+        return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
     }
 
     // MARK: - Data/Hidden Routes Toggle

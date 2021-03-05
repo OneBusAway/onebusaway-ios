@@ -194,7 +194,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
         let highSeverityAlerts = application.alertsStore.recentHighSeverityAlerts
         if highSeverityAlerts.count > 0 {
-            sections.append(contentsOf: tableSections(agencyAlerts: highSeverityAlerts))
+            sections.append(contentsOf: listSections(agencyAlerts: highSeverityAlerts))
         }
 
         if stops.count > 0 {

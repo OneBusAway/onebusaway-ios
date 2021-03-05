@@ -222,7 +222,7 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             condition = try container.decode(String.self, forKey: .condition)
-            conditionDetails = try container.decode(ConditionDetails.self, forKey: .conditionDetails)
+            conditionDetails = try container.decodeIfPresent(ConditionDetails.self, forKey: .conditionDetails)
         }
 
         public override func isEqual(_ object: Any?) -> Bool {

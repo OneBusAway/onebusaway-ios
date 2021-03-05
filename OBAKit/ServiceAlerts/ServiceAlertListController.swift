@@ -13,6 +13,7 @@ import OBAKitCore
 /// Displays a list of `ServiceAlert` objects.
 final class ServiceAlertListController: UIViewController,
     AppContext,
+    AgencyAlertListViewConverters,
     OBAListViewDataSource,
     Previewable {
 
@@ -62,13 +63,7 @@ final class ServiceAlertListController: UIViewController,
     // MARK: - ListView
     private let listView = OBAListView()
 
-    // MARK: - IGListKit
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, forLocale: .current, onSelectAction: onSelectAlert)}
-        return [OBAListViewSection(id: "alerts", contents: items)]
-    }
-
-    func onSelectAlert(_ viewModel: TransitAlertDataListViewModel) {
-        application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
+        return [listSection(serviceAlerts: serviceAlerts, showSectionTitle: true)]
     }
 }

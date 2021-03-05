@@ -148,6 +148,6 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return tableSections(agencyAlerts: alertsStore.agencyAlerts)
+        return listSections(agencyAlerts: alertsStore.agencyAlerts)
     }
 }
