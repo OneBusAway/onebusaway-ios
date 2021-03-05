@@ -62,6 +62,7 @@ extension OBAListRowView {
     /// you can use this view model to define a `value` appearance list row.
     public struct ValueViewModel: OBAListViewItem {
         public let id: UUID = UUID()
+        public var image: UIImage?
         public var title: OBAListRowConfiguration.LabelText
         public var subtitle: OBAListRowConfiguration.LabelText?
         public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
@@ -69,32 +70,38 @@ extension OBAListRowView {
         public var onSelectAction: OBAListViewAction<ValueViewModel>?
 
         public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(text: title, secondaryText: subtitle, appearance: .value, accessoryType: accessoryType)
+            return OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .value, accessoryType: accessoryType)
         }
 
+        /// Convenience initializer for `ValueViewModel` using `String` as text.
         public init(
+            image: UIImage? = nil,
             title: String,
             subtitle: String?,
             accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
             onSelectAction: OBAListViewAction<ValueViewModel>? = nil) {
 
-            self.init(title: .string(title), subtitle: .string(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+            self.init(image: image, title: .string(title), subtitle: .string(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
         }
 
+        /// Convenience initializer for `ValueViewModel` using `NSAttributedString` as text.
         public init(
+            image: UIImage? = nil,
             title: NSAttributedString,
             subtitle: NSAttributedString?,
             accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
             onSelectAction: OBAListViewAction<ValueViewModel>? = nil) {
 
-            self.init(title: .attributed(title), subtitle: .attributed(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+            self.init(image: image, title: .attributed(title), subtitle: .attributed(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
         }
 
         public init(
+            image: UIImage? = nil,
             title: OBAListRowConfiguration.LabelText,
             subtitle: OBAListRowConfiguration.LabelText?,
             accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
             onSelectAction: OBAListViewAction<ValueViewModel>? = nil) {
+            self.image = image
             self.title = title
             self.subtitle = subtitle
             self.accessoryType = accessoryType
@@ -103,10 +110,17 @@ extension OBAListRowView {
 
         public func hash(into hasher: inout Hasher) {
             hasher.combine(id)
+            hasher.combine(image)
+            hasher.combine(title)
+            hasher.combine(subtitle)
+            hasher.combine(accessoryType)
         }
 
         public static func == (lhs: ValueViewModel, rhs: ValueViewModel) -> Bool {
-            return lhs.title == rhs.title &&
+            return
+                lhs.id == rhs.id &&
+                lhs.image == rhs.image &&
+                lhs.title == rhs.title &&
                 lhs.subtitle == rhs.subtitle &&
                 lhs.accessoryType == rhs.accessoryType
         }

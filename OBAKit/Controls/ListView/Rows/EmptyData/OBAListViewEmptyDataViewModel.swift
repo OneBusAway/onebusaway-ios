@@ -63,6 +63,7 @@ extension OBAListView {
 
 extension EmptyDataSetView {
     func apply(_ viewModel: OBAListView.StandardEmptyDataViewModel) {
+        alignment = viewModel.alignment
         titleLabel.text = viewModel.title
         bodyLabel.text = viewModel.body
         imageView.image = viewModel.image

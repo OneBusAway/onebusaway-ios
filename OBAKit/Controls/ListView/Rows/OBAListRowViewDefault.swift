@@ -50,12 +50,14 @@ extension OBAListRowView {
             return OBAListRowConfiguration(image: image, text: title, appearance: .default, accessoryType: accessoryType)
         }
 
+        /// Convenience initializer for `DefaultViewModel` using `String` as text.
         public init(title: String, accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator, onSelectAction: OBAListViewAction<DefaultViewModel>? = nil) {
             self.title = .string(title)
             self.accessoryType = accessoryType
             self.onSelectAction = onSelectAction
         }
 
+        /// Convenience initializer for `DefaultViewModel` using `NSAttributedString` as text.
         public init(title: NSAttributedString, accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator, onSelectAction: OBAListViewAction<DefaultViewModel>? = nil) {
             self.title = .attributed(title)
             self.accessoryType = accessoryType
@@ -64,10 +66,16 @@ extension OBAListRowView {
 
         public func hash(into hasher: inout Hasher) {
             hasher.combine(id)
+            hasher.combine(image)
+            hasher.combine(title)
+            hasher.combine(accessoryType)
         }
 
         public static func == (lhs: DefaultViewModel, rhs: DefaultViewModel) -> Bool {
-            return lhs.title == rhs.title &&
+            return
+                lhs.id == rhs.id &&
+                lhs.image == rhs.image &&
+                lhs.title == rhs.title &&
                 lhs.accessoryType == rhs.accessoryType
         }
     }
