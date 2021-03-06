@@ -193,7 +193,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
     /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
     public var id: String {
-        return "stop=\(stopID),trip=\(tripID),route=\(routeID)"
+        return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
     }
 
     /// Provides the best available trip headsign.
