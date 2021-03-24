@@ -57,3 +57,16 @@ extension Array {
         return nil
     }
 }
+
+extension Array where Element: Hashable {
+    /// Removes duplicates (based on `Hashable`) while preserving order.
+    public var uniqued: Array {
+        var result: [Element] = []
+        var addedItems: Set<Element> = []
+        for item in self where !addedItems.contains(item) {
+            result.append(item)
+            addedItems.insert(item)
+        }
+        return result
+    }
+}

@@ -34,11 +34,37 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
         case none
     }
 
+    // Avoids naming conflict with SwiftUI.Text.
+    public enum LabelText: Hashable, Equatable {
+        case string(String?)
+        case attributed(NSAttributedString?)
+
+        public func hash(into hasher: inout Hasher) {
+            switch self {
+            case .string(let string):
+                hasher.combine(string)
+            case .attributed(let attributed):
+                hasher.combine(attributed)
+            }
+        }
+
+        public static func == (_ lhs: LabelText, rhs: LabelText) -> Bool {
+            switch (lhs, rhs) {
+            case (.string(let lhsString), .string(let rhsString)):
+                return lhsString == rhsString
+            case (.attributed(let lhsAttributed), .attributed(let rhsAttributed)):
+                return lhsAttributed == rhsAttributed
+            default:
+                return false
+            }
+        }
+    }
+
     public var formatters: Formatters?
 
     public var image: UIImage?
-    public var text: String?
-    public var secondaryText: String?
+    public var text: LabelText?
+    public var secondaryText: LabelText?
 
     public var textConfig: OBALabelConfiguration = .init()
     public var secondaryTextConfig: OBALabelConfiguration = .init(textColor: .secondaryLabel)
@@ -83,5 +109,18 @@ extension UILabel {
     func configure(with config: OBALabelConfiguration) {
         self.textColor = config.textColor
         self.numberOfLines = isAccessibility ? config.accessibilityNumberOfLines : config.numberOfLines
+    }
+
+    func setText(_ text: OBAListRowConfiguration.LabelText?) {
+        if let text = text {
+            switch text {
+            case .string(let string):
+                self.text = string
+            case .attributed(let attributed):
+                self.attributedText = attributed
+            }
+        } else {
+            self.text = nil // setting text to nil also sets attributed text to nil in UILabel.
+        }
     }
 }

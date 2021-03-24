@@ -10,6 +10,31 @@ import UIKit
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
 public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
+    public struct Configuration: Hashable, Equatable {
+        var accessibilityLabel: String
+        var displayText: String
+        var backgroundColor: CGColor
+
+        public init(arrivalDepartureMinutes: Int, temporalState: TemporalState, scheduleStatus: ScheduleStatus, formatters: Formatters) {
+            self.accessibilityLabel = formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: arrivalDepartureMinutes, temporalState: temporalState)
+            self.displayText = formatters.shortFormattedTime(untilMinutes: arrivalDepartureMinutes, temporalState: temporalState)
+            self.backgroundColor = formatters.backgroundColorForScheduleStatus(scheduleStatus).cgColor
+        }
+
+        public init(withArrivalDeparture arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
+            self.init(arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes,
+                      temporalState: arrivalDeparture.temporalState,
+                      scheduleStatus: arrivalDeparture.scheduleStatus,
+                      formatters: formatters)
+        }
+
+        public init(accessibilityLabel: String, displayText: String, backgroundColor: CGColor) {
+            self.accessibilityLabel = accessibilityLabel
+            self.displayText = displayText
+            self.backgroundColor = backgroundColor
+        }
+    }
+
     /// Defines the margin for the text. By default, this is `ThemeMetrics.compactPadding` for
     /// Top and Bottom and `ThemeMetrics.buttonContentPadding` for Left and Right.
     public var contentMargin: UIEdgeInsets = UIEdgeInsets(top: ThemeMetrics.compactPadding,
@@ -55,11 +80,13 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
     }
 
     public func configure(with arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
-        accessibilityLabel = formatters.formattedTime(until: arrivalDeparture)
-        text = formatters.shortFormattedTime(until: arrivalDeparture)
+        self.configure(Configuration(withArrivalDeparture: arrivalDeparture, formatters: formatters))
+    }
 
-        let status = arrivalDeparture.scheduleStatus
-        layer.backgroundColor = formatters.backgroundColorForScheduleStatus(status).cgColor
+    public func configure(_ config: Configuration?) {
+        accessibilityLabel = config?.accessibilityLabel
+        text = config?.displayText
+        layer.backgroundColor = config?.backgroundColor
     }
 
     public func highlightBackground() {

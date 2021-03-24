@@ -22,15 +22,25 @@ public class OBAListRowViewSubtitle: OBAListRowView {
 
     override func configureView() {
         super.configureView()
-        titleLabel.text = configuration.text
+
+        titleLabel.setText(configuration.text)
         titleLabel.configure(with: configuration.textConfig)
 
-        subtitleLabel.text = configuration.secondaryText
+        subtitleLabel.setText(configuration.secondaryText)
         subtitleLabel.configure(with: configuration.secondaryTextConfig)
 
         isAccessibilityElement = true
-        accessibilityLabel = configuration.text
-        accessibilityValue = configuration.secondaryText
+        if case let .string(string) = configuration.text {
+            accessibilityLabel = string
+        } else {
+            accessibilityLabel = nil
+        }
+
+        if case let .string(string) = configuration.secondaryText {
+            accessibilityValue = string
+        } else {
+            accessibilityLabel = nil
+        }
     }
 
     override func prepareForReuse() {
@@ -46,22 +56,65 @@ extension OBAListRowView {
     /// you can use this view model to define a `subtitle` appearance list row.
     public struct SubtitleViewModel: OBAListViewItem {
         public let id: UUID = UUID()
-        public var title: String
-        public var subtitle: String?
+        public var image: UIImage?
+        public var title: OBAListRowConfiguration.LabelText
+        public var subtitle: OBAListRowConfiguration.LabelText?
         public var accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator
 
         public var onSelectAction: OBAListViewAction<SubtitleViewModel>?
 
         public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: accessoryType)
+            return OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: accessoryType)
+        }
+
+        /// Convenience initializer for `SubtitleViewModel` using `String` as text.
+        public init(
+            image: UIImage? = nil,
+            title: String,
+            subtitle: String?,
+            accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
+            onSelectAction: OBAListViewAction<SubtitleViewModel>? = nil) {
+
+            self.init(image: image, title: .string(title), subtitle: .string(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+        }
+
+        /// Convenience initializer for `SubtitleViewModel` using `NSAttributedString` as text.
+        public init(
+            image: UIImage? = nil,
+            title: NSAttributedString,
+            subtitle: NSAttributedString?,
+            accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
+            onSelectAction: OBAListViewAction<SubtitleViewModel>? = nil) {
+
+            self.init(image: image, title: .attributed(title), subtitle: .attributed(subtitle), accessoryType: .disclosureIndicator, onSelectAction: onSelectAction)
+        }
+
+        public init(
+            image: UIImage? = nil,
+            title: OBAListRowConfiguration.LabelText,
+            subtitle: OBAListRowConfiguration.LabelText?,
+            accessoryType: OBAListRowConfiguration.Accessory = .disclosureIndicator,
+            onSelectAction: OBAListViewAction<SubtitleViewModel>? = nil) {
+            self.image = image
+            self.title = title
+            self.subtitle = subtitle
+            self.accessoryType = accessoryType
+            self.onSelectAction = onSelectAction
         }
 
         public func hash(into hasher: inout Hasher) {
+            hasher.combine(image)
             hasher.combine(id)
+            hasher.combine(title)
+            hasher.combine(subtitle)
+            hasher.combine(accessoryType)
         }
 
         public static func == (lhs: SubtitleViewModel, rhs: SubtitleViewModel) -> Bool {
-            return lhs.title == rhs.title &&
+            return
+                lhs.id == rhs.id &&
+                lhs.image == rhs.image &&
+                lhs.title == rhs.title &&
                 lhs.subtitle == rhs.subtitle &&
                 lhs.accessoryType == rhs.accessoryType
         }
@@ -76,8 +129,8 @@ import OBAKitCore
 struct OBAListRowViewSubtitle_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.fill"),
-        text: "name",
-        secondaryText: "address",
+        text: .string("name"),
+        secondaryText: .string("address"),
         appearance: .subtitle,
         accessoryType: .none)
 

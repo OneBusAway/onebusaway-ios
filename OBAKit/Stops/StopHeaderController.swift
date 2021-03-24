@@ -9,55 +9,44 @@
 
 import UIKit
 import OBAKitCore
-import IGListKit
 
 // MARK: - StopHeaderSection
-
-class StopHeaderSection: NSObject, ListDiffable {
-    func diffIdentifier() -> NSObjectProtocol {
-        return self.stop.id as NSString
+struct StopHeaderItem: OBAListViewItem {
+    var contentConfiguration: OBAContentConfiguration {
+        return StopHeaderContentConfiguration(stop: stop, application: application)
     }
 
-    func isEqual(toDiffableObject object: ListDiffable?) -> Bool {
-        guard let stopHeaderSection = object as? StopHeaderSection else { return false }
-        return self.stop.isEqual(stopHeaderSection.stop)
+    static var customCellType: OBAListViewCell.Type? {
+        return StopHeaderCollectionCell.self
     }
 
-    init(stop: Stop, application: Application) {
-        self.stop = stop
-        self.application = application
+    var onSelectAction: OBAListViewAction<StopHeaderItem>?
+
+    var stop: Stop
+    var application: Application
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(stop.id)
     }
 
-    let stop: Stop
-    let application: Application
+    static func == (lhs: StopHeaderItem, rhs: StopHeaderItem) -> Bool {
+        return lhs.stop.isEqual(rhs.stop)
+    }
 }
 
-// MARK: - StopHeaderSectionController
-
-final class StopHeaderSectionController: OBAListSectionController<StopHeaderSection> {
-    override func sizeForItem(at index: Int) -> CGSize {
-        // the height of 200 is semi-arbitrary, and was determined by playing around
-        // looking for a height that doesn't cause the collection view to be misaligned
-        // when it first appears on screen.
-        return CGSize(width: collectionContext!.containerSize.width, height: StopHeaderView.headerHeight)
-    }
-
-    override func cellForItem(at index: Int) -> UICollectionViewCell {
-        let cell = dequeueReusableCell(type: StopHeaderCollectionCell.self, at: index)
-        cell.section = sectionData
-        return cell
+struct StopHeaderContentConfiguration: OBAContentConfiguration {
+    var stop: Stop
+    var application: Application
+    var formatters: Formatters?
+    var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        return StopHeaderCollectionCell.self
     }
 }
 
 // MARK: - StopHeaderCollectionCell
 
-class StopHeaderCollectionCell: SelfSizingCollectionCell {
+class StopHeaderCollectionCell: OBAListViewCell {
     let stopHeader = StopHeaderView.autolayoutNew()
-
-    var section: StopHeaderSection? {
-        get { stopHeader.section }
-        set { stopHeader.section = newValue }
-    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -68,6 +57,11 @@ class StopHeaderCollectionCell: SelfSizingCollectionCell {
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    override func apply(_ config: OBAContentConfiguration) {
+        guard let config = config as? StopHeaderContentConfiguration else { return }
+        stopHeader.config = config
+    }
 }
 
 // MARK: - StopHeaderView
@@ -76,13 +70,6 @@ class StopHeaderView: UIView {
     fileprivate static let headerHeight: CGFloat = 120.0
     private var headerHeight: CGFloat {
         StopHeaderView.headerHeight
-    }
-
-    var section: StopHeaderSection? {
-        didSet {
-            guard let section = section else { return }
-            stop = section.stop
-        }
     }
 
     private let backgroundImageView: UIImageView = {
@@ -96,10 +83,6 @@ class StopHeaderView: UIView {
     private lazy var routesLabel = buildLabel(bold: false, numberOfLines: 0)
 
     private var snapshotter: MapSnapshotter?
-
-    private var application: Application {
-        section!.application
-    }
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -128,34 +111,30 @@ class StopHeaderView: UIView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
-    public var stop: Stop? {
+    public var config: StopHeaderContentConfiguration? {
         didSet {
-            if stop != oldValue {
-                configureView()
-            }
+            configureView()
         }
     }
 
-    private func configureView() {
-        guard let stop = stop else { return }
-
+    public func configureView() {
+        guard let config = config else { return }
         let maxWidth = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let size = CGSize(width: maxWidth, height: headerHeight)
 
-        snapshotter = MapSnapshotter(size: size, stopIconFactory: application.stopIconFactory)
+        snapshotter = MapSnapshotter(size: size, stopIconFactory: config.application.stopIconFactory)
 
-        snapshotter?.snapshot(stop: stop, traitCollection: traitCollection) { [weak self] image in
-            guard let self = self else { return }
-            self.backgroundImageView.image = image
+        snapshotter?.snapshot(stop: config.stop, traitCollection: traitCollection) { [weak self] image in
+            self?.backgroundImageView.image = image
         }
 
-        stopNameLabel.text = stop.name
-        stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: stop)
-        routesLabel.text = Formatters.formattedRoutes(stop.routes)
+        stopNameLabel.text = config.stop.name
+        stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: config.stop)
+        routesLabel.text = Formatters.formattedRoutes(config.stop.routes)
 
         isAccessibilityElement = true
         accessibilityTraits = [.summaryElement, .header, .staticText]
-        accessibilityLabel = stop.name
+        accessibilityLabel = config.stop.name
         accessibilityValue = [stopNumberLabel.text, routesLabel.text].compactMap {$0}.joined(separator: " ")
     }
 

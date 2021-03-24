@@ -88,9 +88,6 @@ packages:
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0
-    IGListKit:
-        url: https://github.com/3a4oT/IGListKit.git
-        branch: spmBrain
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.0.5

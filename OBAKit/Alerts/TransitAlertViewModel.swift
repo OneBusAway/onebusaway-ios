@@ -16,6 +16,8 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
     let body: String
     let localizedURL: URL?
 
+    let isUnread: Bool
+
     /// Truncated summary for UILabel performance. Agencies often provide long
     /// summaries, which causes poor UI performance for us. See #264 & #266.
     var subtitle: String { return String(body.prefix(256)) }
@@ -23,12 +25,16 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
 
     var contentConfiguration: OBAContentConfiguration {
         var config = OBAListRowConfiguration(
-            text: title,
-            secondaryText: subtitle,
+            text: .string(title),
+            secondaryText: .string(subtitle),
             appearance: .subtitle,
             accessoryType: .disclosureIndicator)
 
-        config.image = Icons.readAlert.applyingSymbolConfiguration(.init(textStyle: .body))
+        if isUnread {
+            config.image = Icons.unreadAlert.applyingSymbolConfiguration(.init(textStyle: .body))
+        } else {
+            config.image = Icons.readAlert.applyingSymbolConfiguration(.init(textStyle: .body))
+        }
         config.textConfig.numberOfLines = 2
         config.secondaryTextConfig.numberOfLines = 3
 
@@ -37,12 +43,13 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
         return config
     }
 
-    init(_ transitAlert: TransitAlertViewModel, forLocale locale: Locale, onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil) {
+    init(_ transitAlert: TransitAlertViewModel, isUnread: Bool = false, forLocale locale: Locale, onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil) {
         self.transitAlert = transitAlert
         self.id = transitAlert.id
         self.title = transitAlert.title(forLocale: locale) ?? ""
         self.body = transitAlert.body(forLocale: locale) ?? ""
         self.localizedURL = transitAlert.url(forLocale: locale)
+        self.isUnread = isUnread
         self.onSelectAction = onSelectAction
     }
 

@@ -347,7 +347,7 @@ public class MapViewController: UIViewController,
         panel.set(contentViewController: mapPanelController)
 
         // Track a scroll view (or the siblings) in the content view controller.
-        panel.track(scrollView: mapPanelController.collectionController.collectionView)
+        panel.track(scrollView: mapPanelController.listView)
 
         return panel
     }()

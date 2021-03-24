@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import OBAKitCore
 import CoreLocation
 
@@ -22,16 +21,37 @@ import CoreLocation
 /// particular vehicle, and report problems with a trip.
 public class StopViewController: UIViewController,
     AlarmBuilderDelegate,
+    AgencyAlertListViewConverters,
     AppContext,
     BookmarkEditorDelegate,
     Idleable,
-    ListAdapterDataSource,
+    OBAListViewDataSource,
+    OBAListViewDelegate,
+    OBAListViewContextMenuDelegate,
+    OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    SectionDataBuilders,
-    ServiceAlertsSectionControllerDelegate,
-    StopArrivalSectionControllerDelegate,
     StopPreferencesDelegate {
+
+    /// The available sections in this view controller.
+    enum ListSections {
+        case stopHeader
+        case emptyData
+        case serviceAlerts
+        case hiddenRoutesToggle
+        case arrivalDepartures(suffix: String)
+        case loadMoreButton
+        case moreOptions
+
+        var sectionID: String {
+            switch self {
+            case .arrivalDepartures(let suffix):
+                return "section_arrival_departures_\(suffix)"
+            default:
+                return "section_\(self)"
+            }
+        }
+    }
 
     public let application: Application
 
@@ -149,12 +169,24 @@ public class StopViewController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        installSwipeOptionsNudge()
-
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
-        collectionController.collectionView.addSubview(refreshControl)
+
+        listView.obaDelegate = self
+        listView.obaDataSource = self
+        listView.contextMenuDelegate = self
+        listView.collapsibleSectionsDelegate = self
+        listView.formatters = application.formatters
+
+        listView.register(listViewItem: ArrivalDepartureItem.self)
+        listView.register(listViewItem: SegmentedControlItem.self)
+        listView.register(listViewItem: StopArrivalWalkItem.self)
+        listView.register(listViewItem: MessageButtonItem.self)
+        listView.register(listViewItem: StopHeaderItem.self)
+        listView.register(listViewItem: EmptyDataSetItem.self)
+
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
+        listView.addSubview(refreshControl)
 
         view.addSubview(fakeToolbar)
 
@@ -168,10 +200,14 @@ public class StopViewController: UIViewController,
             fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
         ])
 
-        var inset = collectionController.collectionView.contentInset
+        var inset = listView.contentInset
         inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-        collectionController.collectionView.contentInset = inset
-        collectionController.collectionView.scrollIndicatorInsets = inset
+        listView.contentInset = inset
+        listView.scrollIndicatorInsets = inset
+
+        if !stopViewShowsServiceAlerts {
+            collapsedSections = [ListSections.serviceAlerts.sectionID]
+        }
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -197,53 +233,24 @@ public class StopViewController: UIViewController,
     public var idleTimerFailsafe: Timer?
 
     // MARK: - Options Nudge
-
-    /// This method will set up a UI affordance for showing the user how they can swipe on a stop arrival cell to see more options.
-    ///
-    /// If the user has already seen the nudge, as determined by user defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
-    /// will be displayed one second after the stop data finishes loading.
-    private func installSwipeOptionsNudge() {
-        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
-            return
-        }
-
-        collectionController.onReload = { [weak self] in
-            guard let self = self else { return }
-            for cell in self.collectionController.collectionView.sortedVisibleCells {
-                if let cell = cell as? StopArrivalCell,
-                   let arrDep = cell.arrivalDeparture,
-                   arrDep.temporalState != .past {
-                    self.showSwipeOptionsNudge(on: cell)
-                    self.collectionController.onReload = nil
-                    return
-                }
-            }
-        }
-    }
-
     private func showSwipeOptionsNudge(on cell: StopArrivalCell) {
-        guard
-            let presentationWindow = view.window,
-            let arrivalDeparture = cell.arrivalDeparture
-        else { return }
+        guard let presentationWindow = view.window else { return }
 
         application.userDefaults.set(false, forKey: UserDefaultsKeys.shouldShowArrivalNudge)
 
         let frame = cell.convert(cell.bounds, to: presentationWindow)
 
         let locText: String
-
-        if canCreateAlarm(for: arrivalDeparture) {
+        if cell.canCreateAlarmForArrivalDeparture {
             locText = OBALoc("stop_controller.swipe_spotlight_text.with_alarm", value: "Swipe on a row to view more options, including adding alarms.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, including the ability to add alarms.")
-        }
-        else {
+        } else {
             locText = OBALoc("stop_controller.swipe_spotlight_text.without_alarm", value: "Swipe on a row to view more options.", comment: "This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms.")
         }
 
         let text = NSAttributedString(string: locText, attributes: [
-            NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .title1),
-            NSAttributedString.Key.foregroundColor: UIColor.white,
-            NSAttributedString.Key.shadow: NSShadow()
+            .font: UIFont.preferredFont(forTextStyle: .title1),
+            .foregroundColor: UIColor.white,
+            .shadow: NSShadow()
         ])
 
         let spotlight = AwesomeSpotlight(rect: frame, attributedText: text)
@@ -314,7 +321,8 @@ public class StopViewController: UIViewController,
 
             switch (broken, result) {
             case (true, _):
-                self.displayBrokenBookmarkMessage()
+                self.isBrokenBookmark = true
+                self.listView.applyData()
             case (_, .failure(let error)):
                 self.operationError = error
             case (false, .success(let response)):
@@ -375,68 +383,16 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Broken Bookmarks
+    private var isBrokenBookmark: Bool = false
 
-    private var errorBulletin: ErrorBulletin?
+    // MARK: - OBAListView
+    public func items(for listView: OBAListView) -> [OBAListViewSection] {
+        if isBrokenBookmark { return [] }
 
-    /// Displays an alert telling the user their bookmark may be broken and need to be recreated.
-    private func displayBrokenBookmarkMessage() {
-        guard let uiApp = self.application.delegate?.uiApplication else {
-            return
-        }
-
-        let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
-        self.errorBulletin = ErrorBulletin(application: self.application, message: message)
-        self.errorBulletin?.show(in: uiApp)
-    }
-
-    // MARK: - IGListKit
-
-    /// Generates a collection of `ListDiffable` objects that should be displayed in a Context Menu preview mode.
-    private func objectsForPreviewMode() -> [ListDiffable] {
-        var sections = [ListDiffable?]()
-        sections.append(stopHeaderSection)
-        sections.append(contentsOf: stopArrivalsSections)
-        return sections.compactMap { $0 }
-    }
-
-    /// Generates a collection of `ListDiffable` objects that should be displayed during non-preview use of the view controller.
-    ///
-    /// In other words, this method generates the regular set of `ListDiffable` objects that the user would want to see when
-    /// directly viewing this view controller, as opposed to looking at it through a Context Menu preview.
-    private func objectsForRegularMode() -> [ListDiffable] {
-        var sections = [ListDiffable?]()
-        sections.append(stopHeaderSection)
-
-        // Service Alerts
-        let serviceAlerts = serviceAlertsSection
-        sections.append(serviceAlerts)
-
-        let hiddenRoutesToggle = self.hiddenRoutesToggle
-        sections.append(hiddenRoutesToggle)
-
-        // When we are displaying service alerts, we should also show a header for the section.
-        // However, don't show a header if a segmented control for toggling hidden routes is visible.
-        if let alertsSection = serviceAlerts,
-            alertsSection.serviceAlerts.count > 0,
-            hiddenRoutesToggle == nil {
-            sections.append(TableHeaderData(title: OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")))
-        }
-
-        sections.append(contentsOf: stopArrivalsSections)
-
-        sections.append(loadMoreSection)
-
-        // More Options
-        sections.append(contentsOf: moreOptions)
-
-        return sections.compactMap { $0 }
-    }
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
         guard stopArrivals != nil else {
             if let error = self.operationError {
-                let emptyDataSection = EmptyDataSetSectionData(error: error, image: nil, buttonConfig: operationRetryButton)
-                return [stopHeaderSection, emptyDataSection].compactMap { $0 }
+                let emptyDataItem = EmptyDataSetItem(id: "empty_data", error: error, image: nil, buttonConfig: operationRetryButton)
+                return [stopHeaderSection, listViewSection(for: .emptyData, title: nil, items: [emptyDataItem])].compactMap { $0 }
             } else {
                 return [stopHeaderSection].compactMap { $0 }
             }
@@ -444,59 +400,139 @@ public class StopViewController: UIViewController,
         }
 
         if inPreviewMode {
-            return objectsForPreviewMode()
+            return itemsForPreviewMode()
+        } else {
+            return itemsForRegularMode()
         }
-        else {
-            return objectsForRegularMode()
+    }
+
+    private func itemsForRegularMode() -> [OBAListViewSection] {
+        var sections: [OBAListViewSection?] = []
+
+        let serviceAlerts = serviceAlertsSection
+        let hiddenRoutes = hiddenRoutesToggle
+
+        // When we are displaying service alerts, we should also show a header
+        // for the section. However, don't show a header if a segmented control
+        // for toggling hidden routes is visible.
+        let showArrivalsHeader = serviceAlertsSection != nil && hiddenRoutes == nil
+
+        sections.append(stopHeaderSection)
+        sections.append(serviceAlerts)
+        sections.append(hiddenRoutes)
+        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
+        sections.append(loadMoreSection)
+        sections.append(moreOptions)
+        return sections.compactMap({ $0 })
+    }
+
+    private func itemsForPreviewMode() -> [OBAListViewSection] {
+        var sections: [OBAListViewSection?] = []
+        sections.append(stopHeaderSection)
+        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: false))
+        return sections.compactMap { $0 }
+    }
+
+    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        if isBrokenBookmark {
+            let message = OBALoc("stop_controller.bad_bookmark_error_message", value: "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.", comment: "An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment.")
+
+            let bookmarkBrokenImage = UIImage(systemName: "bookmark.slash.fill")?.withTintColor(.systemRed)    // iOS 14+ only.
+            return .standard(.init(alignment: .center, title: "Broken Bookmark", body: message, image: bookmarkBrokenImage, buttonConfig: .none))
+        }
+
+        if let error = self.operationError {
+            return .standard(.init(error: error))
+        }
+
+        return nil
+    }
+
+    public func didApplyData(_ listView: OBAListView) {
+        // This method will set up a UI affordance for showing the user how
+        // they can swipe on a stop arrival cell to see more options.
+        //
+        // If the user has already seen the nudge, as determined by user
+        // defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
+        // will be displayed one second after the stop data finishes loading.
+
+        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
+            return
+        }
+
+        for cell in listView.sortedVisibleCells {
+            if let cell = cell as? StopArrivalCell,
+               !cell.isShowingPastArrivalDeparture {
+                self.showSwipeOptionsNudge(on: cell)
+                return
+            }
         }
     }
 
     // MARK: - Data/Stop Header
-
-    private var stopHeaderSection: StopHeaderSection? {
+    private var stopHeaderSection: OBAListViewSection? {
         guard let stop = stop else { return nil }
-        return StopHeaderSection(stop: stop, application: application)
+        let item = StopHeaderItem(stop: stop, application: application)
+        return listViewSection(for: .stopHeader, title: nil, items: [item])
     }
 
     // MARK: - Data/Stop Arrivals
-
-    private var stopArrivalsSections: [ListDiffable] {
-        guard let stopArrivals = stopArrivals else { return [] }
+    func stopArrivalsSection(showSectionHeaders: Bool) -> [OBAListViewSection] {
+        guard let stopArrivals = self.stopArrivals else { return [] }
+        var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
             let arrDeps: [ArrivalDeparture]
             if isListFiltered {
                 arrDeps = stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences)
-            }
-            else {
+            } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            let arrDepRows: [ArrivalDepartureSectionData] = arrDeps.map {
-                buildArrivalDepartureSectionData(arrivalDeparture: $0)
-            }
-            return addWalkTimeRow(to: arrDepRows)
-        }
-        else {
+            sections = [sectionForGroup(groupRoute: nil, showSectionHeader: showSectionHeaders, arrDeps: arrDeps)]
+        } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-
-            var rows = [ListDiffable]()
-
-            for g in groups {
-                rows.append(TableHeaderData(title: g.route.longName ?? g.route.shortName))
-                let arrDepRows = g.arrivalDepartures.map {
-                    buildArrivalDepartureSectionData(arrivalDeparture: $0)
-                }
-                rows.append(contentsOf: addWalkTimeRow(to: arrDepRows))
-            }
-            return rows
+            // Regardless of the provided `showSectionHeader`, if stops are grouped by route, we will always show the section header.
+            sections = groups.map { sectionForGroup(groupRoute: $0.route, showSectionHeader: true, arrDeps: $0.arrivalDepartures) }
         }
+
+        return sections
     }
 
-    private func buildArrivalDepartureSectionData(arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureSectionData {
+    private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        let data = ArrivalDepartureSectionData(arrivalDeparture: arrivalDeparture, isAlarmAvailable: alarmAvailable)
+        let deepLinkingAvailable = application.features.deepLinking == .running
+        let highlightTimeOnDisplay = shouldHighlight(arrivalDeparture: arrivalDeparture)
+        return ArrivalDepartureItem(
+            arrivalDeparture: arrivalDeparture,
+            isAlarmAvailable: alarmAvailable,
+            isDeepLinkingAvailable: deepLinkingAvailable,
+            highlightTimeOnDisplay: highlightTimeOnDisplay,
+            onSelectAction: didSelectArrivalDepartureItem,
+            alarmAction: addAlarm,
+            bookmarkAction: addBookmark,
+            shareAction: shareTripStatus)
+    }
 
-        return data
+    func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
+        let sectionID: String
+        let sectionName: String?
+        if let groupRoute = groupRoute {
+            sectionID = groupRoute.id
+            sectionName = showSectionHeader ? (groupRoute.longName ?? groupRoute.shortName) : nil
+        } else {
+            sectionID = "all"
+            sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
+        }
+
+        let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
+
+        // Sometimes stopArrivals will respond with duplicate entries, so get rid of them.
+        var items = arrDepItems.uniqued
+            .sorted(by: \.arrivalDepartureDate)
+            .map { $0.typeErased }
+        addWalkTimeRow(to: &items)
+
+        return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
     }
 
     /// Tracks arrival/departure times for `ArrivalDeparture`s.
@@ -507,82 +543,72 @@ public class StopViewController: UIViewController,
     //           lifecycle of a StopViewController is ever measured in days or weeks, then we should
     //           revisit this decision.
 
-    // MARK: - StopArrivalSectionControllerDelegate methods
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, didSelect arrivalDeparture: ArrivalDepartureSectionData) {
-        self.application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture.arrivalDeparture, from: self)
+    func arrivalDeparture(forViewModel viewModel: ArrivalDepartureItem) -> ArrivalDeparture? {
+        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.identifier }).first
     }
 
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, swipeActionsFor arrivalDeparture: ArrivalDepartureSectionData) -> [SwipeAction]? {
-        var actions: [SwipeAction] = []
+    // MARK: Actions
 
-        let bookmarkAction = SwipeAction(style: .default, title: Strings.bookmark) { (_, _) in
-            self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+    func didSelectArrivalDepartureItem(_ selectedItem: ArrivalDepartureItem) {
+        guard let selectedArrivalDeparture = arrivalDeparture(forViewModel: selectedItem) else {
+            return
         }
-        bookmarkAction.backgroundColor = ThemeColors.shared.brand
-        bookmarkAction.font = UIFont.preferredFont(forTextStyle: .caption1)
-        bookmarkAction.image = Icons.addBookmark
-        actions.append(bookmarkAction)
-
-        if arrivalDeparture.isAlarmAvailable {
-            let addAlarm = SwipeAction(style: .default, title: Strings.alarm) { (_, _) in
-                self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-            addAlarm.backgroundColor = ThemeColors.shared.blue
-            addAlarm.font = UIFont.preferredFont(forTextStyle: .caption1)
-            addAlarm.image = Icons.addAlarm
-            actions.append(addAlarm)
-        }
-
-        if application.features.deepLinking == .running {
-            let shareAction = SwipeAction(style: .default, title: Strings.share) { _, _ in
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            }
-
-            shareAction.backgroundColor = UIColor.purple
-            shareAction.font = UIFont.preferredFont(forTextStyle: .caption1)
-            shareAction.image = Icons.shareFill
-            actions.append(shareAction)
-        }
-
-        return actions
+        self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
     }
 
-    @available(iOS 13, *)
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, contextMenuConfigurationFor arrivalDeparture: ArrivalDepartureSectionData) -> UIContextMenuConfiguration? {
-        let previewProvider = { [weak self] () -> UIViewController? in
-            guard let self = self else { return nil }
-            let controller = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture.arrivalDeparture)
-            controller.enterPreviewMode()
-            return controller
+    private func stopArrivalContextMenu(_ viewModel: ArrivalDepartureItem) -> OBAListViewMenuActions {
+        let preview: OBAListViewMenuActions.PreviewProvider = {
+            return self.previewStopArrival(viewModel)
         }
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: previewProvider) { _ in
+        let performPreview: VoidBlock = {
+            self.performPreviewStopArrival(viewModel)
+        }
+
+        let menuProvider: OBAListViewMenuActions.MenuProvider = { _ in
             var actions = [UIAction]()
 
-            if arrivalDeparture.isAlarmAvailable {
+            if viewModel.isAlarmAvailable {
                 let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
-                    self.addAlarm(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+                    self.addAlarm(viewModel: viewModel)
                 }
                 actions.append(alarm)
             }
 
             let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
-                self.addBookmark(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+                self.addBookmark(viewModel: viewModel)
             }
             actions.append(addBookmark)
 
             let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+                self.shareTripStatus(viewModel: viewModel)
             }
             actions.append(shareTrip)
 
             // Create and return a UIMenu with all of the actions as children
-            return UIMenu(title: arrivalDeparture.arrivalDeparture.routeShortName, children: actions)
+            return UIMenu(title: viewModel.name, children: actions)
         }
+
+        return OBAListViewMenuActions(previewProvider: preview, performPreviewAction: performPreview, contextMenuProvider: menuProvider)
     }
 
-    func stopArrivalSectionController(_ controller: StopArrivalSectionController, shouldHighlightOnAppearance arrivalDeparture: ArrivalDepartureSectionData) -> Bool {
-        return shouldHighlight(arrivalDeparture: arrivalDeparture.arrivalDeparture)
+    private func previewStopArrival(_ viewModel: ArrivalDepartureItem) -> UIViewController? {
+        guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return nil }
+        let vc = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
+        self.previewingVC = (arrivalDeparture.id, vc)
+        return vc
+    }
+
+    private func performPreviewStopArrival(_ viewModel: ArrivalDepartureItem) {
+        if let previewingVC = self.previewingVC,
+           previewingVC.identifier == viewModel.identifier,
+           let tripVC = previewingVC.vc as? TripViewController {
+            tripVC.exitPreviewMode()
+            application.viewRouter.navigate(to: tripVC, from: self)
+        } else {
+            guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return }
+            application.viewRouter.navigateTo(arrivalDeparture: arrivalDeparture, from: self)
+        }
     }
 
     /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
@@ -602,45 +628,39 @@ public class StopViewController: UIViewController,
         return highlight
     }
 
-    private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, arrivalDepartureSections: [ArrivalDepartureSectionData]) -> Int? {
-        for (idx, elt) in arrivalDepartureSections.enumerated() {
-            let interval = elt.arrivalDeparture.arrivalDepartureDate.timeIntervalSinceNow
-            if interval >= walkTimeInterval {
-                return idx
-            }
+    private func findInsertionIndexForWalkTime(_ walkTimeInterval: TimeInterval, items: [AnyOBAListViewItem]) -> Int? {
+        for (idx, elt) in items.enumerated() {
+            guard let arrDep = elt.as(ArrivalDepartureItem.self) else { continue }
+            let interval = arrDep.scheduledDate.timeIntervalSinceNow
+            if interval >= walkTimeInterval { return idx }
         }
         return nil
     }
 
-    private func addWalkTimeRow(to arrivalDepartureSections: [ArrivalDepartureSectionData]) -> [ListDiffable] {
-        guard
-            arrivalDepartureSections.count > 0,
-            let currentLocation = application.locationService.currentLocation,
-            let stopLocation = stop?.location,
-            let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
-        else { return arrivalDepartureSections }
+    private func addWalkTimeRow(to items: inout [AnyOBAListViewItem]) {
+        guard items.count > 0,
+              let currentLocation = application.locationService.currentLocation,
+              let stopLocation = stop?.location,
+              let walkingTime = WalkingDirections.travelTime(from: currentLocation, to: stopLocation)
+        else { return }
 
-        if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, arrivalDepartureSections: arrivalDepartureSections) {
-            var sections = [ListDiffable](arrivalDepartureSections)
-            let walkTimeSection = WalkTimeSectionData(distance: currentLocation.distance(from: stopLocation), timeToWalk: walkingTime)
-            sections.insert(walkTimeSection, at: insertionIndex)
-            return sections
-        }
-        else {
-            return arrivalDepartureSections
+        if let insertionIndex = findInsertionIndexForWalkTime(walkingTime, items: items) {
+            let distance = currentLocation.distance(from: stopLocation)
+            let walkItem = StopArrivalWalkItem(id: "walk_item", distance: distance, timeToWalk: walkingTime)
+            items.insert(walkItem.typeErased, at: insertionIndex)
         }
     }
 
     // MARK: - Data/Service Alerts
 
-    private var serviceAlertsSection: ServiceAlertsSectionData? {
+    private var serviceAlertsSection: OBAListViewSection? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
-        return sectionData(from: alerts, collapsedState: stopViewShowsServiceAlerts ? .expanded : .collapsed)
+        return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
     }
 
     // MARK: - Data/Hidden Routes Toggle
 
-    private var hiddenRoutesToggle: ListDiffable? {
+    private var hiddenRoutesToggle: OBAListViewSection? {
         guard stopPreferences.hasHiddenRoutes else { return nil }
 
         // If we have hidden routes, then show the hide/show filter toggle.
@@ -650,41 +670,41 @@ public class StopViewController: UIViewController,
         ]
 
         let selectedIndex = isListFiltered ? 1 : 0
-        let toggleSection = ToggleSectionData(segments: segments, selectedIndex: selectedIndex) { [weak self] _ in
-            guard let self = self else { return }
-            self.isListFiltered.toggle()
+        let toggleItem = SegmentedControlItem(id: "hidden_routes_toggle", segments: segments, initialSelectedIndex: selectedIndex) { [weak self] _ in
+            self?.isListFiltered.toggle()
         }
-        return toggleSection
+
+        return listViewSection(for: .hiddenRoutesToggle, title: nil, items: [toggleItem])
     }
 
     // MARK: - Data/Load More
 
-    private var loadMoreSection: ListDiffable {
+    private var loadMoreSection: OBAListViewSection {
         let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
-        let section = LoadMoreSectionData(footerText: footerText, error: operationError) { [weak self] in
+        let item = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", error: operationError, footerText: footerText, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.loadMoreDepartures()
         }
 
-        return section
+        return listViewSection(for: .loadMoreButton, title: nil, items: [item])
     }
 
     // MARK: - Data/More Options
 
-    private var moreOptions: [ListDiffable] {
-        var rows = [TableRowData]()
+    private var moreOptions: OBAListViewSection {
+        var items: [AnyOBAListViewItem] = []
 
         if let stop = stop {
-            let nearbyStops = TableRowData(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let nearbyStops = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard let self = self else { return }
                 let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
                 self.application.viewRouter.navigate(to: nearbyController, from: self)
             }
-            rows.append(nearbyStops)
+            items.append(nearbyStops.typeErased)
 
-            let appleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
                     let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate)
@@ -692,10 +712,10 @@ public class StopViewController: UIViewController,
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(appleMaps)
+            items.append(appleMaps.typeErased)
 
             #if !targetEnvironment(simulator)
-            let googleMaps = TableRowData(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
+            let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
                 guard
                     let self = self,
                     let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
@@ -704,57 +724,37 @@ public class StopViewController: UIViewController,
 
                 self.application.open(url, options: [:], completionHandler: nil)
             }
-            rows.append(googleMaps)
+            items.append(googleMaps.typeErased)
             #endif
         }
 
         // Report Problem
-        let reportProblem = TableRowData(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            guard let self = self else { return }
-            self.showReportProblem()
+        let reportProblem = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
+            self?.showReportProblem()
         }
-        rows.append(reportProblem)
+        items.append(reportProblem.typeErased)
 
         // All Service Alerts
         if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
-            let row = TableRowData(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
+            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
                 let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
                 self.application.viewRouter.navigate(to: controller, from: self)
             }
-            row.previewDestination = { [weak self] in
-                guard let self = self else { return nil }
-                return ServiceAlertListController(application: self.application, serviceAlerts: alerts)
-            }
-            rows.append(row)
+            items.append(row.typeErased)
         }
 
-        return [
-            TableHeaderData(title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller")),
-            TableSectionData(rows: rows)
-        ]
+        return listViewSection(for: .moreOptions, title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), items: items)
     }
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
-        collectionController.reload(animated: false)
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let controller = defaultSectionController(for: object)
-
-        if let stopArrSection = controller as? StopArrivalSectionController {
-            stopArrSection.delegate = self
-        } else if let alertsSection = controller as? ServiceAlertsSectionController {
-            alertsSection.delegate = self
-        }
-
-        return controller
+        listView.applyData(animated: false)
     }
 
     var operationError: Error? {
         didSet {
-            DispatchQueue.main.async {
-                self.collectionController.reload(animated: true)
+            if operationError?.localizedDescription != oldValue?.localizedDescription {
+                self.listView.applyData(animated: true)
             }
         }
     }
@@ -763,24 +763,54 @@ public class StopViewController: UIViewController,
         self?.refresh()
     }
 
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        guard let error = operationError else { return nil }
-
-        let emptyView = EmptyDataSetView(alignment: .center)
-        emptyView.configure(with: error, buttonConfig: operationRetryButton)
-
-        return emptyView
-    }
+//    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+//        guard let error = operationError else { return nil }
+//
+//        let emptyView = EmptyDataSetView(alignment: .center)
+//        emptyView.configure(with: error, buttonConfig: operationRetryButton)
+//
+//        return emptyView
+//    }
 
     // MARK: - Collection Controller
-
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
+    private lazy var listView = OBAListView()
+    public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
+    public var collapsedSections: Set<OBAListViewSection.ID> = [] {
+        didSet {
+            didCollapseSection()
+        }
+    }
 
     private lazy var refreshControl: UIRefreshControl = {
         let refreshControl = UIRefreshControl()
         refreshControl.addTarget(self, action: #selector(refresh), for: .valueChanged)
         return refreshControl
     }()
+
+    public func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
+        return section.id == ListSections.serviceAlerts.sectionID
+    }
+
+    func didCollapseSection() {
+        self.stopViewShowsServiceAlerts = !collapsedSections.contains(ListSections.serviceAlerts.sectionID)
+    }
+
+    /// Helper for creating stop view controller sections. There are a lot of sections in stopviewcontroller,
+    /// so sections must be defined in StopViewController.ListSections for safety.
+    func listViewSection<Item: OBAListViewItem>(for section: ListSections, title: String?, items: [Item]) -> OBAListViewSection {
+        return OBAListViewSection(id: section.sectionID, title: title, contents: items)
+    }
+
+    /// The view controller currently being previewed (via context menu).
+    /// The identifier is a string (ideally a `UUID`) used when the user commits the context menu to ensure
+    /// that the `previewingVC` is actually the view controller that the user committed to.
+    var previewingVC: (identifier: String, vc: UIViewController)?
+    public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
+        if let arrDepItem = item.as(ArrivalDepartureItem.self) {
+            return stopArrivalContextMenu(arrDepItem)
+        }
+        return nil
+    }
 
     // MARK: - ServiceAlertsSectionController methods
     /// Whether the map view shows the direction the user is currently facing in.
@@ -792,43 +822,8 @@ public class StopViewController: UIViewController,
     }
     private let stopViewShowsServiceAlertsKey = "stopViewShowsServiceAlerts"
 
-    func serviceAlertsSectionControllerDidTapHeader(_ controller: ServiceAlertsSectionController) {
-        stopViewShowsServiceAlerts.toggle()
-        self.collectionController.reload(animated: true)
-    }
-
-    func serviceAlertsSectionController(_ controller: ServiceAlertsSectionController, didSelectAlert alert: ServiceAlert) {
-        let serviceAlertController = ServiceAlertViewController(serviceAlert: alert, application: self.application)
-        let nc = UINavigationController(rootViewController: serviceAlertController)
-        self.present(nc, animated: true)
-    }
-
-    // MARK: - Stop Arrival Actions
-
-    public func showMoreOptions(arrivalDeparture: ArrivalDeparture, sourceView: UIView?, sourceFrame: CGRect?) {
-        let actionSheet = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-
-        actionSheet.addAction(title: Strings.addBookmark) { [weak self] _ in
-            guard let self = self else { return }
-            self.addBookmark(arrivalDeparture: arrivalDeparture)
-        }
-
-        if application.features.deepLinking == .running {
-            actionSheet.addAction(title: Strings.shareTrip) { [weak self] _ in
-                guard let self = self else { return }
-                self.shareTripStatus(arrivalDeparture: arrivalDeparture)
-            }
-        }
-
-        actionSheet.addAction(UIAlertAction.cancelAction)
-
-        application.viewRouter.present(
-            actionSheet,
-            from: self,
-            isPopover: traitCollection.userInterfaceIdiom == .pad,
-            popoverSourceView: sourceView,
-            popoverSourceFrame: sourceFrame
-        )
+    func didSelectAlert(_ viewModel: TransitAlertDataListViewModel) {
+        application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
     }
 
     // MARK: - Alarms
@@ -845,6 +840,11 @@ public class StopViewController: UIViewController,
     }
 
     private var alarmBuilder: AlarmBuilder?
+
+    func addAlarm(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        addAlarm(arrivalDeparture: arrivalDeparture)
+    }
 
     func addAlarm(arrivalDeparture: ArrivalDeparture) {
         alarmBuilder = AlarmBuilder(arrivalDeparture: arrivalDeparture, application: application, delegate: self)
@@ -868,6 +868,10 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Bookmarks
+    private func addBookmark(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        addBookmark(arrivalDeparture: arrivalDeparture)
+    }
 
     private func addBookmark(arrivalDeparture: ArrivalDeparture) {
         let bookmarkController = EditBookmarkViewController(application: application, arrivalDeparture: arrivalDeparture, bookmark: nil, delegate: self)
@@ -890,6 +894,10 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Share Trip Status
+    func shareTripStatus(viewModel: ArrivalDepartureItem) {
+        guard let arrivalDeparture = arrivalDeparture(forViewModel: viewModel) else { return }
+        shareTripStatus(arrivalDeparture: arrivalDeparture)
+    }
 
     func shareTripStatus(arrivalDeparture: ArrivalDeparture) {
         guard
@@ -902,7 +910,10 @@ public class StopViewController: UIViewController,
         let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
 
         let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
-        application.viewRouter.present(activityController, from: self, isModal: true)
+
+        // Use self.presnt because when using application.viewRouter.present(:_),
+        // it disables UIActivityViewController's "tap anywhere to dismiss".
+        self.present(activityController, animated: true)
     }
 
     // MARK: - Actions

@@ -6,7 +6,6 @@ targets:
     dependencies:
       - target: OBAKitCore
       - package: BLTNBoard
-      - package: IGListKit
       - package: Hyperconnectivity
       - package: Eureka
       - package: FloatingPanel

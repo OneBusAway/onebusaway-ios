@@ -9,14 +9,13 @@
 
 import UIKit
 import OBAKitCore
-import IGListKit
 
 /// Displays a list of `ServiceAlert` objects.
 final class ServiceAlertListController: UIViewController,
     AppContext,
-    ListAdapterDataSource,
-    Previewable,
-    SectionDataBuilders {
+    AgencyAlertListViewConverters,
+    OBAListViewDataSource,
+    Previewable {
 
     private let serviceAlerts: [ServiceAlert]
 
@@ -40,14 +39,15 @@ final class ServiceAlertListController: UIViewController,
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        addChildController(collectionController)
-        collectionController.view.pinToSuperview(.edges)
+
+        listView.obaDataSource = self
+        view.addSubview(listView)
+        listView.pinToSuperview(.edges)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     // MARK: - Previewable
@@ -60,21 +60,10 @@ final class ServiceAlertListController: UIViewController,
         // nop.
     }
 
-    // MARK: - Collection Controller
+    // MARK: - ListView
+    private let listView = OBAListView()
 
-    private lazy var collectionController = CollectionController(application: application, dataSource: self)
-
-    // MARK: - IGListKit
-
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        return [sectionData(from: serviceAlerts, collapsedState: .alwaysExpanded)]
-    }
-
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        return defaultSectionController(for: object)
-    }
-
-    func emptyView(for listAdapter: ListAdapter) -> UIView? {
-        nil
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
+        return [listSection(serviceAlerts: serviceAlerts, showSectionTitle: true)]
     }
 }

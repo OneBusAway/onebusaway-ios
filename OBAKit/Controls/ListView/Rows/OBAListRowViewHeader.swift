@@ -25,9 +25,9 @@ public class OBAListRowViewHeader: OBAListRowView {
                 case .expanded:     image = UIImage(systemName: "chevron.down.circle.fill")!
                 }
 
-                self.configuration = OBAListRowConfiguration(image: image, text: section.title, appearance: .header)
+                self.configuration = OBAListRowConfiguration(image: image, text: .string(section.title), appearance: .header)
             } else {
-                self.configuration = OBAListRowConfiguration(text: section.title, appearance: .header)
+                self.configuration = OBAListRowConfiguration(text: .string(section.title), appearance: .header)
             }
         }
     }
@@ -43,11 +43,15 @@ public class OBAListRowViewHeader: OBAListRowView {
         super.configureView()
         self.backgroundColor = UIColor.secondarySystemBackground
 
-        titleLabel.text = configuration.text
+        titleLabel.setText(configuration.text)
 
         isAccessibilityElement = true
-        accessibilityLabel = configuration.text
         accessibilityTraits = .header
+        if case let .string(string) = configuration.text {
+            accessibilityLabel = string
+        } else {
+            accessibilityLabel = nil
+        }
 
         self.layoutIfNeeded()
     }
@@ -61,7 +65,7 @@ import OBAKitCore
 struct OBAListRowViewHeader_Previews: PreviewProvider {
     static let configuration = OBAListRowConfiguration(
         image: UIImage(systemName: "person.circle.fill"),
-        text: "Privacy Settings",
+        text: .string("Privacy Settings"),
         appearance: .header,
         accessoryType: .none)
 

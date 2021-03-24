@@ -8,7 +8,6 @@
 //
 
 import UIKit
-import IGListKit
 import FloatingPanel
 import OBAKitCore
 
@@ -21,13 +20,12 @@ protocol MapPanelDelegate: NSObjectProtocol {
 /// This is the view controller that powers the drawer on the `MapViewController`.
 class MapFloatingPanelController: VisualEffectViewController,
     AgencyAlertsDelegate,
-    AgencyAlertListKitConverters,
-    AgencyAlertsSectionControllerDelegate,
+    AgencyAlertListViewConverters,
     AppContext,
-    ListAdapterDataSource,
     RegionsServiceDelegate,
     SearchDelegate,
-    SectionDataBuilders,
+    OBAListViewDataSource,
+//    OBAListViewContextMenuDelegate,
     UISearchBarDelegate {
 
     let mapRegionManager: MapRegionManager
@@ -38,7 +36,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     private var stops = [Stop]() {
         didSet {
-            collectionController.reload(animated: false)
+            listView.applyData()
         }
     }
 
@@ -51,10 +49,12 @@ class MapFloatingPanelController: VisualEffectViewController,
 
         super.init(nibName: nil, bundle: nil)
 
+        self.listView.obaDataSource = self
+//        self.listView.contextMenuDelegate = self
+        self.listView.backgroundColor = nil
+
         self.mapRegionManager.addDelegate(self)
-
         self.application.regionsService.addDelegate(self)
-
         self.application.alertsStore.addDelegate(self)
     }
 
@@ -67,18 +67,8 @@ class MapFloatingPanelController: VisualEffectViewController,
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UI
-
-    private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [searchBar, collectionController.view])
-
-    public lazy var collectionController: CollectionController = {
-        let controller = CollectionController(application: application, dataSource: self)
-        controller.collectionView.showsVerticalScrollIndicator = false
-        return controller
-    }()
-
-    var scrollView: UIScrollView { collectionController.collectionView }
-
-    var highSeverityAlertCollapsedSections: [String] = []
+    let listView = OBAListView()
+    private lazy var stackView = UIStackView.verticalStack(arrangedSubviews: [searchBar, listView])
 
     // MARK: - UI/Search
 
@@ -91,7 +81,7 @@ class MapFloatingPanelController: VisualEffectViewController,
             else {
                 mapPanelDelegate?.mapPanelController(self, moveTo: .tip, animated: true)
             }
-            collectionController.reload(animated: false)
+            listView.applyData()
         }
     }
 
@@ -109,16 +99,14 @@ class MapFloatingPanelController: VisualEffectViewController,
 
         updateSearchBarPlaceholderText()
 
-        prepareChildController(collectionController) {
-            visualEffectView.contentView.addSubview(stackView)
-            stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset, leading: 0, bottom: 0, trailing: 0))
-        }
+        visualEffectView.contentView.addSubview(stackView)
+        stackView.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.floatingPanelTopInset, leading: 0, bottom: 0, trailing: 0))
     }
 
     // MARK: - Agency Alerts
 
     public func agencyAlertsUpdated() {
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     // MARK: - Search UI and Data
@@ -148,7 +136,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-        collectionController.reload(animated: false)
+        listView.applyData()
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
@@ -172,106 +160,77 @@ class MapFloatingPanelController: VisualEffectViewController,
         inSearchMode = false
     }
 
-    private lazy var searchModeEmptyView: EmptyDataSetView = {
-        let emptyView = EmptyDataSetView(alignment: .top)
-        emptyView.imageView.image = UIImage(systemName: "magnifyingglass")
-        emptyView.titleLabel.text = OBALoc("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
-        emptyView.bodyLabel.text = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
+    var searchModeEmptyData: OBAListView.EmptyData {
+        let image = UIImage(systemName: "magnifyingglass")
+        let title = OBALoc("search_controller.empty_set.title", value: "Search", comment: "Title for the empty set indicator on the Search controller.")
+        let body = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
 
-        return emptyView
-    }()
+        return .standard(.init(alignment: .top, title: title, body: body, image: image))
+    }
 
     private lazy var searchInteractor = SearchInteractor(userDataStore: application.userDataStore, delegate: self)
 
     // MARK: - ListAdapterDataSource (Data Loading)
 
-    public func objects(for listAdapter: ListAdapter) -> [ListDiffable] {
+    func items(for listView: OBAListView) -> [OBAListViewSection] {
         if inSearchMode {
-            return searchInteractor.searchModeObjects(text: searchBar.text, listAdapter: listAdapter)
-        }
-        else {
-            return nearbyModeObjects(for: listAdapter)
+            return searchInteractor.searchModeObjects(text: searchBar.text)
+        } else {
+            return nearbyModeObjects()
         }
     }
 
     // MARK: - Nearby Mode
 
-    private lazy var nearbyModeEmptyView: EmptyDataSetView = {
-        let emptyView = EmptyDataSetView(alignment: .top)
-        emptyView.titleLabel.text = OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller")
-        emptyView.bodyLabel.text = OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller.")
+    var nearbyModeEmptyData: OBAListView.EmptyData {
+        let title = OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller")
+        let body = OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller.")
 
-        return emptyView
-    }()
+        return .standard(.init(alignment: .top, title: title, body: body))
+    }
 
-    private func nearbyModeObjects(for listAdapter: ListAdapter) -> [ListDiffable] {
-        var sections: [ListDiffable] = []
+    private func nearbyModeObjects() -> [OBAListViewSection] {
+        var sections: [OBAListViewSection] = []
 
         let highSeverityAlerts = application.alertsStore.recentHighSeverityAlerts
         if highSeverityAlerts.count > 0 {
-            let section = tableSections(agencyAlerts: highSeverityAlerts, collapsedSections: highSeverityAlertCollapsedSections)
-            sections.append(contentsOf: section)
+            sections.append(contentsOf: listSections(agencyAlerts: highSeverityAlerts))
         }
 
         if stops.count > 0 {
-            let section = tableSection(stops: Array(stops.prefix(5))) { [weak self] vm in
-                guard
-                    let self = self,
-                    let stop = vm.object as? Stop
-                else { return }
+            let stopsToShow = Array(stops.prefix(5))
+            let rows = stopsToShow.map { stop -> StopViewModel in
+                let onSelect = { (viewModel: StopViewModel) -> Void in
+                    self.mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
+                }
 
-                self.mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
+                return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: nil)
             }
-            sections.append(section)
+
+            sections.append(OBAListViewSection(id: "stops", contents: rows))
         }
 
         return sections
     }
 
-    public func listAdapter(_ listAdapter: ListAdapter, sectionControllerFor object: Any) -> ListSectionController {
-        let sectionController = defaultSectionController(for: object)
-        if let alertController = sectionController as? AgencyAlertsSectionController {
-            alertController.delegate = self
-        }
-        return sectionController
-    }
-
-    public func emptyView(for listAdapter: ListAdapter) -> UIView? {
+    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
         if inSearchMode {
-            return searchModeEmptyView
-        }
-        else {
-            return nearbyModeEmptyView
-        }
-    }
-
-    // MARK: - AgencyAlertsSectionControllerDelegate methods
-    func agencyAlertsSectionController(_ controller: AgencyAlertsSectionController, didSelectAlert alert: AgencyAlert) {
-        self.presentAlert(alert)
-    }
-
-    func agencyAlertsSectionControllerDidTapHeader(_ controller: AgencyAlertsSectionController) {
-        let agency = controller.sectionData!.agencyName
-        if let index = highSeverityAlertCollapsedSections.firstIndex(of: agency) {
-            highSeverityAlertCollapsedSections.remove(at: index)
+            return searchModeEmptyData
         } else {
-            highSeverityAlertCollapsedSections.append(agency)
+            return nearbyModeEmptyData
         }
-
-        self.collectionController.reload(animated: true)
     }
 }
 
 // MARK: - MapRegionDelegate
 
 extension MapFloatingPanelController: MapRegionDelegate {
-
     public var bottomScrollInset: CGFloat {
         get {
-            return collectionController.collectionView.contentInset.bottom
+            return listView.contentInset.bottom
         }
         set {
-            collectionController.collectionView.contentInset.bottom = newValue
+            listView.contentInset.bottom = newValue
         }
     }
 

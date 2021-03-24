@@ -107,33 +107,74 @@ public class Formatters: NSObject {
     }()
 
     // MARK: - ArrivalDeparture
-
+    // MARK: Full attributed explanation
     public func fullAttributedExplanation(from arrivalDeparture: ArrivalDeparture) -> NSAttributedString {
-        let arrDepTime = timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+        return fullAttributedArrivalDepartureExplanation(
+            arrivalDepartureDate: arrivalDeparture.arrivalDepartureDate,
+            scheduleStatus: arrivalDeparture.scheduleStatus,
+            temporalState: arrivalDeparture.temporalState,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            scheduleDeviationInMinutes: arrivalDeparture.deviationFromScheduleInMinutes)
+    }
+
+    public func fullAttributedArrivalDepartureExplanation(
+        arrivalDepartureDate: Date,
+        scheduleStatus: ScheduleStatus,
+        temporalState: TemporalState,
+        arrivalDepartureStatus: ArrivalDepartureStatus,
+        scheduleDeviationInMinutes: Int) -> NSAttributedString {
+
+        let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
 
         let explanationText: String
-        if arrivalDeparture.scheduleStatus == .unknown {
+        if scheduleStatus == .unknown {
             explanationText = Strings.scheduledNotRealTime
         }
         else {
-            explanationText = formattedScheduleDeviation(for: arrivalDeparture)
+            explanationText = formattedScheduleDeviation(temporalState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, scheduleDeviation: scheduleDeviationInMinutes)
         }
 
-        let scheduleStatusColor = colorForScheduleStatus(arrivalDeparture.scheduleStatus)
-
+        let scheduleStatusColor = colorForScheduleStatus(scheduleStatus)
         let timeExplanationFont = UIFont.preferredFont(forTextStyle: .footnote)
 
-        let attributedExplanation = NSMutableAttributedString(string: "\(arrDepTime) - ", attributes: [NSAttributedString.Key.font: timeExplanationFont])
+        let attributedExplanation = NSMutableAttributedString(
+            string: "\(arrDepTime) - ",
+            attributes: [NSAttributedString.Key.font: timeExplanationFont])
 
-        let explanation = NSAttributedString(string: explanationText, attributes: [NSAttributedString.Key.font: timeExplanationFont, NSAttributedString.Key.foregroundColor: scheduleStatusColor])
+        let explanation = NSAttributedString(
+            string: explanationText,
+            attributes: [NSAttributedString.Key.font: timeExplanationFont,
+                         NSAttributedString.Key.foregroundColor: scheduleStatusColor])
+
         attributedExplanation.append(explanation)
 
         return attributedExplanation
     }
 
+    // MARK: Accessibility label
     /// Creates a localized string appropriate for using in UIAccessibility.accessibilityLabel. Example: "Route 49 - University District Broadway"
     public func accessibilityLabel(for arrivalDeparture: ArrivalDeparture) -> String {
-        return String(format: OBALoc("voiceover.arrivaldeparture_route_fmt", value: "Route %@", comment: "VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals."), arrivalDeparture.routeAndHeadsign)
+        return accessibilityLabelForArrivalDeparture(routeAndHeadsign: arrivalDeparture.routeAndHeadsign)
+    }
+
+    /// Creates a localized string appropriate for using in UIAccessibility.accessibilityLabel. Example: "Route 49 - University District Broadway"
+    public func accessibilityLabelForArrivalDeparture(routeAndHeadsign: String) -> String {
+        return String(format: OBALoc("voiceover.arrivaldeparture_route_fmt", value: "Route %@", comment: "VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals."), routeAndHeadsign)
+    }
+
+    // MARK: Accessibility value
+    /// Creates a localized string appropriate for using in UIAccessibility.accessibilityValue.
+    /// - Note: This does not include schedule deviation information.
+    /// ## Examples
+    /// - "arriving in 3 minutes at 9:57pm"
+    /// - "scheduled to arrive in 3 minutes at 9:57pm"
+    public func accessibilityValue(for arrivalDeparture: ArrivalDeparture) -> String {
+        return accessibilityValueForArrivalDeparture(
+            arrivalDepartureDate: arrivalDeparture.arrivalDepartureDate,
+            arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes,
+            arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
+            temporalState: arrivalDeparture.temporalState,
+            scheduleStatus: arrivalDeparture.scheduleStatus)
     }
 
     /// Creates a localized string appropriate for using in UIAccessibility.accessibilityValue.
@@ -141,48 +182,78 @@ public class Formatters: NSObject {
     /// ## Examples
     /// - "arriving in 3 minutes at 9:57pm"
     /// - "scheduled to arrive in 3 minutes at 9:57pm"
-    public func accessibilityValue(for arrivalDeparture: ArrivalDeparture) -> String {
-        let arrDepTime = timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
+    public func accessibilityValueForArrivalDeparture(arrivalDepartureDate: Date, arrivalDepartureMinutes: Int, arrivalDepartureStatus: ArrivalDepartureStatus, temporalState: TemporalState, scheduleStatus: ScheduleStatus) -> String {
+        let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
 
-        let apply: (String) -> String = { String(format: $0, abs(arrivalDeparture.arrivalDepartureMinutes), arrDepTime) }
+        let apply: (String) -> String = { String(format: $0, abs(arrivalDepartureMinutes), arrDepTime) }
 
-        let scheduleStatus: String
-        switch (arrivalDeparture.arrivalDepartureStatus,
-                arrivalDeparture.temporalState,
-                arrivalDeparture.scheduleStatus == .unknown) {
+        let scheduleStatusString: String
+        switch (arrivalDepartureStatus,
+                temporalState,
+                scheduleStatus == .unknown) {
 
         // Is a past event, regardless of realtime data availability.
-        case (.arriving, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt", value: "arrived %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already arrived, regardless of realtime data availability."))
-        case (.departing, .past, _): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departed_x_minutes_ago_fmt", value: "departed %d minutes ago at %@.", comment: "VoiceOver text describing a route that has already departed, regardless of realtime data availability."))
+        case (.arriving, .past, _):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt",
+                                                value: "arrived %d minutes ago at %@.",
+                                                comment: "VoiceOver text describing a route that has already arrived, regardless of realtime data availability."))
+
+        case (.departing, .past, _):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_departed_x_minutes_ago_fmt",
+                                                value: "departed %d minutes ago at %@.",
+                                                comment: "VoiceOver text describing a route that has already departed, regardless of realtime data availability."))
 
         // Is a current event, regardless of realtime data availability.
-        case (.arriving, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_arriving_now", value: "arriving now!", comment: "VoiceOver text describing a route that is arriving now, regardless of realtime data availability.")
-        case (.departing, .present, _): scheduleStatus = OBALoc("voiceover.arrivaldeparture_departing_now", value: "departing now!", comment: "VoiceOver text describing a route that is departing now, regardless of realtime data availability.")
+        case (.arriving, .present, _):
+            scheduleStatusString = OBALoc("voiceover.arrivaldeparture_arriving_now",
+                                          value: "arriving now!",
+                                          comment: "VoiceOver text describing a route that is arriving now, regardless of realtime data availability.")
+        case (.departing, .present, _):
+            scheduleStatusString = OBALoc("voiceover.arrivaldeparture_departing_now",
+                                          value: "departing now!",
+                                          comment: "VoiceOver text describing a route that is departing now, regardless of realtime data availability.")
 
         // Has realtime data and is a future event.
-        case (.arriving, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_arriving_in_x_minutes", value: "arriving in %d minutes at %@.", comment: "VoiceOver text describing a future arrival that is based off realtime data."))
-        case (.departing, .future, false): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_departing_in_x_minutes_fmt", value: "departing in %d minutes at %@.", comment: "VoiceOver text describing a future departure that is based off realtime data."))
+        case (.arriving, .future, false):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_arriving_in_x_minutes",
+                                          value: "arriving in %d minutes at %@.",
+                                          comment: "VoiceOver text describing a future arrival that is based off realtime data."))
+        case (.departing, .future, false):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_departing_in_x_minutes_fmt",
+                                          value: "departing in %d minutes at %@.",
+                                          comment: "VoiceOver text describing a future departure that is based off realtime data."))
 
         // No realtime data and is a future event.
-        case (.arriving, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt", value: "scheduled to arrive in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to arrive (no realtime data was available)."))
-        case (.departing, .future, true): scheduleStatus = apply(OBALoc("voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt", value: "scheduled to depart in %d minutes at %@.", comment: "VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"))
+        case (.arriving, .future, true):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_scheduled_arrives_in_x_minutes_fmt",
+                                          value: "scheduled to arrive in %d minutes at %@.",
+                                          comment: "VoiceOver text describing a route that is scheduled to arrive (no realtime data was available)."))
+        case (.departing, .future, true):
+            scheduleStatusString = apply(OBALoc("voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt",
+                                          value: "scheduled to depart in %d minutes at %@.",
+                                          comment: "VoiceOver text describing a route that is scheduled to depart. (no realtime data was available)"))
         }
 
-        return scheduleStatus
+        return scheduleStatusString
     }
 
     /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
-    ///
     /// For example, it might generate a string that says "Arrived 3 min ago", "Departing now", or "Departs in 8 min".
     ///
     /// - Parameter arrivalDeparture: The ArrivalDeparture object representing the string
     /// - Returns: A localized string explaining the arrival/departure status.
     public func explanation(from arrivalDeparture: ArrivalDeparture) -> String {
-        let temporalState = arrivalDeparture.temporalState
-        let arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
-        let apply: (String) -> String = { String(format: $0, abs(arrivalDeparture.arrivalDepartureMinutes)) }
+        return explanationForArrivalDeparture(tempuraState: arrivalDeparture.temporalState, arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes)
+    }
 
-        switch (temporalState, arrivalDepartureStatus) {
+    /// Creates a string that explains when the `ArrivalDeparture` arrives or departs.
+    /// For example, it might generate a string that says "Arrived 3 min ago", "Departing now", or "Departs in 8 min".
+    ///
+    /// - Returns: A localized string explaining the arrival/departure status.
+    public func explanationForArrivalDeparture(tempuraState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, arrivalDepartureMinutes: Int) -> String {
+        let apply: (String) -> String = { String(format: $0, abs(arrivalDepartureMinutes)) }
+
+        switch (tempuraState, arrivalDepartureStatus) {
         case (.past, .arriving):
             return apply(OBALoc("formatters.arrived_x_min_ago_fmt", value: "Arrived %d min ago", comment: "Use for vehicles that arrived X minutes ago."))
         case (.past, .departing):
@@ -208,17 +279,21 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The object used to determine the schedule deviation.
     /// - Returns: A formatted string representing the schedule deviation.
     public func formattedScheduleDeviation(for arrivalDeparture: ArrivalDeparture) -> String {
-        switch (arrivalDeparture.temporalState, arrivalDeparture.arrivalDepartureStatus) {
+        return formattedScheduleDeviation(temporalState: arrivalDeparture.temporalState, arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus, scheduleDeviation: arrivalDeparture.deviationFromScheduleInMinutes)
+    }
+
+    public func formattedScheduleDeviation(temporalState: TemporalState, arrivalDepartureStatus: ArrivalDepartureStatus, scheduleDeviation: Int) -> String {
+        switch (temporalState, arrivalDepartureStatus) {
         case (.past, .arriving):
-            return explanationOfDeviationForPastArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForPastArrival(minutes: scheduleDeviation)
         case (.past, .departing):
-            return explanationOfDeviationForPastDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForPastDeparture(minutes: scheduleDeviation)
         case (_, .arriving):
-            return explanationOfDeviationForFutureArrival(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForFutureArrival(minutes: scheduleDeviation)
         case (_, .departing):
             fallthrough // swiftlint:disable:this no_fallthrough_only
         default:
-            return explanationOfDeviationForFutureDeparture(minutes: arrivalDeparture.deviationFromScheduleInMinutes)
+            return explanationOfDeviationForFutureDeparture(minutes: scheduleDeviation)
         }
     }
 
@@ -286,11 +361,21 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
     /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
     public func shortFormattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
-        switch arrivalDeparture.temporalState {
+        return shortFormattedTime(untilMinutes: arrivalDeparture.arrivalDepartureMinutes, temporalState: arrivalDeparture.temporalState)
+    }
+
+    /// Creates a formatted string from the `ArrivalDeparture` object that shows the short formatted time until this event occurs.
+    ///
+    /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7m"`.
+    /// 7 minutes in the past: `"-7m"`. If the `ArrivalDeparture` event occurs now, then this will return `"NOW"`.
+    ///
+    /// - Returns: The short formatted string representing the time until the `arrivalDeparture` event occurs.
+    public func shortFormattedTime(untilMinutes: Int, temporalState: TemporalState) -> String {
+        switch temporalState {
         case .present: return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         default:
             let formatString = OBALoc("formatters.short_time_fmt", value: "%dm", comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past.")
-            return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
+            return String(format: formatString, untilMinutes)
         }
     }
 
@@ -305,7 +390,20 @@ public class Formatters: NSObject {
     /// - Parameter arrivalDeparture: The event for which a formatted time distance is to be calculated.
     /// - Returns: The formatted string representing the time until the `arrivalDeparture` event occurs.
     public func formattedTime(until arrivalDeparture: ArrivalDeparture) -> String {
-        switch (abs(arrivalDeparture.arrivalDepartureMinutes), arrivalDeparture.temporalState) {
+        return formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes, temporalState: arrivalDeparture.temporalState)
+    }
+
+    /// Creates a formatted string from the `ArrivalDeparture` object that shows the  formatted time until this event occurs.
+    ///
+    /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7 minutes"`.
+    /// 7 minutes in the past: `"-7 minutes"`. If the `ArrivalDeparture` event occurs now, then this will return `"NOW"`.
+    /// Special casing is applied for times that occur -1/+1 minute from now: "One minute ago" and "One minute".
+    /// This method is meant to be used as the value of `accessibilityLabel` properties, for instance, where the "m" suffix on
+    /// `shortFormattedTime()` will be misinterpreted by VoiceOver.
+    ///
+    /// - Returns: The formatted string representing the time until the `arrivalDeparture` event occurs.
+    public func formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: Int, temporalState: TemporalState) -> String {
+        switch (abs(arrivalDepartureMinutes), temporalState) {
         case (_, .present):
             return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         case (1, .past):
@@ -314,7 +412,7 @@ public class Formatters: NSObject {
             return OBALoc("formatters.one_minute", value: "One minute", comment: "Formatted time text for arrivals/departures that occur in one minute.")
         default:
             let formatString = OBALoc("formatters.time_fmt", value: "%d minutes", comment: "Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past.")
-            return String(format: formatString, arrivalDeparture.arrivalDepartureMinutes)
+            return String(format: formatString, arrivalDepartureMinutes)
         }
     }
 
