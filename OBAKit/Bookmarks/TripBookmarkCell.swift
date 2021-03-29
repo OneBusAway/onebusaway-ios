@@ -130,7 +130,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
         contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         contentView.addSubview(stackView)
-        stackView.pinToSuperview(.readableContent) { $0.trailing.priority = .required - 1 }
+        stackView.pinToSuperview(.readableContent)
 
         NSLayoutConstraint.activate([
             primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8)
