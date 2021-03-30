@@ -91,6 +91,11 @@ final class TripBookmarkTableCell: OBAListViewCell {
     private let secondaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
     private let tertiaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
 
+    // MARK: Should highlight updates on display
+    private var primaryLabelHighlightOnDisplay = false
+    private var secondaryLabelHighlightOnDisplay = false
+    private var tertiaryLabelHighlightOnDisplay = false
+
     static var buildMinutesLabel: HighlightChangeLabel {
         let label = HighlightChangeLabel.autolayoutNew()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -181,31 +186,39 @@ final class TripBookmarkTableCell: OBAListViewCell {
         minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
 
         // Update data
-        func update(view: ArrivalDepartureDrivenUI, withDataAtIndex index: Int) {
+        func update(view: ArrivalDepartureDrivenUI, shouldHighlightOnDisplay: inout Bool, withDataAtIndex index: Int) {
             if arrivalDepartures.count > index {
                 view.configure(with: arrivalDepartures[index], formatters: formatters)
+                shouldHighlightOnDisplay = config.viewModel.arrivalDeparturesPair[index].shouldHighlightOnDisplay
                 view.isHidden = false
             } else {
                 view.isHidden = true
             }
         }
 
-        update(view: primaryMinutesLabel, withDataAtIndex: 0)
-        update(view: secondaryMinutesLabel, withDataAtIndex: 1)
-        update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
+        update(view: primaryMinutesLabel, shouldHighlightOnDisplay: &primaryLabelHighlightOnDisplay, withDataAtIndex: 0)
+        update(view: secondaryMinutesLabel, shouldHighlightOnDisplay: &secondaryLabelHighlightOnDisplay, withDataAtIndex: 1)
+        update(view: tertiaryMinutesLabel, shouldHighlightOnDisplay: &tertiaryLabelHighlightOnDisplay, withDataAtIndex: 2)
 
         accessibilityLabel = formatters.accessibilityLabel(for: config.viewModel)
         accessibilityValue = formatters.accessibilityValue(for: config.viewModel)
     }
 
-    func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
-                           basedOn arrivalDepartureTimes: inout ArrivalDepartureTimes) {
-        let views: [ArrivalDepartureDrivenUI] = [primaryMinutesLabel, secondaryMinutesLabel, tertiaryMinutesLabel]
+    override func willDisplayCell(in listView: OBAListView) {
+        // Highlight arrival departure changes, if needed.
+        if primaryLabelHighlightOnDisplay {
+            primaryMinutesLabel.highlightBackground()
+            primaryLabelHighlightOnDisplay = false
+        }
 
-        for view in views.enumerated() {
-            guard newArrivalDepartures.count > view.offset else { continue }
-            let arrDep = newArrivalDepartures[view.offset]
-            view.element.highlightIfNeeded(arrivalDeparture: arrDep, basedOn: &arrivalDepartureTimes)
+        if secondaryLabelHighlightOnDisplay {
+            secondaryMinutesLabel.highlightBackground()
+            secondaryLabelHighlightOnDisplay = false
+        }
+
+        if tertiaryLabelHighlightOnDisplay {
+            tertiaryMinutesLabel.highlightBackground()
+            tertiaryLabelHighlightOnDisplay = false
         }
     }
 
