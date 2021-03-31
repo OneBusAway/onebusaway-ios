@@ -172,18 +172,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
             accessibilityScheduleDeviationLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
         }
 
-        // Do accessibility
-        standardInfoStack.forEach { $0.isHidden = isAccessibility }
-        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
-
-        stackView.axis = isAccessibility ? .vertical : .horizontal
-        minutesStackView.axis = isAccessibility ? .horizontal : .vertical
-
-        stackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
-        minutesStackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
-
-        minutesStackView.alignment = isAccessibility ? .center : .trailing
-        minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
+        layoutView()
 
         // Update data
         func update(view: ArrivalDepartureDrivenUI, shouldHighlightOnDisplay: inout Bool, withDataAtIndex index: Int) {
@@ -222,6 +211,21 @@ final class TripBookmarkTableCell: OBAListViewCell {
         }
     }
 
+    func layoutView() {
+        // Do accessibility
+        standardInfoStack.forEach { $0.isHidden = isAccessibility }
+        accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
+
+        stackView.axis = isAccessibility ? .vertical : .horizontal
+        minutesStackView.axis = isAccessibility ? .horizontal : .vertical
+
+        stackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
+        minutesStackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
+
+        minutesStackView.alignment = isAccessibility ? .center : .trailing
+        minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
+    }
+
     // MARK: - UICollectionViewCell Overrides
 
     override func prepareForReuse() {
@@ -238,6 +242,11 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         accessibilityLabel = nil
         accessibilityValue = nil
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        layoutView()
     }
 
     override var isHighlighted: Bool {
