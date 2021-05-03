@@ -200,7 +200,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         if stops.count > 0 {
             let stopsToShow = Array(stops.prefix(5))
             let rows = stopsToShow.map { stop -> StopViewModel in
-                let onSelect = { (viewModel: StopViewModel) -> Void in
+                let onSelect = { (viewModel: StopViewModel) -> Void in // swiftlint:disable:this unused_closure_parameter
                     self.mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
                 }
 

@@ -10,7 +10,7 @@ import UIKit
 
 // swiftlint:disable cyclomatic_complexity function_body_length multiple_closures_with_trailing_closure
 
-protocol SwipeControllerDelegate: class {
+protocol SwipeControllerDelegate: AnyObject {
 
     func swipeController(_ controller: SwipeController, canBeginEditingSwipeableFor orientation: SwipeActionsOrientation) -> Bool
 

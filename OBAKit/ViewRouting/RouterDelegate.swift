@@ -8,7 +8,7 @@
 import Foundation
 
 /// Provide navigation behavior overrides if necessary.
-public protocol ViewRouterDelegate: class {
+public protocol ViewRouterDelegate: AnyObject {
 
     /// Gives an implementing view controller the opportunity to override navigation to a destination controller.
     ///

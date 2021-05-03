@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 10/11/20.
 //
 
-public protocol OBAListViewDataSource: class {
+public protocol OBAListViewDataSource: AnyObject {
     /// Asks the data source for the items to display in the list.
     /// - precondition: The section identifiers must be unique, and the item identifiers in each section
     /// must be unique across all sections.

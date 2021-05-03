@@ -211,10 +211,9 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         return _routeShortName ?? route.shortName
     }
 
-    /// Provides the best available name for this route, which will either be the value of
-    /// `routeLongName` or `routeShortName`, depending on whether or not `routeLongName` is nil.
+    /// Provides the best available name for this route.
     public var routeName: String {
-        return routeLongName ?? routeShortName
+        return routeShortName
     }
 
     /// A composite of the route name and headsign.

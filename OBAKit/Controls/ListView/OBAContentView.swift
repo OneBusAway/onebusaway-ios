@@ -16,7 +16,7 @@ import Foundation
 /// content and styling that you define with its configuration. The content view’s
 /// configuration encapsulates all of the supported properties and behaviors for
 /// content view customization.
-public protocol OBAContentView: class {
+public protocol OBAContentView: AnyObject {
     /// Applies the new configuration to the view, causing the view to render any updates
     /// to its appearance.
     ///

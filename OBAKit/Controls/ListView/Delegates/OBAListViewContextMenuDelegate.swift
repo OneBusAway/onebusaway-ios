@@ -7,7 +7,7 @@
 
 /// To add contextual menus to `OBAListView`, conform to `OBAListViewContextMenuDelegate`.
 /// Then, set `OBAListView.contextMenuDelegate`.
-public protocol OBAListViewContextMenuDelegate: class {
+public protocol OBAListViewContextMenuDelegate: AnyObject {
     /// Provides the configuration for the context menu of the given item.
     ///
     /// # Example implementation
