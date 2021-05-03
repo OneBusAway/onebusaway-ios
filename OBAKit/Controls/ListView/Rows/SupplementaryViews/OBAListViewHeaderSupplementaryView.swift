@@ -10,7 +10,7 @@ import UIKit
 // MARK: - UICollectionReusableView
 
 /// Respond to user actions on the header view.
-public protocol OBAListRowHeaderSupplementaryViewDelegate: class {
+public protocol OBAListRowHeaderSupplementaryViewDelegate: AnyObject {
     func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection)
 }
 

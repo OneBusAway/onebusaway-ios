@@ -151,12 +151,12 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Selected Tab Index
 
     func test_selectedTabIndex_mapSelectedByDefault() {
-        expect(self.userDefaultsStore.lastSelectedView) == .map
+        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
     }
 
     func test_selectedTabIndex_changingDefaults() {
         userDefaultsStore.lastSelectedView = .bookmarks
-        expect(self.userDefaultsStore.lastSelectedView) == .bookmarks
+        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.bookmarks
     }
 
     // MARK: - Debug Mode

@@ -5,7 +5,7 @@
 //  Created by Alan Chu on 3/4/21.
 //
 
-public protocol OBAListViewDelegate: class {
+public protocol OBAListViewDelegate: AnyObject {
     /// Tells the delegate that the OBAListView finished applying data.
     /// - parameter listView: The OBAListView that finished applying data.
     func didApplyData(_ listView: OBAListView)

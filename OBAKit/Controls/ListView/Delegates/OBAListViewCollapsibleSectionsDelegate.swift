@@ -9,7 +9,7 @@ import UIKit
 
 /// To add collapsible sections to `OBAListView`, conform to `OBAListViewCollapsibleSectionsDelegate`.
 /// Then, set `OBAListView.collapsibleSectionsDelegate`.
-public protocol OBAListViewCollapsibleSectionsDelegate: class {
+public protocol OBAListViewCollapsibleSectionsDelegate: AnyObject {
     /// Required. A list of collapsed sections.
     var collapsedSections: Set<OBAListViewSection.ID> { get set }
 
