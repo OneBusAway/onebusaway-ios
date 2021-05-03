@@ -91,6 +91,11 @@ final class TripBookmarkTableCell: OBAListViewCell {
     private let secondaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
     private let tertiaryMinutesLabel = TripBookmarkTableCell.buildMinutesLabel
 
+    // MARK: Should highlight updates on display
+    private var primaryLabelHighlightOnDisplay = false
+    private var secondaryLabelHighlightOnDisplay = false
+    private var tertiaryLabelHighlightOnDisplay = false
+
     static var buildMinutesLabel: HighlightChangeLabel {
         let label = HighlightChangeLabel.autolayoutNew()
         label.font = .preferredFont(forTextStyle: .subheadline)
@@ -130,7 +135,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
         contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         contentView.addSubview(stackView)
-        stackView.pinToSuperview(.readableContent) { $0.trailing.priority = .required - 1 }
+        stackView.pinToSuperview(.readableContent)
 
         NSLayoutConstraint.activate([
             primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8)
@@ -167,6 +172,46 @@ final class TripBookmarkTableCell: OBAListViewCell {
             accessibilityScheduleDeviationLabel.textColor = formatters.colorForScheduleStatus(arrivalDeparture.scheduleStatus)
         }
 
+        layoutView()
+
+        // Update data
+        func update(view: ArrivalDepartureDrivenUI, shouldHighlightOnDisplay: inout Bool, withDataAtIndex index: Int) {
+            if arrivalDepartures.count > index {
+                view.configure(with: arrivalDepartures[index], formatters: formatters)
+                shouldHighlightOnDisplay = config.viewModel.arrivalDeparturesPair[index].shouldHighlightOnDisplay
+                view.isHidden = false
+            } else {
+                view.isHidden = true
+            }
+        }
+
+        update(view: primaryMinutesLabel, shouldHighlightOnDisplay: &primaryLabelHighlightOnDisplay, withDataAtIndex: 0)
+        update(view: secondaryMinutesLabel, shouldHighlightOnDisplay: &secondaryLabelHighlightOnDisplay, withDataAtIndex: 1)
+        update(view: tertiaryMinutesLabel, shouldHighlightOnDisplay: &tertiaryLabelHighlightOnDisplay, withDataAtIndex: 2)
+
+        accessibilityLabel = formatters.accessibilityLabel(for: config.viewModel)
+        accessibilityValue = formatters.accessibilityValue(for: config.viewModel)
+    }
+
+    override func willDisplayCell(in listView: OBAListView) {
+        // Highlight arrival departure changes, if needed.
+        if primaryLabelHighlightOnDisplay {
+            primaryMinutesLabel.highlightBackground()
+            primaryLabelHighlightOnDisplay = false
+        }
+
+        if secondaryLabelHighlightOnDisplay {
+            secondaryMinutesLabel.highlightBackground()
+            secondaryLabelHighlightOnDisplay = false
+        }
+
+        if tertiaryLabelHighlightOnDisplay {
+            tertiaryMinutesLabel.highlightBackground()
+            tertiaryLabelHighlightOnDisplay = false
+        }
+    }
+
+    func layoutView() {
         // Do accessibility
         standardInfoStack.forEach { $0.isHidden = isAccessibility }
         accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
@@ -179,34 +224,6 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         minutesStackView.alignment = isAccessibility ? .center : .trailing
         minutesStackView.distribution = isAccessibility ? .fillProportionally : .fill
-
-        // Update data
-        func update(view: ArrivalDepartureDrivenUI, withDataAtIndex index: Int) {
-            if arrivalDepartures.count > index {
-                view.configure(with: arrivalDepartures[index], formatters: formatters)
-                view.isHidden = false
-            } else {
-                view.isHidden = true
-            }
-        }
-
-        update(view: primaryMinutesLabel, withDataAtIndex: 0)
-        update(view: secondaryMinutesLabel, withDataAtIndex: 1)
-        update(view: tertiaryMinutesLabel, withDataAtIndex: 2)
-
-        accessibilityLabel = formatters.accessibilityLabel(for: config.viewModel)
-        accessibilityValue = formatters.accessibilityValue(for: config.viewModel)
-    }
-
-    func highlightIfNeeded(newArrivalDepartures: [ArrivalDeparture],
-                           basedOn arrivalDepartureTimes: inout ArrivalDepartureTimes) {
-        let views: [ArrivalDepartureDrivenUI] = [primaryMinutesLabel, secondaryMinutesLabel, tertiaryMinutesLabel]
-
-        for view in views.enumerated() {
-            guard newArrivalDepartures.count > view.offset else { continue }
-            let arrDep = newArrivalDepartures[view.offset]
-            view.element.highlightIfNeeded(arrivalDeparture: arrDep, basedOn: &arrivalDepartureTimes)
-        }
     }
 
     // MARK: - UICollectionViewCell Overrides
@@ -225,6 +242,11 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         accessibilityLabel = nil
         accessibilityValue = nil
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        layoutView()
     }
 
     override var isHighlighted: Bool {

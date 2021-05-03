@@ -19,6 +19,8 @@ struct BookmarkArrivalContentConfiguration: OBAContentConfiguration {
 
 /// Used by `OBAListView` to display bookmark data in `BookmarksViewController`.
 struct BookmarkArrivalViewModel: OBAListViewItem {
+    /// Whether to highlight the time (to indicate a data update) when this item is displayed on the list.
+    typealias ArrivalDepartureShouldHighlightPair = (arrDep: ArrivalDeparture, shouldHighlightOnDisplay: Bool)
     let bookmark: Bookmark
 
     // MARK: - View model properties
@@ -36,6 +38,7 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
 
     // TODO: Same as mentioned above, make arrival departures a struct.
     let arrivalDepartures: [ArrivalDeparture]?
+    let arrivalDeparturesPair: [ArrivalDepartureShouldHighlightPair]
 
     static var customCellType: OBAListViewCell.Type? {
         return TripBookmarkTableCell.self
@@ -49,7 +52,7 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
     var onDeleteAction: OBAListViewAction<BookmarkArrivalViewModel>?
 
     init(bookmark: Bookmark,
-         arrivalDepartures: [ArrivalDeparture]?,
+         arrivalDepartures: [ArrivalDepartureShouldHighlightPair],
          onSelect: OBAListViewAction<BookmarkArrivalViewModel>?) {
         self.bookmark = bookmark
         self.bookmarkID = bookmark.id
@@ -63,7 +66,13 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
         self.tripHeadsign = bookmark.tripHeadsign
         self.routeID = bookmark.routeID
 
-        self.arrivalDepartures = arrivalDepartures
+        self.arrivalDeparturesPair = arrivalDepartures
+
+        if arrivalDeparturesPair.isEmpty {
+            self.arrivalDepartures = nil
+        } else {
+            self.arrivalDepartures = arrivalDeparturesPair.map { $0.arrDep }
+        }
 
         self.onSelectAction = onSelect
     }

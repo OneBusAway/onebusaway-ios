@@ -47,6 +47,7 @@ public class BookmarksViewController: UIViewController,
     }
 
     public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
+
     let listView = OBAListView()
 
     public init(application: Application) {
@@ -143,10 +144,13 @@ public class BookmarksViewController: UIViewController,
         let bookmarks = application.userDataStore.bookmarksInGroup(group)
 
         let arrivalData = bookmarks.compactMap { bookmark -> BookmarkArrivalViewModel? in
-            var arrDeps = [ArrivalDeparture]()
+            var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
 
             if let key = TripBookmarkKey(bookmark: bookmark) {
-                arrDeps = dataLoader.dataForKey(key)
+                let data = dataLoader.dataForKey(key)
+                arrDeps = data.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
+                    return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
+                }
             }
 
             let viewModel = BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
@@ -226,6 +230,26 @@ public class BookmarksViewController: UIViewController,
         return OBAListViewMenuActions(previewProvider: previewProvider,
                                performPreviewAction: commitPreviewAction,
                                contextMenuProvider: menu)
+    }
+
+    // MARK: - Arrival departure highlight updates
+    private var arrivalDepartureTimes = ArrivalDepartureTimes()
+
+    /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
+    ///
+    /// This is used to indicate whether the departure time for the `ArrivalDeparture` object has changed.
+    ///
+    /// - Parameter arrivalDeparture: The ArrivalDeparture object
+    /// - Returns: Whether or not to highlight the ArrivalDeparture in its cell.
+    private func shouldHighlight(arrivalDeparture: ArrivalDeparture) -> Bool {
+        var highlight = false
+        if let lastMinutes = arrivalDepartureTimes[arrivalDeparture.tripID] {
+            highlight = lastMinutes != arrivalDeparture.arrivalDepartureMinutes
+        }
+
+        arrivalDepartureTimes[arrivalDeparture.tripID] = arrivalDeparture.arrivalDepartureMinutes
+
+        return highlight
     }
 
     // MARK: - BookmarkEditorDelegate
