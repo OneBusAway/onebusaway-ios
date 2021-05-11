@@ -204,11 +204,11 @@ final class DataMigrationErrorPage: ThemedBulletinPage {
 
         switch error {
         case .noAPIServiceAvailable:
-            descriptionText = OBALoc("data_migration_bulletin.errors.no_api_service_available", value: "", comment: "")
+            descriptionText = OBALoc("data_migration_bulletin.errors.no_api_service_available", value: "Check your internet connection and try again.", comment: "An error message that appears when the user needs to have data migrated, but is not connected to the Internet.")
         case .noDataToMigrate:
-            descriptionText = OBALoc("data_migration_bulletin.errors.no_data_to_migrate", value: "", comment: "")
+            descriptionText = OBALoc("data_migration_bulletin.errors.no_data_to_migrate", value: "You're all set!", comment: "An error message that appears when the data migrator runs but no data can be migrated.")
         case .noMigrationPending:
-            descriptionText = OBALoc("data_migration_bulletin.errors.no_migration_pending", value: "", comment: "")
+            descriptionText = OBALoc("data_migration_bulletin.errors.no_migration_pending", value: "No data migration is pending.", comment: "An error message that appears when the data migrator runs without a pending migration.")
         }
     }
 }
