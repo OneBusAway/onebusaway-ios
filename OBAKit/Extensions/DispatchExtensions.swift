@@ -12,8 +12,6 @@
 import Dispatch
 import OBAKitCore
 
-// swiftlint:disable empty_enum_arguments
-
 private var throttleWorkItems = [AnyHashable: DispatchWorkItem]()
 private var lastDebounceCallTimes = [AnyHashable: DispatchTime]()
 private let nilContext: AnyHashable = arc4random()
