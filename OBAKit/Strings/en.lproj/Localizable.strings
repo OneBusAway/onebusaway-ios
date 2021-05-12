@@ -40,12 +40,6 @@
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
 "bookmarks_controller.ungrouped_bookmarks_section.title" = "Bookmarks";
 
-/* Voiceover text describing a collapsed (or closed) section. */
-"collapsible_header_cell.voiceover.collapsed" = "Section collapsed";
-
-/* Voiceover text describing an expanded (or opened) section. */
-"collapsible_header_cell.voiceover.expanded" = "Section expanded";
-
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
 "contact_us_helper.cant_send_email.body_fmt" = "In order to contact us, you'll need to email us at %@. Please tap 'Copy Debug Info' to copy information to the clipboard that will be helpful for us to fix this problem. Please include this information in your email.";
 
@@ -73,14 +67,14 @@
 /* Dismissal button title for the DataMigrationBulletinPage. */
 "data_migration_bulletin.dismiss_button" = "Maybe Later…";
 
-/* No comment provided by engineer. */
-"data_migration_bulletin.errors.no_api_service_available" = "data_migration_bulletin.errors.no_api_service_available";
+/* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
+"data_migration_bulletin.errors.no_api_service_available" = "Check your internet connection and try again.";
 
-/* No comment provided by engineer. */
-"data_migration_bulletin.errors.no_data_to_migrate" = "data_migration_bulletin.errors.no_data_to_migrate";
+/* An error message that appears when the data migrator runs but no data can be migrated. */
+"data_migration_bulletin.errors.no_data_to_migrate" = "You're all set!";
 
-/* No comment provided by engineer. */
-"data_migration_bulletin.errors.no_migration_pending" = "data_migration_bulletin.errors.no_migration_pending";
+/* An error message that appears when the data migrator runs without a pending migration. */
+"data_migration_bulletin.errors.no_migration_pending" = "No data migration is pending.";
 
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "We're all done upgrading your data. Thanks for your patience!";
@@ -514,11 +508,17 @@
 /* Message displayed an existing bookmark is updated. */
 "stops_controller.updated_bookmark" = "Updated Bookmark";
 
+/* Button that launches a maps app with walking directions to this stop */
+"stops_controller.walking_directions" = "Walking Directions";
+
 /* Button that launches Apple's maps.app with walking directions to this stop */
 "stops_controller.walking_directions_apple" = "Walking Directions (Apple Maps)";
 
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Walking Directions (Google Maps)";
+
+/* A notice when a transit alert doesn't have body text. */
+"transit_alert.no_additional_details.body" = "No additional details available.";
 
 /* Describes the next trip of this vehicle. e.g. Continues as 10 - Downtown Seattle */
 "trip_details_controller.continues_as_fmt" = "Continues as %@";
@@ -526,8 +526,11 @@
 /* Last report: <TIME> */
 "trip_details_controller.last_report_fmt" = "Last report: %@";
 
-/* Service alerts header in the trip details controller. Cleverly, it looks like the header for the next section. */
+/* Service alerts header in the trip details controller. */
 "trip_details_controller.service_alerts_footer" = "Trip Details";
+
+/* Button that moves the map to focus on the selected stop */
+"trip_details_controller.show_on_map" = "Show on Map";
 
 /* Describes the previous trip of this vehicle. e.g. Starts as 10 - Downtown Seattle */
 "trip_details_controller.starts_as_fmt" = "Starts as %@";
