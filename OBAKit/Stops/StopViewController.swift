@@ -704,27 +704,25 @@ public class StopViewController: UIViewController,
             }
             items.append(nearbyStops.typeErased)
 
-            let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard
-                    let self = self,
-                    let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate)
-                    else { return }
+            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
+                let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
+                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
+                }
 
-                self.application.open(url, options: [:], completionHandler: nil)
+                items.append(appleMaps.typeErased)
             }
-            items.append(appleMaps.typeErased)
 
             #if !targetEnvironment(simulator)
-            let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard
-                    let self = self,
-                    let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-                    self.application.canOpenURL(url)
-                else { return }
+            // Display Google Maps app link, only if Google Maps is installed.
+            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+               self.application.canOpenURL(googleMapsURL) {
 
-                self.application.open(url, options: [:], completionHandler: nil)
+                let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
+                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
+                }
+                items.append(googleMaps.typeErased)
             }
-            items.append(googleMaps.typeErased)
+
             #endif
         }
 

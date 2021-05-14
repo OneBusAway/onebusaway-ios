@@ -55,10 +55,14 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(title)
+        hasher.combine(body)
+        hasher.combine(localizedURL)
     }
 
     static func == (lhs: TransitAlertDataListViewModel, rhs: TransitAlertDataListViewModel) -> Bool {
-        return lhs.title == rhs.title &&
+        return lhs.id == rhs.id &&
+            lhs.title == rhs.title &&
             lhs.body == rhs.body &&
             lhs.localizedURL == rhs.localizedURL
     }
