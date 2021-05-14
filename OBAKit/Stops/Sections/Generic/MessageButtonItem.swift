@@ -132,7 +132,6 @@ final class MessageButtonCell: OBAListViewCell {
         super.init(frame: frame)
 
         contentView.addSubview(stack)
-        stack.pinToSuperview(.layoutMargins)
 
         self.showsLargeContentViewer = true
         self.addInteraction(UILargeContentViewerInteraction())
@@ -143,6 +142,11 @@ final class MessageButtonCell: OBAListViewCell {
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        stack.pinToSuperview(.layoutMargins)
     }
 
     override func prepareForReuse() {

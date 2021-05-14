@@ -97,19 +97,13 @@ public class ActivityIndicatedButton: UIView {
     }
 
     public func showActivityIndicator() {
-        UIView.animate(withDuration: 0.1) {
-            self.button.isHidden = true
-            self.activityIndicator.startAnimating()
-            self.layoutIfNeeded()
-        }
+        self.button.isHidden = true
+        self.activityIndicator.startAnimating()
     }
 
     public func hideActivityIndicator() {
-        UIView.animate(withDuration: 0.1) {
-            self.button.isHidden = false
-            self.activityIndicator.stopAnimating()
-            self.layoutIfNeeded()
-        }
+        self.button.isHidden = false
+        self.activityIndicator.stopAnimating()
     }
 
     func configureView() {
