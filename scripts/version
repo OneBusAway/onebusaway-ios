@@ -4,19 +4,19 @@ require 'date'
 
 PLISTBUDDY_PATH = "/usr/libexec/PlistBuddy"
 
-def update_build_version(label, plist_path, build_version)  
-  puts `#{PLISTBUDDY_PATH} -c "Set :CFBundleVersion #{build_version}" #{plist_path}`
+def update_build_version(label, plist_path, build_version)
+  `#{PLISTBUDDY_PATH} -c "Set :CFBundleVersion #{build_version}" #{plist_path}`
 end
 
 def update_all_apps
   apps = Dir.glob("Apps/*") - ["Apps/Shared"]
   apps += ["OBAKit", "OBAKitCore", "TodayView"]
   launch_directory = Dir.pwd
-  
+
   build_version = DateTime.now.strftime("%Y%m%d.%H")
 
   puts "Updating bundle build number to #{build_version}."
-  
+
   apps.each do |app_path|
     label = app_path
     plist = Dir["#{app_path}/Info.plist"].first
