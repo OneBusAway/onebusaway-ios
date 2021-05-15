@@ -52,6 +52,16 @@ Run `scripts/generate_project` on its own to see a list of available app targets
 
 To create your own app target, duplicate the `Apps/OneBusAway` directory and update all of the available variables with the ones that are relevant to your project. [Learn more about White Label support by reading the documentation on the subject](Tutorials/WhiteLabel.md).
 
+## Sub-Projects
+
+The app, whether it is OneBusAway, KiedyBus, YRTViva, or another, is just a thin shell on top of two frameworks: `OBAKitCore` and `OBAKit`.
+
+`OBAKitCore` is responsible for networking, data models and storage, location services, and region management.
+
+`OBAKit` provides an iOS-compatible user interface that can easily be created from any app that consumes `OBAKit`.
+
+`TodayView`, if your project supports it, is a widget that provides the user with easy access to a subset of their bookmarked transit routes from the [Today View](https://support.apple.com/guide/iphone/add-widgets-iphb8f1bf206/ios).
+
 ## Internationalization and Localization
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
@@ -79,11 +89,7 @@ scripts/docs
 
 Configuration data for the Jazzy-generated documentation can be found in the file `.jazzy.json` in the root of the repository.
 
-## Frameworks
-
-The app is essentially a thin shell around two frameworks, `OBAKitCore` and `OBAKit`. `OBAKitCore` is responsible for networking, data models and storage, location services, and region management. `OBAKit` provides an iOS-compatible user interface that can easily be created from an app that consumes `OBAKit`.
-
-## Functional Areas
+## How-To's
 
 ### Protobuf
 
@@ -277,7 +283,7 @@ Version 2.7.1 / https://github.com/SwipeCellKit/SwipeCellKit/commit/6d632bdf1b73
 
 All other code is made available under the Apache 2.0 license.
 
-    Copyright 2018-Present Aaron Brethorst
+    Copyright 2018-Present Open Transit Software Foundation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
