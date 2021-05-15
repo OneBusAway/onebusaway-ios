@@ -14,6 +14,8 @@ check_for_project_file(app)
 
 generate_project(app)
 
+puts `scripts/version`
+
 BEGIN {
   def display_usage_information()
     puts "Usage: scripts/generate_project <APP NAME>"
@@ -22,7 +24,7 @@ BEGIN {
       puts "    #{app.split("/").last}"
     end
   end
-  
+
   def check_for_project_file(app)
     path = project_yml_path(app)
     if !File.exist?(path)
@@ -30,12 +32,12 @@ BEGIN {
       exit
     end
   end
-  
+
   def generate_project(app)
     `cp #{project_yml_path(app)} .`
     puts `xcodegen`
   end
-  
+
   def project_yml_path(app)
     "Apps/#{app}/project.yml"
   end
