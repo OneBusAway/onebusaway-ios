@@ -72,10 +72,11 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.TodayView
-     
+
 include:
   - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
+  - path: OBAKitUITests/project.yml
   - path: TodayView/project.yml

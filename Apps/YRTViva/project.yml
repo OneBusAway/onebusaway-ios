@@ -65,3 +65,5 @@ include:
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
+  - path: OBAKitUITests/project.yml
+  - path: TodayView/project.yml
