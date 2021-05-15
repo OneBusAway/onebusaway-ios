@@ -11,6 +11,9 @@ targets:
       - path: Apps/OneBusAway
         name: App
         group: OneBusAway
+      - path: Apps/Shared/Analytics
+        name: Analytics
+        group: OneBusAway
       - path: Apps/Shared/CommonClient
         name: Common
         group: OneBusAway
