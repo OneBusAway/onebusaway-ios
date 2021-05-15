@@ -35,8 +35,6 @@ Second, update the files that are explicitly tied to OneBusAway with your own cu
 
 * App Icon
 * AppDelegate.m
-* Info.plist
-* Entitlements file
 * project.yml
 * GoogleService-Info.plist (if you want to use Firebase and Crashlytics)
 * regions.json
@@ -61,9 +59,9 @@ Some features that are present within OneBusAway will require you to create and 
 * OneSignal for push notifications.
 * OneBusAway.co (Obaco) for alarms.
 
-(List accurate as of September 1, 2020.)
+(List accurate as of May 15, 2021.)
 
-If you do not wish to use these services in your app, you may disable them by excluding the relevant pieces of data in your `AppDelegate.m` and `project.yml` files. Furthermore, both analytics and push notifications are designed to support integration of other third party services. Please contact the OBAKit project maintainer for more information.
+If you do not wish to use these services in your app, you may disable them by excluding the relevant pieces of data in your `AppDelegate.m` and `project.yml` files. Furthermore, both analytics and push notifications are designed to support integration of other third party services. Please contact the OBAKit project maintainer for more information on how you can add support for other third party services.
 
 ## Embeddable Frameworks
 
@@ -86,3 +84,51 @@ This is a higher-level framework that contains almost all of the OneBusAway appl
 Example use cases:
 
 * I want to embed OneBusAway application screens, like stops or trip information, into my existing app.
+
+## Apple Developer Accounts and Settings
+
+### Sign up 
+
+Building your app for submission to Apple will require you to have a [Apple Developer account](https://developer.apple.com/programs/).
+
+### Log in to your Apple Developer account in Xcode
+
+In Xcode, navigate to the Xcode menu > Preferences > Accounts
+
+Log in to your Apple Developer account
+
+![The Accounts tab in Xcode preferences](images/white_label_xcode_prefs.png)
+
+### Create identifier
+
+Once you have an Apple Developer account, you will need to create an identifier for your app. (if you already have an identifier, then skip this step!)
+
+![Identifiers page on Apple Developer website](images/white_label_identifiers.png)
+
+### Configure identifier
+
+Once your identifier has been created, configure it with the following settings:
+
+* App Groups - This is used to let the Today View widget share data with the main app
+* Associated Domains - Used to allow OneBusAway.co to work with OBAKit apps. This is necessary for apps that support alarms.
+* Push Notifications - Only if you want to support alarms. Currently, only the free [OneSignal service](https://onesignal.com) is supported within OBAKit.
+
+![Configure your identifier](images/white_label_config_identifiers.png)
+
+### Verify in Xcode
+
+If your app has been correctly configured, you should see a Signing &amp; Capabilities screen in Xcode that looks similar to what is depicted below. Namely, the "Team", "Provisioning Profile", and "Signing Certificate" fields are populated, an App Group is listed, Associated Domains are populated with "applinks", the "Remote notifications" Background Mode is checked, and the "Push Notifications" capability is included in the app.
+
+![A correctly configured app in Xcode](images/white_label_xcode.png)
+
+### Run your app in the Simulator
+
+Launch your app in the Simulator and make sure everything looks correct.
+
+### Archive Your App
+
+Once you are satisfied, create an Archive of your app by changing your build option to "Any iOS Device (arm64)", and selecting the Product > Archive menu item.
+
+Then, you can submit your app to Apple for distribution via TestFlight and the App Store.
+
+![The Archive menu item in the Product menu](images/white_label_build_archive.png)

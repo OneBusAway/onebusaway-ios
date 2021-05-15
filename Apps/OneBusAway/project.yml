@@ -68,8 +68,9 @@ targets:
           RegionsServerAPIPath: /regions-v3.json
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
+        DEVELOPMENT_TEAM: 4ZQCMA634J
         MARKETING_VERSION: 21.1.0
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
   TodayView:
     sources: ["Apps/OneBusAway/Assets.xcassets"]
     entitlements:
@@ -90,6 +91,7 @@ targets:
           RegionsServerAPIPath: /regions-v3.json
     settings:
       base:
+        DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.TodayView
 
 include:
