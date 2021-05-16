@@ -30,6 +30,9 @@ targets:
             goeuropa.eu:
               NSTemporaryExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
+            iplaner.pl:
+              NSTemporaryExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: true
             kiedybus.pl:
               NSTemporaryExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
