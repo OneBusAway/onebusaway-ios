@@ -4,6 +4,34 @@
   "version": 3,
   "data": {
     "list": [
+{
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 52.407014,
+            "latSpan": 0.5424609999999994,
+            "lon": 16.926709,
+            "lonSpan": 0.576357999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/oba-api-webapp-pkspoznan?key=web",
+        "id": 1,
+        "experimental": false,
+        "regionName": "PKS Poznań"
+      },
 	{
         "siriBaseUrl": "",
         "supportsEmbeddedSocial": true,
@@ -28,7 +56,7 @@
         "active": true,
         "facebookUrl": "",
         "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
-        "id": 0,
+        "id": 2,
         "experimental": false,
         "regionName": "Swarzędz"
       },
@@ -56,7 +84,7 @@
         "active": true,
         "facebookUrl": "",
         "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
-        "id": 1,
+        "id": 3,
         "experimental": false,
         "regionName": "Środa Wlkp."
       },
@@ -84,7 +112,7 @@
         "active": true,
         "facebookUrl": "",
         "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-production?key=web",
-        "id": 2,
+        "id": 4,
         "experimental": false,
         "regionName": "Kórnik"
       },
@@ -112,9 +140,37 @@
         "active": true,
         "facebookUrl": "",
         "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-ztm?key=web",
-        "id": 3,
+        "id": 5,
         "experimental": false,
         "regionName": "ZTM Poznań"
+      },
+      {
+        "siriBaseUrl": "",
+        "supportsEmbeddedSocial": true,
+        "obaVersionInfo": "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9",
+        "supportsSiriRealtimeApis": false,
+        "language": "pl_PL",
+        "supportsObaDiscoveryApis": true,
+        "twitterUrl": "",
+        "supportsObaRealtimeApis": true,
+        "bounds": [
+          {
+            "lat": 51.111163,
+            "latSpan": 0.5424609999999994,
+            "lon": 17.034778,
+            "lonSpan": 0.576357999999999
+          }
+        ],
+        "otpBaseUrl": "",
+        "contactEmail": "info@goeuropa.eu",
+        "otpContactEmail": "",
+        "stopInfoUrl": null,
+        "active": true,
+        "facebookUrl": "",
+        "obaBaseUrl": "http://kiedybus.pl:8080/onebusaway-api-webapp-wroclaw?key=web",
+        "id": 6,
+        "experimental": false,
+        "regionName": "MPK Wrocław"
       }
     ]
   }
