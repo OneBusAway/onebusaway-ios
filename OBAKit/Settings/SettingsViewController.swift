@@ -42,6 +42,10 @@ class SettingsViewController: FormViewController {
             form +++ privacySection
         }
 
+        if application.userDataStore.debugMode {
+            form +++ debugSection
+        }
+
         if application.hasDataToMigrate {
             form +++ migrateDataSection
         }
@@ -51,7 +55,8 @@ class SettingsViewController: FormViewController {
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
             privacySectionReportingEnabled: application.analytics?.reportingEnabled?() ?? false,
-            AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts)
+            AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
+            RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         ])
     }
 
@@ -84,6 +89,10 @@ class SettingsViewController: FormViewController {
 
         if let reportingEnabled = values[privacySectionReportingEnabled] as? Bool {
             application.analytics?.setReportingEnabled?(reportingEnabled)
+        }
+
+        if let alwaysRefreshRegions = values[RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey] as? Bool {
+            application.userDefaults.set(alwaysRefreshRegions, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
     }
 
@@ -137,6 +146,19 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = privacySectionReportingEnabled
             $0.title = OBALoc("settings_controller.privacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
+        }
+
+        return section
+    }()
+
+    // MARK: - Debug Section
+
+    private lazy var debugSection: Section = {
+        let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
+
+        section <<< SwitchRow {
+            $0.tag = RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey
+            $0.title = OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch")
         }
 
         return section
