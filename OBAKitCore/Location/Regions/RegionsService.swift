@@ -51,7 +51,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         self.apiPath = apiPath
 
         self.userDefaults.register(defaults: [
-            RegionsService.automaticallySelectRegionUserDefaultsKey: true
+            RegionsService.automaticallySelectRegionUserDefaultsKey: true,
+            RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: false
         ])
 
         if let regions = RegionsService.loadStoredRegions(from: userDefaults), regions.count > 0 {
@@ -202,6 +203,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // MARK: - Region Data Storage
 
+    public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"
     static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
     static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
     static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
@@ -250,16 +252,35 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     // swiftlint:enable force_try
 
+    // MARK: - Update Helpers
+
+    /// Returns `true` if the list of `Region`s should be updated from the server.
+    ///
+    /// By default, this method only returns `true` if it has been at least a week since the last successful refresh,
+    /// however you can override this to force it to update the list of `Region`s on every launch if you set the
+    /// `UserDefaults` key `RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey` to `true`.
+    /// You can set this value to `true` either through some console trickery, or by toggling the setting in the Settings controller
+    /// when Debug Mode is enabled in the `MoreViewController`.
+    var shouldUpdateRegionList: Bool {
+        if userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) {
+            return true
+        }
+
+        guard let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date else {
+            return true
+        }
+
+        // True if it has been at least the number of seconds in a week since the last update.
+        return abs(lastUpdatedAt.timeIntervalSinceNow) >= 604800
+    }
+
     // MARK: - Public Methods
 
     /// Fetches the current list of `Region`s from the network.
     /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
     public func updateRegionsList(forceUpdate: Bool = false) {
         // only update once per week, unless forceUpdate is true.
-        if let lastUpdatedAt = userDefaults.object(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
-           abs(lastUpdatedAt.timeIntervalSinceNow) < 604800, // Seconds in a day.
-           !forceUpdate
-        { // swiftlint:disable:this opening_brace
+        if !shouldUpdateRegionList && !forceUpdate {
             notifyDelegatesRegionListUpdateCancelled()
             return
         }

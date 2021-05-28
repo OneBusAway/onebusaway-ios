@@ -187,6 +187,23 @@ class RegionsServiceTests: OBATestCase {
         }
     }
 
+    /// It *does* download a list of regions—even if the list was last updated less than a week ago—if alwaysRefreshRegionsOnLaunchUserDefaultsKey is true.
+    func test_init_alwaysRefreshRegionsOnLaunch() {
+        stubRegionsJustPugetSound(dataLoader: dataLoader)
+        userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
+        userDefaults.set(true, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
+
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+
+        waitUntil { done in
+            self.testDelegate.updatedRegionsListCallbacks.append {
+                expect(regionsService.regions.count) == 1
+                done()
+            }
+            regionsService.updateRegionsList()
+        }
+    }
+
     // MARK: - Persistence
 
     // It stores downloaded region data in user defaults when the regions property is set.
