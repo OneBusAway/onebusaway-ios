@@ -43,6 +43,7 @@ struct DEBUG_Person: OBAListViewItem {
 
 /// Sample view model, using a custom cell for its content.
 struct DEBUG_CustomContent: OBAListViewItem {
+    var id: UUID = UUID()
     var text: String
     var onSelectAction: OBAListViewAction<DEBUG_CustomContent>?
 

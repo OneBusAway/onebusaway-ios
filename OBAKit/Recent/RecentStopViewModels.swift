@@ -15,7 +15,7 @@ struct StopViewModel: OBAListViewItem {
     let name: String
     let subtitle: String?
 
-    let stopID: Stop.ID
+    let id: Stop.ID
 
     var contentConfiguration: OBAContentConfiguration {
         return OBAListRowConfiguration(
@@ -34,18 +34,18 @@ struct StopViewModel: OBAListViewItem {
         self.name = stop.name
         self.subtitle = stop.subtitle
 
-        self.stopID = stop.id
+        self.id = stop.id
         self.onSelectAction = selectAction
         self.onDeleteAction = deleteAction
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stopID)
+        hasher.combine(name)
+        hasher.combine(subtitle)
     }
 
     static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
-        return lhs.stopID == rhs.stopID &&
-            lhs.name == rhs.name &&
+        return lhs.name == rhs.name &&
             lhs.subtitle == rhs.subtitle
     }
 }
@@ -56,6 +56,8 @@ extension RecentStopsViewController {
         let deepLink: ArrivalDepartureDeepLink
 
         let title: String
+
+        var id: URL { alarm.url }
 
         var contentConfiguration: OBAContentConfiguration {
             return OBAListRowConfiguration(
@@ -80,11 +82,16 @@ extension RecentStopsViewController {
         }
 
         func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+            hasher.combine(title)
+            alarm.hash(into: &hasher)
             deepLink.hash(into: &hasher)
         }
 
         static func == (lhs: AlarmViewModel, rhs: AlarmViewModel) -> Bool {
-            return lhs.title == rhs.title
+            return lhs.alarm.isEqual(rhs.alarm) &&
+                lhs.deepLink.isEqual(rhs.deepLink) &&
+                lhs.title == rhs.title
         }
     }
 }

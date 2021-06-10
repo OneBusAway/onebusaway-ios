@@ -29,6 +29,10 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
     let regionIdentifier: Int
     let stopID: StopID
 
+    var id: String {
+        return "bookmark=\(bookmarkID),region=\(regionIdentifier),stopID=\(stopID)"
+    }
+
     let isFavorite: Bool
     let sortOrder: Int
 
@@ -78,9 +82,14 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(bookmarkID)
-        hasher.combine(regionIdentifier)
-        hasher.combine(stopID)
+        hasher.combine(id)
+        hasher.combine(name)
+        hasher.combine(isFavorite)
+        hasher.combine(sortOrder)
+        hasher.combine(routeShortName)
+        hasher.combine(tripHeadsign)
+        hasher.combine(routeID)
+        hasher.combine(arrivalDepartures)
     }
 
     static func == (lhs: BookmarkArrivalViewModel, rhs: BookmarkArrivalViewModel) -> Bool {

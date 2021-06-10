@@ -544,7 +544,7 @@ public class StopViewController: UIViewController,
     //           revisit this decision.
 
     func arrivalDeparture(forViewModel viewModel: ArrivalDepartureItem) -> ArrivalDeparture? {
-        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.identifier }).first
+        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.id }).first
     }
 
     // MARK: Actions
@@ -601,7 +601,7 @@ public class StopViewController: UIViewController,
 
     private func performPreviewStopArrival(_ viewModel: ArrivalDepartureItem) {
         if let previewingVC = self.previewingVC,
-           previewingVC.identifier == viewModel.identifier,
+           previewingVC.identifier == viewModel.id,
            let tripVC = previewingVC.vc as? TripViewController {
             tripVC.exitPreviewMode()
             application.viewRouter.navigate(to: tripVC, from: self)

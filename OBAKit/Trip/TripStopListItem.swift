@@ -22,6 +22,8 @@ struct TripStopListItemRowConfiguration: OBAContentConfiguration {
 }
 
 struct TripStopViewModel: OBAListViewItem {
+    var id: String { stop.id }
+
     var contentConfiguration: OBAContentConfiguration {
         return TripStopListItemRowConfiguration(viewModel: self)
     }
@@ -79,7 +81,12 @@ struct TripStopViewModel: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stop.id)
+        hasher.combine(id)
+        hasher.combine(isCurrentVehicleLocation)
+        hasher.combine(isUserDestination)
+        hasher.combine(title)
+        hasher.combine(date)
+        hasher.combine(routeType)
     }
 
     static func == (lhs: TripStopViewModel, rhs: TripStopViewModel) -> Bool {

@@ -22,7 +22,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
     var bookmarkAction: OBAListViewAction<ArrivalDepartureItem>?
     var shareAction: OBAListViewAction<ArrivalDepartureItem>?
 
-    let identifier: String
+    let id: String
     let routeID: RouteID
     let stopID: StopID
 
@@ -96,7 +96,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
          bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          shareAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
 
-        self.identifier = arrivalDeparture.id
+        self.id = arrivalDeparture.id
         self.routeID = arrivalDeparture.routeID
         self.stopID = arrivalDeparture.stopID
         self.name = arrivalDeparture.routeAndHeadsign
@@ -121,12 +121,17 @@ struct ArrivalDepartureItem: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(identifier)
+        hasher.combine(id)
+        hasher.combine(routeID)
+        hasher.combine(stopID)
+        hasher.combine(name)
+        hasher.combine(scheduledDate)
+        hasher.combine(scheduleStatus)
+        hasher.combine(temporalState)
     }
 
     static func == (lhs: ArrivalDepartureItem, rhs: ArrivalDepartureItem) -> Bool {
-        return lhs.identifier == rhs.identifier &&
-            lhs.routeID == rhs.routeID &&
+        return lhs.routeID == rhs.routeID &&
             lhs.stopID == rhs.stopID &&
             lhs.name == rhs.name &&
             lhs.scheduledDate == rhs.scheduledDate &&
