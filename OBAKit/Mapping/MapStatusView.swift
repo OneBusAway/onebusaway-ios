@@ -146,12 +146,12 @@ class MapStatusView: UIView {
             setHidden = false
             setImage = UIImage(systemName: "location.slash")!
             setLargeImage = UIImage(systemName: "location.slash.fill")!
-            setLabel = "Location services unavailable"
+            setLabel = OBALoc("map_status_view.location_services_unavailable", value: "Location services unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their location")
         case .impreciseLocation:
             setHidden = false
             setImage = UIImage(systemName: "location.circle")!
             setLargeImage = UIImage(systemName: "location.circle.fill")!
-            setLabel = "Precise location unavailable"
+            setLabel = OBALoc("map_status_view.precise_location_unavailable", value: "Precise location unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location")
         case .locationServicesOn:
             setHidden = true
         }

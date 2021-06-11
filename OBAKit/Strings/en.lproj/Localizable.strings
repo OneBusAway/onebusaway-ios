@@ -196,6 +196,12 @@
 /* Map region manager message to the user when they need to zoom in more to view stops */
 "map_region_manager.status_overlay.zoom_to_see_stops" = "Zoom in to look for stops";
 
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
+"map_status_view.location_services_unavailable" = "Location services unavailable";
+
+/* Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location */
+"map_status_view.precise_location_unavailable" = "Precise location unavailable";
+
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "About this App";
 
@@ -411,6 +417,12 @@
 
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
+
+/* Settings > Debug section > Refresh regions on every launch */
+"settings_controller.debug_section.always_refresh_regions" = "Refresh regions on every launch";
+
+/* Settings > Debug section title */
+"settings_controller.debug_section.title" = "Debug";
 
 /* Settings > Map section > Show my current heading */
 "settings_controller.map_section.shows_heading" = "Show my current heading";
