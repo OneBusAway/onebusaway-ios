@@ -19,7 +19,6 @@ let package = Package(
         .package(url: "https://github.com/xmartlabs/Eureka.git", .exact("5.3.1")),
         .package(url: "https://github.com/SCENEE/FloatingPanel.git", .exact("1.7.6")),
         .package(url: "https://github.com/rwbutler/Hyperconnectivity.git", .exact("1.1.0")),
-        .package(url: "https://github.com/3a4oT/IGListKit.git", .branch("spmBrain")),
         .package(url: "https://github.com/cbpowell/MarqueeLabel.git", .exact("4.0.5")),
         .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.13.0")
     ],
@@ -31,7 +30,6 @@ let package = Package(
                 "Eureka",
                 "FloatingPanel",
                 "Hyperconnectivity",
-                "IGListKit",
                 "MarqueeLabel",
                 "OBAKitCore"
             ],
