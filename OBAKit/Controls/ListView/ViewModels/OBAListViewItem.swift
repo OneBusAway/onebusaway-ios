@@ -9,7 +9,15 @@
 /// A view model that provides the necessary implementation to compare the identity and equality of
 /// two view models for `OBAListView`. Also, defines list row actions, such as what to
 /// do when the user taps the row.
-public protocol OBAListViewItem: Hashable {
+///
+/// - The `Hashable` protocol requires a `hash` method.
+///     This is needed for `NSDiffableDataSource`, which is the "identity" of the model.
+///     It should be a combination of *all values, including the identifier*.
+/// - The `Identifiable` protocol requires an `id` property.
+///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
+/// - The `Equatable` protocol requires a `==` method to compare equality.
+///     It is currently not in use, reserved for future item diffing functionality. This should compare the values between both subjects, excluding its identifier.
+public protocol OBAListViewItem: Hashable, Identifiable {
     var contentConfiguration: OBAContentConfiguration { get }
 
     /// Optional. If your item doesn't use OBAListRowView, you define the custom view type here.
@@ -64,6 +72,7 @@ extension OBAListViewItem {
 /// ```
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
+    private let _id: () -> AnyHashable
     private let _contentConfiguration: () -> OBAContentConfiguration
     private let _hash: (_ hasher: inout Hasher) -> Void
 
@@ -76,6 +85,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
         self._contentConfiguration = { return listCellViewModel.contentConfiguration }
+        self._id = { return listCellViewModel.id }
         self._hash = listCellViewModel.hash
         self._type = listCellViewModel
 
@@ -125,6 +135,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public static var customCellType: OBAListViewCell.Type? {
         fatalError("Illegal. You cannot get the customCellType of AnyOBAListViewItem.")
+    }
+
+    public var id: AnyHashable {
+        return _id()
     }
 
     public var contentConfiguration: OBAContentConfiguration {

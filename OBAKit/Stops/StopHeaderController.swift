@@ -12,6 +12,7 @@ import OBAKitCore
 
 // MARK: - StopHeaderSection
 struct StopHeaderItem: OBAListViewItem {
+    var id: String { stop.id }
     var contentConfiguration: OBAContentConfiguration {
         return StopHeaderContentConfiguration(stop: stop, application: application)
     }
@@ -26,7 +27,8 @@ struct StopHeaderItem: OBAListViewItem {
     var application: Application
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stop.id)
+        hasher.combine(id)
+        stop.hash(into: &hasher)
     }
 
     static func == (lhs: StopHeaderItem, rhs: StopHeaderItem) -> Bool {

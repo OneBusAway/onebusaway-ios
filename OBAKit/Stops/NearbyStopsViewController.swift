@@ -120,7 +120,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
         }
 
         let tapHandler = { (vm: NearbyStopViewModel) -> Void in
-            self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
+            self.application.viewRouter.navigateTo(stopID: vm.id, from: self)
         }
 
         return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in
@@ -140,7 +140,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 }
 
 struct NearbyStopViewModel: OBAListViewItem {
-    let stopID: String
+    let id: String
     let title: String
     let subtitle: String
 
@@ -153,13 +153,15 @@ struct NearbyStopViewModel: OBAListViewItem {
     init(stop: Stop, onSelectAction: @escaping OBAListViewAction<NearbyStopViewModel>) {
         self.onSelectAction = onSelectAction
 
-        self.stopID = stop.id
+        self.id = stop.id
         self.title = Formatters.formattedTitle(stop: stop)
         self.subtitle = Formatters.formattedRoutes(stop.routes)
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stopID)
+        hasher.combine(id)
+        hasher.combine(title)
+        hasher.combine(subtitle)
     }
 
     static func == (lhs: NearbyStopViewModel, rhs: NearbyStopViewModel) -> Bool {

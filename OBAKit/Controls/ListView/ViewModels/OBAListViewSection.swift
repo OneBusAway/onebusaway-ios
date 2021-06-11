@@ -16,7 +16,7 @@ import UIKit
 /// ## Collapsible sections
 /// Set `collapseState` to a non-`nil` value. Note, `OBAListView` will also need to have collapsible
 /// section implementation to properly function.
-public struct OBAListViewSection: Hashable {
+public struct OBAListViewSection: Hashable, Identifiable {
     public typealias ID = String
     public enum CollapseState {
         case collapsed
@@ -91,6 +91,8 @@ public struct OBAListViewSection: Hashable {
 
     public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(title)
+        hasher.combine(contents)
     }
 
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {

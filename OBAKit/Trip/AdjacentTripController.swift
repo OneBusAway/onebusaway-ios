@@ -28,6 +28,8 @@ struct AdjacentTripRowConfiguration: OBAContentConfiguration {
 }
 
 struct AdjacentTripItem: OBAListViewItem {
+    var id: String { trip.id }
+
     let order: AdjacentTripOrder
     let trip: Trip
     var onSelectAction: OBAListViewAction<AdjacentTripItem>?
@@ -37,7 +39,9 @@ struct AdjacentTripItem: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(trip.id)
+        hasher.combine(id)
+        hasher.combine(order)
+        hasher.combine(trip)
     }
 
     static func == (lhs: AdjacentTripItem, rhs: AdjacentTripItem) -> Bool {
