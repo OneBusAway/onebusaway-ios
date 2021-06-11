@@ -14,7 +14,7 @@ options:
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:
-    iOS: "13.6"
+    iOS: "14.5"
 
 ############
 # App
@@ -77,13 +77,13 @@ packages:
         exactVersion: 5.0.0
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.0
+        exactVersion: 3.7.2
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.0
+        exactVersion: 3.7.2
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
-        exactVersion: 5.3.1
+        exactVersion: 5.3.3
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 1.7.6
@@ -98,4 +98,4 @@ packages:
         minorVersion: 2.15.4
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.13.0
+        minorVersion: 1.17.0

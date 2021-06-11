@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/CocoaLumberjack/CocoaLumberjack.git",
         "state": {
           "branch": null,
-          "revision": "b06614d2373a9830c87817144d47ce654980a2d7",
-          "version": "3.7.0"
+          "revision": "e518eb6e362df327574ba5e04269cd6d29f40aec",
+          "version": "3.7.2"
         }
       },
       {
@@ -24,8 +24,8 @@
         "repositoryURL": "https://github.com/xmartlabs/Eureka.git",
         "state": {
           "branch": null,
-          "revision": "ae025915335f02e7277ed5446b4de002bab05866",
-          "version": "5.3.1"
+          "revision": "523af88efc83cdaf39b415446be1ca1529f5664d",
+          "version": "5.3.3"
         }
       },
       {
@@ -44,15 +44,6 @@
           "branch": null,
           "revision": "000171e456c3ea26a2a6fed6b7f363b131862221",
           "version": "1.1.0"
-        }
-      },
-      {
-        "package": "IGListKit",
-        "repositoryURL": "https://github.com/3a4oT/IGListKit.git",
-        "state": {
-          "branch": "spmBrain",
-          "revision": "507264281abd3a72ff87ae9337a6dbf0934b862d",
-          "version": null
         }
       },
       {
@@ -78,8 +69,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "da9a52be9cd36c63993291ce3f1b65dafcd1e826",
-          "version": "1.14.0"
+          "revision": "1f62db409f2c9b0223a3f68567b4a01333aae778",
+          "version": "1.17.0"
         }
       }
     ]

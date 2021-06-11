@@ -7,7 +7,7 @@ let package = Package(
     name: "OBAKit",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v14)
     ],
     products: [
         .library(name: "OBAKit", targets: ["OBAKit"]),
@@ -15,13 +15,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "BLTNBoard", url: "https://github.com/alexaubry/BulletinBoard.git", .exact("5.0.0")),
-        .package(url: "https://github.com/CocoaLumberjack/CocoaLumberjack.git", .exact("3.7.0")),
-        .package(url: "https://github.com/xmartlabs/Eureka.git", .exact("5.3.1")),
+        .package(url: "https://github.com/CocoaLumberjack/CocoaLumberjack.git", .exact("3.7.2")),
+        .package(url: "https://github.com/xmartlabs/Eureka.git", .exact("5.3.3")),
         .package(url: "https://github.com/SCENEE/FloatingPanel.git", .exact("1.7.6")),
         .package(url: "https://github.com/rwbutler/Hyperconnectivity.git", .exact("1.1.0")),
-        .package(url: "https://github.com/3a4oT/IGListKit.git", .branch("spmBrain")),
         .package(url: "https://github.com/cbpowell/MarqueeLabel.git", .exact("4.0.5")),
-        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.13.0")
+        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0")
     ],
     targets: [
         .target(
@@ -31,7 +30,6 @@ let package = Package(
                 "Eureka",
                 "FloatingPanel",
                 "Hyperconnectivity",
-                "IGListKit",
                 "MarqueeLabel",
                 "OBAKitCore"
             ],
