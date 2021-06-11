@@ -195,8 +195,8 @@
         "repositoryURL": "https://github.com/apple/swift-protobuf.git",
         "state": {
           "branch": null,
-          "revision": "426bef0ddfdc6449b7bd1418baafad6bbc56110b",
-          "version": "1.13.0"
+          "revision": "1f62db409f2c9b0223a3f68567b4a01333aae778",
+          "version": "1.17.0"
         }
       }
     ]
