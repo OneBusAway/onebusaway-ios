@@ -7,7 +7,7 @@ let package = Package(
     name: "OBAKit",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v14)
     ],
     products: [
         .library(name: "OBAKit", targets: ["OBAKit"]),
