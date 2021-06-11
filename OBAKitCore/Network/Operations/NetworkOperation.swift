@@ -29,7 +29,7 @@ public enum APIError: Error, LocalizedError {
             return String(format: fmt, expectedContentType, actualContentType ?? "(nil)")
         case .networkFailure(let error):
             guard let error = error else {
-                return OBALoc("api_error.network_failure_fmt", value: "Unable to connect to the Internet or the server. Please check your network connection and try again.", comment: "An error that tells the user that the network connection isn't working.")
+                return OBALoc("api_error.network_failure", value: "Unable to connect to the Internet or the server. Please check your network connection and try again.", comment: "An error that tells the user that the network connection isn't working.")
             }
 
             let nsError = error as NSError
