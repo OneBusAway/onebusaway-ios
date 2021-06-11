@@ -75,10 +75,10 @@ packages:
         exactVersion: 5.0.0
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.0
+        exactVersion: 3.7.2
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.0
+        exactVersion: 3.7.2
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.3.1

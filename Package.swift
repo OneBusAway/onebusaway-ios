@@ -15,8 +15,8 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "BLTNBoard", url: "https://github.com/alexaubry/BulletinBoard.git", .exact("5.0.0")),
-        .package(url: "https://github.com/CocoaLumberjack/CocoaLumberjack.git", .exact("3.7.0")),
         .package(url: "https://github.com/xmartlabs/Eureka.git", .exact("5.3.1")),
+        .package(url: "https://github.com/CocoaLumberjack/CocoaLumberjack.git", .exact("3.7.2")),
         .package(url: "https://github.com/SCENEE/FloatingPanel.git", .exact("1.7.6")),
         .package(url: "https://github.com/rwbutler/Hyperconnectivity.git", .exact("1.1.0")),
         .package(url: "https://github.com/cbpowell/MarqueeLabel.git", .exact("4.0.5")),
