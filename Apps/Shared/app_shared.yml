@@ -34,7 +34,9 @@ targets:
         CFBundleLocalizations:
           - en
           - es
+          - it
           - pl
+          - zh-Hans
         ITSAppUsesNonExemptEncryption: false
         LSApplicationQueriesSchemes:
           - fb
