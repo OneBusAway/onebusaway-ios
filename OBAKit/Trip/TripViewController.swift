@@ -417,8 +417,23 @@ class TripViewController: UIViewController,
 
     public func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
-        renderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
-        renderer.lineWidth = 3.0
+
+        // Tries to use an agency provided color, if available.
+        var strokeColor = tripConvertible.arrivalDeparture?.route.color ?? ThemeColors.shared.brand
+
+        // If the user has High Contrast or Reduce Transparency turned ON in iOS,
+        // don't apply the transparency to the stroke color.
+        let needsIncreasedVisibility =
+            traitCollection.userInterfaceStyle == .dark ||
+            traitCollection.accessibilityContrast == .high ||
+            UIAccessibility.isReduceTransparencyEnabled
+
+        if !needsIncreasedVisibility {
+            strokeColor = strokeColor.withAlphaComponent(0.75)
+        }
+        renderer.strokeColor = strokeColor
+
+        renderer.lineWidth = 6.0
         renderer.lineCap = .round
 
         return renderer
@@ -438,6 +453,9 @@ class TripViewController: UIViewController,
 
         if let annotationView = annotationView as? PulsingVehicleAnnotationView {
             vehicleAnnotationView = annotationView
+            if let color = tripConvertible.arrivalDeparture?.route.color {
+                annotationView.realTimeAnnotationColor = color
+            }
         }
         else if let annotationView = annotationView as? PulsingAnnotationView {
             userLocationAnnotationView = annotationView

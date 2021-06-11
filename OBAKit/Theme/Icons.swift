@@ -141,14 +141,16 @@ class Icons: NSObject {
 
     // MARK: - Heading
 
-    /// A gradient arc image that can be used to show the user's heading.
-    public class var userHeading: UIImage {
-        imageNamed("user_heading")
+    /// A template gradient arc image that can be used to show a heading.
+    /// Apply attributes using `UIImage` methods, e.g. `templateHeading.withTintColor(.red)`
+    /// for a red-colored heading.
+    public class var templateHeading: UIImage {
+        imageNamed("heading")
     }
 
-    /// A gradient arc image that can be used to show a vehicle's heading.
-    public class var vehicleHeading: UIImage {
-        imageNamed("vehicle_heading")
+    /// A gradient arc image that can be used to show the user's heading.
+    public class var userHeading: UIImage {
+        templateHeading.withTintColor(UIColor(red: 0.0, green: 0.478, blue: 1.0, alpha: 1.0))
     }
 
     // MARK: - Branding

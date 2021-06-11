@@ -29,6 +29,7 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
         isUserInteractionEnabled = false
 
         imageView.tintColor = .white
+        headingImage = Icons.templateHeading
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -74,9 +75,7 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
             return
         }
 
-        if headingImage == nil {
-            headingImage = Icons.vehicleHeading
-        }
+        headingImageView.tintColor = realTimeAnnotationColor
 
         // n.b. The coordinate system that Core Graphics uses on iOS for transforms is backwards from what
         // you would normally expect, and backwards from what the OBA API vends. Long story short: instead
