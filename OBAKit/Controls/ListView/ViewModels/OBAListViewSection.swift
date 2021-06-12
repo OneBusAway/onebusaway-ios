@@ -102,48 +102,14 @@ public struct OBAListViewSection: Hashable, Identifiable {
 
     // MARK: - UICollectionView
 
-    /// The layout defining this section's layout with full width cells.
-    var sectionLayout: NSCollectionLayoutSection {
+    func sectionLayout(_ layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
         if let custom = self.customSectionLayout {
             return custom
         }
 
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(64))
-        let item = NSCollectionLayoutItem(layoutSize: size)
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
-        let section = NSCollectionLayoutSection(group: group)
+        var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
+        configuration.headerMode = hasHeader ? .supplementary : .none
 
-        // Only include supplementary views with headers
-        if hasHeader {
-            // Section headers
-            let headerSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .estimated(100)
-            )
-            let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: headerSize,
-                elementKind: UICollectionView.elementKindSectionHeader,
-                alignment: .top
-            )
-            sectionHeader.pinToVisibleBounds = true
-
-            if collapseState != nil {
-                // Section footers, a thin line is used to animate a fake cell movement
-                let footerSize = NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1.0),
-                    heightDimension: .estimated(2)
-                )
-                let sectionFooter = NSCollectionLayoutBoundarySupplementaryItem(
-                    layoutSize: footerSize,
-                    elementKind: UICollectionView.elementKindSectionFooter,
-                    alignment: .bottom
-                )
-                section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
-            } else {
-                section.boundarySupplementaryItems = [sectionHeader]
-            }
-        }
-
-        return section
+        return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
     }
 }

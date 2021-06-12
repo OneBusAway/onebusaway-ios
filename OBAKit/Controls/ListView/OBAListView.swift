@@ -214,8 +214,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Layout configuration
     fileprivate func createLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { section, _ -> NSCollectionLayoutSection? in
-            return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
+        return UICollectionViewCompositionalLayout { section, environment -> NSCollectionLayoutSection? in
+            return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout(environment)
         }
     }
 
