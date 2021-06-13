@@ -70,23 +70,10 @@ public struct OBAListViewSection: Hashable, Identifiable {
                 return item.typeErased
             }
         }
+    }
 
-        #if DEBUG
-        // This is helpful to track down where item identifiers are being set.
-        // Since this condition is potentially expensive, only run it in DEBUG mode.
-        let debug_ContentsSet = Set(self.contents)
-        if debug_ContentsSet.count != self.contents.count {
-            print("FATAL ERROR")
-            print("The OBAListViewSection contents you provided have one or more of the same item identifier. This will cause a crash with UICollectionView later on!")
-            print("Item(s) in question:")
-            var affectedItems: [AnyOBAListViewItem] = self.contents // stores as local var so debugger can access
-            debug_ContentsSet.allObjects.forEach { affectedItems.remove(at: affectedItems.firstIndex(of: $0)!) }
-            for item in affectedItems {
-                print(item)
-            }
-            assertionFailure("The OBAListViewSection contents you provided have one or more of the same item identifier. This will cause a crash with UICollectionView later on!")
-        }
-        #endif
+    subscript(_ itemIndex: Int) -> AnyOBAListViewItem {
+        return contents[itemIndex]
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -109,6 +96,7 @@ public struct OBAListViewSection: Hashable, Identifiable {
 
         var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
         configuration.headerMode = hasHeader ? .supplementary : .none
+        configuration.separatorConfiguration = .init(listAppearance: .plain)
 
         return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
     }
