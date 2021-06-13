@@ -78,9 +78,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.backgroundColor = .systemBackground
 
         // Register default rows.
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewDefault>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewSubtitle>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewValue>.self)
+//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewDefault>.self)
+//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewSubtitle>.self)
+//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewValue>.self)
         self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewHeader>.self)
 
         self.register(OBAListRowHeaderSupplementaryView.self,
@@ -101,21 +101,16 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         let dataSource = UICollectionViewDiffableDataSource<SectionType, ItemType>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
             let item = self.lastDataSourceSnapshot[indexPath.section][indexPath.item]
 
-            // Reference the formatters in the item's content configuration
-            var config = item.contentConfiguration
-            config.formatters = self.formatters
-
-            let reuseIdentifier = config.obaContentView.ReuseIdentifier
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
-
-            guard let obaView = cell as? OBAListViewCell else {
-                fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
+            switch item.configuration {
+            case .custom(let config):
+                if let listConfig = config as? OBAListRowConfiguration {
+                    return self.listCell(collectionView, indexPath: indexPath, item: item, config: listConfig.listConfiguration, accessories: [listConfig.accessoryType.cellAccessory])
+                } else {
+                    return self.standardCell(collectionView, indexPath: indexPath, item: item, config: config)
+                }
+            case .list(let config, let accessories):
+                return self.listCell(collectionView, indexPath: indexPath, item: item, config: config, accessories: accessories)
             }
-
-            obaView.delegate = self
-            obaView.apply(config)
-
-            return obaView
         }
 
         dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
@@ -129,6 +124,34 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
 
         return dataSource
+    }
+
+    func standardCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: OBAContentConfiguration) -> UICollectionViewCell? {
+        // Reference the formatters in the item's content configuration
+        var config = item.contentConfiguration
+        config.formatters = self.formatters
+
+        let reuseIdentifier = config.obaContentView.ReuseIdentifier
+
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+
+        guard let obaView = cell as? OBAListViewCell else {
+            fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
+        }
+
+        obaView.delegate = self
+        obaView.apply(config)
+
+        return obaView
+    }
+
+    func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
+        let registration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, indexPath, item in
+            cell.contentConfiguration = config
+            cell.accessories = accessories.compactMap { $0 }
+        }
+
+        return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
     }
 
     // MARK: - Supplementary views

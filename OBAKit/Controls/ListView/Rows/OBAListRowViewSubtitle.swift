@@ -63,8 +63,8 @@ extension OBAListRowView {
 
         public var onSelectAction: OBAListViewAction<SubtitleViewModel>?
 
-        public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: accessoryType)
+        public var configuration: OBAListViewItemConfiguration {
+            return .custom(OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .subtitle, accessoryType: accessoryType))
         }
 
         /// Convenience initializer for `SubtitleViewModel` using `String` as text.

@@ -69,8 +69,8 @@ extension OBAListRowView {
 
         public var onSelectAction: OBAListViewAction<ValueViewModel>?
 
-        public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .value, accessoryType: accessoryType)
+        public var configuration: OBAListViewItemConfiguration {
+            return .custom(OBAListRowConfiguration(image: image, text: title, secondaryText: subtitle, appearance: .value, accessoryType: accessoryType))
         }
 
         /// Convenience initializer for `ValueViewModel` using `String` as text.

@@ -46,8 +46,8 @@ extension OBAListRowView {
 
         public var onSelectAction: OBAListViewAction<DefaultViewModel>?
 
-        public var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(image: image, text: title, appearance: .default, accessoryType: accessoryType)
+        public var configuration: OBAListViewItemConfiguration {
+            return .custom(OBAListRowConfiguration(image: image, text: title, appearance: .default, accessoryType: accessoryType))
         }
 
         /// Convenience initializer for `DefaultViewModel` using `String` as text.
