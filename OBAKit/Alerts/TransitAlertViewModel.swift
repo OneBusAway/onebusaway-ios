@@ -43,9 +43,14 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
         return config
     }
 
-    init(_ transitAlert: TransitAlertViewModel, isUnread: Bool = false, forLocale locale: Locale, onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil) {
+    init<TA: TransitAlertViewModel>(
+        _ transitAlert: TA,
+        isUnread: Bool = false,
+        forLocale locale: Locale,
+        onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil)
+    where TA: Hashable {
         self.transitAlert = transitAlert
-        self.id = transitAlert.id
+        self.id = "\(transitAlert.hashValue)"
         self.title = transitAlert.title(forLocale: locale) ?? ""
         self.body = transitAlert.body(forLocale: locale) ?? ""
         self.localizedURL = transitAlert.url(forLocale: locale)
@@ -58,12 +63,14 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
         hasher.combine(title)
         hasher.combine(body)
         hasher.combine(localizedURL)
+        hasher.combine(isUnread)
     }
 
     static func == (lhs: TransitAlertDataListViewModel, rhs: TransitAlertDataListViewModel) -> Bool {
         return lhs.id == rhs.id &&
             lhs.title == rhs.title &&
             lhs.body == rhs.body &&
-            lhs.localizedURL == rhs.localizedURL
+            lhs.localizedURL == rhs.localizedURL &&
+            lhs.isUnread == rhs.isUnread
     }
 }
