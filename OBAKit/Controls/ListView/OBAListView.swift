@@ -99,7 +99,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<SectionType, ItemType> {
         let dataSource = UICollectionViewDiffableDataSource<SectionType, ItemType>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            let item = self.lastDataSourceSnapshot[indexPath.section][indexPath.item]
 
             switch item.configuration {
             case .custom(let config):
@@ -186,13 +185,23 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        let item = lastDataSourceSnapshot[indexPath.section][indexPath.item]
+        var correctedItemIndex = indexPath.item
+        if lastDataSourceSnapshot[indexPath.section].hasHeader {
+            if indexPath.item == 0 {
+                // TODO: inform collapsible section delegate
+                return
+            }
+
+            correctedItemIndex -= 1
+        }
+
+        let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
         item.onSelectAction?(item)
     }
 
     public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
-        guard collectionView == self else { return nil }
-        let item = lastDataSourceSnapshot[indexPath.section][indexPath.item]
+        guard collectionView == self,
+              let item = itemForIndexPath(indexPath) else { return nil }
 
         // The action closure passes a copy of the view model, so we need to include that.
         func setItem(on action: OBAListViewContextualAction<AnyOBAListViewItem>) -> OBAListViewContextualAction<AnyOBAListViewItem> {
@@ -227,8 +236,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Context menu configuration
     public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        let item = lastDataSourceSnapshot[indexPath.section][indexPath.item]
-        guard let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
+        guard let item = itemForIndexPath(indexPath),
+              let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
 
         // Add uuid so in `willPerformPreviewActionForMenuWith`, we can independently
         // verify (without using index paths that may change) that the user did
@@ -243,6 +252,17 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         animator.addCompletion {
             menuAction.actions.performPreviewAction?()
         }
+    }
+
+    /// Accounts for whether the section has a header or not.
+    func itemForIndexPath(_ indexPath: IndexPath) -> AnyOBAListViewItem? {
+        var correctedItemIndex = indexPath.item
+        if lastDataSourceSnapshot[indexPath.section].hasHeader {
+            guard correctedItemIndex != 0 else { return nil }
+            correctedItemIndex -= 1
+        }
+
+        return lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
     }
 
     // MARK: - Layout configuration
@@ -274,29 +294,43 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
         var snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
         snapshot.appendSections(sections)
+        diffableDataSource.apply(snapshot, animatingDifferences: false)
+
         for section in sections {
-            // If the section is collapsible, account for its state.
-            // Otherwise, show all items.
-            if let collapsedState = section.collapseState {
-                switch collapsedState {
-                case .collapsed:
-                    snapshot.deleteItems(section.contents)
-                case .expanded:
-                    snapshot.appendItems(section.contents, toSection: section)
+            var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<ItemType>()
+
+            if section.hasHeader {
+                let header = OBAListViewHeader(id: section.id, title: section.title, isCollapsible: section.collapseState != nil).typeErased
+                sectionSnapshot.append([header])
+                sectionSnapshot.append(section.contents, to: header)
+
+                // If the section is collapsible, account for its state.
+                // Otherwise, show all items.
+                if let collapsedState = section.collapseState {
+                    switch collapsedState {
+                    case .collapsed:
+                        sectionSnapshot.collapse([header])
+                    case .expanded:
+                        sectionSnapshot.expand([header])
+                    }
+                } else {
+                    sectionSnapshot.expand([header])
                 }
             } else {
-                snapshot.appendItems(section.contents, toSection: section)
+                sectionSnapshot.append(section.contents)
             }
+
+            diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
 
-        DispatchQueue.main.async {
-            self.diffableDataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    self.obaDelegate?.didApplyData(self)
-                }
-            }
-        }
+//        DispatchQueue.main.async {
+//            self.diffableDataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
+//                guard let self = self else { return }
+//                DispatchQueue.main.async {
+//                    self.obaDelegate?.didApplyData(self)
+//                }
+//            }
+//        }
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {

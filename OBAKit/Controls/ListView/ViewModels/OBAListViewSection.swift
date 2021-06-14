@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A section view model for `OBAListView`. `OBAListView` uses `OBAListViewSection` to
 /// define list sections and to "normalize" item data. It also provides a number of other convenience properties.
@@ -45,10 +46,8 @@ public struct OBAListViewSection: Hashable, Identifiable {
     public var collapseState: CollapseState?
 
     /// Provide an optional custom section layout.
-    ///
-    /// Instead of creating a custom layout, you may want to consider creating a separate
-    /// `UICollectionView` as `OBAListView` is supposed to be a list view, akin to `UITableView`.
-    public var customSectionLayout: NSCollectionLayoutSection?
+    /// - important: OBAListView will override `headerMode` in your custom list configuration, so do not use `headerMode` in your custom configuration.
+    public var customListConfiguration: UICollectionLayoutListConfiguration?
 
     /// OBAListViewSection is a level-one section on OBAListView.
     /// - parameters:
@@ -90,12 +89,15 @@ public struct OBAListViewSection: Hashable, Identifiable {
     // MARK: - UICollectionView
 
     func sectionLayout(_ layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        if let custom = self.customSectionLayout {
-            return custom
+        let headerMode: UICollectionLayoutListConfiguration.HeaderMode = hasHeader ? .firstItemInSection : .none
+
+        if var customListConfiguration = self.customListConfiguration {
+            customListConfiguration.headerMode = headerMode
+            return NSCollectionLayoutSection.list(using: customListConfiguration, layoutEnvironment: layoutEnvironment)
         }
 
-        var configuration = UICollectionLayoutListConfiguration(appearance: .plain)
-        configuration.headerMode = hasHeader ? .supplementary : .none
+        var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+        configuration.headerMode = headerMode
         configuration.separatorConfiguration = .init(listAppearance: .plain)
 
         return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
