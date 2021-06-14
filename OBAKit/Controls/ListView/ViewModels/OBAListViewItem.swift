@@ -95,20 +95,18 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _id: () -> AnyHashable
     private let _contentConfiguration: () -> OBAContentConfiguration
     private let _configuration: () -> OBAListViewItemConfiguration
-    private let _hash: (_ hasher: inout Hasher) -> Void
 
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _onDeleteAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _leadingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _trailingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
-    private let _type: Any
+    private let _type: AnyHashable
 
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
         self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._configuration = { return listCellViewModel.configuration }
         self._id = { return listCellViewModel.id }
-        self._hash = listCellViewModel.hash
         self._type = listCellViewModel
 
         self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
@@ -188,7 +186,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     }
 
     public func hash(into hasher: inout Hasher) {
-        self._hash(&hasher)
+        hasher.combine(_type)
     }
 
     public static func == (lhs: AnyOBAListViewItem, rhs: AnyOBAListViewItem) -> Bool {
