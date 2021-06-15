@@ -76,19 +76,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.delegate = self
 
         self.backgroundColor = .systemBackground
-
-        // Register default rows.
-//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewDefault>.self)
-//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewSubtitle>.self)
-//        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewValue>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewHeader>.self)
-
-        self.register(OBAListRowHeaderSupplementaryView.self,
-                      forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-                      withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier)
-        self.register(OBAListViewSeparatorSupplementaryView.self,
-                      forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
-                      withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier)
     }
 
     required init?(coder: NSCoder) {
@@ -109,16 +96,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
                 }
             case .list(let config, let accessories):
                 return self.listCell(collectionView, indexPath: indexPath, item: item, config: config, accessories: accessories)
-            }
-        }
-
-        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            if kind == UICollectionView.elementKindSectionHeader {
-                return self.headerView(collectionView: collectionView, of: kind, at: indexPath, dataSource: dataSource)
-            } else if kind == UICollectionView.elementKindSectionFooter {
-                return self.footerView(collectionView: collectionView, of: kind, at: indexPath, dataSource: dataSource)
-            } else {
-                return nil
             }
         }
 
@@ -151,36 +128,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
 
         return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
-    }
-
-    // MARK: - Supplementary views
-    fileprivate func headerView(
-        collectionView: UICollectionView,
-        of kind: String,
-        at indexPath: IndexPath,
-        dataSource: UICollectionViewDiffableDataSource<SectionType, ItemType>
-    ) -> UICollectionReusableView? {
-        guard kind == UICollectionView.elementKindSectionHeader,
-              let view = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier,
-                for: indexPath) as? OBAListRowHeaderSupplementaryView
-        else { return nil }
-
-        let section = lastDataSourceSnapshot[indexPath.section]
-        view.delegate = self
-        view.section = section
-
-        return view
-    }
-
-    fileprivate func footerView(
-        collectionView: UICollectionView,
-        of kind: String,
-        at indexPath: IndexPath,
-        dataSource: UICollectionViewDiffableDataSource<SectionType, ItemType>
-    ) -> UICollectionReusableView? {
-        return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier, for: indexPath)
     }
 
     // MARK: - Item selection actions
