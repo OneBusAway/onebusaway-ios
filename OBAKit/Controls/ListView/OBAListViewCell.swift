@@ -11,7 +11,7 @@ import OBAKitCore
 
 /// The base cell for all `OBAListView` cells.
 public class OBAListViewCell:
-    SwipeCollectionViewCell,
+    UICollectionViewListCell,
     ReuseIdentifierProviding,
     Separated,
     OBAContentView {

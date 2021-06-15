@@ -120,8 +120,8 @@ class StatusOverlayView: UIView {
         let animator = UIViewPropertyAnimator(duration: UIView.inheritedAnimationDuration, curve: .easeInOut) { [weak self] in
             self?.statusOverlay.alpha = 0.0
         }
-        animator.addCompletion { [weak self] (complete: Bool) in
-            self?.statusOverlay.isHidden = true
+        animator.addCompletion { [unowned self] _ in
+            self.statusOverlay.isHidden = true
         }
         animator.startAnimation()
         hideAnimator = animator

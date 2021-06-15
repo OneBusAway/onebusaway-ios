@@ -27,7 +27,7 @@ import UIKit
 /// ## Context Menus
 /// To support context menus, set `contextMenuDelegate`. The delegate will allow you to provide menu
 /// actions based on the selected item. For more info, refer to `OBAListViewMenuActions`.
-public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRowHeaderSupplementaryViewDelegate {
 
     /// The view type for `EmptyData`.
     /// To use the standard view, provide the view model. OBAListView will handle the view lifecycle.
@@ -115,7 +115,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
             fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
         }
 
-        obaView.delegate = self
         obaView.apply(config)
 
         return obaView
@@ -144,41 +143,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
         let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
         item.onSelectAction?(item)
-    }
-
-    public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
-        guard collectionView == self,
-              let item = itemForIndexPath(indexPath) else { return nil }
-
-        // The action closure passes a copy of the view model, so we need to include that.
-        func setItem(on action: OBAListViewContextualAction<AnyOBAListViewItem>) -> OBAListViewContextualAction<AnyOBAListViewItem> {
-            var newAction = action
-            newAction.item = item
-            return newAction
-        }
-
-        switch orientation {
-        case .left:
-            return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
-        case .right:
-            let items = item.trailingContextualActions ?? []
-            var swipeActions = items.map { setItem(on: $0).swipeAction }
-
-            if let deleteAction = item.onDeleteAction {
-                // Hides "Delete" text if the cell is less than 64 units tall.
-                let cellSize = collectionView.cellForItem(at: indexPath)?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
-                let isCellCompact = cellSize < 64
-                let swipeActionText = isCellCompact ? nil : Strings.delete
-                let deleteSwipeAction = SwipeAction(style: .destructive, title: swipeActionText) { (action, _) in
-                    action.fulfill(with: .delete)
-                    deleteAction(item)
-                }
-                deleteSwipeAction.image = Icons.delete
-                swipeActions.append(deleteSwipeAction)
-            }
-
-            return swipeActions.isEmpty ? nil : swipeActions
-        }
     }
 
     // MARK: - Context menu configuration
@@ -214,9 +178,36 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Layout configuration
     fileprivate func createLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { section, environment -> NSCollectionLayoutSection? in
-            return self.lastDataSourceSnapshot[section].sectionLayout(environment)
+        return UICollectionViewCompositionalLayout { [unowned self] section, environment -> NSCollectionLayoutSection? in
+            let sectionModel = self.lastDataSourceSnapshot[section]
+
+            var configuration = sectionModel.customListConfiguration ?? UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+            configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
+            configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
+
+            configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
+            configuration.trailingSwipeActionsConfigurationProvider = self.trailingSwipeActions
+
+            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
+    }
+
+    fileprivate func leadingSwipeActions(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let actions = itemForIndexPath(indexPath)?.leadingContextualActions else { return nil }
+
+        let config = UISwipeActionsConfiguration(actions: actions.map { $0.contextualAction })
+        config.performsFirstActionWithFullSwipe = false
+
+        return config
+    }
+
+    fileprivate func trailingSwipeActions(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let actions = itemForIndexPath(indexPath)?.trailingContextualActions else { return nil }
+
+        let config = UISwipeActionsConfiguration(actions: actions.map { $0.contextualAction })
+        config.performsFirstActionWithFullSwipe = false
+
+        return config
     }
 
     // MARK: - Data source

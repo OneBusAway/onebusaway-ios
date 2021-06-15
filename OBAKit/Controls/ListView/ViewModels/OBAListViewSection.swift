@@ -85,21 +85,4 @@ public struct OBAListViewSection: Hashable, Identifiable {
         return lhs.title == rhs.title &&
             lhs.contents == rhs.contents
     }
-
-    // MARK: - UICollectionView
-
-    func sectionLayout(_ layoutEnvironment: NSCollectionLayoutEnvironment) -> NSCollectionLayoutSection {
-        let headerMode: UICollectionLayoutListConfiguration.HeaderMode = hasHeader ? .firstItemInSection : .none
-
-        if var customListConfiguration = self.customListConfiguration {
-            customListConfiguration.headerMode = headerMode
-            return NSCollectionLayoutSection.list(using: customListConfiguration, layoutEnvironment: layoutEnvironment)
-        }
-
-        var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
-        configuration.headerMode = headerMode
-        configuration.separatorConfiguration = .init(listAppearance: .plain)
-
-        return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: layoutEnvironment)
-    }
 }

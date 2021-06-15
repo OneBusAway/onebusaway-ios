@@ -44,8 +44,6 @@ class OBAListRowCell<ListRowType: OBAListRowView>: OBAListViewCell {
         contentView.addSubview(self.listRowView)
         self.listRowView.pinToSuperview(.edges)
 
-        fixiOS13AutoLayoutBug()
-
         contentView.layer.addSublayer(separator)
 
         if kUseDebugColors {
