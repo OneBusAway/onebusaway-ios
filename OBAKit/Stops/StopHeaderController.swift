@@ -13,8 +13,9 @@ import OBAKitCore
 // MARK: - StopHeaderSection
 struct StopHeaderItem: OBAListViewItem {
     var id: String { stop.id }
-    var contentConfiguration: OBAContentConfiguration {
-        return StopHeaderContentConfiguration(stop: stop, application: application)
+
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(StopHeaderContentConfiguration(stop: stop, application: application))
     }
 
     static var customCellType: OBAListViewCell.Type? {

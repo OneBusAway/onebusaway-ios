@@ -104,18 +104,17 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     func standardCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: OBAContentConfiguration) -> UICollectionViewCell? {
         // Reference the formatters in the item's content configuration
-        var config = item.contentConfiguration
-        config.formatters = self.formatters
+        var formattedConfig = config
+        formattedConfig.formatters = self.formatters
 
-        let reuseIdentifier = config.obaContentView.ReuseIdentifier
-
+        let reuseIdentifier = formattedConfig.obaContentView.ReuseIdentifier
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
 
         guard let obaView = cell as? OBAListViewCell else {
             fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
         }
 
-        obaView.apply(config)
+        obaView.apply(formattedConfig)
 
         return obaView
     }

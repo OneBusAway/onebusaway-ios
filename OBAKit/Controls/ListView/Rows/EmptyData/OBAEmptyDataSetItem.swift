@@ -10,8 +10,8 @@
 import OBAKitCore
 
 struct EmptyDataSetItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return EmptyDataSetContentConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(EmptyDataSetContentConfiguration(viewModel: self))
     }
 
     static var customCellType: OBAListViewCell.Type? {

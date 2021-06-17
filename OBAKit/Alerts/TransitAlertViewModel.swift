@@ -23,7 +23,7 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
     var subtitle: String { return String(body.prefix(256)) }
     var onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>?
 
-    var contentConfiguration: OBAContentConfiguration {
+    var configuration: OBAListViewItemConfiguration {
         var config = OBAListRowConfiguration(
             text: .string(title),
             secondaryText: .string(subtitle),
@@ -40,7 +40,8 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
 
         config.textConfig.accessibilityNumberOfLines = 5
         config.secondaryTextConfig.accessibilityNumberOfLines = 8
-        return config
+
+        return .custom(config)
     }
 
     init<TA: TransitAlertViewModel>(

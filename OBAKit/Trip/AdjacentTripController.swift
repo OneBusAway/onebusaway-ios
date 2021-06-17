@@ -34,8 +34,8 @@ struct AdjacentTripItem: OBAListViewItem {
     let trip: Trip
     var onSelectAction: OBAListViewAction<AdjacentTripItem>?
 
-    var contentConfiguration: OBAContentConfiguration {
-        return AdjacentTripRowConfiguration(order: order, routeHeadsign: trip.routeHeadsign)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(AdjacentTripRowConfiguration(order: order, routeHeadsign: trip.routeHeadsign))
     }
 
     func hash(into hasher: inout Hasher) {

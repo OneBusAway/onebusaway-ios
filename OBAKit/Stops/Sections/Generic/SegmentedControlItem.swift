@@ -9,8 +9,8 @@ import UIKit
 import OBAKitCore
 
 struct SegmentedControlItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return SegmentedControlContentConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(SegmentedControlContentConfiguration(viewModel: self))
     }
 
     static var customCellType: OBAListViewCell.Type? {

@@ -9,8 +9,8 @@ import OBAKitCore
 import CoreLocation
 
 struct StopArrivalWalkItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk))
     }
 
     static var customCellType: OBAListViewCell.Type? {

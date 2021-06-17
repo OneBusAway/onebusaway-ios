@@ -25,8 +25,8 @@ struct DEBUG_Person: OBAListViewItem {
 
     var onSelectAction: OBAListViewAction<DEBUG_Person>?
 
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: .string(name), secondaryText: .string(address), appearance: .subtitle, accessoryType: .disclosureIndicator)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(OBAListRowConfiguration(image: UIImage(systemName: "person.fill"), text: .string(name), secondaryText: .string(address), appearance: .subtitle, accessoryType: .disclosureIndicator))
     }
 
     func hash(into hasher: inout Hasher) {
@@ -64,8 +64,8 @@ struct DEBUG_CustomContent: OBAListViewItem {
         return [action]
     }
 
-    var contentConfiguration: OBAContentConfiguration {
-        return DEBUG_CustomContentConfiguration(text: text)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(DEBUG_CustomContentConfiguration(text: text))
     }
 
     func hash(into hasher: inout Hasher) {

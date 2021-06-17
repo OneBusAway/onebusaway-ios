@@ -18,12 +18,12 @@ struct StopViewModel: OBAListViewItem {
     let id: Stop.ID
     let stop: Stop
 
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListRowConfiguration(
-            text: .string(name),
-            secondaryText: .string(subtitle),
-            appearance: .subtitle,
-            accessoryType: .disclosureIndicator)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(OBAListRowConfiguration(
+                        text: .string(name),
+                        secondaryText: .string(subtitle),
+                        appearance: .subtitle,
+                        accessoryType: .disclosureIndicator))
     }
 
     let onSelectAction: OBAListViewAction<StopViewModel>?
@@ -66,11 +66,11 @@ extension RecentStopsViewController {
 
         var id: URL { alarm.url }
 
-        var contentConfiguration: OBAContentConfiguration {
-            return OBAListRowConfiguration(
-                text: .string(title),
-                appearance: .subtitle,
-                accessoryType: .disclosureIndicator)
+        var configuration: OBAListViewItemConfiguration {
+            return .custom(OBAListRowConfiguration(
+                            text: .string(title),
+                            appearance: .subtitle,
+                            accessoryType: .disclosureIndicator))
         }
 
         let onSelectAction: OBAListViewAction<AlarmViewModel>?

@@ -23,9 +23,6 @@ public enum OBAListViewItemConfiguration {
 /// - The `Identifiable` protocol requires an `id` property.
 ///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
 public protocol OBAListViewItem: Hashable, Identifiable {
-    @available(*, deprecated, renamed: "configuration")
-    var contentConfiguration: OBAContentConfiguration { get }
-
     var configuration: OBAListViewItemConfiguration { get }
 
     /// Optional. If your item doesn't use OBAListRowView, you define the custom view type here.
@@ -52,14 +49,6 @@ public protocol OBAListViewItem: Hashable, Identifiable {
 extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
         return nil
-    }
-
-    public var contentConfiguration: OBAContentConfiguration {
-        fatalError("Use `configuration` instead of `contentConfiguration`")
-    }
-
-    public var configuration: OBAListViewItemConfiguration {
-        return .custom(contentConfiguration)
     }
 
     public var onSelectAction: OBAListViewAction<Self>? {
@@ -93,7 +82,6 @@ extension OBAListViewItem {
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
     private let _id: () -> AnyHashable
-    private let _contentConfiguration: () -> OBAContentConfiguration
     private let _configuration: () -> OBAListViewItemConfiguration
 
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
@@ -104,7 +92,6 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
-        self._contentConfiguration = { return listCellViewModel.contentConfiguration }
         self._configuration = { return listCellViewModel.configuration }
         self._id = { return listCellViewModel.id }
         self._type = listCellViewModel
@@ -159,10 +146,6 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public var id: AnyHashable {
         return _id()
-    }
-
-    public var contentConfiguration: OBAContentConfiguration {
-        return _contentConfiguration()
     }
 
     public var configuration: OBAListViewItemConfiguration {

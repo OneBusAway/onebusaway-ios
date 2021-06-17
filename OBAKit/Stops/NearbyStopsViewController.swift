@@ -146,8 +146,8 @@ struct NearbyStopViewModel: OBAListViewItem {
 
     let onSelectAction: OBAListViewAction<NearbyStopViewModel>?
 
-    var contentConfiguration: OBAContentConfiguration {
-        return OBAListRowConfiguration(text: .string(title), secondaryText: .string(subtitle), appearance: .subtitle, accessoryType: .disclosureIndicator)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(OBAListRowConfiguration(text: .string(title), secondaryText: .string(subtitle), appearance: .subtitle, accessoryType: .disclosureIndicator))
     }
 
     init(stop: Stop, onSelectAction: @escaping OBAListViewAction<NearbyStopViewModel>) {

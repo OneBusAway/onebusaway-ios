@@ -24,8 +24,8 @@ struct TripStopListItemRowConfiguration: OBAContentConfiguration {
 struct TripStopViewModel: OBAListViewItem {
     var id: String { stop.id }
 
-    var contentConfiguration: OBAContentConfiguration {
-        return TripStopListItemRowConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(TripStopListItemRowConfiguration(viewModel: self))
     }
 
     static var customCellType: OBAListViewCell.Type? {
