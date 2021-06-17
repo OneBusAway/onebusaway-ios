@@ -27,7 +27,7 @@ import UIKit
 /// ## Context Menus
 /// To support context menus, set `contextMenuDelegate`. The delegate will allow you to provide menu
 /// actions based on the selected item. For more info, refer to `OBAListViewMenuActions`.
-public class OBAListView: UICollectionView, UICollectionViewDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     /// The view type for `EmptyData`.
     /// To use the standard view, provide the view model. OBAListView will handle the view lifecycle.
