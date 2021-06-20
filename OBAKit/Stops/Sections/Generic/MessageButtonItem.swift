@@ -21,6 +21,8 @@ struct MessageButtonItem: OBAListViewItem {
         return MessageButtonCell.self
     }
 
+    let separatorConfiguration: OBAListRowSeparatorConfiguration = .hidden()
+
     var onSelectAction: OBAListViewAction<MessageButtonItem>?
 
     var id: String
@@ -124,10 +126,6 @@ final class MessageButtonCell: OBAListViewCell {
 
     var showActivityIndicatorOnSelect: Bool = false
     var onTapAction: VoidBlock?
-
-    override var showsSeparator: Bool {
-        return false
-    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)

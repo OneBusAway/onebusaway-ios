@@ -183,6 +183,13 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
             var configuration = sectionModel.customListConfiguration ?? UICollectionLayoutListConfiguration(appearance: .insetGrouped)
             configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
             configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
+            configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
+                guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
+
+                var configuration = listConfiguration
+                configuration.applying(item.separatorConfiguration)
+                return configuration
+            }
 
             configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
             configuration.trailingSwipeActionsConfigurationProvider = self.trailingSwipeActions

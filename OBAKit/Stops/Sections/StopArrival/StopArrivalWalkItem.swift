@@ -17,6 +17,10 @@ struct StopArrivalWalkItem: OBAListViewItem {
         return StopArrivalWalkCell.self
     }
 
+    var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return .hidden()
+    }
+
     var onSelectAction: OBAListViewAction<StopArrivalWalkItem>?
 
     let id: String
@@ -45,10 +49,6 @@ struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
 }
 
 class StopArrivalWalkCell: OBAListViewCell {
-    override var showsSeparator: Bool {
-        return false
-    }
-
     let walkTimeView = WalkTimeView.autolayoutNew()
 
     override init(frame: CGRect) {

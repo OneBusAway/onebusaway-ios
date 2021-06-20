@@ -25,6 +25,8 @@ public enum OBAListViewItemConfiguration {
 public protocol OBAListViewItem: Hashable, Identifiable {
     var configuration: OBAListViewItemConfiguration { get }
 
+    var separatorConfiguration: OBAListRowSeparatorConfiguration { get }
+
     /// Optional. If your item doesn't use OBAListRowView, you define the custom view type here.
     static var customCellType: OBAListViewCell.Type? { get }
 
@@ -49,6 +51,10 @@ public protocol OBAListViewItem: Hashable, Identifiable {
 extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
         return nil
+    }
+
+    public var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return .init()
     }
 
     public var onSelectAction: OBAListViewAction<Self>? {
@@ -84,6 +90,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     private let _id: () -> AnyHashable
     private let _configuration: () -> OBAListViewItemConfiguration
 
+    private let _separatorConfiguration: () -> OBAListRowSeparatorConfiguration
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _onDeleteAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _leadingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
@@ -96,6 +103,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         self._id = { return listCellViewModel.id }
         self._type = listCellViewModel
 
+        self._separatorConfiguration = { return listCellViewModel.separatorConfiguration }
         self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
         self._onDeleteAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onDeleteAction) }
         self._leadingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingContextualActions) }
@@ -150,6 +158,10 @@ public struct AnyOBAListViewItem: OBAListViewItem {
 
     public var configuration: OBAListViewItemConfiguration {
         return _configuration()
+    }
+
+    public var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return _separatorConfiguration()
     }
 
     public var onSelectAction: OBAListViewAction<AnyOBAListViewItem>? {

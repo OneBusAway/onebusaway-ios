@@ -28,6 +28,10 @@ struct TripStopViewModel: OBAListViewItem {
         return .custom(TripStopListItemRowConfiguration(viewModel: self))
     }
 
+    var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return .withInset(leading: TripStopCell.tripSegmentImageWidth + 10.0)
+    }
+
     static var customCellType: OBAListViewCell.Type? {
         return TripStopCell.self
     }
@@ -227,7 +231,6 @@ final class TripStopCell: OBAListViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layoutSeparator(leftSeparatorInset: TripStopCell.tripSegmentImageWidth + 10.0)
         layoutAccessibility()
     }
 
