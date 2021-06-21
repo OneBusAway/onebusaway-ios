@@ -45,9 +45,8 @@ public struct OBAListViewSection: Hashable, Identifiable {
     /// - important: To avoid confusing `UICollectionView` animations, this value is not checked for equality.
     public var collapseState: CollapseState?
 
-    /// Provide an optional custom section layout.
-    /// - important: OBAListView will override `headerMode` in your custom list configuration, so do not use `headerMode` in your custom configuration.
-    public var customListConfiguration: UICollectionLayoutListConfiguration?
+    /// The list configuration to use with this section. Primarily for visual configuration.
+    public var configuration: OBAListSectionConfiguration
 
     /// OBAListViewSection is a level-one section on OBAListView.
     /// - parameters:
@@ -69,6 +68,9 @@ public struct OBAListViewSection: Hashable, Identifiable {
                 return item.typeErased
             }
         }
+
+        // Set default list configuration
+        self.configuration = .init(appearance: .insetGrouped)
     }
 
     subscript(_ itemIndex: Int) -> AnyOBAListViewItem {

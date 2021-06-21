@@ -180,7 +180,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
         return UICollectionViewCompositionalLayout { [unowned self] section, environment -> NSCollectionLayoutSection? in
             let sectionModel = self.lastDataSourceSnapshot[section]
 
-            var configuration = sectionModel.customListConfiguration ?? UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+            var configuration = sectionModel.configuration.listConfiguration()
             configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
             configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
             configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
