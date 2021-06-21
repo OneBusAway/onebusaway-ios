@@ -26,7 +26,7 @@ class StopPreferencesViewController: FormViewController {
         self.stop = stop
         self.delegate = delegate
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(style: .insetGrouped)
 
         title = OBALoc("stop_preferences_controller.title", value: "Sort & Filter Routes", comment: "Title of the Edit Stop preferences controller")
 

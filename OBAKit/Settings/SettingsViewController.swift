@@ -18,7 +18,7 @@ class SettingsViewController: FormViewController {
     init(application: Application) {
         self.application = application
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(style: .insetGrouped)
 
         title = Strings.settings
 

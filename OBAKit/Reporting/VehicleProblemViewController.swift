@@ -70,7 +70,7 @@ class VehicleProblemViewController: FormViewController {
         self.application = application
         self.arrivalDeparture = arrivalDeparture
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(style: .insetGrouped)
 
         title = OBALoc("vehicle_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Vehicle Problem controller")
 

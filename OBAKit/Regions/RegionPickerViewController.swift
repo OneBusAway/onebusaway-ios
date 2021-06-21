@@ -24,7 +24,7 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
     public init(application: Application) {
         self.application = application
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(style: .insetGrouped)
 
         title = OBALoc("region_picker_controller.title", value: "Select a Region", comment: "Region Picker view controller title")
 
