@@ -45,7 +45,8 @@ extension AgencyAlertListViewConverters where Self: UIViewController {
     ///     - sectionID: The section ID to use with `OBAListViewSection`. The default value is `service_alerts`.
     /// - Returns: An `OBAListViewSection` representing the array of `ServiceAlert`s for use with OBAListView.
     func listSection(serviceAlerts: [ServiceAlert], showSectionTitle: Bool, sectionID: String = "service_alerts") -> OBAListViewSection {
-        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, isUnread: false, forLocale: .current, onSelectAction: presentAlert) }.uniqued
+        let onSelectAction: (TransitAlertDataListViewModel) -> Void = { [weak self] item in self?.presentAlert(item) }
+        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, isUnread: false, forLocale: .current, onSelectAction: onSelectAction) }.uniqued
         let title: String?
         if showSectionTitle {
             if items.count > 1 {
