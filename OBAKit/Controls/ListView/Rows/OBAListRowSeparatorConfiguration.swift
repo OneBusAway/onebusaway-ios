@@ -25,6 +25,8 @@ public struct OBAListRowSeparatorConfiguration: Equatable {
     }
 }
 
+// #398 - list view separators always appears on iOS 14.4
+@available(iOS 14.5, *)
 extension UIListSeparatorConfiguration {
     mutating func applying(_ obaConfiguration: OBAListRowSeparatorConfiguration) {
         let visibility: UIListSeparatorConfiguration.Visibility = obaConfiguration.showsSeparator ? .automatic : .hidden

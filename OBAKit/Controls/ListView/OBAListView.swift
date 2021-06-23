@@ -182,13 +182,18 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             var configuration = sectionModel.configuration.listConfiguration()
             configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
-            configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
-            configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
-                guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
 
-                var configuration = listConfiguration
-                configuration.applying(item.separatorConfiguration)
-                return configuration
+            // #398 - list view separators always appears on iOS 14.4
+            // Necessary for CI compatibility. Remove check when CI is fixed.
+            if #available(iOS 14.5, *) {
+                configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
+                configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
+                    guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
+
+                    var configuration = listConfiguration
+                    configuration.applying(item.separatorConfiguration)
+                    return configuration
+                }
             }
 
             configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
