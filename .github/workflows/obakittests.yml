@@ -11,10 +11,6 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: maxim-lobanov/setup-xcode@master
-      with:
-        xcode-version: '12.2'
-        # xcode-version: latest-stable
     - uses: actions/checkout@v2
 
     - uses: actions/cache@v2
@@ -23,8 +19,13 @@ jobs:
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
         restore-keys: |
           ${{ runner.os }}-spm-
+
+    - name: Switch Xcode 12
+      run: sudo xcode-select -switch /Applications/Xcode_12.4.app
+
     - name: Install xcodegen
       run: brew install xcodegen
+
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
@@ -32,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'name=iPhone 11 Pro'
+        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
         -quiet
 
     # Unit Test
@@ -41,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'name=iPhone 11 Pro'
+        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
     - name: Upload OBAKitTests results
@@ -56,9 +57,11 @@ jobs:
         -only-testing:OBAKitUITests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'name=iPhone 11 Pro'
+        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
         -resultBundlePath OBAKitUITests.xcresult
         -quiet
+
+    # Upload results
     - name: Upload OBAKitUITests results
       uses: actions/upload-artifact@v2
       with:
