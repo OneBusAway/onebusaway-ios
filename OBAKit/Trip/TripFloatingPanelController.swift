@@ -256,7 +256,7 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func serviceAlertsListSection(_ alerts: [ServiceAlert]) -> OBAListViewSection {
-        let action: OBAListViewAction<TransitAlertDataListViewModel> = { viewModel in
+        let action: OBAListViewAction<TransitAlertDataListViewModel> = { [unowned self] viewModel in
             self.application.viewRouter.navigateTo(alert: viewModel.transitAlert, from: self)
         }
 
@@ -275,19 +275,21 @@ class TripFloatingPanelController: UIViewController,
 
     private func tripStopListSection(tripDetails: TripDetails, arrivalDeparture: ArrivalDeparture?, showHeader: Bool) -> OBAListViewSection {
         var contents: [AnyOBAListViewItem] = []
+        let selectAdjacentTripAction: OBAListViewAction<AdjacentTripItem> = { [unowned self] item in self.onSelectAdjacentTrip(item) }
 
         // Previous trip, if any.
         if let previousTrip = tripDetails.previousTrip {
-            contents.append(AdjacentTripItem(order: .previous, trip: previousTrip, onSelectAction: onSelectAdjacentTrip).typeErased)
+            contents.append(AdjacentTripItem(order: .previous, trip: previousTrip, onSelectAction: selectAdjacentTripAction).typeErased)
         }
 
         // Stop times
-        let stopTimes: [AnyOBAListViewItem] = tripDetails.stopTimes.map { TripStopViewModel(stopTime: $0, arrivalDeparture: arrivalDeparture, onSelectAction: onSelectTripStop).typeErased }
+        let selectTripStopAction: OBAListViewAction<TripStopViewModel> = { [unowned self] item in self.onSelectTripStop(item) }
+        let stopTimes: [AnyOBAListViewItem] = tripDetails.stopTimes.map { TripStopViewModel(stopTime: $0, arrivalDeparture: arrivalDeparture, onSelectAction: selectTripStopAction).typeErased }
         contents.append(contentsOf: stopTimes)
 
         // Next trip, if any.
         if let nextTrip = tripDetails.nextTrip {
-            contents.append(AdjacentTripItem(order: .next, trip: nextTrip, onSelectAction: onSelectAdjacentTrip).typeErased)
+            contents.append(AdjacentTripItem(order: .next, trip: nextTrip, onSelectAction: selectAdjacentTripAction).typeErased)
         }
 
         let title: String? = showHeader ? OBALoc("trip_details_controller.service_alerts_footer", value: "Trip Details", comment: "Service alerts header in the trip details controller.") : nil
@@ -298,7 +300,7 @@ class TripFloatingPanelController: UIViewController,
     private func viewOnMapAction(for viewModel: TripStopViewModel) -> UIAction? {
         guard parentTripViewController != nil else { return nil }
 
-        return UIAction(title: OBALoc("trip_details_controller.show_on_map", value: "Show on Map", comment: "Button that moves the map to focus on the selected stop"), image: UIImage(systemName: "mappin.circle")) { _ in
+        return UIAction(title: OBALoc("trip_details_controller.show_on_map", value: "Show on Map", comment: "Button that moves the map to focus on the selected stop"), image: UIImage(systemName: "mappin.circle")) { [unowned self] _ in
             self.showOnMap(viewModel)
         }
     }
@@ -306,7 +308,7 @@ class TripFloatingPanelController: UIViewController,
     private func getWalkingDirections(for viewModel: TripStopViewModel) -> UIMenuElement? {
         let appleMapsAction: UIAction?
         if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: viewModel.stop.coordinate) {
-            appleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { _ in
+            appleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { [unowned self] _ in
                 self.application.open(appleMapsURL, options: [:], completionHandler: nil)
             }
         } else {
@@ -316,7 +318,7 @@ class TripFloatingPanelController: UIViewController,
         let googleMapsAction: UIAction?
         #if !targetEnvironment(simulator)
         if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: viewModel.stop.coordinate) {
-            googleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { _ in
+            googleMapsAction = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
                 self.application.open(googleMapsURL, options: [:], completionHandler: nil)
             }
         } else {
@@ -336,7 +338,7 @@ class TripFloatingPanelController: UIViewController,
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         guard let tripStop = item.as(TripStopViewModel.self) else { return nil }
 
-        let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
+        let menu: OBAListViewMenuActions.MenuProvider = { [unowned self] _ -> UIMenu? in
             let menuActions = [
                 self.viewOnMapAction(for: tripStop),
                 self.getWalkingDirections(for: tripStop)
@@ -345,13 +347,13 @@ class TripFloatingPanelController: UIViewController,
             return UIMenu(title: tripStop.title, children: menuActions)
         }
 
-        let previewProvider: OBAListViewMenuActions.PreviewProvider = { () -> UIViewController? in
+        let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
             let stopVC = StopViewController(application: self.application, stopID: tripStop.stop.id)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }
 
-        let commitPreviewAction: VoidBlock = {
+        let commitPreviewAction: VoidBlock = { [unowned self] in
             guard let vc = self.currentPreviewingViewController else { return }
             (vc as? Previewable)?.exitPreviewMode()
             self.application.viewRouter.navigate(to: vc, from: self)

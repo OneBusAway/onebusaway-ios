@@ -151,7 +151,9 @@ public class StopViewController: UIViewController,
 
         registerDefaults()
 
-        Timer.scheduledTimer(timeInterval: StopViewController.defaultTimerReloadInterval / 2.0, target: self, selector: #selector(timerFired), userInfo: nil, repeats: true)
+        reloadTimer = Timer.scheduledTimer(withTimeInterval: StopViewController.defaultTimerReloadInterval / 2.0, repeats: true) { [weak self] _ in
+            self?.timerFired()
+        }
 
         navigationItem.backBarButtonItem = UIBarButtonItem.backButton
     }
@@ -502,15 +504,21 @@ public class StopViewController: UIViewController,
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
         let deepLinkingAvailable = application.features.deepLinking == .running
         let highlightTimeOnDisplay = shouldHighlight(arrivalDeparture: arrivalDeparture)
+
+        let onSelectAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.didSelectArrivalDepartureItem(item) }
+        let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
+        let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
+        let shareAction: OBAListViewAction<ArrivalDepartureItem>    = { [unowned self] item in self.shareTripStatus(viewModel: item) }
+
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
             isDeepLinkingAvailable: deepLinkingAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
-            onSelectAction: didSelectArrivalDepartureItem,
-            alarmAction: addAlarm,
-            bookmarkAction: addBookmark,
-            shareAction: shareTripStatus)
+            onSelectAction: onSelectAction,
+            alarmAction: addAlarmAction,
+            bookmarkAction: bookmarkAction,
+            shareAction: shareAction)
     }
 
     func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
@@ -565,22 +573,22 @@ public class StopViewController: UIViewController,
             self.performPreviewStopArrival(viewModel)
         }
 
-        let menuProvider: OBAListViewMenuActions.MenuProvider = { _ in
+        let menuProvider: OBAListViewMenuActions.MenuProvider = { [unowned self] _ in
             var actions = [UIAction]()
 
             if viewModel.isAlarmAvailable {
-                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { _ in
+                let alarm = UIAction(title: Strings.addAlarm, image: Icons.addAlarm) { [unowned self] _ in
                     self.addAlarm(viewModel: viewModel)
                 }
                 actions.append(alarm)
             }
 
-            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { _ in
+            let addBookmark = UIAction(title: Strings.addBookmark, image: Icons.addBookmark) { [unowned self] _ in
                 self.addBookmark(viewModel: viewModel)
             }
             actions.append(addBookmark)
 
-            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { _ in
+            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { [unowned self] _ in
                 self.shareTripStatus(viewModel: viewModel)
             }
             actions.append(shareTrip)
@@ -734,7 +742,7 @@ public class StopViewController: UIViewController,
 
         // All Service Alerts
         if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
-            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { _ in
+            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { [unowned self] _ in
                 let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
                 self.application.viewRouter.navigate(to: controller, from: self)
             }
