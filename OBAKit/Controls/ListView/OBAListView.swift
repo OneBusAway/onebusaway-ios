@@ -278,15 +278,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
-
-//        DispatchQueue.main.async {
-//            self.diffableDataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-//                guard let self = self else { return }
-//                DispatchQueue.main.async {
-//                    self.obaDelegate?.didApplyData(self)
-//                }
-//            }
-//        }
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {

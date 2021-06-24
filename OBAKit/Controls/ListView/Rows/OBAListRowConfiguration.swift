@@ -29,14 +29,12 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
 
     public enum Accessory {
         case checkmark
-        case detailButton
         case disclosureIndicator
         case none
 
         var cellAccessory: UICellAccessory? {
             switch self {
             case .checkmark: return .checkmark(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
-            case .detailButton: return .label(text: "i") // TODO: this
             case .disclosureIndicator: return .disclosureIndicator(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
             case .none: return nil
             }

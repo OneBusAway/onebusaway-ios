@@ -7,8 +7,6 @@
 
 import OBAKitCore
 
-// swiftlint:disable colon
-
 /// The base cell for all `OBAListView` cells.
 public class OBAListViewCell: UICollectionViewListCell, ReuseIdentifierProviding, OBAContentView {
     // MARK: - Events
