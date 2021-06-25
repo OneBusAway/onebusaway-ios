@@ -5,6 +5,11 @@
 //  Created by Alan Chu on 10/4/20.
 //
 
+public enum OBAListViewItemConfiguration {
+    case custom(OBAContentConfiguration)
+    case list(UIListContentConfiguration, [UICellAccessory?])
+}
+
 // MARK: - OBAListViewItem
 /// A view model that provides the necessary implementation to compare the identity and equality of
 /// two view models for `OBAListView`. Also, defines list row actions, such as what to
@@ -13,12 +18,14 @@
 /// - The `Hashable` protocol requires a `hash` method.
 ///     This is needed for `NSDiffableDataSource`, which is the "identity" of the model.
 ///     It should be a combination of *all values, including the identifier*.
+/// - If the compiler is unable to synthesize an Equatable conformance, your implementation should behave
+///     similar to hashable, comparing *all values, including the identifier*.
 /// - The `Identifiable` protocol requires an `id` property.
 ///     It is currently not in use, reserved for future item identification functionality. This value is the "stable identity" (e.g. `stopID`) of the model.
-/// - The `Equatable` protocol requires a `==` method to compare equality.
-///     It is currently not in use, reserved for future item diffing functionality. This should compare the values between both subjects, excluding its identifier.
 public protocol OBAListViewItem: Hashable, Identifiable {
-    var contentConfiguration: OBAContentConfiguration { get }
+    var configuration: OBAListViewItemConfiguration { get }
+
+    var separatorConfiguration: OBAListRowSeparatorConfiguration { get }
 
     /// Optional. If your item doesn't use OBAListRowView, you define the custom view type here.
     static var customCellType: OBAListViewCell.Type? { get }
@@ -43,6 +50,14 @@ public protocol OBAListViewItem: Hashable, Identifiable {
 // MARK: Default implementations
 extension OBAListViewItem {
     public static var customCellType: OBAListViewCell.Type? {
+        return nil
+    }
+
+    public var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return .init()
+    }
+
+    public var onSelectAction: OBAListViewAction<Self>? {
         return nil
     }
 
@@ -73,22 +88,22 @@ extension OBAListViewItem {
 public struct AnyOBAListViewItem: OBAListViewItem {
     private let _anyEquatable: AnyEquatable
     private let _id: () -> AnyHashable
-    private let _contentConfiguration: () -> OBAContentConfiguration
-    private let _hash: (_ hasher: inout Hasher) -> Void
+    private let _configuration: () -> OBAListViewItemConfiguration
 
+    private let _separatorConfiguration: () -> OBAListRowSeparatorConfiguration
     private let _onSelectAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _onDeleteAction: () -> OBAListViewAction<AnyOBAListViewItem>?
     private let _leadingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
     private let _trailingContextualActions: () -> [OBAListViewContextualAction<AnyOBAListViewItem>]?
-    private let _type: Any
+    private let _type: AnyHashable
 
     public init<ViewModel: OBAListViewItem>(_ listCellViewModel: ViewModel) {
         self._anyEquatable = AnyEquatable(listCellViewModel)
-        self._contentConfiguration = { return listCellViewModel.contentConfiguration }
+        self._configuration = { return listCellViewModel.configuration }
         self._id = { return listCellViewModel.id }
-        self._hash = listCellViewModel.hash
         self._type = listCellViewModel
 
+        self._separatorConfiguration = { return listCellViewModel.separatorConfiguration }
         self._onSelectAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onSelectAction) }
         self._onDeleteAction = { return AnyOBAListViewItem.typeEraseAction(listCellViewModel.onDeleteAction) }
         self._leadingContextualActions = { return AnyOBAListViewItem.typeEraseActions(listCellViewModel.leadingContextualActions) }
@@ -141,8 +156,12 @@ public struct AnyOBAListViewItem: OBAListViewItem {
         return _id()
     }
 
-    public var contentConfiguration: OBAContentConfiguration {
-        return _contentConfiguration()
+    public var configuration: OBAListViewItemConfiguration {
+        return _configuration()
+    }
+
+    public var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return _separatorConfiguration()
     }
 
     public var onSelectAction: OBAListViewAction<AnyOBAListViewItem>? {
@@ -162,7 +181,7 @@ public struct AnyOBAListViewItem: OBAListViewItem {
     }
 
     public func hash(into hasher: inout Hasher) {
-        self._hash(&hasher)
+        hasher.combine(_type)
     }
 
     public static func == (lhs: AnyOBAListViewItem, rhs: AnyOBAListViewItem) -> Bool {

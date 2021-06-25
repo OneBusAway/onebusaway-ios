@@ -162,7 +162,9 @@ public class BookmarksViewController: UIViewController,
         let groupID: String = group?.id.uuidString ?? "unknown_group"
         let groupName = group?.name ?? OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
 
-        return OBAListViewSection(id: groupID, title: groupName, contents: arrivalData)
+        var section = OBAListViewSection(id: groupID, title: groupName, contents: arrivalData)
+        section.configuration = .appearance(.plain)
+        return section
     }
 
     public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {

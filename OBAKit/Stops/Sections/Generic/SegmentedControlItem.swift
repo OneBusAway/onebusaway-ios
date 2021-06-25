@@ -9,9 +9,11 @@ import UIKit
 import OBAKitCore
 
 struct SegmentedControlItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return SegmentedControlContentConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(SegmentedControlContentConfiguration(viewModel: self))
     }
+
+    let separatorConfiguration: OBAListRowSeparatorConfiguration = .hidden()
 
     static var customCellType: OBAListViewCell.Type? {
         return SegmentedControlCell.self
@@ -68,10 +70,6 @@ final class SegmentedControlCell: OBAListViewCell {
         control.addTarget(self, action: #selector(valueChanged(_:)), for: .valueChanged)
         return control
     }()
-
-    override var showsSeparator: Bool {
-        return false
-    }
 
     override func prepareForReuse() {
         super.prepareForReuse()

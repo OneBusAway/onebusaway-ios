@@ -7,9 +7,6 @@
 
 /// Wraps `AgencyAlert` and `ServiceAlert` into a common view model for displaying alert details in-app.
 public protocol TransitAlertViewModel {
-    /// A unique identifier for the alert. Should be unique across alert type (i.e. should not conflict across `AgencyAlert` or `ServiceAlert`)
-    var id: String { get }
-
     /// The closest matching localized title text for the specified `Locale`.
     func title(forLocale locale: Locale) -> String?
 

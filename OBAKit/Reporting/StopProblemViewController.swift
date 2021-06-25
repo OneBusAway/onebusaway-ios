@@ -27,7 +27,7 @@ class StopProblemViewController: FormViewController {
     init(application: Application, stop: Stop) {
         self.application = application
         self.stop = stop
-        super.init(nibName: nil, bundle: nil)
+        super.init(style: .insetGrouped)
 
         title = OBALoc("stop_problem_controller.title", value: "Report a Problem", comment: "Title for the Report Stop Problem controller")
 

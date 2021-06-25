@@ -27,7 +27,7 @@ import UIKit
 /// ## Context Menus
 /// To support context menus, set `contextMenuDelegate`. The delegate will allow you to provide menu
 /// actions based on the selected item. For more info, refer to `OBAListViewMenuActions`.
-public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeCollectionViewCellDelegate, OBAListRowHeaderSupplementaryViewDelegate {
+public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     /// The view type for `EmptyData`.
     /// To use the standard view, provide the view model. OBAListView will handle the view lifecycle.
@@ -53,7 +53,14 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
     weak public var contextMenuDelegate: OBAListViewContextMenuDelegate?
 
     // MARK: - Private properties
-    fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>!
+    fileprivate typealias SectionType = OBAListViewSection
+    fileprivate typealias ItemType = AnyOBAListViewItem
+
+    fileprivate var diffableDataSource: UICollectionViewDiffableDataSource<SectionType, ItemType>!
+
+    /// Cache the last applied data source snapshot, as we cannot rely on the parent data source to ensure
+    /// that the data source and the UI are sync'd. This is the source of truth of this list view.
+    fileprivate var lastDataSourceSnapshot: [OBAListViewSection] = []
 
     /// Cache the last used context menu for handling "perform preview action".
     fileprivate var lastUsedContextMenu: (identifier: String, actions: OBAListViewMenuActions)?
@@ -69,19 +76,6 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         self.delegate = self
 
         self.backgroundColor = .systemBackground
-
-        // Register default rows.
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewDefault>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewSubtitle>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewValue>.self)
-        self.register(reuseIdentifierProviding: OBAListRowCell<OBAListRowViewHeader>.self)
-
-        self.register(OBAListRowHeaderSupplementaryView.self,
-                      forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-                      withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier)
-        self.register(OBAListViewSeparatorSupplementaryView.self,
-                      forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
-                      withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier)
     }
 
     required init?(coder: NSCoder) {
@@ -90,112 +84,70 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
 
     // MARK: - Data source
 
-    fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem> {
-        let dataSource = UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
-            var config = item.contentConfiguration
-            config.formatters = self.formatters
+    fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<SectionType, ItemType> {
+        let dataSource = UICollectionViewDiffableDataSource<SectionType, ItemType>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
 
-            let reuseIdentifier = config.obaContentView.ReuseIdentifier
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
-
-            guard let obaView = cell as? OBAListViewCell else {
-                fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
-            }
-
-            obaView.delegate = self
-            obaView.apply(config)
-
-            return obaView
-        }
-
-        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            if kind == UICollectionView.elementKindSectionHeader {
-                return self.headerView(collectionView: collectionView, of: kind, at: indexPath, dataSource: dataSource)
-            } else if kind == UICollectionView.elementKindSectionFooter {
-                return self.footerView(collectionView: collectionView, of: kind, at: indexPath, dataSource: dataSource)
-            } else {
-                return nil
+            switch item.configuration {
+            case .custom(let config):
+                if let listConfig = config as? OBAListRowConfiguration {
+                    return self.listCell(collectionView, indexPath: indexPath, item: item, config: listConfig.listConfiguration, accessories: [listConfig.accessoryType.cellAccessory])
+                } else {
+                    return self.standardCell(collectionView, indexPath: indexPath, item: item, config: config)
+                }
+            case .list(let config, let accessories):
+                return self.listCell(collectionView, indexPath: indexPath, item: item, config: config, accessories: accessories)
             }
         }
 
         return dataSource
     }
 
-    // MARK: - Supplementary views
-    fileprivate func headerView(
-        collectionView: UICollectionView,
-        of kind: String,
-        at indexPath: IndexPath,
-        dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>
-    ) -> UICollectionReusableView? {
-        guard kind == UICollectionView.elementKindSectionHeader,
-              let view = collectionView.dequeueReusableSupplementaryView(
-                ofKind: kind,
-                withReuseIdentifier: OBAListRowHeaderSupplementaryView.ReuseIdentifier,
-                for: indexPath) as? OBAListRowHeaderSupplementaryView
-        else { return nil }
+    func standardCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: OBAContentConfiguration) -> UICollectionViewCell? {
+        // Reference the formatters in the item's content configuration
+        var formattedConfig = config
+        formattedConfig.formatters = self.formatters
 
-        let section = dataSource.snapshot().sectionIdentifiers[indexPath.section]
-        view.delegate = self
-        view.section = section
+        let reuseIdentifier = formattedConfig.obaContentView.ReuseIdentifier
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
 
-        return view
+        guard let obaView = cell as? OBAListViewCell else {
+            fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
+        }
+
+        obaView.apply(formattedConfig)
+
+        return obaView
     }
 
-    fileprivate func footerView(
-        collectionView: UICollectionView,
-        of kind: String,
-        at indexPath: IndexPath,
-        dataSource: UICollectionViewDiffableDataSource<OBAListViewSection, AnyOBAListViewItem>
-    ) -> UICollectionReusableView? {
-        return collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: OBAListViewSeparatorSupplementaryView.ReuseIdentifier, for: indexPath)
+    func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
+        let registration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, indexPath, item in
+            cell.contentConfiguration = config
+            cell.accessories = accessories.compactMap { $0 }
+        }
+
+        return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
     }
 
     // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let item = diffableDataSource.itemIdentifier(for: indexPath) else { return }
-        item.onSelectAction?(item)
-    }
-
-    public func collectionView(_ collectionView: UICollectionView, editActionsForItemAt indexPath: IndexPath, for orientation: SwipeActionsOrientation) -> [SwipeAction]? {
-        guard collectionView == self else { return nil }
-        guard let item = self.diffableDataSource.itemIdentifier(for: indexPath) else { return nil }
-
-        // The action closure passes a copy of the view model, so we need to include that.
-        func setItem(on action: OBAListViewContextualAction<AnyOBAListViewItem>) -> OBAListViewContextualAction<AnyOBAListViewItem> {
-            var newAction = action
-            newAction.item = item
-            return newAction
-        }
-
-        switch orientation {
-        case .left:
-            return item.leadingContextualActions?.map { setItem(on: $0).swipeAction }
-        case .right:
-            let items = item.trailingContextualActions ?? []
-            var swipeActions = items.map { setItem(on: $0).swipeAction }
-
-            if let deleteAction = item.onDeleteAction {
-                // Hides "Delete" text if the cell is less than 64 units tall.
-                let cellSize = collectionView.cellForItem(at: indexPath)?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
-                let isCellCompact = cellSize < 64
-                let swipeActionText = isCellCompact ? nil : Strings.delete
-                let deleteSwipeAction = SwipeAction(style: .destructive, title: swipeActionText) { (action, _) in
-                    action.fulfill(with: .delete)
-                    deleteAction(item)
-                }
-                deleteSwipeAction.image = Icons.delete
-                swipeActions.append(deleteSwipeAction)
+        var correctedItemIndex = indexPath.item
+        if lastDataSourceSnapshot[indexPath.section].hasHeader {
+            if indexPath.item == 0 {
+                // TODO: inform collapsible section delegate
+                return
             }
 
-            return swipeActions.isEmpty ? nil : swipeActions
+            correctedItemIndex -= 1
         }
+
+        let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
+        item.onSelectAction?(item)
     }
 
     // MARK: - Context menu configuration
     public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-        guard let item = self.diffableDataSource.itemIdentifier(for: indexPath),
-             let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
+        guard let item = itemForIndexPath(indexPath),
+              let config = self.contextMenuDelegate?.contextMenu(self, for: item) else { return nil }
 
         // Add uuid so in `willPerformPreviewActionForMenuWith`, we can independently
         // verify (without using index paths that may change) that the user did
@@ -212,17 +164,74 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
         }
     }
 
+    /// Accounts for whether the section has a header or not.
+    func itemForIndexPath(_ indexPath: IndexPath) -> AnyOBAListViewItem? {
+        var correctedItemIndex = indexPath.item
+        if lastDataSourceSnapshot[indexPath.section].hasHeader {
+            guard correctedItemIndex != 0 else { return nil }
+            correctedItemIndex -= 1
+        }
+
+        return lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
+    }
+
     // MARK: - Layout configuration
     fileprivate func createLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { section, _ -> NSCollectionLayoutSection? in
-            return self.diffableDataSource.snapshot().sectionIdentifiers[section].sectionLayout
+        return UICollectionViewCompositionalLayout { [unowned self] section, environment -> NSCollectionLayoutSection? in
+            let sectionModel = self.lastDataSourceSnapshot[section]
+
+            var configuration = sectionModel.configuration.listConfiguration()
+            configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
+
+            // #398 - list view separators always appears on iOS 14.4
+            // Necessary for CI compatibility. Remove check when CI is fixed.
+            // Also, remove availability checks in OBAListRowSeparatorConfiguration.swift.
+            //
+            // CI uses Xcode 12.4 (swift 5.3), which doesn't contain iOS 14.5 API,
+            // causing the code below to fail to compile.
+            // The block below builds on Xcode 12.5+ (swift 5.4).
+            #if swift(>=5.4)
+            if #available(iOS 14.5, *) {
+                configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
+                configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
+                    guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
+
+                    var configuration = listConfiguration
+                    configuration.applying(item.separatorConfiguration)
+                    return configuration
+                }
+            }
+            #endif
+
+            configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
+            configuration.trailingSwipeActionsConfigurationProvider = self.trailingSwipeActions
+
+            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
     }
 
+    fileprivate func leadingSwipeActions(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let actions = itemForIndexPath(indexPath)?.leadingContextualActions else { return nil }
+
+        let config = UISwipeActionsConfiguration(actions: actions.map { $0.contextualAction })
+        config.performsFirstActionWithFullSwipe = false
+
+        return config
+    }
+
+    fileprivate func trailingSwipeActions(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard let actions = itemForIndexPath(indexPath)?.trailingContextualActions else { return nil }
+
+        let config = UISwipeActionsConfiguration(actions: actions.map { $0.contextualAction })
+        config.performsFirstActionWithFullSwipe = false
+
+        return config
+    }
+
     // MARK: - Data source
-    public func applyData(animated: Bool = false) {
+    public func applyData(animated: Bool = true) {
         var sections = self.obaDataSource?.items(for: self) ?? []
-        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
+        self.emptyDataConfiguration(isEmpty: self.lastDataSourceSnapshot.isEmpty)
 
         if let collapsibleDelegate = self.collapsibleSectionsDelegate {
             // Add collapsed state to the section, if it is allowed to collapse.
@@ -237,30 +246,37 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate, SwipeColle
             }
         }
 
-        var snapshot = NSDiffableDataSourceSnapshot<OBAListViewSection, AnyOBAListViewItem>()
+        self.lastDataSourceSnapshot = sections
+
+        var snapshot = NSDiffableDataSourceSnapshot<SectionType, ItemType>()
         snapshot.appendSections(sections)
+        diffableDataSource.apply(snapshot, animatingDifferences: false)
+
         for section in sections {
-            // If the section is collapsible, account for its state.
-            // Otherwise, show all items.
-            if let collapsedState = section.collapseState {
-                switch collapsedState {
-                case .collapsed:
-                    snapshot.deleteItems(section.contents)
-                case .expanded:
-                    snapshot.appendItems(section.contents, toSection: section)
+            var sectionSnapshot = NSDiffableDataSourceSectionSnapshot<ItemType>()
+
+            if section.hasHeader {
+                let header = OBAListViewHeader(id: section.id, title: section.title, isCollapsible: section.collapseState != nil).typeErased
+                sectionSnapshot.append([header])
+                sectionSnapshot.append(section.contents, to: header)
+
+                // If the section is collapsible, account for its state.
+                // Otherwise, show all items.
+                if let collapsedState = section.collapseState {
+                    switch collapsedState {
+                    case .collapsed:
+                        sectionSnapshot.collapse([header])
+                    case .expanded:
+                        sectionSnapshot.expand([header])
+                    }
+                } else {
+                    sectionSnapshot.expand([header])
                 }
             } else {
-                snapshot.appendItems(section.contents, toSection: section)
+                sectionSnapshot.append(section.contents)
             }
-        }
 
-        DispatchQueue.main.async {
-            self.diffableDataSource.apply(snapshot, animatingDifferences: animated) { [weak self] in
-                guard let self = self else { return }
-                DispatchQueue.main.async {
-                    self.obaDelegate?.didApplyData(self)
-                }
-            }
+            diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
     }
 

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A section view model for `OBAListView`. `OBAListView` uses `OBAListViewSection` to
 /// define list sections and to "normalize" item data. It also provides a number of other convenience properties.
@@ -44,11 +45,8 @@ public struct OBAListViewSection: Hashable, Identifiable {
     /// - important: To avoid confusing `UICollectionView` animations, this value is not checked for equality.
     public var collapseState: CollapseState?
 
-    /// Provide an optional custom section layout.
-    ///
-    /// Instead of creating a custom layout, you may want to consider creating a separate
-    /// `UICollectionView` as `OBAListView` is supposed to be a list view, akin to `UITableView`.
-    public var customSectionLayout: NSCollectionLayoutSection?
+    /// The list configuration to use with this section. Primarily for visual configuration.
+    public var configuration: OBAListSectionConfiguration
 
     /// OBAListViewSection is a level-one section on OBAListView.
     /// - parameters:
@@ -71,22 +69,12 @@ public struct OBAListViewSection: Hashable, Identifiable {
             }
         }
 
-        #if DEBUG
-        // This is helpful to track down where item identifiers are being set.
-        // Since this condition is potentially expensive, only run it in DEBUG mode.
-        let debug_ContentsSet = Set(self.contents)
-        if debug_ContentsSet.count != self.contents.count {
-            print("FATAL ERROR")
-            print("The OBAListViewSection contents you provided have one or more of the same item identifier. This will cause a crash with UICollectionView later on!")
-            print("Item(s) in question:")
-            var affectedItems: [AnyOBAListViewItem] = self.contents // stores as local var so debugger can access
-            debug_ContentsSet.allObjects.forEach { affectedItems.remove(at: affectedItems.firstIndex(of: $0)!) }
-            for item in affectedItems {
-                print(item)
-            }
-            assertionFailure("The OBAListViewSection contents you provided have one or more of the same item identifier. This will cause a crash with UICollectionView later on!")
-        }
-        #endif
+        // Set default list configuration
+        self.configuration = .init(appearance: .insetGrouped)
+    }
+
+    subscript(_ itemIndex: Int) -> AnyOBAListViewItem {
+        return contents[itemIndex]
     }
 
     public func hash(into hasher: inout Hasher) {
@@ -98,52 +86,5 @@ public struct OBAListViewSection: Hashable, Identifiable {
     public static func == (lhs: OBAListViewSection, rhs: OBAListViewSection) -> Bool {
         return lhs.title == rhs.title &&
             lhs.contents == rhs.contents
-    }
-
-    // MARK: - UICollectionView
-
-    /// The layout defining this section's layout with full width cells.
-    var sectionLayout: NSCollectionLayoutSection {
-        if let custom = self.customSectionLayout {
-            return custom
-        }
-
-        let size = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(64))
-        let item = NSCollectionLayoutItem(layoutSize: size)
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: size, subitems: [item])
-        let section = NSCollectionLayoutSection(group: group)
-
-        // Only include supplementary views with headers
-        if hasHeader {
-            // Section headers
-            let headerSize = NSCollectionLayoutSize(
-                widthDimension: .fractionalWidth(1.0),
-                heightDimension: .estimated(100)
-            )
-            let sectionHeader = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: headerSize,
-                elementKind: UICollectionView.elementKindSectionHeader,
-                alignment: .top
-            )
-            sectionHeader.pinToVisibleBounds = true
-
-            if collapseState != nil {
-                // Section footers, a thin line is used to animate a fake cell movement
-                let footerSize = NSCollectionLayoutSize(
-                    widthDimension: .fractionalWidth(1.0),
-                    heightDimension: .estimated(2)
-                )
-                let sectionFooter = NSCollectionLayoutBoundarySupplementaryItem(
-                    layoutSize: footerSize,
-                    elementKind: UICollectionView.elementKindSectionFooter,
-                    alignment: .bottom
-                )
-                section.boundarySupplementaryItems = [sectionHeader, sectionFooter]
-            } else {
-                section.boundarySupplementaryItems = [sectionHeader]
-            }
-        }
-
-        return section
     }
 }

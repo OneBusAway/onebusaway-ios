@@ -26,7 +26,6 @@ final class StopArrivalCell: OBAListViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        fixiOS13AutoLayoutBug()
         contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         stopArrivalView = StopArrivalView.autolayoutNew()
@@ -66,6 +65,7 @@ final class StopArrivalCell: OBAListViewCell {
     }
 
     func showNudge() {
-        showSwipe(orientation: .right)
+        // TODO: me!
+//        showSwipe(orientation: .right)
     }
 }

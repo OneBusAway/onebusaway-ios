@@ -17,8 +17,8 @@ struct MoreHeaderItem: OBAListViewItem {
         return MoreHeaderViewCell.self
     }
 
-    var contentConfiguration: OBAContentConfiguration {
-        return MoreHeaderItemContentConfiguration()
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(MoreHeaderItemContentConfiguration())
     }
 
     var onSelectAction: OBAListViewAction<MoreHeaderItem>?

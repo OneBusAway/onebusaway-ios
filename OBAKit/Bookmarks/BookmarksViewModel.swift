@@ -48,8 +48,8 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
         return TripBookmarkTableCell.self
     }
 
-    var contentConfiguration: OBAContentConfiguration {
-        return BookmarkArrivalContentConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(BookmarkArrivalContentConfiguration(viewModel: self))
     }
 
     var onSelectAction: OBAListViewAction<BookmarkArrivalViewModel>?

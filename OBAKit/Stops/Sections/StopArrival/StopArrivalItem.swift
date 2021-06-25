@@ -8,8 +8,8 @@
 import OBAKitCore
 
 struct ArrivalDepartureItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return ArrivalDepartureContentConfiguration(viewModel: self)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(ArrivalDepartureContentConfiguration(viewModel: self))
     }
 
     static var customCellType: OBAListViewCell.Type? {

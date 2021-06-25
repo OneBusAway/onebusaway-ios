@@ -11,14 +11,17 @@ import OBAKitCore
 /// Displays a button with optional footer text and error text.
 /// With optional support for showing activity indicator on selection (see `showActivityIndicatorOnSelect` property).
 struct MessageButtonItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return MessageButtonContentConfiguration(errorText: errorText, buttonText: buttonText, footerText: footerText, showActivityIndicatorOnSelect: showActivityIndicatorOnSelect, onTapAction: {
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(MessageButtonContentConfiguration(errorText: errorText, buttonText: buttonText, footerText: footerText, showActivityIndicatorOnSelect: showActivityIndicatorOnSelect, onTapAction: {
             onSelectAction?(self)
-        })
+        }))
     }
+
     static var customCellType: OBAListViewCell.Type? {
         return MessageButtonCell.self
     }
+
+    let separatorConfiguration: OBAListRowSeparatorConfiguration = .hidden()
 
     var onSelectAction: OBAListViewAction<MessageButtonItem>?
 
@@ -123,10 +126,6 @@ final class MessageButtonCell: OBAListViewCell {
 
     var showActivityIndicatorOnSelect: Bool = false
     var onTapAction: VoidBlock?
-
-    override var showsSeparator: Bool {
-        return false
-    }
 
     override init(frame: CGRect) {
         super.init(frame: frame)

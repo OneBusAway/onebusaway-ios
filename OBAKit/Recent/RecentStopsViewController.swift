@@ -8,8 +8,6 @@
 import UIKit
 import OBAKitCore
 
-// swiftlint:disable unused_closure_parameter
-
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
 public class RecentStopsViewController: UIViewController,
     AppContext,

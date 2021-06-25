@@ -130,8 +130,6 @@ final class TripBookmarkTableCell: OBAListViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
 
-        fixiOS13AutoLayoutBug()
-
         contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         contentView.addSubview(stackView)

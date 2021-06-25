@@ -29,9 +29,16 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
 
     public enum Accessory {
         case checkmark
-        case detailButton
         case disclosureIndicator
         case none
+
+        var cellAccessory: UICellAccessory? {
+            switch self {
+            case .checkmark: return .checkmark(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
+            case .disclosureIndicator: return .disclosureIndicator(displayed: .always, options: .init(tintColor: ThemeColors.shared.brand))
+            case .none: return nil
+            }
+        }
     }
 
     // Avoids naming conflict with SwiftUI.Text.
@@ -73,12 +80,29 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Hashable, Equata
     public var accessoryType: Accessory = .none
 
     public var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
+        fatalError("You can't do that!")
+    }
+
+    public var listConfiguration: UIListContentConfiguration {
+        var config: UIListContentConfiguration
         switch appearance {
-        case .default:  return OBAListRowCell<OBAListRowViewDefault>.self
-        case .subtitle: return OBAListRowCell<OBAListRowViewSubtitle>.self
-        case .value:    return OBAListRowCell<OBAListRowViewValue>.self
-        case .header:   return OBAListRowCell<OBAListRowViewHeader>.self
+        case .default:  config = .cell()
+        case .subtitle: config = .subtitleCell()
+        case .value:    config = .valueCell()
+        case .header:   config = .plainHeader()
         }
+
+        config.image = self.image
+        config.imageProperties.tintColor = ThemeColors.shared.brand
+        textConfig.applyToText(&config)
+
+        config.labelText = self.text
+        config.secondaryLabelText = self.secondaryText
+        secondaryTextConfig.applyToSecondaryText(&config)
+
+        config.textToSecondaryTextVerticalPadding = ThemeMetrics.compactPadding
+
+        return config
     }
 
     public var minimumCellHeight: CGFloat {
@@ -102,6 +126,16 @@ public struct OBALabelConfiguration: Hashable, Equatable {
 
     /// The number of lines when the content size is an accessibility size, aka `UITraitEnvironment.isAccessibility` is `true`.
     var accessibilityNumberOfLines: Int = 0
+
+    func applyToText(_ config: inout UIListContentConfiguration) {
+        config.textProperties.color = textColor
+        config.textProperties.numberOfLines = numberOfLines
+    }
+
+    func applyToSecondaryText(_ config: inout UIListContentConfiguration) {
+        config.secondaryTextProperties.color = textColor
+        config.secondaryTextProperties.numberOfLines = numberOfLines
+    }
 }
 
 extension UILabel {
@@ -121,6 +155,50 @@ extension UILabel {
             }
         } else {
             self.text = nil // setting text to nil also sets attributed text to nil in UILabel.
+        }
+    }
+}
+
+extension UIListContentConfiguration {
+    var labelText: OBAListRowConfiguration.LabelText? {
+        get {
+            if let text = text {
+                return .string(text)
+            } else if let attributedText = attributedText {
+                return .attributed(attributedText)
+            } else {
+                return nil
+            }
+        } set {
+            if let labelText = newValue {
+                switch labelText {
+                case .string(let string): self.text = string
+                case .attributed(let text): self.attributedText = text
+                }
+            } else {
+                self.secondaryText = nil
+            }
+        }
+    }
+
+    var secondaryLabelText: OBAListRowConfiguration.LabelText? {
+        get {
+            if let text = secondaryText {
+                return .string(text)
+            } else if let attributedText = secondaryAttributedText {
+                return .attributed(attributedText)
+            } else {
+                return nil
+            }
+        } set {
+            if let labelText = newValue {
+                switch labelText {
+                case .string(let string): self.secondaryText = string
+                case .attributed(let text): self.secondaryAttributedText = text
+                }
+            } else {
+                self.secondaryText = nil
+            }
         }
     }
 }

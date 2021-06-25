@@ -42,21 +42,24 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
     public var item: Item?
     public var handler: OBAListViewAction<Item>?
 
-    public var swipeAction: SwipeAction {
-        let style: SwipeActionStyle
+    public var contextualAction: UIContextualAction {
+        let style: UIContextualAction.Style
         switch self.style {
         case .destructive: style = .destructive
-        case .normal: style = .default
+        case .normal: style = .normal
         }
 
-        let action = SwipeAction(style: style, title: title) { _, _ in
+        // TODO: adopt uicontextualaction's handler's parameters
+        let action = UIContextualAction(style: style, title: self.title) { action, view, success in
             guard let handler = self.handler, let item = self.item else { return }
+            if hidesWhenSelected {
+                success(true)
+            }
             handler(item)
         }
 
-        action.image = image
-        action.backgroundColor = backgroundColor
-        action.hidesWhenSelected = hidesWhenSelected
+        action.image = self.image
+        action.backgroundColor = self.backgroundColor
 
         return action
     }

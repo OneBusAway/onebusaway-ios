@@ -9,12 +9,16 @@ import OBAKitCore
 import CoreLocation
 
 struct StopArrivalWalkItem: OBAListViewItem {
-    var contentConfiguration: OBAContentConfiguration {
-        return StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk)
+    var configuration: OBAListViewItemConfiguration {
+        return .custom(StopArrivalWalkContentConfiguration(distance: distance, timeToWalk: timeToWalk))
     }
 
     static var customCellType: OBAListViewCell.Type? {
         return StopArrivalWalkCell.self
+    }
+
+    var separatorConfiguration: OBAListRowSeparatorConfiguration {
+        return .hidden()
     }
 
     var onSelectAction: OBAListViewAction<StopArrivalWalkItem>?
@@ -45,10 +49,6 @@ struct StopArrivalWalkContentConfiguration: OBAContentConfiguration {
 }
 
 class StopArrivalWalkCell: OBAListViewCell {
-    override var showsSeparator: Bool {
-        return false
-    }
-
     let walkTimeView = WalkTimeView.autolayoutNew()
 
     override init(frame: CGRect) {
