@@ -458,17 +458,18 @@ public class StopViewController: UIViewController,
         // defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
         // will be displayed one second after the stop data finishes loading.
 
-        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
-            return
-        }
-
-        for cell in listView.sortedVisibleCells {
-            if let cell = cell as? StopArrivalCell,
-               !cell.isShowingPastArrivalDeparture {
-                self.showSwipeOptionsNudge(on: cell)
-                return
-            }
-        }
+        // Disabled code: see #401 -- List view show nudge action doesn't work
+//        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
+//            return
+//        }
+//
+//        for cell in listView.sortedVisibleCells {
+//            if let cell = cell as? StopArrivalCell,
+//               !cell.isShowingPastArrivalDeparture {
+//                self.showSwipeOptionsNudge(on: cell)
+//                return
+//            }
+//        }
     }
 
     // MARK: - Data/Stop Header

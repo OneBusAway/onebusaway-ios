@@ -304,6 +304,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
+
+        self.obaDelegate?.didApplyData(self)
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {
