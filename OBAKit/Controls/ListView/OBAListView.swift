@@ -147,6 +147,14 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
         item.onSelectAction?(item)
+
+        // Fixes #399 -- List view cells appears selected after presenting/pushing view controller
+        // This shouldn't be necessary and is a duct tape fix.
+        // Supporting native cell behavior is ideal, where the cell remains
+        // highlighted until after the view controller is popped off the stack.
+        // I suspect that OBAListView should be a UICollectionViewController
+        // instead of a UICollectionView for this to work elegantly.
+        collectionView.deselectItem(at: indexPath, animated: true)
     }
 
     // MARK: - Section collapse configuration
