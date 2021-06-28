@@ -16,13 +16,21 @@ struct StopViewModel: OBAListViewItem {
     let subtitle: String?
 
     let id: Stop.ID
+    let routeType: Route.RouteType
 
+    // Hide icon if there is only one type of route in the list
     var configuration: OBAListViewItemConfiguration {
-        return .custom(OBAListRowConfiguration(
-                        text: .string(name),
-                        secondaryText: .string(subtitle),
-                        appearance: .subtitle,
-                        accessoryType: .disclosureIndicator))
+        let transportIcon = Icons.transportIcon(from: routeType)
+        var config = OBAListRowConfiguration(
+            image: transportIcon,
+            text: .string(name),
+            secondaryText: .string(subtitle),
+            appearance: .subtitle,
+            accessoryType: .disclosureIndicator)
+        config.imageConfig.tintColor = .label
+        config.imageConfig.maximumSize = CGSize(width: 24, height: 24)
+
+        return .custom(config)
     }
 
     let onSelectAction: OBAListViewAction<StopViewModel>?
@@ -33,6 +41,7 @@ struct StopViewModel: OBAListViewItem {
          onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
         self.name = stop.nameWithLocalizedDirectionAbbreviation
         self.subtitle = stop.subtitle
+        self.routeType = stop.prioritizedRouteTypeForDisplay
 
         self.id = stop.id
         self.onSelectAction = selectAction
