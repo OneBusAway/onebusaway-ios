@@ -26,7 +26,6 @@ final class StopArrivalCell: OBAListViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         stopArrivalView = StopArrivalView.autolayoutNew()
         stopArrivalView.backgroundColor = .clear
