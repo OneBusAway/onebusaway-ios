@@ -391,8 +391,8 @@ public class MapViewController: UIViewController,
 
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
-    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop) {
-        show(stop: stop)
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID) {
+        application.viewRouter.navigateTo(stopID: stopID, from: self)
     }
 
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {

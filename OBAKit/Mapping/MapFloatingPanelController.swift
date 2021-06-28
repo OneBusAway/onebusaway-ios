@@ -12,7 +12,7 @@ import FloatingPanel
 import OBAKitCore
 
 protocol MapPanelDelegate: NSObjectProtocol {
-    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stop: Stop)
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool)
 }
@@ -128,7 +128,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
-        mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
+        mapPanelDelegate?.mapPanelController(self, didSelectStop: stop.id)
     }
 
     var isVehicleSearchAvailable: Bool {
@@ -173,11 +173,17 @@ class MapFloatingPanelController: VisualEffectViewController,
     // MARK: - ListAdapterDataSource (Data Loading)
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
+        var sections: [OBAListViewSection]
         if inSearchMode {
-            return searchInteractor.searchModeObjects(text: searchBar.text)
+            sections = searchInteractor.searchModeObjects(text: searchBar.text)
         } else {
-            return nearbyModeObjects()
+            sections = nearbyModeObjects()
         }
+
+        for idx in sections.indices {
+            sections[idx].configuration.backgroundColor = .clear
+        }
+        return sections
     }
 
     // MARK: - Nearby Mode
@@ -198,16 +204,16 @@ class MapFloatingPanelController: VisualEffectViewController,
         }
 
         if stops.count > 0 {
-            let stopsToShow = Array(stops.prefix(5))
-            let rows = stopsToShow.map { stop -> StopViewModel in
-                let onSelect = { (viewModel: StopViewModel) -> Void in // swiftlint:disable:this unused_closure_parameter
-                    self.mapPanelDelegate?.mapPanelController(self, didSelectStop: stop)
+            let rows = stops.map { stop -> StopViewModel in
+                let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
+                    self.mapPanelDelegate?.mapPanelController(self, didSelectStop: viewModel.id)
                 }
 
                 return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: nil)
             }
 
-            sections.append(OBAListViewSection(id: "stops", contents: rows))
+            let section = OBAListViewSection(id: "nearby_stops", title: OBALoc("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller."), contents: rows)
+            sections.append(section)
         }
 
         return sections

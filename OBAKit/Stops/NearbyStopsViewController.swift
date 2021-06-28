@@ -142,7 +142,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
 struct NearbyStopViewModel: OBAListViewItem {
     let id: String
     let title: String
-    let subtitle: String
+    let subtitle: String?
 
     let onSelectAction: OBAListViewAction<NearbyStopViewModel>?
 

@@ -128,17 +128,17 @@ public class RecentStopsViewController: UIViewController,
         }
 
         let rows = stops.map { stop -> StopViewModel in
-            let onSelect = { (viewModel: StopViewModel) -> Void in
-                self.application.viewRouter.navigateTo(stop: stop, from: self)
+            let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
+                self.application.viewRouter.navigateTo(stopID: viewModel.id, from: self)
             }
 
-            let onDelete = { (viewModel: StopViewModel) -> Void in
+            let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
                 self.application.userDataStore.delete(recentStop: stop)
                 self.listView.applyData(animated: true)
             }
 
             return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: onDelete)
-        }
+        }.uniqued
 
         let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
         return OBAListViewSection(id: "recent_stops", title: title, contents: rows)

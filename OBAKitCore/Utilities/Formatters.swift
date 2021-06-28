@@ -508,8 +508,13 @@ public class Formatters: NSObject {
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
     /// - Returns: A human-readable list of the passed-in `Route`
-    public class func formattedRoutes(_ routes: [Route]) -> String {
-        let routeNames = routes.map { $0.shortName }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    public class func formattedRoutes(_ routes: [Route]) -> String? {
+        let routeNames = routes
+            .map { $0.shortName }
+            .filter { !$0.isEmpty }     // Some agencies may not provide a shortName (i.e. Washington State Ferries in Puget Sound)
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        guard routeNames.isEmpty == false else { return nil }
+
         let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
         return String(format: fmt, routeNames.joined(separator: ", "))
     }

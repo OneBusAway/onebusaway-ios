@@ -16,7 +16,6 @@ struct StopViewModel: OBAListViewItem {
     let subtitle: String?
 
     let id: Stop.ID
-    let stop: Stop
 
     var configuration: OBAListViewItemConfiguration {
         return .custom(OBAListRowConfiguration(
@@ -32,8 +31,7 @@ struct StopViewModel: OBAListViewItem {
     init(withStop stop: Stop,
          onSelect selectAction: OBAListViewAction<StopViewModel>?,
          onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
-        self.stop = stop
-        self.name = stop.name
+        self.name = stop.nameWithLocalizedDirectionAbbreviation
         self.subtitle = stop.subtitle
 
         self.id = stop.id
@@ -42,18 +40,11 @@ struct StopViewModel: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stop)
         hasher.combine(id)
-        hasher.combine(name)
-        hasher.combine(subtitle)
     }
 
     static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
-        return
-            lhs.id == rhs.id &&
-            lhs.name == rhs.name &&
-            lhs.subtitle == rhs.subtitle &&
-            lhs.stop.isEqual(rhs.stop)
+        return lhs.id == rhs.id
     }
 }
 
