@@ -281,7 +281,7 @@ class TripViewController: UIViewController,
                 self.currentTripStatus = response.entry.status
 
                 // In cases where TripStatus.coordinates is (0,0), we don't want to show it.
-                var annotationsToShow = self.mapView.annotations
+                var annotationsToShow = self.mapView.annotations.filter { !($0 is MKUserLocation) }
                 annotationsToShow.removeAll(where: { $0.coordinate.isNullIsland })
 
                 if !self.mapView.hasBeenTouched {
