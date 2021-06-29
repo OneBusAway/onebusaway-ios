@@ -338,7 +338,7 @@ class TripViewController: UIViewController,
                 self.routePolyline = polyline
                 self.mapView.addOverlay(polyline)
                 if !self.mapView.hasBeenTouched {
-                    self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 60, right: 20))
+                    self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
                 }
             }
         }
@@ -384,9 +384,6 @@ class TripViewController: UIViewController,
         guard !skipNextStopTimeHighlight else { return }
 
         func mapViewAnnotationSelectionComplete() {
-            if !self.mapView.hasBeenTouched {
-                self.mapView.setCenter(stopTime.stop.coordinate, animated: true)
-            }
             self.tripDetailsController.highlightStopInList(stopTime.stop)
         }
 
