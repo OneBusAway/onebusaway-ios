@@ -352,6 +352,13 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         self.register(reuseIdentifierProviding: cellType)
     }
+
+    public func scrollTo(section: OBAListViewSection, at position: UICollectionView.ScrollPosition, animated: Bool) {
+        guard let lastItemOfSection = section.contents.last,
+              let indexPath = diffableDataSource.indexPath(for: lastItemOfSection) else { return }
+
+        self.scrollToItem(at: indexPath, at: position, animated: animated)
+    }
 }
 
 // MARK: - Preview
