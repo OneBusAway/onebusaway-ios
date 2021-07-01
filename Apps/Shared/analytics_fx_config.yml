@@ -1,7 +1,7 @@
 packages:
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk.git
-    majorVersion: 7.3.1
+    majorVersion: 8.2.0
 
 targets:
   App:
@@ -10,13 +10,3 @@ targets:
         product: FirebaseAnalytics
       - package: Firebase
         product: FirebaseCrashlytics
-    postBuildScripts:
-      - name: FirebaseBugWorkaround
-        script: |
-                echo "Workaround for an issue with Xcode 12.3 and Firebase iOS SDK: https://github.com/firebase/firebase-ios-sdk/issues/6472"
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Frameworks/FIRAnalyticsConnector.framework" ;
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Frameworks/FirebaseAnalytics.framework" ;
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/Frameworks/GoogleAppMeasurement.framework" ;
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/PlugIns/FIRAnalyticsConnector.framework" ;
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/PlugIns/FirebaseAnalytics.framework" ;
-                rm -rf "${TARGET_BUILD_DIR}/${FULL_PRODUCT_NAME}/PlugIns/GoogleAppMeasurement.framework"
