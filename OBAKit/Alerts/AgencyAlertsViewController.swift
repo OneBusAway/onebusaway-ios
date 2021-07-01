@@ -150,4 +150,9 @@ class AgencyAlertsViewController: UIViewController,
     func items(for listView: OBAListView) -> [OBAListViewSection] {
         return listSections(agencyAlerts: alertsStore.agencyAlerts)
     }
+
+    func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        let regionName = application.currentRegion?.name
+        return .standard(.init(title: Strings.emptyAlertTitle, body: regionName))
+    }
 }

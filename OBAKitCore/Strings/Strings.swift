@@ -84,4 +84,6 @@ public class Strings: NSObject {
     public static let emptyBookmarkTitle = OBALoc("common.empty_bookmark_set.title", value: "No Bookmarks", comment: "Title for the bookmark empty set indicator.")
 
     public static let emptyBookmarkBody = OBALoc("common.empty_bookmark_set.body", value: "Add a bookmark for a stop or trip to easily access it here.", comment: "Body for the bookmark empty set indicator.")
+
+    public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
 }
