@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/firebase/abseil-cpp-SwiftPM.git",
         "state": {
           "branch": null,
-          "revision": "05d8107f2971a37e6c77245b7c4c6b0a7e97bc99",
-          "version": "0.20200225.0"
+          "revision": "fffc3c2729be5747390ad02d5100291a0d9ad26a",
+          "version": "0.20200225.4"
         }
       },
       {
@@ -15,8 +15,8 @@
         "repositoryURL": "https://github.com/firebase/boringssl-SwiftPM.git",
         "state": {
           "branch": null,
-          "revision": "7bcafa2660bc58715c39637494550d1ed7cd7229",
-          "version": "0.0.7"
+          "revision": "734a8247442fde37df4364c21f6a0085b6a36728",
+          "version": "0.7.2"
         }
       },
       {
@@ -69,8 +69,8 @@
         "repositoryURL": "https://github.com/firebase/firebase-ios-sdk.git",
         "state": {
           "branch": null,
-          "revision": "447cf74cc561d408bc66c0294145a624645038ac",
-          "version": "7.5.1"
+          "revision": "805863da97d733e4507a07d6fd113d9dd2e4ec7a",
+          "version": "8.2.0"
         }
       },
       {
@@ -87,8 +87,17 @@
         "repositoryURL": "https://github.com/google/GoogleAppMeasurement.git",
         "state": {
           "branch": null,
-          "revision": "38205d8e39f806f71b048f93427337c9511c9402",
-          "version": "7.5.1"
+          "revision": "8f2945122bef809c963a619a598c3ac390c2163a",
+          "version": "8.1.1"
+        }
+      },
+      {
+        "package": "GoogleDataTransport",
+        "repositoryURL": "https://github.com/google/GoogleDataTransport.git",
+        "state": {
+          "branch": null,
+          "revision": "cad598c0338e8b203b94378dff0d4d819fa141cf",
+          "version": "9.0.1"
         }
       },
       {
@@ -96,8 +105,8 @@
         "repositoryURL": "https://github.com/google/GoogleUtilities.git",
         "state": {
           "branch": null,
-          "revision": "2c7d33099a3c3da1139bb1e8eb94e46e0dacf075",
-          "version": "7.2.2"
+          "revision": "94f9ab80d39da19dd3a2492d5451e909333f0269",
+          "version": "7.4.3"
         }
       },
       {
@@ -105,8 +114,8 @@
         "repositoryURL": "https://github.com/firebase/grpc-SwiftPM.git",
         "state": {
           "branch": null,
-          "revision": "91b62619e6c83bc5f1b99d9d60fe46b2862d3a5a",
-          "version": "1.28.2"
+          "revision": "fb405dd2c7901485f7e158b24e3a0a47e4efd8b5",
+          "version": "1.28.4"
         }
       },
       {
@@ -132,8 +141,8 @@
         "repositoryURL": "https://github.com/firebase/leveldb.git",
         "state": {
           "branch": null,
-          "revision": "fa1f25f296a766e5a789c4dacd4798dea798b2c2",
-          "version": "1.22.1"
+          "revision": "0706abcc6b0bd9cedfbb015ba840e4a780b5159b",
+          "version": "1.22.2"
         }
       },
       {
@@ -150,8 +159,8 @@
         "repositoryURL": "https://github.com/firebase/nanopb.git",
         "state": {
           "branch": null,
-          "revision": "c2d43e59d8ec880ed261366818f0cacc5c8cc2e6",
-          "version": "2.30907.0"
+          "revision": "7ee9ef9f627d85cbe1b8c4f49a3ed26eed216c77",
+          "version": "2.30908.0"
         }
       },
       {
@@ -168,8 +177,8 @@
         "repositoryURL": "https://github.com/OneSignal/OneSignal-iOS-SDK.git",
         "state": {
           "branch": null,
-          "revision": "be54eb1a2c10b22b56d4706f3d5851fc3d57376f",
-          "version": "2.15.4"
+          "revision": "c91fdfe06f517eaec992e34b2fd653d3c42ad303",
+          "version": "3.5.3"
         }
       },
       {
