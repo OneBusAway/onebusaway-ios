@@ -99,6 +99,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
             }
         }
 
+        dataSource.sectionSnapshotHandlers.shouldCollapseItem = { [unowned self] item in self.canCollapseOrExpandSection(item) }
+        dataSource.sectionSnapshotHandlers.shouldExpandItem   = { [unowned self] item in self.canCollapseOrExpandSection(item) }
+
+        dataSource.sectionSnapshotHandlers.willCollapseItem = { [unowned self] item in self.notifyDelegateOfCollapsingOrExpandingSection(item) }
+        dataSource.sectionSnapshotHandlers.willExpandItem   = { [unowned self] item in self.notifyDelegateOfCollapsingOrExpandingSection(item) }
+
         return dataSource
     }
 
@@ -132,16 +138,36 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         var correctedItemIndex = indexPath.item
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
-            if indexPath.item == 0 {
-                // TODO: inform collapsible section delegate
-                return
-            }
-
+            // If index path is zero, the user selected the header item.
+            // dataSource.sectionSnapshotHandler will handle notifying the
+            // collapsibleSectionDelegate of a collapsing section.
+            guard indexPath.item != 0 else { return }
             correctedItemIndex -= 1
         }
 
         let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
         item.onSelectAction?(item)
+
+        // Fixes #399 -- List view cells appears selected after presenting/pushing view controller
+        // This shouldn't be necessary and is a duct tape fix.
+        // Supporting native cell behavior is ideal, where the cell remains
+        // highlighted until after the view controller is popped off the stack.
+        // I suspect that OBAListView should be a UICollectionViewController
+        // instead of a UICollectionView for this to work elegantly.
+        collectionView.deselectItem(at: indexPath, animated: true)
+    }
+
+    // MARK: - Section collapse configuration
+    fileprivate func canCollapseOrExpandSection(_ item: AnyOBAListViewItem) -> Bool {
+        guard let header = item.as(OBAListViewHeader.self),
+              let section = self.lastDataSourceSnapshot.first(where: { $0.id == header.id }) else { return false }
+        return self.collapsibleSectionsDelegate?.canCollapseSection(self, section: section) ?? false
+    }
+
+    fileprivate func notifyDelegateOfCollapsingOrExpandingSection(_ item: AnyOBAListViewItem) {
+        guard let header = item.as(OBAListViewHeader.self),
+              let section = self.lastDataSourceSnapshot.first(where: { $0.id == header.id }) else { return }
+        self.collapsibleSectionsDelegate?.didTap(self, section: section)
     }
 
     // MARK: - Context menu configuration
@@ -278,6 +304,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             diffableDataSource.apply(sectionSnapshot, to: section, animatingDifferences: false)
         }
+
+        self.obaDelegate?.didApplyData(self)
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {
@@ -325,8 +353,11 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
         self.register(reuseIdentifierProviding: cellType)
     }
 
-    public func didTap(_ headerView: OBAListRowViewHeader, section: OBAListViewSection) {
-        collapsibleSectionsDelegate?.didTap(self, headerView: headerView, section: section)
+    public func scrollTo(section: OBAListViewSection, at position: UICollectionView.ScrollPosition, animated: Bool) {
+        guard let lastItemOfSection = section.contents.last,
+              let indexPath = diffableDataSource.indexPath(for: lastItemOfSection) else { return }
+
+        self.scrollToItem(at: indexPath, at: position, animated: animated)
     }
 }
 

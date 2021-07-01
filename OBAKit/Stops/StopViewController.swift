@@ -451,6 +451,18 @@ public class StopViewController: UIViewController,
     }
 
     public func didApplyData(_ listView: OBAListView) {
+        // Due to an OBAListView bug, applying data causes the entire list view
+        // to reload, scrolling the user back to the top of the page.
+        // If the user initiated the applyData call from the "LOAD MORE" button,
+        // manually scroll the user back to the bottom of the arrDeps section
+        // to maintain UX continuity.
+        // Related 1: #389 -- OBAListView still has identity problems, causing crashes
+        // Related 2: https://github.com/OneBusAway/OBAKit/issues/389#issuecomment-867014676
+
+        if self.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad {
+            listView.scrollTo(section: loadMoreSection, at: .top, animated: false)
+            shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
+        }
         // This method will set up a UI affordance for showing the user how
         // they can swipe on a stop arrival cell to see more options.
         //
@@ -458,17 +470,18 @@ public class StopViewController: UIViewController,
         // defaults, it will do nothing. Otherwise, an `AwesomeSpotlightView`
         // will be displayed one second after the stop data finishes loading.
 
-        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
-            return
-        }
-
-        for cell in listView.sortedVisibleCells {
-            if let cell = cell as? StopArrivalCell,
-               !cell.isShowingPastArrivalDeparture {
-                self.showSwipeOptionsNudge(on: cell)
-                return
-            }
-        }
+        // Disabled code: see #401 -- List view show nudge action doesn't work
+//        guard application.userDefaults.bool(forKey: UserDefaultsKeys.shouldShowArrivalNudge) else {
+//            return
+//        }
+//
+//        for cell in listView.sortedVisibleCells {
+//            if let cell = cell as? StopArrivalCell,
+//               !cell.isShowingPastArrivalDeparture {
+//                self.showSwipeOptionsNudge(on: cell)
+//                return
+//            }
+//        }
     }
 
     // MARK: - Data/Stop Header
@@ -686,13 +699,14 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Load More
-
+    private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
     private var loadMoreSection: OBAListViewSection {
         let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
         let item = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", error: operationError, footerText: footerText, showActivityIndicatorOnSelect: true) { [weak self] _ in
+            self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
             self?.loadMoreDepartures()
         }
 
