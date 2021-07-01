@@ -177,8 +177,8 @@
         "repositoryURL": "https://github.com/OneSignal/OneSignal-iOS-SDK.git",
         "state": {
           "branch": null,
-          "revision": "be54eb1a2c10b22b56d4706f3d5851fc3d57376f",
-          "version": "2.15.4"
+          "revision": "c91fdfe06f517eaec992e34b2fd653d3c42ad303",
+          "version": "3.5.3"
         }
       },
       {

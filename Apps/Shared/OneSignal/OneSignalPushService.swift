@@ -27,25 +27,25 @@ public class OneSignalPushService: NSObject, PushServiceProvider {
     // MARK: - PushService Delegate
 
     public func start(launchOptions: [AnyHashable: Any]) {
-        let settings: [String: Any] = [
-            kOSSettingsKeyAutoPrompt: false,
-            kOSSettingsKeyInAppAlerts: true,
-            kOSSettingsKeyInFocusDisplayOption: OSNotificationDisplayType.notification.rawValue
-        ]
-
         OneSignal.setLogLevel(.LL_ERROR, visualLevel: .LL_NONE)
 
         OneSignal.setLocationShared(false)
 
-        OneSignal.initWithLaunchOptions(launchOptions, appId: APIKey, handleNotificationAction: handleNotificationAction(result:), settings: settings)
+        OneSignal.initWithLaunchOptions(launchOptions)
+        OneSignal.setAppId(APIKey)
+        OneSignal.setNotificationOpenedHandler(handleNotificationAction(result:))
     }
 
     public var isRegisteredForRemoteNotifications: Bool {
-        OneSignal.getPermissionSubscriptionState()?.permissionStatus.status == .authorized
+        deviceState.notificationPermissionStatus == .authorized
     }
 
     public var pushUserID: PushManagerUserID? {
-        OneSignal.getPermissionSubscriptionState()?.subscriptionStatus?.userId
+        deviceState.userId
+    }
+    
+    private var deviceState: OSDeviceState {
+        OneSignal.getDeviceState()
     }
 
     public func requestPushID(_ callback: @escaping PushManagerUserIDCallback) {
@@ -57,25 +57,21 @@ public class OneSignalPushService: NSObject, PushServiceProvider {
                 return
             }
 
-            guard
-                let state = OneSignal.getPermissionSubscriptionState(),
-                let subscriptionStatus = state.subscriptionStatus,
-                let userID = subscriptionStatus.userId
-            else {
+            guard self.deviceState.isSubscribed, let userID = self.deviceState.userId else {
                 Logger.error("OneSignal failed to produce a user ID. Waiting!")
                 return
             }
+
             callback(userID)
         }
     }
 
-    private func handleNotificationAction(result: OSNotificationOpenedResult?) {
-        guard
-            let result = result,
-            let message = result.notification.payload.body
-        else { return }
+    private func handleNotificationAction(result: OSNotificationOpenedResult) {
+        guard let message = result.notification.body else {
+            return
+        }
 
-        let additionalData = result.notification.payload.additionalData
+        let additionalData = result.notification.additionalData
         notificationReceivedHandler(message, additionalData)
     }
 }

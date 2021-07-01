@@ -128,7 +128,7 @@
 #pragma mark - Push Notifications
 
 - (BOOL)isRegisteredForRemoteNotifications {
-    return [OneSignal getPermissionSubscriptionState].permissionStatus.status == OSNotificationPermissionAuthorized;
+    return [OneSignal getDeviceState].notificationPermissionStatus == OSNotificationPermissionAuthorized;
 }
 
 @end

@@ -95,7 +95,7 @@ packages:
         exactVersion: 4.0.5
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
-        minorVersion: 2.15.4
+        minorVersion: 3.5.3
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.17.0
