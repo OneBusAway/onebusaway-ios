@@ -119,13 +119,13 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
             directions[stop.direction] = list
         }
 
-        let tapHandler = { (vm: NearbyStopViewModel) -> Void in
+        let tapHandler = { [unowned self] (vm: StopViewModel) -> Void in
             self.application.viewRouter.navigateTo(stopID: vm.id, from: self)
         }
 
         return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in
             let stops = directions[direction] ?? []
-            let cells = stops.map { NearbyStopViewModel(stop: $0, onSelectAction: tapHandler) }
+            let cells = stops.map { StopViewModel(withStop: $0, showDirectionInTitle: false, onSelect: tapHandler, onDelete: nil) }
             let header = Formatters.adjectiveFormOfCardinalDirection(direction) ?? ""
             return OBAListViewSection(id: "\(direction.rawValue)", title: header, contents: cells)
         }
@@ -136,35 +136,5 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
         let body = OBALoc("nearby_stops_controller.empty_set.body", value: "There are no other stops in the vicinity.", comment: "Body for the empty set indicator on the Nearby Stops controller.")
 
         return .standard(.init(title: title, body: body))
-    }
-}
-
-struct NearbyStopViewModel: OBAListViewItem {
-    let id: String
-    let title: String
-    let subtitle: String?
-
-    let onSelectAction: OBAListViewAction<NearbyStopViewModel>?
-
-    var configuration: OBAListViewItemConfiguration {
-        return .custom(OBAListRowConfiguration(text: .string(title), secondaryText: .string(subtitle), appearance: .subtitle, accessoryType: .disclosureIndicator))
-    }
-
-    init(stop: Stop, onSelectAction: @escaping OBAListViewAction<NearbyStopViewModel>) {
-        self.onSelectAction = onSelectAction
-
-        self.id = stop.id
-        self.title = Formatters.formattedTitle(stop: stop)
-        self.subtitle = Formatters.formattedRoutes(stop.routes)
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(title)
-        hasher.combine(subtitle)
-    }
-
-    static func == (lhs: NearbyStopViewModel, rhs: NearbyStopViewModel) -> Bool {
-        return lhs.title == rhs.title && lhs.subtitle == rhs.subtitle
     }
 }

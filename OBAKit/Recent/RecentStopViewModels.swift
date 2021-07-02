@@ -37,9 +37,11 @@ struct StopViewModel: OBAListViewItem {
     let onDeleteAction: OBAListViewAction<StopViewModel>?
 
     init(withStop stop: Stop,
+         showDirectionInTitle: Bool = false,
          onSelect selectAction: OBAListViewAction<StopViewModel>?,
          onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
-        self.name = stop.nameWithLocalizedDirectionAbbreviation
+
+        self.name = showDirectionInTitle ? stop.nameWithLocalizedDirectionAbbreviation : stop.name
         self.subtitle = stop.subtitle
         self.routeType = stop.prioritizedRouteTypeForDisplay
 
