@@ -25,7 +25,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     RegionsServiceDelegate,
     SearchDelegate,
     OBAListViewDataSource,
-//    OBAListViewContextMenuDelegate,
+    OBAListViewContextMenuDelegate,
     UISearchBarDelegate {
 
     let mapRegionManager: MapRegionManager
@@ -50,7 +50,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         super.init(nibName: nil, bundle: nil)
 
         self.listView.obaDataSource = self
-//        self.listView.contextMenuDelegate = self
+        self.listView.contextMenuDelegate = self
         self.listView.backgroundColor = nil
 
         self.mapRegionManager.addDelegate(self)
@@ -170,8 +170,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     private lazy var searchInteractor = SearchInteractor(userDataStore: application.userDataStore, delegate: self)
 
-    // MARK: - ListAdapterDataSource (Data Loading)
-
+    // MARK: - OBAListViewDataSource (Data Loading)
     func items(for listView: OBAListView) -> [OBAListViewSection] {
         var sections: [OBAListViewSection]
         if inSearchMode {
@@ -225,6 +224,25 @@ class MapFloatingPanelController: VisualEffectViewController,
         } else {
             return nearbyModeEmptyData
         }
+    }
+
+    fileprivate var currentPreviewingViewController: UIViewController?
+    func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
+        guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
+
+        let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
+            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.id)
+            self.currentPreviewingViewController = stopVC
+            return stopVC
+        }
+
+        let commitPreviewAction: VoidBlock = { [unowned self] in
+            guard let vc = self.currentPreviewingViewController else { return }
+            (vc as? Previewable)?.exitPreviewMode()
+            self.application.viewRouter.navigate(to: vc, from: self)
+        }
+
+        return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: nil)
     }
 }
 
