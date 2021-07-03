@@ -141,3 +141,63 @@ class TripSegmentView: UIView {
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }
 }
+
+#if DEBUG
+import SwiftUI
+import OBAKitCore
+
+struct TripSegmentView_Previews: PreviewProvider {
+    private static let standardTripSegmentView: some View = {
+        UIViewPreview { TripSegmentView() }
+    }()
+
+    private static let userTripSegmentView: some View = { () -> UIViewPreview in
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: true, vehicle: false)
+        return UIViewPreview { view }
+    }()
+
+    private static let vehicleTripSegmentView: some View = { () -> UIViewPreview in
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: false, vehicle: true)
+        return UIViewPreview { view }
+    }()
+
+    private static let userVehicleTripSegmentView: some View = { () -> UIViewPreview in
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: true, vehicle: true)
+        return UIViewPreview { view }
+    }()
+
+    private static let width: CGFloat = 64
+    private static let height: CGFloat = 44
+
+    static var previews: some View {
+        HStack {
+            VStack {
+                standardTripSegmentView
+                    .frame(width: width, height: height, alignment: .center)
+                Text("Standard")
+            }
+            VStack {
+                userTripSegmentView
+                    .frame(width: width, height: height, alignment: .center)
+                Text("User")
+            }
+            VStack {
+                vehicleTripSegmentView
+                    .frame(width: width, height: height, alignment: .center)
+                Text("Vehicle")
+            }
+            VStack {
+                userVehicleTripSegmentView
+                    .frame(width: width, height: height, alignment: .center)
+                Text("User & Vehicle")
+            }
+        }
+        .previewLayout(.sizeThatFits)
+        .padding()
+    }
+}
+
+#endif
