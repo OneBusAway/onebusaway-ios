@@ -59,6 +59,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
 
         textAlignment = .center
         font = UIFont.preferredFont(forTextStyle: .headline)
+        adjustsFontSizeToFitWidth = true
 
         layer.backgroundColor = UIColor.clear.cgColor
         layer.masksToBounds = true
@@ -98,3 +99,62 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
         }
     }
 }
+
+#if DEBUG
+import SwiftUI
+
+struct DepartureTimeBadge_Previews: PreviewProvider {
+    private static let nowBadge: DepartureTimeBadge = {
+        let badge = DepartureTimeBadge()
+        badge.configure(.preview("NOW", color: .red))
+        return badge
+    }()
+
+    private static let fiveMinutesBadge: DepartureTimeBadge = {
+        let badge = DepartureTimeBadge()
+        badge.configure(.preview("5m", color: .blue))
+        return badge
+    }()
+
+    private static let ninetyNineMinutesBadge: DepartureTimeBadge = {
+        let badge = DepartureTimeBadge()
+        badge.configure(.preview("99m", color: .gray))
+        return badge
+    }()
+
+    private static let nineNineNineChineseBadge: DepartureTimeBadge = {
+        let badge = DepartureTimeBadge()
+        badge.configure(.preview("999分", color: .blue))
+        return badge
+    }()
+
+    // For fixing #354 -- TodayView “NOW” is ellipsized
+    fileprivate static let constrainedFrameStack: UIStackView = {
+        NSLayoutConstraint.activate([
+            nowBadge.widthAnchor.constraint(equalToConstant: 48),
+            fiveMinutesBadge.widthAnchor.constraint(equalToConstant: 48),
+            ninetyNineMinutesBadge.widthAnchor.constraint(equalToConstant: 48),
+            nineNineNineChineseBadge.widthAnchor.constraint(equalToConstant: 48)
+        ])
+
+        let stack = UIStackView.stack(arrangedSubviews: [nowBadge, fiveMinutesBadge, ninetyNineMinutesBadge, nineNineNineChineseBadge])
+        NSLayoutConstraint.activate([stack.heightAnchor.constraint(equalToConstant: 24)])
+        return stack
+    }()
+
+    static var previews: some View {
+        UIViewPreview {
+            constrainedFrameStack
+        }
+        .previewLayout(.sizeThatFits)
+        .padding()
+    }
+}
+
+extension DepartureTimeBadge.Configuration {
+    static func preview(_ text: String, color: UIColor) -> Self {
+        return .init(accessibilityLabel: "", displayText: text, backgroundColor: color.cgColor)
+    }
+}
+
+#endif

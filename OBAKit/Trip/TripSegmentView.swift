@@ -141,3 +141,63 @@ class TripSegmentView: UIView {
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }
 }
+
+#if DEBUG
+import SwiftUI
+import OBAKitCore
+
+struct TripSegmentView_Previews: PreviewProvider {
+    private static let standardTripSegmentView: TripSegmentView = {
+        return TripSegmentView()
+    }()
+
+    private static let userTripSegmentView: TripSegmentView = {
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: true, vehicle: false)
+        return view
+    }()
+
+    private static let vehicleTripSegmentView: TripSegmentView = {
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: false, vehicle: true)
+        return view
+    }()
+
+    private static let userVehicleTripSegmentView: TripSegmentView = {
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: true, vehicle: true)
+        return view
+    }()
+
+    private static let width: CGFloat = 64
+    private static let height: CGFloat = 44
+
+    static var previews: some View {
+        HStack {
+            VStack {
+                UIViewPreview { standardTripSegmentView }
+                    .frame(width: width, height: height, alignment: .center)
+                Text("Standard")
+            }
+            VStack {
+                UIViewPreview { userTripSegmentView }
+                    .frame(width: width, height: height, alignment: .center)
+                Text("User")
+            }
+            VStack {
+                UIViewPreview { vehicleTripSegmentView }
+                    .frame(width: width, height: height, alignment: .center)
+                Text("Vehicle")
+            }
+            VStack {
+                UIViewPreview { userVehicleTripSegmentView }
+                    .frame(width: width, height: height, alignment: .center)
+                Text("User & Vehicle")
+            }
+        }
+        .previewLayout(.sizeThatFits)
+        .padding()
+    }
+}
+
+#endif

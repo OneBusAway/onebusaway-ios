@@ -11,16 +11,22 @@ public struct OBAListSectionConfiguration: Equatable {
         case insetGrouped
     }
 
-    public let appearance: ListAppearance
+    public var appearance: ListAppearance
 
-    public init(appearance: ListAppearance = .plain) {
+    /// Note, per `UICollectionLayoutListConfiguration`, a value of `nil` means that the configuration uses the system background color.
+    public var backgroundColor: UIColor?
+
+    // MARK: - Initializers
+    public init(appearance: ListAppearance = .plain, backgroundColor: UIColor? = nil) {
         self.appearance = appearance
+        self.backgroundColor = nil
     }
 
     static public func appearance(_ appearance: ListAppearance) -> Self {
         return .init(appearance: appearance)
     }
 
+    // MARK: - UIKit
     func listConfiguration() -> UICollectionLayoutListConfiguration {
         let appearance: UICollectionLayoutListConfiguration.Appearance
         switch self.appearance {
@@ -28,6 +34,8 @@ public struct OBAListSectionConfiguration: Equatable {
         case .insetGrouped: appearance = .insetGrouped
         }
 
-        return .init(appearance: appearance)
+        var config = UICollectionLayoutListConfiguration(appearance: appearance)
+        config.backgroundColor = self.backgroundColor
+        return config
     }
 }

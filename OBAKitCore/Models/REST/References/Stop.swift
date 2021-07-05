@@ -96,6 +96,16 @@ public class Stop: NSObject, Identifiable, Codable, HasReferences {
     /// A human-readable name for this stop.
     public let name: String
 
+    /// A localized name for this stop including the direction, if available.
+    /// Example: "E Pine St & 15th Ave (W)" for a westbound bus stop.
+    public var nameWithLocalizedDirectionAbbreviation: String {
+        if let direction = Formatters.directionAbbreviation(direction) {
+            return "\(name) (\(direction))"
+        } else {
+            return name
+        }
+    }
+
     /// A list of route IDs served by this stop.
     ///
     /// Route IDs correspond to values in References.

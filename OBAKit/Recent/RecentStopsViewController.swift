@@ -11,7 +11,8 @@ import OBAKitCore
 /// Provides an interface to browse recently-viewed information, mostly `Stop`s.
 public class RecentStopsViewController: UIViewController,
     AppContext,
-    OBAListViewDataSource {
+    OBAListViewDataSource,
+    OBAListViewContextMenuDelegate {
 
     let application: Application
 
@@ -44,6 +45,7 @@ public class RecentStopsViewController: UIViewController,
 
         view.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(listView)
+        listView.contextMenuDelegate = self
         listView.pinToSuperview(.edges)
     }
 
@@ -128,17 +130,17 @@ public class RecentStopsViewController: UIViewController,
         }
 
         let rows = stops.map { stop -> StopViewModel in
-            let onSelect = { (viewModel: StopViewModel) -> Void in
-                self.application.viewRouter.navigateTo(stop: stop, from: self)
+            let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
+                self.application.viewRouter.navigateTo(stopID: viewModel.id, from: self)
             }
 
-            let onDelete = { (viewModel: StopViewModel) -> Void in
+            let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
                 self.application.userDataStore.delete(recentStop: stop)
                 self.listView.applyData(animated: true)
             }
 
             return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: onDelete)
-        }
+        }.uniqued
 
         let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
         return OBAListViewSection(id: "recent_stops", title: title, contents: rows)
@@ -162,5 +164,24 @@ public class RecentStopsViewController: UIViewController,
         }
 
         return .standard(.init(title: title, body: subtitle, buttonConfig: button))
+    }
+
+    fileprivate var currentPreviewingViewController: UIViewController?
+    public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
+        guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
+
+        let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
+            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.id)
+            self.currentPreviewingViewController = stopVC
+            return stopVC
+        }
+
+        let commitPreviewAction: VoidBlock = { [unowned self] in
+            guard let vc = self.currentPreviewingViewController else { return }
+            (vc as? Previewable)?.exitPreviewMode()
+            self.application.viewRouter.navigate(to: vc, from: self)
+        }
+
+        return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: nil)
     }
 }

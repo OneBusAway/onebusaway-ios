@@ -16,25 +16,34 @@ struct StopViewModel: OBAListViewItem {
     let subtitle: String?
 
     let id: Stop.ID
-    let stop: Stop
+    let routeType: Route.RouteType
 
+    // Hide icon if there is only one type of route in the list
     var configuration: OBAListViewItemConfiguration {
-        return .custom(OBAListRowConfiguration(
-                        text: .string(name),
-                        secondaryText: .string(subtitle),
-                        appearance: .subtitle,
-                        accessoryType: .disclosureIndicator))
+        let transportIcon = Icons.transportIcon(from: routeType)
+        var config = OBAListRowConfiguration(
+            image: transportIcon,
+            text: .string(name),
+            secondaryText: .string(subtitle),
+            appearance: .subtitle,
+            accessoryType: .disclosureIndicator)
+        config.imageConfig.tintColor = .label
+        config.imageConfig.maximumSize = CGSize(width: 24, height: 24)
+
+        return .custom(config)
     }
 
     let onSelectAction: OBAListViewAction<StopViewModel>?
     let onDeleteAction: OBAListViewAction<StopViewModel>?
 
     init(withStop stop: Stop,
+         showDirectionInTitle: Bool = false,
          onSelect selectAction: OBAListViewAction<StopViewModel>?,
          onDelete deleteAction: OBAListViewAction<StopViewModel>?) {
-        self.stop = stop
-        self.name = stop.name
+
+        self.name = showDirectionInTitle ? stop.nameWithLocalizedDirectionAbbreviation : stop.name
         self.subtitle = stop.subtitle
+        self.routeType = stop.prioritizedRouteTypeForDisplay
 
         self.id = stop.id
         self.onSelectAction = selectAction
@@ -42,18 +51,11 @@ struct StopViewModel: OBAListViewItem {
     }
 
     func hash(into hasher: inout Hasher) {
-        hasher.combine(stop)
         hasher.combine(id)
-        hasher.combine(name)
-        hasher.combine(subtitle)
     }
 
     static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
-        return
-            lhs.id == rhs.id &&
-            lhs.name == rhs.name &&
-            lhs.subtitle == rhs.subtitle &&
-            lhs.stop.isEqual(rhs.stop)
+        return lhs.id == rhs.id
     }
 }
 

@@ -246,9 +246,26 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     fileprivate func trailingSwipeActions(for indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard let actions = itemForIndexPath(indexPath)?.trailingContextualActions else { return nil }
+        guard let item = itemForIndexPath(indexPath) else { return nil }
+        let contextualActions = item.trailingContextualActions ?? []
+        var swipeActions = contextualActions.map { $0.contextualAction }
 
-        let config = UISwipeActionsConfiguration(actions: actions.map { $0.contextualAction })
+        if let deleteAction = item.onDeleteAction {
+            // Hides "Delete" text if the cell is less than 64 units tall.
+            let cellSize = self.cellForItem(at: indexPath)?.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height ?? 0
+            let isCellCompact = cellSize < 64
+            let swipeActionText = isCellCompact ? nil : Strings.delete
+
+            let deleteAction =  UIContextualAction(style: .destructive, title: swipeActionText) { _, _, success in
+                deleteAction(item)
+                success(true)
+            }
+            deleteAction.image = Icons.delete
+
+            swipeActions.append(deleteAction)
+        }
+
+        let config = UISwipeActionsConfiguration(actions: swipeActions)
         config.performsFirstActionWithFullSwipe = false
 
         return config
