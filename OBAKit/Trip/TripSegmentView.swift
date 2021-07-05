@@ -147,26 +147,26 @@ import SwiftUI
 import OBAKitCore
 
 struct TripSegmentView_Previews: PreviewProvider {
-    private static let standardTripSegmentView: some View = {
-        UIViewPreview { TripSegmentView() }
+    private static let standardTripSegmentView: TripSegmentView = {
+        return TripSegmentView()
     }()
 
-    private static let userTripSegmentView: some View = { () -> UIViewPreview in
+    private static let userTripSegmentView: TripSegmentView = {
         let view = TripSegmentView()
         view.setDestinationStatus(user: true, vehicle: false)
-        return UIViewPreview { view }
+        return view
     }()
 
-    private static let vehicleTripSegmentView: some View = { () -> UIViewPreview in
+    private static let vehicleTripSegmentView: TripSegmentView = {
         let view = TripSegmentView()
         view.setDestinationStatus(user: false, vehicle: true)
-        return UIViewPreview { view }
+        return view
     }()
 
-    private static let userVehicleTripSegmentView: some View = { () -> UIViewPreview in
+    private static let userVehicleTripSegmentView: TripSegmentView = {
         let view = TripSegmentView()
         view.setDestinationStatus(user: true, vehicle: true)
-        return UIViewPreview { view }
+        return view
     }()
 
     private static let width: CGFloat = 64
@@ -175,22 +175,22 @@ struct TripSegmentView_Previews: PreviewProvider {
     static var previews: some View {
         HStack {
             VStack {
-                standardTripSegmentView
+                UIViewPreview { standardTripSegmentView }
                     .frame(width: width, height: height, alignment: .center)
                 Text("Standard")
             }
             VStack {
-                userTripSegmentView
+                UIViewPreview { userTripSegmentView }
                     .frame(width: width, height: height, alignment: .center)
                 Text("User")
             }
             VStack {
-                vehicleTripSegmentView
+                UIViewPreview { vehicleTripSegmentView }
                     .frame(width: width, height: height, alignment: .center)
                 Text("Vehicle")
             }
             VStack {
-                userVehicleTripSegmentView
+                UIViewPreview { userVehicleTripSegmentView }
                     .frame(width: width, height: height, alignment: .center)
                 Text("User & Vehicle")
             }
