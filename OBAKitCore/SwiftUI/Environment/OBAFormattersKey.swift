@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-private struct OBAFormattersKey: EnvironmentKey {
-    static let defaultValue: Formatters = Formatters(locale: .current, calendar: .current, themeColors: .shared)
+public struct OBAFormattersKey: EnvironmentKey {
+    static public let defaultValue: Formatters = Formatters(locale: .current, calendar: .current, themeColors: .shared)
 }
 
 extension EnvironmentValues {
-    var obaFormatters: Formatters {
+    public var obaFormatters: Formatters {
         get { self[OBAFormattersKey.self] }
         set { self[OBAFormattersKey.self] = newValue }
     }

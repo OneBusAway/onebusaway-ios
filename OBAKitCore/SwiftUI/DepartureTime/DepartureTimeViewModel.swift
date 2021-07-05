@@ -30,27 +30,27 @@ extension DepartureTimeViewModel {
         self.init(arrivalDepartureDate: date, temporalState: temporalState, scheduleStatus: scheduleStatus)
     }
 
-    static var DEBUG_departingNOWOnTime: Self {
+    static public var DEBUG_departingNOWOnTime: Self {
         return .init(minutes: 1, temporalState: .present, scheduleStatus: .onTime)
     }
 
-    static var DEBUG_departingIn12MinutesOnTime: Self {
+    static public var DEBUG_departingIn12MinutesOnTime: Self {
         return .init(minutes: 12, temporalState: .future, scheduleStatus: .onTime)
     }
 
-    static var DEBUG_departingIn20MinutesScheduled: Self {
+    static public var DEBUG_departingIn20MinutesScheduled: Self {
         return .init(minutes: 20, temporalState: .future, scheduleStatus: .unknown)
     }
 
-    static var DEBUG_departed11MinutesAgoEarly: Self {
+    static public var DEBUG_departed11MinutesAgoEarly: Self {
         return .init(minutes: 11, temporalState: .past, scheduleStatus: .early)
     }
 
-    static var DEBUG_arrivingIn3MinutesLate: Self {
+    static public var DEBUG_arrivingIn3MinutesLate: Self {
         return .init(minutes: 3, temporalState: .future, scheduleStatus: .delayed)
     }
 
-    static var DEBUG_arrivingIn124MinutesScheduled: Self {
+    static public var DEBUG_arrivingIn124MinutesScheduled: Self {
         return .init(minutes: 124, temporalState: .future, scheduleStatus: .unknown)
     }
 }

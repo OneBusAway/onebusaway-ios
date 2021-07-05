@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ScheduleStatusViewModifier: ViewModifier {
+struct ScheduleStatusBackgroundViewModifier: ViewModifier {
     var scheduleStatus: ScheduleStatus
 
     func body(content: Content) -> some View {
@@ -19,6 +19,15 @@ struct ScheduleStatusViewModifier: ViewModifier {
     }
 }
 
+struct ScheduleStatusForegroundViewModifier: ViewModifier {
+    var scheduleStatus: ScheduleStatus
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundColor(Color.scheduleStatus(scheduleStatus))
+    }
+}
+
 extension View {
     /// Applies the specified schedule status as the background color.
     ///
@@ -27,10 +36,24 @@ extension View {
     /// ## Example Usage
     /// ```swift
     /// Text("5m")
-    ///   .scheduleStatus(.onTime)
+    ///   .scheduleStatusBackground(.onTime)
     /// ```
-    public func scheduleStatus(_ scheduleStatus: ScheduleStatus) -> some View {
-        self.modifier(ScheduleStatusViewModifier(scheduleStatus: scheduleStatus))
+    public func scheduleStatusBackground(_ scheduleStatus: ScheduleStatus) -> some View {
+        self.modifier(ScheduleStatusBackgroundViewModifier(scheduleStatus: scheduleStatus))
+    }
+
+    /// Applies the specified schedule status as the foreground color.
+    ///
+    /// - parameter scheduleStatus: The schedule status to apply to this view.
+    ///
+    /// ## Example Usage
+    /// The example below shows how to change the Text's font color to the schedule status corresponding to `.onTime`.
+    /// ```swift
+    /// Text("5m")
+    ///   .scheduleStatusForeground(.onTime)
+    /// ```
+    public func scheduleStatusForeground(_ scheduleStatus: ScheduleStatus) -> some View {
+        self.modifier(ScheduleStatusForegroundViewModifier(scheduleStatus: scheduleStatus))
     }
 }
 
@@ -62,13 +85,13 @@ struct ScheduleStatusViewModifierPreviews: PreviewProvider {
     static var previews: some View {
         VStack(alignment: .center, spacing: 16) {
             Text("3m")
-                .scheduleStatus(.onTime)
+                .scheduleStatusBackground(.onTime)
             Text("13m")
-                .scheduleStatus(.early)
+                .scheduleStatusBackground(.early)
             Text("12345m")
-                .scheduleStatus(.delayed)
+                .scheduleStatusBackground(.delayed)
             Image(systemName: "ant.fill")
-                .scheduleStatus(.early)
+                .scheduleStatusBackground(.early)
         }
         .fixedSize()
         .padding()

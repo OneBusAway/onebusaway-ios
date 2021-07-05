@@ -14,6 +14,7 @@ public struct DepartureTimeView: View {
 
     // MARK: - View Model
     @State public var viewModel: DepartureTimeViewModel
+    public let isBadge: Bool
 
     var minutes: Int {
         return Calendar.current.dateComponents([.minute], from: Date(), to: viewModel.arrivalDepartureDate).minute ?? 0
@@ -31,22 +32,29 @@ public struct DepartureTimeView: View {
             temporalState: viewModel.temporalState)
     }
 
-    public init(viewModel: DepartureTimeViewModel) {
+    public init(viewModel: DepartureTimeViewModel, isBadge: Bool = true) {
         self._viewModel = State(wrappedValue: viewModel)
+        self.isBadge = isBadge
     }
 
     // MARK: - View Attributes
-    static let topBottomPadding = ThemeMetrics.compactPadding
-    static let leftRightPadding = ThemeMetrics.buttonContentPadding
+    static let badgeTopBottomPadding = ThemeMetrics.compactPadding
+    static let badgeLeftRightPadding = ThemeMetrics.buttonContentPadding
 
     public var body: some View {
-        Text(displayText)
-            .font(.headline)
-            .padding([.top, .bottom], Self.topBottomPadding)
-            .padding([.leading, .trailing], Self.leftRightPadding)
-            .scheduleStatus(viewModel.scheduleStatus)
-            .cornerRadius(8)
-            .accessibility(label: Text(accessibilityLabel))
+        if isBadge {
+            Text(displayText)
+                .font(.headline)
+                .padding([.top, .bottom], Self.badgeTopBottomPadding)
+                .padding([.leading, .trailing], Self.badgeLeftRightPadding)
+                .scheduleStatusBackground(viewModel.scheduleStatus)
+                .cornerRadius(8)
+                .accessibility(label: Text(accessibilityLabel))
+        } else {
+            Text(displayText)
+                .scheduleStatusForeground(viewModel.scheduleStatus)
+                .accessibility(label: Text(accessibilityLabel))
+        }
     }
 }
 
