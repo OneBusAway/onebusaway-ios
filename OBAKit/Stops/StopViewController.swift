@@ -190,22 +190,22 @@ public class StopViewController: UIViewController,
         listView.pinToSuperview(.edges)
         listView.addSubview(refreshControl)
 
-        view.addSubview(fakeToolbar)
+//        view.addSubview(fakeToolbar)
 
-        let toolbarHeight: CGFloat = 44.0
+//        let toolbarHeight: CGFloat = 44.0
 
-        NSLayoutConstraint.activate([
-            fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
-            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ])
+//        NSLayoutConstraint.activate([
+//            fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//            fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//            fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+//            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
+//            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+//        ])
 
-        var inset = listView.contentInset
-        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-        listView.contentInset = inset
-        listView.scrollIndicatorInsets = inset
+//        var inset = listView.contentInset
+//        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
+//        listView.contentInset = inset
+//        listView.scrollIndicatorInsets = inset
 
         if !stopViewShowsServiceAlerts {
             collapsedSections = [ListSections.serviceAlerts.sectionID]
@@ -279,18 +279,80 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Bottom Toolbar
+    public var filterButtonImage: UIImage? {
+        // NOTE: On iOS 15 (SFSymbols 3.0), this is renamed to `line.3.horizontal.decrease.circle.fill`.
+        if stopPreferences.hasHiddenRoutes && isListFiltered {
+            return UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
+        } else {
+            return UIImage(systemName: "line.horizontal.3.decrease.circle")
+        }
+    }
 
-    private lazy var refreshButton = FakeToolbar.buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
+    func filterMenu() -> UIMenu {
+        let showAll = UIAction(title: "All Routes") { _ in
+            if self.isListFiltered {
+                // Only change value if it's different to avoid unnecessary data loading.
+                self.isListFiltered = false
+            }
+        }
 
-    private lazy var bookmarkButton = FakeToolbar.buildToolbarButton(title: Strings.bookmark, image: Icons.addBookmark, target: self, action: #selector(addBookmark(sender:)))
+        let showFiltered = UIAction(title: "Filtered Routes") { _ in
+            self.isListFiltered = true
+            self.filter()
+        }
 
-    private lazy var filterButton = FakeToolbar.buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
+        if isListFiltered {
+            showFiltered.image = UIImage(systemName: "checkmark")
+        } else {
+            showAll.image = UIImage(systemName: "checkmark")
+        }
 
-    private lazy var fakeToolbar: FakeToolbar = {
-        let toolbar = FakeToolbar(toolbarItems: [refreshButton, bookmarkButton, filterButton])
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        return toolbar
-    }()
+        return UIMenu(children: [showAll, showFiltered])
+    }
+
+    func pulldownMenu() -> UIMenu {
+        // File
+        let refreshAction = UIAction(title: Strings.refresh, image: UIImage(systemName: "arrow.clockwise")) { _ in
+            self.refresh()
+        }
+
+        let bookmarkAction = UIAction(title: Strings.bookmark, image: UIImage(systemName: "bookmark")) { action in
+            self.addBookmark(sender: action)
+        }
+
+        let fileMenu = UIMenu(title: "File", options: .displayInline, children: [refreshAction, bookmarkAction])
+
+        // Sorting
+        var preferences = application.stopPreferencesDataStore.preferences(stopID: self.stopID, region: self.application.currentRegion!)
+
+        let sortByTime = UIAction(title: "Sort by time") { _ in
+            preferences.sortType = .time
+            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
+            self.stopPreferences = preferences
+        }
+
+        let sortByRoute = UIAction(title: "Sort by route") { _ in
+            preferences.sortType = .route
+            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
+            self.stopPreferences = preferences
+        }
+
+        switch preferences.sortType {
+        case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
+        case .route: sortByRoute.image = UIImage(systemName: "checkmark")
+        }
+
+        let sortMenu = UIMenu(title: "Sort", options: .displayInline, children: [sortByTime, sortByRoute])
+
+        // Help
+        let reportButton = UIAction(title: "Report Problem", image: UIImage(systemName: "exclamationmark.bubble")) { _ in
+            self.showReportProblem()
+        }
+
+        let helpMenu = UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+
+        return UIMenu(children: [fileMenu, sortMenu, helpMenu])
+    }
 
     // MARK: - NSUserActivity
 
@@ -313,7 +375,6 @@ public class StopViewController: UIViewController,
         guard let apiService = application.restAPIService else { return }
 
         title = Strings.updating
-        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         op.complete { [weak self] result in
@@ -338,8 +399,6 @@ public class StopViewController: UIViewController,
                     self.extendLoadMoreWindow()
                 }
             }
-
-            self.navigationItem.rightBarButtonItem = nil
         }
 
         self.operation = op
@@ -421,7 +480,7 @@ public class StopViewController: UIViewController,
 
         sections.append(stopHeaderSection)
         sections.append(serviceAlerts)
-        sections.append(hiddenRoutes)
+//        sections.append(hiddenRoutes)
         sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
         sections.append(loadMoreSection)
         sections.append(moreOptions)
@@ -769,6 +828,10 @@ public class StopViewController: UIViewController,
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
         listView.applyData(animated: false)
+
+        let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
+        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
     }
 
     var operationError: Error? {
@@ -1016,12 +1079,12 @@ public class StopViewController: UIViewController,
     private var inPreviewMode = false
 
     func enterPreviewMode() {
-        fakeToolbar.isHidden = true
+//        fakeToolbar.isHidden = true
         inPreviewMode = true
     }
 
     func exitPreviewMode() {
-        fakeToolbar.isHidden = false
+//        fakeToolbar.isHidden = false
         inPreviewMode = false
     }
 

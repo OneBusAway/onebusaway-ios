@@ -40,7 +40,7 @@ class StopPreferencesViewController: FormViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         form
-            +++ sortingSection
+//            +++ sortingSection
             +++ routesSection
     }
 
@@ -131,3 +131,4 @@ class StopPreferencesViewController: FormViewController {
         return section
     }()
 }
+    
