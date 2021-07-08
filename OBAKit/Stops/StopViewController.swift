@@ -40,6 +40,7 @@ public class StopViewController: UIViewController,
         case serviceAlerts
         case arrivalDepartures(suffix: String)
         case loadMoreButton
+        case dataAttribution
 
         var sectionID: String {
             switch self {
@@ -528,6 +529,7 @@ public class StopViewController: UIViewController,
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)
         sections.append(loadMoreSection)
+        sections.append(dataAttributionSection)
         return sections.compactMap({ $0 })
     }
 
@@ -795,6 +797,20 @@ public class StopViewController: UIViewController,
         }
 
         return listViewSection(for: .loadMoreButton, title: nil, items: [item])
+    }
+
+    fileprivate var dataAttributionSection: OBAListViewSection {
+        let agencies = self.stop!.routes
+            .compactMap { $0.agency.name }
+            .uniqued
+            .joined(separator: ", ")
+
+        let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas.")
+        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
+
+        var section = listViewSection(for: .dataAttribution, title: nil, items: [dataAttribution])
+        section.configuration.backgroundColor = .clear
+        return section
     }
 
     // MARK: - Data/More Options
