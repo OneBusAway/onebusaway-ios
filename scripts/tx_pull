@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require 'yaml'
+
+app_config = YAML.load(File.open("Apps/Shared/app_shared.yml"))
+
+localizations = app_config["targets"]["App"]["info"]["properties"]["CFBundleLocalizations"] - ["en"]
+
+localizations.each do |lang|
+  puts `tx pull -l #{lang}`
+end
+

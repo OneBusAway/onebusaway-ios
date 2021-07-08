@@ -76,11 +76,9 @@ Use `tx` by following the instructions here: https://docs.transifex.com/client/i
 
 Get an API token to use with `tx` by following the instructions here: https://docs.transifex.com/account/authentication
 
-Fetch updated strings from Transifex by running the command `tx pull -l {LANG CODE}`. For instance:
+Fetch updated strings from Transifex by running the command `scripts/tx_pull`.
 
-```
-tx pull -l zh-Hans
-```
+`tx_pull` extracts the full list of localizations that are specified in `app_shared.yml`, and requests the latest list of strings for each language from Transifex by calling `tx pull -l {LANG CODE}` under the hood.
 
 ## Objective-C Compatibility
 
