@@ -38,7 +38,6 @@ public class StopViewController: UIViewController,
         case stopHeader
         case emptyData
         case serviceAlerts
-        case hiddenRoutesToggle
         case arrivalDepartures(suffix: String)
         case loadMoreButton
 
@@ -179,7 +178,6 @@ public class StopViewController: UIViewController,
         listView.formatters = application.formatters
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
-        listView.register(listViewItem: SegmentedControlItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
@@ -188,23 +186,6 @@ public class StopViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
         listView.addSubview(refreshControl)
-
-//        view.addSubview(fakeToolbar)
-
-//        let toolbarHeight: CGFloat = 44.0
-
-//        NSLayoutConstraint.activate([
-//            fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//            fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-//            fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
-//            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-//        ])
-
-//        var inset = listView.contentInset
-//        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-//        listView.contentInset = inset
-//        listView.scrollIndicatorInsets = inset
 
         if !stopViewShowsServiceAlerts {
             collapsedSections = [ListSections.serviceAlerts.sectionID]
@@ -543,18 +524,9 @@ public class StopViewController: UIViewController,
     private func itemsForRegularMode() -> [OBAListViewSection] {
         var sections: [OBAListViewSection?] = []
 
-        let serviceAlerts = serviceAlertsSection
-        let hiddenRoutes = hiddenRoutesToggle
-
-        // When we are displaying service alerts, we should also show a header
-        // for the section. However, don't show a header if a segmented control
-        // for toggling hidden routes is visible.
-        let showArrivalsHeader = serviceAlertsSection != nil && hiddenRoutes == nil
-
         sections.append(stopHeaderSection)
-        sections.append(serviceAlerts)
-//        sections.append(hiddenRoutes)
-        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
+        sections.append(serviceAlertsSection)
+        sections.append(contentsOf: stopArrivalsSection)
         sections.append(loadMoreSection)
         return sections.compactMap({ $0 })
     }
@@ -562,7 +534,7 @@ public class StopViewController: UIViewController,
     private func itemsForPreviewMode() -> [OBAListViewSection] {
         var sections: [OBAListViewSection?] = []
         sections.append(stopHeaderSection)
-        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: false))
+        sections.append(contentsOf: stopArrivalsSection)
         return sections.compactMap { $0 }
     }
 
@@ -623,7 +595,7 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Stop Arrivals
-    func stopArrivalsSection(showSectionHeaders: Bool) -> [OBAListViewSection] {
+    private var stopArrivalsSection: [OBAListViewSection] {
         guard let stopArrivals = self.stopArrivals else { return [] }
         var sections: [OBAListViewSection] = []
 
@@ -634,11 +606,11 @@ public class StopViewController: UIViewController,
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            sections = [sectionForGroup(groupRoute: nil, showSectionHeader: showSectionHeaders, arrDeps: arrDeps)]
+            sections = [sectionForGroup(groupRoute: nil, arrDeps: arrDeps)]
         } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
             // Regardless of the provided `showSectionHeader`, if stops are grouped by route, we will always show the section header.
-            sections = groups.map { sectionForGroup(groupRoute: $0.route, showSectionHeader: true, arrDeps: $0.arrivalDepartures) }
+            sections = groups.map { sectionForGroup(groupRoute: $0.route, arrDeps: $0.arrivalDepartures) }
         }
 
         return sections
@@ -665,15 +637,15 @@ public class StopViewController: UIViewController,
             shareAction: shareAction)
     }
 
-    func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
+    func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
         if let groupRoute = groupRoute {
             sectionID = groupRoute.id
-            sectionName = showSectionHeader ? (groupRoute.longName ?? groupRoute.shortName) : nil
+            sectionName = groupRoute.longName ?? groupRoute.shortName
         } else {
             sectionID = "all"
-            sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
+            sectionName = OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")
         }
 
         let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
@@ -808,25 +780,6 @@ public class StopViewController: UIViewController,
     private var serviceAlertsSection: OBAListViewSection? {
         guard let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 else { return nil }
         return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
-    }
-
-    // MARK: - Data/Hidden Routes Toggle
-
-    private var hiddenRoutesToggle: OBAListViewSection? {
-        guard stopPreferences.hasHiddenRoutes else { return nil }
-
-        // If we have hidden routes, then show the hide/show filter toggle.
-        let segments = [
-            OBALoc("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"),
-            OBALoc("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures")
-        ]
-
-        let selectedIndex = isListFiltered ? 1 : 0
-        let toggleItem = SegmentedControlItem(id: "hidden_routes_toggle", segments: segments, initialSelectedIndex: selectedIndex) { [weak self] _ in
-            self?.isListFiltered.toggle()
-        }
-
-        return listViewSection(for: .hiddenRoutesToggle, title: nil, items: [toggleItem])
     }
 
     // MARK: - Data/Load More
