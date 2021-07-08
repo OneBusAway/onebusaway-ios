@@ -49,7 +49,7 @@ public class BookmarkDataLoader: NSObject {
 
     public func loadData() {
         cancelUpdates()
-        for bookmark in application.userDataStore.bookmarks {
+        for bookmark in application.userDataStore.bookmarks.filter {$0.regionIdentifier == application.regionsService.currentRegion?.id} {
             loadData(bookmark: bookmark)
         }
         startRefreshTimer()

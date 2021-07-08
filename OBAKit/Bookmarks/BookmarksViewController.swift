@@ -143,7 +143,9 @@ public class BookmarksViewController: UIViewController,
     private func listSection(group: BookmarkGroup?, title: String?) -> OBAListViewSection? {
         let bookmarks = application.userDataStore.bookmarksInGroup(group)
 
-        let arrivalData = bookmarks.compactMap { bookmark -> BookmarkArrivalViewModel? in
+        let arrivalData = bookmarks
+            .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
+            .compactMap { bookmark -> BookmarkArrivalViewModel? in
             var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
 
             if let key = TripBookmarkKey(bookmark: bookmark) {
