@@ -263,11 +263,20 @@ public class StopViewController: UIViewController,
     fileprivate func configureTabBarButtons() {
         let filterButtonImage: UIImage?
 
-        // NOTE: On iOS 15 (SFSymbols 3.0), this is renamed to `line.3.horizontal.decrease.circle.fill`.
+        // On iOS 15+ (SFSymbols 3.0), the symbol name is `line.3.horizontal.decrease.circle`.
+        // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
-            filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
+            if #available(iOS 15, *) {
+                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
+            } else {
+                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
+            }
         } else {
-            filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle")
+            if #available(iOS 15, *) {
+                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
+            } else {
+                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle")
+            }
         }
 
         let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
