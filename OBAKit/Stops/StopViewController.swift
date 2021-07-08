@@ -41,7 +41,6 @@ public class StopViewController: UIViewController,
         case hiddenRoutesToggle
         case arrivalDepartures(suffix: String)
         case loadMoreButton
-        case moreOptions
 
         var sectionID: String {
             switch self {
@@ -278,25 +277,38 @@ public class StopViewController: UIViewController,
         ])
     }
 
-    // MARK: - Bottom Toolbar
-    public var filterButtonImage: UIImage? {
+    // MARK: - Dropdown Menus
+    fileprivate func configureTabBarButtons() {
+        let filterButtonImage: UIImage?
+
         // NOTE: On iOS 15 (SFSymbols 3.0), this is renamed to `line.3.horizontal.decrease.circle.fill`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
-            return UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
+            filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
         } else {
-            return UIImage(systemName: "line.horizontal.3.decrease.circle")
+            filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle")
         }
+
+        let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
+        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+    }
+
+    fileprivate func pulldownMenu() -> UIMenu {
+        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), helpMenu()])
     }
 
     func filterMenu() -> UIMenu {
-        let showAll = UIAction(title: "All Routes") { _ in
+        let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "")
+        let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "")
+
+        let showAll = UIAction(title: allRoutesTitle) { _ in
             if self.isListFiltered {
                 // Only change value if it's different to avoid unnecessary data loading.
                 self.isListFiltered = false
             }
         }
 
-        let showFiltered = UIAction(title: "Filtered Routes") { _ in
+        let showFiltered = UIAction(title: filteredRoutesTitle) { _ in
             self.isListFiltered = true
             self.filter()
         }
@@ -310,48 +322,109 @@ public class StopViewController: UIViewController,
         return UIMenu(children: [showAll, showFiltered])
     }
 
-    func pulldownMenu() -> UIMenu {
-        // File
-        let refreshAction = UIAction(title: Strings.refresh, image: UIImage(systemName: "arrow.clockwise")) { _ in
-            self.refresh()
-        }
-
-        let bookmarkAction = UIAction(title: Strings.bookmark, image: UIImage(systemName: "bookmark")) { action in
+    fileprivate func fileMenu() -> UIMenu {
+        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { action in
             self.addBookmark(sender: action)
         }
 
-        let fileMenu = UIMenu(title: "File", options: .displayInline, children: [refreshAction, bookmarkAction])
+        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { _ in
+            let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.stopArrivals?.serviceAlerts ?? [])
+            self.application.viewRouter.navigate(to: controller, from: self)
+        }
 
-        // Sorting
+        // Disable the alerts action if there are no service alerts.
+        if (stopArrivals?.serviceAlerts ?? []).isEmpty {
+            alertsAction.attributes = .disabled
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+    }
+
+    fileprivate func locationMenu() -> UIMenu {
+        let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { _ in
+            let nearbyController = NearbyStopsViewController(coordinate: self.stop!.coordinate, application: self.application)
+            self.application.viewRouter.navigate(to: nearbyController, from: self)
+        }
+
+        var walkingDirectionActions: [UIMenuElement] = []
+
+        if let stop = self.stop {
+            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
+                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { _ in
+                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(appleMaps)
+            }
+
+            #if !targetEnvironment(simulator)
+            // Display Google Maps app link, only if Google Maps is installed.
+            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+               self.application.canOpenURL(googleMapsURL) {
+                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { _ in
+                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(googleMaps)
+            }
+            #endif
+        }
+
+        let walkingDirectionsElement: UIMenuElement
+        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walkign Directions", comment: "Button that launches a maps app with walking directions to this stop")
+        let walkingDirectionsImage = UIImage(systemName: "figure.walk")
+
+        // Show a disabled walking directions button if there are no Walking Directions apps available.
+        if walkingDirectionActions.isEmpty {
+            walkingDirectionsElement = UIAction(title: walkingDirectionsTitle, image: walkingDirectionsImage, attributes: .disabled) { _ in /* noop */ }
+        } else {
+            walkingDirectionsElement = UIMenu(title: walkingDirectionsTitle, image: walkingDirectionsImage, children: walkingDirectionActions)
+        }
+
+        return UIMenu(title: "Location", options: .displayInline, children: [nearbyAction, walkingDirectionsElement])
+    }
+
+    fileprivate func sortMenu() -> UIMenu {
         var preferences = application.stopPreferencesDataStore.preferences(stopID: self.stopID, region: self.application.currentRegion!)
 
-        let sortByTime = UIAction(title: "Sort by time") { _ in
+        let sortByTimeTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
+        let sortByRouteTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
+
+        let sortByTime = UIAction(title: sortByTimeTitle) { _ in
             preferences.sortType = .time
             self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
             self.stopPreferences = preferences
         }
 
-        let sortByRoute = UIAction(title: "Sort by route") { _ in
+        let sortByRoute = UIAction(title: sortByRouteTitle) { _ in
             preferences.sortType = .route
             self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
             self.stopPreferences = preferences
         }
 
+        // Show a checkmark by the current sort type.
         switch preferences.sortType {
         case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
         case .route: sortByRoute.image = UIImage(systemName: "checkmark")
         }
 
-        let sortMenu = UIMenu(title: "Sort", options: .displayInline, children: [sortByTime, sortByRoute])
+        var sortMenu: UIMenu
+        let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
+        let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
+        if #available(iOS 15, *) {
+            // Submenus in iOS 15 looks better.
+            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
+        } else {
+            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, options: .displayInline, children: [sortByTime, sortByRoute])
+        }
 
-        // Help
-        let reportButton = UIAction(title: "Report Problem", image: UIImage(systemName: "exclamationmark.bubble")) { _ in
+        return sortMenu
+    }
+
+    fileprivate func helpMenu() -> UIMenu {
+        let reportButton = UIAction(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), image: UIImage(systemName: "exclamationmark.bubble")) { _ in
             self.showReportProblem()
         }
 
-        let helpMenu = UIMenu(title: "Help", options: .displayInline, children: [reportButton])
-
-        return UIMenu(children: [fileMenu, sortMenu, helpMenu])
+        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
     }
 
     // MARK: - NSUserActivity
@@ -483,7 +556,6 @@ public class StopViewController: UIViewController,
 //        sections.append(hiddenRoutes)
         sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
         sections.append(loadMoreSection)
-        sections.append(moreOptions)
         return sections.compactMap({ $0 })
     }
 
@@ -774,64 +846,10 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/More Options
 
-    private var moreOptions: OBAListViewSection {
-        var items: [AnyOBAListViewItem] = []
-
-        if let stop = stop {
-            let nearbyStops = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
-                self.application.viewRouter.navigate(to: nearbyController, from: self)
-            }
-            items.append(nearbyStops.typeErased)
-
-            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
-                let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
-                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
-                }
-
-                items.append(appleMaps.typeErased)
-            }
-
-            #if !targetEnvironment(simulator)
-            // Display Google Maps app link, only if Google Maps is installed.
-            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-               self.application.canOpenURL(googleMapsURL) {
-
-                let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
-                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
-                }
-                items.append(googleMaps.typeErased)
-            }
-
-            #endif
-        }
-
-        // Report Problem
-        let reportProblem = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            self?.showReportProblem()
-        }
-        items.append(reportProblem.typeErased)
-
-        // All Service Alerts
-        if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
-            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { [unowned self] _ in
-                let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
-                self.application.viewRouter.navigate(to: controller, from: self)
-            }
-            items.append(row.typeErased)
-        }
-
-        return listViewSection(for: .moreOptions, title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), items: items)
-    }
-
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
         listView.applyData(animated: false)
-
-        let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
-        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
-        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+        self.configureTabBarButtons()
     }
 
     var operationError: Error? {
