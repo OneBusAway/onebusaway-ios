@@ -78,13 +78,13 @@ class RegionsModelOperationTests: OBATestCase {
                     expect(pugetSound.name) == "Puget Sound"
 
                     let mapRect = MKMapRect(x: 42206703.270115554, y: 92590980.991902918, width: 1338771.0533083975, height: 1897888.1099742353)
-                    expect(pugetSound.serviceRect.minX) == mapRect.minX
-                    expect(pugetSound.serviceRect.minY) == mapRect.minY
-                    expect(pugetSound.serviceRect.maxX) == mapRect.maxX
-                    expect(pugetSound.serviceRect.maxY) == mapRect.maxY
+                    expect(pugetSound.serviceRect.minX).to(beCloseTo(mapRect.minX))
+                    expect(pugetSound.serviceRect.minY).to(beCloseTo(mapRect.minY))
+                    expect(pugetSound.serviceRect.maxX).to(beCloseTo(mapRect.maxX))
+                    expect(pugetSound.serviceRect.maxY).to(beCloseTo(mapRect.maxY))
 
-                    expect(pugetSound.centerCoordinate.latitude) == 47.795091214055
-                    expect(pugetSound.centerCoordinate.longitude) == -122.49868405298474
+                    expect(pugetSound.centerCoordinate.latitude).to(beCloseTo(47.795091214055))
+                    expect(pugetSound.centerCoordinate.longitude).to(beCloseTo(-122.49868405298474))
 
                     done()
                 }
