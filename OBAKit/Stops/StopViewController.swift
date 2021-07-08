@@ -1050,12 +1050,10 @@ public class StopViewController: UIViewController,
     private var inPreviewMode = false
 
     func enterPreviewMode() {
-//        fakeToolbar.isHidden = true
         inPreviewMode = true
     }
 
     func exitPreviewMode() {
-//        fakeToolbar.isHidden = false
         inPreviewMode = false
     }
 
