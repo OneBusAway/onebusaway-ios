@@ -304,7 +304,7 @@ public class StopViewController: UIViewController,
             self.filter()
         }
 
-        if isListFiltered {
+        if isListFiltered && stopPreferences.hasHiddenRoutes {
             showFiltered.image = UIImage(systemName: "checkmark")
         } else {
             showAll.image = UIImage(systemName: "checkmark")
