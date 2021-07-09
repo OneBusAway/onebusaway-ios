@@ -102,6 +102,10 @@ class MapItemViewController: VisualEffectViewController,
     }
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return [aboutSection, moreSection]
+        var sections = [aboutSection, moreSection]
+        for idx in sections.indices {
+            sections[idx].configuration.backgroundColor = .clear
+        }
+        return sections
     }
 }

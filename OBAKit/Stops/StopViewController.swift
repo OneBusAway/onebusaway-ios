@@ -38,10 +38,9 @@ public class StopViewController: UIViewController,
         case stopHeader
         case emptyData
         case serviceAlerts
-        case hiddenRoutesToggle
         case arrivalDepartures(suffix: String)
         case loadMoreButton
-        case moreOptions
+        case dataAttribution
 
         var sectionID: String {
             switch self {
@@ -180,7 +179,6 @@ public class StopViewController: UIViewController,
         listView.formatters = application.formatters
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
-        listView.register(listViewItem: SegmentedControlItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
@@ -189,23 +187,6 @@ public class StopViewController: UIViewController,
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
         listView.addSubview(refreshControl)
-
-        view.addSubview(fakeToolbar)
-
-        let toolbarHeight: CGFloat = 44.0
-
-        NSLayoutConstraint.activate([
-            fakeToolbar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            fakeToolbar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            fakeToolbar.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fakeToolbar.heightAnchor.constraint(greaterThanOrEqualToConstant: toolbarHeight),
-            fakeToolbar.stackWrapper.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        ])
-
-        var inset = listView.contentInset
-        inset.bottom = toolbarHeight + view.safeAreaInsets.bottom
-        listView.contentInset = inset
-        listView.scrollIndicatorInsets = inset
 
         if !stopViewShowsServiceAlerts {
             collapsedSections = [ListSections.serviceAlerts.sectionID]
@@ -278,19 +259,164 @@ public class StopViewController: UIViewController,
         ])
     }
 
-    // MARK: - Bottom Toolbar
+    // MARK: - Dropdown Menus
+    fileprivate func configureTabBarButtons() {
+        let filterButtonImage: UIImage?
 
-    private lazy var refreshButton = FakeToolbar.buildToolbarButton(title: Strings.refresh, image: Icons.refresh, target: self, action: #selector(refresh))
+        // On iOS 15+ (SFSymbols 3.0), the symbol name is `line.3.horizontal.decrease.circle`.
+        // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
+        if stopPreferences.hasHiddenRoutes && isListFiltered {
+            if #available(iOS 15, *) {
+                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
+            } else {
+                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
+            }
+        } else {
+            if #available(iOS 15, *) {
+                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
+            } else {
+                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle")
+            }
+        }
 
-    private lazy var bookmarkButton = FakeToolbar.buildToolbarButton(title: Strings.bookmark, image: Icons.addBookmark, target: self, action: #selector(addBookmark(sender:)))
+        let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
+        let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+    }
 
-    private lazy var filterButton = FakeToolbar.buildToolbarButton(title: Strings.filter, image: Icons.filter, target: self, action: #selector(filter))
+    fileprivate func pulldownMenu() -> UIMenu {
+        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), helpMenu()])
+    }
 
-    private lazy var fakeToolbar: FakeToolbar = {
-        let toolbar = FakeToolbar(toolbarItems: [refreshButton, bookmarkButton, filterButton])
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        return toolbar
-    }()
+    func filterMenu() -> UIMenu {
+        let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "")
+        let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "")
+
+        let showAll = UIAction(title: allRoutesTitle) { _ in
+            if self.isListFiltered {
+                // Only change value if it's different to avoid unnecessary data loading.
+                self.isListFiltered = false
+            }
+        }
+
+        let showFiltered = UIAction(title: filteredRoutesTitle) { _ in
+            self.isListFiltered = true
+            self.filter()
+        }
+
+        if isListFiltered && stopPreferences.hasHiddenRoutes {
+            showFiltered.image = UIImage(systemName: "checkmark")
+        } else {
+            showAll.image = UIImage(systemName: "checkmark")
+        }
+
+        return UIMenu(children: [showAll, showFiltered])
+    }
+
+    fileprivate func fileMenu() -> UIMenu {
+        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { action in
+            self.addBookmark(sender: action)
+        }
+
+        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { _ in
+            let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.stopArrivals?.serviceAlerts ?? [])
+            self.application.viewRouter.navigate(to: controller, from: self)
+        }
+
+        // Disable the alerts action if there are no service alerts.
+        if (stopArrivals?.serviceAlerts ?? []).isEmpty {
+            alertsAction.attributes = .disabled
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+    }
+
+    fileprivate func locationMenu() -> UIMenu {
+        let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { _ in
+            let nearbyController = NearbyStopsViewController(coordinate: self.stop!.coordinate, application: self.application)
+            self.application.viewRouter.navigate(to: nearbyController, from: self)
+        }
+
+        var walkingDirectionActions: [UIMenuElement] = []
+
+        if let stop = self.stop {
+            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
+                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { _ in
+                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(appleMaps)
+            }
+
+            #if !targetEnvironment(simulator)
+            // Display Google Maps app link, only if Google Maps is installed.
+            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+               self.application.canOpenURL(googleMapsURL) {
+                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { _ in
+                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(googleMaps)
+            }
+            #endif
+        }
+
+        let walkingDirectionsElement: UIMenuElement
+        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walkign Directions", comment: "Button that launches a maps app with walking directions to this stop")
+        let walkingDirectionsImage = UIImage(systemName: "figure.walk")
+
+        // Show a disabled walking directions button if there are no Walking Directions apps available.
+        if walkingDirectionActions.isEmpty {
+            walkingDirectionsElement = UIAction(title: walkingDirectionsTitle, image: walkingDirectionsImage, attributes: .disabled) { _ in /* noop */ }
+        } else {
+            walkingDirectionsElement = UIMenu(title: walkingDirectionsTitle, image: walkingDirectionsImage, children: walkingDirectionActions)
+        }
+
+        return UIMenu(title: "Location", options: .displayInline, children: [nearbyAction, walkingDirectionsElement])
+    }
+
+    fileprivate func sortMenu() -> UIMenu {
+        var preferences = application.stopPreferencesDataStore.preferences(stopID: self.stopID, region: self.application.currentRegion!)
+
+        let sortByTimeTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
+        let sortByRouteTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
+
+        let sortByTime = UIAction(title: sortByTimeTitle) { _ in
+            preferences.sortType = .time
+            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
+            self.stopPreferences = preferences
+        }
+
+        let sortByRoute = UIAction(title: sortByRouteTitle) { _ in
+            preferences.sortType = .route
+            self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
+            self.stopPreferences = preferences
+        }
+
+        // Show a checkmark by the current sort type.
+        switch preferences.sortType {
+        case .time:  sortByTime.image =  UIImage(systemName: "checkmark")
+        case .route: sortByRoute.image = UIImage(systemName: "checkmark")
+        }
+
+        var sortMenu: UIMenu
+        let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
+        let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
+        if #available(iOS 15, *) {
+            // Submenus in iOS 15 looks better.
+            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
+        } else {
+            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, options: .displayInline, children: [sortByTime, sortByRoute])
+        }
+
+        return sortMenu
+    }
+
+    fileprivate func helpMenu() -> UIMenu {
+        let reportButton = UIAction(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), image: UIImage(systemName: "exclamationmark.bubble")) { _ in
+            self.showReportProblem()
+        }
+
+        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+    }
 
     // MARK: - NSUserActivity
 
@@ -313,7 +439,6 @@ public class StopViewController: UIViewController,
         guard let apiService = application.restAPIService else { return }
 
         title = Strings.updating
-        navigationItem.rightBarButtonItem = UIActivityIndicatorView.asNavigationItem()
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         op.complete { [weak self] result in
@@ -338,8 +463,6 @@ public class StopViewController: UIViewController,
                     self.extendLoadMoreWindow()
                 }
             }
-
-            self.navigationItem.rightBarButtonItem = nil
         }
 
         self.operation = op
@@ -411,27 +534,18 @@ public class StopViewController: UIViewController,
     private func itemsForRegularMode() -> [OBAListViewSection] {
         var sections: [OBAListViewSection?] = []
 
-        let serviceAlerts = serviceAlertsSection
-        let hiddenRoutes = hiddenRoutesToggle
-
-        // When we are displaying service alerts, we should also show a header
-        // for the section. However, don't show a header if a segmented control
-        // for toggling hidden routes is visible.
-        let showArrivalsHeader = serviceAlertsSection != nil && hiddenRoutes == nil
-
         sections.append(stopHeaderSection)
-        sections.append(serviceAlerts)
-        sections.append(hiddenRoutes)
-        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: showArrivalsHeader))
+        sections.append(serviceAlertsSection)
+        sections.append(contentsOf: stopArrivalsSection)
         sections.append(loadMoreSection)
-        sections.append(moreOptions)
+        sections.append(dataAttributionSection)
         return sections.compactMap({ $0 })
     }
 
     private func itemsForPreviewMode() -> [OBAListViewSection] {
         var sections: [OBAListViewSection?] = []
         sections.append(stopHeaderSection)
-        sections.append(contentsOf: stopArrivalsSection(showSectionHeaders: false))
+        sections.append(contentsOf: stopArrivalsSection)
         return sections.compactMap { $0 }
     }
 
@@ -492,7 +606,7 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Stop Arrivals
-    func stopArrivalsSection(showSectionHeaders: Bool) -> [OBAListViewSection] {
+    private var stopArrivalsSection: [OBAListViewSection] {
         guard let stopArrivals = self.stopArrivals else { return [] }
         var sections: [OBAListViewSection] = []
 
@@ -503,11 +617,11 @@ public class StopViewController: UIViewController,
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
             }
-            sections = [sectionForGroup(groupRoute: nil, showSectionHeader: showSectionHeaders, arrDeps: arrDeps)]
+            sections = [sectionForGroup(groupRoute: nil, arrDeps: arrDeps)]
         } else {
             let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
             // Regardless of the provided `showSectionHeader`, if stops are grouped by route, we will always show the section header.
-            sections = groups.map { sectionForGroup(groupRoute: $0.route, showSectionHeader: true, arrDeps: $0.arrivalDepartures) }
+            sections = groups.map { sectionForGroup(groupRoute: $0.route, arrDeps: $0.arrivalDepartures) }
         }
 
         return sections
@@ -534,15 +648,15 @@ public class StopViewController: UIViewController,
             shareAction: shareAction)
     }
 
-    func sectionForGroup(groupRoute: Route?, showSectionHeader: Bool, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
+    func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
         if let groupRoute = groupRoute {
             sectionID = groupRoute.id
-            sectionName = showSectionHeader ? (groupRoute.longName ?? groupRoute.shortName) : nil
+            sectionName = groupRoute.longName ?? groupRoute.shortName
         } else {
             sectionID = "all"
-            sectionName = showSectionHeader ? OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.") : nil
+            sectionName = OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")
         }
 
         let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
@@ -679,25 +793,6 @@ public class StopViewController: UIViewController,
         return listSection(serviceAlerts: alerts, showSectionTitle: true, sectionID: ListSections.serviceAlerts.sectionID)
     }
 
-    // MARK: - Data/Hidden Routes Toggle
-
-    private var hiddenRoutesToggle: OBAListViewSection? {
-        guard stopPreferences.hasHiddenRoutes else { return nil }
-
-        // If we have hidden routes, then show the hide/show filter toggle.
-        let segments = [
-            OBALoc("stop_controller.filter_toggle.all_departures", value: "All Departures", comment: "Segmented control item: show all departures"),
-            OBALoc("stop_controller.filter_toggle.filtered_departures", value: "Filtered Departures", comment: "Segmented control item: show filtered departures")
-        ]
-
-        let selectedIndex = isListFiltered ? 1 : 0
-        let toggleItem = SegmentedControlItem(id: "hidden_routes_toggle", segments: segments, initialSelectedIndex: selectedIndex) { [weak self] _ in
-            self?.isListFiltered.toggle()
-        }
-
-        return listViewSection(for: .hiddenRoutesToggle, title: nil, items: [toggleItem])
-    }
-
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
     private var loadMoreSection: OBAListViewSection {
@@ -713,62 +808,26 @@ public class StopViewController: UIViewController,
         return listViewSection(for: .loadMoreButton, title: nil, items: [item])
     }
 
-    // MARK: - Data/More Options
+    fileprivate var dataAttributionSection: OBAListViewSection {
+        let agencies = self.stop!.routes
+            .compactMap { $0.agency.name }
+            .uniqued
+            .joined(separator: ", ")
 
-    private var moreOptions: OBAListViewSection {
-        var items: [AnyOBAListViewItem] = []
+        let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas.")
+        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
 
-        if let stop = stop {
-            let nearbyStops = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
-                self.application.viewRouter.navigate(to: nearbyController, from: self)
-            }
-            items.append(nearbyStops.typeErased)
-
-            if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
-                let appleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
-                    self.application.open(appleMapsURL, options: [:], completionHandler: nil)
-                }
-
-                items.append(appleMaps.typeErased)
-            }
-
-            #if !targetEnvironment(simulator)
-            // Display Google Maps app link, only if Google Maps is installed.
-            if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
-               self.application.canOpenURL(googleMapsURL) {
-
-                let googleMaps = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop"), accessoryType: .disclosureIndicator) { [unowned self] _ in
-                    self.application.open(googleMapsURL, options: [:], completionHandler: nil)
-                }
-                items.append(googleMaps.typeErased)
-            }
-
-            #endif
-        }
-
-        // Report Problem
-        let reportProblem = OBAListRowView.DefaultViewModel(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), accessoryType: .disclosureIndicator) { [weak self] _ in
-            self?.showReportProblem()
-        }
-        items.append(reportProblem.typeErased)
-
-        // All Service Alerts
-        if let alerts = stopArrivals?.serviceAlerts, alerts.count > 0 {
-            let row = OBAListRowView.DefaultViewModel(title: Strings.serviceAlerts, accessoryType: .disclosureIndicator) { [unowned self] _ in
-                let controller = ServiceAlertListController(application: self.application, serviceAlerts: alerts)
-                self.application.viewRouter.navigate(to: controller, from: self)
-            }
-            items.append(row.typeErased)
-        }
-
-        return listViewSection(for: .moreOptions, title: OBALoc("stops_controller.more_options", value: "More Options", comment: "More Options section header on the Stops controller"), items: items)
+        var section = listViewSection(for: .dataAttribution, title: nil, items: [dataAttribution])
+        section.configuration.backgroundColor = .clear
+        return section
     }
+
+    // MARK: - Data/More Options
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
         listView.applyData(animated: false)
+        self.configureTabBarButtons()
     }
 
     var operationError: Error? {
@@ -1016,12 +1075,10 @@ public class StopViewController: UIViewController,
     private var inPreviewMode = false
 
     func enterPreviewMode() {
-        fakeToolbar.isHidden = true
         inPreviewMode = true
     }
 
     func exitPreviewMode() {
-        fakeToolbar.isHidden = false
         inPreviewMode = false
     }
 
