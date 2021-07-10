@@ -149,7 +149,7 @@ struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
         return StopArrivalCell.self
     }
 
-    var fullAttributedExplaination: NSAttributedString? {
+    var fullAttributedExplanation: NSAttributedString? {
         return formatters?.fullAttributedArrivalDepartureExplanation(
             arrivalDepartureDate: viewModel.arrivalDepartureDate,
             scheduleStatus: viewModel.scheduleStatus,

@@ -235,7 +235,7 @@ class StopArrivalView: UIView {
         }
 
         routeHeadsignLabel.text = contentConfiguration.viewModel.name
-        fullExplanationLabel.attributedText = contentConfiguration.fullAttributedExplaination
+        fullExplanationLabel.attributedText = contentConfiguration.fullAttributedExplanation
 
         minutesLabel.text = contentConfiguration.untilMinutesText
         minutesLabel.textColor = contentConfiguration.colorForScheduleStatus
