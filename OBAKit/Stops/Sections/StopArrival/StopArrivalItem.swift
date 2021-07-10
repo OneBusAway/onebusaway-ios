@@ -38,6 +38,12 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     let isAlarmAvailable: Bool
     let isDeepLinkingAvailable: Bool
+    
+    /// Real-time occupancy status information.
+    let occupancyStatus: ArrivalDeparture.OccupancyStatus?
+    
+    /// Historical occupancy status information.
+    let historicalOccupancyStatus: ArrivalDeparture.OccupancyStatus?
 
     /// Whether to highlight the time (to indicate a change) when this item is displayed on the list.
     let highlightTimeOnDisplay: Bool
@@ -109,6 +115,9 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.arrivalDepartureDate = arrivalDeparture.arrivalDepartureDate
         self.arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
         self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
+        
+        self.occupancyStatus = arrivalDeparture.occupancyStatus
+        self.historicalOccupancyStatus = arrivalDeparture.historicalOccupancyStatus
 
         self.isAlarmAvailable = isAlarmAvailable
         self.isDeepLinkingAvailable = isDeepLinkingAvailable

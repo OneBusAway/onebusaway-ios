@@ -108,6 +108,8 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         case departureEnabled
         case distanceFromStop
         case frequency
+        case occupancyStatus
+        case historicalOccupancyStatus = "historicalOccupancy"
         case lastUpdated = "lastUpdateTime"
         case numberOfStopsAway
         case predicted
@@ -176,6 +178,9 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
         tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
         vehicleID = String.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
+        
+        occupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .occupancyStatus)
+        historicalOccupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .historicalOccupancyStatus)
     }
 
     // MARK: - HasReferences
@@ -311,6 +316,29 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
             return .delayed
         }
     }
+    
+    // MARK: - Occupancy Status
+    
+    /// For transit systems that support it, this value represents the current occupancy
+    /// of the vehicle represented by this ArrivalDeparture object.
+    ///
+    /// For more information, see https://developers.google.com/transit/gtfs-realtime/reference#enum-occupancystatus
+    public let occupancyStatus: OccupancyStatus?
+
+    /// For transit systems that support it, this value represents the historical occupancy
+    /// of the vehicle represented by this ArrivalDeparture object.
+    public let historicalOccupancyStatus: OccupancyStatus?
+    
+    public enum OccupancyStatus: String, Codable {
+        case unknown = ""
+        case empty = "EMPTY"
+        case manySeatsAvailable = "MANY_SEATS_AVAILABLE"
+        case fewSeatsAvailable = "FEW_SEATS_AVAILABLE"
+        case standingRoomOnly = "STANDING_ROOM_ONLY"
+        case crushedStandingRoomOnly = "CRUSHED_STANDING_ROOM_ONLY"
+        case full = "FULL"
+        case notAcceptingPassengers = "NOT_ACCEPTING_PASSENGERS"
+    }
 
     // MARK: - Equality and Hashing
 
@@ -324,6 +352,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
             frequency == rhs.frequency &&
             lastUpdated == rhs.lastUpdated &&
             numberOfStopsAway == rhs.numberOfStopsAway &&
+            occupancyStatus == rhs.occupancyStatus &&
             predicted == rhs.predicted &&
             predictedArrival == rhs.predictedArrival &&
             predictedDeparture == rhs.predictedDeparture &&
@@ -358,6 +387,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         hasher.combine(frequency)
         hasher.combine(lastUpdated)
         hasher.combine(numberOfStopsAway)
+        hasher.combine(occupancyStatus)
         hasher.combine(predicted)
         hasher.combine(predictedArrival)
         hasher.combine(predictedDeparture)
@@ -394,6 +424,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         builder.add(key: "frequency", value: frequency)
         builder.add(key: "lastUpdated", value: lastUpdated)
         builder.add(key: "numberOfStopsAway", value: numberOfStopsAway)
+        builder.add(key: "occupancyStatus", value: occupancyStatus)
         builder.add(key: "predicted", value: predicted)
         builder.add(key: "predictedArrival", value: predictedArrival)
         builder.add(key: "predictedDeparture", value: predictedDeparture)

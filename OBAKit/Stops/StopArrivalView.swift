@@ -24,8 +24,9 @@ import OBAKitCore
 /// +----------------outerStackView------------------+
 /// | +-------infoStack------+                       |
 /// | |routeHeadsignLabel    |                       |
-/// | |                      |       minutesWrapper  |
+/// | |                      |     minutesWrapper    |
 /// | |fullExplanationlabel  |                       |
+/// | |occupancyStatusView   |                       |
 /// | +----------------------+                       |
 /// +------------------------------------------------+
 /// ```
@@ -38,6 +39,7 @@ import OBAKitCore
 /// | |accessibilityTimeLabel                      | |
 /// | |accessibilityScheduleDeviationLabel         | |
 /// | |accessibilityRelativeTimeBadge              | |
+/// | |occupancyStatus                             | |
 /// | +--------------------------------------------+ |
 /// +------------------------------------------------+
 /// ```
@@ -121,6 +123,7 @@ class StopArrivalView: UIView {
     private lazy var infoStack = UIStackView.verticalStack(arrangedSubviews: [
         routeHeadsignLabel,
         fullExplanationLabel,
+        occupancyStatusView,
         accessibilityTimeLabel,
         accessibilityScheduleDeviationLabel,
         accessibilityRelativeTimeBadge
@@ -145,6 +148,10 @@ class StopArrivalView: UIView {
         ])
         return wrapper
     }()
+    
+    // MARK: - Occupancy Status
+    
+    let occupancyStatusView = OccupancyStatusView.autolayoutNew()
 
     // MARK: - Public Properties
 
@@ -162,6 +169,7 @@ class StopArrivalView: UIView {
         accessibilityScheduleDeviationLabel.text = nil
         accessibilityRelativeTimeBadge.prepareForReuse()
         minutesLabel.text = ""
+        occupancyStatusView.prepareForReuse()
     }
 
     /// Set this to display data in this view.
@@ -242,6 +250,17 @@ class StopArrivalView: UIView {
         accessibilityTimeLabel.text = contentConfiguration.accessibilityTimeLabelText
         accessibilityScheduleDeviationLabel.text = contentConfiguration.accessibilityScheduleDeviationText
         accessibilityRelativeTimeBadge.configure(contentConfiguration.departureTimeBadgeConfiguration)
+        
+        if let occupancy = contentConfiguration.viewModel.occupancyStatus, occupancy != .unknown {
+            occupancyStatusView.configure(occupancyStatus: occupancy, realtimeData: true)
+            infoStack.setCustomSpacing(ThemeMetrics.compactPadding, after: fullExplanationLabel)
+        } else if let historicalOccupancy = contentConfiguration.viewModel.historicalOccupancyStatus, historicalOccupancy != .unknown {
+            occupancyStatusView.configure(occupancyStatus: historicalOccupancy, realtimeData: false)
+            infoStack.setCustomSpacing(ThemeMetrics.compactPadding, after: fullExplanationLabel)
+        }
+        else {
+            infoStack.setCustomSpacing(0, after: fullExplanationLabel)
+        }
 
         accessibilityLabel = contentConfiguration.accessibilityLabel
         accessibilityValue = contentConfiguration.accessibilityValue
