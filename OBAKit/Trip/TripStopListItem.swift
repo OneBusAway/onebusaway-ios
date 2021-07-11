@@ -107,7 +107,7 @@ struct TripStopViewModel: OBAListViewItem {
 /// ## Standard Cell Appearance
 /// ```
 /// [ |                            ]
-/// [ O  15th & Galer     7:25PM > ]
+/// [ O  15th & Galer     7:25PM   ] <- Title and Time labels appears side-by-side
 /// [ |                            ]
 /// ```
 ///
@@ -115,7 +115,7 @@ struct TripStopViewModel: OBAListViewItem {
 /// ```
 /// [ |                            ]
 /// [ |  15th                      ]
-/// [ O  & Galer                   ] <- no accessory
+/// [ O  & Galer                   ] <- Title and Time labels appears on top of each other
 /// [ |  7:25PM                    ]
 /// [ |                            ]
 /// ```
@@ -151,22 +151,6 @@ final class TripStopCell: OBAListViewCell {
 
     let tripSegmentView = TripSegmentView.autolayoutNew()
 
-    private let accessoryImageView: UIView = {
-        let imageView = UIImageView.autolayoutNew()
-        imageView.contentMode = .scaleAspectFit
-        imageView.setContentCompressionResistancePriority(.required, for: .horizontal)
-        imageView.image = Icons.from(accessoryType: .disclosureIndicator)
-        let wrapper = imageView.embedInWrapperView(setConstraints: false)
-
-        NSLayoutConstraint.activate([
-            imageView.centerYAnchor.constraint(equalTo: wrapper.centerYAnchor),
-            imageView.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor, constant: ThemeMetrics.compactPadding),
-            imageView.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor)
-        ])
-
-        return wrapper
-    }()
-
     override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -187,15 +171,8 @@ final class TripStopCell: OBAListViewCell {
             stackWrapper.leadingAnchor.constraint(equalTo: tripSegmentView.trailingAnchor, constant: ThemeMetrics.padding),
             stackWrapper.topAnchor.constraint(equalTo: contentView.topAnchor),
             stackWrapper.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            stackWrapper.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
             heightConstraint
-        ])
-
-        contentView.addSubview(accessoryImageView)
-        NSLayoutConstraint.activate([
-            accessoryImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            accessoryImageView.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
-            accessoryImageView.widthAnchor.constraint(equalToConstant: 16),
-            stackWrapper.trailingAnchor.constraint(equalTo: accessoryImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
     }
 
@@ -242,6 +219,5 @@ final class TripStopCell: OBAListViewCell {
     func layoutAccessibility() {
         self.textLabelsStack.axis = isAccessibility ? .vertical : .horizontal
         self.textLabelSpacerView.isHidden = isAccessibility
-        self.accessoryImageView.isHidden = isAccessibility
     }
 }
