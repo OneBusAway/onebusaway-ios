@@ -224,6 +224,10 @@ class TripFloatingPanelController: UIViewController,
                 arrivalDeparture: tripConvertible?.arrivalDeparture,
                 showHeader: !tripDetails.serviceAlerts.isEmpty))
 
+        for (idx, _) in sections.enumerated() {
+            sections[idx].configuration.appearance = .plain
+        }
+
         return sections
     }
 
