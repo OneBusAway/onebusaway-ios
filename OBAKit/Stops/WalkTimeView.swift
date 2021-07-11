@@ -29,7 +29,7 @@ class WalkTimeView: UIView {
     private lazy var triangleHeight = ThemeMetrics.padding
     private lazy var triangleVertexWidth = 1.5 * triangleHeight
 
-    private let walkerImageInset: CGFloat = 0.0
+    private let walkerImageInset: CGFloat = 8.0
 
     private let walkerImageView: UIImageView = {
         let imageView = UIImageView.autolayoutNew()
@@ -72,6 +72,8 @@ class WalkTimeView: UIView {
             label.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             label.trailingAnchor.constraint(equalTo: walkerImageView.leadingAnchor, constant: -ThemeMetrics.padding)
         ])
+
+        NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -119,10 +121,19 @@ class WalkTimeView: UIView {
         return CGSize(width: UIView.noIntrinsicMetric, height: maximumIntrinsicHeight)
     }
 
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        setNeedsDisplay()
+    }
+
+    @objc fileprivate func deviceOrientationDidChange(_ notification: Notification) {
+        setNeedsDisplay()
+    }
+
     override func draw(_ rect: CGRect) {
         super.draw(rect)
 
-        let triHorizontalOffset: CGFloat = walkerImageView.center.y + walkerImageInset
+        let triHorizontalOffset: CGFloat = readableContentGuide.layoutFrame.minX + walkerImageInset
 
         let bezierPath = UIBezierPath()
 
