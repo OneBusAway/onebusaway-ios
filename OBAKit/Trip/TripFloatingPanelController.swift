@@ -247,8 +247,7 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {
-        parentTripViewController?.skipNextStopTimeHighlight = true
-        parentTripViewController?.selectedStopTime = tripStop.stopTime
+        parentTripViewController?.showStopOnMap(tripStop)
     }
 
     private func showOnList(_ tripStop: TripStopTime) {
