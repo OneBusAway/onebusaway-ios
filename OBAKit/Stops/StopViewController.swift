@@ -289,8 +289,8 @@ public class StopViewController: UIViewController,
     }
 
     func filterMenu() -> UIMenu {
-        let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "")
-        let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "")
+        let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again.")
+        let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes.")
 
         let showAll = UIAction(title: allRoutesTitle) { _ in
             if self.isListFiltered {
@@ -360,7 +360,7 @@ public class StopViewController: UIViewController,
         }
 
         let walkingDirectionsElement: UIMenuElement
-        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walkign Directions", comment: "Button that launches a maps app with walking directions to this stop")
+        let walkingDirectionsTitle = OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop")
         let walkingDirectionsImage = UIImage(systemName: "figure.walk")
 
         // Show a disabled walking directions button if there are no Walking Directions apps available.
@@ -814,7 +814,7 @@ public class StopViewController: UIViewController,
             .uniqued
             .joined(separator: ", ")
 
-        let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas.")
+        let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
         let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
 
         var section = listViewSection(for: .dataAttribution, title: nil, items: [dataAttribution])

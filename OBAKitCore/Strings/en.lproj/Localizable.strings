@@ -52,6 +52,9 @@
 /* The verb 'to edit', as in to change or modify something. Used as a button title. */
 "common.edit" = "Edit";
 
+/* Title for the alert empty set indicator. */
+"common.empty_alert_set.title" = "No Alerts";
+
 /* Body for the bookmark empty set indicator. */
 "common.empty_bookmark_set.body" = "Add a bookmark for a stop or trip to easily access it here.";
 
