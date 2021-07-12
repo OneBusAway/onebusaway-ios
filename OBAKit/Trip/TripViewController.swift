@@ -232,6 +232,13 @@ class TripViewController: UIViewController,
         }
     }
 
+    func showStopOnMap(_ tripStop: TripStopViewModel) {
+        self.floatingPanel.move(to: .half, animated: true) {
+            self.skipNextStopTimeHighlight = true
+            self.selectedStopTime = tripStop.stopTime
+        }
+    }
+
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?

@@ -262,16 +262,19 @@ public class StopViewController: UIViewController,
     // MARK: - Dropdown Menus
     fileprivate func configureTabBarButtons() {
         let filterButtonImage: UIImage?
+        let filterButtonTitle: String
 
         // On iOS 15+ (SFSymbols 3.0), the symbol name is `line.3.horizontal.decrease.circle`.
         // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
+            filterButtonTitle = "FILTER (ON)"
             if #available(iOS 15, *) {
                 filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
             } else {
                 filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
             }
         } else {
+            filterButtonTitle = "FILTER (OFF)"
             if #available(iOS 15, *) {
                 filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
             } else {
@@ -279,7 +282,7 @@ public class StopViewController: UIViewController,
             }
         }
 
-        let filterMenuButton = UIBarButtonItem(title: "FILTER", image: filterButtonImage, menu: filterMenu())
+        let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
         navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
     }

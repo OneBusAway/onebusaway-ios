@@ -224,6 +224,10 @@ class TripFloatingPanelController: UIViewController,
                 arrivalDeparture: tripConvertible?.arrivalDeparture,
                 showHeader: !tripDetails.serviceAlerts.isEmpty))
 
+        for (idx, _) in sections.enumerated() {
+            sections[idx].configuration.appearance = .plain
+        }
+
         return sections
     }
 
@@ -247,8 +251,7 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {
-        parentTripViewController?.skipNextStopTimeHighlight = true
-        parentTripViewController?.selectedStopTime = tripStop.stopTime
+        parentTripViewController?.showStopOnMap(tripStop)
     }
 
     private func showOnList(_ tripStop: TripStopTime) {

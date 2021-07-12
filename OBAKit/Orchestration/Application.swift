@@ -415,9 +415,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         MKMarkerAnnotationView.appearance().markerTintColor = ThemeColors.shared.brand
 
         UIBarButtonItem.appearance().setTitleTextAttributes([.foregroundColor: ThemeColors.shared.brand], for: .normal)
-
-        // See: https://github.com/Instagram/IGListKit/blob/master/Guides/Working%20with%20UICollectionView.md
-        UICollectionView.appearance().isPrefetchingEnabled = false
     }
 
     // MARK: - Regions Management
