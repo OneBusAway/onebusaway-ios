@@ -283,6 +283,33 @@
 /* The title of the Nearby Stops controller. */
 "nearby_stops_controller.title" = "Nearby Stops";
 
+/* Vehicle occupancy is very high */
+"occupancy_status.crushed_standing_room_only" = "Crushed standing room only";
+
+/* Vehicle occupancy is zero */
+"occupancy_status.empty" = "Empty";
+
+/* Vehicle occupancy is medium */
+"occupancy_status.few_seats_available" = "Few seats available";
+
+/* Vehicle occupancy is full */
+"occupancy_status.full" = "Full";
+
+/* A format string that denotes that the associated occupancy status is historical data. e.g. 'Historical: Standing room only' */
+"occupancy_status.historical_fmt" = "Historical: %@";
+
+/* Vehicle occupancy is low */
+"occupancy_status.many_seats_available" = "Many seats available";
+
+/* Vehicle is not accepting any passengers */
+"occupancy_status.not_accepting_passengers" = "Not accepting passengers";
+
+/* Vehicle occupancy is high */
+"occupancy_status.standing_room_only" = "Standing room only";
+
+/* Vehicle occupancy status is unknown. */
+"occupancy_status.unknown" = "Unknown";
+
 /* Reachability bulletin for a cellular connection that can't access the Internet. */
 "reachability_bulletin.description.cellular_no_internet" = "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.";
 
@@ -451,11 +478,8 @@
 /* An error message displayed when a stop is shown by tapping on a bookmark—and the bookmark doesn't seem to point to a valid stop any longer. This problem will occur when a transit agency changes its stop IDs, perhaps as part of an annual transit system realignment. */
 "stop_controller.bad_bookmark_error_message" = "This bookmark may not work anymore. Did your transit agency change something? Please delete and recreate the bookmark.";
 
-/* Segmented control item: show all departures */
-"stop_controller.filter_toggle.all_departures" = "All Departures";
-
-/* Segmented control item: show filtered departures */
-"stop_controller.filter_toggle.filtered_departures" = "Filtered Departures";
+/* A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit */
+"stop_controller.data_attribution_format" = "Data provided by %@";
 
 /* Load More button */
 "stop_controller.load_more_button" = "Load More";
@@ -470,7 +494,7 @@
 "stop_preferences_controller.routes_section.header_title" = "Routes";
 
 /* Title of the Sorting section */
-"stop_preferences_controller.sorting_section.header_title" = "Sorting";
+"stop_preferences_controller.sorting_section.header_title" = "Sort By";
 
 /* Sort by route option */
 "stop_preferences_controller.sorting_section.sort_by_route" = "Sort by route";
@@ -479,7 +503,7 @@
 "stop_preferences_controller.sorting_section.sort_by_time" = "Sort by time";
 
 /* Title of the Edit Stop preferences controller */
-"stop_preferences_controller.title" = "Sort & Filter Routes";
+"stop_preferences_controller.title" = "Filter Routes";
 
 /* The section header to a free-form comments field that the user does not have to add text to in order to submit this form. */
 "stop_problem_controller.comments_section.section_title" = "Additional comments (optional)";
@@ -508,8 +532,11 @@
 /* Message displayed when a new bookmark is created. */
 "stops_controller.created_new_bookmark" = "Added Bookmark";
 
-/* More Options section header on the Stops controller */
-"stops_controller.more_options" = "More Options";
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again. */
+"stops_controller.filter.all_routes" = "All Routes";
+
+/* A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes. */
+"stops_controller.filter.filtered_routes" = "Filtered Routes";
 
 /* Title of the row that will show stops that are near this one. */
 "stops_controller.nearby_stops" = "Nearby Stops";
