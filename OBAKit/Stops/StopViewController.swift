@@ -803,19 +803,24 @@ public class StopViewController: UIViewController,
         let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
         let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
 
-        let item = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", error: operationError, footerText: footerText, showActivityIndicatorOnSelect: true) { [weak self] _ in
+        var items: [AnyOBAListViewItem] = []
+
+        if let error = operationError {
+            items.append(ErrorCaptionItem(error: error).typeErased)
+        }
+
+        let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
             self?.loadMoreDepartures()
         }
+        items.append(loadMoreButton.typeErased)
+        items.append(FootnoteItem(text: footerText).typeErased)
 
-        return listViewSection(for: .loadMoreButton, title: nil, items: [item])
+        return listViewSection(for: .loadMoreButton, title: nil, items: items)
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
-        let agencies = self.stop!.routes
-            .compactMap { $0.agency.name }
-            .uniqued
-            .joined(separator: ", ")
+        let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
 
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
         let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
