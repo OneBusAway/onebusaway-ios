@@ -812,10 +812,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
-        let agencies = self.stop!.routes
-            .compactMap { $0.agency.name }
-            .uniqued
-            .joined(separator: ", ")
+        let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
 
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas.")
         let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))

@@ -507,7 +507,7 @@ public class Formatters: NSObject {
     /// For example: "Routes: 10, 12, 49".
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
-    /// - Returns: A human-readable list of the passed-in `Route`
+    /// - Returns: A human-readable list of the passed-in `Route`s.
     public class func formattedRoutes(_ routes: [Route]) -> String? {
         let routeNames = routes
             .map { $0.shortName }
@@ -517,6 +517,20 @@ public class Formatters: NSObject {
 
         let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
         return String(format: fmt, routeNames.joined(separator: ", "))
+    }
+
+    /// Generates an alphabetical-ordered, formatted, human readable unique list of agencies.
+    ///
+    /// For example: "Community Transit, Sound Transit".
+    ///
+    /// - Parameter routes: An array of `Route`s from which the string will be generated.
+    /// - Returns: A human-readable list of the passed-in `Route`s.
+    public class func formattedAgenciesForRoutes(_ routes: [Route]) -> String {
+        return routes
+            .compactMap { $0.agency.name }
+            .uniqued
+            .sorted()
+            .joined(separator: ", ")
     }
 
     /// Returns an adjective form of the passed-in cardinal direction. For example `n` -> `Northbound`

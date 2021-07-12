@@ -12,10 +12,8 @@ import OBAKitCore
 
 // MARK: - StopHeaderSection
 struct StopHeaderItem: OBAListViewItem {
-    var id: String { stop.id }
-
     var configuration: OBAListViewItemConfiguration {
-        return .custom(StopHeaderContentConfiguration(stop: stop, application: application))
+        return .custom(StopHeaderContentConfiguration(self))
     }
 
     static var customCellType: OBAListViewCell.Type? {
@@ -24,25 +22,55 @@ struct StopHeaderItem: OBAListViewItem {
 
     var onSelectAction: OBAListViewAction<StopHeaderItem>?
 
-    var stop: Stop
-    var application: Application
+    let id: String
+
+    let stop: Stop
+    let stopName: String
+    let stopNumber: String
+    let subtitleText: String
+
+    let stopIconFactory: StopIconFactory
+
+    init(stop: Stop, application: Application) {
+        self.id = stop.id
+        self.stop = stop
+        self.stopName = stop.name
+        self.stopNumber = Formatters.formattedCodeAndDirection(stop: stop)
+
+        if let formattedRoutes = Formatters.formattedRoutes(stop.routes), !formattedRoutes.isEmpty {
+            self.subtitleText = formattedRoutes
+        } else {
+            self.subtitleText = Formatters.formattedAgenciesForRoutes(stop.routes)
+        }
+
+        self.stopIconFactory = application.stopIconFactory
+    }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
-        stop.hash(into: &hasher)
+        hasher.combine(stopName)
+        hasher.combine(stopNumber)
+        hasher.combine(subtitleText)
     }
 
     static func == (lhs: StopHeaderItem, rhs: StopHeaderItem) -> Bool {
-        return lhs.stop.isEqual(rhs.stop)
+        return lhs.id == rhs.id &&
+            lhs.stopName == rhs.stopName &&
+            lhs.stopNumber == rhs.stopNumber &&
+            lhs.subtitleText == rhs.subtitleText
     }
 }
 
 struct StopHeaderContentConfiguration: OBAContentConfiguration {
-    var stop: Stop
-    var application: Application
+    var viewModel: StopHeaderItem
     var formatters: Formatters?
+
     var obaContentView: (OBAContentView & ReuseIdentifierProviding).Type {
         return StopHeaderCollectionCell.self
+    }
+
+    init(_ viewModel: StopHeaderItem) {
+        self.viewModel = viewModel
     }
 }
 
@@ -70,10 +98,8 @@ class StopHeaderCollectionCell: OBAListViewCell {
 // MARK: - StopHeaderView
 
 class StopHeaderView: UIView {
-    fileprivate static let headerHeight: CGFloat = 120.0
-    private var headerHeight: CGFloat {
-        StopHeaderView.headerHeight
-    }
+    // ↓ Arbitrary height, seems to work OK for most text sizes, too large and the map snapshot will take too long to render.
+    fileprivate static let mapSnapshotHeight: CGFloat = 360.0
 
     private let backgroundImageView: UIImageView = {
         let view = UIImageView.autolayoutNew()
@@ -92,13 +118,11 @@ class StopHeaderView: UIView {
 
         backgroundColor = ThemeColors.shared.mapSnapshotOverlayColor
 
+        // To avoid broken constraints, the backgroundImageView "floats" rather than being constrained on its sides.
         addSubview(backgroundImageView)
         NSLayoutConstraint.activate([
-            backgroundImageView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            backgroundImageView.topAnchor.constraint(equalTo: topAnchor),
-            backgroundImageView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            backgroundImageView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            backgroundImageView.heightAnchor.constraint(equalToConstant: headerHeight)
+            backgroundImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            backgroundImageView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
         let stack = UIStackView.verticalStack(arrangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
@@ -108,7 +132,8 @@ class StopHeaderView: UIView {
             stack.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: ThemeMetrics.padding),
-            stack.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor)
+            stack.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -ThemeMetrics.padding),
+            stack.heightAnchor.constraint(lessThanOrEqualToConstant: StopHeaderView.mapSnapshotHeight)
         ])
     }
 
@@ -122,22 +147,23 @@ class StopHeaderView: UIView {
 
     public func configureView() {
         guard let config = config else { return }
-        let maxWidth = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let size = CGSize(width: maxWidth, height: headerHeight)
 
-        snapshotter = MapSnapshotter(size: size, stopIconFactory: config.application.stopIconFactory)
+        let width = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
+        let size = CGSize(width: width, height: StopHeaderView.mapSnapshotHeight)
 
-        snapshotter?.snapshot(stop: config.stop, traitCollection: traitCollection) { [weak self] image in
+        snapshotter = MapSnapshotter(size: size, stopIconFactory: config.viewModel.stopIconFactory)
+
+        snapshotter?.snapshot(stop: config.viewModel.stop, traitCollection: traitCollection) { [weak self] image in
             self?.backgroundImageView.image = image
         }
 
-        stopNameLabel.text = config.stop.name
-        stopNumberLabel.text = Formatters.formattedCodeAndDirection(stop: config.stop)
-        routesLabel.text = Formatters.formattedRoutes(config.stop.routes)
+        stopNameLabel.text = config.viewModel.stopName
+        stopNumberLabel.text = config.viewModel.stopNumber
+        routesLabel.text = config.viewModel.subtitleText
 
         isAccessibilityElement = true
         accessibilityTraits = [.summaryElement, .header, .staticText]
-        accessibilityLabel = config.stop.name
+        accessibilityLabel = config.viewModel.stopName
         accessibilityValue = [stopNumberLabel.text, routesLabel.text].compactMap {$0}.joined(separator: " ")
     }
 
