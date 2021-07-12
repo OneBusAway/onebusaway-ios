@@ -41,6 +41,22 @@ class MapSnapshotter: NSObject {
         options.region = MapHelpers.coordinateRegionWith(center: stop.coordinate, zoomLevel: zoomLevel, size: size)
         options.scale = scale
         options.mapType = mapType
+
+        // POIs to show are public services and first/last-mile transportation (car rental & car parking)
+        options.pointOfInterestFilter = MKPointOfInterestFilter(including: [
+            .airport,
+            .beach,
+            .carRental,
+            .hospital,
+            .library,
+            .nationalPark,
+            .park,
+            .parking,
+            .school,
+            .stadium,
+            .university
+        ])
+
         options.traitCollection = traitCollection
 
         return options
