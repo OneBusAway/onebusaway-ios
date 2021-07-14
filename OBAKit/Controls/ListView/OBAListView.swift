@@ -300,12 +300,16 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
             if section.hasHeader {
                 let header = OBAListViewHeader(id: section.id, title: section.title, isCollapsible: section.collapseState != nil).typeErased
-                sectionSnapshot.append([header])
-                sectionSnapshot.append(section.contents, to: header)
 
-                // If the section is collapsible, account for its state.
-                // Otherwise, show all items.
+                // If the section is collapsible, attach contents to the header item.
+                // Otherwise, treat both header item and contents as equals.
+                //
+                // This was an attempt to fix #421 -- OBAListView DiffableDataSource can't find item index of headers,
+                // it is a partial fix because only BookmarksViewController has this problem now.
+                // Related: https://stackoverflow.com/q/64089384
                 if let collapsedState = section.collapseState {
+                    sectionSnapshot.append([header])
+                    sectionSnapshot.append(section.contents, to: header)
                     switch collapsedState {
                     case .collapsed:
                         sectionSnapshot.collapse([header])
@@ -313,7 +317,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
                         sectionSnapshot.expand([header])
                     }
                 } else {
-                    sectionSnapshot.expand([header])
+                    sectionSnapshot.append([header])
+                    sectionSnapshot.append(section.contents)
                 }
             } else {
                 sectionSnapshot.append(section.contents)
