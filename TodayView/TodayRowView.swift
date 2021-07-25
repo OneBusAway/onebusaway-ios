@@ -36,7 +36,7 @@ class TodayRowView: UIView {
 
     private lazy var hairline: UIView = {
         let view = UIView.autolayoutNew()
-        view.backgroundColor = UIColor(white: 1.0, alpha: 0.25)
+        view.backgroundColor = ThemeColors.shared.separator
 
         NSLayoutConstraint.activate([
             view.heightAnchor.constraint(equalToConstant: 0.5)
@@ -48,6 +48,7 @@ class TodayRowView: UIView {
     private lazy var outerStack: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [hairline, outerLabelStack])
         stack.axis = .vertical
+        stack.spacing = ThemeMetrics.compactPadding
 
         return stack
     }()

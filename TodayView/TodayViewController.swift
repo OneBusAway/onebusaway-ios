@@ -13,6 +13,7 @@ import OBAKitCore
 
 let kMinutes: UInt = 60
 
+@available(iOS, deprecated: 14.0)
 class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProviding {
     // MARK: - App Context
     private let formatters = Formatters(
@@ -90,7 +91,7 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
     private lazy var refreshControl: TodayRefreshView = {
         let refresh = TodayRefreshView.autolayoutNew()
         refresh.lastUpdatedAt = lastUpdatedAt
-        refresh.addTarget(self, action: #selector(beginRefreshing), for: .touchUpInside)
+        refresh.refreshButton.addTarget(self, action: #selector(beginRefreshing), for: .touchUpInside)
         return refresh
     }()
 
@@ -145,7 +146,7 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
     private func viewForBookmark(_ bookmark: Bookmark, index: Int) -> TodayRowView {
         let v = TodayRowView(frame: .zero, formatters: formatters)
         v.translatesAutoresizingMaskIntoConstraints = false
-        v.addGestureRecognizer(UITapGestureRecognizer.init(target: self, action: #selector(TodayViewController.bookmarkTapped(sender:))))
+        v.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(TodayViewController.bookmarkTapped(sender:))))
         v.bookmark = bookmark
         v.setContentHuggingPriority(.defaultHigh, for: .vertical)
         v.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
@@ -187,11 +188,11 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
         extensionContext?.open(url, completionHandler: nil)
     }
 
-    private static func buildStackView() -> UIStackView {
+    private static func buildStackView(spacing: CGFloat = ThemeMetrics.compactPadding) -> UIStackView {
         let stack = UIStackView()
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
-        stack.spacing = ThemeMetrics.compactPadding
+        stack.spacing = spacing
 
         return stack
     }
@@ -215,9 +216,11 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
         // Calculate the number of bookmarks to display given the display mode.
         // This varies depending on the number of lines the bookmark name is using.
 
-        let padding = ThemeMetrics.padding
-        let frontMatterSize = self.frontMatterWrapper.systemLayoutSizeFitting(maximumSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .defaultHigh)
-        let heightAvailableForBookmarks = maximumSize.height - frontMatterSize.height - padding
+        frontMatterWrapper.setNeedsLayout()
+        frontMatterWrapper.layoutIfNeeded()
+        let frontMatterHeight = frontMatterWrapper.frame.height
+
+        let heightAvailableForBookmarks = maximumSize.height - frontMatterHeight
 
         var numberOfBookmarksToDisplay: Int = 0
         if displayMode == .compact {
@@ -242,7 +245,7 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
 
         let bookmarksSize = self.bookmarkWrapper.systemLayoutSizeFitting(maximumSize, withHorizontalFittingPriority: .required, verticalFittingPriority: .defaultHigh)
 
-        self.preferredContentSize = CGSize(width: frontMatterSize.width, height: frontMatterSize.height + bookmarksSize.height + padding)
+        self.preferredContentSize = CGSize(width: 10000, height: frontMatterHeight + bookmarksSize.height)
     }
 
     // MARK: - Refresh Control UI
