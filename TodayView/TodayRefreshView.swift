@@ -9,40 +9,38 @@
 import UIKit
 import OBAKitCore
 
-class TodayRefreshView: UIControl {
+class TodayRefreshView: UIView {
 
     // MARK: - UI Components
 
     private lazy var lastUpdatedLabel: UILabel = {
         let label = UILabel()
         label.font = .preferredFont(forTextStyle: .footnote)
+        label.textColor = .secondaryLabel
         return label
     }()
 
-    private lazy var refreshImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "arrow.clockwise"))
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private lazy var activityView: UIActivityIndicatorView = {
-        let activity = UIActivityIndicatorView(style: .medium)
-        activity.hidesWhenStopped = true
-        return activity
-    }()
-
-    private lazy var refreshLabel: UILabel = {
-        let label = UILabel()
-        label.text = Strings.refresh
-        label.font = .preferredFont(forTextStyle: .footnote)
-        return label
+    lazy var refreshButton: UIButton = {
+        let button = UIButton.autolayoutNew()
+        button.setImage(UIImage(systemName: "arrow.clockwise"), for: .normal)
+        button.setTitle(Strings.refresh, for: .normal)
+        button.setTitle(Strings.updating, for: .disabled)
+        button.backgroundColor = ThemeColors.shared.brand
+        button.layer.cornerRadius = 4.0
+        button.imageView?.contentMode = .scaleAspectFit
+        button.setTitleColor(.lightText, for: .normal)
+        button.tintColor = .lightText
+        button.titleLabel?.font = UIFont.preferredFont(forTextStyle: UIFont.TextStyle.footnote).bold
+        button.contentEdgeInsets = UIEdgeInsets(top: 2, left: 4, bottom: 2, right: 4)
+        button.isUserInteractionEnabled = true
+        return button
     }()
 
     private lazy var stackView: UIStackView = {
         let spacer = UIView.init()
-        let stack = UIStackView(arrangedSubviews: [lastUpdatedLabel, spacer, refreshImageView, activityView, refreshLabel])
+        let stack = UIStackView(arrangedSubviews: [lastUpdatedLabel, spacer, refreshButton])
         stack.spacing = ThemeMetrics.ultraCompactPadding
-        stack.isUserInteractionEnabled = false
+        stack.isUserInteractionEnabled = true
         NSLayoutConstraint.activate([
             stack.heightAnchor.constraint(greaterThanOrEqualToConstant: 20)
         ])
@@ -104,15 +102,10 @@ class TodayRefreshView: UIControl {
 // MARK: - Refresh
 extension TodayRefreshView {
     public func beginRefreshing() {
-        refreshImageView.isHidden = true
-        activityView.startAnimating()
-
-        refreshLabel.text = Strings.updating
+        refreshButton.isEnabled = false
     }
 
     public func stopRefreshing() {
-        activityView.stopAnimating()
-        refreshImageView.isHidden = false
-        refreshLabel.text = Strings.refresh
+        refreshButton.isEnabled = true
     }
 }
