@@ -15,14 +15,19 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
         var displayText: String
         var backgroundColor: CGColor
 
-        public init(arrivalDepartureMinutes: Int, temporalState: TemporalState, scheduleStatus: ScheduleStatus, formatters: Formatters) {
-            self.accessibilityLabel = formatters.formattedTimeUntilArrivalDeparture(arrivalDepartureMinutes: arrivalDepartureMinutes, temporalState: temporalState)
+        public init(arrivalDepartureMinutes: Int,
+                    arrivalDepartureStatus: ArrivalDepartureStatus,
+                    temporalState: TemporalState,
+                    scheduleStatus: ScheduleStatus,
+                    formatters: Formatters) {
+            self.accessibilityLabel = formatters.explanationForArrivalDeparture(tempuraState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDepartureMinutes)
             self.displayText = formatters.shortFormattedTime(untilMinutes: arrivalDepartureMinutes, temporalState: temporalState)
             self.backgroundColor = formatters.backgroundColorForScheduleStatus(scheduleStatus).cgColor
         }
 
         public init(withArrivalDeparture arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
             self.init(arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes,
+                      arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus,
                       temporalState: arrivalDeparture.temporalState,
                       scheduleStatus: arrivalDeparture.scheduleStatus,
                       formatters: formatters)
