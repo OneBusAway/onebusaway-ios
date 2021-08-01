@@ -197,7 +197,12 @@ struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
 
     var departureTimeBadgeConfiguration: DepartureTimeBadge.Configuration? {
         guard let formatters = formatters else { return nil }
-        return DepartureTimeBadge.Configuration(arrivalDepartureMinutes: viewModel.arrivalDepartureMinutes, temporalState: viewModel.temporalState, scheduleStatus: viewModel.scheduleStatus, formatters: formatters)
+        return DepartureTimeBadge.Configuration(
+            arrivalDepartureMinutes: viewModel.arrivalDepartureMinutes,
+            arrivalDepartureStatus: viewModel.arrivalDepartureStatus,
+            temporalState: viewModel.temporalState,
+            scheduleStatus: viewModel.scheduleStatus,
+            formatters: formatters)
     }
 
     var accessibilityLabel: String? {
