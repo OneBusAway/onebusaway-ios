@@ -51,6 +51,7 @@ class TripSegmentView: UIView {
     public func setDestinationStatus(user: Bool, vehicle: Bool) {
         isUserDestination = user
         isCurrentVehicleLocation = vehicle
+        setAccessibilityLabel()
         setNeedsDisplay()
     }
 
@@ -140,6 +141,22 @@ class TripSegmentView: UIView {
         let image = Icons.transportIcon(from: routeType).tinted(color: imageColor)
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
     }
+
+    private func setAccessibilityLabel() {
+        var flags: [String] = []
+
+        if isUserDestination {
+            flags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
+        }
+
+        if isCurrentVehicleLocation {
+            flags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
+        }
+
+        let joined = flags.joined(separator: ", ")
+        accessibilityLabel = joined.isEmpty ? nil : joined
+        isAccessibilityElement = !joined.isEmpty
+    }
 }
 
 #if DEBUG
@@ -147,53 +164,31 @@ import SwiftUI
 import OBAKitCore
 
 struct TripSegmentView_Previews: PreviewProvider {
-    private static let standardTripSegmentView: TripSegmentView = {
-        return TripSegmentView()
-    }()
-
-    private static let userTripSegmentView: TripSegmentView = {
-        let view = TripSegmentView()
-        view.setDestinationStatus(user: true, vehicle: false)
-        return view
-    }()
-
-    private static let vehicleTripSegmentView: TripSegmentView = {
-        let view = TripSegmentView()
-        view.setDestinationStatus(user: false, vehicle: true)
-        return view
-    }()
-
-    private static let userVehicleTripSegmentView: TripSegmentView = {
-        let view = TripSegmentView()
-        view.setDestinationStatus(user: true, vehicle: true)
-        return view
-    }()
-
     private static let width: CGFloat = 64
     private static let height: CGFloat = 44
 
+    private static func tripSegmentView(user: Bool, vehicle: Bool) -> TripSegmentView {
+        let view = TripSegmentView()
+        view.setDestinationStatus(user: user, vehicle: vehicle)
+        return view
+    }
+
+    private static func preview(for view: TripSegmentView, _ description: String) -> some View {
+        VStack {
+            UIViewPreview { view }
+                .frame(width: width, height: height, alignment: .center)
+            Text(description)
+            Text(view.accessibilityLabel ?? "No VoiceOver label")
+                .font(.caption)
+        }.fixedSize()
+    }
+
     static var previews: some View {
         HStack {
-            VStack {
-                UIViewPreview { standardTripSegmentView }
-                    .frame(width: width, height: height, alignment: .center)
-                Text("Standard")
-            }
-            VStack {
-                UIViewPreview { userTripSegmentView }
-                    .frame(width: width, height: height, alignment: .center)
-                Text("User")
-            }
-            VStack {
-                UIViewPreview { vehicleTripSegmentView }
-                    .frame(width: width, height: height, alignment: .center)
-                Text("Vehicle")
-            }
-            VStack {
-                UIViewPreview { userVehicleTripSegmentView }
-                    .frame(width: width, height: height, alignment: .center)
-                Text("User & Vehicle")
-            }
+            preview(for: tripSegmentView(user: false, vehicle: false), "Standard")
+            preview(for: tripSegmentView(user: true, vehicle: false), "User")
+            preview(for: tripSegmentView(user: false, vehicle: true), "Vehicle")
+            preview(for: tripSegmentView(user: true, vehicle: true), "User & Vehicle")
         }
         .previewLayout(.sizeThatFits)
         .padding()
