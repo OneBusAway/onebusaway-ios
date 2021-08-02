@@ -51,6 +51,7 @@ class TripSegmentView: UIView {
     public func setDestinationStatus(user: Bool, vehicle: Bool) {
         isUserDestination = user
         isCurrentVehicleLocation = vehicle
+        setAccessibilityLabel()
         setNeedsDisplay()
     }
 
@@ -139,6 +140,22 @@ class TripSegmentView: UIView {
     private func drawRouteType(_ routeType: Route.RouteType, frame: CGRect) {
         let image = Icons.transportIcon(from: routeType).tinted(color: imageColor)
         image.draw(in: frame.insetBy(dx: imageInset, dy: imageInset))
+    }
+
+    private func setAccessibilityLabel() {
+        var flags: [String] = []
+
+        if isUserDestination {
+            flags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
+        }
+
+        if isCurrentVehicleLocation {
+            flags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
+        }
+
+        let joined = flags.joined(separator: ", ")
+        accessibilityLabel = joined.isEmpty ? nil : joined
+        isAccessibilityElement = !joined.isEmpty
     }
 }
 
