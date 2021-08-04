@@ -337,8 +337,8 @@ public class MapViewController: UIViewController,
     }
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
-    private lazy var floatingPanel: FloatingPanelController = {
-        let panel = FloatingPanelController(delegate: self)
+    private lazy var floatingPanel: OBAFloatingPanelController = {
+        let panel = OBAFloatingPanelController(delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
         panel.surfaceView.backgroundColor = .clear
