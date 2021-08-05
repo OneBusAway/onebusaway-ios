@@ -49,7 +49,7 @@ public class Strings: NSObject {
 
     public static let migrateData = OBALoc("common.migrate_data", value: "Migrate Data", comment: "A title or command for upgrading data from older versions of OBA.")
 
-    public static let migrateDataDescription = OBALoc("common.migrate_data_description", value: "Upgrade your recent stops and bookmarks to work with the latest version of the app.", comment: "An explanation about what the Migrate Data feature does.")
+    public static let migrateDataDescription = OBALoc("common.migrate_data_description", value: "Upgrade your recent stops and bookmarks to work with the latest version of the app. (Requires an internet connection.)", comment: "An explanation about what the Migrate Data feature does.")
 
     public static let more = OBALoc("common.more", value: "More", comment: "As in 'see more' or 'learn more'.")
 
@@ -84,6 +84,8 @@ public class Strings: NSObject {
     public static let emptyBookmarkTitle = OBALoc("common.empty_bookmark_set.title", value: "No Bookmarks", comment: "Title for the bookmark empty set indicator.")
 
     public static let emptyBookmarkBody = OBALoc("common.empty_bookmark_set.body", value: "Add a bookmark for a stop or trip to easily access it here.", comment: "Body for the bookmark empty set indicator.")
+
+    public static let emptyBookmarkBodyWithPendingMigration = OBALoc("common.empty_bookmark_set.body_with_pending_migration", value: "Go to the More tab > Settings > Migrate Data to see your bookmarks appear here.", comment: "Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app.")
 
     public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
 }
