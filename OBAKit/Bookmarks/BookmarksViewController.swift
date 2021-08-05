@@ -170,7 +170,11 @@ public class BookmarksViewController: UIViewController,
     }
 
     public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        return .standard(.init(title: Strings.emptyBookmarkTitle, body: Strings.emptyBookmarkBody))
+        let body = application.hasDataToMigrate ?
+            Strings.emptyBookmarkBodyWithPendingMigration :
+            Strings.emptyBookmarkBody
+
+        return .standard(.init(title: Strings.emptyBookmarkTitle, body: body))
     }
 
     // MARK: - Bookmark Actions

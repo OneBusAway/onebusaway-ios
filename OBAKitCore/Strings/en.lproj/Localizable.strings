@@ -58,6 +58,9 @@
 /* Body for the bookmark empty set indicator. */
 "common.empty_bookmark_set.body" = "Add a bookmark for a stop or trip to easily access it here.";
 
+/* Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app. */
+"common.empty_bookmark_set.body_with_pending_migration" = "Go to the More tab > Settings > Migrate Data to see your bookmarks appear here.";
+
 /* Title for the bookmark empty set indicator. */
 "common.empty_bookmark_set.title" = "No Bookmarks";
 
@@ -80,7 +83,7 @@
 "common.migrate_data" = "Migrate Data";
 
 /* An explanation about what the Migrate Data feature does. */
-"common.migrate_data_description" = "Upgrade your recent stops and bookmarks to work with the latest version of the app.";
+"common.migrate_data_description" = "Upgrade your recent stops and bookmarks to work with the latest version of the app. (Requires an internet connection.)";
 
 /* As in 'see more' or 'learn more'. */
 "common.more" = "More";

@@ -103,6 +103,24 @@
 /* A button that says continue and don't show again. */
 "fare_payments.dont_show_again" = "Continue and Don't Show Again";
 
+/* A voiceover title describing the 'grabber' for controlling the visibility of a card. */
+"floating_panel.controller.accessibility_label" = "Card controller";
+
+/* A voiceover title describing the action to minimize (or collapse) the visibility of a card. */
+"floating_panel.controller.collapse_action_name" = "Collapse";
+
+/* A voiceover title describing the action to expand the visibility of a card. */
+"floating_panel.controller.expand_action_name" = "Expand";
+
+/* A voiceover title describing that the card's visibility is taking up the full screen. */
+"floating_panel.controller.position.full" = "Full screen";
+
+/* A voiceover title describing that the card's visibility is taking up half of the screen. */
+"floating_panel.controller.position.half" = "Half screen";
+
+/* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
+"floating_panel.controller.position.minimized" = "Minimized";
+
 /* This button rejects the application's request to see the user's location. */
 "location_permission_bulletin.buttons.deny_permission" = "Maybe Later";
 
@@ -579,6 +597,12 @@
 
 /* Shown on the map when the user taps on a vehicle to indicate we don't know the vehicle's ID. */
 "trip_status_annotation.vehicle_id_unavailable" = "Vehicle ID Unavailable";
+
+/* Voiceover text explaining that this stop is the user's destination */
+"trip_stop.user_destination.accessibility_label" = "Your destination";
+
+/* Voiceover text explaining that the vehicle is currently at this stop */
+"trip_stop.vehicle_location.accessibility_label" = "Vehicle is here";
 
 /* Suggested invocation phrase for Siri Shortcut */
 "user_activity_builder.show_me_my_bus" = "Show me my bus";
