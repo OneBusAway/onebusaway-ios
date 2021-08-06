@@ -116,10 +116,6 @@ Now, replace the file `OBAKitCore/Models/Protobuf/gtfs-realtime.proto` with the 
 
 You can find the latest version of the GTFS-RT protobuf file in the https://github.com/google/transit/ repository.
 
-# App Store Graphics
-
-[The App Store page for OneBusAway](https://apps.apple.com/us/app/onebusaway/id329380089) uses the [Hotpot.ai](https://hotpot.ai) to generate its nifty panoramic screenshots.
-
 # Third Party Libraries
 
 These are third party libraries directly included inside of this project.
