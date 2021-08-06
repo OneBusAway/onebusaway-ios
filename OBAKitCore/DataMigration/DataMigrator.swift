@@ -206,8 +206,14 @@ public class DataMigrator: NSObject {
         currentRegion: Region,
         apiService: RESTAPIService
     ) -> [DecodableOperation<RESTAPIResponse<StopArrivals>>] {
-        return bookmarks.map { migrationBookmark -> DecodableOperation<RESTAPIResponse<StopArrivals>> in
-            let tripKey = TripBookmarkKey(migrationBookmark: migrationBookmark)
+        return bookmarks.compactMap { migrationBookmark -> DecodableOperation<RESTAPIResponse<StopArrivals>>? in
+            guard
+                !migrationBookmark.isStopBookmark,
+                let tripKey = TripBookmarkKey(migrationBookmark: migrationBookmark)
+            else {
+                return nil
+            }
+
             let op = apiService.getArrivalsAndDeparturesForStop(id: migrationBookmark.stopID, minutesBefore: 0, minutesAfter: 60, enqueue: false)
 
             op.complete { [weak self] result in
