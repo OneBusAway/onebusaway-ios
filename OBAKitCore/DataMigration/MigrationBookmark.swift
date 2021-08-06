@@ -15,21 +15,22 @@ import Foundation
     public let name: String
     public let stopID: String
     public let regionID: Int?
-    public let routeShortName: String
-    public let tripHeadsign: String
-    public let routeID: String
+    public let routeShortName: String?
+    public let tripHeadsign: String?
+    public let routeID: String?
     public let sortOrder: Int?
 
     required public init?(coder: NSCoder) {
         guard
             let name = coder.decodeObject(forKey: "name") as? String,
-            let stopID = coder.decodeObject(forKey: "stopId") as? String,
-            let regionID = coder.decodeObject(forKey: "regionIdentifier") as? Int?,
-            let routeShortName = coder.decodeObject(forKey: "routeShortName") as? String,
-            let tripHeadsign = coder.decodeObject(forKey: "tripHeadsign") as? String,
-            let routeID = coder.decodeObject(forKey: "routeID") as? String,
-            let sortOrder = coder.decodeObject(forKey: "sortOrder") as? Int?
+            let stopID = coder.decodeObject(forKey: "stopId") as? String
         else { return nil }
+
+        let routeID = coder.decodeObject(forKey: "routeID") as? String
+        let regionID = coder.decodeObject(forKey: "regionIdentifier") as? Int
+        let routeShortName = coder.decodeObject(forKey: "routeShortName") as? String
+        let tripHeadsign = coder.decodeObject(forKey: "tripHeadsign") as? String
+        let sortOrder = coder.decodeObject(forKey: "sortOrder") as? Int
 
         self.name = name
         self.stopID = stopID
@@ -41,6 +42,12 @@ import Foundation
     }
 
     public func encode(with coder: NSCoder) { fatalError("This class only supports initialization of an old object. You can't save it back!") }
+
+    /// We are not migrating stop bookmarks at this time.
+    /// I have logged a bug on this: https://github.com/OneBusAway/OBAKit/issues/441
+    public var isStopBookmark: Bool {
+        return routeShortName == nil || tripHeadsign == nil
+    }
 }
 
 // MARK: - MigrationBookmarkGroup
@@ -75,8 +82,16 @@ import Foundation
 // MARK: - Initializer Extensions
 
 extension TripBookmarkKey {
-    init(migrationBookmark: MigrationBookmark) {
-        self.init(stopID: migrationBookmark.stopID, routeShortName: migrationBookmark.routeShortName, routeID: migrationBookmark.routeID, tripHeadsign: migrationBookmark.tripHeadsign)
+    init?(migrationBookmark: MigrationBookmark) {
+        guard
+            let routeShortName = migrationBookmark.routeShortName,
+            let tripHeadsign = migrationBookmark.tripHeadsign,
+            let routeID = migrationBookmark.routeID
+        else {
+            return nil
+        }
+
+        self.init(stopID: migrationBookmark.stopID, routeShortName: routeShortName, routeID: routeID, tripHeadsign: tripHeadsign)
     }
 }
 
