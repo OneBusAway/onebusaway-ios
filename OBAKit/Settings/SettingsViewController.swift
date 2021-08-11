@@ -50,6 +50,8 @@ class SettingsViewController: FormViewController {
             form +++ migrateDataSection
         }
 
+        form +++ exportDataSection
+
         form.setValues([
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
@@ -174,6 +176,34 @@ class SettingsViewController: FormViewController {
             $0.onCellSelection { [weak self] _, _ in
                 guard let self = self else { return }
                 self.application.performDataMigration()
+            }
+        }
+
+        return section
+    }()
+
+    // MARK: - Exports Defaults Section
+
+    private lazy var exportDataSection: Section = {
+        let section = Section(header: nil, footer: nil)
+
+        section <<< ButtonRow("export_data") {
+            $0.title = Strings.exportData
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self = self else { return }
+
+                let dict = self.application.userDefaults.dictionaryRepresentation()
+
+                do {
+                    let data = try PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)
+                    let tmpDirURL = FileManager.default.temporaryDirectory
+                    let xmlPath = tmpDirURL.appendingPathComponent("userdefaults.xml")
+                    try data.write(to: xmlPath)
+                    let activity = UIActivityViewController(activityItems: [xmlPath], applicationActivities: nil)
+                    self.present(activity, animated: true, completion: nil)
+                } catch let ex {
+                    AlertPresenter.show(error: ex, presentingController: self)
+                }
             }
         }
 

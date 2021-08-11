@@ -39,6 +39,8 @@ public class Strings: NSObject {
 
     public static let error = OBALoc("common.error", value: "Error", comment: "The noun 'error', as in 'something went wrong'.")
 
+    public static let exportData = OBALoc("common.export_data", value: "Export Data", comment: "The title of a button that exports all of the user's data into a file.")
+
     public static let filter = OBALoc("common.filter", value: "Filter", comment: "The verb 'to filter'.")
 
     public static let learnMore = OBALoc("common.learn_more", value: "Learn More", comment: "This is button text that tells the user they can tap on it to learn more about the topic at hand.")
