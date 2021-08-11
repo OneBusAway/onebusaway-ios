@@ -67,6 +67,9 @@
 /* The noun 'error', as in 'something went wrong'. */
 "common.error" = "Error";
 
+/* The title of a button that exports all of the user's data into a file. */
+"common.export_data" = "Export Data";
+
 /* The verb 'to filter'. */
 "common.filter" = "Filter";
 
