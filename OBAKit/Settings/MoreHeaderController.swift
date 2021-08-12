@@ -120,10 +120,36 @@ final class MoreHeaderView: UIView {
         supportUsLabel.text = OBALoc("more_header.support_us_label_text", value: "This app is made and supported by volunteers.", comment: "Explanation about how this app is built and maintained by volunteers.")
 
         addSubview(stackView)
-        stackView.pinToSuperview(.layoutMargins)
+
+        let topAnchor = stackView.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor)
+        topAnchor.priority = .defaultLow
+
+        let bottomAnchor = stackView.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor)
+        bottomAnchor.priority = .defaultLow
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: layoutMarginsGuide.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
+            stackView.centerYAnchor.constraint(equalTo: layoutMarginsGuide.centerYAnchor),
+            topAnchor,
+            bottomAnchor
+        ])
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 }
+
+#if DEBUG
+import SwiftUI
+
+struct MoreHeaderView_Previews: PreviewProvider {
+    static var previews: some View {
+        UIViewPreview {
+            MoreHeaderView()
+        }.previewLayout(.sizeThatFits)
+    }
+}
+
+#endif

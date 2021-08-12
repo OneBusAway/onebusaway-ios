@@ -23,6 +23,8 @@ class TripViewController: UIViewController,
 
     private let tripConvertible: TripConvertible
 
+    private let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
+
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
         self.tripConvertible = tripConvertible
@@ -281,6 +283,7 @@ class TripViewController: UIViewController,
             switch result {
             case .failure(let error):
                 self.application.displayError(error)
+                self.dataLoadFeedbackGenerator.dataLoad(.failed)
             case .success(let response):
                 self.tripDetailsController.tripDetails = response.entry
                 self.mapView.updateAnnotations(with: response.entry.stopTimes)
@@ -307,6 +310,8 @@ class TripViewController: UIViewController,
                         self.floatingPanel.move(to: .half, animated: true)
                     }
                 }
+
+                self.dataLoadFeedbackGenerator.dataLoad(.success)
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton
