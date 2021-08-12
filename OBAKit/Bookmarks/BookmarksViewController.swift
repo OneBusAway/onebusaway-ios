@@ -47,6 +47,7 @@ public class BookmarksViewController: UIViewController,
     }
 
     public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
+    fileprivate let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
 
     let listView = OBAListView()
 
@@ -277,6 +278,9 @@ public class BookmarksViewController: UIViewController,
 
     public func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader) {
         listView.applyData(animated: false)
+
+        // TOOD: handle error cases. currently, this view is not notified of an error.
+        dataLoadFeedbackGenerator.dataLoad(.success)
     }
 
     // MARK: - Notifications

@@ -435,6 +435,8 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data Loading
 
+    private let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
+
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {
         operation?.cancel()
@@ -453,8 +455,10 @@ public class StopViewController: UIViewController,
             case (true, _):
                 self.isBrokenBookmark = true
                 self.listView.applyData()
+                self.dataLoadFeedbackGenerator.dataLoad(.failed)
             case (_, .failure(let error)):
                 self.operationError = error
+                self.dataLoadFeedbackGenerator.dataLoad(.failed)
             case (false, .success(let response)):
                 self.operationError = nil
                 self.lastUpdated = Date()
@@ -465,6 +469,8 @@ public class StopViewController: UIViewController,
                 if response.entry.arrivalsAndDepartures.count == 0 {
                     self.extendLoadMoreWindow()
                 }
+
+                self.dataLoadFeedbackGenerator.dataLoad(.success)
             }
         }
 
