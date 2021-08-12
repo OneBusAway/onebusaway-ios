@@ -101,7 +101,7 @@ final class EmptyDataSetCell: OBAListViewCell {
         emptyDataView = EmptyDataSetView(alignment: config.viewModel.alignment)
         emptyDataView.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(emptyDataView)
-        emptyDataView.pinToSuperview(.readableContent)
+        emptyDataView.pinToSuperview(.readableContent, insets: NSDirectionalEdgeInsets(top: ThemeMetrics.padding, leading: 0, bottom: ThemeMetrics.padding, trailing: 0))
 
         emptyDataView.titleLabel.text = config.viewModel.title
         emptyDataView.bodyLabel.text = config.viewModel.body
