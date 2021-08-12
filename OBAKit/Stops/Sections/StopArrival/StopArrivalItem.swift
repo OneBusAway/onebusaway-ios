@@ -38,10 +38,10 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     let isAlarmAvailable: Bool
     let isDeepLinkingAvailable: Bool
-    
+
     /// Real-time occupancy status information.
     let occupancyStatus: ArrivalDeparture.OccupancyStatus?
-    
+
     /// Historical occupancy status information.
     let historicalOccupancyStatus: ArrivalDeparture.OccupancyStatus?
 
@@ -115,7 +115,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.arrivalDepartureDate = arrivalDeparture.arrivalDepartureDate
         self.arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
         self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
-        
+
         self.occupancyStatus = arrivalDeparture.occupancyStatus
         self.historicalOccupancyStatus = arrivalDeparture.historicalOccupancyStatus
 

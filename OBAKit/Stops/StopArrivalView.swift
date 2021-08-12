@@ -148,9 +148,9 @@ class StopArrivalView: UIView {
         ])
         return wrapper
     }()
-    
+
     // MARK: - Occupancy Status
-    
+
     let occupancyStatusView = OccupancyStatusView.autolayoutNew()
 
     // MARK: - Public Properties
@@ -250,7 +250,7 @@ class StopArrivalView: UIView {
         accessibilityTimeLabel.text = contentConfiguration.accessibilityTimeLabelText
         accessibilityScheduleDeviationLabel.text = contentConfiguration.accessibilityScheduleDeviationText
         accessibilityRelativeTimeBadge.configure(contentConfiguration.departureTimeBadgeConfiguration)
-        
+
         if let occupancy = contentConfiguration.viewModel.occupancyStatus, occupancy != .unknown {
             occupancyStatusView.configure(occupancyStatus: occupancy, realtimeData: true)
             infoStack.setCustomSpacing(ThemeMetrics.compactPadding, after: fullExplanationLabel)

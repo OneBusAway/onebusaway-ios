@@ -50,7 +50,7 @@ public struct OBAListViewContextualAction<Item: OBAListViewItem> {
         }
 
         // TODO: adopt uicontextualaction's handler's parameters
-        let action = UIContextualAction(style: style, title: self.title) { action, view, success in
+        let action = UIContextualAction(style: style, title: self.title) { _, _, success in
             guard let handler = self.handler, let item = self.item else { return }
             if hidesWhenSelected {
                 success(true)

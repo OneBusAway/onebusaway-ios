@@ -134,7 +134,7 @@ public class RecentStopsViewController: UIViewController,
                 self.application.viewRouter.navigateTo(stopID: viewModel.id, from: self)
             }
 
-            let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
+            let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] _ in
                 self.application.userDataStore.delete(recentStop: stop)
                 self.listView.applyData(animated: true)
             }

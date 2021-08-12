@@ -126,7 +126,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
-        let registration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, indexPath, item in
+        let registration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, _, _ in
             cell.contentConfiguration = config
             cell.accessories = accessories.compactMap { $0 }
         }
