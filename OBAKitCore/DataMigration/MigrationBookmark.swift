@@ -48,6 +48,19 @@ import Foundation
     public var isStopBookmark: Bool {
         return routeShortName == nil || tripHeadsign == nil
     }
+
+    public override var debugDescription: String {
+        let params: [String: Any?] = [
+            "name": name,
+            "stopID": stopID,
+            "regionID": regionID,
+            "routeShortName": routeShortName,
+            "tripHeadsign": tripHeadsign,
+            "routeID": routeID,
+            "sortOrder": sortOrder
+        ]
+        return "\(super.debugDescription) - \(params)"
+    }
 }
 
 // MARK: - MigrationBookmarkGroup
