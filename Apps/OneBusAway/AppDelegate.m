@@ -35,9 +35,16 @@
         assert(appGroup);
 
         _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:appGroup];
+
         [_userDefaults registerDefaults:@{
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
         }];
+
+//        // If you need to debug a user's NSUserDefaults data, drop the XML file they provide into Xcode's Project Navigator
+//        // with the name "userdefaults.xml". Then, uncomment this section.
+//        NSData *data = [NSData dataWithContentsOfFile:[NSBundle.mainBundle pathForResource:@"userdefaults" ofType:@"xml"]];
+//        NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:data options:0 format:nil error:nil];
+//        [_userDefaults registerDefaults:plist];
 
         _analyticsClient = [[OBAFirebaseAnalytics alloc] initWithUserDefaults:_userDefaults];
 

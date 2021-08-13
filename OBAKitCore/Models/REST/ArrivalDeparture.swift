@@ -178,7 +178,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
         tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
         vehicleID = String.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
-        
+
         occupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .occupancyStatus)
         historicalOccupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .historicalOccupancyStatus)
     }
@@ -316,9 +316,9 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
             return .delayed
         }
     }
-    
+
     // MARK: - Occupancy Status
-    
+
     /// For transit systems that support it, this value represents the current occupancy
     /// of the vehicle represented by this ArrivalDeparture object.
     ///
@@ -328,7 +328,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     /// For transit systems that support it, this value represents the historical occupancy
     /// of the vehicle represented by this ArrivalDeparture object.
     public let historicalOccupancyStatus: OccupancyStatus?
-    
+
     public enum OccupancyStatus: String, Codable {
         case unknown = ""
         case empty = "EMPTY"

@@ -143,29 +143,25 @@ public class DataMigrator: NSObject {
             unqueuedOperations.append(contentsOf: recentStopOperations)
         }
 
-        if let looseBookmarks = extractor.extractBookmarks() {
-            let bookmarkOps = migrateBookmarks(looseBookmarks, group: nil, currentRegion: currentRegion, apiService: apiService)
+        func registerBookmarkOperations(_ ops: [Operation]) {
+            bookmarksOperations.append(contentsOf: ops)
 
-            bookmarksOperations.append(contentsOf: bookmarkOps)
-
-            for op in bookmarkOps {
+            for op in ops {
                 completionOp.addDependency(op)
             }
 
-            unqueuedOperations.append(contentsOf: bookmarkOps)
+            unqueuedOperations.append(contentsOf: ops)
+        }
+
+        if let looseBookmarks = extractor.extractBookmarks() {
+            registerBookmarkOperations(migrateTripBookmarks(looseBookmarks, group: nil, currentRegion: currentRegion, apiService: apiService))
+            registerBookmarkOperations(migrateStopBookmarks(looseBookmarks, group: nil, currentRegion: currentRegion, apiService: apiService))
         }
 
         if let groups = extractor.extractBookmarkGroups() {
             for g in groups {
-                let bookmarkOps = migrateBookmarks(g.bookmarks, group: g, currentRegion: currentRegion, apiService: apiService)
-
-                bookmarksOperations.append(contentsOf: bookmarkOps)
-
-                for op in bookmarkOps {
-                    completionOp.addDependency(op)
-                }
-
-                unqueuedOperations.append(contentsOf: bookmarkOps)
+                registerBookmarkOperations(migrateTripBookmarks(g.bookmarks, group: g, currentRegion: currentRegion, apiService: apiService))
+                registerBookmarkOperations(migrateStopBookmarks(g.bookmarks, group: g, currentRegion: currentRegion, apiService: apiService))
             }
         }
 
@@ -200,7 +196,35 @@ public class DataMigrator: NSObject {
 
     // MARK: - Bookmark
 
-    private func migrateBookmarks(
+    private func migrateStopBookmarks(
+        _ bookmarks: [MigrationBookmark],
+        group: MigrationBookmarkGroup?,
+        currentRegion: Region,
+        apiService: RESTAPIService
+    ) -> [DecodableOperation<RESTAPIResponse<Stop>>] {
+        return bookmarks.compactMap { migrationBookmark -> DecodableOperation<RESTAPIResponse<Stop>>? in
+            guard migrationBookmark.isStopBookmark else {
+                return nil
+            }
+
+            let op = apiService.getStop(id: migrationBookmark.stopID, enqueue: false)
+            op.complete { [weak self] result in
+                guard let self = self else { return }
+
+                switch result {
+                case .failure(let error):
+                    self.failedBookmarks.append((error, migrationBookmark))
+                case .success(let response):
+                    let bookmark = Bookmark(name: migrationBookmark.name, regionIdentifier: currentRegion.regionIdentifier, stop: response.entry)
+                    self.storeBookmark(bookmark, migrationGroup: group)
+                }
+            }
+
+            return op
+        }
+    }
+
+    private func migrateTripBookmarks(
         _ bookmarks: [MigrationBookmark],
         group: MigrationBookmarkGroup?,
         currentRegion: Region,
@@ -248,7 +272,8 @@ public class DataMigrator: NSObject {
 
     private var bookmarks = [Bookmark]()
 
-    private var bookmarksOperations = [DecodableOperation<RESTAPIResponse<StopArrivals>>]()
+    // actually [DecodableOperation<RESTAPIResponse<StopArrivals|Stop>>]
+    private var bookmarksOperations = [AnyObject]()
 
     private var failedBookmarks = [(Error, MigrationBookmark)]()
 
