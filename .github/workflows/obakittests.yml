@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-11
 
     steps:
     - uses: actions/checkout@v2
@@ -21,7 +21,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode 12
-      run: sudo xcode-select -switch /Applications/Xcode_12.4.app
+      run: sudo xcode-select -switch /Applications/Xcode_12.5.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -33,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
         -quiet
 
     # Unit Test
@@ -42,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
     - name: Upload OBAKitTests results
@@ -57,7 +57,7 @@ jobs:
         -only-testing:OBAKitUITests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.4,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
         -resultBundlePath OBAKitUITests.xcresult
         -quiet
 
