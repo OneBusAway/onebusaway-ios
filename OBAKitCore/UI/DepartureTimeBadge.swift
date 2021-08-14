@@ -90,6 +90,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
     }
 
     public func configure(_ config: Configuration?) {
+        isHidden = config == nil
         accessibilityLabel = config?.accessibilityLabel
         text = config?.displayText
         layer.backgroundColor = config?.backgroundColor
