@@ -45,7 +45,7 @@ extension Stop: MKAnnotation {
     }
 
     public var mapTitle: String? {
-        routes.map { $0.shortName }.prefix(3).joined(separator: ", ")
+        return Formatters.formattedRoutes(routes, limit: 3)
     }
 
     public var mapSubtitle: String? {

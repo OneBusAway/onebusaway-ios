@@ -504,19 +504,28 @@ public class Formatters: NSObject {
 
     /// Generates a formatted, human readable list of routes.
     ///
-    /// For example: "Routes: 10, 12, 49".
+    /// For example: "Routes: 10, 12, 49, + 3 more".
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
+    /// - Parameter limit: The number of `Route`s that be displayed in the returned string. By default, this is `Int.max`.
     /// - Returns: A human-readable list of the passed-in `Route`s.
-    public class func formattedRoutes(_ routes: [Route]) -> String? {
+    public class func formattedRoutes(_ routes: [Route], limit: Int = .max) -> String? {
         let routeNames = routes
             .map { $0.shortName }
-            .filter { !$0.isEmpty }     // Some agencies may not provide a shortName (i.e. Washington State Ferries in Puget Sound)
+            .filter { !$0.isEmpty && $0.count > 0 } // Some agencies may not provide a shortName (i.e. Washington State Ferries in Puget Sound)
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        guard routeNames.isEmpty == false else { return nil }
+        guard !routeNames.isEmpty else { return nil }
 
-        let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
-        return String(format: fmt, routeNames.joined(separator: ", "))
+        if routeNames.count > limit {
+            let fmt = OBALoc("formatters.routes_label_plus_more_fmt", value: "Routes: %@, + %d more", comment: "A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more")
+            let shortList = routeNames.prefix(limit).joined(separator: ", ")
+            let overflowCount = routeNames.count - limit
+            return String(format: fmt, shortList, overflowCount)
+        }
+        else {
+            let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
+            return String(format: fmt, routeNames.joined(separator: ", "))
+        }
     }
 
     /// Generates an alphabetical-ordered, formatted, human readable unique list of agencies.

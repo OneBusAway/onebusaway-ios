@@ -35,6 +35,7 @@ class StopAnnotationView: MKAnnotationView {
         let label = UILabel.autolayoutNew()
         label.textAlignment = .center
         label.font = UIFont.mapAnnotationFont
+        label.numberOfLines = 2
         return label
     }
 
