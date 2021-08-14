@@ -83,6 +83,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
     public func prepareForReuse() {
         accessibilityLabel = nil
         text = nil
+        layer.backgroundColor = nil
     }
 
     public func configure(with arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
