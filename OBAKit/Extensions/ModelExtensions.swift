@@ -47,10 +47,6 @@ extension Stop: MKAnnotation {
     public var mapTitle: String? {
         return Formatters.formattedRoutes(routes, limit: 3)
     }
-
-    public var mapSubtitle: String? {
-        Formatters.adjectiveFormOfCardinalDirection(direction)
-    }
 }
 
 // MARK: - TripStatus/MKAnnotation

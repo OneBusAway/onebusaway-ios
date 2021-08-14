@@ -29,7 +29,6 @@ class StopAnnotationView: MKAnnotationView {
     // MARK: - Subviews
 
     private let titleLabel = StopAnnotationView.buildLabel()
-    private let subtitleLabel = StopAnnotationView.buildLabel()
 
     private class func buildLabel() -> UILabel {
         let label = UILabel.autolayoutNew()
@@ -40,7 +39,7 @@ class StopAnnotationView: MKAnnotationView {
     }
 
     private lazy var labelStack: UIStackView = {
-        return UIStackView.verticalStack(arrangedSubviews: [titleLabel, subtitleLabel])
+        return UIStackView.verticalStack(arrangedSubviews: [titleLabel])
     }()
 
     public var isHidingExtraStopAnnotationData: Bool {
@@ -69,7 +68,6 @@ class StopAnnotationView: MKAnnotationView {
         if kUseDebugColors {
             backgroundColor = .red
             titleLabel.backgroundColor = .yellow
-            subtitleLabel.backgroundColor = .orange
         }
 
         rightCalloutAccessoryView = UIButton.chevronButton
@@ -88,7 +86,6 @@ class StopAnnotationView: MKAnnotationView {
         labelStack.isHidden = true
 
         titleLabel.text = nil
-        subtitleLabel.text = nil
     }
 
     public override func prepareForDisplay() {
@@ -106,7 +103,6 @@ class StopAnnotationView: MKAnnotationView {
         image = iconFactory.buildIcon(for: stop, isBookmarked: bookmarked, traits: self.traitCollection)
 
         titleLabel.text = stop.mapTitle
-        subtitleLabel.text = stop.mapSubtitle
 
         let detailLabel = UILabel()
         detailLabel.font = .preferredFont(forTextStyle: .caption1)
