@@ -504,19 +504,63 @@ public class Formatters: NSObject {
 
     /// Generates a formatted, human readable list of routes.
     ///
-    /// For example: "Routes: 10, 12, 49".
+    /// For example: "Routes: 10, 12, 49, + 3 more".
     ///
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
+    /// - Parameter limit: The number of `Route`s that be displayed in the returned string. By default, this is `Int.max`.
     /// - Returns: A human-readable list of the passed-in `Route`s.
-    public class func formattedRoutes(_ routes: [Route]) -> String? {
-        let routeNames = routes
-            .map { $0.shortName }
-            .filter { !$0.isEmpty }     // Some agencies may not provide a shortName (i.e. Washington State Ferries in Puget Sound)
-            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        guard routeNames.isEmpty == false else { return nil }
+    public class func formattedRoutes(_ routes: [Route], limit: Int = .max) -> String? {
+        guard routes.count > 0 else { return nil }
 
-        let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
-        return String(format: fmt, routeNames.joined(separator: ", "))
+        var routeNames = routes
+            .map { $0.shortName }
+            .filter { !$0.isEmpty && $0.count > 0 } // Some agencies may not provide a shortName (i.e. Washington State Ferries in Puget Sound)
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+
+        // If we don't have any shortNames (as is the case with WA State Ferries), then use route types instead.
+        if routeNames.count == 0 {
+            routeNames = routes.map { $0.routeType }.uniqued.compactMap { routeTypeToString($0) }.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        }
+
+        guard !routeNames.isEmpty else {
+            return nil
+        }
+
+        if routeNames.count > limit {
+            let fmt = OBALoc("formatters.routes_label_plus_more_fmt", value: "Routes: %@, + %d more", comment: "A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more")
+            let shortList = routeNames.prefix(limit).joined(separator: ", ")
+            let overflowCount = routeNames.count - limit
+            return String(format: fmt, shortList, overflowCount)
+        }
+        else {
+            let fmt = OBALoc("formatters.routes_label_fmt", value: "Routes: %@", comment: "A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49'")
+            return String(format: fmt, routeNames.joined(separator: ", "))
+        }
+    }
+
+    /// Returns a localized, human-readable string representation of the passed-in route type value.
+    /// - Parameter routeType: A route type, like train, light rail, or bus.
+    public class func routeTypeToString(_ routeType: Route.RouteType) -> String? {
+        switch routeType {
+        case .lightRail:
+            return OBALoc("route_type.light_rail", value: "Light Rail", comment: "Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area.")
+        case .subway:
+            return OBALoc("route_type.subway", value: "Subway", comment: "Subway, Metro. Any underground rail system within a metropolitan area.")
+        case .rail:
+            return OBALoc("route_type.rail", value: "Rail", comment: "Rail. Used for intercity or long-distance travel.")
+        case .bus:
+            return OBALoc("route_type.bus", value: "Bus", comment: "Bus. Used for short- and long-distance bus routes.")
+        case .ferry:
+            return OBALoc("route_type.ferry", value: "Ferry", comment: "Ferry. Used for short- and long-distance boat service.")
+        case .cableCar:
+            return OBALoc("route_type.cable_car", value: "Cable Car", comment: "Cable car. Used for street-level cable cars where the cable runs beneath the car.")
+        case .gondola:
+            return OBALoc("route_type.gondola", value: "Gondola", comment: "Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable.")
+        case .funicular:
+            return OBALoc("route_type.funicular", value: "Funicular", comment: "Funicular. Any rail system designed for steep inclines.")
+        default:
+            return nil
+        }
     }
 
     /// Generates an alphabetical-ordered, formatted, human readable unique list of agencies.

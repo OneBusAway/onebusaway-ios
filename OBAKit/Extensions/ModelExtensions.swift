@@ -38,16 +38,14 @@ extension Stop: MKAnnotation {
         Formatters.formattedTitle(stop: self)
     }
 
+    /// The subtitle for a `Stop` as an `MKAnnotation` is a formatted list of `Route`s served by this `Stop`,
+    /// plus the value of `Stop.code`, which is the transit rider-visible stop ID number.
     public var subtitle: String? {
-        Formatters.formattedRoutes(routes)
+        ["#\(code)", Formatters.formattedRoutes(routes)].compactMap {$0}.joined(separator: "\n")
     }
 
     public var mapTitle: String? {
-        routes.map { $0.shortName }.prefix(3).joined(separator: ", ")
-    }
-
-    public var mapSubtitle: String? {
-        Formatters.adjectiveFormOfCardinalDirection(direction)
+        return Formatters.formattedRoutes(routes, limit: 3)
     }
 }
 
