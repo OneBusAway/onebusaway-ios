@@ -153,8 +153,13 @@ class TripViewController: UIViewController,
             return
         }
 
+        let parts = [tripStatus.vehicleID, tripStatus.activeTrip.route.shortName].compactMap { $0 }
+
+        if parts.count > 0 {
+            titleView.topLabel.text = parts.joined(separator: " - ")
+        }
+
         if let vehicleID = tripStatus.vehicleID {
-            titleView.topLabel.text = vehicleID
             title = vehicleID
         }
 
