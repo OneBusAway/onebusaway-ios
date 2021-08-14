@@ -247,6 +247,9 @@
 /* A format string used to denote the list of routes served by this stop. e.g. 'Routes: 10, 12, 49' */
 "formatters.routes_label_fmt" = "Routes: %@";
 
+/* A format string used to denote the overflowing list of routes served by this stop. e.g. 'Routes: 10, 12, 49, + 3 more */
+"formatters.routes_label_plus_more_fmt" = "Routes: %1$@, + %2$d more";
+
 /* Placeholder text for the search bar: 'Search in {REGION NAME}' */
 "formatters.search_bar_placeholder_fmt" = "Search in %@";
 
@@ -261,6 +264,30 @@
 
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d minutes";
+
+/* Bus. Used for short- and long-distance bus routes. */
+"route_type.bus" = "Bus";
+
+/* Cable car. Used for street-level cable cars where the cable runs beneath the car. */
+"route_type.cable_car" = "Cable Car";
+
+/* Ferry. Used for short- and long-distance boat service. */
+"route_type.ferry" = "Ferry";
+
+/* Funicular. Any rail system designed for steep inclines. */
+"route_type.funicular" = "Funicular";
+
+/* Gondola, Suspended cable car. Typically used for aerial cable cars where the car is suspended from the cable. */
+"route_type.gondola" = "Gondola";
+
+/* Tram, Streetcar, Light rail. Any light rail or street level system within a metropolitan area. */
+"route_type.light_rail" = "Light Rail";
+
+/* Rail. Used for intercity or long-distance travel. */
+"route_type.rail" = "Rail";
+
+/* Subway, Metro. Any underground rail system within a metropolitan area. */
+"route_type.subway" = "Subway";
 
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Location is wrong";
