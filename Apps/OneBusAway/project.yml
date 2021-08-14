@@ -69,7 +69,6 @@ targets:
     settings:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
-        MARKETING_VERSION: 21.1.1
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
   TodayView:
     sources: ["Apps/OneBusAway/Assets.xcassets"]
@@ -80,7 +79,6 @@ targets:
     info:
       properties:
         CFBundleDisplayName: OneBusAway
-        CFBundleShortVersionString: 21.1.1
         OBAKitConfig:
           AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
