@@ -209,25 +209,14 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
             var configuration = sectionModel.configuration.listConfiguration()
             configuration.headerMode = sectionModel.hasHeader ? .firstItemInSection : .none
 
-            // #398 - list view separators always appears on iOS 14.4
-            // Necessary for CI compatibility. Remove check when CI is fixed.
-            // Also, remove availability checks in OBAListRowSeparatorConfiguration.swift.
-            //
-            // CI uses Xcode 12.4 (swift 5.3), which doesn't contain iOS 14.5 API,
-            // causing the code below to fail to compile.
-            // The block below builds on Xcode 12.5+ (swift 5.4).
-            #if swift(>=5.4)
-            if #available(iOS 14.5, *) {
-                configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
-                configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
-                    guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
+            configuration.separatorConfiguration = .init(listAppearance: .insetGrouped)
+            configuration.itemSeparatorHandler = { [unowned self] (indexPath, listConfiguration) -> UIListSeparatorConfiguration in
+                guard let item = self.itemForIndexPath(indexPath) else { return listConfiguration }
 
-                    var configuration = listConfiguration
-                    configuration.applying(item.separatorConfiguration)
-                    return configuration
-                }
+                var configuration = listConfiguration
+                configuration.applying(item.separatorConfiguration)
+                return configuration
             }
-            #endif
 
             configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
             configuration.trailingSwipeActionsConfigurationProvider = self.trailingSwipeActions

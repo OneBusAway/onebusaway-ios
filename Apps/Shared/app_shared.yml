@@ -15,7 +15,7 @@ options:
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:
-    iOS: "14.4"
+    iOS: "14.5"
 
 ############
 # App
