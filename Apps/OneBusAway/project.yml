@@ -42,6 +42,7 @@ targets:
           - comgooglemaps
           - fb313213768708402HART
           - org.sdmts.riderapp.compassmobile.payments
+          - org.sdmts.pronto
           - co.bytemark.tgt
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: false
