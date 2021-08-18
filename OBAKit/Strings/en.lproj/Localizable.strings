@@ -253,6 +253,12 @@
 /* Title for the Push Notification ID row in the More Controller */
 "more_controller.debug_section.push_id.title" = "Push ID";
 
+/* Request to help develop the app */
+"more_controller.develop_the_app" = "Help Fix Bugs & Build New Features";
+
+/* Header for the volunteer section. */
+"more_controller.help_out" = "Help make the app better";
+
 /* Title of the Agencies row in the My Location section */
 "more_controller.my_location.agencies" = "Agencies";
 
@@ -270,6 +276,9 @@
 
 /* Title of the More tab */
 "more_controller.title" = "More";
+
+/* Request to help localize OneBusAway */
+"more_controller.translate_the_app" = "Help Translate the App";
 
 /* Updates and Alerts header text */
 "more_controller.updates_and_alerts.header" = "Updates and Alerts";
