@@ -379,6 +379,28 @@ public class Formatters: NSObject {
         }
     }
 
+    private lazy var relativeDateTimeFormatter: RelativeDateTimeFormatter = {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .short
+        f.locale = locale
+        return f
+    }()
+
+    /// Creates a string that describes the time since `date`.
+    ///
+    /// Pass in a date that is less than 5 seconds old, and it will return "Just Now".
+    /// Pass in a date older than that, and it will return a string like "31 seconds ago".
+    ///
+    /// - Parameter date: The date to calculate the time ago in words from.
+    /// - Returns: A human-readable, localized representation of the time ago in words.
+    public func timeAgoInWords(date: Date) -> String {
+        if abs(date.timeIntervalSinceNow) < 5 {
+            return OBALoc("formatters.time_ago_just_now", value: "Just Now", comment: "Indicates that an event just took place.")
+        }
+
+        return relativeDateTimeFormatter.localizedString(for: date, relativeTo: Date())
+    }
+
     /// Creates a formatted string from the `ArrivalDeparture` object that shows the  formatted time until this event occurs.
     ///
     /// For example, if the `ArrivalDeparture` happens 7 minutes in the future, this will return the string `"7 minutes"`.
