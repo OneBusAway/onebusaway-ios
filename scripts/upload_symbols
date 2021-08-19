@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+
+firebase_tool = File.join(File.dirname(__FILE__), "firebase-upload-symbols")
+
+print "Drag and drop the folder that contains your DSYM files here: "
+dsym_path = gets.chomp
+
+system("#{firebase_tool} -gsp Apps/OneBusAway/Resources/GoogleService-Info.plist -p ios #{dsym_path}", out: STDOUT)
