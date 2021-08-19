@@ -64,7 +64,7 @@ public class MapViewController: UIViewController,
         self.application.mapRegionManager.addDelegate(self)
         self.application.locationService.addDelegate(self)
 
-        self.application.notificationCenter.addObserver(self, selector: #selector(applictionDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
+        self.application.notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
     }
 
@@ -273,7 +273,7 @@ public class MapViewController: UIViewController,
         resignedActiveAt = Date()
     }
 
-    @objc func applictionDidBecomeActive(_ notification: NSNotification) {
+    @objc func applicationDidBecomeActive(_ notification: NSNotification) {
         guard
             let resignedActiveAt = resignedActiveAt,
             abs(resignedActiveAt.timeIntervalSinceNow) > 600
