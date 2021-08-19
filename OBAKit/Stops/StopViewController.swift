@@ -503,6 +503,8 @@ public class StopViewController: UIViewController,
     ///
     /// - Note: Driven by the private `reloadTimer` variable in this class.
     @objc private func timerFired() {
+        updateTitle()
+
         if timeIntervalSinceLastUpdate > StopViewController.defaultTimerReloadInterval {
             updateData()
         }
@@ -510,10 +512,11 @@ public class StopViewController: UIViewController,
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
     private func updateTitle() {
-        if let lastUpdated = lastUpdated {
-            let time = application.formatters.timeFormatter.string(from: lastUpdated)
-            title = String(format: Strings.updatedAtFormat, time)
+        guard let lastUpdated = lastUpdated else {
+            return
         }
+
+        title = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
     }
 
     // MARK: - Broken Bookmarks
