@@ -50,6 +50,10 @@ class AgencyAlertBulletin: NSObject {
     }
 
     func show(in application: UIApplication) {
+        guard !bulletinManager.isShowingBulletin else {
+            return
+        }
+
         bulletinManager.showBulletin(in: application)
     }
 }

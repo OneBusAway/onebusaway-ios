@@ -76,6 +76,10 @@ class AlarmBuilder: NSObject {
     // MARK: - Public Methods
 
     public func showBulletin(above viewController: UIViewController) {
+        guard !bulletinManager.isShowingBulletin else {
+            return
+        }
+
         bulletinManager.showBulletin(above: viewController)
     }
 
