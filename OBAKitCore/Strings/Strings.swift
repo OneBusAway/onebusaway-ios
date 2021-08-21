@@ -47,6 +47,8 @@ public class Strings: NSObject {
 
     public static let loading = OBALoc("common.loading", value: "Loading…", comment: "Used to indicate that content is loading.")
 
+    public static let locationUnavailable = OBALoc("common.location_unavailable", value: "Location Unavailable", comment: "A common error message that can be used when the user's location is not available and we need it to accomplish something.")
+
     public static let map = OBALoc("common.map", value: "Map", comment: "The noun for a map.")
 
     public static let migrateData = OBALoc("common.migrate_data", value: "Migrate Data", comment: "A title or command for upgrading data from older versions of OBA.")
@@ -76,6 +78,8 @@ public class Strings: NSObject {
     public static let shareTrip = OBALoc("common.share_trip", value: "Share Trip", comment: "Button title for sharing the status of your trip (i.e. location, arrival time, etc.)")
 
     public static let skip = OBALoc("common.skip", value: "Skip", comment: "The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.'")
+
+    public static let sort = OBALoc("common.sort", value: "Sort", comment: "The verb 'to sort' as in to arrange things in an order.")
 
     public static let stops = OBALoc("common.stops", value: "Stops", comment: "Noun. Plural form of a transit stop.")
 

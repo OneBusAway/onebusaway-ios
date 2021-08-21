@@ -79,6 +79,9 @@
 /* Used to indicate that content is loading. */
 "common.loading" = "Loading…";
 
+/* A common error message that can be used when the user's location is not available and we need it to accomplish something. */
+"common.location_unavailable" = "Location Unavailable";
+
 /* The noun for a map. */
 "common.map" = "Map";
 
@@ -123,6 +126,9 @@
 
 /* The verb 'to skip' as in 'don't perform a particular step and go on to the next one instead.' */
 "common.skip" = "Skip";
+
+/* The verb 'to sort' as in to arrange things in an order. */
+"common.sort" = "Sort";
 
 /* Noun. Plural form of a transit stop. */
 "common.stops" = "Stops";
@@ -261,6 +267,9 @@
 
 /* Format string representing a numeric stop number. e.g. Stop #1234 */
 "formatters.stop.stop_code_numeric" = "Stop #%@";
+
+/* Indicates that an event just took place. */
+"formatters.time_ago_just_now" = "Just Now";
 
 /* Formatted time text for arrivals/departures. Used for accessibility labels, so be sure to spell out the word for 'minute'. Example: 7 minutes means that this event happens 7 minutes in the future. -7 minutes means 7 minutes in the past. */
 "formatters.time_fmt" = "%d minutes";

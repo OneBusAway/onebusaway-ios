@@ -60,6 +60,10 @@ public class BookmarksViewController: UIViewController,
         tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
 
         navigationItem.leftBarButtonItem = UIBarButtonItem(title: OBALoc("bookmarks_controller.groups_button_title", value: "Edit", comment: "Groups button title in Bookmarks controller"), style: .plain, target: self, action: #selector(manageGroups))
+
+        application.userDefaults.register(defaults: [
+            userDefaultsKeys.sortBookmarksByGroup.rawValue: true
+        ])
     }
 
     required init?(coder: NSCoder) {
@@ -68,6 +72,22 @@ public class BookmarksViewController: UIViewController,
 
     deinit {
         dataLoader.cancelUpdates()
+    }
+
+    // MARK: - User Defaults
+
+    private enum userDefaultsKeys: String {
+        case sortBookmarksByGroup = "OBABookmarksController_SortBookmarksByGroup"
+    }
+
+    private var sortBookmarksByGroup: Bool {
+        get {
+            application.userDefaults.bool(forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
+        }
+        set {
+            application.userDefaults.setValue(newValue, forKey: userDefaultsKeys.sortBookmarksByGroup.rawValue)
+            listView.applyData(animated: false)
+        }
     }
 
     // MARK: - UIViewController
@@ -82,6 +102,8 @@ public class BookmarksViewController: UIViewController,
         listView.register(listViewItem: BookmarkArrivalViewModel.self)
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
+
+        rebuildSortMenu()
 
         dataLoader.loadData()
     }
@@ -108,6 +130,34 @@ public class BookmarksViewController: UIViewController,
         dataLoader.cancelUpdates()
     }
 
+    // MARK: - Sorting
+
+    private func rebuildSortMenu() {
+        let groupTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_group", value: "Sort by Group", comment: "A menu item that allows the user to sort their bookmarks into groups.")
+        let groupSortAction = UIAction(title: groupTitle, image: UIImage(systemName: "folder")) { _ in
+            self.sortBookmarksByGroup = true
+            self.rebuildSortMenu()
+        }
+
+        let distanceTitle = OBALoc("bookmarks_controller.sort_menu.sort_by_distance", value: "Sort by Distance", comment: "A menu item that allows the user to sort their bookmarks by distance from the user.")
+        let distanceSortAction = UIAction(title: distanceTitle, image: UIImage(systemName: "location.circle")) { _ in
+            self.sortBookmarksByGroup = false
+            self.rebuildSortMenu()
+        }
+
+        if self.sortBookmarksByGroup {
+            groupSortAction.state = .on
+            distanceSortAction.state = .off
+        }
+        else {
+            groupSortAction.state = .off
+            distanceSortAction.state = .on
+        }
+
+        let sortMenu = UIMenu(title: Strings.sort, options: .displayInline, children: [groupSortAction, distanceSortAction])
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "arrow.up.arrow.down.circle"), menu: sortMenu)
+    }
+
     // MARK: - Refresh Control
 
     @objc private func refreshControlPulled() {
@@ -128,54 +178,107 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - List view
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        var sections = application.userDataStore.bookmarkGroups.compactMap { listSection(group: $0, title: $0.name) }
+        if sortBookmarksByGroup {
+            return listItemsSortedByGroup()
+        }
+        else {
+            return listItemsSortedByDistance()
+        }
+    }
 
+    /// Creates an `OBAListViewSection` containing the specified bookmarks.
+    /// - Parameters:
+    ///   - bookmarks: The list of `Bookmark`s to include in this section.
+    ///   - id: The unique ID of the section. Used for diffing.
+    ///   - title: The section header title.
+    private func buildListSection(bookmarks: [Bookmark], id: String, title: String) -> OBAListViewSection? {
+        let arrivalData = bookmarks
+            .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
+            .compactMap { bookmark -> BookmarkArrivalViewModel? in
+                var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
+
+                if let key = TripBookmarkKey(bookmark: bookmark) {
+                    let data = dataLoader.dataForKey(key)
+                    arrDeps = data.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
+                        return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
+                    }
+                }
+
+                return BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
+            }
+
+        guard arrivalData.count > 0 else { return nil }
+
+        var section = OBAListViewSection(id: id, title: title, contents: arrivalData)
+        section.configuration = .appearance(.plain)
+        return section
+    }
+
+    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        let title: String
+        let body: String
+
+        switch (application.hasDataToMigrate, distanceSortRequestedButUnavailable) {
+        case (true, _):
+            title = Strings.emptyBookmarkTitle
+            body = Strings.emptyBookmarkBodyWithPendingMigration
+        case (false, false):
+            title = Strings.emptyBookmarkTitle
+            body = Strings.emptyBookmarkBody
+        case (false, true):
+            title = Strings.locationUnavailable
+            body = OBALoc("bookmarks_controller.unable_to_sort_by_distance_error", value: "We can't sort your bookmarks by distance because your location is not available.", comment: "An error message displayed on the bookmarks tab when the user has Sort By Distance enabled and their location isn't available.")
+        }
+
+        return .standard(.init(title: title, body: body))
+    }
+
+    // MARK: - Group Sort
+
+    private func listItemsSortedByGroup() -> [OBAListViewSection] {
         // Add grouped bookmarks
-        let ungroupedTitle = sections.count > 0 ? OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.") : nil
+        var sections = application.userDataStore.bookmarkGroups.compactMap { buildListSection(group: $0) }
 
         // Add ungrouped bookmarks
-        if let section = listSection(group: nil, title: ungroupedTitle) {
+        if let section = buildListSection(group: nil) {
             sections.append(section)
         }
 
         return sections
     }
 
-    private func listSection(group: BookmarkGroup?, title: String?) -> OBAListViewSection? {
-        let bookmarks = application.userDataStore.bookmarksInGroup(group)
-
-        let arrivalData = bookmarks
-            .filter { $0.regionIdentifier == application.regionsService.currentRegion?.id }
-            .compactMap { bookmark -> BookmarkArrivalViewModel? in
-            var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
-
-            if let key = TripBookmarkKey(bookmark: bookmark) {
-                let data = dataLoader.dataForKey(key)
-                arrDeps = data.map { arrDep -> BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair in
-                    return (arrDep, shouldHighlight(arrivalDeparture: arrDep))
-                }
-            }
-
-            let viewModel = BookmarkArrivalViewModel(bookmark: bookmark, arrivalDepartures: arrDeps, onSelect: onSelectBookmark)
-            return viewModel
-        }
-
-        guard arrivalData.count > 0 else { return nil }
-
-        let groupID: String = group?.id.uuidString ?? "unknown_group"
-        let groupName = group?.name ?? OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
-
-        var section = OBAListViewSection(id: groupID, title: groupName, contents: arrivalData)
-        section.configuration = .appearance(.plain)
-        return section
+    /// Creates an `OBAListViewSection` containing the specified bookmark group's contents.
+    /// - Parameter group: The bookmark group to turn into an `OBAListViewSection`
+    private func buildListSection(group: BookmarkGroup?) -> OBAListViewSection? {
+        return buildListSection(
+            bookmarks: application.userDataStore.bookmarksInGroup(group),
+            id: group?.id.uuidString ?? "unknown_group",
+            title: group?.name ?? OBALoc("bookmarks_controller.ungrouped_bookmarks_section.title", value: "Bookmarks", comment: "The title for the bookmarks controller section that shows bookmarks that aren't in a group.")
+        )
     }
 
-    public func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        let body = application.hasDataToMigrate ?
-            Strings.emptyBookmarkBodyWithPendingMigration :
-            Strings.emptyBookmarkBody
+    // MARK: - Distance Sort
 
-        return .standard(.init(title: Strings.emptyBookmarkTitle, body: body))
+    /// Provides a way to check if the user wants to sort by distance, but cannot for whatever reason right now.
+    private var distanceSortRequestedButUnavailable: Bool {
+        !sortBookmarksByGroup && application.locationService.currentLocation == nil
+    }
+
+    /// Builds a single item array that contains a list of all bookmarks in the current region sorted by distance from the current user.
+    private func listItemsSortedByDistance() -> [OBAListViewSection] {
+        guard let currentLocation = application.locationService.currentLocation else {
+            return []
+        }
+
+        let bookmarks = application.userDataStore.bookmarks.sorted(by: {
+            $0.stop.location.distance(from: currentLocation) < $1.stop.location.distance(from: currentLocation)
+        })
+
+        return [buildListSection(
+                    bookmarks: bookmarks,
+                    id: "distance_sorted_group",
+                    title: OBALoc("bookmarks_controller.sorted_by_distance_header", value: "Sorted by Distance", comment: "The table section header on the bookmarks controller for when bookmarks are sorted by distance.")
+            )].compactMap({$0})
     }
 
     // MARK: - Bookmark Actions

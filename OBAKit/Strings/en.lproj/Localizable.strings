@@ -34,8 +34,20 @@
 /* Groups button title in Bookmarks controller */
 "bookmarks_controller.groups_button_title" = "Edit";
 
+/* A menu item that allows the user to sort their bookmarks by distance from the user. */
+"bookmarks_controller.sort_menu.sort_by_distance" = "Sort by Distance";
+
+/* A menu item that allows the user to sort their bookmarks into groups. */
+"bookmarks_controller.sort_menu.sort_by_group" = "Sort by Group";
+
+/* The table section header on the bookmarks controller for when bookmarks are sorted by distance. */
+"bookmarks_controller.sorted_by_distance_header" = "Sorted by Distance";
+
 /* Title of the Bookmarks tab */
 "bookmarks_controller.title" = "Bookmarks";
+
+/* An error message displayed on the bookmarks tab when the user has Sort By Distance enabled and their location isn't available. */
+"bookmarks_controller.unable_to_sort_by_distance_error" = "We can't sort your bookmarks by distance because your location is not available.";
 
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
 "bookmarks_controller.ungrouped_bookmarks_section.title" = "Bookmarks";
