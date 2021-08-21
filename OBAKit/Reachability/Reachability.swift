@@ -36,7 +36,10 @@ class ReachabilityBulletin: NSObject {
     }
 
     func showStatus(_ status: ConnectivityResult, in application: UIApplication) {
-        guard !status.isConnected else {
+        guard
+            !status.isConnected,
+            !bulletinManager.isShowingBulletin
+        else {
             return
         }
 
@@ -50,6 +53,7 @@ class ReachabilityBulletin: NSObject {
         }
 
         dismiss()
+
         bulletinManager.showBulletin(in: application)
     }
 
