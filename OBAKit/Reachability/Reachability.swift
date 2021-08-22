@@ -24,7 +24,7 @@ class ReachabilityBulletin: NSObject {
 
         super.init()
 
-        connectivityPage.isDismissable = true
+        connectivityPage.isDismissable = false
         let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)
         connectivityPage.image = squircleRenderer.drawImageOnRoundedRect(Icons.noInternet)
         connectivityPage.actionButtonTitle = Strings.dismiss
