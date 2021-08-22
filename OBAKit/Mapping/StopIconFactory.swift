@@ -122,12 +122,13 @@ class StopIconFactory: NSObject {
                 UIRectFill(imageBounds)
             }
 
-            self.drawBackground(color: fillColor, rect: rect, context: ctx)
-
-            self.drawIcon(routeType: routeType, rect: rect, context: ctx)
-
             if isBookmarked {
-                self.drawBookmarkBadge(fillColor: bookmarkedStrokeColor, iconColor: .white, rect: rect, context: ctx)
+                self.drawBackground(color: bookmarkedStrokeColor, rect: rect, context: ctx)
+                self.drawIcon(routeType: routeType, rect: rect, context: ctx, color: .white)
+            }
+            else {
+                self.drawBackground(color: fillColor, rect: rect, context: ctx)
+                self.drawIcon(routeType: routeType, rect: rect, context: ctx)
             }
 
             self.drawBorder(color: strokeColor, rect: rect, context: ctx)
@@ -170,34 +171,11 @@ class StopIconFactory: NSObject {
     /// - Parameter routeType: The transport glyph type that will be drawn.
     /// - Parameter rect: The rectangle in which to draw.
     /// - Parameter context: The Core Graphics context in which drawing happens.
-    private func drawIcon(routeType: Route.RouteType, rect: CGRect, context: CGContext) {
+    /// - Parameter color: An override color for filling the icon. Pass `nil` to use the default color.
+    private func drawIcon(routeType: Route.RouteType, rect: CGRect, context: CGContext, color: UIColor? = nil) {
         context.pushPop {
-            let image = Icons.transportIcon(from: routeType).tinted(color: transportIconColor)
+            let image = Icons.transportIcon(from: routeType).tinted(color: color ?? transportIconColor)
             image.draw(in: rect.insetBy(dx: transportGlyphInset, dy: transportGlyphInset))
-        }
-    }
-
-    /// Draws a badge indicating this stop has been bookmarked in its bottom right corner.
-    /// - Parameters:
-    ///   - fillColor: The border and stroke colors of the badge.
-    ///   - iconColor: The color that the badge will be drawn in.
-    ///   - rect: The rectangle in which to draw.
-    ///   - context: The Core Graphics context in which drawing happens.
-    private func drawBookmarkBadge(fillColor: UIColor, iconColor: UIColor, rect: CGRect, context: CGContext) {
-        context.pushPop {
-            let badgeSize: CGFloat = 15.0
-            let miniFrame = CGRect(x: rect.midX, y: rect.midY, width: badgeSize, height: badgeSize)
-
-            fillColor.withAlphaComponent(0.95).setFill()
-
-            let corners = UIRectCorner.topLeft
-            let cornerRadii = CGSize(width: ThemeMetrics.compactCornerRadius, height: ThemeMetrics.compactCornerRadius)
-            let bezierPath = UIBezierPath(roundedRect: miniFrame, byRoundingCorners: corners, cornerRadii: cornerRadii)
-
-            bezierPath.fill()
-
-            let icon = Icons.bookmarkIcon.tinted(color: iconColor)
-            icon.draw(in: miniFrame.insetBy(dx: 1.0, dy: 1.0))
         }
     }
 

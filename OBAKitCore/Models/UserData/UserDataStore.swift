@@ -95,6 +95,11 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter searchText: The text to search `Bookmark`s for.
     func findBookmarks(matching searchText: String) -> [Bookmark]
 
+    /// Examines the list of bookmarks to see if a `Bookmark` exists whose contents match `bookmark`
+    /// by using the method `Bookmark.isEqualish()` to determine if a match exists.
+    /// - Parameter bookmark: The bookmark that will compared to the current list of bookmarks.
+    func checkForDuplicates(bookmark: Bookmark) -> Bool
+
     // MARK: - Recent Stops
 
     /// Find recent stops that match `searchText`
@@ -299,6 +304,15 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup? = nil) {
         add(bookmark, to: group, index: .max)
+    }
+
+    public func checkForDuplicates(bookmark: Bookmark) -> Bool {
+        for candidate in bookmarks {
+            if bookmark.isEqualish(candidate) {
+                return true
+            }
+        }
+        return false
     }
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int) {
