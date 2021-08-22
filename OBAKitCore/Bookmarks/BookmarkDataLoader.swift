@@ -56,7 +56,10 @@ public class BookmarkDataLoader: NSObject {
     }
 
     private func loadData(bookmark: Bookmark) {
-        guard let apiService = application.restAPIService else { return }
+        guard
+            let apiService = application.restAPIService,
+            bookmark.isTripBookmark
+        else { return }
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60)
         op.complete { [weak self] result in
