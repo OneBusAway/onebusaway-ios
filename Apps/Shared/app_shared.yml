@@ -43,10 +43,10 @@ targets:
           - fb
           - twitter
           - comgooglemaps
-        NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
-        NSLocationWhenInUseUsageDescription: Show your location on the map
+        NSLocationAlwaysAndWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
+        NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         NSLocationTemporaryUsageDescriptionDictionary:
-          MapStatusView: Show your location on the map
+          MapStatusView: See where you are in relation to transit, and help you navigate more easily.
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities:
           - armv7
