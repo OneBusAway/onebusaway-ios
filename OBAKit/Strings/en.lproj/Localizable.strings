@@ -94,8 +94,17 @@
 /* Explanatory text that tells the user how to migrate their data later on. */
 "data_migration_bulletin.migrate_later_text" = "You can upgrade your data later by going to the More tab > Settings, and then tapping on the Migrate Data button.";
 
+/* Indicates that the user wants to create a duplicate bookmark. */
+"edit_book_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
+
 /* Title of the button that lets the user add a new Bookmark Group. */
 "edit_bookmark_controller.add_group_button_title" = "Add Bookmark Group";
+
+/* Body of an alert telling the user they have already bookmarked this thing. */
+"edit_bookmark_controller.duplicate_alert.body" = "You already have this bookmarked. Did you mean to create a duplicate?";
+
+/* The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb. */
+"edit_bookmark_controller.duplicate_alert.title" = "Duplicate Bookmark";
 
 /* Title of the Bookmark Group header. */
 "edit_bookmark_controller.group_section.header_title" = "Bookmark Group";

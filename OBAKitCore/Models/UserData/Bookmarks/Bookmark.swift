@@ -112,6 +112,20 @@ import Foundation
         routeID = try container.decodeIfPresent(RouteID.self, forKey: .routeID)
     }
 
+    /// Returns `true` if the receiver's contents match the contents of `bookmark`.
+    ///
+    /// i.e. they have identical contents, even though they may not be `==` equal.
+    /// - Parameter bookmark: The bookmark to compare the receiver to.
+    public func isEqualish(_ bookmark: Bookmark) -> Bool {
+        return
+            name == bookmark.name &&
+            regionIdentifier == bookmark.regionIdentifier &&
+            stopID == bookmark.stopID &&
+            routeShortName == bookmark.routeShortName &&
+            tripHeadsign == bookmark.tripHeadsign &&
+            routeID == bookmark.routeID
+    }
+
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Bookmark else { return false }
 
