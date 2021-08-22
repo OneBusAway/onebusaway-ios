@@ -28,7 +28,7 @@ class HoverBar: HoverBarPassThroughView {
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.spacing = 2
         stack.axis = .vertical
-        stack.distribution = .fillEqually
+        stack.distribution = .fill
         stack.alignment = .fill
         return stack
     }()
@@ -133,7 +133,7 @@ class HoverBarPassThroughView: UIView {
     fileprivate func lazyVisualEffectView() -> UIVisualEffectView {
         // The "system thin" material automatically adapts to changes to the `UIUserInterfaceStyle`.
         // The only we need to do here is show/ hide the shadow.
-        let blurEffect = UIBlurEffect(style: .systemThinMaterial)
+        let blurEffect = UIBlurEffect(style: .systemThickMaterial)
 
         let view = UIVisualEffectView(effect: blurEffect)
         view.translatesAutoresizingMaskIntoConstraints = false
