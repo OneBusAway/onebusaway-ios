@@ -76,7 +76,6 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     ///   - animated: Is the transition animated or not.
     public func navigate(to viewController: UIViewController, from fromController: UIViewController, animated: Bool = true) {
         assert(fromController.navigationController != nil)
-        viewController.hidesBottomBarWhenPushed = true
         fromController.navigationController?.pushViewController(viewController, animated: animated)
     }
 
