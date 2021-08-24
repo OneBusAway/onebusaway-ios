@@ -35,6 +35,7 @@ public class MapViewController: UIViewController,
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
 
         if application.features.obaco == .running {
+            hover.stackView.addArrangedSubview(HoverBarSeparator())
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
