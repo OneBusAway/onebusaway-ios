@@ -10,7 +10,9 @@ import OBAKitCore
 
 /// A view for visually separating buttons in HoverBar.
 class HoverBarSeparator: UIView {
-    fileprivate var separatorHeight: CGFloat = 1.0
+    private var separatorHeight: CGFloat {
+        1.0 / UIScreen.main.scale
+    }
 
     override var intrinsicContentSize: CGSize {
         return CGSize(width: UIView.noIntrinsicMetric, height: separatorHeight)
