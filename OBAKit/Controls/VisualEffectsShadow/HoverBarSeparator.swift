@@ -36,6 +36,8 @@ class HoverBarSeparator: UIView {
     }
 }
 
+#if DEBUG
+
 struct HoverBarSeparator_Previews: PreviewProvider {
     static var previews: some View {
         UIViewPreview {
@@ -44,3 +46,5 @@ struct HoverBarSeparator_Previews: PreviewProvider {
         .previewLayout(.fixed(width: 64, height: 8))
     }
 }
+
+#endif
