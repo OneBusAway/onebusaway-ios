@@ -23,7 +23,9 @@ public extension UIButton {
 
 // MARK: - UITraitEnvironment Accessibility
 extension UITraitEnvironment {
+    /// For OneBusAway, `isAccessibility` is anything equal to or larger than `.extraLarge`.
     var isAccessibility: Bool {
-        return traitCollection.preferredContentSizeCategory.isAccessibilityCategory
+        let contentSize = traitCollection.preferredContentSizeCategory
+        return contentSize >= .extraLarge
     }
 }
