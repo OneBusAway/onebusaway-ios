@@ -67,6 +67,13 @@ public class ActivityIndicatedButton: UIView {
         return button
     }()
 
+    fileprivate let chevron: UIImageView = {
+        let view = UIImageView(image: UIImage(systemName: "chevron.compact.down"))
+        view.preferredSymbolConfiguration = UIImage.SymbolConfiguration(textStyle: .headline)
+        view.tintColor = ThemeColors.shared.brand
+        return view
+    }()
+
     fileprivate let activityIndicator: UIActivityIndicatorView = {
         let activityIndicator = UIActivityIndicatorView(style: .medium)
         activityIndicator.hidesWhenStopped = true
@@ -80,7 +87,8 @@ public class ActivityIndicatedButton: UIView {
         let stackView = UIStackView.stack(axis: .vertical,
                                           distribution: .fill,
                                           alignment: .center,
-                                          arrangedSubviews: [button, activityIndicator])
+                                          arrangedSubviews: [button, chevron, activityIndicator])
+        stackView.setCustomSpacing(0, after: button)
         addSubview(stackView)
         stackView.pinToSuperview(.edges)
 
@@ -98,17 +106,20 @@ public class ActivityIndicatedButton: UIView {
 
     public func showActivityIndicator() {
         self.button.isHidden = true
+        self.chevron.isHidden = true
         self.activityIndicator.startAnimating()
     }
 
     public func hideActivityIndicator() {
         self.button.isHidden = false
+        self.chevron.isHidden = false
         self.activityIndicator.stopAnimating()
     }
 
     func configureView() {
         self.activityIndicator.stopAnimating()
         self.button.isHidden = false
+        self.chevron.isHidden = false
 
         // If there is no config, then hide the view to prevent Voiceover interaction.
         self.isHidden = self.config == nil
