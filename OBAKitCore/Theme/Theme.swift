@@ -130,8 +130,10 @@ public class ThemeColors: NSObject {
         departureEarly = .systemRed
         departureEarlyBackground = .systemRed
 
-        departureOnTime = .systemGreen
-        departureOnTimeBackground = .systemGreen
+        // Hex #129900 -- UIColor.systemGreen is too bright for small text, which StopViewController uses.
+        // See #506 and #508 for user feedback.
+        departureOnTime = UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
+        departureOnTimeBackground = UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
 
         departureUnknown = .label
         departureUnknownBackground = .systemGray
