@@ -808,10 +808,6 @@ public class StopViewController: UIViewController,
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
     private var loadMoreSection: OBAListViewSection {
-        let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
-        let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
-        let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-
         var items: [AnyOBAListViewItem] = []
 
         if let error = operationError {
@@ -823,16 +819,19 @@ public class StopViewController: UIViewController,
             self?.loadMoreDepartures()
         }
         items.append(loadMoreButton.typeErased)
-        items.append(FootnoteItem(text: footerText).typeErased)
 
         return listViewSection(for: .loadMoreButton, title: nil, items: items)
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
         let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
-
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
-        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
+
+        let dataDateRangeBeforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
+        let dataDateRangeAfterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
+        let dataDateRangeText = application.formatters.formattedDateRange(from: dataDateRangeBeforeTime, to: dataDateRangeAfterTime)
+
+        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies), subtitle: dataDateRangeText)
 
         var section = listViewSection(for: .dataAttribution, title: nil, items: [dataAttribution])
         section.configuration.backgroundColor = .clear
