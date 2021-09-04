@@ -140,6 +140,19 @@ public class MapRegionManager: NSObject,
     }
     private let lastVisibleMapRectKey = "mapRegionManager.lastVisibleMapRect"
 
+    private let mapViewMapTypeKey = "mapRegionManager.selectedMapType"
+
+    /// Changing this value will also update `mapView`.
+    var userSelectedMapType: MKMapType {
+        get {
+            let rawMapType: Int = application.userDefaults.integer(forKey: mapViewMapTypeKey)
+            return MKMapType(rawValue: UInt(rawMapType)) ?? .mutedStandard
+        } set {
+            application.userDefaults.set(newValue.rawValue, forKey: mapViewMapTypeKey)
+            mapView.mapType = newValue
+        }
+    }
+
     // MARK: - Init
 
     public init(application: Application) {
@@ -148,7 +161,8 @@ public class MapRegionManager: NSObject,
         application.userDefaults.register(defaults: [
             mapViewShowsTrafficKey: true,
             mapViewShowsScaleKey: true,
-            mapViewShowsHeadingKey: true
+            mapViewShowsHeadingKey: true,
+            mapViewMapTypeKey: MKMapType.mutedStandard.rawValue
         ])
 
         super.init()
@@ -159,6 +173,7 @@ public class MapRegionManager: NSObject,
         mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
         mapView.showsScale = mapViewShowsScale
         mapView.showsTraffic = mapViewShowsTraffic
+        mapView.mapType = userSelectedMapType
 
         registerAnnotationViews(mapView: mapView)
 
@@ -453,7 +468,8 @@ public class MapRegionManager: NSObject,
     private let requiredHeightToShowExtraStopData = 7000.0
 
     var shouldHideExtraStopAnnotationData: Bool {
-        mapView.visibleMapRect.height > requiredHeightToShowExtraStopData
+        return mapView.mapType == .hybrid || mapView.mapType == .satellite ||
+            mapView.visibleMapRect.height > requiredHeightToShowExtraStopData
     }
 
     // MARK: - Map View Delegate

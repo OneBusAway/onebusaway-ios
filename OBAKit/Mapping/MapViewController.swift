@@ -39,6 +39,10 @@ public class MapViewController: UIViewController,
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
+        hover.stackView.addArrangedSubview(HoverBarSeparator())
+        hover.stackView.addArrangedSubview(toggleMapTypeButton)
+        setMapTypeButtonImage(toggleMapTypeButton)
+
         return hover
     }()
 
@@ -106,7 +110,8 @@ public class MapViewController: UIViewController,
             toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor)
+            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
 
         mapRegionManager.statusOverlay = statusOverlay
@@ -264,6 +269,34 @@ public class MapViewController: UIViewController,
             }
         }
         weatherOperation = op
+    }
+
+    // MARK: - Map Type
+    public let toggleMapTypeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.addTarget(self, action: #selector(toggleMapType), for: .touchUpInside)
+        button.accessibilityLabel = OBALoc("map_controller.map_type.accessibility_label", value: "Map type", comment: "Voiceover text indicating that this button toggles the base map type.")
+        return button
+    }()
+
+    @objc private func toggleMapType() {
+        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
+            application.mapRegionManager.userSelectedMapType = .hybrid
+        } else {
+            application.mapRegionManager.userSelectedMapType = .mutedStandard
+        }
+
+        setMapTypeButtonImage(toggleMapTypeButton)
+    }
+
+    private func setMapTypeButtonImage(_ button: UIButton) {
+        if application.mapRegionManager.userSelectedMapType == .mutedStandard {
+            button.setImage(UIImage(systemName: "map"), for: .normal)
+            button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
+        } else {
+            button.setImage(UIImage(systemName: "globe"), for: .normal)
+            button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "hybrid", comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels).")
+        }
     }
 
     // MARK: - Application State
