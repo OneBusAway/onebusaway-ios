@@ -34,14 +34,14 @@ public class MapViewController: UIViewController,
 
         locationButton.isHidden = !application.locationService.isLocationUseAuthorized
 
+        hover.stackView.addArrangedSubview(HoverBarSeparator())
+        hover.stackView.addArrangedSubview(toggleMapTypeButton)
+        setMapTypeButtonImage(toggleMapTypeButton)
+
         if application.features.obaco == .running {
             hover.stackView.addArrangedSubview(HoverBarSeparator())
             hover.stackView.addArrangedSubview(weatherButton)
         }
-
-        hover.stackView.addArrangedSubview(HoverBarSeparator())
-        hover.stackView.addArrangedSubview(toggleMapTypeButton)
-        setMapTypeButtonImage(toggleMapTypeButton)
 
         return hover
     }()
