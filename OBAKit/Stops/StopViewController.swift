@@ -590,7 +590,7 @@ public class StopViewController: UIViewController,
         // Related 2: https://github.com/OneBusAway/OBAKit/issues/389#issuecomment-867014676
 
         if self.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad {
-            listView.scrollTo(section: loadMoreSection, at: .top, animated: false)
+            listView.scrollTo(section: dataAttributionSection, at: .bottom, animated: false)
             shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
         }
         // This method will set up a UI affordance for showing the user how

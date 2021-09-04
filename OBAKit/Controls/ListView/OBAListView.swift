@@ -365,7 +365,9 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     public func scrollTo(section: OBAListViewSection, at position: UICollectionView.ScrollPosition, animated: Bool) {
-        guard let lastItemOfSection = section.contents.last,
+        let sectionIdentifiers = diffableDataSource.snapshot().sectionIdentifiers
+        guard let matchingSection = sectionIdentifiers.first(where: { $0.id == section.id }),
+              let lastItemOfSection = matchingSection.contents.last,
               let indexPath = diffableDataSource.indexPath(for: lastItemOfSection) else { return }
 
         self.scrollToItem(at: indexPath, at: position, animated: animated)
