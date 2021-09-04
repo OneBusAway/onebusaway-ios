@@ -549,7 +549,11 @@ public class StopViewController: UIViewController,
         sections.append(stopHeaderSection)
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)
-        sections.append(loadMoreSection)
+
+        if self.stopPreferences.sortType == .route {
+            sections.append(listViewSection(for: .loadMoreButton, title: nil, items: loadMoreItems))
+        }
+
         sections.append(dataAttributionSection)
         return sections.compactMap({ $0 })
     }
@@ -660,6 +664,7 @@ public class StopViewController: UIViewController,
             shareAction: shareAction)
     }
 
+    /// - parameter groupRoute: If `groupRoute` is `nil`, this section will also include a "Load More" button at the end of its contents.
     func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
@@ -678,6 +683,10 @@ public class StopViewController: UIViewController,
             .sorted(by: \.arrivalDepartureDate)
             .map { $0.typeErased }
         addWalkTimeRow(to: &items)
+
+        if groupRoute == nil {
+            items.append(contentsOf: loadMoreItems)
+        }
 
         return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
     }
@@ -807,20 +816,20 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
-    private var loadMoreSection: OBAListViewSection {
+    private var loadMoreItems: [AnyOBAListViewItem] {
         var items: [AnyOBAListViewItem] = []
 
         if let error = operationError {
             items.append(ErrorCaptionItem(error: error).typeErased)
         }
 
-        let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", showActivityIndicatorOnSelect: true) { [weak self] _ in
+        let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: UUID().uuidString, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
             self?.loadMoreDepartures()
         }
         items.append(loadMoreButton.typeErased)
 
-        return listViewSection(for: .loadMoreButton, title: nil, items: items)
+        return items
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
