@@ -187,6 +187,7 @@ class StopArrivalView: UIView {
         addSubview(outerStackView)
         outerStackView.pinToSuperview(.edges)
 
+        minutesLabel.font = .preferredFont(forTextStyle: .headline)
         configureView(for: traitCollection)
 
         if kUseDebugColors {

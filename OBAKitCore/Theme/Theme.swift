@@ -130,8 +130,18 @@ public class ThemeColors: NSObject {
         departureEarly = .systemRed
         departureEarlyBackground = .systemRed
 
-        departureOnTime = .systemGreen
-        departureOnTimeBackground = .systemGreen
+        // Hex #129900 is better visibility for small text in light mode.
+        // UIColor.systemGreen is better visibility for small text in dark mode.
+        // See #506 and #508 for user feedback.
+        let departureOnTimeColor = UIColor { traitCollection in
+            if traitCollection.userInterfaceStyle == .dark {
+                return UIColor.systemGreen
+            } else {
+                return UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
+            }
+        }
+        departureOnTime = departureOnTimeColor
+        departureOnTimeBackground = departureOnTimeColor
 
         departureUnknown = .label
         departureUnknownBackground = .systemGray
