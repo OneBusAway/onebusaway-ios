@@ -33,18 +33,12 @@ class LocationPermissionItem: ThemedBulletinPage, LocationServiceDelegate {
 
         descriptionText = OBALoc("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services")
 
-        actionButtonTitle = OBALoc("location_permission_bulletin.buttons.give_permission", value: "Allow Access", comment: "This button signals the user is willing to grant location access to the app.")
-
-        alternativeButtonTitle = OBALoc("location_permission_bulletin.buttons.deny_permission", value: "Maybe Later", comment: "This button rejects the application's request to see the user's location.")
+        actionButtonTitle = Strings.continue
 
         actionHandler = { [weak self] _ in
-            self?.locationService.requestInUseAuthorization()
-        }
-
-        alternativeHandler = { [weak self] _ in
             guard let self = self else { return }
             self.locationService.canPromptUserForPermission = false
-            self.completion()
+            self.locationService.requestInUseAuthorization()
         }
     }
 
