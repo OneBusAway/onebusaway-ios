@@ -18,6 +18,11 @@ class HoverBarSeparator: UIView {
         return CGSize(width: UIView.noIntrinsicMetric, height: separatorHeight)
     }
 
+    override var isAccessibilityElement: Bool {
+        get { return false }
+        set { _ = newValue }
+    }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         configure()
@@ -30,6 +35,7 @@ class HoverBarSeparator: UIView {
 
     fileprivate func configure() {
         self.backgroundColor = ThemeColors.shared.separator
+
         NSLayoutConstraint.activate([
             self.heightAnchor.constraint(equalToConstant: separatorHeight)
         ])

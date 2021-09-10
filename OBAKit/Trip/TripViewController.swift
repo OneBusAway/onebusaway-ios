@@ -391,6 +391,7 @@ class TripViewController: UIViewController,
     private lazy var mapView: TouchesMapView = {
         let map = TouchesMapView.autolayoutNew()
         map.delegate = self
+        map.mapType = application.mapRegionManager.userSelectedMapType
         return map
     }()
 
