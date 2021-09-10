@@ -32,20 +32,26 @@ class DataLoadFeedbackGenerator {
     }
 
     fileprivate func dataLoadSuccess() {
-        if selectionFeedback == nil {
-            selectionFeedback = UISelectionFeedbackGenerator()
-        }
+        // TODO: Until https://github.com/oneBusAway/onebusaway-ios/issues/505
+        // is fixed, this has been disabled.
 
-        selectionFeedback?.selectionChanged()
-        selectionFeedback = nil
+        // if selectionFeedback == nil {
+        //     selectionFeedback = UISelectionFeedbackGenerator()
+        // }
+        //
+        // selectionFeedback?.selectionChanged()
+        // selectionFeedback = nil
     }
 
     fileprivate func dataLoadFailed() {
-        if notificationFeedback == nil {
-            notificationFeedback = UINotificationFeedbackGenerator()
-        }
+        // TODO: Until https://github.com/oneBusAway/onebusaway-ios/issues/505
+        // is fixed, this has been disabled.
 
-        notificationFeedback?.notificationOccurred(.error)
-        notificationFeedback = nil
+        // if notificationFeedback == nil {
+        //     notificationFeedback = UINotificationFeedbackGenerator()
+        // }
+        //
+        // notificationFeedback?.notificationOccurred(.error)
+        // notificationFeedback = nil
     }
 }
