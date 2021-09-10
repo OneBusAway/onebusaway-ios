@@ -21,11 +21,18 @@ struct ErrorCaptionItem: OBAListViewItem {
         return .list(config, [])
     }
 
+    var separatorConfiguration: OBAListRowSeparatorConfiguration { .hidden() }
+
     var id: UUID
     var text: String
 
     init(id: UUID = UUID(), error: Error) {
         self.id = id
         self.text = error.localizedDescription
+    }
+
+    init(id: UUID = UUID(), text: String) {
+        self.id = id
+        self.text = text
     }
 }

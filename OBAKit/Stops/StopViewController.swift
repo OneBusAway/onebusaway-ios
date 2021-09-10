@@ -549,7 +549,11 @@ public class StopViewController: UIViewController,
         sections.append(stopHeaderSection)
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)
-        sections.append(loadMoreSection)
+
+        if self.stopPreferences.sortType == .route {
+            sections.append(listViewSection(for: .loadMoreButton, title: nil, items: loadMoreItems))
+        }
+
         sections.append(dataAttributionSection)
         return sections.compactMap({ $0 })
     }
@@ -586,7 +590,7 @@ public class StopViewController: UIViewController,
         // Related 2: https://github.com/OneBusAway/OBAKit/issues/389#issuecomment-867014676
 
         if self.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad {
-            listView.scrollTo(section: loadMoreSection, at: .top, animated: false)
+            listView.scrollTo(section: dataAttributionSection, at: .bottom, animated: false)
             shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
         }
         // This method will set up a UI affordance for showing the user how
@@ -660,6 +664,7 @@ public class StopViewController: UIViewController,
             shareAction: shareAction)
     }
 
+    /// - parameter groupRoute: If `groupRoute` is `nil`, this section will also include a "Load More" button at the end of its contents.
     func sectionForGroup(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
         let sectionID: String
         let sectionName: String?
@@ -678,6 +683,10 @@ public class StopViewController: UIViewController,
             .sorted(by: \.arrivalDepartureDate)
             .map { $0.typeErased }
         addWalkTimeRow(to: &items)
+
+        if groupRoute == nil {
+            items.append(contentsOf: loadMoreItems)
+        }
 
         return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
     }
@@ -807,32 +816,31 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data/Load More
     private var shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = false
-    private var loadMoreSection: OBAListViewSection {
-        let beforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
-        let afterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
-        let footerText = application.formatters.formattedDateRange(from: beforeTime, to: afterTime)
-
+    private var loadMoreItems: [AnyOBAListViewItem] {
         var items: [AnyOBAListViewItem] = []
 
         if let error = operationError {
             items.append(ErrorCaptionItem(error: error).typeErased)
         }
 
-        let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: "load_more_item", showActivityIndicatorOnSelect: true) { [weak self] _ in
+        let loadMoreButton = MessageButtonItem(asLoadMoreButtonWithID: UUID().uuidString, showActivityIndicatorOnSelect: true) { [weak self] _ in
             self?.shouldScrollToBottomOfArrivalsDeparuresOnDataLoad = true
             self?.loadMoreDepartures()
         }
         items.append(loadMoreButton.typeErased)
-        items.append(FootnoteItem(text: footerText).typeErased)
 
-        return listViewSection(for: .loadMoreButton, title: nil, items: items)
+        return items
     }
 
     fileprivate var dataAttributionSection: OBAListViewSection {
         let agencies = Formatters.formattedAgenciesForRoutes(self.stop!.routes)
-
         let dataAttributionStringFormat = OBALoc("stop_controller.data_attribution_format", value: "Data provided by %@", comment: "A string listing the data providers (agencies) for this stop's data. It contains one or more providers separated by commas. e.g. Data provided by King County Metro, Sound Transit")
-        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies))
+
+        let dataDateRangeBeforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
+        let dataDateRangeAfterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
+        let dataDateRangeText = application.formatters.formattedDateRange(from: dataDateRangeBeforeTime, to: dataDateRangeAfterTime)
+
+        let dataAttribution = FootnoteItem(text: String(format: dataAttributionStringFormat, agencies), subtitle: dataDateRangeText)
 
         var section = listViewSection(for: .dataAttribution, title: nil, items: [dataAttribution])
         section.configuration.backgroundColor = .clear
