@@ -373,7 +373,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         if reorderGroup {
             for (idx, elt) in bookmarksInGroup(findGroup(id: groupID)).enumerated() {
                 if let existing = findBookmark(id: elt.id) {
-                    delete(bookmark: existing)
+                    delete(bookmark: existing, reorderGroup: false)
                 }
                 elt.sortOrder = idx
                 bookmarks.append(elt)
