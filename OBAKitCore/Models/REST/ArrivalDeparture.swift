@@ -223,7 +223,9 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
     /// A composite of the route name and headsign.
     public var routeAndHeadsign: String {
-        return [routeName, tripHeadsign].compactMap { $0 }.joined(separator: " - ")
+        [String.nilifyBlankValue(routeName), String.nilifyBlankValue(tripHeadsign)]
+            .compactMap { $0 }
+            .joined(separator: " - ")
     }
 
     // MARK: - Helpers/Statuses+Times
