@@ -131,7 +131,8 @@ public class MapViewController: UIViewController,
         // and so we can swap this delegate on the MapRegionManager
         // at different times. I think this expectation will become
         // unfounded when UIScene gets adopted in the app. TODO.
-        self.application.mapRegionManager.mapViewDelegate = self
+        application.mapRegionManager.mapViewDelegate = self
+        application.mapRegionManager.bookmarks = application.userDataStore.findBookmarks(in: application.currentRegion)
 
         navigationController?.setNavigationBarHidden(true, animated: false)
 
@@ -468,13 +469,14 @@ public class MapViewController: UIViewController,
     }
 
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-        guard let stop = view.annotation as? Stop else {
-            return
+        if let stop = view.annotation as? Stop {
+            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            show(stop: stop)
         }
-
-        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
-
-        show(stop: stop)
+        else if let bookmark = view.annotation as? Bookmark {
+            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            show(stop: bookmark.stop)
+        }
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {

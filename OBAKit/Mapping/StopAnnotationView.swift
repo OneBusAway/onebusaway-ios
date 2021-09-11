@@ -91,25 +91,16 @@ class StopAnnotationView: MKAnnotationView {
     public override func prepareForDisplay() {
         super.prepareForDisplay()
 
-        guard
-            let stop = annotation as? Stop,
-            let delegate = delegate
-        else { return }
+        guard let delegate = delegate else {
+            return
+        }
 
-        labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
-
-        let iconFactory = delegate.iconFactory
-        let bookmarked = delegate.isStopBookmarked(stop)
-        image = iconFactory.buildIcon(for: stop, isBookmarked: bookmarked, traits: self.traitCollection)
-
-        titleLabel.text = stop.mapTitle
-
-        let detailLabel = UILabel()
-        detailLabel.font = .preferredFont(forTextStyle: .caption1)
-        detailLabel.numberOfLines = 0
-        detailLabel.text = stop.subtitle
-
-        detailCalloutAccessoryView = detailLabel
+        if let bookmark = annotation as? Bookmark {
+            prepareForDisplay(bookmark: bookmark, delegate: delegate)
+        }
+        else if let stop = annotation as? Stop {
+            prepareForDisplay(stop: stop, delegate: delegate)
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -121,6 +112,30 @@ class StopAnnotationView: MKAnnotationView {
         else { return }
 
         image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
+    }
+
+    // MARK: - Annotation Rendering
+
+    private func prepareForDisplay(bookmark: Bookmark, delegate: StopAnnotationDelegate) {
+        labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
+        image = delegate.iconFactory.buildIcon(for: bookmark.stop, isBookmarked: true, traits: traitCollection)
+        titleLabel.text = bookmark.name
+        detailCalloutAccessoryView = buildDetailLabel(text: bookmark.stop.subtitle)
+    }
+
+    private func prepareForDisplay(stop: Stop, delegate: StopAnnotationDelegate) {
+        labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
+        image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
+        titleLabel.text = stop.mapTitle
+        detailCalloutAccessoryView = buildDetailLabel(text: stop.subtitle)
+    }
+
+    private func buildDetailLabel(text: String?) -> UILabel {
+        let detailLabel = UILabel()
+        detailLabel.font = .preferredFont(forTextStyle: .caption1)
+        detailLabel.numberOfLines = 0
+        detailLabel.text = text
+        return detailLabel
     }
 
     // MARK: - Appearance

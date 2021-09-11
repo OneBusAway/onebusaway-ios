@@ -308,34 +308,38 @@ public class MapRegionManager: NSObject,
 
     private var requestStopsOperation: DecodableOperation<RESTAPIResponse<[Stop]>>?
 
-    // MARK: - Stops
+    // MARK: - Setters
 
-    public private(set) var stops = [Stop]() {
+    public var bookmarks = [Bookmark]() {
         didSet {
-            mapView.updateAnnotations(with: stops)
-            notifyDelegatesStopsChanged()
+            displayUniqueStopAnnotations()
         }
     }
 
-    public func fetchStopWithID(_ id: String, completion: @escaping (Stop?) -> Void) {
-        if let stop = (stops.filter {$0.id == id}).first {
-            completion(stop)
-            return
+    public private(set) var stops = [Stop]() {
+        didSet {
+            displayUniqueStopAnnotations()
+        }
+    }
+
+    private func displayUniqueStopAnnotations() {
+        mapView.removeAnnotations(type: Bookmark.self)
+        var bookmarksHash = [StopID: Bookmark]()
+
+        for bm in bookmarks {
+            bookmarksHash[bm.stopID] = bm
         }
 
-        guard let apiService = application.restAPIService else {
-            return
-        }
+        mapView.addAnnotations(Array(bookmarksHash.values))
 
-        let op = apiService.getStop(id: id)
-        op.complete { result in
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                completion(response.list)
-            }
-        }
+        let bookmarkStopIDs = Set(bookmarksHash.keys)
+        let rejectedStops = stops.filter { bookmarkStopIDs.contains($0.id) }
+        let acceptedStops = stops.filter { !rejectedStops.contains($0) }
+
+        mapView.removeAnnotations(rejectedStops)
+        mapView.addAnnotations(acceptedStops)
+
+        notifyDelegatesStopsChanged()
     }
 
     // MARK: - Map Status Overlay
@@ -555,6 +559,7 @@ public class MapRegionManager: NSObject,
 
     private func reuseIdentifier(for annotation: MKAnnotation) -> String? {
         switch annotation {
+        case is Bookmark: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
         case is MKUserLocation: return self.userLocationAnnotationReuseIdentifier
         case is Region: return MKMapView.reuseIdentifier(for: MKMarkerAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
@@ -564,13 +569,11 @@ public class MapRegionManager: NSObject,
 
     // On iOS 14, use the default MKUserLocationView because it will display imprecise locations elegantly.
     private var userLocationAnnotationReuseIdentifier: String? {
-        if #available(iOS 14, *) {
-            if application.locationService.accuracyAuthorization == .reducedAccuracy {
-                return nil      // Use the default MKUserLocationView when imprecise location.
-            } else {
-                return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
-            }
-        } else {
+        // Use the default MKUserLocationView when the user has only authorized imprecise location access.
+        if application.locationService.accuracyAuthorization == .reducedAccuracy {
+            return nil
+        }
+        else {
             return MKMapView.reuseIdentifier(for: PulsingAnnotationView.self)
         }
     }
