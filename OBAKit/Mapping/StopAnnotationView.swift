@@ -73,7 +73,9 @@ class StopAnnotationView: MKAnnotationView {
         rightCalloutAccessoryView = UIButton.chevronButton
 
         annotationSize = ThemeMetrics.defaultMapAnnotationSize
-        canShowCallout = true
+        updateAccessibility()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(voiceoverStatusDidChange), name: UIAccessibility.voiceOverStatusDidChangeNotification, object: nil)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -136,4 +138,15 @@ class StopAnnotationView: MKAnnotationView {
 
     /// Foreground color for text written directly onto the map as part of this annotation view.
     public var mapTextColor: UIColor = ThemeColors.shared.mapText
+
+    // MARK: - Accessibility
+    @objc fileprivate func voiceoverStatusDidChange(_ notification: Notification) {
+        updateAccessibility()
+    }
+
+    fileprivate func updateAccessibility() {
+        // Callouts are finicky when in VoiceOver. When VoiceOver is running,
+        // we should skip the callout and push directly to the annotation's destination view.
+        canShowCallout = !UIAccessibility.isVoiceOverRunning
+    }
 }
