@@ -454,6 +454,12 @@ public class MapViewController: UIViewController,
             present(alert, animated: true) {
                 mapView.deselectAnnotation(view.annotation, animated: true)
             }
+        } else if let stop = view.annotation as? Stop, UIAccessibility.isVoiceOverRunning {
+            // When VoiceOver is running, StopAnnotationView does not display a callout due to
+            // VoiceOver limitations with MKMapView. Therefore, we should skip any callouts
+            // and just go directly to pushing the stop onto the navigation stack.
+            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            show(stop: stop)
         }
     }
 
@@ -472,8 +478,7 @@ public class MapViewController: UIViewController,
         if let stop = view.annotation as? Stop {
             application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
-        }
-        else if let bookmark = view.annotation as? Bookmark {
+        } else if let bookmark = view.annotation as? Bookmark {
             application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: bookmark.stop)
         }
