@@ -103,6 +103,10 @@ public class MapViewController: UIViewController,
 
         floatingPanel.addPanel(toParent: self)
 
+        if #available(iOS 15.0, *) {
+            setContentScrollView(floatingPanel.scrollView, for: .bottom)
+        }
+
         view.insertSubview(toolbar, aboveSubview: mapView)
 
         NSLayoutConstraint.activate([
