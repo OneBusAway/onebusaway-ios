@@ -125,13 +125,26 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
         return obaView
     }
 
-    func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
-        let registration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, _, _ in
-            cell.contentConfiguration = config
+    let listCellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, AnyOBAListViewItem> { cell, _, item in
+        let config = item.configuration
+        switch config {
+        case .list(let contentConfig, let accessories):
+            cell.contentConfiguration = contentConfig
             cell.accessories = accessories.compactMap { $0 }
+        case .custom(let config):
+            if let listRow = config as? OBAListRowConfiguration {
+                cell.contentConfiguration = listRow.listConfiguration
+                if let accessory = listRow.accessoryType.cellAccessory {
+                    cell.accessories = [accessory]
+                } else {
+                    cell.accessories = []
+                }
+            }
         }
+    }
 
-        return collectionView.dequeueConfiguredReusableCell(using: registration, for: indexPath, item: item)
+    func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
+        return collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: item)
     }
 
     // MARK: - Item selection actions
