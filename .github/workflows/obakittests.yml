@@ -20,8 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
-    - name: Switch Xcode 12
-      run: sudo xcode-select -switch /Applications/Xcode_12.5.app
+    - name: Switch Xcode 13
+      run: sudo xcode-select -switch /Applications/Xcode_13.0.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -33,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 8'
         -quiet
 
     # Unit Test
@@ -42,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 8'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
     - name: Upload OBAKitTests results
@@ -57,7 +57,7 @@ jobs:
         -only-testing:OBAKitUITests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=14.5,name=iPhone 8'
+        -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 8'
         -resultBundlePath OBAKitUITests.xcresult
         -quiet
 
