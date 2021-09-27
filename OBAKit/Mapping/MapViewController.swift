@@ -104,7 +104,9 @@ public class MapViewController: UIViewController,
         floatingPanel.addPanel(toParent: self)
 
         if #available(iOS 15.0, *) {
-            setContentScrollView(floatingPanel.scrollView, for: .bottom)
+            let appearance = UITabBarAppearance()
+            appearance.configureWithDefaultBackground()
+            tabBarItem.scrollEdgeAppearance = appearance
         }
 
         view.insertSubview(toolbar, aboveSubview: mapView)
