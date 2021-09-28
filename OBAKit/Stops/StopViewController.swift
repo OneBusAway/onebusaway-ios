@@ -295,14 +295,14 @@ public class StopViewController: UIViewController,
         let allRoutesTitle = OBALoc("stops_controller.filter.all_routes", value: "All Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a filtered list to all of the list items. e.g. a stop serves routes 1, 2, and 3. The user has filtered the stop to only show route 3. Chooosing this item will show 1, 2, and 3 again.")
         let filteredRoutesTitle = OBALoc("stops_controller.filter.filtered_routes", value: "Filtered Routes", comment: "A menu item on a Stop page that toggles the visible list of transit vehicles from a list of all items to a filtered list. e.g. a stop serves routes 1, 2, and 3. The user wants to only view route 3. Choosing this item would show that subset of routes.")
 
-        let showAll = UIAction(title: allRoutesTitle) { _ in
+        let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
             if self.isListFiltered {
                 // Only change value if it's different to avoid unnecessary data loading.
                 self.isListFiltered = false
             }
         }
 
-        let showFiltered = UIAction(title: filteredRoutesTitle) { _ in
+        let showFiltered = UIAction(title: filteredRoutesTitle) { [unowned self] _ in
             self.isListFiltered = true
             self.filter()
         }
@@ -317,11 +317,11 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func fileMenu() -> UIMenu {
-        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { action in
+        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { [unowned self] action in
             self.addBookmark(sender: action)
         }
 
-        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { _ in
+        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { [unowned self] _ in
             let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.stopArrivals?.serviceAlerts ?? [])
             self.application.viewRouter.navigate(to: controller, from: self)
         }
@@ -335,7 +335,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func locationMenu() -> UIMenu {
-        let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { _ in
+        let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
             let nearbyController = NearbyStopsViewController(coordinate: self.stop!.coordinate, application: self.application)
             self.application.viewRouter.navigate(to: nearbyController, from: self)
         }
@@ -344,7 +344,7 @@ public class StopViewController: UIViewController,
 
         if let stop = self.stop {
             if let appleMapsURL = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) {
-                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { _ in
+                let appleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_apple", value: "Walking Directions (Apple Maps)", comment: "Button that launches Apple's maps.app with walking directions to this stop")) { [unowned self] _ in
                     self.application.open(appleMapsURL, options: [:], completionHandler: nil)
                 }
                 walkingDirectionActions.append(appleMaps)
@@ -354,7 +354,7 @@ public class StopViewController: UIViewController,
             // Display Google Maps app link, only if Google Maps is installed.
             if let googleMapsURL = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
                self.application.canOpenURL(googleMapsURL) {
-                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { _ in
+                let googleMaps = UIAction(title: OBALoc("stops_controller.walking_directions_google", value: "Walking Directions (Google Maps)", comment: "Button that launches Google Maps with walking directions to this stop")) { [unowned self] _ in
                     self.application.open(googleMapsURL, options: [:], completionHandler: nil)
                 }
                 walkingDirectionActions.append(googleMaps)
@@ -382,13 +382,13 @@ public class StopViewController: UIViewController,
         let sortByTimeTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_time", value: "Sort by time", comment: "Sort by time option")
         let sortByRouteTitle = OBALoc("stop_preferences_controller.sorting_section.sort_by_route", value: "Sort by route", comment: "Sort by route option")
 
-        let sortByTime = UIAction(title: sortByTimeTitle) { _ in
+        let sortByTime = UIAction(title: sortByTimeTitle) { [unowned self] _ in
             preferences.sortType = .time
             self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
             self.stopPreferences = preferences
         }
 
-        let sortByRoute = UIAction(title: sortByRouteTitle) { _ in
+        let sortByRoute = UIAction(title: sortByRouteTitle) { [unowned self] _ in
             preferences.sortType = .route
             self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: self.stop!, region: self.application.currentRegion!)
             self.stopPreferences = preferences
@@ -414,7 +414,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func helpMenu() -> UIMenu {
-        let reportButton = UIAction(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), image: UIImage(systemName: "exclamationmark.bubble")) { _ in
+        let reportButton = UIAction(title: OBALoc("stops_controller.report_problem", value: "Report a Problem", comment: "Button that launches the 'Report Problem' UI."), image: UIImage(systemName: "exclamationmark.bubble")) { [unowned self] _ in
             self.showReportProblem()
         }
 
