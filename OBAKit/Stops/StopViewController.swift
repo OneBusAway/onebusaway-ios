@@ -435,7 +435,7 @@ public class StopViewController: UIViewController,
 
     // MARK: - Data Loading
 
-    private let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
+    private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {

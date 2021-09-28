@@ -23,7 +23,7 @@ class TripViewController: UIViewController,
 
     private let tripConvertible: TripConvertible
 
-    private let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
+    private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application

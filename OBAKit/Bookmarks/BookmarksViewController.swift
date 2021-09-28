@@ -47,7 +47,7 @@ public class BookmarksViewController: UIViewController,
     }
 
     public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
-    fileprivate let dataLoadFeedbackGenerator = DataLoadFeedbackGenerator()
+    fileprivate lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
     let listView = OBAListView()
 
