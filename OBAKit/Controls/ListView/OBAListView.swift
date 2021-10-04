@@ -85,7 +85,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     // MARK: - Data source
 
     fileprivate func createDataSource() -> UICollectionViewDiffableDataSource<SectionType, ItemType> {
-        let dataSource = UICollectionViewDiffableDataSource<SectionType, ItemType>(collectionView: self) { (collectionView, indexPath, item) -> UICollectionViewCell? in
+        let dataSource = UICollectionViewDiffableDataSource<SectionType, ItemType>(collectionView: self) { [unowned self] (collectionView, indexPath, item) -> UICollectionViewCell? in
 
             switch item.configuration {
             case .custom(let config):
@@ -231,8 +231,13 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
                 return configuration
             }
 
-            configuration.leadingSwipeActionsConfigurationProvider = self.leadingSwipeActions
-            configuration.trailingSwipeActionsConfigurationProvider = self.trailingSwipeActions
+            configuration.leadingSwipeActionsConfigurationProvider = { [unowned self] indexPath -> UISwipeActionsConfiguration? in
+                leadingSwipeActions(for: indexPath)
+            }
+
+            configuration.trailingSwipeActionsConfigurationProvider = { [unowned self] indexPath -> UISwipeActionsConfiguration? in
+                trailingSwipeActions(for: indexPath)
+            }
 
             return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
         }
