@@ -446,7 +446,7 @@ public class StopViewController: UIViewController,
         title = Strings.updating
 
         let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
-        op.complete { [weak self] result in
+        op.complete { [weak self, unowned op] result in
             guard let self = self else { return }
 
             let broken = self.bookmarkContext != nil && (op.statusCodeIsEffectively404 ?? false)
