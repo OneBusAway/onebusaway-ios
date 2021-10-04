@@ -7,6 +7,7 @@
 
 import UIKit
 import MapKit
+import SwiftUI
 import CoreLocation
 import OBAKitCore
 
@@ -86,7 +87,6 @@ class MapStatusView: UIView {
         stackView.alignment = .center
         stackView.axis = .horizontal
         stackView.spacing = 8
-        stackView.distribution = .fillProportionally
 
         // Make visual view
         iconView = UIImageView.autolayoutNew()
@@ -186,5 +186,29 @@ class MapStatusView: UIView {
         }
 
         return UIAlertController(title: title, message: message, preferredStyle: .alert)
+    }
+}
+
+// MARK: - Previews
+
+extension MapStatusView.State: Identifiable, CaseIterable {
+    var id: String { return "\(self)"}
+}
+
+struct MapStatusView_Previews: PreviewProvider {
+    static func makeStatusView(for state: MapStatusView.State) -> MapStatusView {
+        let v = MapStatusView()
+        v.configure(for: state)
+        return v
+    }
+
+    static var previews: some View {
+        ForEach(MapStatusView.State.allCases) { state in
+            UIViewPreview {
+                makeStatusView(for: state)
+            }
+            .previewLayout(.fixed(width: 375, height: 64))
+            .previewDisplayName(state.id)
+        }
     }
 }

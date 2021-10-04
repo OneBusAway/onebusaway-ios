@@ -37,6 +37,7 @@ class SettingsViewController: FormViewController {
         form
             +++ mapSection
             +++ alertsSection
+            +++ accessibilitySection
 
         if application.analytics != nil {
             form +++ privacySection
@@ -57,6 +58,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
             privacySectionReportingEnabled: application.analytics?.reportingEnabled?() ?? false,
+            DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         ])
@@ -83,6 +85,10 @@ class SettingsViewController: FormViewController {
 
         if let heading = values[mapSectionShowsHeading] as? Bool {
             application.mapRegionManager.mapViewShowsHeading = heading
+        }
+
+        if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
+            application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
         }
 
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
@@ -120,6 +126,17 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = mapSectionShowsHeading
             $0.title = OBALoc("settings_controller.map_section.shows_heading", value: "Show my current heading", comment: "Settings > Map section > Show my current heading")
+        }
+
+        return section
+    }()
+
+    private lazy var accessibilitySection: Section = {
+        let section = Section() /* Untitled section */
+
+        section <<< SwitchRow {
+            $0.tag = DataLoadFeedbackGenerator.EnabledUserDefaultsKey
+            $0.title = OBALoc("settings_controller.accessibility_section.enable_reload_haptic", value: "Haptic feedback on reload", comment: "Settings > Accessibility section > Haptic feedback on reload")
         }
 
         return section

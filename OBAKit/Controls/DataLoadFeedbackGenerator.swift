@@ -13,6 +13,12 @@ class DataLoadFeedbackGenerator {
         case success
         case failed
     }
+    static let EnabledUserDefaultsKey = "DataLoadFeedbackGenerator.enabled"
+
+    private let userDefaults: UserDefaults
+    private var isUserEnabled: Bool {
+        userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
+    }
 
     // TODO: this feature may be expanded to make better use of
     // system resources. For now, this will avoid initializing
@@ -22,7 +28,14 @@ class DataLoadFeedbackGenerator {
     fileprivate var selectionFeedback: UISelectionFeedbackGenerator?
     fileprivate var notificationFeedback: UINotificationFeedbackGenerator?
 
-    init() { }
+    init(userDefaults: UserDefaults) {
+        self.userDefaults = userDefaults
+        userDefaults.register(defaults: [DataLoadFeedbackGenerator.EnabledUserDefaultsKey: true])
+    }
+
+    convenience init(application: Application) {
+        self.init(userDefaults: application.userDefaults)
+    }
 
     func dataLoad(_ feedback: FeedbackType) {
         switch feedback {
@@ -32,26 +45,22 @@ class DataLoadFeedbackGenerator {
     }
 
     fileprivate func dataLoadSuccess() {
-        // TODO: Until https://github.com/oneBusAway/onebusaway-ios/issues/505
-        // is fixed, this has been disabled.
+        guard isUserEnabled else { return }
+        if selectionFeedback == nil {
+            selectionFeedback = UISelectionFeedbackGenerator()
+        }
 
-        // if selectionFeedback == nil {
-        //     selectionFeedback = UISelectionFeedbackGenerator()
-        // }
-        //
-        // selectionFeedback?.selectionChanged()
-        // selectionFeedback = nil
+        selectionFeedback?.selectionChanged()
+        selectionFeedback = nil
     }
 
     fileprivate func dataLoadFailed() {
-        // TODO: Until https://github.com/oneBusAway/onebusaway-ios/issues/505
-        // is fixed, this has been disabled.
+        guard isUserEnabled else { return }
+        if notificationFeedback == nil {
+            notificationFeedback = UINotificationFeedbackGenerator()
+        }
 
-        // if notificationFeedback == nil {
-        //     notificationFeedback = UINotificationFeedbackGenerator()
-        // }
-        //
-        // notificationFeedback?.notificationOccurred(.error)
-        // notificationFeedback = nil
+        notificationFeedback?.notificationOccurred(.error)
+        notificationFeedback = nil
     }
 }
