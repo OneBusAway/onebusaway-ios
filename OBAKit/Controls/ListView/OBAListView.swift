@@ -338,14 +338,13 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     fileprivate func emptyDataConfiguration(isEmpty: Bool) {
-        guard isEmpty, let emptyData = self.obaDataSource?.emptyData(for: self) else {
-            self.backgroundView?.isHidden = true
-            return
-        }
-
         self.backgroundView?.removeFromSuperview()
         self.backgroundView?.isHidden = false
         self.backgroundView = nil
+
+        guard isEmpty, let emptyData = self.obaDataSource?.emptyData(for: self) else {
+            return
+        }
 
         let view: UIView
         switch emptyData {
