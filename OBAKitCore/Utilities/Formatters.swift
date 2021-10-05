@@ -9,6 +9,7 @@
 
 import Foundation
 import MapKit
+import SwiftUI
 
 public class Formatters: NSObject {
     private let locale: Locale
@@ -149,6 +150,31 @@ public class Formatters: NSObject {
         attributedExplanation.append(explanation)
 
         return attributedExplanation
+    }
+
+    /// SwiftUI port of `fullAttributedArrivalDepartureExplanation`.
+    public func fullAttributedArrivalDepartureExplanation(
+        arrivalDepartureDate: Date,
+        scheduleStatus: ScheduleStatus,
+        temporalState: TemporalState,
+        arrivalDepartureStatus: ArrivalDepartureStatus,
+        scheduleDeviationInMinutes: Int) -> some View {
+            let arrDepTime = timeFormatter.string(from: arrivalDepartureDate)
+
+            let explanationText: String
+            if scheduleStatus == .unknown {
+                explanationText = Strings.scheduledNotRealTime
+            }
+            else {
+                explanationText = formattedScheduleDeviation(temporalState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, scheduleDeviation: scheduleDeviationInMinutes)
+            }
+
+            return
+                Text("\(arrDepTime) - ")
+                    .font(.footnote)
+                + Text(explanationText)
+                    .font(.footnote)
+                    .foregroundColor(.scheduleStatus(scheduleStatus))
     }
 
     // MARK: Accessibility label
