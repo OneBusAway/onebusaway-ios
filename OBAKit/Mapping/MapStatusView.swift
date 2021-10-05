@@ -191,6 +191,8 @@ class MapStatusView: UIView {
 
 // MARK: - Previews
 
+#if DEBUG
+
 extension MapStatusView.State: Identifiable, CaseIterable {
     var id: String { return "\(self)"}
 }
@@ -212,3 +214,5 @@ struct MapStatusView_Previews: PreviewProvider {
         }
     }
 }
+
+#endif
