@@ -405,9 +405,11 @@ public class MapViewController: UIViewController,
     public func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
         // Don't allow the status overlay to be shown when the
         // Floating Panel is fully open because it looks weird.
+        let floatingPanelPositionIsCollapsed = vc.position == .tip || vc.position == .hidden
         statusOverlay.isHidden = vc.position == .full
+        mapPanelController.listView.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
 
-        if mapPanelController.inSearchMode && (vc.position == .hidden || vc.position == .tip) {
+        if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
         }
     }
