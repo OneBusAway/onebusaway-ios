@@ -30,7 +30,7 @@ public struct DepartureTimeViewModel: Hashable, Equatable {
 extension DepartureTimeViewModel {
     init(minutes: Int, temporalState: TemporalState, scheduleStatus: ScheduleStatus, arrivalDepartureStatus: ArrivalDepartureStatus) {
         let date = Calendar.current.date(byAdding: .minute, value: minutes, to: Date())!
-        self.init(arrivalDepartureDate: date, temporalState: temporalState, scheduleStatus: scheduleStatus)
+        self.init(arrivalDepartureDate: date, temporalState: temporalState, scheduleStatus: scheduleStatus, arrivalDepartureStatus: arrivalDepartureStatus)
     }
 
     static public var DEBUG_departingNOWOnTime: Self {

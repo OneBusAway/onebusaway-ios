@@ -14,7 +14,12 @@ public struct DepartureTimeView: View {
 
     // MARK: - View Model
     @State public var viewModel: DepartureTimeViewModel
-    public let isBadge: Bool
+    @State public var isBadge: Bool = true
+
+    public init(viewModel: DepartureTimeViewModel, isBadge: Bool = true) {
+        self._viewModel = State(initialValue: viewModel)
+        self._isBadge = State(initialValue: isBadge)
+    }
 
     var minutes: Int {
         return Calendar.current.dateComponents([.minute], from: Date(), to: viewModel.arrivalDepartureDate).minute ?? 0
@@ -30,11 +35,6 @@ public struct DepartureTimeView: View {
         return formatters.formattedTimeUntilArrivalDeparture(
             arrivalDepartureMinutes: minutes,
             temporalState: viewModel.temporalState)
-    }
-
-    public init(viewModel: DepartureTimeViewModel, isBadge: Bool = true) {
-        self._viewModel = State(wrappedValue: viewModel)
-        self.isBadge = isBadge
     }
 
     // MARK: - View Attributes
