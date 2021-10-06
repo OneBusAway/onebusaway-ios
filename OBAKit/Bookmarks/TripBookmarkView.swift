@@ -15,7 +15,7 @@ struct TripBookmarkView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             if let routeShortName = viewModel.routeShortName {
-                routeType(routeShortName: routeShortName, routeType: viewModel.routeType)
+                RouteTypeLabelView(labelText: routeShortName, routeType: viewModel.routeType)
             }
 
             HStack(alignment: .top) {
@@ -51,20 +51,6 @@ struct TripBookmarkView: View {
                 }
             }
         }
-    }
-
-    func routeType(routeShortName: String, routeType: Route.RouteType) -> some View {
-        return Label {
-            Text(routeShortName)
-        } icon: {
-            Image(uiImage: Icons.transportIcon(from: routeType))
-                .resizable()
-                .aspectRatio(1, contentMode: .fit)
-                .frame(width: 24)
-        }
-        .labelStyle(.titleAndIcon)
-        .font(.subheadline)
-        .foregroundColor(.secondary)
     }
 
     func headline(_ arrDep: DepartureTimeViewModel) -> some View {
