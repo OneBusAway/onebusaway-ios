@@ -11,7 +11,7 @@ import OBAKitCore
 struct TripBookmarkViewModel: Identifiable {
     let id: String
 
-    let bookmarkName: String
+    let name: String
     let stopID: StopID
 
     let isFavorite: Bool
@@ -39,7 +39,7 @@ extension TripBookmarkViewModel {
     ) -> Self {
         return self.init(
             id: UUID().uuidString,
-            bookmarkName: name,
+            name: name,
             stopID: stopID,
             isFavorite: isFavorite,
             routeShortName: routeShortName,

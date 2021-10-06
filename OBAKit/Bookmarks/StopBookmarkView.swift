@@ -14,6 +14,7 @@ struct StopBookmarkView: View {
         VStack(alignment: .leading) {
             RouteTypeLabelView(labelText: "Stop #\(viewModel.stopID)", routeType: viewModel.primaryRouteType)
             Text(viewModel.name)
+                .font(.headline)
         }
     }
 }

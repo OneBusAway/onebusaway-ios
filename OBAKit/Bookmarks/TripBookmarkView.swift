@@ -20,7 +20,7 @@ struct TripBookmarkView: View {
 
             HStack(alignment: .top) {
                 VStack(alignment: .leading) {
-                    Text(viewModel.bookmarkName)
+                    Text(viewModel.name)
                         .font(.headline)
 
                     if let headlineArrDep = viewModel.primaryArrivalDeparture {
