@@ -437,6 +437,9 @@ public class StopViewController: UIViewController,
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
+    /// Used to control behavior on the first load of data from the server in this controller.
+    private var firstLoad = true
+
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() {
         operation?.cancel()
@@ -470,7 +473,12 @@ public class StopViewController: UIViewController,
                     self.extendLoadMoreWindow()
                 }
 
-                self.dataLoadFeedbackGenerator.dataLoad(.success)
+                if self.firstLoad {
+                    self.firstLoad = false
+                }
+                else {
+                    self.dataLoadFeedbackGenerator.dataLoad(.success)
+                }
             }
         }
 
