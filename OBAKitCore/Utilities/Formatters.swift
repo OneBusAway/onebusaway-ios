@@ -477,6 +477,46 @@ public class Formatters: NSObject {
         }
     }
 
+    /// Creates a string suitable for use as an accessibility label for a stop annotation view on the map.
+    /// - Parameter stop: The `Stop` object to generate an accessibility label from.
+    /// - Returns: A localized string.
+    public class func formattedAccessibilityLabel(stop: Stop) -> String {
+        var parts = [stop.name]
+
+        if let direction = directionString(stop.direction) {
+            parts.append(direction)
+        }
+
+        if let routes = Formatters.formattedRoutes(stop.routes) {
+            parts.append(routes)
+        }
+
+        let fmt = OBALoc("formatters.stop_id_fmt", value: "Stop ID: %@", comment: "A string that prefixes a stop ID to tell the user what that value is.")
+        parts.append(String(format: fmt, stop.code))
+
+        return parts.joined(separator: "; ")
+    }
+
+    /// Provides the a localized string representing the cardinal direction that is passed in. For example, `.n` returns `"North"`.
+    /// - Parameter direction: The direction enum value.
+    /// - Returns: A localized string representing the direction.
+    public class func directionString(_ direction: Direction) -> String? {
+        switch direction {
+        case .n: return OBALoc("formatters.cardinal_direction.north", value: "North", comment: "North Direction")
+        case .ne: return OBALoc("formatters.cardinal_direction.northeast", value: "Northeast", comment: "Northeast Direction")
+        case .e: return OBALoc("formatters.cardinal_direction.east", value: "East", comment: "East Direction")
+        case .se: return OBALoc("formatters.cardinal_direction.southeast", value: "Southeast", comment: "Southeast Direction")
+        case .s: return OBALoc("formatters.cardinal_direction.south", value: "South", comment: "South Direction")
+        case .sw: return OBALoc("formatters.cardinal_direction.southwest", value: "Southwest", comment: "Southwest Direction")
+        case .w: return OBALoc("formatters.cardinal_direction.west", value: "West", comment: "West Direction")
+        case .nw: return OBALoc("formatters.cardinal_direction.northwest", value: "Northwest", comment: "Northwest Direction")
+        case .unknown: return nil
+        }
+    }
+
+    /// Provides an abbreviation of the cardinal direction that is passed in. For example, `.n` returns `"N"`.
+    /// - Parameter direction: The direction enum value.
+    /// - Returns: A localized string representing the direction.
     public class func directionAbbreviation(_ direction: Direction) -> String? {
         switch direction {
         case .n: return OBALoc("formatters.cardinal_direction_abbrev.north", value: "N", comment: "Abbreviation for North")

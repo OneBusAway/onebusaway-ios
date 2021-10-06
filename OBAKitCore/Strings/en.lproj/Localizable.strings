@@ -172,6 +172,30 @@
 /* Headed in a western direction */
 "formatters.cardinal_adjective.west" = "Westbound";
 
+/* East Direction */
+"formatters.cardinal_direction.east" = "East";
+
+/* North Direction */
+"formatters.cardinal_direction.north" = "North";
+
+/* Northeast Direction */
+"formatters.cardinal_direction.northeast" = "Northeast";
+
+/* Northwest Direction */
+"formatters.cardinal_direction.northwest" = "Northwest";
+
+/* South Direction */
+"formatters.cardinal_direction.south" = "South";
+
+/* Southeast Direction */
+"formatters.cardinal_direction.southeast" = "Southeast";
+
+/* Southwest Direction */
+"formatters.cardinal_direction.southwest" = "Southwest";
+
+/* West Direction */
+"formatters.cardinal_direction.west" = "West";
+
 /* Abbreviation for East */
 "formatters.cardinal_direction_abbrev.east" = "E";
 
@@ -267,6 +291,9 @@
 
 /* Format string representing a numeric stop number. e.g. Stop #1234 */
 "formatters.stop.stop_code_numeric" = "Stop #%@";
+
+/* A string that prefixes a stop ID to tell the user what that value is. */
+"formatters.stop_id_fmt" = "Stop ID: %@";
 
 /* Indicates that an event just took place. */
 "formatters.time_ago_just_now" = "Just Now";
