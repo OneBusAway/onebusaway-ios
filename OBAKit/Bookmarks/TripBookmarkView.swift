@@ -15,11 +15,20 @@ struct TripBookmarkView: View {
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading) {
+                if let routeShortName = viewModel.routeShortName {
+                    (Text("[") + Text(routeShortName) + Text("]"))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+
                 Text(viewModel.bookmarkName)
                     .font(.headline)
 
                 if let headlineArrDep = viewModel.primaryArrivalDeparture {
                     headline(headlineArrDep)
+                } else {
+                    Text("No upcoming trips.")
+                        .font(.caption)
                 }
 
                 Spacer()
@@ -27,7 +36,7 @@ struct TripBookmarkView: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 0) {
+            VStack(alignment: .trailing, spacing: 2) {
                 if let first = viewModel.primaryArrivalDeparture {
                     DepartureTimeView(viewModel: first, isBadge: true)
                         .fixedSize()
@@ -55,8 +64,10 @@ struct TripBookmarkView: View {
 
 struct TripBookmarkView_Previews: PreviewProvider {
     static var previews: some View {
-        TripBookmarkView(viewModel: .linkArrivingNowOnTime)
-            .padding()
-            .previewLayout(.sizeThatFits)
+        List {
+            TripBookmarkView(viewModel: .linkArrivingNowOnTime)
+            TripBookmarkView(viewModel: .metroTransitBLineDepartingLate)
+            TripBookmarkView(viewModel: .soundTransit550NoTrips)
+        }.listStyle(.plain)
     }
 }
