@@ -13,44 +13,58 @@ struct TripBookmarkView: View {
     @State var viewModel: TripBookmarkViewModel
 
     var body: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading) {
-                if let routeShortName = viewModel.routeShortName {
-                    (Text("[") + Text(routeShortName) + Text("]"))
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
+        VStack(alignment: .leading, spacing: 4) {
+            if let routeShortName = viewModel.routeShortName {
+                routeType(routeShortName: routeShortName, routeType: viewModel.routeType)
+            }
 
-                Text(viewModel.bookmarkName)
-                    .font(.headline)
+            HStack(alignment: .top) {
+                VStack(alignment: .leading) {
+                    Text(viewModel.bookmarkName)
+                        .font(.headline)
 
-                if let headlineArrDep = viewModel.primaryArrivalDeparture {
-                    headline(headlineArrDep)
-                } else {
-                    Text("No upcoming trips.")
-                        .font(.caption)
+                    if let headlineArrDep = viewModel.primaryArrivalDeparture {
+                        headline(headlineArrDep)
+                    } else {
+                        Text("No upcoming trips.")
+                            .font(.caption)
+                    }
+
+                    Spacer()
                 }
 
                 Spacer()
-            }
 
-            Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    if let first = viewModel.primaryArrivalDeparture {
+                        DepartureTimeView(viewModel: first, isBadge: true)
+                            .fixedSize()
+                    }
 
-            VStack(alignment: .trailing, spacing: 2) {
-                if let first = viewModel.primaryArrivalDeparture {
-                    DepartureTimeView(viewModel: first, isBadge: true)
-                        .fixedSize()
-                }
+                    if let second = viewModel.secondaryArrivalDeparture {
+                        DepartureTimeView(viewModel: second, isBadge: false)
+                    }
 
-                if let second = viewModel.secondaryArrivalDeparture {
-                    DepartureTimeView(viewModel: second, isBadge: false)
-                }
-
-                if let third = viewModel.tertiaryArrivalDeparture {
-                    DepartureTimeView(viewModel: third, isBadge: false)
+                    if let third = viewModel.tertiaryArrivalDeparture {
+                        DepartureTimeView(viewModel: third, isBadge: false)
+                    }
                 }
             }
         }
+    }
+
+    func routeType(routeShortName: String, routeType: Route.RouteType) -> some View {
+        return Label {
+            Text(routeShortName)
+        } icon: {
+            Image(uiImage: Icons.transportIcon(from: routeType))
+                .resizable()
+                .aspectRatio(1, contentMode: .fit)
+                .frame(width: 24)
+        }
+        .labelStyle(.titleAndIcon)
+        .font(.subheadline)
+        .foregroundColor(.secondary)
     }
 
     func headline(_ arrDep: DepartureTimeViewModel) -> some View {
@@ -64,10 +78,12 @@ struct TripBookmarkView: View {
 
 struct TripBookmarkView_Previews: PreviewProvider {
     static var previews: some View {
-        List {
-            TripBookmarkView(viewModel: .linkArrivingNowOnTime)
-            TripBookmarkView(viewModel: .metroTransitBLineDepartingLate)
-            TripBookmarkView(viewModel: .soundTransit550NoTrips)
-        }.listStyle(.plain)
+        Group {
+            List {
+                TripBookmarkView(viewModel: .linkArrivingNowOnTime)
+                TripBookmarkView(viewModel: .metroTransitBLineDepartingLate)
+                TripBookmarkView(viewModel: .soundTransit550NoTrips)
+            }.listStyle(.plain)
+        }
     }
 }
