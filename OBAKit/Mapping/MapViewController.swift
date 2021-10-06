@@ -302,7 +302,7 @@ public class MapViewController: UIViewController,
             button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "standard", comment: "Voiceover text indicating the current map type as the standard base map.")
         } else {
             button.setImage(UIImage(systemName: "globe"), for: .normal)
-            button.accessibilityValue = OBALoc("map_controller.map_type.standard.accessibility_value", value: "hybrid", comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels).")
+            button.accessibilityValue = OBALoc("map_controller.map_type.hybrid.accessibility_value", value: "hybrid", comment: "Voiceover text indicating the current map type as the hybrid base map (satellite view with labels).")
         }
     }
 
