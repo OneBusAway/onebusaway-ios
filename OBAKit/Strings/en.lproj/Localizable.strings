@@ -142,12 +142,6 @@
 /* A voiceover title describing that the card's visibility taking up the minimum amount of screen. */
 "floating_panel.controller.position.minimized" = "Minimized";
 
-/* This button rejects the application's request to see the user's location. */
-"location_permission_bulletin.buttons.deny_permission" = "Maybe Later";
-
-/* This button signals the user is willing to grant location access to the app. */
-"location_permission_bulletin.buttons.give_permission" = "Allow Access";
-
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
 
@@ -213,6 +207,15 @@
 
 /* Title of the alert that appears when the user is updating their current region manually. */
 "map_controller.change_region_alert.title" = "Change Region?";
+
+/* Voiceover text indicating that this button toggles the base map type. */
+"map_controller.map_type.accessibility_label" = "Map type";
+
+/* Voiceover text indicating the current map type as the hybrid base map (satellite view with labels). */
+"map_controller.map_type.hybrid.accessibility_value" = "hybrid";
+
+/* Voiceover text indicating the current map type as the standard base map. */
+"map_controller.map_type.standard.accessibility_value" = "standard";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "No search results were found.";
@@ -486,6 +489,9 @@
 
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Learn more: %@";
+
+/* Settings > Accessibility section > Haptic feedback on reload */
+"settings_controller.accessibility_section.enable_reload_haptic" = "Haptic feedback on reload";
 
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";

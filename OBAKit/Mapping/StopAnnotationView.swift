@@ -155,6 +155,21 @@ class StopAnnotationView: MKAnnotationView {
     public var mapTextColor: UIColor = ThemeColors.shared.mapText
 
     // MARK: - Accessibility
+
+    override var accessibilityLabel: String? {
+        get {
+            guard let stop = annotation as? Stop else {
+                return nil
+            }
+
+            return Formatters.formattedAccessibilityLabel(stop: stop)
+        }
+
+        set {
+            super.accessibilityLabel = newValue
+        }
+    }
+
     @objc fileprivate func voiceoverStatusDidChange(_ notification: Notification) {
         updateAccessibility()
     }
