@@ -486,4 +486,11 @@ public class Open311Server: NSObject, Codable {
         try container.encode(apiKey, forKey: .apiKey)
         try container.encode(baseURL, forKey: .baseURL)
     }
+
+    public override func isEqual(_ object: Any?) -> Bool {
+        guard let rhs = object as? Open311Server else { return false }
+        return jurisdictionID == rhs.jurisdictionID &&
+            apiKey == rhs.apiKey &&
+            baseURL == rhs.baseURL
+    }
 }
