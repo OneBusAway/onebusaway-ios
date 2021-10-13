@@ -154,7 +154,10 @@ final class TripBookmarkTableCell: OBAListViewCell {
         routeHeadsignLabel.text = config.viewModel.name
 
         guard let arrivalDepartures = config.viewModel.arrivalDepartures,
-              let formatters = config.formatters else { return }
+              let formatters = config.formatters else {
+                  accessibilityLabel = config.viewModel.name
+                  return
+              }
 
         if let arrivalDeparture = arrivalDepartures.first {
             fullExplanationLabel.attributedText = formatters.fullAttributedExplanation(from: arrivalDeparture)
