@@ -14,9 +14,9 @@ struct TripBookmarkView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let routeShortName = viewModel.routeShortName {
-                RouteTypeLabelView(labelText: routeShortName, routeType: viewModel.routeType)
-            }
+//            if let routeShortName = viewModel.routeShortName {
+//                RouteTypeLabelView(labelText: routeShortName, routeType: viewModel.routeType)
+//            }
 
             HStack(alignment: .top) {
                 VStack(alignment: .leading) {
