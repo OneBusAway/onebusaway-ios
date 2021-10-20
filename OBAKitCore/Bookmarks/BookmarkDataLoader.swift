@@ -9,7 +9,7 @@
 
 import Foundation
 
-public protocol BookmarkDataDelegate: NSObjectProtocol {
+public protocol BookmarkDataDelegate: AnyObject {
     func dataLoaderDidUpdate(_ dataLoader: BookmarkDataLoader)
 }
 

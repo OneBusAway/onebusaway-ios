@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct StopBookmarkView: View {
-    @State var viewModel: StopBookmarkViewModel
+    var viewModel: StopBookmarkViewModel
 
     var body: some View {
         VStack(alignment: .leading) {

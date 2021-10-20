@@ -10,7 +10,7 @@ import OBAKitCore
 
 struct TripBookmarkView: View {
     @Environment(\.obaFormatters) var formatters
-    @State var viewModel: TripBookmarkViewModel
+    var viewModel: TripBookmarkViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
