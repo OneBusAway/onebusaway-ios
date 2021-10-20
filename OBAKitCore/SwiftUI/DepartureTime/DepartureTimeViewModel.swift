@@ -24,6 +24,11 @@ public struct DepartureTimeViewModel: Hashable, Equatable {
                   scheduleStatus: arrivalDeparture.scheduleStatus,
                   arrivalDepartureStatus: arrivalDeparture.arrivalDepartureStatus)
     }
+
+    /// For use with SwiftUI's `.redacted(.placeholder)` view modifier.
+    static public var placeholder: Self {
+        return .init(minutes: 999, temporalState: .future, scheduleStatus: .unknown, arrivalDepartureStatus: .departing)
+    }
 }
 
 #if DEBUG

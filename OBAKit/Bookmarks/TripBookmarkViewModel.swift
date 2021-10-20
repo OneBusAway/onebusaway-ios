@@ -39,6 +39,7 @@ extension TripBookmarkViewModel {
         routeType: Route.RouteType,
         routeShortName: String?,
         isFavorite: Bool,
+        isLoading: Bool = false,
         primaryArrivalDeparture: DepartureTimeViewModel? = nil,
         secondaryArrivalDeparture: DepartureTimeViewModel? = nil,
         tertiaryArrivalDeparture: DepartureTimeViewModel? = nil
@@ -52,12 +53,16 @@ extension TripBookmarkViewModel {
             tripHeadsign: nil,
             routeID: nil,
             routeType: routeType,
-            isLoading: false,
+            isLoading: isLoading,
             primaryArrivalDeparture: primaryArrivalDeparture,
             secondaryArrivalDeparture: secondaryArrivalDeparture,
             tertiaryArrivalDeparture: tertiaryArrivalDeparture)
     }
 
+    static var metroTransitUWLoadingData: TripBookmarkViewModel {
+        return .preview(name: "[44] 15th Ave N & NE Campus Pkwy", stopID: "1_10914", routeType: .bus, routeShortName: "44", isFavorite: false, isLoading: true)
+    }
+    
     static var linkArrivingNowOnTime: TripBookmarkViewModel {
         let arrDep1 = DepartureTimeViewModel.DEBUG_departingNOWOnTime
         let arrDep2 = DepartureTimeViewModel.DEBUG_departingIn20MinutesScheduled

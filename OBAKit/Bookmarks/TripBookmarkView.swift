@@ -26,8 +26,15 @@ struct TripBookmarkView: View {
                     if let headlineArrDep = viewModel.primaryArrivalDeparture {
                         headline(headlineArrDep)
                     } else {
-                        Text("No upcoming trips.")
-                            .font(.caption)
+                        if viewModel.isLoading {
+                            // placeholder text, the string length is for visual purposes
+                            Text("go away, i'm still loading!!")
+                                .font(.caption)
+                                .redacted(reason: .placeholder)
+                        } else {
+                            Text("No upcoming trips.")
+                                .font(.caption)
+                        }
                     }
 
                     Spacer()
@@ -36,17 +43,29 @@ struct TripBookmarkView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    if let first = viewModel.primaryArrivalDeparture {
-                        DepartureTimeView(viewModel: first, isBadge: true)
+                    if viewModel.isLoading {
+                        DepartureTimeView(viewModel: .placeholder, isBadge: true)
                             .fixedSize()
-                    }
+                            .redacted(reason: .placeholder)
 
-                    if let second = viewModel.secondaryArrivalDeparture {
-                        DepartureTimeView(viewModel: second, isBadge: false)
-                    }
+                        DepartureTimeView(viewModel: .placeholder, isBadge: false)
+                            .redacted(reason: .placeholder)
 
-                    if let third = viewModel.tertiaryArrivalDeparture {
-                        DepartureTimeView(viewModel: third, isBadge: false)
+                        DepartureTimeView(viewModel: .placeholder, isBadge: false)
+                            .redacted(reason: .placeholder)
+                    } else {
+                        if let first = viewModel.primaryArrivalDeparture {
+                            DepartureTimeView(viewModel: first, isBadge: true)
+                                .fixedSize()
+                        }
+
+                        if let second = viewModel.secondaryArrivalDeparture {
+                            DepartureTimeView(viewModel: second, isBadge: false)
+                        }
+
+                        if let third = viewModel.tertiaryArrivalDeparture {
+                            DepartureTimeView(viewModel: third, isBadge: false)
+                        }
                     }
                 }
             }
@@ -66,6 +85,7 @@ struct TripBookmarkView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             List {
+                TripBookmarkView(viewModel: .metroTransitUWLoadingData)
                 TripBookmarkView(viewModel: .linkArrivingNowOnTime)
                 TripBookmarkView(viewModel: .metroTransitBLineDepartingLate)
                 TripBookmarkView(viewModel: .soundTransit550NoTrips)
