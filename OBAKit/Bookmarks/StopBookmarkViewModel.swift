@@ -8,7 +8,7 @@
 import Foundation
 import OBAKitCore
 
-struct StopBookmarkViewModel: Identifiable {
+struct StopBookmarkViewModel: Identifiable, Equatable {
     let id: String
 
     let name: String

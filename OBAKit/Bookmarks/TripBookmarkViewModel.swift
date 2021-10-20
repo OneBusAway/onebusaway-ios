@@ -8,7 +8,7 @@
 import SwiftUI
 import OBAKitCore
 
-struct TripBookmarkViewModel: Identifiable {
+struct TripBookmarkViewModel: Identifiable, Equatable {
     let id: String
 
     let name: String
@@ -20,9 +20,15 @@ struct TripBookmarkViewModel: Identifiable {
     let routeID: RouteID?
     let routeType: Route.RouteType
 
-    let primaryArrivalDeparture: DepartureTimeViewModel?
-    let secondaryArrivalDeparture: DepartureTimeViewModel?
-    let tertiaryArrivalDeparture: DepartureTimeViewModel?
+    let isLoading: Bool
+
+    var primaryArrivalDeparture: DepartureTimeViewModel?
+    var secondaryArrivalDeparture: DepartureTimeViewModel?
+    var tertiaryArrivalDeparture: DepartureTimeViewModel?
+
+    static func fromBookmark(bookmark: Bookmark, isLoading: Bool) -> Self {
+        return self.init(id: bookmark.id.uuidString, name: bookmark.name, stopID: bookmark.stopID, isFavorite: bookmark.isFavorite, routeShortName: bookmark.routeShortName, tripHeadsign: bookmark.tripHeadsign, routeID: bookmark.routeID, routeType: .unknown, isLoading: isLoading, primaryArrivalDeparture: nil, secondaryArrivalDeparture: nil, tertiaryArrivalDeparture: nil)
+    }
 }
 
 #if DEBUG
@@ -46,6 +52,7 @@ extension TripBookmarkViewModel {
             tripHeadsign: nil,
             routeID: nil,
             routeType: routeType,
+            isLoading: false,
             primaryArrivalDeparture: primaryArrivalDeparture,
             secondaryArrivalDeparture: secondaryArrivalDeparture,
             tertiaryArrivalDeparture: tertiaryArrivalDeparture)
