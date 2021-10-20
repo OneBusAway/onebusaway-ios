@@ -22,7 +22,7 @@ struct BookmarksView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTitle("Bookmarks")
+        .navigationTitle(OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab"))
         .listStyle(.plain)
         .toolbar {
             Button("Toggle edit") {

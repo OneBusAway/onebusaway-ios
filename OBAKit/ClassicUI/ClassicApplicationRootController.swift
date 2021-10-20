@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import SwiftUI
 
 @objc(OBAClassicApplicationRootController)
 public class ClassicApplicationRootController: UITabBarController {
@@ -26,7 +27,15 @@ public class ClassicApplicationRootController: UITabBarController {
 
         self.mapController = MapViewController(application: application)
         self.recentStopsController = RecentStopsViewController(application: application)
-        self.bookmarksController = BookmarksViewController(application: application)
+        
+        let bookmarksView = BookmarksView()
+            .environment(\.coreApplication, application)
+        self.bookmarksController = UIHostingController(rootView: bookmarksView)
+        self.bookmarksController.title = OBALoc("bookmarks_controller.title", value: "Bookmarks", comment: "Title of the Bookmarks tab")
+        self.bookmarksController.tabBarItem.image = Icons.bookmarksTabIcon
+        self.bookmarksController.tabBarItem.selectedImage = Icons.bookmarksSelectedTabIcon
+
+//        self.bookmarksController = BookmarksViewController(application: application)
         self.moreController = MoreViewController(application: application)
 
         super.init(nibName: nil, bundle: nil)
@@ -45,7 +54,7 @@ public class ClassicApplicationRootController: UITabBarController {
 
     @objc public let mapController: MapViewController
     @objc public let recentStopsController: RecentStopsViewController
-    @objc public let bookmarksController: BookmarksViewController
+    let bookmarksController: UIViewController
     @objc public let moreController: MoreViewController
 
     required init?(coder aDecoder: NSCoder) {
