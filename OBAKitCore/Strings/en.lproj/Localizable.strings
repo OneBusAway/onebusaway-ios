@@ -358,6 +358,12 @@
 /* User-facing string that means the vehicle headsign was wrong. */
 "trip_problem_code.user_description.wrong_headsign" = "Wrong headsign";
 
+/* Voiceover text explaining that this stop is the user's destination */
+"trip_stop.user_destination.accessibility_label" = "Your destination";
+
+/* Voiceover text explaining that the vehicle is currently at this stop */
+"trip_stop.vehicle_location.accessibility_label" = "Vehicle is here";
+
 /* VoiceOver text describing a route that has already arrived, regardless of realtime data availability. */
 "voiceover.arrivaldeparture_arrived_x_minutes_ago_fmt" = "arrived %1$d minutes ago at %2$@.";
 
