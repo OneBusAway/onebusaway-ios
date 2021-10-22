@@ -174,6 +174,8 @@ final class TripStopCell: OBAListViewCell {
             stackWrapper.trailingAnchor.constraint(equalTo: contentView.readableContentGuide.trailingAnchor),
             heightConstraint
         ])
+
+        isAccessibilityElement = true
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -192,6 +194,10 @@ final class TripStopCell: OBAListViewCell {
         timeLabel.text = config.formatters?.timeFormatter.string(from: config.viewModel.date) ?? ""
         tripSegmentView.routeType = config.viewModel.routeType
         tripSegmentView.setDestinationStatus(user: config.viewModel.isUserDestination, vehicle: config.viewModel.isCurrentVehicleLocation)
+
+        let labels = [config.viewModel.title, config.formatters?.timeFormatter.string(from: config.viewModel.date)]
+        accessibilityLabel = labels.compactMap { $0 }.joined(separator: "; ")
+        accessibilityValue = config.formatters?.accessibilityValueForTripStop(isUserDestination: config.viewModel.isUserDestination, isCurrentVehicleLocation: config.viewModel.isCurrentVehicleLocation)
     }
 
     private func apply(adjacentTripConfiguration config: AdjacentTripRowConfiguration) {
