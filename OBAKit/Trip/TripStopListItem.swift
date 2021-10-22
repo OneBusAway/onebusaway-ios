@@ -197,7 +197,19 @@ final class TripStopCell: OBAListViewCell {
 
         let labels = [config.viewModel.title, config.formatters?.timeFormatter.string(from: config.viewModel.date)]
         accessibilityLabel = labels.compactMap { $0 }.joined(separator: "; ")
-        accessibilityValue = config.formatters?.accessibilityValueForTripStop(isUserDestination: config.viewModel.isUserDestination, isCurrentVehicleLocation: config.viewModel.isCurrentVehicleLocation)
+
+        var accessibilityValueFlags: [String] = []
+
+        if config.viewModel.isUserDestination {
+            accessibilityValueFlags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
+        }
+
+        if config.viewModel.isCurrentVehicleLocation {
+            accessibilityValueFlags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
+        }
+
+        let joined = accessibilityValueFlags.joined(separator: ", ")
+        accessibilityValue = joined.isEmpty ? nil : joined
     }
 
     private func apply(adjacentTripConfiguration config: AdjacentTripRowConfiguration) {
