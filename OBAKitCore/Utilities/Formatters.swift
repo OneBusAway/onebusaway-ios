@@ -162,22 +162,6 @@ public class Formatters: NSObject {
         return String(format: OBALoc("voiceover.arrivaldeparture_route_fmt", value: "Route %@", comment: "VoiceOver text describing the name of a route in a verbose fashion to compensate for no visuals."), routeAndHeadsign)
     }
 
-    // MARK: Accessibility value
-    public func accessibilityValueForTripStop(isUserDestination: Bool, isCurrentVehicleLocation: Bool) -> String? {
-        var flags: [String] = []
-
-        if isUserDestination {
-            flags.append(OBALoc("trip_stop.user_destination.accessibility_label", value: "Your destination", comment: "Voiceover text explaining that this stop is the user's destination"))
-        }
-
-        if isCurrentVehicleLocation {
-            flags.append(OBALoc("trip_stop.vehicle_location.accessibility_label", value: "Vehicle is here", comment: "Voiceover text explaining that the vehicle is currently at this stop"))
-        }
-
-        let joined = flags.joined(separator: ", ")
-        return joined.isEmpty ? nil : joined
-    }
-
     /// Creates a localized string appropriate for using in UIAccessibility.accessibilityValue.
     /// - Note: This does not include schedule deviation information.
     /// ## Examples
