@@ -216,20 +216,7 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         let faveVal = form.values()[showInTodayViewTag]
         bookmark.isFavorite = faveVal as! Bool // swiftlint:disable:this force_cast
 
-        if application.userDataStore.checkForDuplicates(bookmark: bookmark) {
-            let alert = UIAlertController(
-                title: OBALoc("edit_bookmark_controller.duplicate_alert.title", value: "Duplicate Bookmark", comment: "The title of an alert telling the user that they have already bookmarked this thing. Noun form of 'duplicate', not the verb."),
-                message: OBALoc("edit_bookmark_controller.duplicate_alert.body", value: "You already have this bookmarked. Did you mean to create a duplicate?", comment: "Body of an alert telling the user they have already bookmarked this thing."), preferredStyle: .alert
-            )
-            alert.addAction(UIAlertAction(title: Strings.cancel, style: .cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: OBALoc("edit_book_controller.duplicate_alert.affirmative_button", value: "Create Duplicate", comment: "Indicates that the user wants to create a duplicate bookmark."), style: .default, handler: { _ in
-                self.addBookmarkToStore(bookmark, isNewBookmark: addMode)
-            }))
-            present(alert, animated: true, completion: nil)
-        }
-        else {
-            self.addBookmarkToStore(bookmark, isNewBookmark: addMode)
-        }
+        self.addBookmarkToStore(bookmark, isNewBookmark: addMode)
     }
 
     private func addBookmarkToStore(_ bookmark: Bookmark, isNewBookmark: Bool) {
