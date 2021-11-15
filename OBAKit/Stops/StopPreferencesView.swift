@@ -13,11 +13,14 @@ protocol StopPreferencesViewDelegate: AnyObject {
     func stopPreferences(stopID: StopID, updated stopPreferences: StopPreferences)
 }
 
+/// Provides a selectable list of routes to display for a given stop.
+/// To use `StopPreferencesView`, it is recommended to use `StopPreferencesWrappedView` as
+/// that is compatible with the current `OBAKitCore.StopPreferences`.
 struct StopPreferencesView: View {
     @Environment(\.coreApplication) var application
-    @Binding var viewModel: StopPreferencesViewModel
+    @Environment(\.presentationMode) var presentationMode
 
-    public weak var delegate: StopPreferencesViewDelegate?
+    @Binding var viewModel: StopPreferencesViewModel
 
     var body: some View {
         List(viewModel.availableRoutes, id: \.id, selection: $viewModel.selectedRoutes) { route in
@@ -27,24 +30,19 @@ struct StopPreferencesView: View {
                     .font(.footnote)
             }
         }
-        .onReceive(Just(viewModel.selectedRoutes), perform: { asdf in
-            guard let delegate = delegate else {
-                return
-            }
-
-            guard let region = application.currentRegion else {
-                return
-            }
-
-            let sort = application.stopPreferencesDataStore.preferences(stopID: viewModel.stopID, region: region).sortType
-            let stopPreferences = StopPreferences(sortType: sort, hiddenRoutes: viewModel.hiddenRoutes.allObjects)
-            delegate.stopPreferences(stopID: viewModel.stopID, updated: stopPreferences)
-        })
         .environment(\.editMode, .constant(.active))
         .navigationTitle(OBALoc("stop_preferences_controller.title", value: "Filter Routes", comment: "Title of the Edit Stop preferences controller"))
+        .toolbar {
+            ToolbarItemGroup {
+                Button(Strings.done) {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
+        }
     }
 }
 
+/// A wrapped version of `StopPreferencesView` that is easier to use with `OBAKitCore.StopPreferences` and UIKit.
 struct StopPreferencesWrappedView: View {
     @Environment(\.coreApplication) var application
     @State fileprivate var viewModel: StopPreferencesViewModel
@@ -61,8 +59,21 @@ struct StopPreferencesWrappedView: View {
 
     var body: some View {
         NavigationView {
-            StopPreferencesView(viewModel: $viewModel, delegate: delegate)
+            StopPreferencesView(viewModel: $viewModel)
         }
+        .onReceive(Just(viewModel.selectedRoutes), perform: { asdf in
+            guard let delegate = delegate else {
+                return
+            }
+
+            guard let region = application.currentRegion else {
+                return
+            }
+
+            let sort = application.stopPreferencesDataStore.preferences(stopID: viewModel.stopID, region: region).sortType
+            let stopPreferences = StopPreferences(sortType: sort, hiddenRoutes: viewModel.hiddenRoutes.allObjects)
+            delegate.stopPreferences(stopID: viewModel.stopID, updated: stopPreferences)
+        })
     }
 }
 
@@ -73,8 +84,9 @@ struct StopPreferencesView_Previews: PreviewProvider {
         .init(id: "1_240", displayName: "240", agencyName: "Metro Transit"),
         .init(id: "0_550", displayName: "550", agencyName: "Sound Transit")])
 
-
     static var previews: some View {
-        StopPreferencesView(viewModel: $preferences)
+        NavigationView {
+            StopPreferencesView(viewModel: $preferences)
+        }
     }
 }
