@@ -49,7 +49,9 @@ class Onboarder: NSObject {
 
     private func refreshUI() {
         guard state != .complete else {
-            bulletinManager.dismissBulletin()
+            DispatchQueue.main.async {
+                self.bulletinManager.dismissBulletin()
+            }
             return
         }
 
