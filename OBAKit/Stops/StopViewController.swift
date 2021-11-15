@@ -1057,9 +1057,7 @@ public class StopViewController: UIViewController,
 
         let hiddenRoutes = Set(stopPreferences.hiddenRoutes)
         let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
-            .accentColor(Color(ThemeColors.shared.brand))
             .environment(\.coreApplication, application)
-
         present(UIHostingController(rootView: stopPreferencesView), animated: true)
     }
 

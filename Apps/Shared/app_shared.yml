@@ -71,6 +71,7 @@ targets:
     settings:
       base:
         OTHER_LDFLAGS: -ObjC
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "AccentColor"
   TodayView:
     info:
       properties:
