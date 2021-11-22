@@ -380,7 +380,7 @@ public class MapViewController: UIViewController,
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: OBAFloatingPanelController = {
-        let panel = OBAFloatingPanelController(delegate: self)
+        let panel = OBAFloatingPanelController(application, delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
         panel.surfaceView.backgroundColor = .clear
@@ -420,6 +420,11 @@ public class MapViewController: UIViewController,
 
         if UIAccessibility.isVoiceOverRunning {
             floatingPanel.move(to: .full, animated: true)
+
+            if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
+                self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
+                floatingPanel.userHasSeenFullSheetVoiceoverChange = true
+            }
         }
     }
 

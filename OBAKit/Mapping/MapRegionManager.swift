@@ -358,8 +358,6 @@ public class MapRegionManager: NSObject,
         mapView.removeAnnotations(rejectedStops)
         mapView.addAnnotations(acceptedStops)
 
-        self.mapView.
-
         notifyDelegatesStopsChanged()
     }
 
