@@ -150,6 +150,7 @@ public class MapViewController: UIViewController,
         super.viewDidAppear(animated)
 
         loadWeather()
+        updateVoiceover()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -411,6 +412,14 @@ public class MapViewController: UIViewController,
 
         if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
+        }
+    }
+
+    func updateVoiceover() {
+        mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
+
+        if UIAccessibility.isVoiceOverRunning {
+            floatingPanel.move(to: .full, animated: true)
         }
     }
 
