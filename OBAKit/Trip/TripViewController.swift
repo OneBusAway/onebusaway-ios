@@ -100,6 +100,11 @@ class TripViewController: UIViewController,
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateVoiceover()
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
@@ -256,6 +261,12 @@ class TripViewController: UIViewController,
         }
     }
 
+    func updateVoiceover() {
+        if UIAccessibility.isVoiceOverRunning {
+            self.floatingPanel.move(to: .full, animated: true)
+        }
+    }
+
     // MARK: - Trip Details Data
 
     private var tripDetailsOperation: DecodableOperation<RESTAPIResponse<TripDetails>>?
@@ -402,6 +413,7 @@ class TripViewController: UIViewController,
         let map = TouchesMapView.autolayoutNew()
         map.delegate = self
         map.mapType = application.mapRegionManager.userSelectedMapType
+        map.accessibilityElementsHidden = true
         return map
     }()
 
