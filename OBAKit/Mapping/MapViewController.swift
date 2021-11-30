@@ -410,6 +410,10 @@ public class MapViewController: UIViewController,
         statusOverlay.isHidden = vc.position == .full
         mapPanelController.listView.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
 
+        // Disables voiceover interacting with map elements (such as streets and POIs).
+        // See #431.
+        mapRegionManager.mapView.accessibilityElementsHidden = !floatingPanelPositionIsCollapsed
+
         if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
         }
