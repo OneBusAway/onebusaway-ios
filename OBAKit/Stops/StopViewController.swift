@@ -10,6 +10,7 @@
 import UIKit
 import OBAKitCore
 import CoreLocation
+import SwiftUI
 
 // swiftlint:disable file_length
 
@@ -31,7 +32,7 @@ public class StopViewController: UIViewController,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    StopPreferencesDelegate {
+    StopPreferencesViewDelegate {
 
     /// The available sections in this view controller.
     enum ListSections {
@@ -1054,9 +1055,10 @@ public class StopViewController: UIViewController,
     @objc private func filter() {
         guard let stop = stop else { return }
 
-        let stopPreferencesController = StopPreferencesViewController(application: application, stop: stop, delegate: self)
-        let navigation = UINavigationController(rootViewController: stopPreferencesController)
-        present(navigation, animated: true, completion: nil)
+        let hiddenRoutes = Set(stopPreferences.hiddenRoutes)
+        let stopPreferencesView = StopPreferencesWrappedView(stop, initialHiddenRoutes: hiddenRoutes, delegate: self)
+            .environment(\.coreApplication, application)
+        present(UIHostingController(rootView: stopPreferencesView), animated: true)
     }
 
     /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
@@ -1093,8 +1095,12 @@ public class StopViewController: UIViewController,
         }
     }
 
-    func stopPreferences(_ controller: StopPreferencesViewController, updated stopPreferences: StopPreferences) {
+    func stopPreferences(stopID: StopID, updated stopPreferences: StopPreferences) {
         self.stopPreferences = stopPreferences
+
+        if let stop = self.stop, let region = application.currentRegion {
+            self.application.stopPreferencesDataStore.set(stopPreferences: stopPreferences, stop: stop, region: region)
+        }
     }
 
     private var isListFiltered: Bool = true {
