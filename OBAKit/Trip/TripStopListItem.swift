@@ -128,6 +128,8 @@ final class TripStopCell: OBAListViewCell {
         timeLabel.text = nil
         tripSegmentView.image = nil
         tripSegmentView.adjacentTripOrder = nil
+        accessibilityLabel = nil
+        accessibilityValue = nil
     }
 
     let titleLabel: UILabel = {
@@ -221,6 +223,7 @@ final class TripStopCell: OBAListViewCell {
         }
 
         titleLabel.text = String(format: titleFormat, config.routeHeadsign)
+        accessibilityLabel = titleLabel.text
         tripSegmentView.adjacentTripOrder = config.order
     }
 

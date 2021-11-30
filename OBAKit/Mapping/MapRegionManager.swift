@@ -42,6 +42,24 @@ public class MapRegionManager: NSObject,
     RegionsServiceDelegate,
     StopAnnotationDelegate {
 
+    public static let DefaultLoadDataRegionFudgeFactor: Double = 1.1
+
+    /// The 'fudge factor' around the current size of the map's
+    /// visible region when loading map data. This will mean that we load some
+    /// stops that are just outside of the visible bounds of the screen, which mean
+    /// that stops should (fingers crossed) seem to load instantly.
+    ///
+    /// The number of stops loaded is still limited by the server, see `RESTAPIService.getStops` for details.
+    /// Note, that this is a `preferred` value. `MapRegionManager` may or may not respect this value.
+    /// The default value may be accessed as a constant, `MapRegionManager.DefaultLoadDataRegionFudgeFactor`.
+    ///
+    /// By default, this value is set to `1.1x`, but should be adjusted depending on user context, such as:
+    /// - If no stops were loaded within the given region, you could set this value to something higher and attempt to load data again.
+    /// - In low-density geographic regions, you may want to set this value higher in order to display a full list of stops.
+    /// - When VoiceOver is enabled, it can be reasonably assumed that the user won't be visually overloaded with
+    /// the map being full of annotations, therefore loading more stops is encouraged.
+    public var preferredLoadDataRegionFudgeFactor: Double = MapRegionManager.DefaultLoadDataRegionFudgeFactor
+
     private let application: Application
 
     private var regionChangeRequestTimer: Timer?
@@ -57,6 +75,11 @@ public class MapRegionManager: NSObject,
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
         mapView.isRotateEnabled = false
+
+        // Disables voiceover interacting with map elements (such as streets and POIs).
+        // See #431.
+        mapView.accessibilityElementsHidden = true
+
         return mapView
     }()
 
@@ -214,13 +237,9 @@ public class MapRegionManager: NSObject,
 
         notifyDelegatesDataLoadingStarted()
 
-        // Add a 'fudge factor' around the current size of the map's
-        // visible region. This will mean that we load some stops that
-        // are just outside of the visible bounds of the screen, which
-        // means that stops should (fingers crossed) seem to load instantly.
         var mapRegion = mapView.region
-        mapRegion.span.latitudeDelta *= 1.1
-        mapRegion.span.longitudeDelta *= 1.1
+        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
+        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
 
         let op = apiService.getStops(region: mapRegion)
         op.complete { [weak self] result in

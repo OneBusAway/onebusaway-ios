@@ -100,6 +100,11 @@ class TripViewController: UIViewController,
         }
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateVoiceover()
+    }
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
@@ -199,7 +204,7 @@ class TripViewController: UIViewController,
 
     /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: OBAFloatingPanelController = {
-        let panel = OBAFloatingPanelController(delegate: self)
+        let panel = OBAFloatingPanelController(application, delegate: self)
         panel.isRemovalInteractionEnabled = false
         panel.surfaceView.cornerRadius = ThemeMetrics.cornerRadius
         panel.contentMode = .fitToBounds
@@ -253,6 +258,12 @@ class TripViewController: UIViewController,
         self.floatingPanel.move(to: .half, animated: true) {
             self.skipNextStopTimeHighlight = true
             self.selectedStopTime = tripStop.stopTime
+        }
+    }
+
+    func updateVoiceover() {
+        if UIAccessibility.isVoiceOverRunning {
+            self.floatingPanel.move(to: .full, animated: true)
         }
     }
 
@@ -402,6 +413,7 @@ class TripViewController: UIViewController,
         let map = TouchesMapView.autolayoutNew()
         map.delegate = self
         map.mapType = application.mapRegionManager.userSelectedMapType
+        map.accessibilityElementsHidden = true
         return map
     }()
 

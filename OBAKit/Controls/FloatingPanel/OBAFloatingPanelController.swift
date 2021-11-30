@@ -9,7 +9,25 @@ import FloatingPanel
 
 /// A subclass of `FloatingPanelController` with additional accessibility features.
 class OBAFloatingPanelController: FloatingPanelController {
-    override init(delegate: FloatingPanelControllerDelegate?) {
+    static let UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey = "OBAFloatingPanelController.userHasSeenFullSheetVoiceoverChange"
+    static let AlwaysShowFullSheetOnVoiceoverUserDefaultsKey = "OBAFloatingPanelController.alwaysShowFullSheetVoiceover"
+
+    let userDefaults: UserDefaults
+
+    /// Flag for displaying an alert informing the user that VoiceOver will automatically
+    /// display the full sheet and ignore map elements.
+    var userHasSeenFullSheetVoiceoverChange: Bool {
+        get { userDefaults.bool(forKey: OBAFloatingPanelController.UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey) }
+        set { userDefaults.set(newValue, forKey: OBAFloatingPanelController.UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey) }
+    }
+
+    var alwaysShowFullSheetOnVoiceover: Bool {
+        userDefaults.bool(forKey: OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey)
+    }
+
+    init(_ application: Application, delegate: FloatingPanelControllerDelegate?) {
+        userDefaults = application.userDefaults
+
         super.init(delegate: delegate)
 
         surfaceView.grabberHandle.accessibilityLabel = OBALoc("floating_panel.controller.accessibility_label", value: "Card controller", comment: "A voiceover title describing the 'grabber' for controlling the visibility of a card.")
@@ -22,10 +40,25 @@ class OBAFloatingPanelController: FloatingPanelController {
         surfaceView.grabberHandle.accessibilityCustomActions = [expandAction, collapseAction]
         surfaceView.grabberHandle.isAccessibilityElement = true
         updateAccessibilityValue()
+
+        userDefaults.register(defaults: [
+            OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey: true,
+            OBAFloatingPanelController.UserHasSeenFullSheetVoiceoverChangeUserDefaultsKey: false
+        ])
     }
 
     required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
+        fatalError()
+    }
+
+    func fullSheetVoiceoverAlert() -> UIAlertController {
+        let title = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.title", value: "Voiceover detected", comment: "")
+        let message = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.message", value: "OneBusAway will automatically expand the sheet when VoiceOver is turned on. To disable this behavior, visit the Settings page.", comment: "")
+
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(.dismissAction)
+
+        return alert
     }
 
     private func updateAccessibilityValue() {

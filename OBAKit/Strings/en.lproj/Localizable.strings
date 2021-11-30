@@ -133,6 +133,12 @@
 /* A voiceover title describing the action to expand the visibility of a card. */
 "floating_panel.controller.expand_action_name" = "Expand";
 
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "OneBusAway will automatically expand the sheet when VoiceOver is turned on. To disable this behavior, visit the Settings page.";
+
+/* No comment provided by engineer. */
+"floating_panel.controller.full_sheet_voiceover_change_alert.title" = "Voiceover detected";
+
 /* A voiceover title describing that the card's visibility is taking up the full screen. */
 "floating_panel.controller.position.full" = "Full screen";
 
@@ -490,8 +496,14 @@
 /* Directs the user to tap on the link that comes at the end of the string. Learn more: <HYPERLINK IS INSERTED HERE> */
 "service_alert_controller.learn_more_fmt" = "Learn more: %@";
 
+/* Settings > Accessibility section > Always show full sheet on Voiceover */
+"settings_controller.accessibility_section.default_full_sheet_voiceover" = "Always show full sheet on Voiceover";
+
 /* Settings > Accessibility section > Haptic feedback on reload */
 "settings_controller.accessibility_section.enable_reload_haptic" = "Haptic feedback on reload";
+
+/* Settings > Accessibility section title */
+"settings_controller.accessibility_section.title" = "Accessibility";
 
 /* Settings > Alerts section > Display test alerts */
 "settings_controller.alerts_section.display_test_alerts" = "Display test alerts";

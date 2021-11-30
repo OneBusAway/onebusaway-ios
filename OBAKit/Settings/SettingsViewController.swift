@@ -132,11 +132,16 @@ class SettingsViewController: FormViewController {
     }()
 
     private lazy var accessibilitySection: Section = {
-        let section = Section() /* Untitled section */
+        let section = Section(OBALoc("settings_controller.accessibility_section.title", value: "Accessibility", comment: "Settings > Accessibility section title"))
 
         section <<< SwitchRow {
             $0.tag = DataLoadFeedbackGenerator.EnabledUserDefaultsKey
             $0.title = OBALoc("settings_controller.accessibility_section.enable_reload_haptic", value: "Haptic feedback on reload", comment: "Settings > Accessibility section > Haptic feedback on reload")
+        }
+
+        section <<< SwitchRow {
+            $0.tag = OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey
+            $0.title = OBALoc("settings_controller.accessibility_section.default_full_sheet_voiceover", value: "Always show full sheet on Voiceover", comment: "Settings > Accessibility section > Always show full sheet on Voiceover")
         }
 
         return section
