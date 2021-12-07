@@ -179,6 +179,12 @@ public class MapViewController: UIViewController,
         }
 
         mapRegionManager.mapView.setCenterCoordinate(centerCoordinate: userLocation.coordinate, zoomLevel: zoomLevel, animated: true)
+
+        // It is possible to activate the center map button via Voiceover. When the user
+        // centers the map on their location, partially collapse the sheet to enable mapview interaction.
+        if floatingPanel.position == .full {
+            floatingPanel.move(to: .half, animated: true)
+        }
     }
 
     @objc func didTapMapStatus(_ sender: Any) {
