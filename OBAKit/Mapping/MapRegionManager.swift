@@ -76,10 +76,6 @@ public class MapRegionManager: NSObject,
         mapView.showsUserLocation = true
         mapView.isRotateEnabled = false
 
-        // Disables voiceover interacting with map elements (such as streets and POIs).
-        // See #431.
-        mapView.accessibilityElementsHidden = true
-
         return mapView
     }()
 
