@@ -134,7 +134,7 @@
 "floating_panel.controller.expand_action_name" = "Expand";
 
 /* No comment provided by engineer. */
-"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "OneBusAway will automatically expand the sheet when VoiceOver is turned on. To disable this behavior, visit the Settings page.";
+"floating_panel.controller.full_sheet_voiceover_change_alert.message" = "The sheet will automatically expand when VoiceOver is turned on. To disable this behavior, visit the Settings page.";
 
 /* No comment provided by engineer. */
 "floating_panel.controller.full_sheet_voiceover_change_alert.title" = "Voiceover detected";
@@ -555,9 +555,6 @@
 
 /* This is an instruction given to the user the first time they look at a stop view instructing them on how to access more options, EXCLUDING the ability to add alarms. */
 "stop_controller.swipe_spotlight_text.without_alarm" = "Swipe on a row to view more options.";
-
-/* Title of the Routes section */
-"stop_preferences_controller.routes_section.header_title" = "Routes";
 
 /* Title of the Sorting section */
 "stop_preferences_controller.sorting_section.header_title" = "Sort By";
