@@ -53,7 +53,7 @@ class OBAFloatingPanelController: FloatingPanelController {
 
     func fullSheetVoiceoverAlert() -> UIAlertController {
         let title = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.title", value: "Voiceover detected", comment: "")
-        let message = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.message", value: "OneBusAway will automatically expand the sheet when VoiceOver is turned on. To disable this behavior, visit the Settings page.", comment: "")
+        let message = OBALoc("floating_panel.controller.full_sheet_voiceover_change_alert.message", value: "The sheet will automatically expand when VoiceOver is turned on. To disable this behavior, visit the Settings page.", comment: "")
 
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(.dismissAction)
