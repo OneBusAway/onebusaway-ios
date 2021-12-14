@@ -16,7 +16,7 @@ import Foundation
 public class CoreRESTAPIResponse: NSObject, Decodable {
     public let code: Int
     public let currentTime: Int?
-    public let text: String
+    public let text: String?
     public let version: Int
 
     fileprivate enum CodingKeys: String, CodingKey {
@@ -27,7 +27,7 @@ public class CoreRESTAPIResponse: NSObject, Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         code = try container.decode(Int.self, forKey: .code)
         currentTime = try container.decodeIfPresent(Int.self, forKey: .currentTime)
-        text = try container.decode(String.self, forKey: .text)
+        text = try container.decodeIfPresent(String.self, forKey: .text)
         version = try container.decode(Int.self, forKey: .version)
     }
 }
