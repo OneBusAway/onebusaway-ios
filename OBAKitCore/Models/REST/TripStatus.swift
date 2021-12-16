@@ -48,14 +48,14 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
     public let frequency: Frequency?
 
     /// The last known distance along trip value received in real-time from the transit vehicle.
-    public let lastKnownDistanceAlongTrip: Int
+    public let lastKnownDistanceAlongTrip: Int?
 
     /// Last known location of the transit vehicle. This differs from the existing position field,
     /// in that the position field is potential extrapolated forward from the last known position and other data.
     public let lastKnownLocation: CLLocation?
 
     /// The last known orientation value received in real-time from the transit vehicle.
-    public let lastKnownOrientation: CLLocationDirection
+    public let lastKnownOrientation: CLLocationDirection?
 
     /// The last known real-time location update from the transit vehicle. This is different
     /// from lastUpdateTime in that it reflects the last known location update. An update from
@@ -166,9 +166,9 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         closestStopTimeOffset = try container.decode(Int.self, forKey: .closestStopTimeOffset)
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
         frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
-        lastKnownDistanceAlongTrip = try container.decode(Int.self, forKey: .lastKnownDistanceAlongTrip)
+        lastKnownDistanceAlongTrip = try container.decodeIfPresent(Int.self, forKey: .lastKnownDistanceAlongTrip)
         lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
-        lastKnownOrientation = try container.decode(CLLocationDirection.self, forKey: .lastKnownOrientation)
+        lastKnownOrientation = try container.decodeIfPresent(CLLocationDirection.self, forKey: .lastKnownOrientation)
         lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
 
         let lastUpdateTime = try container.decode(TimeInterval.self, forKey: .lastUpdate)
