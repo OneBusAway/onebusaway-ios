@@ -73,6 +73,30 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Credits";
 
+/* Title of the Base URL header. */
+"custom_region_builder_controller.base_url_section.header_title" = "Base URL";
+
+/* Title of the Contact Email header. */
+"custom_region_builder_controller.contact_email_section.header_title" = "Contact Email";
+
+/* Title for the region builder controller in edit mode */
+"custom_region_builder_controller.edit_title" = "Edit Custom Region";
+
+/* Example custom region name */
+"custom_region_builder_controller.example_data.region_name" = "My Custom Region";
+
+/* Title of the Region Name header. */
+"custom_region_builder_controller.name_section.header_title" = "Region Name";
+
+/* Title for the region builder controller in add mode */
+"custom_region_builder_controller.new_title" = "Add Custom Region";
+
+/* The error that is shown when the custom region builder does not have all of its fields filled in. */
+"custom_region_builder_controller.save_validation_error" = "Please fill out all fields";
+
+/* Title of the Service Area header. */
+"custom_region_builder_controller.service_area_section.header_title" = "Service Area";
+
 /* Action button title for the DataMigrationBulletinPage. */
 "data_migration_bulletin.action_button" = "Migrate";
 
@@ -420,6 +444,9 @@
 
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Choose Region";
+
+/* Title of a button that shows a region creation view controller. */
+"region_picker_controller.add_custom_region_button" = "Add Custom Region";
 
 /* Title next to the switch that toggles whether the user can manually pick their region. */
 "region_picker_controller.automatically_select_region_switch_title" = "Automatically select region";

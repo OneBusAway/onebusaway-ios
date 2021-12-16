@@ -11,6 +11,8 @@ import Foundation
 import CoreLocation
 import MapKit
 
+public typealias RegionIdentifier = Int
+
 /// Represents a OneBusAway server deployment.
 /// For example, OBA regions include Tampa, Puget Sound, and Washington, D.C.
 public class Region: NSObject, Identifiable, Codable {
@@ -18,12 +20,12 @@ public class Region: NSObject, Identifiable, Codable {
     /// The human-readable name of the region. Example: Puget Sound.
     public let name: String
 
-    public var id: Int {
+    public var id: RegionIdentifier {
         return self.regionIdentifier
     }
 
     /// The unique ID for the region.
-    public let regionIdentifier: Int
+    public let regionIdentifier: RegionIdentifier
 
     /// Is this region functional?
     ///
@@ -191,9 +193,10 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter OBABaseURL: The base URL against which API requests will be made.
     /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
     /// - Parameter contactEmail: The contact email address for this region.
-    public init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String) {
+    /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
+    public init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil) {
         self.name = name
-        regionIdentifier = 1000 + Int.random(in: 0...999)
+        self.regionIdentifier = regionIdentifier ?? 1000 + Int.random(in: 0...999)
         isActive = true
         isExperimental = false
         isCustom = true

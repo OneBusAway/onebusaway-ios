@@ -12,7 +12,7 @@ import Eureka
 import OBAKitCore
 
 /// Entrypoint for manual management of `Region`s in the app. Includes affordances for creating custom `Region`s.
-class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
+class RegionPickerViewController: FormViewController, RegionsServiceDelegate, RegionBuilderDelegate {
 
     // MARK: - Properties
 
@@ -40,11 +40,7 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     override public func viewDidLoad() {
         super.viewDidLoad()
-        form
-            +++ autoSelectSwitchSection
-            +++ selectedRegionSection
-
-        setFormValues()
+        reloadForm()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -63,11 +59,42 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     // MARK: - Load Form
 
+    private func reloadForm() {
+        form
+            +++ autoSelectSwitchSection
+            +++ selectedRegionSection
+            +++ addCustomRegionSection
+
+        setFormValues()
+    }
+
     private func setFormValues() {
         var values = [String: Any]()
         values[autoSelectTag] = application.regionsService.automaticallySelectRegion
         form.setValues(values)
     }
+
+    // MARK: - Add Custom Region Section
+
+    private lazy var addCustomRegionSection: Section = {
+        let section = Section()
+
+        section <<< ButtonRow("addCustomRegionTag") {
+            $0.title = OBALoc("region_picker_controller.add_custom_region_button", value: "Add Custom Region", comment: "Title of a button that shows a region creation view controller.")
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self = self else { return }
+                let customRegionController = CustomRegionBuilderController(
+                    application: self.application,
+                    region: nil,
+                    delegate: self
+                )
+                let nav = UINavigationController(rootViewController: customRegionController)
+                self.present(nav, animated: true, completion: nil)
+            }
+        }
+
+        return section
+    }()
 
     // MARK: - Auto-Select Switch
 
@@ -97,7 +124,7 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     // MARK: - Region List Section
 
-    private lazy var selectedRegionSection: SelectableSection<ListCheckRow<String>> = {
+    private func buildSelectedRegionSection() -> SelectableSection<ListCheckRow<String>> {
         let title = OBALoc("region_picker.region_section.title", value: "Regions", comment: "Title of the Regions section.")
         let section = SelectableSection<ListCheckRow<String>>(title, selectionType: .singleSelection(enableDeselection: false))
 
@@ -114,19 +141,52 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
             section <<< ListCheckRow<String>(regionID) {
                 $0.title = region.name
                 $0.selectableValue = regionID
-                $0.value = selectedRegionID == regionID ? regionID : nil
+                let isSelected = selectedRegionID == regionID
+                $0.value = isSelected ? regionID : nil
                 $0.disabled = "$autoSelectTag == true"
+
+                if let isCustom = region.isCustom, isCustom {
+                    let deleteAction = SwipeAction(style: .destructive, title: Strings.delete) { [weak self] action, row, completionHandler in
+                        self?.application.regionsService.deleteCustomRegion(identifier: region.regionIdentifier)
+                        completionHandler?(true)
+                    }
+                    deleteAction.image = Icons.delete
+
+                    let editAction = SwipeAction(style: .normal, title: Strings.edit) { [weak self] action, row, completionHandler in
+                        guard let self = self else { return }
+
+                        let editor = CustomRegionBuilderController(application: self.application, region: region, delegate: self)
+                        let nav = UINavigationController(rootViewController: editor)
+                        self.present(nav, animated: true, completion: nil)
+
+                        completionHandler?(true)
+                    }
+
+                    editAction.actionBackgroundColor = ThemeColors.shared.blue
+
+                    $0.trailingSwipe.actions = [deleteAction, editAction]
+                    $0.trailingSwipe.performsFirstActionWithFullSwipe = true
+                }
             }
         }
 
         return section
-    }()
+    }
+
+    private var _selectedRegionSection: SelectableSection<ListCheckRow<String>>?
+    private var selectedRegionSection: SelectableSection<ListCheckRow<String>> {
+        if _selectedRegionSection == nil {
+            _selectedRegionSection = buildSelectedRegionSection()
+        }
+
+        return _selectedRegionSection!
+    }
 
     /// Sorts the `regions` list by selection and then alphabetically.
     private var sortedRegions: [Region] {
         let currentRegionID = application.currentRegion?.regionIdentifier
 
-        let regions = application.regionsService.regions.sorted { (r1, r2) -> Bool in
+        let regions = application.regionsService.allRegions.sorted { (r1, r2) -> Bool in
             if r1.regionIdentifier == currentRegionID {
                 return true
             }
@@ -143,10 +203,19 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate {
 
     private let selectedRegionTag = "selectedRegionTag"
     private let autoSelectTag = "autoSelectTag"
+    private let addCustomRegionTag = "addCustomRegionTag"
 
     // MARK: - Actions
 
     @objc private func dismissRegionPicker() {
         dismiss(animated: true, completion: nil)
+    }
+
+    // MARK: - RegionBuilderDelegate
+
+    func reloadRegions() {
+        form.removeAll()
+        _selectedRegionSection = nil
+        reloadForm()
     }
 }
