@@ -198,7 +198,67 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     public func find(id: Int) -> Region? {
-        regions.first { $0.regionIdentifier == id }
+        if let region = regions.first(where: { $0.regionIdentifier == id }) {
+            return region
+        }
+        else {
+            return customRegions.first { $0.regionIdentifier == id }
+        }
+    }
+
+    // MARK: - Custom Regions
+
+    public func addCustomRegion(_ region: Region) {
+        var regions = customRegions
+
+        if let idx = regions.firstIndex(where: { $0.regionIdentifier == region.regionIdentifier }) {
+            regions.remove(at: idx)
+        }
+
+        regions.append(region)
+
+        do {
+            try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+        }
+        catch {
+            Logger.error("Unable to write custom regions to user defaults: \(error)")
+        }
+    }
+
+    /// Deletes the custom region with the matching identifier.
+    /// - Parameter identifier: The region identifier used to find the custom region to delete.
+    /// - Returns: True if the custom region was found and deleted, and false if it could not be found.
+    @discardableResult public func deleteCustomRegion(identifier: RegionIdentifier) -> Bool {
+        var success = false
+        var regions = customRegions
+
+        if let idx = regions.firstIndex(where: { $0.regionIdentifier == identifier }) {
+            regions.remove(at: idx)
+
+            do {
+                try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+                success = true
+            }
+            catch {
+                Logger.error("Unable to write custom regions to user defaults: \(error)")
+            }
+        }
+
+        return success
+    }
+
+    public var customRegions: [Region] {
+        let regions: [Region]
+        do {
+            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedCustomRegionsUserDefaultsKey) ?? []
+        } catch {
+            regions = []
+        }
+        return regions
+    }
+
+    public var allRegions: [Region] {
+        return regions + customRegions
     }
 
     // MARK: - Region Data Storage
@@ -206,6 +266,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"
     static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
     static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
+    static let storedCustomRegionsUserDefaultsKey = "OBAStoredCustomRegionsUserDefaultsKey"
     static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
     static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
 
@@ -327,7 +388,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     /// Refreshes the `currentRegion` based upon the user's current location.
     /// - Note: If `locationService.currentLocation` returns `nil`, then this method will do nothing.
-    private func updateCurrentRegionFromLocation() {
+    public func updateCurrentRegionFromLocation() {
         // We can't do anything here if we can't get the user's current location.
         // Also, don't set the user's region if they've specifically told us not to.
         guard
