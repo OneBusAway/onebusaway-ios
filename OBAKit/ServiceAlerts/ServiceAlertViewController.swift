@@ -115,7 +115,7 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     private func buildPageContent() {
         let builder = HTMLBuilder()
-        builder.append(.h1, value: serviceAlert.summary.value)
+        builder.append(.h1, value: serviceAlert.summary?.value ?? Strings.serviceAlert)
         builder.append(.p, value: application.formatters.shortDateTimeFormatter.string(from: serviceAlert.createdAt))
         if let description = serviceAlert.situationDescription {
             // Some agencies may separate information using `\n`, so we try to account for that.

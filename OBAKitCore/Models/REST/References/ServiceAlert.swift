@@ -32,7 +32,7 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
     public let publicationWindows: [TimeWindow]
     public let reason: String
     public let severity: String
-    public let summary: TranslatedString
+    public let summary: TranslatedString?
     public let urlString: TranslatedString?
 
     public private(set) var regionIdentifier: Int?
@@ -63,7 +63,7 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
         publicationWindows = try container.decode([TimeWindow].self, forKey: .publicationWindows)
         reason = try container.decode(String.self, forKey: .reason)
         severity = try container.decode(String.self, forKey: .severity)
-        summary = try container.decode(TranslatedString.self, forKey: .summary)
+        self.summary = try container.decodeIfPresent(TranslatedString.self, forKey: .summary)
         self.urlString = try container.decodeIfPresent(TranslatedString.self, forKey: .url)
     }
 

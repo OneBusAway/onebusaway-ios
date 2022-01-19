@@ -23,7 +23,7 @@ extension AgencyAlert: TransitAlertViewModel {
 
 extension ServiceAlert: TransitAlertViewModel {
     public func title(forLocale locale: Locale) -> String? {
-        return summary.value
+        return summary?.value
     }
 
     public func body(forLocale locale: Locale) -> String? {
