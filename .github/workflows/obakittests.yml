@@ -21,7 +21,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode 13
-      run: sudo xcode-select -switch /Applications/Xcode_13.0.app
+      run: sudo xcode-select -switch /Applications/Xcode_13.2.1.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -33,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 13'
+        -destination 'platform=iOS Simulator,OS=15.2,name=iPhone 13'
         -quiet
 
     # Unit Test
@@ -42,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 13'
+        -destination 'platform=iOS Simulator,OS=15.2,name=iPhone 13'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
@@ -56,9 +56,9 @@ jobs:
     #    -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 8'
     #    -resultBundlePath OBAKitUITests.xcresult
     #    -quiet
-    
+
     # Upload results
-    - uses: kishikawakatsumi/xcresulttool@v1.0.3
+    - uses: kishikawakatsumi/xcresulttool@v1.3.1
       if: ${{ success() || failure() }}
       with:
         path: |

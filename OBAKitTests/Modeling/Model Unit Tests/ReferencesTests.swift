@@ -99,8 +99,8 @@ class ReferencesTests: OBATestCase {
         expect(situation.publicationWindows) == []
         expect(situation.reason) == "CONSTRUCTION"
         expect(situation.severity) == ""
-        expect(situation.summary.lang) == "en"
-        expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
+        expect(situation.summary!.lang) == "en"
+        expect(situation.summary!.value) == "Washington St. ramp from Pac Hwy Closed"
         expect(situation.urlString).to(beNil())
     }
 

@@ -60,7 +60,7 @@ class TripArrivalsModelOperationTests: OBATestCase {
 
                     expect(arrDep.serviceAlerts.count) == 1
                     let situation = arrDep.serviceAlerts.first!
-                    expect(situation.summary.value) == "Washington St. ramp from Pac Hwy Closed"
+                    expect(situation.summary!.value) == "Washington St. ramp from Pac Hwy Closed"
                     expect(situation.consequences.first!.condition) == "detour"
                     expect(situation.consequences.first!.conditionDetails!.diversionPath).toNot(beNil())
 
