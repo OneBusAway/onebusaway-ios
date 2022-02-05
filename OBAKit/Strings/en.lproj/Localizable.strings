@@ -529,6 +529,9 @@
 /* Settings > Accessibility section > Haptic feedback on reload */
 "settings_controller.accessibility_section.enable_reload_haptic" = "Haptic feedback on reload";
 
+/* Settings > Accessibility section > Show route labels on the map */
+"settings_controller.accessibility_section.show_stop_annotation_labels" = "Show route labels on the map";
+
 /* Settings > Accessibility section title */
 "settings_controller.accessibility_section.title" = "Accessibility";
 
