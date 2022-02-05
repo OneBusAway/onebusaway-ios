@@ -146,13 +146,13 @@ class RegionPickerViewController: FormViewController, RegionsServiceDelegate, Re
                 $0.disabled = "$autoSelectTag == true"
 
                 if let isCustom = region.isCustom, isCustom {
-                    let deleteAction = SwipeAction(style: .destructive, title: Strings.delete) { [weak self] action, row, completionHandler in
+                    let deleteAction = SwipeAction(style: .destructive, title: Strings.delete) { [weak self] _, _, completionHandler in
                         self?.application.regionsService.deleteCustomRegion(identifier: region.regionIdentifier)
                         completionHandler?(true)
                     }
                     deleteAction.image = Icons.delete
 
-                    let editAction = SwipeAction(style: .normal, title: Strings.edit) { [weak self] action, row, completionHandler in
+                    let editAction = SwipeAction(style: .normal, title: Strings.edit) { [weak self] _, _, completionHandler in
                         guard let self = self else { return }
 
                         let editor = CustomRegionBuilderController(application: self.application, region: region, delegate: self)

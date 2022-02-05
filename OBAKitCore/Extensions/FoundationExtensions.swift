@@ -241,7 +241,7 @@ extension String {
     ///   - pattern: The regex pattern that will be matched.
     ///   - namedGroups: The named capture groups in the regex to extract.
     public func caseInsensitiveMatch(pattern: String, namedGroups: [String]) -> [String: String]? {
-        let regex = try! NSRegularExpression(pattern: pattern, options: NSRegularExpression.Options.caseInsensitive)  //swiftlint:disable:this force_try
+        let regex = try! NSRegularExpression(pattern: pattern, options: NSRegularExpression.Options.caseInsensitive)  // swiftlint:disable:this force_try
 
         return match(regex: regex, namedGroups: namedGroups)
     }

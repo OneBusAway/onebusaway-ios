@@ -86,8 +86,8 @@ class UserActivityBuilder: NSObject {
 
     /// Creates an `NSUserActivity` for a trip.
     ///
-    ///- Note: Due to technical limitations, this method will only create an `NSUserActivity` if `trip`
-    ///        contains an `ArrivalDeparture`.
+    /// - Note: Due to technical limitations, this method will only create an `NSUserActivity` if `trip`
+    ///         contains an `ArrivalDeparture`.
     ///
     /// - Parameters:
     ///   - trip: This can be sourced from `TripViewController`, for example.
