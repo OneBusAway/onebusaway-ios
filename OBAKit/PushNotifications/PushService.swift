@@ -41,7 +41,6 @@ public protocol PushServiceProvider: NSObjectProtocol {
 
 // MARK: - PushServiceDelegate
 
-//@objc(OBAPushServiceDelegate)
 public protocol PushServiceDelegate: NSObjectProtocol {
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController?
     func pushService(_ pushService: PushService, received arrivalDeparture: AlarmPushBody)

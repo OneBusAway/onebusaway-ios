@@ -30,7 +30,11 @@ public final class MapRectRow: OptionsRow<PushSelectorCell<MKMapRect>>, Presente
 
     public required init(tag: String?) {
         super.init(tag: tag)
-        presentationMode = .show(controllerProvider: ControllerProvider.callback { return EurekaMapViewController(){ _ in } }, onDismiss: { vc in _ = vc.navigationController?.popViewController(animated: true) })
+        presentationMode = .show(controllerProvider: ControllerProvider.callback {
+            return EurekaMapViewController(nil)
+        }, onDismiss: { vc in
+            _ = vc.navigationController?.popViewController(animated: true)
+        })
 
         displayValueFor = {
             guard let location = $0 else { return "" }
@@ -67,12 +71,12 @@ public final class MapRectRow: OptionsRow<PushSelectorCell<MKMapRect>>, Presente
     }
 }
 
-public class EurekaMapViewController : UIViewController, TypedRowControllerType, MKMapViewDelegate {
+public class EurekaMapViewController: UIViewController, TypedRowControllerType, MKMapViewDelegate {
 
     public var row: RowOf<MKMapRect>!
-    public var onDismissCallback: ((UIViewController) -> ())?
+    public var onDismissCallback: ((UIViewController) -> Void)?
 
-    lazy var mapView : MKMapView = { [unowned self] in
+    lazy var mapView: MKMapView = { [unowned self] in
         let v = MKMapView(frame: self.view.bounds)
         v.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         return v
@@ -86,7 +90,7 @@ public class EurekaMapViewController : UIViewController, TypedRowControllerType,
         super.init(nibName: nil, bundle: nil)
     }
 
-    convenience public init(_ callback: ((UIViewController) -> ())?){
+    convenience public init(_ callback: ((UIViewController) -> Void)?) {
         self.init(nibName: nil, bundle: nil)
         onDismissCallback = callback
     }
@@ -109,12 +113,12 @@ public class EurekaMapViewController : UIViewController, TypedRowControllerType,
 
     }
 
-    @objc func tappedDone(_ sender: UIBarButtonItem){
+    @objc func tappedDone(_ sender: UIBarButtonItem) {
         row.value = mapView.visibleMapRect
         onDismissCallback?(self)
     }
 
-    func updateTitle(){
+    func updateTitle() {
         let fmt = NumberFormatter()
         fmt.maximumFractionDigits = 4
         fmt.minimumFractionDigits = 4

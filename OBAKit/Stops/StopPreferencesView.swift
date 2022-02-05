@@ -61,7 +61,7 @@ struct StopPreferencesWrappedView: View {
         NavigationView {
             StopPreferencesView(viewModel: $viewModel)
         }
-        .onReceive(Just(viewModel.selectedRoutes), perform: { asdf in
+        .onReceive(Just(viewModel.selectedRoutes), perform: { _ in
             guard let delegate = delegate else {
                 return
             }
