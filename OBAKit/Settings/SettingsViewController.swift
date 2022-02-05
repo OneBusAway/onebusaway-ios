@@ -60,7 +60,8 @@ class SettingsViewController: FormViewController {
             privacySectionReportingEnabled: application.analytics?.reportingEnabled?() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
-            RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
+            RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
+            MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
         ])
     }
 
@@ -89,6 +90,10 @@ class SettingsViewController: FormViewController {
 
         if let hapticFeedbackOnDataLoad = values[DataLoadFeedbackGenerator.EnabledUserDefaultsKey] as? Bool {
             application.userDefaults.set(hapticFeedbackOnDataLoad, forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey)
+        }
+
+        if let mapViewShowsStopAnnotationLabels = values[MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey] as? Bool {
+            application.userDefaults.set(mapViewShowsStopAnnotationLabels, forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
         }
 
         if let testAlerts = values[AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts] as? Bool {
@@ -142,6 +147,11 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = OBAFloatingPanelController.AlwaysShowFullSheetOnVoiceoverUserDefaultsKey
             $0.title = OBALoc("settings_controller.accessibility_section.default_full_sheet_voiceover", value: "Always show full sheet on Voiceover", comment: "Settings > Accessibility section > Always show full sheet on Voiceover")
+        }
+
+        section <<< SwitchRow {
+            $0.tag = MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey
+            $0.title = OBALoc("settings_controller.accessibility_section.show_stop_annotation_labels", value: "Show route labels on the map", comment: "Settings > Accessibility section > Show route labels on the map")
         }
 
         return section

@@ -81,6 +81,10 @@ public class MapRegionManager: NSObject,
 
     // MARK: - User Defaults
 
+    /// This user defaults key points to a value that indicates whether stop annotation views should
+    /// show labels underneath them enumerating the routes served by that stop.
+    public static let mapViewShowsStopAnnotationLabelsDefaultsKey = "mapRegionManager.mapViewShowsStopAnnotationLabels"
+
     /// Whether the map view displays current traffic conditions.
     ///
     /// `true` by default.
@@ -181,7 +185,8 @@ public class MapRegionManager: NSObject,
             mapViewShowsTrafficKey: true,
             mapViewShowsScaleKey: true,
             mapViewShowsHeadingKey: true,
-            mapViewMapTypeKey: MKMapType.mutedStandard.rawValue
+            mapViewMapTypeKey: MKMapType.mutedStandard.rawValue,
+            MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: true,
         ])
 
         super.init()
@@ -487,8 +492,21 @@ public class MapRegionManager: NSObject,
     private let requiredHeightToShowExtraStopData = 7000.0
 
     var shouldHideExtraStopAnnotationData: Bool {
-        return mapView.mapType == .hybrid || mapView.mapType == .satellite ||
-            mapView.visibleMapRect.height > requiredHeightToShowExtraStopData
+        // only the standard map type shows extra data.
+        if mapView.mapType == .hybrid || mapView.mapType == .satellite {
+            return true
+        }
+
+        // only show the extra data below `requiredHeightToShowExtraStopData`
+        if mapView.visibleMapRect.height > requiredHeightToShowExtraStopData {
+            return true
+        }
+
+        // Finally, return the opposite of the appropriate user defaults value.
+        // This user defaults key is written in affirmative language and negated
+        // here because it's a lot easier for users to reason about a switch that
+        // says "show a thing" [true] or [false] versus "hide a thing" [true] or [false]
+        return !application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey)
     }
 
     // MARK: - Map View Delegate
