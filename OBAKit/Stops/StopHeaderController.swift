@@ -98,8 +98,9 @@ class StopHeaderCollectionCell: OBAListViewCell {
 // MARK: - StopHeaderView
 
 class StopHeaderView: UIView {
+    fileprivate static let minimumHeight: CGFloat = 128.0
     // ↓ Arbitrary height, seems to work OK for most text sizes, too large and the map snapshot will take too long to render.
-    fileprivate static let mapSnapshotHeight: CGFloat = 360.0
+    fileprivate static let maximumHeight: CGFloat = 360.0
 
     private let backgroundImageView: UIImageView = {
         let view = UIImageView.autolayoutNew()
@@ -110,6 +111,10 @@ class StopHeaderView: UIView {
     private lazy var stopNameLabel = buildLabel(bold: true)
     private lazy var stopNumberLabel = buildLabel()
     private lazy var routesLabel = buildLabel(bold: false, numberOfLines: 0)
+    private var stackPaddingBottomHeight: NSLayoutConstraint!
+
+    private var isHidingRoutesLabel: Bool = false
+    private lazy var toggleRouteDetailsGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(toggleRouteDetails))
 
     private var snapshotter: MapSnapshotter?
 
@@ -125,7 +130,13 @@ class StopHeaderView: UIView {
             backgroundImageView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
-        let stack = UIStackView.verticalStack(arrangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, UIView.autolayoutNew()])
+        let stackPaddingBottom = UIView.autolayoutNew()
+        self.stackPaddingBottomHeight = stackPaddingBottom.heightAnchor.constraint(equalToConstant: 0)
+        self.stackPaddingBottomHeight.priority = .defaultLow
+
+        NSLayoutConstraint.activate([self.stackPaddingBottomHeight])
+
+        let stack = UIStackView.verticalStack(arrangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, stackPaddingBottom])
         addSubview(stack)
 
         NSLayoutConstraint.activate([
@@ -133,8 +144,11 @@ class StopHeaderView: UIView {
             stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: ThemeMetrics.padding),
             stack.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -ThemeMetrics.padding),
-            stack.heightAnchor.constraint(lessThanOrEqualToConstant: StopHeaderView.mapSnapshotHeight)
+            stack.heightAnchor.constraint(greaterThanOrEqualToConstant: StopHeaderView.minimumHeight),
+            stack.heightAnchor.constraint(lessThanOrEqualToConstant: StopHeaderView.maximumHeight)
         ])
+
+        addGestureRecognizer(toggleRouteDetailsGestureRecognizer)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -149,7 +163,7 @@ class StopHeaderView: UIView {
         guard let config = config else { return }
 
         let width = max(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
-        let size = CGSize(width: width, height: StopHeaderView.mapSnapshotHeight)
+        let size = CGSize(width: width, height: StopHeaderView.maximumHeight)
 
         snapshotter = MapSnapshotter(size: size, stopIconFactory: config.viewModel.stopIconFactory)
 
@@ -167,9 +181,33 @@ class StopHeaderView: UIView {
         accessibilityValue = [stopNumberLabel.text, routesLabel.text].compactMap {$0}.joined(separator: " ")
     }
 
+    override func layoutSubviews() {
+        // Adjust the bottom padding view dynamically (i.e. when font size changed).
+        super.layoutSubviews()
+
+        let stopNameLabelSize = stopNameLabel.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
+        let stopNumberLabelSize = stopNumberLabel.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
+        let routesLabelSize = routesLabel.systemLayoutSizeFitting(UIView.layoutFittingExpandedSize)
+        let sumOfHeights = stopNameLabelSize.height + stopNumberLabelSize.height + routesLabelSize.height
+
+        let suggestedHeight: CGFloat
+        if sumOfHeights < StopHeaderView.minimumHeight {
+            suggestedHeight = StopHeaderView.minimumHeight - sumOfHeights
+        } else {
+            suggestedHeight = 0
+        }
+
+        self.stackPaddingBottomHeight.constant = suggestedHeight
+    }
+
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         self.configureView()
+    }
+
+    @objc private func toggleRouteDetails(_ sender: UITapGestureRecognizer) {
+        isHidingRoutesLabel.toggle()
+        routesLabel.alpha = isHidingRoutesLabel ? 1.0 : 0.0
     }
 
     private func buildLabel(bold: Bool = false, numberOfLines: Int = 1) -> UILabel {
