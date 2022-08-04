@@ -78,7 +78,7 @@
         kFIRParameterItemID: id,
         kFIRParameterItemName: name,
         kFIRParameterItemCategory: @"stops",
-        kFIRParameterItemLocationID: stopDistance
+        kFIRParameterLocationID: stopDistance
     }];
 }
 

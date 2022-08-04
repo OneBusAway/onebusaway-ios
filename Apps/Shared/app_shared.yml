@@ -8,7 +8,7 @@ settings:
   base:
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
     CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
-    MARKETING_VERSION: 22.2.0
+    MARKETING_VERSION: 22.3.0
 
 options:
   minimumXcodeGenVersion: 2.17
@@ -84,13 +84,13 @@ packages:
         exactVersion: 5.0.0
     CocoaLumberjack:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.2
+        exactVersion: 3.7.4
     CocoaLumberjackSwift:
         url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.7.2
+        exactVersion: 3.7.4
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
-        exactVersion: 5.3.3
+        exactVersion: 5.3.6
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 1.7.6
@@ -99,10 +99,10 @@ packages:
         exactVersion: 1.1.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
-        exactVersion: 4.0.5
+        exactVersion: 4.3.0
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
-        minorVersion: 3.5.3
+        minorVersion: 3.11.2
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
-        minorVersion: 1.17.0
+        minorVersion: 1.19.1
