@@ -27,7 +27,17 @@ extension ServiceAlert: TransitAlertViewModel {
     }
 
     public func body(forLocale locale: Locale) -> String? {
-        return affectedAgencies.map { $0.name }.sorted().joined(separator: ", ")
+        var body = ""
+
+        if let situationDescription = situationDescription {
+            body = "\(situationDescription.value)\r\n\r\n"
+        }
+
+        if affectedAgencies.count > 0 {
+            body = body.appending(affectedAgencies.map { $0.name }.sorted().joined(separator: ", "))
+        }
+
+        return body
     }
 
     public func url(forLocale locale: Locale) -> URL? {
