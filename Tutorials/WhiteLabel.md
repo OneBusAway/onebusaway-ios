@@ -27,7 +27,7 @@ To create your own white label app (let's call it "MyApp"):
 
 ### 1. Create Project Directory
 
-First, duplicate the `Apps/OneBusAway` directory and rename it as you see fit. In this case, we'll make a copy at `Apps/MyApp`. For example, some of our current White Label apps are called "KiedyBus" and "YRTViva".
+First, duplicate the `Apps/OneBusAway` directory and rename it as you see fit. In this case, we'll make a copy at `Apps/MyApp`. For example, one of our current White Label apps is called "KiedyBus".
 
 ### 2. Update Files
 
@@ -59,7 +59,7 @@ Some features that are present within OneBusAway will require you to create and 
 * OneSignal for push notifications.
 * OneBusAway.co (Obaco) for alarms.
 
-(List accurate as of May 15, 2021.)
+(List accurate as of September 1, 2022.)
 
 If you do not wish to use these services in your app, you may disable them by excluding the relevant pieces of data in your `AppDelegate.m` and `project.yml` files. Furthermore, both analytics and push notifications are designed to support integration of other third party services. Please contact the OBAKit project maintainer for more information on how you can add support for other third party services.
 
@@ -132,3 +132,28 @@ Once you are satisfied, create an Archive of your app by changing your build opt
 Then, you can submit your app to Apple for distribution via TestFlight and the App Store.
 
 ![The Archive menu item in the Product menu](images/white_label_build_archive.png)
+
+## OBAKitConfig
+
+These are parameters specified in your app's `project.yml` file that customizes your application for your needs and purposes. This list is incomplete, however hopefully most of the available parameters are self-explanatory.
+
+  OBAKitConfig:
+    AppGroup: group.org.onebusaway.iphone
+    BundledRegionsFileName: regions.json
+    DeepLinkServerBaseAddress: https://onebusaway.co
+    ExtensionURLScheme: onebusaway
+    RESTServerAPIKey: org.onebusaway.iphone
+    RegionsServerBaseAddress: https://regions.onebusaway.org
+    RegionsServerAPIPath: /regions-v3.json
+
+### Regions
+
+There are three parameters that are associated with regions:
+
+* `BundledRegionsFileName` - Required.
+* `RegionsServerBaseAddress` - Optional.
+* `RegionsServerAPIPath` - Optional.
+
+The regions JSON file that you will specify with the `BundledRegionsFileName` parameter is required so that the app can show the user a list of available regions as soon as the application launches, without having to worry about having an internet connection. However, that list will eventually/inevitably become out of date, and so the app will also regularly download the remote copy of the regions file to make sure that changes (names, features, new regions, deleted regions) are handled.
+
+If you choose to leave out `RegionsServerBaseAddress` and `RegionsServerAPIPath`, then your app will rely solely on the bundled regions file for all regions that your application will know about. It is _highly_ recommended that you provide a regions server URL and path, but it is not strictly required.
