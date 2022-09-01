@@ -227,7 +227,7 @@ public class MapViewController: UIViewController,
         self.present(alert, animated: true)
     }
 
-    private let locationButton: UIButton = {
+    private lazy var locationButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(Icons.nearMe, for: .normal)
         button.addTarget(self, action: #selector(centerMapOnUserLocationViaTap), for: .touchUpInside)
@@ -237,7 +237,7 @@ public class MapViewController: UIViewController,
 
     // MARK: - Weather
 
-    private let weatherButton: UIButton = {
+    private lazy var weatherButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("—", for: .normal)
         button.titleLabel?.adjustsFontSizeToFitWidth = true
@@ -286,7 +286,7 @@ public class MapViewController: UIViewController,
     }
 
     // MARK: - Map Type
-    public let toggleMapTypeButton: UIButton = {
+    public lazy var toggleMapTypeButton: UIButton = {
         let button = UIButton(type: .system)
         button.addTarget(self, action: #selector(toggleMapType), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.map_type.accessibility_label", value: "Map type", comment: "Voiceover text indicating that this button toggles the base map type.")

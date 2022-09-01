@@ -54,7 +54,7 @@ public class ActivityIndicatedButton: UIView {
     }
 
     // MARK: - UI
-    fileprivate let button: UIButton = {
+    fileprivate lazy var button: UIButton = {
         let button = UIButton()
         button.titleLabel?.font = .preferredFont(forTextStyle: .headline)
         button.setTitleColor(ThemeColors.shared.brand, for: .normal)

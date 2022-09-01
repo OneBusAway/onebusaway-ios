@@ -11,7 +11,7 @@
 
 import UIKit
 
-// swiftlint:disable control_statement cyclomatic_complexity no_space_in_method_call unused_closure_parameter notification_center_detachment file_length opening_brace switch_case_alignment
+// swiftlint:disable comment_spacing control_statement cyclomatic_complexity no_space_in_method_call unused_closure_parameter notification_center_detachment file_length opening_brace switch_case_alignment
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 public enum AnimationType {
