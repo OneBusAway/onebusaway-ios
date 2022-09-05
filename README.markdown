@@ -116,6 +116,10 @@ Now, replace the file `OBAKitCore/Models/Protobuf/gtfs-realtime.proto` with the 
 
 You can find the latest version of the GTFS-RT protobuf file in the https://github.com/google/transit/ repository.
 
+### Fix "Missing package product" build errors
+
+In Xcode: File Menu -> Packages -> Reset Package Caches
+
 # Third Party Libraries
 
 These are third party libraries directly included inside of this project.
