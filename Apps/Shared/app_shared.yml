@@ -43,7 +43,6 @@ targets:
           - fb
           - twitter
           - comgooglemaps
-        NSLocationAlwaysAndWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         NSLocationWhenInUseUsageDescription: See where you are in relation to transit, and help you navigate more easily.
         NSLocationTemporaryUsageDescriptionDictionary:
           MapStatusView: See where you are in relation to transit, and help you navigate more easily.
