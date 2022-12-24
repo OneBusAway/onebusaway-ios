@@ -2,13 +2,13 @@ name: OBAKitTests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: macos-11
+    runs-on: macos-12
 
     steps:
     - uses: actions/checkout@v2
@@ -20,8 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
-    - name: Switch Xcode 13
-      run: sudo xcode-select -switch /Applications/Xcode_13.2.1.app
+    - name: Switch Xcode 14
+      run: sudo xcode-select -switch /Applications/Xcode_14.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
