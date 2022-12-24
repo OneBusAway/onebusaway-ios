@@ -150,7 +150,8 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Answers the question of whether the device GPS can be consulted for location data.
     public var isLocationUseAuthorized: Bool {
-        return locationManager.isLocationServicesEnabled && authorizationStatus == .authorizedWhenInUse
+        return locationManager.isLocationServicesEnabled &&
+            (authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways)
     }
 
     @available(iOS 14, *)
