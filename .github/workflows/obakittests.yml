@@ -2,13 +2,13 @@ name: OBAKitTests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: macos-11
+    runs-on: macos-12
 
     steps:
     - uses: actions/checkout@v2
@@ -20,8 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
-    - name: Switch Xcode 13
-      run: sudo xcode-select -switch /Applications/Xcode_13.2.1.app
+    - name: Switch Xcode 14
+      run: sudo xcode-select -switch /Applications/Xcode_14.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -33,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=15.2,name=iPhone 13'
+        -destination 'platform=iOS Simulator,OS=16.2,name=iPhone 14'
         -quiet
 
     # Unit Test
@@ -42,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,OS=15.2,name=iPhone 13'
+        -destination 'platform=iOS Simulator,OS=16.2,name=iPhone 14'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
@@ -53,15 +53,16 @@ jobs:
     #    -only-testing:OBAKitUITests
     #    -project 'OBAKit.xcodeproj'
     #    -scheme 'App'
-    #    -destination 'platform=iOS Simulator,OS=15.0,name=iPhone 8'
+    #    -destination 'platform=iOS Simulator,OS=16.2,name=iPhone 14'
     #    -resultBundlePath OBAKitUITests.xcresult
     #    -quiet
 
     # Upload results
-    - uses: kishikawakatsumi/xcresulttool@v1.3.1
-      if: ${{ success() || failure() }}
+    - uses: kishikawakatsumi/xcresulttool@v1.7.0
       with:
+        show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
         path: |
           OBAKitTests.xcresult
     #      OBAKitUITests.xcresult # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
+      if: success() || failure()
 
