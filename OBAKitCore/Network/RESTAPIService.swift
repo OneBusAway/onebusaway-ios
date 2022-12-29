@@ -39,25 +39,6 @@ public class _RESTAPIService: APIService {
 
     // MARK: - Vehicle with ID
 
-    /// Provides information on the vehicle with the specified ID.
-    ///
-    /// API Endpoint: `/api/where/vehicle/{id}.json`
-    ///
-    /// - Important: Vehicle IDs are seldom identical to the IDs that are physically printed
-    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
-    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
-    /// is unique across the Puget Sound region with all of its agencies.
-    ///
-    /// - Parameters:
-    ///   - vehicleID: Vehicle ID string
-    /// - Returns: The enqueued network operation.
-    public func getVehicle(_ vehicleID: String) -> DecodableOperation<RESTAPIResponse<VehicleStatus>> {
-        let url = URLBuilder.getVehicleURL(vehicleID)
-        let operation = buildOperation(type: RESTAPIResponse<VehicleStatus>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle
     /// currently operating in the field, return extended trip details about the current trip for the vehicle.
     ///

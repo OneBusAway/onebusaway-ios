@@ -158,7 +158,7 @@ public class SearchManager: NSObject {
     }
 
     private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
-        guard let apiService = application.restAPIService else { return }
+        guard let apiService = application.betterAPIService else { return }
 
         if matchingVehicles.count > 1 {
             // Show a disambiguation UI.
@@ -168,21 +168,23 @@ public class SearchManager: NSObject {
 
         if matchingVehicles.count == 1, let vehicleID = matchingVehicles.first?.vehicleID {
             // One result. Find that vehicle and show it.
-            let op = apiService.getVehicle(vehicleID)
-            op.complete { [weak self] result in
-                guard let self = self else { return }
-
-                switch result {
-                case .failure(let error):
-                    self.application.displayError(error)
-                case .success(let response):
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [response.entry], boundingRegion: nil, error: nil)
+            Task(priority: .userInitiated) {
+                do {
+                    let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
+                    await MainActor.run {
+                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.application.displayError(error)
+                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
+                    }
                 }
-            }
-            return
-        }
 
-        // No results :(
-        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+            }
+        } else {
+            // No results :(
+            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+        }
     }
 }

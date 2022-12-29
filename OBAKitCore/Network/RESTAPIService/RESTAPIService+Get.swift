@@ -8,6 +8,26 @@
 import MapKit
 
 extension RESTAPIService {
+    // MARK: - Vehicle with ID
+
+    /// Provides information on the vehicle with the specified ID.
+    ///
+    /// API Endpoint: `/api/where/vehicle/{id}.json`
+    ///
+    /// - important: Vehicle IDs are seldom identical to the IDs that are physically printed
+    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
+    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - parameter vehicleID: Vehicle ID string
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``VehicleStatus``].
+    public nonisolated func getVehicle(vehicleID: String) async throws -> RESTAPIResponse<VehicleStatus> {
+        return try await getData(
+            for: urlBuilder.getVehicleURL(vehicleID),
+            decodeRESTAPIResponseAs: VehicleStatus.self
+        )
+    }
 
     // MARK: - Current Time
     /// Retrieves the current system time of the OneBusAway server.
