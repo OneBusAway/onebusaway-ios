@@ -114,7 +114,7 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.betterAPIService = RESTAPIService(RESTAPIService.Configuration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion))
+        self.betterAPIService = RESTAPIService(RESTAPIService.Configuration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
         self.restAPIService = _RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
     }
 

@@ -9,9 +9,12 @@ import Foundation
 
 extension RESTAPIService {
     nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await self.session.data(from: url)
+            (data, response) = try await dataLoader.data(for: request)
         } catch (let error as NSError) {
             if errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal

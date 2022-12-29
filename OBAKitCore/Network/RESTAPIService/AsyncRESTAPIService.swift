@@ -14,15 +14,17 @@ public actor RESTAPIService {
         let apiKey: String
         let uuid: String
         let appVersion: String
+        let regionIdentifier: Int?
 
         /// Generated query items from the initializer. Include this set of query items with every request you make.
         let defaultQueryItems: [URLQueryItem]
 
         /// - parameter baseURL: Any queries included in the `baseURL` will be moved to the `defaultQueryItems`.
-        init(baseURL: URL, apiKey: String, uuid: String, appVersion: String) {
+        init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionIdentifier: Int?) {
             self.apiKey = apiKey
             self.uuid = uuid
             self.appVersion = appVersion
+            self.regionIdentifier = regionIdentifier
 
             // Add default query items, including the component query of the baseURL.
             var queryItems: [URLQueryItem] = [
@@ -49,17 +51,17 @@ public actor RESTAPIService {
     }
 
     public let configuration: Configuration
-    public let session: URLSession
 
     private let logger = Logger()
-    internal nonisolated let urlBuilder: RESTAPIURLBuilder
-    internal let decoder = JSONDecoder()
+    nonisolated let dataLoader: URLDataLoader
+    nonisolated let urlBuilder: RESTAPIURLBuilder
+    nonisolated let decoder: JSONDecoder
 
-    public init(_ configuration: Configuration, session: URLSession = .shared) {
+    public init(_ configuration: Configuration, dataLoader: URLDataLoader = URLSession.shared) {
         self.configuration = configuration
-        self.session = session
-
+        self.dataLoader = dataLoader
         self.urlBuilder = RESTAPIURLBuilder(baseURL: configuration.baseURL, defaultQueryItems: configuration.defaultQueryItems)
+        self.decoder = JSONDecoder.RESTDecoder(regionIdentifier: configuration.regionIdentifier)
     }
 
     // MARK: - Common API handlers -
