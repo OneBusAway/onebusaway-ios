@@ -69,6 +69,7 @@ public class _RESTAPIService: APIService {
     ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
     /// - Returns: The enqueued network operation.
+    @available(*, deprecated, message: "Use async.")
     public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<StopArrivals>> {
         let url = URLBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         let operation = buildOperation(type: RESTAPIResponse<StopArrivals>.self, URL: url)

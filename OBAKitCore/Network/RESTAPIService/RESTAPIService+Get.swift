@@ -134,4 +134,25 @@ extension RESTAPIService {
             decodeRESTAPIResponseAs: Stop.self
         )
     }
+
+    // MARK: - Arrival and Departures for Stop
+    /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
+    /// `minutesBefore` to `minutesAfter`.
+    ///
+    /// - API Endpoint: `/api/where/arrivals-and-departures-for-stop/{id}.json`
+    /// - [View REST API Documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrivals-and-departures-for-stop.html)
+    ///
+    /// - parameter id: The stop ID
+    /// - parameter minutesBefore: How many minutes before now should Arrivals and Departures be returned for
+    /// - parameter minutesAfter: How many minutes after now should Arrivals and Departures be returned for
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``StopArrivals``.
+    public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) async throws -> RESTAPIResponse<StopArrivals> {
+        let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
+        return try await getData(
+            for: url,
+            decodeRESTAPIResponseAs: StopArrivals.self
+        )
+    }
+
 }
