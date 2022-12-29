@@ -95,22 +95,6 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Stops
-
-    /// Retrieves stops in the vicinity of `coordinate`.
-    ///
-    /// - API Endpoint: `/api/where/stops-for-location.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
-    ///
-    /// - Parameters:
-    ///   - coordinate: The coordinate around which to search for stops.
-    /// - Returns: The enqueued network operation.
-    public func getStops(coordinate: CLLocationCoordinate2D) -> DecodableOperation<RESTAPIResponse<[Stop]>> {
-        let url = URLBuilder.getStops(coordinate: coordinate)
-        let operation = buildOperation(type: RESTAPIResponse<[Stop]>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     /// Retrieves stops within `region`.
     ///
     /// - API Endpoint: `/api/where/stops-for-location.json`
