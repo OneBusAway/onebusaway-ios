@@ -70,9 +70,14 @@ public class RecentStopsViewController: UIViewController,
         present(alertController, animated: true, completion: nil)
     }
 
-    func onSelectAlarm(_ viewModel: AlarmViewModel) async {
-        guard let apiService = self.application.betterAPIService else { return }
+    func onSelectAlarm(_ viewModel: AlarmViewModel) {
+        Task(priority: .userInitiated) {
+            await self.showDeepLink(deepLink: viewModel.deepLink)
+        }
+    }
 
+    func showDeepLink(deepLink: ArrivalDepartureDeepLink) async {
+        guard let apiService = self.application.betterAPIService else { return }
         await MainActor.run {
             ProgressHUD.show()
         }
@@ -83,7 +88,6 @@ public class RecentStopsViewController: UIViewController,
             }
         }
 
-        let deepLink = viewModel.deepLink
         do {
             let response = try await apiService.getTripArrivalDepartureAtStop(
                 stopID: deepLink.stopID,
@@ -96,9 +100,7 @@ public class RecentStopsViewController: UIViewController,
                 self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
             }
         } catch {
-            await MainActor.run {
-                self.application.displayError(error)
-            }
+            self.application.displayError(error)
         }
     }
 
