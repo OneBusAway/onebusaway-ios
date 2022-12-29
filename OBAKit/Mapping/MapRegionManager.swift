@@ -248,7 +248,7 @@ public class MapRegionManager: NSObject,
         mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
 
         do {
-            let stops = try await apiService.getStop(region: mapRegion).list
+            let stops = try await apiService.getStops(region: mapRegion).list
 
             await MainActor.run {
                 // Some UI code is dependent on this being changed on Main.

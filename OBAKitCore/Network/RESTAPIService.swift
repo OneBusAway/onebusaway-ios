@@ -104,7 +104,8 @@ public class _RESTAPIService: APIService {
     ///   - id: The full, agency-prefixed ID of the stop.
     ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
     /// - Returns: The enqueued network operation.
-    public func getStop(id: String, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<Stop>> {
+    @available(*, deprecated, message: "This is for DataMigrator use only.")
+    func getStop(id: String, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<Stop>> {
         let url = URLBuilder.getStop(stopID: id)
         let operation = buildOperation(type: RESTAPIResponse<Stop>.self, URL: url)
         if enqueue { enqueueOperation(operation) }

@@ -63,17 +63,18 @@ extension RESTAPIService {
         )
     }
 
+    /// Retrieves the stop with the specified ID.
+    ///
+    /// - API Endpoint: `/api/where/stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stop.html)
+    ///
+    /// - parameter id: The full, agency-prefixed ID of the stop.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``Stop``.
     public nonisolated func getStop(id: String) async throws -> RESTAPIResponse<Stop> {
         return try await getData(
             for: urlBuilder.getStop(stopID: id),
             decodeRESTAPIResponseAs: Stop.self
-        )
-    }
-
-    public nonisolated func getStop(region: MKCoordinateRegion) async throws -> RESTAPIResponse<[Stop]> {
-        return try await getData(
-            for: urlBuilder.getStops(region: region),
-            decodeRESTAPIResponseAs: [Stop].self
         )
     }
 }
