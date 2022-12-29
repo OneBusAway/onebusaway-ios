@@ -15,7 +15,8 @@ struct StopViewModel: OBAListViewItem {
     let name: String
     let subtitle: String?
 
-    let id: Stop.ID
+    let id: UUID = UUID()
+    let stopID: Stop.ID
     let routeType: Route.RouteType
 
     // Hide icon if there is only one type of route in the list
@@ -45,17 +46,23 @@ struct StopViewModel: OBAListViewItem {
         self.subtitle = stop.subtitle
         self.routeType = stop.prioritizedRouteTypeForDisplay
 
-        self.id = stop.id
+        self.stopID = stop.id
         self.onSelectAction = selectAction
         self.onDeleteAction = deleteAction
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(stopID)
+        hasher.combine(name)
+        hasher.combine(routeType)
     }
 
     static func == (lhs: StopViewModel, rhs: StopViewModel) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id == rhs.id &&
+            lhs.stopID == rhs.stopID &&
+            lhs.name == rhs.name &&
+            lhs.routeType == rhs.routeType
     }
 }
 

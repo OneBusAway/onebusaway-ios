@@ -33,7 +33,7 @@ extension AgencyAlertListViewConverters where Self: UIViewController {
                 return TransitAlertDataListViewModel(alert, isUnread: isUnread, forLocale: Locale.current, onSelectAction: presentAlertAction)
             }
 
-            let alerts = viewModels.uniqued.sorted(by: \.title) // remove duplicates
+            let alerts = viewModels.sorted(by: \.title) // remove duplicates
             return OBAListViewSection(id: "agency_alerts_\(group.key)", title: group.key, contents: alerts)
         }.sorted(by: \.id)
     }
@@ -47,7 +47,7 @@ extension AgencyAlertListViewConverters where Self: UIViewController {
     /// - Returns: An `OBAListViewSection` representing the array of `ServiceAlert`s for use with OBAListView.
     func listSection(serviceAlerts: [ServiceAlert], showSectionTitle: Bool, sectionID: String = "service_alerts") -> OBAListViewSection {
         let onSelectAction: OBAListViewAction<TransitAlertDataListViewModel> = { [weak self] item in self?.presentAlert(item) }
-        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, isUnread: false, forLocale: .current, onSelectAction: onSelectAction) }.uniqued
+        let items = serviceAlerts.map { TransitAlertDataListViewModel($0, isUnread: false, forLocale: .current, onSelectAction: onSelectAction) }
         let title: String?
         if showSectionTitle {
             if items.count > 1 {

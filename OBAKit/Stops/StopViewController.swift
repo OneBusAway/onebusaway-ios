@@ -687,8 +687,7 @@ public class StopViewController: UIViewController,
 
         let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
 
-        // Sometimes stopArrivals will respond with duplicate entries, so get rid of them.
-        var items = arrDepItems.uniqued
+        var items = arrDepItems
             .sorted(by: \.arrivalDepartureDate)
             .map { $0.typeErased }
         addWalkTimeRow(to: &items)
@@ -709,7 +708,7 @@ public class StopViewController: UIViewController,
     //           revisit this decision.
 
     func arrivalDeparture(forViewModel viewModel: ArrivalDepartureItem) -> ArrivalDeparture? {
-        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.id }).first
+        return stopArrivals?.arrivalsAndDepartures.filter({ $0.id == viewModel.arrivalDepartureID }).first
     }
 
     // MARK: Actions
@@ -760,7 +759,7 @@ public class StopViewController: UIViewController,
     private func previewStopArrival(_ viewModel: ArrivalDepartureItem) -> UIViewController? {
         guard let arrivalDeparture = self.arrivalDeparture(forViewModel: viewModel) else { return nil }
         let vc = TripViewController(application: self.application, arrivalDeparture: arrivalDeparture)
-        self.previewingVC = (arrivalDeparture.id, vc)
+        self.previewingVC = (viewModel.id, vc)
         return vc
     }
 
@@ -917,7 +916,7 @@ public class StopViewController: UIViewController,
     /// The view controller currently being previewed (via context menu).
     /// The identifier is a string (ideally a `UUID`) used when the user commits the context menu to ensure
     /// that the `previewingVC` is actually the view controller that the user committed to.
-    var previewingVC: (identifier: String, vc: UIViewController)?
+    var previewingVC: (identifier: UUID, vc: UIViewController)?
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         if let arrDepItem = item.as(ArrivalDepartureItem.self) {
             return stopArrivalContextMenu(arrDepItem)

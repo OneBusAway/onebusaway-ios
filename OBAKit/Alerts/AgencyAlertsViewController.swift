@@ -102,7 +102,7 @@ class AgencyAlertsViewController: UIViewController,
 
     // MARK: - Preview
 
-    var previewingVC: (identifier: String, vc: UIViewController)?
+    var previewingVC: (identifier: UUID, vc: UIViewController)?
 
     func previewAlert(_ alert: TransitAlertDataListViewModel) -> UIViewController? {
         let viewController: UIViewController
