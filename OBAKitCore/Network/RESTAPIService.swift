@@ -37,29 +37,6 @@ public class _RESTAPIService: APIService {
         return DecodableOperation(type: type, decoder: JSONDecoder.RESTDecoder(regionIdentifier: regionIdentifier), URL: URL, dataLoader: dataLoader)
     }
 
-    // MARK: - Vehicle with ID
-
-    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle
-    /// currently operating in the field, return extended trip details about the current trip for the vehicle.
-    ///
-    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
-    ///
-    /// - Important: Vehicle IDs are seldom identical to the IDs that are physically printed
-    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
-    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
-    /// is unique across the Puget Sound region with all of its agencies.
-    ///
-    /// - Parameters:
-    ///   - vehicleID: The ID of the vehicle
-    /// - Returns: The enqueued network operation.
-    public func getVehicleTrip(vehicleID: String) -> DecodableOperation<RESTAPIResponse<TripDetails>> {
-        let url = URLBuilder.getVehicleTrip(vehicleID: vehicleID)
-        let operation = buildOperation(type: RESTAPIResponse<TripDetails>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     // MARK: - Stops
     /// Retrieves the stop with the specified ID.
     ///

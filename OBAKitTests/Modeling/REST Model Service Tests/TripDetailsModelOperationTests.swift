@@ -25,7 +25,7 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     override func setUp() {
         super.setUp()
-        dataLoader = (restService.dataLoader as! MockDataLoader)
+        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
@@ -58,26 +58,17 @@ class TripDetailsModelOperationTests: OBATestCase {
         expect(tripDetails.serviceAlerts.count) == 0
     }
 
-    func testLoading_vehicleDetails_success() {
+    func testLoading_vehicleDetails_success() async throws {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: vehicleTripAPIPath, with: data)
 
-        let op = restService.getVehicleTrip(vehicleID: vehicleID)
-
-        waitUntil { done in
-            op.complete { result in
-                switch result {
-                case .failure:
-                    fatalError()
-                case .success(let response):
-                    self.checkExpectations(response.entry)
-                    done()
-                }
-            }
-        }
+        let trip = try await betterRESTService.getVehicleTrip(vehicleID: vehicleID).entry
+        self.checkExpectations(trip)
     }
 
-    func testLoading_tripDetails_success() {
+    func testLoading_tripDetails_success() async throws {
+        throw XCTSkip("Needs to use betterRESTService")
+
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: tripDetailsAPIPath, with: data)
 

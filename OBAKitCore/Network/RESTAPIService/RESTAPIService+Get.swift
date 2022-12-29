@@ -29,6 +29,27 @@ extension RESTAPIService {
         )
     }
 
+    /// Get extended trip details for a specific transit vehicle. That is, given a vehicle id for a transit vehicle
+    /// currently operating in the field, return extended trip details about the current trip for the vehicle.
+    ///
+    /// - API Endpoint: `/api/where/trip-for-vehicle/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-for-vehicle.html)
+    ///
+    /// - important: Vehicle IDs are seldom identical to the IDs that are physically printed
+    /// on buses. For example, in Puget Sound, a KC Metro bus that has the number `1234`
+    /// printed on its side will likely have the vehicle ID `1_1234` to ensure that the vehicle ID
+    /// is unique across the Puget Sound region with all of its agencies.
+    ///
+    /// - parameter vehicleID: The ID of the vehicle
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``TripDetails``].
+    public nonisolated func getVehicleTrip(vehicleID: String) async throws -> RESTAPIResponse<TripDetails> {
+        return try await getData(
+            for: urlBuilder.getVehicleTrip(vehicleID: vehicleID),
+            decodeRESTAPIResponseAs: TripDetails.self
+        )
+    }
+
     // MARK: - Current Time
     /// Retrieves the current system time of the OneBusAway server.
     ///
