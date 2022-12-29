@@ -8,7 +8,7 @@
 import Foundation
 
 extension RESTAPIService {
-    nonisolated func data(for url: URL) async throws -> (Data, HTTPURLResponse) {
+    nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await self.session.data(from: url)
@@ -52,11 +52,11 @@ extension RESTAPIService {
     }
 
     /// Convenience.
-    nonisolated func data<T: Decodable>(for url: URL, decodeAs decodeType: T.Type) async throws -> T {
-        let (data, response) = try await self.data(for: url)
+    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
+        let (data, response) = try await self.getData(for: url)
 
         do {
-            return try self.decoder.decode(decodeType, from: data)
+            return try self.decoder.decode(RESTAPIResponse<T>.self, from: data)
         } catch {
             await logError(response, "decoder failed: \(error)")
             throw error
