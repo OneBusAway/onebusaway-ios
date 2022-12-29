@@ -120,7 +120,7 @@ class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIR
         }
 
         let tapHandler = { [unowned self] (vm: StopViewModel) -> Void in
-            self.application.viewRouter.navigateTo(stopID: vm.id, from: self)
+            self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
         return directions.sorted(by: \.key).map { (direction, _) -> OBAListViewSection in

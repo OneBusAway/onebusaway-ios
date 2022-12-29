@@ -114,11 +114,11 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
 
         let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, isDeepLinkingAvailable: false, onSelectAction: onSelectArrivalDeparture) }
 
-        return OBAListViewSection(id: "vehicle_problem_section", title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: rows.uniqued)
+        return OBAListViewSection(id: "vehicle_problem_section", title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: rows)
     }
 
     func onSelectArrivalDeparture(_ arrivalDepartureItem: ArrivalDepartureItem) {
-        guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.id }) else { return }
+        guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.arrivalDepartureID }) else { return }
         let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
         self.navigationController?.pushViewController(controller, animated: true)
     }

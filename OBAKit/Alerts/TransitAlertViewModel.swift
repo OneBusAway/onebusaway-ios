@@ -11,7 +11,7 @@ import Foundation
 struct TransitAlertDataListViewModel: OBAListViewItem {
     let transitAlert: TransitAlertViewModel
 
-    let id: String
+    let id: UUID = UUID()
     let title: String
     let body: String
     let localizedURL: URL?
@@ -51,7 +51,6 @@ struct TransitAlertDataListViewModel: OBAListViewItem {
         onSelectAction: OBAListViewAction<TransitAlertDataListViewModel>? = nil)
     where TA: Hashable {
         self.transitAlert = transitAlert
-        self.id = "\(transitAlert.hashValue)"
         self.title = transitAlert.title(forLocale: locale) ?? ""
         self.body = transitAlert.body(forLocale: locale) ?? ""
         self.localizedURL = transitAlert.url(forLocale: locale)

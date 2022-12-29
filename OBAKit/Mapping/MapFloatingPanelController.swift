@@ -205,7 +205,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         if stops.count > 0 {
             let rows = stops.map { stop -> StopViewModel in
                 let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
-                    self.mapPanelDelegate?.mapPanelController(self, didSelectStop: viewModel.id)
+                    self.mapPanelDelegate?.mapPanelController(self, didSelectStop: viewModel.stopID)
                 }
 
                 return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: nil)
@@ -231,7 +231,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.id)
+            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }

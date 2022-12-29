@@ -131,7 +131,7 @@ public class RecentStopsViewController: UIViewController,
 
         let rows = stops.map { stop -> StopViewModel in
             let onSelect: OBAListViewAction<StopViewModel> = { [unowned self] viewModel in
-                self.application.viewRouter.navigateTo(stopID: viewModel.id, from: self)
+                self.application.viewRouter.navigateTo(stopID: viewModel.stopID, from: self)
             }
 
             let onDelete: OBAListViewAction<StopViewModel> = { [unowned self] _ in
@@ -140,7 +140,7 @@ public class RecentStopsViewController: UIViewController,
             }
 
             return StopViewModel(withStop: stop, onSelect: onSelect, onDelete: onDelete)
-        }.uniqued
+        }
 
         let title = application.userDataStore.alarms.count > 0 ? Strings.recentStops : nil
         return OBAListViewSection(id: "recent_stops", title: title, contents: rows)
@@ -171,7 +171,7 @@ public class RecentStopsViewController: UIViewController,
         guard let stopViewModel = item.as(StopViewModel.self) else { return nil }
 
         let previewProvider: OBAListViewMenuActions.PreviewProvider = { [unowned self] () -> UIViewController? in
-            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.id)
+            let stopVC = StopViewController(application: self.application, stopID: stopViewModel.stopID)
             self.currentPreviewingViewController = stopVC
             return stopVC
         }
