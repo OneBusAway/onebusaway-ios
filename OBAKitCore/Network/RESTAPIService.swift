@@ -79,21 +79,6 @@ public class _RESTAPIService: APIService {
         return operation
     }
 
-    // MARK: - Current Time
-
-    /// Retrieves the current system time of the OneBusAway server.
-    ///
-    /// - API Endpoint: `/api/where/current-time.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/current-time.html)
-    ///
-    /// - Returns: The enqueued network operation.
-    public func getCurrentTime() -> DecodableOperation<CoreRESTAPIResponse> {
-        let url = URLBuilder.getCurrentTime()
-        let operation = buildOperation(type: CoreRESTAPIResponse.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     // MARK: - Stops
     /// Retrieves the stop with the specified ID.
     ///

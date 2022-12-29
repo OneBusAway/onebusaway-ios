@@ -54,16 +54,20 @@ extension RESTAPIService {
         return (data, httpResponse)
     }
 
-    /// Convenience.
-    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
+    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type) async throws -> T {
         let (data, response) = try await self.getData(for: url)
 
         do {
-            return try self.decoder.decode(RESTAPIResponse<T>.self, from: data)
+            return try self.decoder.decode(T.self, from: data)
         } catch {
             await logError(response, "decoder failed: \(error)")
             throw error
         }
+    }
+
+    /// Convenience.
+    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
+        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self)
     }
 
     private nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {

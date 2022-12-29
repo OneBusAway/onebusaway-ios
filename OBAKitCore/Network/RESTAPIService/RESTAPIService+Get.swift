@@ -8,6 +8,22 @@
 import MapKit
 
 extension RESTAPIService {
+
+    // MARK: - Current Time
+    /// Retrieves the current system time of the OneBusAway server.
+    ///
+    /// - API Endpoint: `/api/where/current-time.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/current-time.html)
+    ///
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: ``CoreRESTAPIResponse``.
+    public nonisolated func getCurrentTime() async throws -> CoreRESTAPIResponse {
+        return try await getData(
+            for: urlBuilder.getCurrentTime(),
+            decodeAs: CoreRESTAPIResponse.self
+        )
+    }
+
     // MARK: - Stops
     /// Retrieves stops near the provided `coordinate`.
     ///
