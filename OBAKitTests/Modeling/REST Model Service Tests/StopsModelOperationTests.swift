@@ -24,7 +24,7 @@ class StopsModelOperationTests: OBATestCase {
 
     override func setUp() {
         super.setUp()
-        dataLoader = (restService.dataLoader as! MockDataLoader)
+        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
     }
 
     func stubApiCall() {
@@ -54,58 +54,23 @@ class StopsModelOperationTests: OBATestCase {
         expect(stop.regionIdentifier) == pugetSoundRegionIdentifier
     }
 
-    func testLoading_coordinate_success() {
+    func testLoading_coordinate_success() async throws {
         stubApiCall()
 
-        let op = restService.getStops(coordinate: coordinate)
-
-        waitUntil { done in
-            op.complete { result in
-                switch result {
-                case .failure:
-                    fatalError()
-                case .success(let response):
-                    self.checkExpectations(response)
-                    done()
-                }
-            }
-        }
+        self.checkExpectations(try await betterRESTService.getStops(coordinate: coordinate))
     }
 
-    func testLoading_region_success() {
+    func testLoading_region_success() async throws {
         stubApiCall()
 
-        let op = restService.getStops(region: MKCoordinateRegion(center: self.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)))
-
-        waitUntil { done in
-            op.complete { result in
-                switch result {
-                case .failure:
-                    fatalError()
-                case .success(let response):
-                    self.checkExpectations(response)
-                    done()
-                }
-            }
-        }
+        let region = MKCoordinateRegion(center: self.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1))
+        self.checkExpectations(try await betterRESTService.getStops(region: region))
     }
 
-    func testLoading_circularRegion_success() {
+    func testLoading_circularRegion_success() async throws {
         stubApiCall()
 
         let circularRegion = CLCircularRegion(center: self.coordinate, radius: 100.0, identifier: "query")
-        let op = self.restService.getStops(circularRegion: circularRegion, query: "query")
-
-        waitUntil { done in
-            op.complete { result in
-                switch result {
-                case .failure:
-                    fatalError()
-                case .success(let response):
-                    self.checkExpectations(response)
-                    done()
-                }
-            }
-        }
+        self.checkExpectations(try await betterRESTService.getStops(circularRegion: circularRegion, query: "query"))
     }
 }

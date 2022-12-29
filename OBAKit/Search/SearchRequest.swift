@@ -117,20 +117,23 @@ public class SearchManager: NSObject {
     }
 
     private func searchStopNumber(request: SearchRequest) {
-        guard let apiService = application.restAPIService else {
+        guard let apiService = application.betterAPIService else {
             return
         }
 
         let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
-        let op = apiService.getStops(circularRegion: region, query: request.query)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
 
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
+        Task(priority: .userInitiated) {
+            do {
+                let stops = try await apiService.getStops(circularRegion: region, query: request.query).list
+                await MainActor.run {
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
+                }
+            } catch {
+                await MainActor.run {
+                    self.application.displayError(error)
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
+                }
             }
         }
     }

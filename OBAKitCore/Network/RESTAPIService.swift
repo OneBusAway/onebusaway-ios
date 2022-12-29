@@ -95,46 +95,6 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Stops
-    /// Retrieves stops within `region`.
-    ///
-    /// - API Endpoint: `/api/where/stops-for-location.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
-    ///
-    /// - Important: Depending on the number of stops located within `region`, you may only receive back
-    /// a subset of the total list of stops within `region`. Zoom in (i.e. provide a smaller region) to
-    /// better guarantee that you will receive a full list.
-    ///
-    /// - Parameters:
-    ///   - region: A coordinate region from which to search for stops.
-    ///
-    /// - Returns: The enqueued network operation.
-    public func getStops(region: MKCoordinateRegion) -> DecodableOperation<RESTAPIResponse<[Stop]>> {
-        let url = URLBuilder.getStops(region: region)
-        let operation = buildOperation(type: RESTAPIResponse<[Stop]>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
-    /// Retrieves stops within `circularRegion`.
-    ///
-    /// - API Endpoint: `/api/where/stops-for-location.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stops-for-location.html)
-    ///
-    /// - Important: Depending on the number of stops located within `circularRegion`, you may only receive back
-    /// a subset of the total list of stops within `circularRegion`. Zoom in (i.e. provide a smaller region) to
-    /// better guarantee that you will receive a full list.
-    ///
-    /// - Parameters:
-    ///   - circularRegion: A circular region from which to search for stops.
-    ///   - query: A search query for a specific stop code.
-    /// - Returns: The enqueued network operation.
-    public func getStops(circularRegion: CLCircularRegion, query: String) -> DecodableOperation<RESTAPIResponse<[Stop]>> {
-        let url = URLBuilder.getStops(circularRegion: circularRegion, query: query)
-        let operation = buildOperation(type: RESTAPIResponse<[Stop]>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     /// Retrieves the stop with the specified ID.
     ///
     /// - API Endpoint: `/api/where/stop/{id}.json`
