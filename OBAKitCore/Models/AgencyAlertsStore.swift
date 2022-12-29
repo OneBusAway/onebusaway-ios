@@ -15,7 +15,7 @@ import Foundation
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var apiService: RESTAPIService?
+    public var apiService: _RESTAPIService?
     public var obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults

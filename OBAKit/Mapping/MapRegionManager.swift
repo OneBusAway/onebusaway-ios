@@ -228,35 +228,43 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Data Loading
 
-    @objc func requestDataForMapRegion(_ timer: Timer) {
-        guard let apiService = application.restAPIService else {
+    func requestDataForMapRegion() async {
+        guard let apiService = application.betterAPIService else {
             return
         }
 
-        self.requestStopsOperation?.cancel()
-        self.requestStopsOperation = nil
+        await MainActor.run {
+            notifyDelegatesDataLoadingStarted()
+        }
 
-        notifyDelegatesDataLoadingStarted()
-
-        var mapRegion = mapView.region
-        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
-        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
-
-        let op = apiService.getStops(region: mapRegion)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.stops = response.list
-                self.notifyDelegatesDataLoadingFinished()
-                self.requestStopsOperation = nil
+        defer {
+            Task { @MainActor in
+                notifyDelegatesDataLoadingFinished()
             }
         }
 
-        self.requestStopsOperation = op
+        var mapRegion = await mapView.region
+        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
+        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
+
+        do {
+            let stops = try await apiService.getStop(region: mapRegion).list
+
+            await MainActor.run {
+                // Some UI code is dependent on this being changed on Main.
+                self.stops = stops
+            }
+        } catch {
+            await MainActor.run {
+                self.application.displayError(error)
+            }
+        }
+    }
+
+    @objc func requestDataForMapRegion(_ timer: Timer) {
+        Task(priority: .utility) {
+            await requestDataForMapRegion()
+        }
     }
 
     // MARK: - Map View Delegate

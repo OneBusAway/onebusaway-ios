@@ -12,7 +12,9 @@ import CoreLocation
 import MapKit
 
 /// Loads data from a OneBusAway REST API server and returns it as model objects.
-public class RESTAPIService: APIService {
+
+@available(*, deprecated, message: "Use RESTAPIService")
+public class _RESTAPIService: APIService {
     lazy var URLBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
 
     private let regionIdentifier: Int

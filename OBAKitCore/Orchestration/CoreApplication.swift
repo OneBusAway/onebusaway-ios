@@ -58,11 +58,13 @@ open class CoreApplication: NSObject,
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    public private(set) var restAPIService: RESTAPIService? {
+    public private(set) var restAPIService: _RESTAPIService? {
         didSet {
             alertsStore.apiService = restAPIService
         }
     }
+
+    public private(set) var betterAPIService: RESTAPIService?
 
     /// Commonly used formatters configured with the user's current, auto-updating locale and calendar, and the app's theme colors.
     @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, calendar: Calendar.autoupdatingCurrent, themeColors: ThemeColors.shared)
@@ -112,7 +114,8 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
+        self.betterAPIService = RESTAPIService(RESTAPIService.Configuration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion))
+        self.restAPIService = _RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
     }
 
     // MARK: - Obaco

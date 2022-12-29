@@ -90,10 +90,10 @@ open class OBATestCase: XCTestCase {
 
     var baseURL: URL { URL(string: "https://\(host)")! }
 
-    var restService: RESTAPIService!
+    var restService: _RESTAPIService!
 
-    func buildRESTService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> RESTAPIService {
-        RESTAPIService(
+    func buildRESTService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> _RESTAPIService {
+        _RESTAPIService(
             baseURL: baseURL,
             apiKey: apiKey,
             uuid: uuid,
