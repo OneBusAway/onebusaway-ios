@@ -59,10 +59,10 @@ jobs:
 
     # Upload results
     - uses: kishikawakatsumi/xcresulttool@v1.7.0
+      continue-on-error: true
       with:
         show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
         path: |
           OBAKitTests.xcresult
     #      OBAKitUITests.xcresult # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
       if: success() || failure()
-
