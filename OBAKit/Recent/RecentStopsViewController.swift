@@ -70,29 +70,34 @@ public class RecentStopsViewController: UIViewController,
         present(alertController, animated: true, completion: nil)
     }
 
-    func onSelectAlarm(_ viewModel: AlarmViewModel) {
-        guard let apiService = self.application.restAPIService else { return }
+    func onSelectAlarm(_ viewModel: AlarmViewModel) async {
+        guard let apiService = self.application.betterAPIService else { return }
 
-        ProgressHUD.show()
+        await MainActor.run {
+            ProgressHUD.show()
+        }
+
+        defer {
+            Task { @MainActor in
+                ProgressHUD.dismiss()
+            }
+        }
 
         let deepLink = viewModel.deepLink
-        let op = apiService.getTripArrivalDepartureAtStop(
-            stopID: deepLink.stopID,
-            tripID: deepLink.tripID,
-            serviceDate: deepLink.serviceDate,
-            vehicleID: deepLink.vehicleID,
-            stopSequence: deepLink.stopSequence)
+        do {
+            let response = try await apiService.getTripArrivalDepartureAtStop(
+                stopID: deepLink.stopID,
+                tripID: deepLink.tripID,
+                serviceDate: deepLink.serviceDate,
+                vehicleID: deepLink.vehicleID,
+                stopSequence: deepLink.stopSequence)
 
-        op.complete { [weak self] result in
-            ProgressHUD.dismiss()
-
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
+            await MainActor.run {
                 self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
+            }
+        } catch {
+            await MainActor.run {
+                self.application.displayError(error)
             }
         }
     }

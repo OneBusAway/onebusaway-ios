@@ -147,7 +147,7 @@ extension RESTAPIService {
     /// - parameter minutesAfter: How many minutes after now should Arrivals and Departures be returned for
     /// - throws: ``APIError`` or other errors.
     /// - returns: The ``RESTAPIResponse`` for ``StopArrivals``.
-    public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) async throws -> RESTAPIResponse<StopArrivals> {
+    public nonisolated func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt) async throws -> RESTAPIResponse<StopArrivals> {
         let url = urlBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
         return try await getData(
             for: url,
@@ -155,4 +155,23 @@ extension RESTAPIService {
         )
     }
 
+    /// Get info about a single arrival and departure for a stop
+    ///
+    /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrival-and-departure-for-stop.html)
+    ///
+    /// - parameter stopID: The ID of the stop.
+    /// - parameter tripID: The trip id of the arriving transit vehicle.
+    /// - parameter serviceDate: The service date of the arriving transit vehicle.
+    /// - parameter vehicleID: The vehicle id of the arriving transit vehicle (optional).
+    /// - parameter stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``ArrivalDeparture``.
+    public nonisolated func getTripArrivalDepartureAtStop(stopID: String, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) async throws -> RESTAPIResponse<ArrivalDeparture> {
+        let url = urlBuilder.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
+        return try await getData(
+            for: url,
+            decodeRESTAPIResponseAs: ArrivalDeparture.self
+        )
+    }
 }

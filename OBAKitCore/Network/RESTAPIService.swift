@@ -91,6 +91,7 @@ public class _RESTAPIService: APIService {
     ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
     ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
     /// - Returns: The enqueued network operation.
+    @available(*, deprecated, message: "Use async.")
     public func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> DecodableOperation<RESTAPIResponse<ArrivalDeparture>> {
         let url = URLBuilder.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
         let operation = buildOperation(type: RESTAPIResponse<ArrivalDeparture>.self, URL: url)
