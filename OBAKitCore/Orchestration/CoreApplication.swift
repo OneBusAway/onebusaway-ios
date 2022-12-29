@@ -64,7 +64,11 @@ open class CoreApplication: NSObject,
         }
     }
 
-    public private(set) var betterAPIService: RESTAPIService?
+    public private(set) var betterAPIService: RESTAPIService? {
+        didSet {
+            alertsStore.betterAPIService = betterAPIService
+        }
+    }
 
     /// Commonly used formatters configured with the user's current, auto-updating locale and calendar, and the app's theme colors.
     @objc public lazy var formatters = Formatters(locale: Locale.autoupdatingCurrent, calendar: Calendar.autoupdatingCurrent, themeColors: ThemeColors.shared)

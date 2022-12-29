@@ -16,6 +16,7 @@ import Foundation
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     public var apiService: _RESTAPIService?
+    public var betterAPIService: RESTAPIService?
     public var obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults
@@ -57,7 +58,6 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
         agenciesOperation?.cancel()
-        regionalAlertsOperation?.cancel()
         obacoOperation?.cancel()
         queue.cancelAllOperations()
     }
@@ -93,18 +93,22 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     }
 
     // MARK: - REST API
-
-    private var regionalAlertsOperation: MultiAgencyAlertsOperation?
-
+    /// temporary glue
     private func fetchRegionalAlerts() {
-        guard let apiService = apiService else { return }
-
-        let op = apiService.getAlerts(agencies: agencies)
-        op.complete { [weak self] (alerts) in
-            guard let self = self else { return }
-            self.storeAgencyAlerts(alerts)
+        Task {
+            await _fetchRegionalAlerts()
         }
-        regionalAlertsOperation = op
+    }
+
+    private func _fetchRegionalAlerts() async {
+        guard let betterAPIService else { return }
+
+        // TODO: don't swallow error
+        if let alerts = try? await betterAPIService.getAlerts(agencies: agencies) {
+            await MainActor.run {
+                self.storeAgencyAlerts(alerts)
+            }
+        }
     }
 
     // MARK: - Obaco

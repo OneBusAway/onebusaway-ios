@@ -240,29 +240,6 @@ public class _RESTAPIService: APIService {
         return operation
     }
 
-    // MARK: - Regional Alerts
-
-    public func getAlerts(agencies: [AgencyWithCoverage]) -> MultiAgencyAlertsOperation {
-        // Set up the final operation that will collect all of our agency alerts.
-        let multiAgencyOp = MultiAgencyAlertsOperation()
-
-        for agency in agencies {
-            let subOp = getAlerts(agency: agency)
-            multiAgencyOp.addDependency(subOp)
-        }
-
-        networkQueue.addOperation(multiAgencyOp)
-
-        return multiAgencyOp
-    }
-
-    public func getAlerts(agency: AgencyWithCoverage) -> AgencyAlertsOperation {
-        let url = URLBuilder.getRESTRegionalAlerts(agencyID: agency.agencyID)
-        let operation = AgencyAlertsOperation(agencies: [agency], URL: url, dataLoader: dataLoader)
-        enqueueOperation(operation)
-        return operation
-    }
-
     // MARK: - Problem Reporting
 
     /// Submit a user-generated problem report for a particular stop.
