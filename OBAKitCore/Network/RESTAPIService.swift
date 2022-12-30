@@ -73,23 +73,6 @@ public class _RESTAPIService: APIService {
         return operation
     }
 
-    // MARK: - Shapes
-
-    /// Retrieve a shape (the path traveled by a transit vehicle) by id
-    ///
-    /// - API Endpoint: `/api/where/shape/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/shape.html)
-    ///
-    /// - Parameters:
-    ///   - id: The ID of the shape to retrieve.
-    /// - Returns: The enqueued network operation.
-    public func getShape(id: String) -> DecodableOperation<RESTAPIResponse<PolylineEntity>> {
-        let url = URLBuilder.getShape(id: id)
-        let operation = buildOperation(type: RESTAPIResponse<PolylineEntity>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     // MARK: - Agencies
 
     @available(*, deprecated, message: "Use async.")

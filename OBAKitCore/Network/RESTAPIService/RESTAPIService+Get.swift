@@ -248,6 +248,22 @@ extension RESTAPIService {
         return response
     }
 
+    // MARK: - Shapes
+    /// Retrieve a shape (the path traveled by a transit vehicle) by id
+    ///
+    /// - API Endpoint: `/api/where/shape/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/shape.html)
+    ///
+    /// - parameter id: The ID of the shape to retrieve.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``PolylineEntity``]. 
+    public nonisolated func getShape(id: String) async throws -> RESTAPIResponse<PolylineEntity> {
+        return try await getData(
+            for: urlBuilder.getShape(id: id),
+            decodeRESTAPIResponseAs: PolylineEntity.self
+        )
+    }
+
     // MARK: - Agencies
     /// Retrieves a list of agencies with known coverage areas for the current region.
     ///
