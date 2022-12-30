@@ -209,6 +209,7 @@ open class CoreApplication: NSObject,
 
     // MARK: - Error Handling
 
+    @MainActor
     open func displayError(_ error: Error) {
         Logger.error("Error: \(error.localizedDescription)")
     }

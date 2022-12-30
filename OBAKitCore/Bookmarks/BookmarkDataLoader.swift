@@ -74,9 +74,7 @@ public class BookmarkDataLoader: NSObject {
                     self.delegate?.dataLoaderDidUpdate(self)
                 }
             } catch {
-                await MainActor.run {
-                    self.application.displayError(error)
-                }
+                await self.application.displayError(error)
             }
         }
     }

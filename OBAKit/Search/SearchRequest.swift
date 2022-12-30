@@ -109,7 +109,9 @@ public class SearchManager: NSObject {
 
             switch result {
             case .failure(let error):
-                self.application.displayError(error)
+                Task { @MainActor in
+                    self.application.displayError(error)
+                }
             case .success(let response):
                 self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
             }
@@ -130,8 +132,8 @@ public class SearchManager: NSObject {
                     self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
                 }
             } catch {
+                await self.application.displayError(error)
                 await MainActor.run {
-                    self.application.displayError(error)
                     self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
                 }
             }
@@ -150,7 +152,9 @@ public class SearchManager: NSObject {
 
             switch result {
             case .failure(let error):
-                self.application.displayError(error)
+                Task { @MainActor in
+                    self.application.displayError(error)
+                }
             case .success(let response):
                 self.processSearchResults(request: request, matchingVehicles: response)
             }
@@ -175,8 +179,8 @@ public class SearchManager: NSObject {
                         self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
                     }
                 } catch {
+                    await self.application.displayError(error)
                     await MainActor.run {
-                        self.application.displayError(error)
                         self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
                     }
                 }

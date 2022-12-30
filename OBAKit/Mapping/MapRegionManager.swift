@@ -255,9 +255,7 @@ public class MapRegionManager: NSObject,
                 self.stops = stops
             }
         } catch {
-            await MainActor.run {
-                self.application.displayError(error)
-            }
+            await self.application.displayError(error)
         }
     }
 
@@ -479,7 +477,9 @@ public class MapRegionManager: NSObject,
 
             switch result {
             case .failure(let error):
-                self.application.displayError(error)
+                Task { @MainActor in
+                    self.application.displayError(error)
+                }
             case .success(let response):
                 let response = SearchResponse(response: searchResponse, substituteResult: response.entry)
                 self.searchResponse = response

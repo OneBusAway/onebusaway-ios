@@ -92,10 +92,8 @@ class NearbyStopsViewController: UIViewController,
                 self.listView.applyData()
             }
         } catch {
-            await MainActor.run {
-                // TODO: (ualch9) Show error inline instead of presenting an ugly error.
-                self.application.displayError(error)
-            }
+            // TODO: (ualch9) Show error inline instead of presenting an ugly error.
+            await self.application.displayError(error)
         }
     }
 

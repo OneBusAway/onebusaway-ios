@@ -153,9 +153,7 @@ public class AppLinksRouter: NSObject {
                     self.showStopHandler?(stop.entry)
                 }
             } catch {
-                await MainActor.run {
-                    self.application.displayError(error)
-                }
+                await self.application.displayError(error)
             }
         }
 
