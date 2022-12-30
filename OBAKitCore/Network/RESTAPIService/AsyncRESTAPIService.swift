@@ -52,7 +52,7 @@ public actor RESTAPIService {
 
     public let configuration: Configuration
 
-    private let logger = Logger()
+    let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "RESTAPIService")
     nonisolated let dataLoader: URLDataLoader
     nonisolated let urlBuilder: RESTAPIURLBuilder
     nonisolated let decoder: JSONDecoder
@@ -62,12 +62,5 @@ public actor RESTAPIService {
         self.dataLoader = dataLoader
         self.urlBuilder = RESTAPIURLBuilder(baseURL: configuration.baseURL, defaultQueryItems: configuration.defaultQueryItems)
         self.decoder = JSONDecoder.RESTDecoder(regionIdentifier: configuration.regionIdentifier)
-    }
-
-    // MARK: - Common API handlers -
-
-    func logError(_ response: URLResponse?, _ description: String) {
-        let urlString: String = response?.url?.absoluteString ?? "(unknown url)"
-        logger.error("\(urlString): \(description)")
     }
 }
