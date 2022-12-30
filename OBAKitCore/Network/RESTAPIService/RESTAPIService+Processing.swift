@@ -27,13 +27,16 @@ extension RESTAPIService {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
+            logger.error("Failed network request for \(url, privacy: .public): missing response.")
             throw APIError.networkFailure(nil)
         }
 
         guard 200...299 ~= httpResponse.statusCode else {
             if httpResponse.statusCode == 404 {
+                logger.error("Failed network request for \(url, privacy: .public): 404 not found.")
                 throw APIError.requestNotFound(httpResponse)
             } else {
+                logger.error("Failed network request for \(url, privacy: .public): \(httpResponse).")
                 throw APIError.requestFailure(httpResponse)
             }
         }
@@ -43,14 +46,12 @@ extension RESTAPIService {
         // data (e.g. a non-existent Stop ID), it should return a 404 error to you.
         // Instead, it gives a 200 and a blank body.
         if httpResponse.expectedContentLength == 0 && httpResponse.statusCode == 200 {
+            logger.error("Failed network request for \(url, privacy: .public): 404 not found.")
             throw APIError.requestNotFound(httpResponse)
         }
 
-        guard httpResponse.hasJSONContentType else {
-            throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: httpResponse.contentType)
-        }
-
         guard data.isEmpty == false else {
+            logger.error("Failed network request for \(url, privacy: .public): missing response body.")
             throw APIError.noResponseBody
         }
 
@@ -58,7 +59,12 @@ extension RESTAPIService {
     }
 
     nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type) async throws -> T {
-        let (data, _) = try await self.getData(for: url)
+        let (data, response) = try await self.getData(for: url)
+
+        guard response.hasJSONContentType else {
+            logger.error("Failed network request for \(url, privacy: .public): Invalid content type (actual: \(response.contentType ?? "<nil>", privacy: .public))")
+            throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: response.contentType)
+        }
 
         do {
             return try self.decoder.decode(T.self, from: data)
