@@ -38,16 +38,7 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Stops
-    /// Retrieves the stop with the specified ID.
-    ///
-    /// - API Endpoint: `/api/where/stop/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/stop.html)
-    ///
-    /// - Parameters:
-    ///   - id: The full, agency-prefixed ID of the stop.
-    ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
-    /// - Returns: The enqueued network operation.
-    @available(*, deprecated, message: "This is for DataMigrator use only.")
+    @available(*, deprecated, message: "Use async.")
     func getStop(id: String, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<Stop>> {
         let url = URLBuilder.getStop(stopID: id)
         let operation = buildOperation(type: RESTAPIResponse<Stop>.self, URL: url)
@@ -56,19 +47,6 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Arrivals and Departures for Stop
-
-    /// Retrieves a list of vehicle arrivals and departures for the specified stop for the time frame of
-    /// `minutesBefore` to `minutesAfter`.
-    ///
-    /// - API Endpoint: `/api/where/arrivals-and-departures-for-stop/{id}.json`
-    /// - [View REST API Documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrivals-and-departures-for-stop.html)
-    ///
-    /// - Parameters:
-    ///   - id: The stop ID
-    ///   - minutesBefore: How many minutes before now should Arrivals and Departures be returned for
-    ///   - minutesAfter: How many minutes after now should Arrivals and Departures be returned for
-    ///   - enqueue: When `false`, the caller will be expected to enqueue this operation themselves.
-    /// - Returns: The enqueued network operation.
     @available(*, deprecated, message: "Use async.")
     public func getArrivalsAndDeparturesForStop(id: StopID, minutesBefore: UInt, minutesAfter: UInt, enqueue: Bool = true) -> DecodableOperation<RESTAPIResponse<StopArrivals>> {
         let url = URLBuilder.getArrivalsAndDeparturesForStop(id: id, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
@@ -78,19 +56,6 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Arrival and Departure for Stop
-
-    /// Get info about a single arrival and departure for a stop
-    ///
-    /// - API Endpoint: `/api/where/arrival-and-departure-for-stop/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/arrival-and-departure-for-stop.html)
-    ///
-    /// - Parameters:
-    ///   - stopID: The ID of the stop.
-    ///   - tripID: The trip id of the arriving transit vehicle.
-    ///   - serviceDate: The service date of the arriving transit vehicle.
-    ///   - vehicleID: The vehicle id of the arriving transit vehicle (optional).
-    ///   - stopSequence: the stop sequence index of the stop in the transit vehicle’s trip.
-    /// - Returns: The enqueued network operation.
     @available(*, deprecated, message: "Use async.")
     public func getTripArrivalDepartureAtStop(stopID: StopID, tripID: String, serviceDate: Date, vehicleID: String?, stopSequence: Int) -> DecodableOperation<RESTAPIResponse<ArrivalDeparture>> {
         let url = URLBuilder.getTripArrivalDepartureAtStop(stopID: stopID, tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopSequence: stopSequence)
@@ -100,17 +65,6 @@ public class _RESTAPIService: APIService {
     }
 
     // MARK: - Trip Details
-
-    /// Get extended details for a specific trip.
-    ///
-    /// - API Endpoint: `/api/where/trip-details/{id}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-details.html)
-    ///
-    /// - Parameters:
-    ///   - tripID: The ID of the trip.
-    ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
-    ///   - serviceDate: The service date for this trip.
-    /// - Returns: The enqueued network operation.
     @available(*, deprecated, message: "Use async.")
     public func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) -> DecodableOperation<RESTAPIResponse<TripDetails>> {
         let url = URLBuilder.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
