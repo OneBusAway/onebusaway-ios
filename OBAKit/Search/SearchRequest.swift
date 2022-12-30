@@ -70,10 +70,10 @@ public class SearchManager: NSObject {
         self.application = application
     }
 
-    public func search(request: SearchRequest) {
+    public func search(request: SearchRequest) async {
         switch request.searchType {
         case .address:    searchAddress(request: request)
-        case .route:      searchRoute(request: request)
+        case .route:      await searchRoute(request: request)
         case .stopNumber: searchStopNumber(request: request)
         case .vehicleID:  searchVehicleID(request: request)
         }
@@ -95,26 +95,19 @@ public class SearchManager: NSObject {
         }
     }
 
-    private func searchRoute(request: SearchRequest) {
+    private func searchRoute(request: SearchRequest) async {
         guard
-            let apiService = application.restAPIService,
+            let apiService = application.betterAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        let op = apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                Task { @MainActor in
-                    self.application.displayError(error)
-                }
-            case .success(let response):
-                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
-            }
+        do {
+            let response = try await apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
+            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
+        } catch {
+            await self.application.displayError(error)
         }
     }
 

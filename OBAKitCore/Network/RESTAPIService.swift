@@ -141,22 +141,6 @@ public class _RESTAPIService: APIService {
         return operation
     }
 
-    /// Search for routes within a region, by name
-    ///
-    /// - API Endpoint: `/api/where/routes-for-location.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/routes-for-location.html)
-    ///
-    /// - Parameters:
-    ///   - query: Search query
-    ///   - region: The circular region from which to return results.
-    /// - Returns: The enqueued network operation.
-    public func getRoute(query: String, region: CLCircularRegion) -> DecodableOperation<RESTAPIResponse<[Route]>> {
-        let url = URLBuilder.getRoute(query: query, region: region)
-        let operation = buildOperation(type: RESTAPIResponse<[Route]>.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
-
     /// Performs a local search and returns matching results
     ///
     /// - Parameters:

@@ -174,4 +174,21 @@ extension RESTAPIService {
             decodeRESTAPIResponseAs: ArrivalDeparture.self
         )
     }
+
+    // MARK: - Search
+    /// Search for routes within a region, by name
+    ///
+    /// - API Endpoint: `/api/where/routes-for-location.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/routes-for-location.html)
+    ///
+    /// - parameter query: Search query
+    /// - parameter region: The circular region from which to return results.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``Route``].
+    public nonisolated func getRoute(query: String, region: CLCircularRegion) async throws -> RESTAPIResponse<[Route]> {
+        return try await getData(
+            for: urlBuilder.getRoute(query: query, region: region),
+            decodeRESTAPIResponseAs: [Route].self
+        )
+    }
 }

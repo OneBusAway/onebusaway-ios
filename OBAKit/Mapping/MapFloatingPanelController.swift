@@ -124,7 +124,10 @@ class MapFloatingPanelController: VisualEffectViewController,
 
         searchBar.resignFirstResponder()
         mapPanelDelegate?.mapPanelController(self, moveTo: .half, animated: true)
-        application.searchManager.search(request: request)
+
+        Task {
+            await application.searchManager.search(request: request)
+        }
     }
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
