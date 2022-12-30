@@ -175,6 +175,24 @@ extension RESTAPIService {
         )
     }
 
+    // MARK: - Trip Details
+    /// Get extended details for a specific trip.
+    ///
+    /// - API Endpoint: `/api/where/trip-details/{id}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/methods/trip-details.html)
+    ///
+    /// - parameter tripID: The ID of the trip.
+    /// - parameter vehicleID: Optional ID for the specific transit vehicle on this trip.
+    /// - parameter serviceDate: The service date for this trip.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``TripDetails``.
+    public nonisolated func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) async throws -> RESTAPIResponse<TripDetails> {
+        return try await getData(
+            for: urlBuilder.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate),
+            decodeRESTAPIResponseAs: TripDetails.self
+        )
+    }
+
     // MARK: - Search
     /// Search for routes within a region, by name
     ///

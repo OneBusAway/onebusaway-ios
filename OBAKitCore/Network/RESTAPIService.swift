@@ -111,6 +111,7 @@ public class _RESTAPIService: APIService {
     ///   - vehicleID: Optional ID for the specific transit vehicle on this trip.
     ///   - serviceDate: The service date for this trip.
     /// - Returns: The enqueued network operation.
+    @available(*, deprecated, message: "Use async.")
     public func getTrip(tripID: String, vehicleID: String?, serviceDate: Date?) -> DecodableOperation<RESTAPIResponse<TripDetails>> {
         let url = URLBuilder.getTrip(tripID: tripID, vehicleID: vehicleID, serviceDate: serviceDate)
         let operation = buildOperation(type: RESTAPIResponse<TripDetails>.self, URL: url)
