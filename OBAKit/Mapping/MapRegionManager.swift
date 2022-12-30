@@ -468,22 +468,24 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Search/Route
 
-    func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
-        guard let apiService = application.restAPIService else { return }
+    func _loadSearchResponse(_ searchResponse: SearchResponse, route: Route) async {
+        guard let apiService = application.betterAPIService else {
+            return
+        }
 
-        let op = apiService.getStopsForRoute(id: route.id)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                Task { @MainActor in
-                    self.application.displayError(error)
-                }
-            case .success(let response):
-                let response = SearchResponse(response: searchResponse, substituteResult: response.entry)
-                self.searchResponse = response
+        do {
+            let response = try await apiService.getStopsForRoute(routeID: route.id)
+            await MainActor.run {
+                self.searchResponse = SearchResponse(response: searchResponse, substituteResult: response.entry)
             }
+        } catch {
+            await self.application.displayError(error)
+        }
+    }
+
+    func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
+        Task {
+            await _loadSearchResponse(searchResponse, route: route)
         }
     }
 
