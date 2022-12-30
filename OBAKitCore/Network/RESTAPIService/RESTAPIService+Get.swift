@@ -209,4 +209,16 @@ extension RESTAPIService {
             decodeRESTAPIResponseAs: [Route].self
         )
     }
+
+    // MARK: - Agencies
+    /// Retrieves a list of agencies with known coverage areas for the current region.
+    ///
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for [``AgencyWithCoverage``].
+    public nonisolated func getAgenciesWithCoverage() async throws -> RESTAPIResponse<[AgencyWithCoverage]> {
+        return try await getData(
+            for: urlBuilder.getAgenciesWithCoverage(),
+            decodeRESTAPIResponseAs: [AgencyWithCoverage].self
+        )
+    }
 }

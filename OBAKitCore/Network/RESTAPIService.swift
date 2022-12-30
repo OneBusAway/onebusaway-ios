@@ -127,11 +127,7 @@ public class _RESTAPIService: APIService {
 
     // MARK: - Agencies
 
-    /// Retrieves a list of agencies with known coverage areas for the current region.
-    ///
-    /// - API Endpoint: `/api/where/agencies-with-coverage.json`
-    ///
-    /// - Returns: The enqueued network operation.
+    @available(*, deprecated, message: "Use async.")
     public func getAgenciesWithCoverage() -> DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>> {
         let url = URLBuilder.getAgenciesWithCoverage()
         let operation = buildOperation(type: RESTAPIResponse<[AgencyWithCoverage]>.self, URL: url)

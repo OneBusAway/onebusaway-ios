@@ -66,48 +66,35 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private var agencies = [AgencyWithCoverage]()
 
+    public func update() async throws {
+        guard let betterAPIService else { return }
+
+        if agencies.isEmpty {
+            agencies = try await betterAPIService.getAgenciesWithCoverage().list
+        }
+
+        try await fetchRegionalAlerts(service: betterAPIService)
+        fetchObacoAlerts()
+    }
+
+    /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
     public func checkForUpdates() {
-        guard let apiService = apiService else { return }
-
-        // Step 1: download a list of agencies, if needed.
-        if agencies.count == 0 {
-            let agenciesOp = apiService.getAgenciesWithCoverage()
-            agenciesOp.complete { [weak self] result in
-                guard let self = self else { return }
-
-                switch result {
-                case .failure(let error):
+        Task {
+            do {
+                try await update()
+            } catch {
+                await MainActor.run {
                     self.notifyDelegates(error: error)
-                case .success(let response):
-                    self.agencies = response.list
-                    self.fetchRegionalAlerts()
-                    self.fetchObacoAlerts()
                 }
             }
-            agenciesOperation = agenciesOp
-        }
-        else {
-            fetchRegionalAlerts()
-            fetchObacoAlerts()
         }
     }
 
     // MARK: - REST API
-    /// temporary glue
-    private func fetchRegionalAlerts() {
-        Task {
-            await _fetchRegionalAlerts()
-        }
-    }
-
-    private func _fetchRegionalAlerts() async {
-        guard let betterAPIService else { return }
-
-        // TODO: don't swallow error
-        if let alerts = try? await betterAPIService.getAlerts(agencies: agencies) {
-            await MainActor.run {
-                self.storeAgencyAlerts(alerts)
-            }
+    private func fetchRegionalAlerts(service: RESTAPIService) async throws {
+        let alerts = try await service.getAlerts(agencies: agencies)
+        await MainActor.run {
+            self.storeAgencyAlerts(alerts)
         }
     }
 
