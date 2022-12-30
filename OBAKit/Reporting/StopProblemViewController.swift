@@ -95,8 +95,9 @@ class StopProblemViewController: FormViewController {
         <<< ButtonRow {
             $0.title = OBALoc("stop_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report.")
             $0.onCellSelection { [weak self] (_, _) in
-                guard let self = self else { return }
-                self.submitForm()
+                Task {
+                    await self?.submitForm()
+                }
             }
         }
     }
@@ -114,30 +115,34 @@ class StopProblemViewController: FormViewController {
         }
     }
 
-    private func submitForm() {
+    private func submitForm() async {
         guard
             let codeRow = form.rowBy(tag: "stopProblemCode") as? PickerInputRow<StopProblemCode>,
             let commentRow = form.rowBy(tag: "comments") as? TextAreaRow,
             let stopProblemCode = codeRow.value,
-            let apiService = application.restAPIService
+            let apiService = application.betterAPIService
         else { return }
 
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
-        ProgressHUD.show()
+        let report = RESTAPIService.StopProblemReport(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
 
-        let op = apiService.getStopProblem(stopID: stop.id, code: stopProblemCode, comment: commentRow.value, location: location)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
+        await MainActor.run {
+            ProgressHUD.show()
+        }
 
-            switch result {
-            case .failure(let error):
-                AlertPresenter.show(error: error, presentingController: self)
-                ProgressHUD.dismiss()
-            case .success:
-                self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
+        do {
+            _ = try await apiService.getStopProblem(report: report)
+            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Stop Problem")
+
+            await MainActor.run {
                 ProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
+            }
+        } catch {
+            await MainActor.run {
+                ProgressHUD.dismiss()
+                AlertPresenter.show(error: error, presentingController: self)
             }
         }
     }

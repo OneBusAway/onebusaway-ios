@@ -8,6 +8,47 @@
 import CoreLocation
 
 extension RESTAPIService {
+    // MARK: - Stop problem reporting
+    public struct StopProblemReport {
+        /// The stop ID where the problem was encountered.
+        public var stopID: StopID
+
+        /// A code to indicate the type of problem encountered.
+        public var code: StopProblemCode
+
+        /// An optional free text field that allows the user to provide more context.
+        public var comment: String?
+
+        /// An optional location value to provide more context.
+        public var location: CLLocation?
+
+        public init(stopID: StopID, code: StopProblemCode, comment: String? = nil, location: CLLocation? = nil) {
+            self.stopID = stopID
+            self.code = code
+            self.comment = comment
+            self.location = location
+        }
+    }
+
+    /// Submit a user-generated problem report for a particular stop.
+    ///
+    /// - API Endpoint: `/api/where/report-problem-with-stop/{stopID}.json`
+    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/1.1.19/api/where/methods/report-problem-with-stop.html)
+    ///
+    /// The reporting mechanism provides lots of fields that can be specified to give more context
+    /// about the details of the problem (which trip, stop, vehicle, etc was involved), making it
+    /// easier for a developer or transit agency staff to diagnose the problem. These reports feed
+    /// into the problem reporting admin interface.
+    ///
+    /// - parameter report: The problem report to submit.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: ``CoreRESTAPIResponse``.
+    public nonisolated func getStopProblem(report: StopProblemReport) async throws -> CoreRESTAPIResponse {
+        let url = urlBuilder.getStopProblem(stopID: report.stopID, code: report.code, comment: report.comment, location: report.location)
+        return try await getData(for: url, decodeAs: CoreRESTAPIResponse.self)
+    }
+
+    // MARK: - Trip problem reporting
     /// A problem report for a particular trip. Use with ``getTripProblem(report:)`` to submit a report.
     public struct TripProblemReport {
         // @ualch9: maybe we can adopt this struct for parameters everywhere?

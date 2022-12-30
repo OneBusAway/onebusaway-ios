@@ -138,34 +138,4 @@ public class _RESTAPIService: APIService {
         enqueueOperation(operation)
         return operation
     }
-
-    // MARK: - Problem Reporting
-
-    /// Submit a user-generated problem report for a particular stop.
-    ///
-    /// - API Endpoint: `/api/where/report-problem-with-stop/{stopID}.json`
-    /// - [View REST API documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/1.1.19/api/where/methods/report-problem-with-stop.html)
-    ///
-    /// The reporting mechanism provides lots of fields that can be specified to give more context
-    /// about the details of the problem (which trip, stop, vehicle, etc was involved), making it
-    /// easier for a developer or transit agency staff to diagnose the problem. These reports feed
-    /// into the problem reporting admin interface.
-    ///
-    /// - Parameters:
-    ///   - stopID: The stop ID where the problem was encountered.
-    ///   - code: A code to indicate the type of problem encountered.
-    ///   - comment: An optional free text field that allows the user to provide more context.
-    ///   - location: An optional location value to provide more context.
-    /// - Returns: The enqueued network operation.
-    public func getStopProblem(
-        stopID: StopID,
-        code: StopProblemCode,
-        comment: String?,
-        location: CLLocation?
-    ) -> DecodableOperation<CoreRESTAPIResponse> {
-        let url = URLBuilder.getStopProblem(stopID: stopID, code: code, comment: comment, location: location)
-        let operation = buildOperation(type: CoreRESTAPIResponse.self, URL: url)
-        enqueueOperation(operation)
-        return operation
-    }
 }
