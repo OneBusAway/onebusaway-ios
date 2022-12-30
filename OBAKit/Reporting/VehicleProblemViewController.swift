@@ -138,21 +138,23 @@ class VehicleProblemViewController: FormViewController {
             $0.title = OBALoc("vehicle_problem_controller.send_button", value: "Send Message", comment: "The 'send' button that actually sends along the problem report.")
             $0.onCellSelection { [weak self] (_, _) in
                 guard let self = self else { return }
-                self.submitForm()
+                Task {
+                    await self.submitForm()
+                }
             }
         }
     }
 
-    private func submitForm() {
+    private func submitForm() async {
         guard
-            let apiService = application.restAPIService,
+            let apiService = application.betterAPIService,
             let tripProblemCode = problemCodePicker.value
         else { return }
 
         let onVehicle = onVehicleSwitch.value ?? false
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil
 
-        let op = apiService.getTripProblem(
+        let report = RESTAPIService.TripProblemReport(
             tripID: arrivalDeparture.tripID,
             serviceDate: arrivalDeparture.serviceDate,
             vehicleID: vehicleIDField.value,
@@ -163,20 +165,22 @@ class VehicleProblemViewController: FormViewController {
             location: location
         )
 
-        ProgressHUD.show()
+        await MainActor.run {
+            ProgressHUD.show()
+        }
 
-        op.complete { [weak self] result in
+        do {
+            _ = try await apiService.getTripProblem(report: report)
+            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
 
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                ProgressHUD.dismiss()
-                AlertPresenter.show(error: error, presentingController: self)
-            case .success:
-                self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
+            await MainActor.run {
                 ProgressHUD.showSuccessAndDismiss()
                 self.dismiss(animated: true, completion: nil)
+            }
+        } catch {
+            await MainActor.run {
+                ProgressHUD.dismiss()
+                AlertPresenter.show(error: error, presentingController: self)
             }
         }
     }
