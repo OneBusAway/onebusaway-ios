@@ -96,7 +96,7 @@ open class OBATestCase: XCTestCase {
     var betterRESTService: RESTAPIService!
 
     func buildBetterRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
-        let config = RESTAPIService.Configuration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
+        let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
         return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
     }
 

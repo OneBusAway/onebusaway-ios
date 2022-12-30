@@ -14,7 +14,7 @@ import MapKit
 /// Loads data from a OneBusAway REST API server and returns it as model objects.
 
 @available(*, deprecated, message: "Use RESTAPIService")
-public class _RESTAPIService: APIService {
+public class _RESTAPIService: _APIService {
     lazy var URLBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
 
     private let regionIdentifier: Int
