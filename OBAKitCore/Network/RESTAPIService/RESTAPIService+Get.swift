@@ -231,6 +231,23 @@ extension RESTAPIService {
         )
     }
 
+    /// Performs a local search and returns matching results
+    ///
+    /// - parameter query: The term for which to search.
+    /// - parameter region: The coordinate region in which to search.
+    /// - throws: MapKit errors.
+    /// - returns: Search results from MapKit.
+    public nonisolated func getPlacemarks(query: String, region: MKCoordinateRegion) async throws -> MKLocalSearch.Response {
+        let request = MKLocalSearch.Request()
+        request.naturalLanguageQuery = query
+        request.region = region
+
+        let search = MKLocalSearch(request: request)
+        let response = try await search.start()
+
+        return response
+    }
+
     // MARK: - Agencies
     /// Retrieves a list of agencies with known coverage areas for the current region.
     ///

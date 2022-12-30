@@ -72,26 +72,31 @@ public class SearchManager: NSObject {
 
     public func search(request: SearchRequest) async {
         switch request.searchType {
-        case .address:    searchAddress(request: request)
+        case .address:    await searchAddress(request: request)
         case .route:      await searchRoute(request: request)
         case .stopNumber: searchStopNumber(request: request)
         case .vehicleID:  searchVehicleID(request: request)
         }
     }
 
-    private func searchAddress(request: SearchRequest) {
+    private func searchAddress(request: SearchRequest) async {
         guard
-            let apiService = application.restAPIService,
+            let apiService = application.betterAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        let op = apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-        op.completionBlock = { [weak self] in
-            DispatchQueue.main.async {
-                self?.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
-            }
+        let searchResponse: SearchResponse
+        do {
+            let results = try await apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
+            searchResponse = SearchResponse(request: request, results: results.mapItems, boundingRegion: results.boundingRegion, error: nil)
+        } catch {
+            searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
+        }
+
+        await MainActor.run {
+            self.application.mapRegionManager.searchResponse = searchResponse
         }
     }
 

@@ -73,20 +73,6 @@ public class _RESTAPIService: APIService {
         return operation
     }
 
-    // MARK: - Search
-
-    /// Performs a local search and returns matching results
-    ///
-    /// - Parameters:
-    ///   - query: The term for which to search.
-    ///   - region: The coordinate region in which to search.
-    /// - Returns: The enqueued network operation.
-    public func getPlacemarks(query: String, region: MKCoordinateRegion) -> PlacemarkSearchOperation {
-        let operation = PlacemarkSearchOperation(query: query, region: region)
-        enqueueOperation(operation)
-        return operation
-    }
-
     // MARK: - Shapes
 
     /// Retrieve a shape (the path traveled by a transit vehicle) by id
