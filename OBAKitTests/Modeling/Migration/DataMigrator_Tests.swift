@@ -67,18 +67,23 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_basicProperties() async throws {
-        let results = try await self.migrator.performMigration(
+        let report = try await self.migrator.performMigration(
             migrationParameters,
             apiService: self.betterRESTService,
             dataStorer: dataStore)
 
+        // Check results metadata
+        XCTAssertNotNil(report.dateFinished)
+        XCTAssertTrue(report.isFinished)
+
         // Check User ID
-        let userIDMigrationResult = try XCTUnwrap(results.userIDMigrationResult)
+        let userIDMigrationResult = try XCTUnwrap(report.userIDMigrationResult)
         XCTAssertNoThrow(try userIDMigrationResult.get(), "Expected User ID migration to be successful")
 
         let storedUserID = try XCTUnwrap(dataStore.userID, "Expected the userID to be stored.")
         XCTAssertEqual(storedUserID, "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0")
 
+        // Check region
         let storedRegion = try XCTUnwrap(dataStore.region, "Expected the region to be stored.")
         XCTAssertEqual(storedRegion.name, "Puget Sound")
         XCTAssertEqual(storedRegion.identifier, pugetSoundRegionIdentifier, "Expected the region identifier to be stored as \(pugetSoundRegionIdentifier)")
