@@ -11,10 +11,24 @@ import Foundation
 
 // swiftlint:disable cyclomatic_complexity function_body_length
 
-public enum DataMigrationError: Error {
+public enum DataMigrationError: Error, LocalizedError {
+    case invalidAPIService
     case noAPIServiceAvailable
     case noDataToMigrate
     case noMigrationPending
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidAPIService:
+            return "Invalid API service"
+        case .noAPIServiceAvailable:
+            return "No API service available"
+        case .noDataToMigrate:
+            return "No data to migrate"
+        case .noMigrationPending:
+            return "No migration pending"
+        }
+    }
 }
 
 public enum MigrationBookmarkError: Error {

@@ -203,6 +203,8 @@ final class DataMigrationErrorPage: ThemedBulletinPage {
         image = badgeRenderer.drawImageOnRoundedRect(Icons.errorOutline)
 
         switch error {
+        case .invalidAPIService:
+            descriptionText = "poopy doopy"
         case .noAPIServiceAvailable:
             descriptionText = OBALoc("data_migration_bulletin.errors.no_api_service_available", value: "Check your internet connection and try again.", comment: "An error message that appears when the user needs to have data migrated, but is not connected to the Internet.")
         case .noDataToMigrate:
