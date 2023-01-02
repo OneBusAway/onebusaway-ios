@@ -46,9 +46,9 @@ struct DataMigrationView: View {
             .listRowSeparator(.hidden)
 
             Section {
-                label(title: "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app.", systemImage: "star.square.on.square")
+                label(title: "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.", systemImage: "star.square.on.square")
                 label(title: "You will not be able to see your Recent Stops or Bookmarks until you upgrade.", systemImage: "bookmark.slash")
-                label(title: "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required while upgrading.", systemImage: "wifi")
+                label(title: "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.", systemImage: "wifi")
             }
             .listRowSeparator(.hidden)
         }
@@ -79,6 +79,11 @@ struct DataMigrationView: View {
 
 struct DataMigrationView_Previews: PreviewProvider {
     static var previews: some View {
-        DataMigrationView()
+        NavigationView {
+            Text("Hello, World!")
+                .sheet(isPresented: .constant(true)) {
+                    DataMigrationView()
+                }
+        }
     }
 }
