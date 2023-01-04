@@ -18,6 +18,11 @@ public actor DataMigrator_ {
     public struct MigrationParameters {
         public var forceMigration: Bool
         public var regionIdentifier: RegionIdentifier
+
+        public init(forceMigration: Bool, regionIdentifier: RegionIdentifier) {
+            self.forceMigration = forceMigration
+            self.regionIdentifier = regionIdentifier
+        }
     }
 
     private struct UserDefaultsKeys {

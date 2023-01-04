@@ -14,6 +14,7 @@ import CoreLocation
 import OBAKitCore
 import SafariServices
 import MapKit
+import SwiftUI
 
 // MARK: - Protocols
 
@@ -162,12 +163,15 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// If data exists to migrate, this method will prompt the user about whether they wish to migrate data from an old format to the new format.
     public func performDataMigration() {
-        guard
-            hasDataToMigrate,
-            let uiApp = self.delegate?.uiApplication
-        else { return }
+        let migrationView = UIHostingController(
+            rootView:
+                DataMigrationView()
+                .environment(\.coreApplication, self)
+        )
 
-        dataMigrationBulletin.show(in: uiApp)
+        if let topViewController {
+            self.viewRouter.present(migrationView, from: topViewController, isModal: true)
+        }
     }
 
     // MARK: - UI
