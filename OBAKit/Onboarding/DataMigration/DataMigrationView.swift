@@ -7,6 +7,7 @@
 
 import SwiftUI
 import OBAKitCore
+import UniformTypeIdentifiers
 
 struct DataMigrationView: View {
     @Environment(\.coreApplication) var application
@@ -14,7 +15,11 @@ struct DataMigrationView: View {
     @Environment(\.dismiss) var dismiss
 
     @State var isMigrating = false
+    @State var isShowingErrorDetails = false
     @State var migrationError: Error?
+
+    @State var isShowingReport = false
+    @State var report: DataMigrator_.MigrationReport?
 
     @ViewBuilder
     private func label(title: String, systemImage: String) -> some View {
@@ -38,6 +43,12 @@ struct DataMigrationView: View {
                 label(title: "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.", systemImage: "wifi")
             }
             .listRowSeparator(.hidden)
+        }
+        .alert("migration error", isPresented: $isShowingErrorDetails) {
+            Text(migrationError?.localizedDescription ?? "<no error>")
+        }
+        .sheet(item: $report) { report in
+            DataMigrationResultView(results: report.viewModel())
         }
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
@@ -81,10 +92,68 @@ struct DataMigrationView: View {
                     Text("Not Now")
                 }
             }
+            .onDrop(of: [.propertyList, .xml, .xmlPropertyList], isTargeted: nil, perform: dryRunMigrationFromUserProvidedItem)
             .disabled(isMigrating)
             .background(.background)
         }
         .padding()
+    }
+
+    private func dryRunMigrationFromUserProvidedItem(_ itemProviders: [NSItemProvider]) -> Bool {
+        // Only the first item will be used.
+        guard let itemProvider = itemProviders.first else {
+            return false
+        }
+
+        _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
+            if let error {
+                self.migrationError = error
+                self.isShowingErrorDetails = true
+            }
+
+            // The data must be loaded from the URL in this closure block, per OS requirements.
+            guard let url else { return }
+
+            // swiftlint:disable force_try
+            let data: Data
+            do {
+                data = try Data(contentsOf: url)
+            } catch {
+                self.migrationError = error
+                self.isShowingErrorDetails = true
+                return
+            }
+
+            Task(priority: .userInitiated) {
+                await dryRunMigration(plistData: data)
+            }
+        }
+
+        return true
+    }
+
+    /// Do a "dry run" migration with the user-provided `plist` file. The dry run report is shown afterwards.
+    private func dryRunMigration(plistData data: Data) async {
+        guard let region = application.currentRegion, let apiService = application.betterAPIService else {
+            return
+        }
+
+        // swiftlint:disable force_try
+        guard let migrator = try! DataMigrator_.asdf(data: data) else {
+            return
+        }
+
+        do {
+            let _report = try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
+            await MainActor.run {
+                self.report = _report
+            }
+        } catch {
+            await MainActor.run {
+                self.migrationError = error
+                self.isShowingErrorDetails = true
+            }
+        }
     }
 
     func doMigration() async {

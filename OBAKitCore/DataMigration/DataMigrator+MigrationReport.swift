@@ -8,11 +8,12 @@
 import Foundation
 
 extension DataMigrator_ {
-    public struct MigrationReport {
+    public struct MigrationReport: Identifiable {
         public var isFinished: Bool {
             dateFinished != nil
         }
 
+        public let id = UUID()
         public let dateStarted: Date
         public var dateFinished: Date? {
             willSet {

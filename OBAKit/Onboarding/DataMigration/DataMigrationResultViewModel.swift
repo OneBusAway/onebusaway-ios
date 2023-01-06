@@ -42,11 +42,34 @@ extension DataMigrator_.MigrationReport {
 
         groups.append(metadata)
 
+        // Recent Stops
         var recentStops = DataMigrationResultGroupViewModel(title: "Recent Stops")
         for recentStopResult in recentStopsMigrationResult {
             let title = recentStopResult.key.title
             recentStops.items.append(resultToItem(title: title, result: recentStopResult.value))
         }
+        groups.append(recentStops)
+
+        // Loose bookmarks
+        var bookmarks = DataMigrationResultGroupViewModel(title: "Bookmarks")
+        for bookmarkResult in bookmarksMigrationResult {
+            let title = bookmarkResult.key.name
+            bookmarks.items.append(resultToItem(title: title, result: bookmarkResult.value))
+        }
+        groups.append(bookmarks)
+
+        // Bookmark groups, each bookmark group is its own section.
+        var bookmarkGroups: [DataMigrationResultGroupViewModel] = []
+        for bookmarkGroupResult in bookmarkGroupsMigrationResult {
+            var groupViewModel = DataMigrationResultGroupViewModel(title: bookmarkGroupResult.key.name ?? "<unnamed group>")
+            let bookmarks = bookmarkGroupResult.value.bookmarks
+            for bookmark in bookmarks {
+                groupViewModel.items.append(resultToItem(title: bookmark.key.name, result: bookmark.value))
+            }
+
+            bookmarkGroups.append(groupViewModel)
+        }
+        groups.append(contentsOf: bookmarkGroups)
 
         return groups
     }

@@ -63,7 +63,7 @@ public actor DataMigrator_ {
         extractor.hasDataToMigrate
     }
 
-    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, dataStorer: DataMigratorDataStorer) async throws -> MigrationReport {
+    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, dataStorer: DataMigratorDataStorer?) async throws -> MigrationReport {
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
         guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
@@ -83,7 +83,7 @@ public actor DataMigrator_ {
 
         if let userID = extractor.oldUserID {
             do {
-                try await dataStorer.migrate(userID: userID)
+                try await dataStorer?.migrate(userID: userID)
                 results.userIDMigrationResult = .success(())
             } catch {
                 results.userIDMigrationResult = .failure(error)
@@ -95,7 +95,7 @@ public actor DataMigrator_ {
         // of the other migration operations below.
         if let region = extractor.extractRegion() {
             do {
-                try await dataStorer.migrate(region: region)
+                try await dataStorer?.migrate(region: region)
                 results.regionMigrationResult = .success(())
             } catch {
                 results.regionMigrationResult = .failure(error)
@@ -126,7 +126,7 @@ public actor DataMigrator_ {
 
         for migratedRecentStop in await migratedRecentStops {
             results.recentStopsMigrationResult[migratedRecentStop.key] = await doTaskIfNoError(migratedRecentStop.value) { stop in
-                try await dataStorer.migrate(recentStop: stop)
+                try await dataStorer?.migrate(recentStop: stop)
             }
         }
 
@@ -135,7 +135,7 @@ public actor DataMigrator_ {
             var newResults = MigrationBookmarkGroupResult(bookmarkGroup: migratedBookmarkGroup.bookmarkGroup, bookmarks: [:])
             for migratedBookmark in migratedBookmarkGroup.bookmarks {
                 newResults.bookmarks[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                    try await dataStorer.migrate(bookmark: bookmark, group: bookmarkGroup)
+                    try await dataStorer?.migrate(bookmark: bookmark, group: bookmarkGroup)
                 }
             }
 
@@ -144,7 +144,7 @@ public actor DataMigrator_ {
 
         for migratedBookmark in await migratedBookmarks {
             results.bookmarksMigrationResult[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                try await dataStorer.migrate(bookmark: bookmark, group: nil)
+                try await dataStorer?.migrate(bookmark: bookmark, group: nil)
             }
         }
 
@@ -170,8 +170,8 @@ public actor DataMigrator_ {
 
     // MARK: - Bookmarks
     public struct MigrationBookmarkGroupResult {
-        let bookmarkGroup: MigrationBookmarkGroup
-        var bookmarks: [MigrationBookmark: Result<Bookmark, Error>]
+        public let bookmarkGroup: MigrationBookmarkGroup
+        public internal(set) var bookmarks: [MigrationBookmark: Result<Bookmark, Error>]
     }
 
     private func migrateBookmarkGroups(_ bookmarkGroups: [MigrationBookmarkGroup], regionIdentifier: RegionIdentifier, apiService: RESTAPIService) async -> [MigrationBookmarkGroupResult] {
