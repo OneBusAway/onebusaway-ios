@@ -48,7 +48,7 @@ public enum MigrationBookmarkError: Error, LocalizedError {
 }
 
 /// `DataMigrator` decodes classic-OBA-encoded objects from UserDefaults, fetches the latest information from the API, then stores it in the new OBAKit format.
-public actor DataMigrator {
+public class DataMigrator {
     public struct MigrationParameters {
         public var forceMigration: Bool
         public var regionIdentifier: RegionIdentifier
@@ -68,7 +68,7 @@ public actor DataMigrator {
     private let extractor: MigrationDataExtractor
     private let userDefaults: UserDefaults
 
-    public init(userDefaults: UserDefaults) {
+    public required init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
         self.extractor = MigrationDataExtractor(defaults: userDefaults)
 
@@ -77,9 +77,8 @@ public actor DataMigrator {
         ])
     }
 
-    public func stopMigrationPrompts() {
-        userDefaults.set(false, forKey: UserDefaultsKeys.migrationPending)
-    }
+    /// The `DataMigrator` for `UserDefaults.standard`.
+    public static let standard = DataMigrator(userDefaults: .standard)
 
     public private(set) var isMigrationPending: Bool {
         get {
@@ -94,8 +93,8 @@ public actor DataMigrator {
     }
 
     /// Returns whether the `UserDefaults.standard` has data to migrate.
-    public static var hasDataToMigrate: Bool {
-        return MigrationDataExtractor(defaults: .standard).hasDataToMigrate
+    public var hasDataToMigrate: Bool {
+        return extractor.hasDataToMigrate
     }
 
     // swiftlint:disable cyclomatic_complexity function_body_length

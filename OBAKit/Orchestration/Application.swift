@@ -158,7 +158,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// When true, this means that the application's user defaults contain data that can be migrated into a modern format.
     public var hasDataToMigrate: Bool {
-        DataMigrator.hasDataToMigrate
+        DataMigrator.standard.hasDataToMigrate
     }
 
     /// If data exists to migrate, this method will prompt the user about whether they wish to migrate data from an old format to the new format.

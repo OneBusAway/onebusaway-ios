@@ -144,10 +144,9 @@ struct DataMigrationView: View {
 
     /// Do migration with `UserDefaults.standard`. The dry run report is shown afterwards, and the migration data is persisted.
     private func doRealMigration() {
-        let migrator = DataMigrator(userDefaults: .standard)
         Task(priority: .userInitiated) {
             self.isMigrating = true
-            await self.doMigration(withMigrator: migrator, isDryRun: false)
+            await self.doMigration(withMigrator: .standard, isDryRun: false)
             self.isMigrating = false
         }
     }
