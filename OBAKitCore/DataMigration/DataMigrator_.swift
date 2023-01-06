@@ -63,6 +63,7 @@ public actor DataMigrator_ {
         extractor.hasDataToMigrate
     }
 
+    // swiftlint:disable cyclomatic_complexity function_body_length
     public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, dataStorer: DataMigratorDataStorer?) async throws -> MigrationReport {
 
         // The API service must be configured to the same region as parameters.regionIdentifier.

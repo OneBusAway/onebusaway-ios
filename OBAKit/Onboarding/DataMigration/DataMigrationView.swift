@@ -10,6 +10,8 @@ import OBAKitCore
 import UniformTypeIdentifiers
 
 struct DataMigrationView: View {
+    // TODO: Instead of a catch-all "application" dependency, each individual dependency should be listed.
+    //       In this specific view, we need `currentRegion` and `apiService` dependencies.
     @Environment(\.coreApplication) var application
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
     @Environment(\.dismiss) var dismiss
@@ -69,11 +71,7 @@ struct DataMigrationView: View {
                 }
 
                 Button {
-                    Task {
-                        isMigrating = true
-                        await doMigration()
-                        isMigrating = false
-                    }
+                    doRealMigration()
                 } label: {
                     if isMigrating {
                         ProgressView()
@@ -92,7 +90,7 @@ struct DataMigrationView: View {
                     Text("Not Now")
                 }
             }
-            .onDrop(of: [.propertyList, .xml, .xmlPropertyList], isTargeted: nil, perform: dryRunMigrationFromUserProvidedItem)
+            .onDrop(of: [.propertyList, .xml, .xmlPropertyList], isTargeted: nil, perform: handleUserProvidedItem)
             .disabled(isMigrating)
             .background(.background)
         }
@@ -106,7 +104,7 @@ struct DataMigrationView: View {
         self.dismiss()
     }
 
-    private func dryRunMigrationFromUserProvidedItem(_ itemProviders: [NSItemProvider]) -> Bool {
+    private func handleUserProvidedItem(_ itemProviders: [NSItemProvider]) -> Bool {
         // Only the first item will be used.
         guard let itemProvider = itemProviders.first else {
             return false
@@ -121,73 +119,69 @@ struct DataMigrationView: View {
             // The data must be loaded from the URL in this closure block, per OS requirements.
             guard let url else { return }
 
-            let data: Data
             do {
-                data = try Data(contentsOf: url)
+                let data = try Data(contentsOf: url)
+                try doDryRunMigration(plistData: data)
             } catch {
                 self.migratorError = error
                 return
-            }
-
-            Task(priority: .userInitiated) {
-                self.isMigrating = true
-                do {
-                    let report = try await dryRunMigration(plistData: data)
-                    await MainActor.run {
-                        self.migrationReport = report
-                    }
-                } catch {
-                    await MainActor.run {
-                        self.migratorError = error
-                    }
-                }
-
-                self.isMigrating = false
             }
         }
 
         return true
     }
 
-    /// Do a "dry run" migration with the user-provided `plist` file. The dry run report is shown afterwards.
-    private func dryRunMigration(plistData data: Data) async throws -> DataMigrator_.MigrationReport {
+    /// Do a "dry run" migration with the user-provided `plist` file. The dry run report is shown afterwards, but none of the migration data will actually persist.
+    private func doDryRunMigration(plistData data: Data) throws {
+        let migrator = try DataMigrator_.createMigrator(fromUserDefaultsData: data)
+
+        Task(priority: .userInitiated) {
+            self.isMigrating = true
+            await self.doMigration(withMigrator: migrator, isDryRun: true)
+            self.isMigrating = false
+        }
+    }
+
+    /// Do migration with `UserDefaults.standard`. The dry run report is shown afterwards, and the migration data is persisted.
+    private func doRealMigration() {
+        let migrator = DataMigrator_(userDefaults: .standard)
+        Task(priority: .userInitiated) {
+            self.isMigrating = true
+            await self.doMigration(withMigrator: migrator, isDryRun: false)
+            self.isMigrating = false
+        }
+    }
+
+    private func doMigration(withMigrator migrator: DataMigrator_, isDryRun: Bool) async {
+        // Dependency check
         guard let region = application.currentRegion else {
-            throw UnstructuredError("No current region is set.")
+            return await MainActor.run {
+                self.migratorError = UnstructuredError("No current region is set.")
+            }
         }
 
         guard let apiService = application.betterAPIService else {
-            throw UnstructuredError("No API service is set.")
+            return await MainActor.run {
+                self.migratorError = UnstructuredError("No API service is set.")
+            }
         }
 
-        let migrator = try DataMigrator_.asdf(data: data)
-        return try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
-    }
+        // Do the actual work
+        let dataStorer: DataMigratorDataStorer? = isDryRun ? nil : self.application
+        let forceMigration = isDryRun
 
-    func doMigration() async {
-        try? await Task.sleep(nanoseconds: 5_000_000_000)
+        let parameters = DataMigrator_.MigrationParameters(forceMigration: forceMigration, regionIdentifier: region.regionIdentifier)
 
-        self.migratorError = UnstructuredError("I'm a teapot")
-        return
-
-//        guard let region = application.currentRegion else {
-//            return
-//        }
-//
-//        guard let apiService = application.betterAPIService else {
-//             return
-//        }
-//
-//        let migrator = DataMigrator_(userDefaults: .standard)
-//
-//        let parameters = DataMigrator_.MigrationParameters(forceMigration: false, regionIdentifier: region.regionIdentifier)
-//
-//        let report: DataMigrator_.MigrationReport
-//        do {
-//            report = try await migrator.performMigration(parameters, apiService: apiService, dataStorer: application)
-//        } catch {
-//            migrationError = error
-//            return
-//        }
+        do {
+            let report = try await migrator.performMigration(parameters, apiService: apiService, dataStorer: dataStorer)
+            await MainActor.run {
+                self.migrationReport = report
+            }
+        } catch {
+            await MainActor.run {
+                self.migratorError = error
+            }
+        }
     }
 }
 
