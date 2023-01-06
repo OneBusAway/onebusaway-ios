@@ -15,6 +15,10 @@ struct DataMigrationReportView: View {
     var numberOfSuccessItems: Int
     var numberOfErrorItems: Int
 
+    init(report: DataMigrator_.MigrationReport) {
+        self.init(reports: report.viewModel())
+    }
+
     init(reports: [DataMigrationReportGroup]) {
         self.reports = reports
 

@@ -15,11 +15,12 @@ struct DataMigrationView: View {
     @Environment(\.dismiss) var dismiss
 
     @State var isMigrating = false
-    @State var isShowingErrorDetails = false
-    @State var migrationError: Error?
 
-    @State var isShowingReport = false
-    @State var report: DataMigrator_.MigrationReport?
+    /// Migration results are displayed in a sheet.
+    @State var migrationReport: DataMigrator_.MigrationReport?
+
+    /// Migrator errors are displayed above the [Continue] button.
+    @State var migratorError: Error?
 
     @ViewBuilder
     private func label(title: String, systemImage: String) -> some View {
@@ -44,12 +45,6 @@ struct DataMigrationView: View {
             }
             .listRowSeparator(.hidden)
         }
-        .alert("migration error", isPresented: $isShowingErrorDetails) {
-            Text(migrationError?.localizedDescription ?? "<no error>")
-        }
-        .sheet(item: $report) { report in
-            DataMigrationReportView(reports: report.viewModel())
-        }
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
         .safeAreaInset(edge: .top) {
@@ -65,9 +60,14 @@ struct DataMigrationView: View {
                     .font(.largeTitle)
                     .bold()
             }
+            .background(.background)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {
+                if let migratorError {
+                    Text(migratorError.localizedDescription)
+                }
+
                 Button {
                     Task {
                         isMigrating = true
@@ -96,7 +96,14 @@ struct DataMigrationView: View {
             .disabled(isMigrating)
             .background(.background)
         }
+        .sheet(item: $migrationReport, onDismiss: handleReportDismiss) { report in
+            DataMigrationReportView(report: report)
+        }
         .padding()
+    }
+
+    private func handleReportDismiss() {
+        self.dismiss()
     }
 
     private func dryRunMigrationFromUserProvidedItem(_ itemProviders: [NSItemProvider]) -> Bool {
@@ -107,8 +114,8 @@ struct DataMigrationView: View {
 
         _ = itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.propertyList.identifier) { url, error in
             if let error {
-                self.migrationError = error
-                self.isShowingErrorDetails = true
+                self.migratorError = error
+                return
             }
 
             // The data must be loaded from the URL in this closure block, per OS requirements.
@@ -118,13 +125,14 @@ struct DataMigrationView: View {
             do {
                 data = try Data(contentsOf: url)
             } catch {
-                self.migrationError = error
-                self.isShowingErrorDetails = true
+                self.migratorError = error
                 return
             }
 
             Task(priority: .userInitiated) {
+                self.isMigrating = true
                 await dryRunMigration(plistData: data)
+                self.isMigrating = false
             }
         }
 
@@ -143,41 +151,44 @@ struct DataMigrationView: View {
         }
 
         do {
-            let _report = try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
+            let report = try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
             await MainActor.run {
-                self.report = _report
+                self.migrationReport = report
             }
         } catch {
             await MainActor.run {
-                self.migrationError = error
-                self.isShowingErrorDetails = true
+                self.migratorError = error
             }
         }
     }
 
     func doMigration() async {
         try? await Task.sleep(nanoseconds: 5_000_000_000)
+
+        self.migratorError = NSError(domain: "org.onebusaway.iphone", code: 418, userInfo: [
+            NSLocalizedDescriptionKey: "I'm a teapot, please try again."
+        ])
         return
 
-        guard let region = application.currentRegion else {
-            return
-        }
-
-        guard let apiService = application.betterAPIService else {
-             return
-        }
-
-        let migrator = DataMigrator_(userDefaults: .standard)
-
-        let parameters = DataMigrator_.MigrationParameters(forceMigration: false, regionIdentifier: region.regionIdentifier)
-
-        let report: DataMigrator_.MigrationReport
-        do {
-            report = try await migrator.performMigration(parameters, apiService: apiService, dataStorer: application)
-        } catch {
-            migrationError = error
-            return
-        }
+//        guard let region = application.currentRegion else {
+//            return
+//        }
+//
+//        guard let apiService = application.betterAPIService else {
+//             return
+//        }
+//
+//        let migrator = DataMigrator_(userDefaults: .standard)
+//
+//        let parameters = DataMigrator_.MigrationParameters(forceMigration: false, regionIdentifier: region.regionIdentifier)
+//
+//        let report: DataMigrator_.MigrationReport
+//        do {
+//            report = try await migrator.performMigration(parameters, apiService: apiService, dataStorer: application)
+//        } catch {
+//            migrationError = error
+//            return
+//        }
     }
 }
 
