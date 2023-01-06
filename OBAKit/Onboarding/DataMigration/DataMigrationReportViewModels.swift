@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-struct DataMigrationResultItem: Identifiable {
+struct DataMigrationReportItem: Identifiable {
     let id = UUID()
     var systemImageName: String
     var title: String
@@ -15,35 +15,25 @@ struct DataMigrationResultItem: Identifiable {
     var error: Error?
 }
 
-struct DataMigrationResultGroupViewModel: Identifiable {
+struct DataMigrationReportGroup: Identifiable {
     let id = UUID()
-
-    // If any of the items have an error, return false.
-    var overallSuccessful: Bool {
-        for item in items where item.error != nil {
-            return false
-        }
-
-        return true
-    }
-
     var title: String
-    var items: [DataMigrationResultItem] = []
+    var items: [DataMigrationReportItem] = []
 }
 
 extension DataMigrator_.MigrationReport {
-    func viewModel() -> [DataMigrationResultGroupViewModel] {
-        var groups: [DataMigrationResultGroupViewModel] = []
+    func viewModel() -> [DataMigrationReportGroup] {
+        var groups: [DataMigrationReportGroup] = []
 
         // Metadata
-        var metadata = DataMigrationResultGroupViewModel(title: "Metadata")
+        var metadata = DataMigrationReportGroup(title: "Metadata")
         metadata.items.append(resultToItem(title: "User ID", result: userIDMigrationResult))
         metadata.items.append(resultToItem(title: "Region", result: regionMigrationResult))
 
         groups.append(metadata)
 
         // Recent Stops
-        var recentStops = DataMigrationResultGroupViewModel(title: "Recent Stops")
+        var recentStops = DataMigrationReportGroup(title: "Recent Stops")
         for recentStopResult in recentStopsMigrationResult {
             let title = recentStopResult.key.title
             recentStops.items.append(resultToItem(title: title, result: recentStopResult.value))
@@ -51,7 +41,7 @@ extension DataMigrator_.MigrationReport {
         groups.append(recentStops)
 
         // Loose bookmarks
-        var bookmarks = DataMigrationResultGroupViewModel(title: "Bookmarks")
+        var bookmarks = DataMigrationReportGroup(title: "Bookmarks")
         for bookmarkResult in bookmarksMigrationResult {
             let title = bookmarkResult.key.name
             bookmarks.items.append(resultToItem(title: title, result: bookmarkResult.value))
@@ -59,9 +49,9 @@ extension DataMigrator_.MigrationReport {
         groups.append(bookmarks)
 
         // Bookmark groups, each bookmark group is its own section.
-        var bookmarkGroups: [DataMigrationResultGroupViewModel] = []
+        var bookmarkGroups: [DataMigrationReportGroup] = []
         for bookmarkGroupResult in bookmarkGroupsMigrationResult {
-            var groupViewModel = DataMigrationResultGroupViewModel(title: bookmarkGroupResult.key.name ?? "<unnamed group>")
+            var groupViewModel = DataMigrationReportGroup(title: bookmarkGroupResult.key.name ?? "<unnamed group>")
             let bookmarks = bookmarkGroupResult.value.bookmarks
             for bookmark in bookmarks {
                 groupViewModel.items.append(resultToItem(title: bookmark.key.name, result: bookmark.value))
@@ -74,7 +64,7 @@ extension DataMigrator_.MigrationReport {
         return groups
     }
 
-    private func resultToItem<T>(title: String, subtitle: String? = nil, result: Result<T, any Error>?) -> DataMigrationResultItem {
+    private func resultToItem<T>(title: String, subtitle: String? = nil, result: Result<T, any Error>?) -> DataMigrationReportItem {
         let systemImage: String
         let error: Error?
         switch result {
@@ -89,6 +79,6 @@ extension DataMigrator_.MigrationReport {
             error = nil
         }
 
-        return DataMigrationResultItem(systemImageName: systemImage, title: title, subtitle: subtitle, error: error)
+        return .init(systemImageName: systemImage, title: title, subtitle: subtitle, error: error)
     }
 }

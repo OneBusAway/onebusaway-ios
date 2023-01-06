@@ -48,7 +48,7 @@ struct DataMigrationView: View {
             Text(migrationError?.localizedDescription ?? "<no error>")
         }
         .sheet(item: $report) { report in
-            DataMigrationResultView(results: report.viewModel())
+            DataMigrationReportView(reports: report.viewModel())
         }
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
@@ -114,7 +114,6 @@ struct DataMigrationView: View {
             // The data must be loaded from the URL in this closure block, per OS requirements.
             guard let url else { return }
 
-            // swiftlint:disable force_try
             let data: Data
             do {
                 data = try Data(contentsOf: url)

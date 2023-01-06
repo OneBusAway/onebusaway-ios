@@ -31,8 +31,15 @@ public enum DataMigrationError: Error, LocalizedError {
     }
 }
 
-public enum MigrationBookmarkError: Error {
+public enum MigrationBookmarkError: Error, LocalizedError {
     case noActiveTrips
+
+    public var errorDescription: String? {
+        switch self {
+        case .noActiveTrips:
+            return "Bookmark has no active trips"
+        }
+    }
 }
 
 public protocol DataMigrationDelegate: NSObjectProtocol {
