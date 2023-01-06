@@ -70,7 +70,7 @@ class DataMigrator_Tests: OBATestCase {
         let report = try await self.migrator.performMigration(
             migrationParameters,
             apiService: self.betterRESTService,
-            dataStorer: dataStore)
+            delegate: dataStore)
 
         // Check results metadata
         XCTAssertNotNil(report.dateFinished)
@@ -93,7 +93,7 @@ class DataMigrator_Tests: OBATestCase {
         let results = try await self.migrator.performMigration(
             migrationParameters,
             apiService: self.betterRESTService,
-            dataStorer: dataStore)
+            delegate: dataStore)
 
         let recentStopErrors = results.recentStopsMigrationResult.filter { key, value in
             if case Result.failure = value {
@@ -128,7 +128,7 @@ class DataMigrator_Tests: OBATestCase {
         let results = try await self.migrator.performMigration(
             migrationParameters,
             apiService: self.betterRESTService,
-            dataStorer: dataStore)
+            delegate: dataStore)
 
         let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
         XCTAssertEqual(groups.count, 3)
@@ -150,7 +150,7 @@ class DataMigrator_Tests: OBATestCase {
         let report = try await self.migrator.performMigration(
             migrationParameters,
             apiService: self.betterRESTService,
-            dataStorer: dataStore)
+            delegate: dataStore)
 
         // MARK: Testing the graceful handling of migration failures
         // Get the failing `BookmarkMigration` object, so we can test the dictionary key.
@@ -244,7 +244,7 @@ class DataMigrator_Tests: OBATestCase {
 
     // MARK: - TestDelegate
 
-    private class DataStore: DataMigratorDataStorer {
+    private class DataStore: DataMigrationDelegate {
 
         var userID: String?
         var region: MigrationRegion?

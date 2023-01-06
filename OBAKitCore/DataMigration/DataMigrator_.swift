@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol DataMigratorDataStorer: AnyObject {
+public protocol DataMigrationDelegate: AnyObject {
     func migrate(recentStop: Stop) async throws
     func migrate(userID: String) async throws
     func migrate(region: MigrationRegion) async throws
@@ -65,7 +65,7 @@ public actor DataMigrator_ {
     }
 
     // swiftlint:disable cyclomatic_complexity function_body_length
-    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, dataStorer: DataMigratorDataStorer?) async throws -> MigrationReport {
+    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, delegate: DataMigrationDelegate?) async throws -> MigrationReport {
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
         guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
@@ -85,7 +85,7 @@ public actor DataMigrator_ {
 
         if let userID = extractor.oldUserID {
             do {
-                try await dataStorer?.migrate(userID: userID)
+                try await delegate?.migrate(userID: userID)
                 results.userIDMigrationResult = .success(())
             } catch {
                 results.userIDMigrationResult = .failure(error)
@@ -97,7 +97,7 @@ public actor DataMigrator_ {
         // of the other migration operations below.
         if let region = extractor.extractRegion() {
             do {
-                try await dataStorer?.migrate(region: region)
+                try await delegate?.migrate(region: region)
                 results.regionMigrationResult = .success(())
             } catch {
                 results.regionMigrationResult = .failure(error)
@@ -128,7 +128,7 @@ public actor DataMigrator_ {
 
         for migratedRecentStop in await migratedRecentStops {
             results.recentStopsMigrationResult[migratedRecentStop.key] = await doTaskIfNoError(migratedRecentStop.value) { stop in
-                try await dataStorer?.migrate(recentStop: stop)
+                try await delegate?.migrate(recentStop: stop)
             }
         }
 
@@ -137,7 +137,7 @@ public actor DataMigrator_ {
             var newResults = MigrationBookmarkGroupResult(bookmarkGroup: migratedBookmarkGroup.bookmarkGroup, bookmarks: [:])
             for migratedBookmark in migratedBookmarkGroup.bookmarks {
                 newResults.bookmarks[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                    try await dataStorer?.migrate(bookmark: bookmark, group: bookmarkGroup)
+                    try await delegate?.migrate(bookmark: bookmark, group: bookmarkGroup)
                 }
             }
 
@@ -146,7 +146,7 @@ public actor DataMigrator_ {
 
         for migratedBookmark in await migratedBookmarks {
             results.bookmarksMigrationResult[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                try await dataStorer?.migrate(bookmark: bookmark, group: nil)
+                try await delegate?.migrate(bookmark: bookmark, group: nil)
             }
         }
 

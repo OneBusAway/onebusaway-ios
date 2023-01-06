@@ -17,7 +17,6 @@ import CoreLocation
 open class CoreApplication: NSObject,
     AgencyAlertsDelegate,
     DataMigrationDelegate,
-    DataMigratorDataStorer,
     LocationServiceDelegate,
     ObacoServiceDelegate,
     RegionsServiceDelegate {

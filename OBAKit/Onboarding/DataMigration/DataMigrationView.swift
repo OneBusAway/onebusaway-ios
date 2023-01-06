@@ -167,13 +167,13 @@ struct DataMigrationView: View {
         }
 
         // Do the actual work
-        let dataStorer: DataMigratorDataStorer? = isDryRun ? nil : self.application
+        let dataStorer: DataMigrationDelegate? = isDryRun ? nil : self.application
         let forceMigration = isDryRun
 
         let parameters = DataMigrator_.MigrationParameters(forceMigration: forceMigration, regionIdentifier: region.regionIdentifier)
 
         do {
-            let report = try await migrator.performMigration(parameters, apiService: apiService, dataStorer: dataStorer)
+            let report = try await migrator.performMigration(parameters, apiService: apiService, delegate: dataStorer)
             await MainActor.run {
                 self.migrationReport = report
             }

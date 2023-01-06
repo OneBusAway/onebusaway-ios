@@ -39,10 +39,3 @@ public enum MigrationBookmarkError: Error, LocalizedError {
         }
     }
 }
-
-public protocol DataMigrationDelegate {
-    func migrate(userID: String) async throws
-    func migrate(region: MigrationRegion) async throws
-    func migrate(recentStop: Stop) async throws
-    func migrate(bookmark: Bookmark, group: BookmarkGroup?) async throws
-}
