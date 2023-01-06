@@ -27,10 +27,10 @@ import Foundation
         else { return nil }
 
         let routeID = coder.decodeObject(forKey: "routeID") as? String
-        let regionID = coder.decodeObject(forKey: "regionIdentifier") as? Int
+        let regionID = coder.decodeInteger(forKey: "regionIdentifier")
         let routeShortName = coder.decodeObject(forKey: "routeShortName") as? String
         let tripHeadsign = coder.decodeObject(forKey: "tripHeadsign") as? String
-        let sortOrder = coder.decodeObject(forKey: "sortOrder") as? Int
+        let sortOrder = coder.decodeInteger(forKey: "sortOrder")
 
         self.name = name
         self.stopID = stopID
