@@ -47,7 +47,7 @@ class SettingsViewController: FormViewController {
             form +++ debugSection
         }
 
-        if application.hasDataToMigrate {
+        if application.hasDataToMigrate || application.userDataStore.debugMode {
             form +++ migrateDataSection
         }
 

@@ -47,6 +47,7 @@ public enum MigrationBookmarkError: Error, LocalizedError {
     }
 }
 
+/// `DataMigrator` decodes classic-OBA-encoded objects from UserDefaults, fetches the latest information from the API, then stores it in the new OBAKit format.
 public actor DataMigrator {
     public struct MigrationParameters {
         public var forceMigration: Bool
