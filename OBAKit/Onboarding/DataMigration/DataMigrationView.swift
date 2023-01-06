@@ -131,7 +131,17 @@ struct DataMigrationView: View {
 
             Task(priority: .userInitiated) {
                 self.isMigrating = true
-                await dryRunMigration(plistData: data)
+                do {
+                    let report = try await dryRunMigration(plistData: data)
+                    await MainActor.run {
+                        self.migrationReport = report
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.migratorError = error
+                    }
+                }
+
                 self.isMigrating = false
             }
         }
@@ -140,34 +150,23 @@ struct DataMigrationView: View {
     }
 
     /// Do a "dry run" migration with the user-provided `plist` file. The dry run report is shown afterwards.
-    private func dryRunMigration(plistData data: Data) async {
-        guard let region = application.currentRegion, let apiService = application.betterAPIService else {
-            return
+    private func dryRunMigration(plistData data: Data) async throws -> DataMigrator_.MigrationReport {
+        guard let region = application.currentRegion else {
+            throw UnstructuredError("No current region is set.")
         }
 
-        // swiftlint:disable force_try
-        guard let migrator = try! DataMigrator_.asdf(data: data) else {
-            return
+        guard let apiService = application.betterAPIService else {
+            throw UnstructuredError("No API service is set.")
         }
 
-        do {
-            let report = try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
-            await MainActor.run {
-                self.migrationReport = report
-            }
-        } catch {
-            await MainActor.run {
-                self.migratorError = error
-            }
-        }
+        let migrator = try DataMigrator_.asdf(data: data)
+        return try await migrator.performMigration(.init(forceMigration: true, regionIdentifier: region.regionIdentifier), apiService: apiService, dataStorer: nil)
     }
 
     func doMigration() async {
         try? await Task.sleep(nanoseconds: 5_000_000_000)
 
-        self.migratorError = NSError(domain: "org.onebusaway.iphone", code: 418, userInfo: [
-            NSLocalizedDescriptionKey: "I'm a teapot, please try again."
-        ])
+        self.migratorError = UnstructuredError("I'm a teapot")
         return
 
 //        guard let region = application.currentRegion else {

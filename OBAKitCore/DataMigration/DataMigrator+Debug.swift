@@ -8,17 +8,16 @@
 import Foundation
 
 extension DataMigrator_ {
-
     /// Loads an arbitrary exported UserDefaults file to a new instance of DataMigrator.
-    public static nonisolated func asdf(data: Data) throws -> Self? {
+    public static nonisolated func asdf(data: Data) throws -> Self {
         let suiteName = "DataMigrator_\(Date().ISO8601Format())"
         guard let userDefaults = UserDefaults(suiteName: suiteName) else {
-            return nil
+            throw UnstructuredError("Unable to create UserDefaults with the name \(suiteName)")
         }
         userDefaults.removePersistentDomain(forName: suiteName)      // Don't persist.
 
         guard let migrationPrefs: [String: Any] = try Dictionary(plistData: data) else {
-            return nil
+            throw UnstructuredError("The provided dictionary is not of type [String: Any] or is empty.")
         }
 
         for (key, value) in migrationPrefs {
