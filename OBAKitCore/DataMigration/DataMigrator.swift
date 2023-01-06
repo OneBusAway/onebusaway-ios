@@ -52,7 +52,7 @@ public class DataMigrator {
     public struct MigrationParameters {
         public var forceMigration: Bool
         public var regionIdentifier: RegionIdentifier
-        public var delegate: DataMigrationDelegate?
+        public weak var delegate: DataMigrationDelegate?
 
         public init(forceMigration: Bool, regionIdentifier: RegionIdentifier, delegate: DataMigrationDelegate?) {
             self.forceMigration = forceMigration
