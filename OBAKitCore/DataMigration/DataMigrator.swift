@@ -52,10 +52,12 @@ public class DataMigrator {
     public struct MigrationParameters {
         public var forceMigration: Bool
         public var regionIdentifier: RegionIdentifier
+        public var delegate: DataMigrationDelegate?
 
-        public init(forceMigration: Bool, regionIdentifier: RegionIdentifier) {
+        public init(forceMigration: Bool, regionIdentifier: RegionIdentifier, delegate: DataMigrationDelegate?) {
             self.forceMigration = forceMigration
             self.regionIdentifier = regionIdentifier
+            self.delegate = delegate
         }
     }
 
@@ -98,7 +100,7 @@ public class DataMigrator {
     }
 
     // swiftlint:disable cyclomatic_complexity function_body_length
-    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService, delegate: DataMigrationDelegate?) async throws -> MigrationReport {
+    public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService) async throws -> MigrationReport {
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
         guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
@@ -118,7 +120,7 @@ public class DataMigrator {
 
         if let userID = extractor.oldUserID {
             do {
-                try await delegate?.migrate(userID: userID)
+                try await parameters.delegate?.migrate(userID: userID)
                 results.userIDMigrationResult = .success(())
             } catch {
                 results.userIDMigrationResult = .failure(error)
@@ -130,7 +132,7 @@ public class DataMigrator {
         // of the other migration operations below.
         if let region = extractor.extractRegion() {
             do {
-                try await delegate?.migrate(region: region)
+                try await parameters.delegate?.migrate(region: region)
                 results.regionMigrationResult = .success(())
             } catch {
                 results.regionMigrationResult = .failure(error)
@@ -161,7 +163,7 @@ public class DataMigrator {
 
         for migratedRecentStop in await migratedRecentStops {
             results.recentStopsMigrationResult[migratedRecentStop.key] = await doTaskIfNoError(migratedRecentStop.value) { stop in
-                try await delegate?.migrate(recentStop: stop)
+                try await parameters.delegate?.migrate(recentStop: stop)
             }
         }
 
@@ -170,7 +172,7 @@ public class DataMigrator {
             var newResults = MigrationBookmarkGroupResult(bookmarkGroup: migratedBookmarkGroup.bookmarkGroup, bookmarks: [:])
             for migratedBookmark in migratedBookmarkGroup.bookmarks {
                 newResults.bookmarks[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                    try await delegate?.migrate(bookmark: bookmark, group: bookmarkGroup)
+                    try await parameters.delegate?.migrate(bookmark: bookmark, group: bookmarkGroup)
                 }
             }
 
@@ -179,7 +181,7 @@ public class DataMigrator {
 
         for migratedBookmark in await migratedBookmarks {
             results.bookmarksMigrationResult[migratedBookmark.key] = await doTaskIfNoError(migratedBookmark.value) { bookmark in
-                try await delegate?.migrate(bookmark: bookmark, group: nil)
+                try await parameters.delegate?.migrate(bookmark: bookmark, group: nil)
             }
         }
 
