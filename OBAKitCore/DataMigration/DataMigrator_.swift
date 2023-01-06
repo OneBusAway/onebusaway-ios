@@ -56,11 +56,12 @@ public actor DataMigrator_ {
     }
 
     public var shouldPerformMigration: Bool {
-        return hasDataToMigrate && isMigrationPending
+        return extractor.hasDataToMigrate && isMigrationPending
     }
 
-    public var hasDataToMigrate: Bool {
-        extractor.hasDataToMigrate
+    /// Returns whether the `UserDefaults.standard` has data to migrate.
+    public static var hasDataToMigrate: Bool {
+        return MigrationDataExtractor(defaults: .standard).hasDataToMigrate
     }
 
     // swiftlint:disable cyclomatic_complexity function_body_length
