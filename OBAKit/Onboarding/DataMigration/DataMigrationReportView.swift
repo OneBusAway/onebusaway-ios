@@ -38,7 +38,42 @@ struct DataMigrationReportView: View {
         self.numberOfErrorItems = numberOfErrorItems
     }
 
+    @Environment(\.dismiss) var dismiss
+    @State var isViewingReport = false
+
     var body: some View {
+        Group {
+            if isViewingReport {
+                report
+            } else {
+                Spacer()
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            summary
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 14) {
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Dismiss")
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                }
+                .buttonStyle(.borderedProminent)
+
+                if !isViewingReport {
+                    Button("View Report") {
+                        isViewingReport = true
+                    }
+                }
+            }
+            .background(.background)
+        }
+        .padding()
+    }
+
+    var report: some View {
         List {
             Section("Summary") {
                 if numberOfErrorItems == 0 {
@@ -57,6 +92,24 @@ struct DataMigrationReportView: View {
                 }
             }
         }
+        .listStyle(.plain)
+    }
+
+    var summary: some View {
+        VStack(alignment: .center) {
+            Image(systemName: "checkmark")
+                .foregroundColor(.white)
+                .font(.largeTitle)
+                .padding(16)
+                .background(Color(uiColor: ThemeColors.shared.brand))
+                .clipShape(Circle())
+
+            Text("Data upgrade complete!")
+                .font(.largeTitle)
+                .bold()
+                .multilineTextAlignment(.center)
+        }
+        .background(.background)
     }
 
     @ViewBuilder func listView(_ item: DataMigrationReportItem) -> some View {
