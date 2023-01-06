@@ -41,7 +41,7 @@ class DataMigrator_Tests: OBATestCase {
 
         self.migrator = DataMigrator(userDefaults: userDefaults)
         self.dataStore = DataStore()
-        self.migrationParameters = DataMigrator.MigrationParameters(forceMigration: false, regionIdentifier: pugetSoundRegionIdentifier)
+        self.migrationParameters = DataMigrator.MigrationParameters(forceMigration: false, regionIdentifier: pugetSoundRegionIdentifier, delegate: dataStore)
     }
 
     override var host: String {
@@ -67,10 +67,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_basicProperties() async throws {
-        let report = try await self.migrator.performMigration(
-            migrationParameters,
-            apiService: self.betterRESTService,
-            delegate: dataStore)
+        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
 
         // Check results metadata
         XCTAssertNotNil(report.dateFinished)
@@ -90,10 +87,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_recentStops() async throws {
-        let results = try await self.migrator.performMigration(
-            migrationParameters,
-            apiService: self.betterRESTService,
-            delegate: dataStore)
+        let results = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
 
         let recentStopErrors = results.recentStopsMigrationResult.filter { key, value in
             if case Result.failure = value {
@@ -125,10 +119,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_bookmarkGroups() async throws {
-        let results = try await self.migrator.performMigration(
-            migrationParameters,
-            apiService: self.betterRESTService,
-            delegate: dataStore)
+        let results = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
 
         let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
         XCTAssertEqual(groups.count, 3)
@@ -147,10 +138,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_bookmarks() async throws {
-        let report = try await self.migrator.performMigration(
-            migrationParameters,
-            apiService: self.betterRESTService,
-            delegate: dataStore)
+        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
 
         // MARK: Testing the graceful handling of migration failures
         // Get the failing `BookmarkMigration` object, so we can test the dictionary key.
