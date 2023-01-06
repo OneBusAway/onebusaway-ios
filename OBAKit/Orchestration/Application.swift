@@ -142,7 +142,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Onboarding
 
-    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService, dataMigrator: dataMigrator)
+    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService)
 
     /// Performs the full onboarding process: location permissions, region selection, and data migration.
     public func performOnboarding() {
