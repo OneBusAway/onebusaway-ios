@@ -2,56 +2,50 @@
 //  DataMigratorTests.swift
 //  OBAKitTests
 //
-//  Copyright © Open Transit Software Foundation
-//  This source code is licensed under the Apache 2.0 license found in the
-//  LICENSE file in the root directory of this source tree.
+//  Created by Alan Chu on 1/1/23.
 //
 
-import Foundation
-import Nimble
 import XCTest
+import Foundation
 @testable import OBAKit
 @testable import OBAKitCore
 
-// xswiftlint:disable force_try function_body_length weak_delegate
-
-class DataMigratorTests: OBATestCase {
+class DataMigrator_Tests: OBATestCase {
 
     var dataLoader: MockDataLoader!
-    var migrator: DataMigrator!
-    var coreApp: CoreApplication!
-    var migrationPrefs: [String: Any]!
-    var queue: OperationQueue!
-    var defaults: UserDefaults!
-    var testDelegate: TestDelegate!
+    var migrator: DataMigrator_!
+
+    private var dataStore: DataStore!
+    private var migrationParameters: DataMigrator_.MigrationParameters!
 
     override func setUp() {
         super.setUp()
 
-        queue = OperationQueue()
+        // Load user defaults from the plist fixture.
+        let userDefaults = buildUserDefaults()
+        let migrationPrefs: [String: Any] = try! Dictionary(plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
 
-        defaults = buildUserDefaults()
-        migrationPrefs = try! [String: Any](plistPath: Fixtures.path(to: "migration_test_preferences.plist"))!
-        for (k, v) in migrationPrefs {
-            defaults.set(v, forKey: k)
+        for (key, value) in migrationPrefs {
+            userDefaults.set(value, forKey: key)
         }
 
-        dataLoader = MockDataLoader(testName: name)
+        // Get API service ready
+        self.dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
 
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
-        let locManager = MockAuthorizedLocationManager(updateLocation: TestData.mockSeattleLocation, updateHeading: TestData.mockHeading)
-        let locationService = LocationService(userDefaults: defaults, locationManager: locManager)
+        mockRecentStops()
+        mockArrivalsAndDepartures()
 
-        let config = CoreAppConfig(regionsBaseURL: regionsURL, obacoBaseURL: obacoURL, apiKey: apiKey, appVersion: appVersion, userDefaults: userDefaults, queue: queue, locationService: locationService, bundledRegionsFilePath: bundledRegionsPath, regionsAPIPath: regionsAPIPath, dataLoader: dataLoader)
+        self.migrator = DataMigrator_(userDefaults: userDefaults)
+        self.dataStore = DataStore()
+        self.migrationParameters = DataMigrator_.MigrationParameters(forceMigration: false, regionIdentifier: pugetSoundRegionIdentifier)
+    }
 
-        coreApp = CoreApplication(config: config)
-
-        testDelegate = TestDelegate()
-
-        migrator = DataMigrator(userDefaults: config.userDefaults, delegate: testDelegate, application: coreApp)
+    override var host: String {
+        return "api.pugetsound.onebusaway.org"
     }
 
     private func mockRecentStops() {
@@ -72,185 +66,185 @@ class DataMigratorTests: OBATestCase {
         dataLoader.mock(URLString: "https://api.pugetsound.onebusaway.org/api/where/arrivals-and-departures-for-stop/1_99610.json", with: Fixtures.loadData(file: "arrivals-and-departures_1_99610.json"))
     }
 
-    func testMigration_basicProperties() {
-        mockRecentStops()
-        mockArrivalsAndDepartures()
+    func testMigration_basicProperties() async throws {
+        let report = try await self.migrator.performMigration(
+            migrationParameters,
+            apiService: self.betterRESTService,
+            dataStorer: dataStore)
 
-        waitUntil { done in
-            self.migrator.performMigration(forceMigration: false) { result in
-                switch result {
-                case .failure:
-                    XCTFail("Should not fail.")
-                case .success:
-                    expect(self.testDelegate.userID) == "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0"
-                    let region = self.testDelegate.region!
-                    expect(region.name) == "Puget Sound"
-                    expect(region.identifier) == 1
-                }
-                done()
-            }
-        }
+        // Check results metadata
+        XCTAssertNotNil(report.dateFinished)
+        XCTAssertTrue(report.isFinished)
+
+        // Check User ID
+        let userIDMigrationResult = try XCTUnwrap(report.userIDMigrationResult)
+        XCTAssertNoThrow(try userIDMigrationResult.get(), "Expected User ID migration to be successful")
+
+        let storedUserID = try XCTUnwrap(dataStore.userID, "Expected the userID to be stored.")
+        XCTAssertEqual(storedUserID, "B72C5F1A-B8E5-4FB3-A857-CAC6EAC86DE0")
+
+        // Check region
+        let storedRegion = try XCTUnwrap(dataStore.region, "Expected the region to be stored.")
+        XCTAssertEqual(storedRegion.name, "Puget Sound")
+        XCTAssertEqual(storedRegion.identifier, pugetSoundRegionIdentifier, "Expected the region identifier to be stored as \(pugetSoundRegionIdentifier)")
     }
 
-    func testMigration_recentStops() {
-        mockRecentStops()
-        mockArrivalsAndDepartures()
+    func testMigration_recentStops() async throws {
+        let results = try await self.migrator.performMigration(
+            migrationParameters,
+            apiService: self.betterRESTService,
+            dataStorer: dataStore)
 
-        waitUntil { done in
-            self.migrator.performMigration(forceMigration: false) { result in
-                switch result {
-                case .failure:
-                    XCTFail("Should not fail.")
-                case .success:
-                    let stops = self.testDelegate.recentStops.sorted(by: {$0.id > $1.id})
-                    expect(stops.count) == 6
-
-                    expect(stops[0].name) == "Capitol Hill Link Station"
-                    expect(stops[0].id) == "1_99610"
-                    expect(stops[0].coordinate.latitude).to(beCloseTo(47.6196))
-                    expect(stops[0].coordinate.longitude).to(beCloseTo(-122.3204))
-                    expect(stops[0].routeIDs) == ["40_100479"]
-                    expect(stops[0].routes.count) == 1
-
-                    expect(stops[1].name) == "24th Ave E & E Galer St"
-                    expect(stops[2].name) == "E John St & Broadway  E"
-                    expect(stops[3].name) == "15th Ave E & E Galer St"
-                    expect(stops[4].name) == "10th Ave E & E Galer St"
-                    expect(stops[5].name) == "Westlake Station - Bay A"
-                }
-
-                done()
+        let recentStopErrors = results.recentStopsMigrationResult.filter { key, value in
+            if case Result.failure = value {
+                return true
+            } else {
+                return false
             }
         }
+
+        XCTAssertTrue(recentStopErrors.isEmpty, "Recent stops migration should have no errors")
+
+        // Check stops
+        let stops = dataStore.recentStops.sorted(by: { $0.id > $1.id })
+        XCTAssertEqual(stops.count, 6)
+
+        let firstStop = try XCTUnwrap(stops.first)
+        XCTAssertEqual(firstStop.name, "Capitol Hill Link Station")
+        XCTAssertEqual(firstStop.id, "1_99610")
+        XCTAssertEqual(firstStop.coordinate.latitude, 47.6196, accuracy: 0.0001)
+        XCTAssertEqual(firstStop.coordinate.longitude, -122.3204, accuracy: 0.0001)
+        XCTAssertEqual(firstStop.routeIDs, ["40_100479"])
+        XCTAssertEqual(firstStop.routes.count, 1)
+
+        XCTAssertEqual(stops[1].name, "24th Ave E & E Galer St")
+        XCTAssertEqual(stops[2].name, "E John St & Broadway  E")
+        XCTAssertEqual(stops[3].name, "15th Ave E & E Galer St")
+        XCTAssertEqual(stops[4].name, "10th Ave E & E Galer St")
+        XCTAssertEqual(stops[5].name, "Westlake Station - Bay A")
     }
 
-    func testMigration_bookmarkGroups() {
-        mockRecentStops()
-        mockArrivalsAndDepartures()
+    func testMigration_bookmarkGroups() async throws {
+        let results = try await self.migrator.performMigration(
+            migrationParameters,
+            apiService: self.betterRESTService,
+            dataStorer: dataStore)
 
-        waitUntil { done in
-            self.migrator.performMigration(forceMigration: false) { result in
-                switch result {
-                case .failure:
-                    XCTFail("Should not fail.")
-                case .success:
-                    let groups = self.testDelegate.bookmarkGroups.sorted(by: {$1.sortOrder > $0.sortOrder})
-                    expect(groups.count) == 3
+        let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
+        XCTAssertEqual(groups.count, 3)
 
-                    expect(groups[0].name) == "Work"
-                    expect(groups[0].id.uuidString) == "E87AFBD5-6B61-4916-947F-458476ACBF98"
-                    expect(groups[0].sortOrder) == 1
+        XCTAssertEqual(groups[0].name, "Work")
+        XCTAssertEqual(groups[0].id.uuidString, "E87AFBD5-6B61-4916-947F-458476ACBF98")
+        XCTAssertEqual(groups[0].sortOrder, 1)
 
-                    expect(groups[1].name) == "Home"
-                    expect(groups[1].id.uuidString) == "C8AD00F0-8C30-48B1-B194-E5167E45C80E"
-                    expect(groups[1].sortOrder) == 2
+        XCTAssertEqual(groups[1].name, "Home")
+        XCTAssertEqual(groups[1].id.uuidString, "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
+        XCTAssertEqual(groups[1].sortOrder, 2)
 
-                    expect(groups[2].name) == "Mika"
-                    expect(groups[2].id.uuidString) == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812"
-                    expect(groups[2].sortOrder) == 3
-                }
-
-                done()
-            }
-        }
+        XCTAssertEqual(groups[2].name, "Mika")
+        XCTAssertEqual(groups[2].id.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        XCTAssertEqual(groups[2].sortOrder, 3)
     }
 
-    func testMigration_bookmarks() {
-        mockRecentStops()
-        mockArrivalsAndDepartures()
+    func testMigration_bookmarks() async throws {
+        let report = try await self.migrator.performMigration(
+            migrationParameters,
+            apiService: self.betterRESTService,
+            dataStorer: dataStore)
 
-        waitUntil { done in
-            self.migrator.performMigration(forceMigration: false) { result in
-                switch result {
-                case .failure:
-                    XCTFail("Should not fail.")
-                case .success(let migrationResult):
-                    let failedBookmarks = migrationResult.failedBookmarks
-                    let failedRecentStops = migrationResult.failedRecentStops
+        // MARK: Testing the graceful handling of migration failures
+        // Get the failing `BookmarkMigration` object, so we can test the dictionary key.
+        let failingBookmark = try XCTUnwrap(report.bookmarksMigrationResult.keys.first { bookmark in
+            return bookmark.stopID == "1_99610"
+        }, "Expected to find a bookmark with a Stop ID of 1_99610")
 
-                    let bookmarks = self.testDelegate.bookmarks.sorted(by: { b1, b2 in
-                        if b1.routeShortName == b2.routeShortName {
-                            return b1.tripHeadsign! < b2.tripHeadsign!
-                        }
-                        else {
-                            return b1.routeShortName! < b2.routeShortName!
-                        }
-                    })
+        // Testing the dictionary key retrieval
+        let failingBookmarkResult = try XCTUnwrap(report.bookmarksMigrationResult[failingBookmark], "Expected the migration report to contain Bookmark Migration Results for bookmark with Stop ID 1_99610")
 
-                    expect(failedBookmarks.count) == 1
-                    expect(failedRecentStops.count) == 0
+        // Testing that the specific migration error is surfaced in the report
+        XCTAssertThrowsError(try failingBookmarkResult.get(),"The failing bookmark should have a result type of .failure") { error in
+            guard let migrationError = error as? MigrationBookmarkError else {
+                return XCTFail("Expected the migration error type to be a MigrationBookmarkError")
+            }
 
-                    expect(bookmarks.count) == 5
+            XCTAssertEqual(migrationError, .noActiveTrips, "Expected the migration to fail because there are no active trips associated with the bookmark's stop")
+        }
 
-                    expect(bookmarks[0].id).toNot(beNil())
-                    expect(bookmarks[0].groupID!.uuidString) == "C8AD00F0-8C30-48B1-B194-E5167E45C80E"
-                    expect(bookmarks[0].name) == "10 to Home"
-                    expect(bookmarks[0].regionIdentifier) == 1
-                    expect(bookmarks[0].stopID) == "1_29270"
-                    expect(bookmarks[0].stop).toNot(beNil())
-                    expect(bookmarks[0].isFavorite) == false
-                    expect(bookmarks[0].routeShortName) == "10"
-                    expect(bookmarks[0].routeID) == "1_100002"
-                    expect(bookmarks[0].sortOrder) == Int.max
-                    expect(bookmarks[0].tripHeadsign) == "Capitol Hill Via 15th Ave E"
+        // MARK: Testing the successful bookmark migrations
 
-                    expect(bookmarks[1].id).toNot(beNil())
-                    expect(bookmarks[1].groupID!.uuidString) == "E87AFBD5-6B61-4916-947F-458476ACBF98"
-                    expect(bookmarks[1].name) == "10 to Work"
-                    expect(bookmarks[1].regionIdentifier) == 1
-                    expect(bookmarks[1].stopID) == "1_11370"
-                    expect(bookmarks[1].stop).toNot(beNil())
-                    expect(bookmarks[1].isFavorite) == false
-                    expect(bookmarks[1].routeShortName) == "10"
-                    expect(bookmarks[1].routeID) == "1_100002"
-                    expect(bookmarks[1].sortOrder) == Int.max
-                    expect(bookmarks[1].tripHeadsign) == "Downtown Seattle"
-
-                    expect(bookmarks[2].id).toNot(beNil())
-                    expect(bookmarks[2].groupID!.uuidString) == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812"
-                    expect(bookmarks[2].name) == "48 to UW"
-                    expect(bookmarks[2].regionIdentifier) == 1
-                    expect(bookmarks[2].stopID) == "1_29320"
-                    expect(bookmarks[2].stop).toNot(beNil())
-                    expect(bookmarks[2].isFavorite) == false
-                    expect(bookmarks[2].routeShortName) == "48"
-                    expect(bookmarks[2].routeID) == "1_100228"
-                    expect(bookmarks[2].sortOrder) == Int.max
-                    expect(bookmarks[2].tripHeadsign) == "University District"
-
-                    expect(bookmarks[3].id).toNot(beNil())
-                    expect(bookmarks[3].groupID?.uuidString) == "7CFB03E7-8C74-4CF6-A415-B1EEE7259812"
-                    expect(bookmarks[3].name) == "49 to UW"
-                    expect(bookmarks[3].regionIdentifier) == 1
-                    expect(bookmarks[3].stopID) == "1_11250"
-                    expect(bookmarks[3].stop).toNot(beNil())
-                    expect(bookmarks[3].isFavorite) == false
-                    expect(bookmarks[3].routeShortName) == "49"
-                    expect(bookmarks[3].routeID) == "1_100447"
-                    expect(bookmarks[3].sortOrder) == Int.max
-                    expect(bookmarks[3].tripHeadsign) == "University District"
-
-                    expect(bookmarks[4].id).toNot(beNil())
-                    expect(bookmarks[4].groupID).to(beNil())
-                    expect(bookmarks[4].name) == "Link to CHS"
-                    expect(bookmarks[4].regionIdentifier) == 1
-                    expect(bookmarks[4].stopID) == "1_1121"
-                    expect(bookmarks[4].stop).toNot(beNil())
-                    expect(bookmarks[4].isFavorite) == false
-                    expect(bookmarks[4].routeShortName) == "Link"
-                    expect(bookmarks[4].routeID) == "40_100479"
-                    expect(bookmarks[4].sortOrder) == Int.max
-                    expect(bookmarks[4].tripHeadsign) == "University Of Washington Station"
-                }
-
-                done()
+        let bookmarks = self.dataStore.bookmarks.sorted { lhs, rhs in
+            if lhs.routeShortName == rhs.routeShortName {
+                return lhs.tripHeadsign! < rhs.tripHeadsign!
+            } else {
+                return lhs.routeShortName! < rhs.routeShortName!
             }
         }
+
+        XCTAssertEqual(bookmarks.count, 5)
+        XCTAssertNotNil(bookmarks[0].id)
+        XCTAssertEqual(bookmarks[0].groupID?.uuidString, "C8AD00F0-8C30-48B1-B194-E5167E45C80E")
+        XCTAssertEqual(bookmarks[0].name, "10 to Home")
+        XCTAssertEqual(bookmarks[0].regionIdentifier, pugetSoundRegionIdentifier)
+        XCTAssertEqual(bookmarks[0].stopID, "1_29270")
+        XCTAssertNotNil(bookmarks[0].stop)
+        XCTAssertFalse(bookmarks[0].isFavorite)
+        XCTAssertEqual(bookmarks[0].routeShortName, "10")
+        XCTAssertEqual(bookmarks[0].routeID, "1_100002")
+        XCTAssertEqual(bookmarks[0].sortOrder, Int.max)
+        XCTAssertEqual(bookmarks[0].tripHeadsign, "Capitol Hill Via 15th Ave E")
+
+        XCTAssertNotNil(bookmarks[1].id)
+        XCTAssertEqual(bookmarks[1].groupID?.uuidString, "E87AFBD5-6B61-4916-947F-458476ACBF98")
+        XCTAssertEqual(bookmarks[1].name, "10 to Work")
+        XCTAssertEqual(bookmarks[1].regionIdentifier, pugetSoundRegionIdentifier)
+        XCTAssertEqual(bookmarks[1].stopID, "1_11370")
+        XCTAssertNotNil(bookmarks[1].stop)
+        XCTAssertFalse(bookmarks[1].isFavorite)
+        XCTAssertEqual(bookmarks[1].routeShortName, "10")
+        XCTAssertEqual(bookmarks[1].routeID, "1_100002")
+        XCTAssertEqual(bookmarks[1].sortOrder, Int.max)
+        XCTAssertEqual(bookmarks[1].tripHeadsign, "Downtown Seattle")
+
+        XCTAssertNotNil(bookmarks[2].id)
+        XCTAssertEqual(bookmarks[2].groupID?.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        XCTAssertEqual(bookmarks[2].name, "48 to UW")
+        XCTAssertEqual(bookmarks[2].regionIdentifier, pugetSoundRegionIdentifier)
+        XCTAssertEqual(bookmarks[2].stopID, "1_29320")
+        XCTAssertNotNil(bookmarks[2].stop)
+        XCTAssertFalse(bookmarks[2].isFavorite)
+        XCTAssertEqual(bookmarks[2].routeShortName, "48")
+        XCTAssertEqual(bookmarks[2].routeID, "1_100228")
+        XCTAssertEqual(bookmarks[2].sortOrder, Int.max)
+        XCTAssertEqual(bookmarks[2].tripHeadsign, "University District")
+
+        XCTAssertNotNil(bookmarks[3].id)
+        XCTAssertEqual(bookmarks[3].groupID?.uuidString, "7CFB03E7-8C74-4CF6-A415-B1EEE7259812")
+        XCTAssertEqual(bookmarks[3].name, "49 to UW")
+        XCTAssertEqual(bookmarks[3].regionIdentifier, pugetSoundRegionIdentifier)
+        XCTAssertEqual(bookmarks[3].stopID, "1_11250")
+        XCTAssertNotNil(bookmarks[3].stop)
+        XCTAssertFalse(bookmarks[3].isFavorite)
+        XCTAssertEqual(bookmarks[3].routeShortName, "49")
+        XCTAssertEqual(bookmarks[3].routeID, "1_100447")
+        XCTAssertEqual(bookmarks[3].sortOrder, Int.max)
+        XCTAssertEqual(bookmarks[3].tripHeadsign, "University District")
+
+        XCTAssertNotNil(bookmarks[4].id)
+        XCTAssertNil(bookmarks[4].groupID)
+        XCTAssertEqual(bookmarks[4].name, "Link to CHS")
+        XCTAssertEqual(bookmarks[4].regionIdentifier, pugetSoundRegionIdentifier)
+        XCTAssertEqual(bookmarks[4].stopID, "1_1121")
+        XCTAssertNotNil(bookmarks[4].stop)
+        XCTAssertFalse(bookmarks[4].isFavorite)
+        XCTAssertEqual(bookmarks[4].routeShortName, "Link")
+        XCTAssertEqual(bookmarks[4].routeID, "40_100479")
+        XCTAssertEqual(bookmarks[4].sortOrder, Int.max)
+        XCTAssertEqual(bookmarks[4].tripHeadsign, "University Of Washington Station")
     }
 
     // MARK: - TestDelegate
 
-    class TestDelegate: NSObject, DataMigrationDelegate {
+    private class DataStore: DataMigratorDataStorer {
 
         var userID: String?
         var region: MigrationRegion?
