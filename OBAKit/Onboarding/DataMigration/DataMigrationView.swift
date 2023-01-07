@@ -59,18 +59,8 @@ struct DataMigrationView: View {
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
         .safeAreaInset(edge: .top) {
-            VStack(alignment: .center) {
-                Image(systemName: "arrow.up.doc.on.clipboard")
-                    .foregroundColor(.white)
-                    .font(.largeTitle)
-                    .padding(16)
-                    .background(Color(uiColor: ThemeColors.shared.brand))
-                    .clipShape(Circle())
-
-                Text(OBALoc("data_migration_bulletin.data_upgrade_title", value: "Data Upgrade", comment: "Title for the DataMigrationBulletinPage."))
-                    .font(.largeTitle)
-                    .bold()
-            }
+            OnboardingHeaderView(imageSystemName: "arrow.up.doc.on.clipboard", headerText: OBALoc("data_migration_bulletin.data_upgrade_title", value: "Data Upgrade", comment: "Title for the DataMigrationBulletinPage."))
+            .frame(maxWidth: .infinity)
             .background(.background)
         }
         .safeAreaInset(edge: .bottom) {
@@ -196,5 +186,9 @@ struct DataMigrationView_Previews: PreviewProvider {
                     DataMigrationView()
                 }
         }
+        .previewDisplayName("In a presented sheet")
+
+        DataMigrationView()
+            .previewDisplayName("Standalone (for previewing variants)")
     }
 }
