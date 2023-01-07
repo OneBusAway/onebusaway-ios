@@ -113,7 +113,7 @@
 "data_migration_bulletin.errors.no_migration_pending" = "No data upgrade is pending.";
 
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
-"data_migration_bulletin.finished_loading" = "Data upgrade complete";
+"data_migration_bulletin.finished_loading" = "Data Upgrade Complete";
 
 /* Explanatory text that tells the user how to migrate their data later on. */
 "data_migration_bulletin.migrate_later_text" = "You can upgrade your data later by going to the More tab > Settings, and then tapping on the Migrate Data button.";

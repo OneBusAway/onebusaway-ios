@@ -50,7 +50,7 @@ struct DataMigrationReportView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            OnboardingHeaderView(imageSystemName: "checkmark", headerText: OBALoc("data_migration_bulletin.finished_loading", value: "Data upgrade complete!", comment: "This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage."))
+            OnboardingHeaderView(imageSystemName: "checkmark", headerText: OBALoc("data_migration_bulletin.finished_loading", value: "Data Upgrade Complete!", comment: "This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage."))
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {

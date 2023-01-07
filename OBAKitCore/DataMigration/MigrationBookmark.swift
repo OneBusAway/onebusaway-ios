@@ -95,13 +95,13 @@ import Foundation
 // MARK: - Initializer Extensions
 
 extension TripBookmarkKey {
-    init?(migrationBookmark: MigrationBookmark) {
+    init(migrationBookmark: MigrationBookmark) throws {
         guard
             let routeShortName = migrationBookmark.routeShortName,
             let tripHeadsign = migrationBookmark.tripHeadsign,
             let routeID = migrationBookmark.routeID
         else {
-            return nil
+            throw UnstructuredError("MigrationBookmark is missing a required field for creating a TripBookmarkKey")
         }
 
         self.init(stopID: migrationBookmark.stopID, routeShortName: routeShortName, routeID: routeID, tripHeadsign: tripHeadsign)

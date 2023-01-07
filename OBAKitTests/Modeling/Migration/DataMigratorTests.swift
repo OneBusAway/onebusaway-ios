@@ -119,7 +119,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_bookmarkGroups() async throws {
-        let results = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
+        _ = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
 
         let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
         XCTAssertEqual(groups.count, 3)

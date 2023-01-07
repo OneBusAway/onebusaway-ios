@@ -337,10 +337,7 @@ public class DataMigrator {
     }
 
     private func migrateTripBookmark(_ migrationBookmark: MigrationBookmark, group: MigrationBookmarkGroup?, regionIdentifier: RegionIdentifier, apiService: RESTAPIService) async throws -> Bookmark {
-        guard let tripKey = TripBookmarkKey(migrationBookmark: migrationBookmark) else {
-            fatalError("todo fix me")
-        }
-
+        let tripKey = try TripBookmarkKey(migrationBookmark: migrationBookmark)
         let response = try await apiService.getArrivalsAndDeparturesForStop(id: migrationBookmark.stopID, minutesBefore: 0, minutesAfter: 60)
 
         guard let arrDep = response.list.arrivalsAndDepartures.tripKeyGroupedElements[tripKey]?.first else {
