@@ -235,6 +235,8 @@ public class DataMigrator {
         // Mark the migration as complete.
         results.dateFinished = Date()
 
+        self.isMigrationPending = false
+
         return results
     }
 
