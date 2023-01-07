@@ -141,6 +141,13 @@ public class DataMigrator {
         // Wait for the parallelized operations to finish.
         _ = await [migratedRecentStops, migratedBookmarkGroups, migratedBookmarks]
 
+        // Check for any critical errors.
+        try await throwCriticalErrorIfAny(migratedRecentStops.values)
+        try await throwCriticalErrorIfAny(migratedBookmarks.values)
+        for group in await migratedBookmarkGroups {
+            try throwCriticalErrorIfAny(group.bookmarks.values)
+        }
+
         for migratedRecentStop in await migratedRecentStops {
             results.recentStopsMigrationResult[migratedRecentStop.key] = await doTaskIfNoError(migratedRecentStop.value) { stop in
                 try await parameters.delegate?.migrate(recentStop: stop)
@@ -168,6 +175,18 @@ public class DataMigrator {
         results.dateFinished = Date()
 
         return results
+    }
+
+    // swiftlint:disable syntactic_sugar
+    /// An `NSURLError` is considered a "critical error".
+    nonisolated func throwCriticalErrorIfAny<ResultType>(_ results: Dictionary<some Hashable, Result<ResultType, Error>>.Values) throws {
+        for result in results {
+            if case let .failure(failure as NSError) = result {
+                if failure.domain == NSURLErrorDomain {
+                    throw failure
+                }
+            }
+        }
     }
 
     /// Helper method for doing additional work (`nextTask`) on a result. If the provided result already contains a failure, then the additional work is not executed and this method will return the original error.
