@@ -151,7 +151,7 @@ class DataMigrator_Tests: OBATestCase {
 
         // Testing that the specific migration error is surfaced in the report
         XCTAssertThrowsError(try failingBookmarkResult.get(),"The failing bookmark should have a result type of .failure") { error in
-            guard let migrationError = error as? MigrationBookmarkError else {
+            guard let migrationError = error as? DataMigrationBookmarkError else {
                 return XCTFail("Expected the migration error type to be a MigrationBookmarkError")
             }
 
