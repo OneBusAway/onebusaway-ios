@@ -50,9 +50,9 @@ struct DataMigrationView: View {
     var body: some View {
         List {
             Section {
-                label(title: "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.", systemImage: "star.square.on.square")
-                label(title: "You will not be able to see your Recent Stops or Bookmarks until you upgrade.", systemImage: "bookmark.slash")
-                label(title: "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.", systemImage: "wifi")
+                label(title: OBALoc("data_migration_bulletin.explanation_1", value: "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.", comment: "First bullet point of DataMigrationBulletinPage explanation"), systemImage: "star.square.on.square")
+                label(title: OBALoc("data_migration_bulletin.explanation_2", value: "You will not be able to see your Recent Stops or Bookmarks until you upgrade.", comment: "Second bullet point of DataMigrationBulletinPage explanation"), systemImage: "bookmark.slash")
+                label(title: OBALoc("data_migration_bulletin.explanation_3", value: "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.", comment: "Third bullet point of DataMigrationBulletinPage explanation"), systemImage: "wifi")
             }
             .listRowSeparator(.hidden)
         }
@@ -67,7 +67,7 @@ struct DataMigrationView: View {
                     .background(Color(uiColor: ThemeColors.shared.brand))
                     .clipShape(Circle())
 
-                Text("Data Upgrade")
+                Text(OBALoc("data_migration_bulletin.data_upgrade_title", value: "Data Upgrade", comment: "Title for the DataMigrationBulletinPage."))
                     .font(.largeTitle)
                     .bold()
             }
@@ -86,7 +86,7 @@ struct DataMigrationView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity, minHeight: 32)
                     } else {
-                        Text("Continue")
+                        Text(OBALoc("data_migration_bulletin.action_button", value: "Continue", comment: "Action button title for the DataMigrationBulletinPage."))
                             .font(.headline)
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
@@ -96,7 +96,7 @@ struct DataMigrationView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Not Now")
+                    Text(OBALoc("data_migration_bulletin.dismiss_button", value: "Not Now", comment: "Dismissal button title for the DataMigrationBulletinPage."))
                 }
             }
             .onDrop(of: [.propertyList, .xml, .xmlPropertyList], isTargeted: nil, perform: handleUserProvidedItem)

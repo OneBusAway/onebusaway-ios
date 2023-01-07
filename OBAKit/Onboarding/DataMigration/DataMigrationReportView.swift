@@ -57,13 +57,13 @@ struct DataMigrationReportView: View {
                 Button {
                     dismiss()
                 } label: {
-                    Text("Dismiss")
+                    Text(Strings.dismiss)
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
                 .buttonStyle(.borderedProminent)
 
                 if !isViewingReport {
-                    Button("View Report") {
+                    Button(OBALoc("data_migration_bulletin.view_report_button", value: "View Report", comment: "Button title to let the user view a data migration report.")) {
                         isViewingReport = true
                     }
                 }
@@ -104,7 +104,7 @@ struct DataMigrationReportView: View {
                 .background(Color(uiColor: ThemeColors.shared.brand))
                 .clipShape(Circle())
 
-            Text("Data upgrade complete!")
+            Text(OBALoc("data_migration_bulletin.finished_loading", value: "Data upgrade complete!", comment: "This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage."))
                 .font(.largeTitle)
                 .bold()
                 .multilineTextAlignment(.center)
@@ -116,8 +116,6 @@ struct DataMigrationReportView: View {
         DisclosureGroup {
             if let error = item.error {
                 Text(error.localizedDescription)
-            } else {
-                Text("No problems.")
             }
         } label: {
             Label(item.title, systemImage: item.systemImageName)

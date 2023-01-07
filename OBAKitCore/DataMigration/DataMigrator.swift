@@ -16,35 +16,15 @@ public protocol DataMigrationDelegate: AnyObject {
     func migrate(bookmark: Bookmark, group: BookmarkGroup?) async throws
 }
 
-public enum DataMigrationError: Error, LocalizedError {
-    case invalidAPIService
+public enum DataMigrationError: Error {
+    case invalidAPIService(String)
     case noAPIServiceAvailable
     case noDataToMigrate
     case noMigrationPending
-
-    public var errorDescription: String? {
-        switch self {
-        case .invalidAPIService:
-            return "Invalid API service"
-        case .noAPIServiceAvailable:
-            return "No API service available"
-        case .noDataToMigrate:
-            return "No data to migrate"
-        case .noMigrationPending:
-            return "No migration pending"
-        }
-    }
 }
 
-public enum MigrationBookmarkError: Error, LocalizedError {
+public enum DataMigrationBookmarkError: Error {
     case noActiveTrips
-
-    public var errorDescription: String? {
-        switch self {
-        case .noActiveTrips:
-            return "Bookmark has no active trips"
-        }
-    }
 }
 
 /// `DataMigrator` decodes classic-OBA-encoded objects from UserDefaults, fetches the latest information from the API, then stores it in the new OBAKit format.
@@ -105,7 +85,7 @@ public class DataMigrator {
         // The API service must be configured to the same region as parameters.regionIdentifier.
         guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
               apiServiceRegionIdentifier == parameters.regionIdentifier else {
-            throw DataMigrationError.invalidAPIService
+            throw DataMigrationError.invalidAPIService("The API must be configured to the same region as parameters.regionIdentifier")
         }
 
         guard extractor.hasDataToMigrate else {
@@ -284,7 +264,7 @@ public class DataMigrator {
         let response = try await apiService.getArrivalsAndDeparturesForStop(id: migrationBookmark.stopID, minutesBefore: 0, minutesAfter: 60)
 
         guard let arrDep = response.list.arrivalsAndDepartures.tripKeyGroupedElements[tripKey]?.first else {
-            throw MigrationBookmarkError.noActiveTrips
+            throw DataMigrationBookmarkError.noActiveTrips
         }
 
         return Bookmark(name: migrationBookmark.name, regionIdentifier: regionIdentifier, arrivalDeparture: arrDep)
