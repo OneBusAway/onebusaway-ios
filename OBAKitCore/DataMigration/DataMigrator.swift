@@ -80,7 +80,66 @@ public class DataMigrator {
     }
 
     // swiftlint:disable cyclomatic_complexity function_body_length
+    /// Perform migration, with the specified `parameters`, against the provided `apiService`. See source code for implementation details.
+    /// - precondition: `parameters.regionIdentifier` must be equal to `apiService.configuration.regionIdentifier`, or else this will throw an error.
+    /// - precondition: `extractor.hasDataToMigrate == true`, or else this will throw an error.
     public func performMigration(_ parameters: MigrationParameters, apiService: RESTAPIService) async throws -> MigrationReport {
+        // High level implementation details of migration procedure
+        //    ┌───────────┐
+        //    │   START   │
+        //    └─────┬─────┘
+        //          ▼
+        // ┌─────────────────────────────┐         ╔════════════════════════════╗
+        // │ extractor.hasDataToMigrate? │──<NO>──▶︎║ throw .noDataToMigrate     ║
+        // └────────┬────────────────────┘         ╚════════════════════════════╝
+        //          │ <YES>
+        //          ▼
+        // ┌───────────────────┐              ╭─────────────────────────────────╮
+        // │ Migrate User ID   │┄┄┄┄┄┄┄┄┄┄┄┄┄▶︎│ delegate.migrate(userID:)       │
+        // └────────┬──────────┘              ╰─────────────────────────────────╯
+        //          ▼
+        // ┌───────────────────┐              ╭─────────────────────────────────╮
+        // │ Migrate Region ID │┄┄┄┄┄┄┄┄┄┄┄┄┄▶︎│ delegate.migrate(regionID:)     │
+        // └────────┬──────────┘              ╰─────────────────────────────────╯
+        //          ▼
+        // ┌───────────────────────────────────────────┐
+        // │ Decode classic-OBA object, then           │
+        // | get new-OBA object via APIService:        │
+        // │   ╭───────────────────╮  ╮                │
+        // │   │ Recent Stops      │  │                │
+        // │   ╰───────────────────╯  │                │
+        // │   ╭───────────────────╮  │ await until    │
+        // │   │ Loose Bookmarks   │  │ all finished   │
+        // │   ╰───────────────────╯  │     │          │
+        // │   ╭───────────────────╮  │     │          │
+        // │   │ Grouped Bookmarks │  │     │          │
+        // │   ╰───────────────────╯  ╯     │          │
+        // │        ┌───────────────────────┘          │
+        // └────────┼──────────────────────────────────┘
+        //          │
+        //          ▼
+        // ┌───────────────────────────────┐
+        // │                               │                ╔═══════════════════╗
+        // │ Check for any critical errors │ ─<has error>─▶︎ ║ rethrow error     ║
+        // │                               │                ╚═══════════════════╝
+        // └────────┬──────────────────────┘
+        //          │ <no error>
+        //          ▼
+        // ┌───────────────────────────┐      ╭───────────────────────────────────╮
+        // │ Migrate Recent Stops      │┄┄┄┄┄▶︎│ delegate.migrate(recentStop:)     │
+        // └────────┬──────────────────┘      ╰───────────────────────────────────╯
+        //          ▼
+        // ┌───────────────────────────┐      ╭───────────────────────────────────╮
+        // │ Migrate Loose Bookmarks   │┄┄┄┄┄▶︎│ delegate.migrate(bookmark:group:) │
+        // └────────┬──────────────────┘      ╰───────────────────────────────────╯
+        //          ▼
+        // ┌───────────────────────────┐      ╭───────────────────────────────────╮
+        // │ Migrate Grouped Bookmarks │┄┄┄┄┄▶︎│ delegate.migrate(bookmark:group:) │
+        // └────────┬──────────────────┘      ╰───────────────────────────────────╯
+        //          ▼
+        //    ╔═══════════════╗
+        //    ║ return report ║
+        //    ╚═══════════════╝
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
         guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
@@ -148,6 +207,7 @@ public class DataMigrator {
             try throwCriticalErrorIfAny(group.bookmarks.values)
         }
 
+        // If the network operations seem OK, proceed with actually migrating.
         for migratedRecentStop in await migratedRecentStops {
             results.recentStopsMigrationResult[migratedRecentStop.key] = await doTaskIfNoError(migratedRecentStop.value) { stop in
                 try await parameters.delegate?.migrate(recentStop: stop)
@@ -172,6 +232,7 @@ public class DataMigrator {
             }
         }
 
+        // Mark the migration as complete.
         results.dateFinished = Date()
 
         return results
