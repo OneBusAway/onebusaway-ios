@@ -20,9 +20,6 @@ public enum APIError: Error, LocalizedError {
     case noResponseBody
     case requestFailure(HTTPURLResponse)
 
-    /// A `404` error.
-    case requestNotFound(HTTPURLResponse)
-
     public var errorDescription: String? {
         switch self {
         case .captivePortal:
@@ -52,8 +49,6 @@ public enum APIError: Error, LocalizedError {
         case .requestFailure(let response):
             let fmt = OBALoc("api_error.request_failure_fmt", value: "The server encountered an error while trying to respond to your request, producing the status code %d. (URL: %@)", comment: "An error that is produced in response to HTTP status codes outside of 200-299.")
             return String(format: fmt, response.statusCode, String(response.url?.absoluteString.split(separator: "?").first ?? "(nil)"))
-        case .requestNotFound(let response):
-            return "404, not found" // TODO: this
         }
     }
 }

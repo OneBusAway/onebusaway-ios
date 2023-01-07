@@ -10,7 +10,6 @@
 import UIKit
 
 /// A base class for view controllers that load data from an operation and display it on-screen.
-@available(*, deprecated, message: "TODO: Create a TaskController for Swift Concurrency")
 class OperationController<OperationType, DataType>: UIViewController, AppContext where OperationType: Operation {
     let application: Application
 

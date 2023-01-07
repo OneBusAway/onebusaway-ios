@@ -110,9 +110,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
                 switch result {
                 case .failure(let error):
-                    Task { @MainActor in
-                        self.displayError(error)
-                    }
+                    self.displayError(error)
                 case .success(let response):
                     self.viewRouter.navigateTo(arrivalDeparture: response.entry, from: topVC)
                 }
@@ -264,9 +262,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
             switch result {
             case .failure(let error):
-                Task { @MainActor in
-                    self.displayError(error)
-                }
+                self.displayError(error)
             case .success(let response):
                 let tripController = TripViewController(application: self, arrivalDeparture: response.entry)
                 self.viewRouter.navigate(to: tripController, from: topController)
@@ -302,9 +298,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     func agencyAlertsStore(_ store: AgencyAlertsStore, displayError error: Error) {
-        Task { @MainActor in
-            self.displayError(error)
-        }
+        displayError(error)
     }
 
     // MARK: - UIApplication Hooks
@@ -447,9 +441,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
-        Task { @MainActor in
-            displayError(error)
-        }
+        displayError(error)
     }
 
     // MARK: - Analytics
@@ -469,7 +461,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// explanation to the user via `localizedDescription`.
     ///
     /// - Parameter error: The error to display.
-    @MainActor
     public override func displayError(_ error: Error) {
         super.displayError(error)
         guard let uiApp = delegate?.uiApplication else { return }

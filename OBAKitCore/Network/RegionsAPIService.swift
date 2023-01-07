@@ -9,7 +9,7 @@
 
 import Foundation
 
-public class RegionsAPIService: _APIService {
+public class RegionsAPIService: APIService {
     lazy var URLBuilder = RESTAPIURLBuilder(baseURL: baseURL, defaultQueryItems: defaultQueryItems)
 
     public func getRegions(apiPath: String) -> DecodableOperation<RESTAPIResponse<[Region]>> {

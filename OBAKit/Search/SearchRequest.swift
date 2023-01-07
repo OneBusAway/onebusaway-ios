@@ -70,70 +70,67 @@ public class SearchManager: NSObject {
         self.application = application
     }
 
-    public func search(request: SearchRequest) async {
+    public func search(request: SearchRequest) {
         switch request.searchType {
-        case .address:    await searchAddress(request: request)
-        case .route:      await searchRoute(request: request)
+        case .address:    searchAddress(request: request)
+        case .route:      searchRoute(request: request)
         case .stopNumber: searchStopNumber(request: request)
         case .vehicleID:  searchVehicleID(request: request)
         }
     }
 
-    private func searchAddress(request: SearchRequest) async {
+    private func searchAddress(request: SearchRequest) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.restAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        let searchResponse: SearchResponse
-        do {
-            let results = try await apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
-            searchResponse = SearchResponse(request: request, results: results.mapItems, boundingRegion: results.boundingRegion, error: nil)
-        } catch {
-            searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-        }
-
-        await MainActor.run {
-            self.application.mapRegionManager.searchResponse = searchResponse
+        let op = apiService.getPlacemarks(query: request.query, region: MKCoordinateRegion(mapRect))
+        op.completionBlock = { [weak self] in
+            DispatchQueue.main.async {
+                self?.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: op.response?.mapItems ?? [MKMapItem](), boundingRegion: op.response?.boundingRegion, error: op.error)
+            }
         }
     }
 
-    private func searchRoute(request: SearchRequest) async {
+    private func searchRoute(request: SearchRequest) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.restAPIService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
         }
 
-        do {
-            let response = try await apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
-        } catch {
-            await self.application.displayError(error)
+        let op = apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
+        op.complete { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
+            }
         }
     }
 
     private func searchStopNumber(request: SearchRequest) {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.restAPIService else {
             return
         }
 
         let region = CLCircularRegion(mapRect: application.regionsService.currentRegion!.serviceRect)
+        let op = apiService.getStops(circularRegion: region, query: request.query)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-        Task(priority: .userInitiated) {
-            do {
-                let stops = try await apiService.getStops(circularRegion: region, query: request.query).list
-                await MainActor.run {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: stops, boundingRegion: nil, error: nil)
-                }
-            } catch {
-                await self.application.displayError(error)
-                await MainActor.run {
-                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-                }
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: op.error)
             }
         }
     }
@@ -150,9 +147,7 @@ public class SearchManager: NSObject {
 
             switch result {
             case .failure(let error):
-                Task { @MainActor in
-                    self.application.displayError(error)
-                }
+                self.application.displayError(error)
             case .success(let response):
                 self.processSearchResults(request: request, matchingVehicles: response)
             }
@@ -160,7 +155,7 @@ public class SearchManager: NSObject {
     }
 
     private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
-        guard let apiService = application.betterAPIService else { return }
+        guard let apiService = application.restAPIService else { return }
 
         if matchingVehicles.count > 1 {
             // Show a disambiguation UI.
@@ -170,23 +165,21 @@ public class SearchManager: NSObject {
 
         if matchingVehicles.count == 1, let vehicleID = matchingVehicles.first?.vehicleID {
             // One result. Find that vehicle and show it.
-            Task(priority: .userInitiated) {
-                do {
-                    let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
-                    await MainActor.run {
-                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [vehicle], boundingRegion: nil, error: nil)
-                    }
-                } catch {
-                    await self.application.displayError(error)
-                    await MainActor.run {
-                        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: error)
-                    }
-                }
+            let op = apiService.getVehicle(vehicleID)
+            op.complete { [weak self] result in
+                guard let self = self else { return }
 
+                switch result {
+                case .failure(let error):
+                    self.application.displayError(error)
+                case .success(let response):
+                    self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [response.entry], boundingRegion: nil, error: nil)
+                }
             }
-        } else {
-            // No results :(
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
+            return
         }
+
+        // No results :(
+        self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: [], boundingRegion: nil, error: nil)
     }
 }

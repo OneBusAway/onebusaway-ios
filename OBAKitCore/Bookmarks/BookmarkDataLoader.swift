@@ -57,26 +57,27 @@ public class BookmarkDataLoader: NSObject {
 
     private func loadData(bookmark: Bookmark) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.restAPIService,
             bookmark.isTripBookmark
         else { return }
 
-        Task(priority: .userInitiated) {
-            do {
-                let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60).entry
+        let op = apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-                await MainActor.run {
-                    let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
-                    for (key, deps) in keysAndDeps {
-                        self.tripBookmarkKeys[key] = deps
-                    }
-
-                    self.delegate?.dataLoaderDidUpdate(self)
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                let keysAndDeps = response.entry.arrivalsAndDepartures.tripKeyGroupedElements
+                for (key, deps) in keysAndDeps {
+                    self.tripBookmarkKeys[key] = deps
                 }
-            } catch {
-                await self.application.displayError(error)
+
+                self.delegate?.dataLoaderDidUpdate(self)
             }
         }
+        operations.append(op)
     }
 
     public func dataForKey(_ key: TripBookmarkKey) -> [ArrivalDeparture] {

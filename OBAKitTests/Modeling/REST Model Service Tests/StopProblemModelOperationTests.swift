@@ -20,14 +20,14 @@ class StopProblemModelOperationTests: OBATestCase {
     let comment = "comment comment comment"
     let location = CLLocation(latitude: 47.1, longitude: -122.1)
     lazy var expectedParams = [
-        "code": StopProblemCode.locationWrong.APIStringValue,
+        "code": "stop_location_wrong",
         "userComment": comment,
         "userLat": "47.1",
         "userLon": "-122.1"
     ]
 
-    func testSuccessfulRequest() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+    func testSuccessfulRequest() {
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(data: Fixtures.loadData(file: "report_stop_problem.json")) { request -> Bool in
             let url = request.url!
@@ -35,8 +35,18 @@ class StopProblemModelOperationTests: OBATestCase {
             && url.containsQueryParams(self.expectedParams)
         }
 
-        let report = RESTAPIService.StopProblemReport(stopID: stopID, code: .locationWrong, comment: comment, location: location)
-        let response = try await betterRESTService.getStopProblem(report: report)
-        expect(response.code) == 200
+        let op = restService.getStopProblem(stopID: stopID, code: .locationWrong, comment: comment, location: location)
+
+        waitUntil { done in
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    expect(response.code) == 200
+                    done()
+                }
+            }
+        }
     }
 }

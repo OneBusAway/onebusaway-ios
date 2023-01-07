@@ -25,7 +25,7 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     override func setUp() {
         super.setUp()
-        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
@@ -58,19 +58,41 @@ class TripDetailsModelOperationTests: OBATestCase {
         expect(tripDetails.serviceAlerts.count) == 0
     }
 
-    func testLoading_vehicleDetails_success() async throws {
+    func testLoading_vehicleDetails_success() {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: vehicleTripAPIPath, with: data)
 
-        let trip = try await betterRESTService.getVehicleTrip(vehicleID: vehicleID).entry
-        self.checkExpectations(trip)
+        let op = restService.getVehicleTrip(vehicleID: vehicleID)
+
+        waitUntil { done in
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    self.checkExpectations(response.entry)
+                    done()
+                }
+            }
+        }
     }
 
-    func testLoading_tripDetails_success() async throws {
+    func testLoading_tripDetails_success() {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: tripDetailsAPIPath, with: data)
 
-        let trip = try await betterRESTService.getTrip(tripID: tripID, vehicleID: "12345", serviceDate: Date()).entry
-        self.checkExpectations(trip)
+        let op = restService.getTrip(tripID: tripID, vehicleID: "12345", serviceDate: Date())
+
+        waitUntil { done in
+            op.complete { result in
+                switch result {
+                case .failure:
+                    fatalError()
+                case .success(let response):
+                    self.checkExpectations(response.entry)
+                    done()
+                }
+            }
+        }
     }
 }

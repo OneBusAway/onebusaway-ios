@@ -16,13 +16,19 @@ import CoreLocation
 // swiftlint:disable force_try force_cast
 
 class RegionalAlertsModelOperationTests: OBATestCase {
-    func testSuccessfulRequest() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+    func testSuccessfulRequest() {
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
-        let alerts = try await betterRESTService.getAlerts(agencies: agencies)
-        expect(alerts.count) == 20
+        let op = restService.getAlerts(agencies: agencies)
+
+        waitUntil { (done) in
+            op.complete { result in
+                expect(result.count) == 20
+                done()
+            }
+        }
     }
 }

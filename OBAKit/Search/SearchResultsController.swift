@@ -108,18 +108,18 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
     }
 
     private func didSelectAgencyVehicle(vehicleID: String) {
-        guard let apiService = application.betterAPIService else { return }
+        guard let apiService = application.restAPIService else { return }
+        let op = apiService.getVehicle(vehicleID)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
 
-        Task(priority: .userInitiated) {
-            do {
-                let vehicle = try await apiService.getVehicle(vehicleID: vehicleID).entry
-                await MainActor.run {
-                    let response = SearchResponse(response: self.searchResponse, substituteResult: vehicle)
-                    self.application.mapRegionManager.searchResponse = response
-                    self.delegate?.dismissModalController(self)
-                }
-            } catch {
+            switch result {
+            case .failure(let error):
                 self.application.displayError(error)
+            case .success(let response):
+                let response = SearchResponse(response: self.searchResponse, substituteResult: response.entry)
+                self.application.mapRegionManager.searchResponse = response
+                self.delegate?.dismissModalController(self)
             }
         }
     }

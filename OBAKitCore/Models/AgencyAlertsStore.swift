@@ -15,8 +15,7 @@ import Foundation
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var apiService: _RESTAPIService?
-    public var betterAPIService: RESTAPIService?
+    public var apiService: RESTAPIService?
     public var obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults
@@ -58,6 +57,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
         agenciesOperation?.cancel()
+        regionalAlertsOperation?.cancel()
         obacoOperation?.cancel()
         queue.cancelAllOperations()
     }
@@ -66,36 +66,45 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private var agencies = [AgencyWithCoverage]()
 
-    public func update() async throws {
-        guard let betterAPIService else { return }
-
-        if agencies.isEmpty {
-            agencies = try await betterAPIService.getAgenciesWithCoverage().list
-        }
-
-        try await fetchRegionalAlerts(service: betterAPIService)
-        fetchObacoAlerts()
-    }
-
-    /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
     public func checkForUpdates() {
-        Task {
-            do {
-                try await update()
-            } catch {
-                await MainActor.run {
+        guard let apiService = apiService else { return }
+
+        // Step 1: download a list of agencies, if needed.
+        if agencies.count == 0 {
+            let agenciesOp = apiService.getAgenciesWithCoverage()
+            agenciesOp.complete { [weak self] result in
+                guard let self = self else { return }
+
+                switch result {
+                case .failure(let error):
                     self.notifyDelegates(error: error)
+                case .success(let response):
+                    self.agencies = response.list
+                    self.fetchRegionalAlerts()
+                    self.fetchObacoAlerts()
                 }
             }
+            agenciesOperation = agenciesOp
+        }
+        else {
+            fetchRegionalAlerts()
+            fetchObacoAlerts()
         }
     }
 
     // MARK: - REST API
-    private func fetchRegionalAlerts(service: RESTAPIService) async throws {
-        let alerts = try await service.getAlerts(agencies: agencies)
-        await MainActor.run {
+
+    private var regionalAlertsOperation: MultiAgencyAlertsOperation?
+
+    private func fetchRegionalAlerts() {
+        guard let apiService = apiService else { return }
+
+        let op = apiService.getAlerts(agencies: agencies)
+        op.complete { [weak self] (alerts) in
+            guard let self = self else { return }
             self.storeAgencyAlerts(alerts)
         }
+        regionalAlertsOperation = op
     }
 
     // MARK: - Obaco

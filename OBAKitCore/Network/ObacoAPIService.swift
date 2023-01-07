@@ -16,7 +16,7 @@ public protocol ObacoServiceDelegate: NSObjectProtocol {
 /// API service client for the Obaco (`alerts.onebusaway.org`) service.
 ///
 /// Obaco provides services like weather, trip status, and alarms to the iOS app.
-public class ObacoAPIService: _APIService {
+public class ObacoAPIService: APIService {
 
     private let regionID: Int
 

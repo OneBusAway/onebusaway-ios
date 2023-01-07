@@ -11,12 +11,10 @@ import UIKit
 import CoreLocation
 import OBAKitCore
 
-class NearbyStopsViewController: UIViewController,
-    AppContext,
+class NearbyStopsViewController: OperationController<DecodableOperation<RESTAPIResponse<[Stop]>>, [Stop]>,
     OBAListViewDataSource,
     UISearchResultsUpdating {
 
-    let application: Application
     private let coordinate: CLLocationCoordinate2D
 
     private var searchFilter: String? {
@@ -28,15 +26,13 @@ class NearbyStopsViewController: UIViewController,
     }
 
     private let listView = OBAListView()
-    private var stops: [Stop] = []
 
     // MARK: - Init
 
     public init(coordinate: CLLocationCoordinate2D, application: Application) {
         self.coordinate = coordinate
-        self.application = application
 
-        super.init(nibName: nil, bundle: nil)
+        super.init(application: application)
 
         title = OBALoc("nearby_stops_controller.title", value: "Nearby Stops", comment: "The title of the Nearby Stops controller.")
     }
@@ -54,10 +50,6 @@ class NearbyStopsViewController: UIViewController,
         listView.obaDataSource = self
 
         configureSearchController()
-
-        Task(priority: .userInitiated) {
-            await loadStops()
-        }
     }
 
     func startLoading() {
@@ -68,33 +60,32 @@ class NearbyStopsViewController: UIViewController,
         navigationItem.rightBarButtonItem = nil
     }
 
-    func loadStops() async {
-        guard let apiService = application.betterAPIService else {
-            return
-        }
+    // MARK: - Operation Controller Overrides
+    override func loadData() -> DecodableOperation<RESTAPIResponse<[Stop]>>? {
+        guard let apiService = application.restAPIService else { return nil }
 
-        await MainActor.run {
-            self.startLoading()
-        }
-
-        defer {
-            Task { @MainActor in
+        startLoading()
+        let op = apiService.getStops(coordinate: coordinate)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
                 self.finishLoading()
             }
+
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                self.data = response.list
+            }
         }
 
-        try? await Task.sleep(nanoseconds: 3_000_000_000)
-        do {
-            let stops = try await apiService.getStops(coordinate: coordinate).list
-            await MainActor.run {
-                self.stops = stops
-                self.searchFilter = nil
-                self.listView.applyData()
-            }
-        } catch {
-            // TODO: (ualch9) Show error inline instead of presenting an ugly error.
-            await self.application.displayError(error)
-        }
+        return op
+    }
+
+    override func updateUI() {
+        searchFilter = nil
+        listView.applyData()
     }
 
     // MARK: - Search
@@ -113,13 +104,13 @@ class NearbyStopsViewController: UIViewController,
 
     // MARK: - Data and Collection Controller
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        guard !stops.isEmpty else { return [] }
+        guard let data = data, data.count > 0 else { return [] }
 
         let filter = String.nilifyBlankValue(searchFilter?.localizedLowercase.trimmingCharacters(in: .whitespacesAndNewlines)) ?? nil
 
         var directions: [Direction: [Stop]] = [:]
 
-        for stop in stops {
+        for stop in data {
             if !stop.matchesQuery(filter) {
                 continue
             }

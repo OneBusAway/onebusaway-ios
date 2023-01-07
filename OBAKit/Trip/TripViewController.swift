@@ -44,6 +44,7 @@ class TripViewController: UIViewController,
     }
 
     deinit {
+        shapeOperation?.cancel()
         enableIdleTimer()
     }
 
@@ -350,33 +351,37 @@ class TripViewController: UIViewController,
 
     // MARK: - Map Data
 
+    private var shapeOperation: DecodableOperation<RESTAPIResponse<PolylineEntity>>?
     private var routePolyline: MKPolyline?
 
     private func loadMapPolyline(isProgrammatic: Bool) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.restAPIService,
             routePolyline == nil // No need to reload the polyline if we already have it
         else {
             return
         }
 
-        Task {
-            do {
-                let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
-                await MainActor.run {
-                    guard let polyline = response.entry.polyline else {
-                        return
-                    }
-                    self.routePolyline = polyline
-                    self.mapView.addOverlay(polyline)
-                    if !self.mapView.hasBeenTouched {
-                        self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
-                    }
-                }
-            } catch {
+        shapeOperation?.cancel()
+
+        let op = apiService.getShape(id: tripConvertible.trip.shapeID)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
                 self.application.displayError(error)
+            case .success(let response):
+                guard let polyline = response.entry.polyline else { return }
+                self.routePolyline = polyline
+                self.mapView.addOverlay(polyline)
+                if !self.mapView.hasBeenTouched {
+                    self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
+                }
             }
         }
+
+        shapeOperation = op
     }
 
     // MARK: - Load Data

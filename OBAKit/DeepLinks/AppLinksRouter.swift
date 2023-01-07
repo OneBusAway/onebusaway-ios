@@ -140,20 +140,21 @@ public class AppLinksRouter: NSObject {
             let userInfo = userActivity.userInfo,
             let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
             let regionID = userInfo[UserActivityBuilder.UserInfoKeys.regionID] as? Int,
-            let apiService = application.betterAPIService,
+            let apiService = application.restAPIService,
             application.currentRegion?.regionIdentifier == regionID
             else {
                 return false
         }
 
-        Task(priority: .userInitiated) {
-            do {
-                let stop = try await apiService.getStop(id: stopID)
-                await MainActor.run {
-                    self.showStopHandler?(stop.entry)
-                }
-            } catch {
-                await self.application.displayError(error)
+        let op = apiService.getStop(id: stopID)
+        op.complete { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .failure(let error):
+                self.application.displayError(error)
+            case .success(let response):
+                self.showStopHandler?(response.list)
             }
         }
 

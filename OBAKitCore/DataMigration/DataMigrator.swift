@@ -200,7 +200,7 @@ public class DataMigrator: NSObject {
         _ bookmarks: [MigrationBookmark],
         group: MigrationBookmarkGroup?,
         currentRegion: Region,
-        apiService: _RESTAPIService
+        apiService: RESTAPIService
     ) -> [DecodableOperation<RESTAPIResponse<Stop>>] {
         return bookmarks.compactMap { migrationBookmark -> DecodableOperation<RESTAPIResponse<Stop>>? in
             guard migrationBookmark.isStopBookmark else {
@@ -228,7 +228,7 @@ public class DataMigrator: NSObject {
         _ bookmarks: [MigrationBookmark],
         group: MigrationBookmarkGroup?,
         currentRegion: Region,
-        apiService: _RESTAPIService
+        apiService: RESTAPIService
     ) -> [DecodableOperation<RESTAPIResponse<StopArrivals>>] {
         return bookmarks.compactMap { migrationBookmark -> DecodableOperation<RESTAPIResponse<StopArrivals>>? in
             guard
@@ -285,7 +285,7 @@ public class DataMigrator: NSObject {
 
     // MARK: - Recent Stops
 
-    private func migrateRecentStops(_ recentStops: [MigrationRecentStop], apiService: _RESTAPIService) -> [DecodableOperation<RESTAPIResponse<Stop>>] {
+    private func migrateRecentStops(_ recentStops: [MigrationRecentStop], apiService: RESTAPIService) -> [DecodableOperation<RESTAPIResponse<Stop>>] {
         let ops = recentStops.map { rs -> DecodableOperation<RESTAPIResponse<Stop>> in
             let op = apiService.getStop(id: rs.stopID, enqueue: false)
 
