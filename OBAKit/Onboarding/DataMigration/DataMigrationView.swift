@@ -19,7 +19,7 @@ struct DataMigrationView: View {
     @State var isMigrating = false
 
     /// Migration results are displayed in a sheet.
-    @State var migrationReport: DataMigrator_.MigrationReport?
+    @State var migrationReport: DataMigrator.MigrationReport?
 
     /// Migrator errors are displayed above the [Continue] button.
     @State var migratorError: Error?
@@ -133,7 +133,7 @@ struct DataMigrationView: View {
 
     /// Do a "dry run" migration with the user-provided `plist` file. The dry run report is shown afterwards, but none of the migration data will actually persist.
     private func doDryRunMigration(plistData data: Data) throws {
-        let migrator = try DataMigrator_.createMigrator(fromUserDefaultsData: data)
+        let migrator = try DataMigrator.createMigrator(fromUserDefaultsData: data)
 
         Task(priority: .userInitiated) {
             self.isMigrating = true
@@ -144,7 +144,7 @@ struct DataMigrationView: View {
 
     /// Do migration with `UserDefaults.standard`. The dry run report is shown afterwards, and the migration data is persisted.
     private func doRealMigration() {
-        let migrator = DataMigrator_(userDefaults: .standard)
+        let migrator = DataMigrator(userDefaults: .standard)
         Task(priority: .userInitiated) {
             self.isMigrating = true
             await self.doMigration(withMigrator: migrator, isDryRun: false)
@@ -152,7 +152,7 @@ struct DataMigrationView: View {
         }
     }
 
-    private func doMigration(withMigrator migrator: DataMigrator_, isDryRun: Bool) async {
+    private func doMigration(withMigrator migrator: DataMigrator, isDryRun: Bool) async {
         // Dependency check
         guard let region = application.currentRegion else {
             return await MainActor.run {
@@ -170,7 +170,7 @@ struct DataMigrationView: View {
         let dataStorer: DataMigrationDelegate? = isDryRun ? nil : self.application
         let forceMigration = isDryRun
 
-        let parameters = DataMigrator_.MigrationParameters(forceMigration: forceMigration, regionIdentifier: region.regionIdentifier)
+        let parameters = DataMigrator.MigrationParameters(forceMigration: forceMigration, regionIdentifier: region.regionIdentifier)
 
         do {
             let report = try await migrator.performMigration(parameters, apiService: apiService, delegate: dataStorer)

@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension DataMigrator_ {
+extension DataMigrator {
     public struct MigrationReport: Identifiable {
         public var isFinished: Bool {
             dateFinished != nil

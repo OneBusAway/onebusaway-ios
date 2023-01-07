@@ -21,7 +21,7 @@ struct DataMigrationReportGroup: Identifiable {
     var items: [DataMigrationReportItem] = []
 }
 
-extension DataMigrator_.MigrationReport {
+extension DataMigrator.MigrationReport {
     func viewModel() -> [DataMigrationReportGroup] {
         var groups: [DataMigrationReportGroup] = []
 

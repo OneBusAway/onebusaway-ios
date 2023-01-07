@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension DataMigrator_ {
+extension DataMigrator {
     /// Loads an arbitrary exported UserDefaults file to a new instance of DataMigrator.
     public static nonisolated func createMigrator(fromUserDefaultsData data: Data) throws -> Self {
         let suiteName = "DataMigrator_\(Date().ISO8601Format())"

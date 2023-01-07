@@ -13,10 +13,10 @@ import Foundation
 class DataMigrator_Tests: OBATestCase {
 
     var dataLoader: MockDataLoader!
-    var migrator: DataMigrator_!
+    var migrator: DataMigrator!
 
     private var dataStore: DataStore!
-    private var migrationParameters: DataMigrator_.MigrationParameters!
+    private var migrationParameters: DataMigrator.MigrationParameters!
 
     override func setUp() {
         super.setUp()
@@ -39,9 +39,9 @@ class DataMigrator_Tests: OBATestCase {
         mockRecentStops()
         mockArrivalsAndDepartures()
 
-        self.migrator = DataMigrator_(userDefaults: userDefaults)
+        self.migrator = DataMigrator(userDefaults: userDefaults)
         self.dataStore = DataStore()
-        self.migrationParameters = DataMigrator_.MigrationParameters(forceMigration: false, regionIdentifier: pugetSoundRegionIdentifier)
+        self.migrationParameters = DataMigrator.MigrationParameters(forceMigration: false, regionIdentifier: pugetSoundRegionIdentifier)
     }
 
     override var host: String {
