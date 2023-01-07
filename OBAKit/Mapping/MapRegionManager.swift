@@ -228,35 +228,41 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Data Loading
 
-    @objc func requestDataForMapRegion(_ timer: Timer) {
-        guard let apiService = application.restAPIService else {
+    func requestDataForMapRegion() async {
+        guard let apiService = application.betterAPIService else {
             return
         }
 
-        self.requestStopsOperation?.cancel()
-        self.requestStopsOperation = nil
+        await MainActor.run {
+            notifyDelegatesDataLoadingStarted()
+        }
 
-        notifyDelegatesDataLoadingStarted()
-
-        var mapRegion = mapView.region
-        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
-        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
-
-        let op = apiService.getStops(region: mapRegion)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.stops = response.list
-                self.notifyDelegatesDataLoadingFinished()
-                self.requestStopsOperation = nil
+        defer {
+            Task { @MainActor in
+                notifyDelegatesDataLoadingFinished()
             }
         }
 
-        self.requestStopsOperation = op
+        var mapRegion = await mapView.region
+        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
+        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
+
+        do {
+            let stops = try await apiService.getStops(region: mapRegion).list
+
+            await MainActor.run {
+                // Some UI code is dependent on this being changed on Main.
+                self.stops = stops
+            }
+        } catch {
+            await self.application.displayError(error)
+        }
+    }
+
+    @objc func requestDataForMapRegion(_ timer: Timer) {
+        Task(priority: .utility) {
+            await requestDataForMapRegion()
+        }
     }
 
     // MARK: - Map View Delegate
@@ -462,20 +468,24 @@ public class MapRegionManager: NSObject,
 
     // MARK: - Search/Route
 
-    func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
-        guard let apiService = application.restAPIService else { return }
+    func _loadSearchResponse(_ searchResponse: SearchResponse, route: Route) async {
+        guard let apiService = application.betterAPIService else {
+            return
+        }
 
-        let op = apiService.getStopsForRoute(id: route.id)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                let response = SearchResponse(response: searchResponse, substituteResult: response.entry)
-                self.searchResponse = response
+        do {
+            let response = try await apiService.getStopsForRoute(routeID: route.id)
+            await MainActor.run {
+                self.searchResponse = SearchResponse(response: searchResponse, substituteResult: response.entry)
             }
+        } catch {
+            await self.application.displayError(error)
+        }
+    }
+
+    func loadSearchResponse(_ searchResponse: SearchResponse, route: Route) {
+        Task {
+            await _loadSearchResponse(searchResponse, route: route)
         }
     }
 

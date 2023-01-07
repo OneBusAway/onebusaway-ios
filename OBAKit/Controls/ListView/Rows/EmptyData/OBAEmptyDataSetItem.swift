@@ -62,6 +62,8 @@ struct EmptyDataSetItem: OBAListViewItem {
                 icon = UIImage(systemName: "wifi.exclamationmark")
             case .noResponseBody, .requestFailure, .invalidContentType :
                 icon = UIImage(systemName: "bolt.horizontal.circle")
+            case .requestNotFound:
+                icon = UIImage(systemName: "questionmark.square.dashed")
             }
         default:
             break

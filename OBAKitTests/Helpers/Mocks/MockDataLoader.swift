@@ -60,6 +60,26 @@ class MockDataLoader: NSObject, URLDataLoader {
         return MockTask(mockResponse: response, closure: completionHandler)
     }
 
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        guard let response = matchResponse(to: request) else {
+            fatalError("\(testName): Missing response to URL: \(request.url!)")
+        }
+
+        if let error = response.error {
+            throw error
+        }
+
+        guard let data = response.data else {
+            fatalError("\(testName): Missing data to URL: \(request.url!))")
+        }
+
+        guard let urlResponse = response.urlResponse else {
+            fatalError("\(testName): Missing urlResponse to URL: \(request.url!))")
+        }
+
+        return (data, urlResponse)
+    }
+
     // MARK: - Response Mapping
 
     func matchResponse(to request: URLRequest) -> MockDataResponse? {

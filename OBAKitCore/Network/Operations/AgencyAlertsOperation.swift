@@ -9,7 +9,8 @@
 
 import Foundation
 
-public class AgencyAlertsOperation: NetworkOperation, HasAgencyAlerts {
+@available(*, deprecated, message: "USE ASYNC!!")
+public class AgencyAlertsOperation: NetworkOperation {
     private let agencies: [AgencyWithCoverage]
     public private(set) var agencyAlerts = [AgencyAlert]()
 

@@ -203,7 +203,9 @@ public class StopViewController: UIViewController,
             beginUserActivity()
         }
 
-        updateData()
+        Task {
+            await updateData()
+        }
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -442,48 +444,41 @@ public class StopViewController: UIViewController,
     private var firstLoad = true
 
     /// Reloads data from the server and repopulates the UI once it finishes loading.
-    func updateData() {
+    func updateData() async {
         operation?.cancel()
 
-        guard let apiService = application.restAPIService else { return }
+        guard let apiService = application.betterAPIService else { return }
 
         title = Strings.updating
 
-        let op = apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter)
-        op.complete { [weak self, unowned op] result in
-            guard let self = self else { return }
+        do {
+            let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter).entry
 
-            let broken = self.bookmarkContext != nil && (op.statusCodeIsEffectively404 ?? false)
-
-            switch (broken, result) {
-            case (true, _):
-                self.isBrokenBookmark = true
-                self.listView.applyData()
-                self.dataLoadFeedbackGenerator.dataLoad(.failed)
-            case (_, .failure(let error)):
-                self.operationError = error
-                self.dataLoadFeedbackGenerator.dataLoad(.failed)
-            case (false, .success(let response)):
+            await MainActor.run {
                 self.operationError = nil
                 self.lastUpdated = Date()
-                self.stopArrivals = response.entry
+                self.stopArrivals = stopArrivals
                 self.refreshControl.endRefreshing()
                 self.updateTitle()
-
-                if response.entry.arrivalsAndDepartures.count == 0 {
+                if stopArrivals.arrivalsAndDepartures.count == 0 {
                     self.extendLoadMoreWindow()
                 }
 
                 if self.firstLoad {
                     self.firstLoad = false
-                }
-                else {
+                } else {
                     self.dataLoadFeedbackGenerator.dataLoad(.success)
                 }
             }
+        } catch APIError.requestNotFound {
+            self.isBrokenBookmark = self.bookmarkContext != nil
+            self.dataLoadFeedbackGenerator.dataLoad(.failed)
+        } catch {
+            self.operationError = error
+            self.dataLoadFeedbackGenerator.dataLoad(.failed)
         }
 
-        self.operation = op
+        self.listView.applyData()
     }
 
     /// Loads more departures for this `Stop` in cases where no `ArrivalDeparture` objects are being returned.
@@ -515,7 +510,9 @@ public class StopViewController: UIViewController,
         updateTitle()
 
         if timeIntervalSinceLastUpdate > StopViewController.defaultTimerReloadInterval {
-            updateData()
+            Task {
+                await updateData()
+            }
         }
     }
 
@@ -1036,7 +1033,9 @@ public class StopViewController: UIViewController,
         // from spamming the server with a ton of requests.
         DispatchQueue.main.debounce(interval: 1.0) { [weak self] in
             guard let self = self else { return }
-            self.updateData()
+            Task(priority: .userInitiated) {
+                await self.updateData()
+            }
         }
     }
 
@@ -1063,7 +1062,9 @@ public class StopViewController: UIViewController,
     /// Extends the `ArrivalDeparture` time window visualized by this view controller and reloads data.
     private func loadMore(minutes: UInt) {
         minutesAfter += minutes
-        updateData()
+        Task {
+            await updateData()
+        }
     }
 
     @objc private func loadMoreDepartures() {

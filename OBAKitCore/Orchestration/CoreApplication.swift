@@ -58,9 +58,15 @@ open class CoreApplication: NSObject,
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    public private(set) var restAPIService: RESTAPIService? {
+    public private(set) var restAPIService: _RESTAPIService? {
         didSet {
             alertsStore.apiService = restAPIService
+        }
+    }
+
+    public private(set) var betterAPIService: RESTAPIService? {
+        didSet {
+            alertsStore.betterAPIService = betterAPIService
         }
     }
 
@@ -112,7 +118,8 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.restAPIService = RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
+        self.betterAPIService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
+        self.restAPIService = _RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
     }
 
     // MARK: - Obaco
@@ -202,6 +209,7 @@ open class CoreApplication: NSObject,
 
     // MARK: - Error Handling
 
+    @MainActor
     open func displayError(_ error: Error) {
         Logger.error("Error: \(error.localizedDescription)")
     }
