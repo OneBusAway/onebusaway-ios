@@ -50,7 +50,7 @@ struct DataMigrationReportView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            summary
+            OnboardingHeaderView(imageSystemName: "checkmark", headerText: OBALoc("data_migration_bulletin.finished_loading", value: "Data upgrade complete!", comment: "This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage."))
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {
@@ -93,23 +93,6 @@ struct DataMigrationReportView: View {
             }
         }
         .listStyle(.plain)
-    }
-
-    var summary: some View {
-        VStack(alignment: .center) {
-            Image(systemName: "checkmark")
-                .foregroundColor(.white)
-                .font(.largeTitle)
-                .padding(16)
-                .background(Color(uiColor: ThemeColors.shared.brand))
-                .clipShape(Circle())
-
-            Text(OBALoc("data_migration_bulletin.finished_loading", value: "Data upgrade complete!", comment: "This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage."))
-                .font(.largeTitle)
-                .bold()
-                .multilineTextAlignment(.center)
-        }
-        .background(.background)
     }
 
     @ViewBuilder func listView(_ item: DataMigrationReportItem) -> some View {

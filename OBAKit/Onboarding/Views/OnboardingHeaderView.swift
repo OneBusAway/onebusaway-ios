@@ -19,6 +19,7 @@ struct OnboardingHeaderView: View {
             HStack(alignment: .center, content: contents)
         } else {
             VStack(alignment: .center, content: contents)
+                .multilineTextAlignment(.center)
                 .font(.largeTitle)
         }
     }
