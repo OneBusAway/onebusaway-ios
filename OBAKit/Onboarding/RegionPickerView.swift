@@ -70,18 +70,7 @@ struct RegionPickerView: View {
             }
         }
         .safeAreaInset(edge: .top) {
-            VStack(alignment: .center) {
-                Image(systemName: "globe")
-                    .foregroundColor(.white)
-                    .font(.largeTitle)
-                    .padding(16)
-                    .background(Color(uiColor: ThemeColors.shared.brand))
-                    .clipShape(Circle())
-
-                Text("Choose A Region")
-                    .font(.largeTitle)
-                    .bold()
-            }
+            OnboardingHeaderView(imageSystemName: "globe", headerText: "Choose A Region")
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {

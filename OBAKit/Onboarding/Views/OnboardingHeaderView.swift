@@ -17,10 +17,14 @@ struct OnboardingHeaderView: View {
     var body: some View {
         if dynamicTypeSize.isAccessibilitySize {
             HStack(alignment: .center, content: contents)
+                .frame(maxWidth: .infinity)
+                .background(.background)
         } else {
             VStack(alignment: .center, content: contents)
                 .multilineTextAlignment(.center)
                 .font(.largeTitle)
+                .frame(maxWidth: .infinity)
+                .background(.background)
         }
     }
 
@@ -40,5 +44,11 @@ struct OnboardingHeaderView: View {
 struct OnboardingHeaderView_Previews: PreviewProvider {
     static var previews: some View {
         OnboardingHeaderView(imageSystemName: "globe", headerText: "Hello, World!")
+
+        ZStack {
+            Color.red
+            OnboardingHeaderView(imageSystemName: "globe", headerText: "Hello, World!")
+        }
+        .previewDisplayName("Testing Background of OnboardingHeaderView")
     }
 }
