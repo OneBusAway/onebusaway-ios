@@ -90,7 +90,9 @@ open class CoreApplication: NSObject,
         regionsService.addDelegate(self)
         alertsStore.addDelegate(self)
 
-        regionsService.updateRegionsList()
+        Task {
+            await regionsService.updateRegionsList()
+        }
         refreshRESTAPIService()
         refreshObacoService()
     }
@@ -172,7 +174,15 @@ open class CoreApplication: NSObject,
             return nil
         }
 
-        return RegionsAPIService(baseURL: regionsBaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader)
+        let configuration = APIServiceConfiguration(
+            baseURL: regionsBaseURL,
+            apiKey: config.apiKey,
+            uuid: userUUID,
+            appVersion: config.appVersion,
+            regionIdentifier: nil
+        )
+
+        return RegionsAPIService(configuration, dataLoader: config.dataLoader)
     }()
 
     open func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {

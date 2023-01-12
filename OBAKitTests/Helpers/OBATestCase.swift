@@ -32,7 +32,6 @@ open class OBATestCase: XCTestCase {
 
     open override func tearDown() {
         super.tearDown()
-        regionsAPIService.networkQueue.cancelAllOperations()
         obacoService.networkQueue.cancelAllOperations()
         restService.networkQueue.cancelAllOperations()
         NSTimeZone.resetSystemTimeZone()
@@ -158,13 +157,17 @@ open class OBATestCase: XCTestCase {
 
     var regionsAPIService: RegionsAPIService!
 
-    func buildRegionsAPIService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> RegionsAPIService {
-        RegionsAPIService(
+    func buildRegionsAPIService(dataLoader: MockDataLoader? = nil) -> RegionsAPIService {
+        let configuration = APIServiceConfiguration(
             baseURL: regionsURL,
             apiKey: "org.onebusaway.iphone.test",
             uuid: "12345-12345-12345-12345-12345",
             appVersion: "2018.12.31",
-            networkQueue: networkQueue ?? OperationQueue(),
+            regionIdentifier: nil
+        )
+
+        return RegionsAPIService(
+            configuration,
             dataLoader: dataLoader ?? MockDataLoader(testName: name)
         )
     }

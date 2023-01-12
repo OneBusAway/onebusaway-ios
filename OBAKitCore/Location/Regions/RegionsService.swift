@@ -77,10 +77,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         self.locationService.addDelegate(self)
     }
 
-    deinit {
-        cancelRequests()
-    }
-
     // MARK: - Delegates
 
     private let delegates = NSHashTable<RegionsServiceDelegate>.weakObjects()
@@ -339,7 +335,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     /// Fetches the current list of `Region`s from the network.
     /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
-    public func updateRegionsList(forceUpdate: Bool = false) {
+    public func updateRegionsList(forceUpdate: Bool = false) async {
         // only update once per week, unless forceUpdate is true.
         if !shouldUpdateRegionList && !forceUpdate {
             notifyDelegatesRegionListUpdateCancelled()
@@ -353,28 +349,18 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
-        let op = apiService.getRegions(apiPath: apiPath)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.notifyDelegatesDisplayError(error)
-            case .success(let response):
-                guard response.list.count > 0 else { return }
-                self.regions = response.list
-                self.updateCurrentRegionFromLocation()
+        do {
+            let regions = try await apiService.getRegions(apiPath: apiPath).list
+            guard !regions.isEmpty else {
+                return
             }
+
+            self.regions = regions
+            updateCurrentRegionFromLocation()
+        } catch {
+            notifyDelegatesDisplayError(error)
         }
-        self.regionsOperation = op
     }
-
-    /// Cancels active network requests, if any exist.
-    public func cancelRequests() {
-        regionsOperation?.cancel()
-    }
-
-    private var regionsOperation: DecodableOperation<RESTAPIResponse<[Region]>>?
 
     // MARK: - LocationServiceDelegate
 

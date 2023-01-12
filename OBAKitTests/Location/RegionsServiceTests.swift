@@ -12,50 +12,34 @@ import XCTest
 @testable import OBAKit
 @testable import OBAKitCore
 import CoreLocation
-import Nimble
 
-// swiftlint:disable force_cast force_try weak_delegate
+// swiftlint:disable weak_delegate
 
-class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
-    var unableToSelectRegionsCallbacks = [VoidBlock]()
-    var updatedRegionsListCallbacks = [VoidBlock]()
-    var newRegionSelectedCallbacks = [VoidBlock]()
-    var regionUpdateCancelledCallbacks = [VoidBlock]()
-
-    func tearDown() {
-        unableToSelectRegionsCallbacks.removeAll()
-        updatedRegionsListCallbacks.removeAll()
-        newRegionSelectedCallbacks.removeAll()
-        regionUpdateCancelledCallbacks.removeAll()
-    }
+private class RegionsServiceTestDelegate: NSObject, RegionsServiceDelegate {
+    private(set) var unableToSelectRegion: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
+    private(set) var updatedRegionsList: DelegateTestingHelper.DidCallDelegateMethod<[Region]> = .didNotCall
+    private(set) var newRegionSelected: DelegateTestingHelper.DidCallDelegateMethod<Region> = .didNotCall
+    private(set) var regionUpdateCancelled: DelegateTestingHelper.DidCallDelegateMethod<Void> = .didNotCall
 
     func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
-        for callback in unableToSelectRegionsCallbacks {
-            callback()
-        }
+        unableToSelectRegion = .called(Void())
     }
 
     func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
-        for callback in updatedRegionsListCallbacks {
-            callback()
-        }
+        updatedRegionsList = .called(regions)
     }
 
     func regionsService(_ service: RegionsService, updatedRegion region: Region) {
-        for callback in newRegionSelectedCallbacks {
-            callback()
-        }
+        newRegionSelected = .called(region)
     }
 
     func regionsServiceListUpdateCancelled(_ service: RegionsService) {
-        for callback in regionUpdateCancelledCallbacks {
-            callback()
-        }
+        regionUpdateCancelled = .called(Void())
     }
 }
 
 class RegionsServiceTests: OBATestCase {
-    var testDelegate: RegionsServiceTestDelegate!
+    private var testDelegate: RegionsServiceTestDelegate!
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
@@ -66,14 +50,7 @@ class RegionsServiceTests: OBATestCase {
         testDelegate = RegionsServiceTestDelegate()
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
-        regionsAPIService.networkQueue.maxConcurrentOperationCount = 1
         dataLoader = (regionsAPIService.dataLoader as! MockDataLoader)
-    }
-
-    override func tearDown() {
-        super.tearDown()
-        testDelegate.tearDown()
-        testDelegate = nil
     }
 
     // MARK: - Upon creating the Regions Service
@@ -83,145 +60,124 @@ class RegionsServiceTests: OBATestCase {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
-        expect(service.regions.count) == 13
-        service.cancelRequests()
+        XCTAssertEqual(service.regions.count, 13)
     }
 
     // It loads regions saved to the user defaults when they exist
-    func test_init_loadsSavedRegions() {
+    func test_init_loadsSavedRegions() throws {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistData = try! PropertyListEncoder().encode([customRegion])
+        let plistData = try PropertyListEncoder().encode([customRegion])
         userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
 
         let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
-        expect(service.regions.first!.name) == "Custom Region"
-        expect(service.regions.count) == 1
-
-        service.cancelRequests()
+        let firstRegion = try XCTUnwrap(service.regions.first)
+        XCTAssertEqual(firstRegion.name, "Custom Region", "Expected the first region to be the custom region")
+        XCTAssertEqual(service.regions.count, 1)
     }
 
     // It loads the current region from user defaults when it exists
-    func test_init_loadsCurrentRegion_autoSelectDisabled() {
+    func test_init_loadsCurrentRegion_autoSelectDisabled() throws {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistArrayData = try! PropertyListEncoder().encode([customRegion])
+        let plistArrayData = try PropertyListEncoder().encode([customRegion])
         userDefaults.set(plistArrayData, forKey: RegionsService.storedRegionsUserDefaultsKey)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
-        let plistData = try! PropertyListEncoder().encode(customRegion)
+        let plistData = try PropertyListEncoder().encode(customRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
 
         let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
-        expect(service.currentRegion) == customRegion
-
-        service.cancelRequests()
+        XCTAssertEqual(service.currentRegion, customRegion)
     }
 
-    func test_init_loadsCurrentRegion_autoSelectEnabled() {
+    func test_init_loadsCurrentRegion_autoSelectEnabled() throws {
         stubRegions(dataLoader: dataLoader)
 
-        let plistData = try! PropertyListEncoder().encode(Fixtures.customMinneapolisRegion)
+        let plistData = try PropertyListEncoder().encode(Fixtures.customMinneapolisRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
         locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
 
         let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
-        expect(service.currentRegion!.name) == "Puget Sound"
-
-        service.cancelRequests()
+        let currentRegion = try XCTUnwrap(service.currentRegion)
+        XCTAssertEqual(currentRegion.name, "Puget Sound")
     }
 
     /// It downloads an up-to-date list of regions if that list hasn't been updated in at least a week.
-    func test_init_updateRegionsList() {
+    func test_init_updateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
 
-        var regionsService: RegionsService!
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            let callback = {
-                expect(regionsService.regions.count) == 1
-                done()
-            }
-            self.testDelegate.updatedRegionsListCallbacks.append(callback)
+        await regionsService.updateRegionsList()
 
-            regionsService = RegionsService(apiService: self.regionsAPIService, locationService: self.locationService, userDefaults: self.userDefaults, bundledRegionsFilePath: self.bundledRegionsPath, apiPath: self.regionsAPIPath, delegate: self.testDelegate)
-
-            regionsService.updateRegionsList()
-        }
+        XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
     }
 
     /// It *does not* download a list of regions if the list was last updated less than a week ago.
-    func test_init_skipUpdateRegionsList() {
+    func test_init_skipUpdateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            self.testDelegate.regionUpdateCancelledCallbacks.append {
-                expect(regionsService.regions.count) == 13
-                done()
-            }
-            regionsService.updateRegionsList()
-        }
+        await regionsService.updateRegionsList()
+
+        XCTAssertTrue(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to inform delegates that the region update was cancelled")
+        XCTAssertEqual(regionsService.regions.count, 13)
     }
 
     /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced..
-    func test_init_forceUpdateRegionsList() {
+    func test_init_forceUpdateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            self.testDelegate.updatedRegionsListCallbacks.append {
-                expect(regionsService.regions.count) == 1
-                done()
-            }
-            regionsService.updateRegionsList(forceUpdate: true)
-        }
+        await regionsService.updateRegionsList(forceUpdate: true)
+        XCTAssertFalse(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to not inform delegates that a region update was cancelled")
+        XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
+        XCTAssertEqual(regionsService.regions.count, 1)
     }
 
     /// It *does* download a list of regions—even if the list was last updated less than a week ago—if alwaysRefreshRegionsOnLaunchUserDefaultsKey is true.
-    func test_init_alwaysRefreshRegionsOnLaunch() {
+    func test_init_alwaysRefreshRegionsOnLaunch() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         userDefaults.set(true, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            self.testDelegate.updatedRegionsListCallbacks.append {
-                expect(regionsService.regions.count) == 1
-                done()
-            }
-            regionsService.updateRegionsList()
-        }
+        await regionsService.updateRegionsList()
+        XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
+        XCTAssertEqual(regionsService.regions.count, 1)
     }
 
     // MARK: - Persistence
 
     // It stores downloaded region data in user defaults when the regions property is set.
-    func test_persistence() {
+    func test_persistence() async throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            self.testDelegate.updatedRegionsListCallbacks.append {
-                let regions: [Region]! = try! self.userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey)
-                expect(regions.count) == 1
-                expect(regions!.first!.name) == "Puget Sound"
-                done()
-            }
-            regionsService.updateRegionsList(forceUpdate: true)
-        }
+        await regionsService.updateRegionsList(forceUpdate: true)
+        XCTAssertTrue(testDelegate.updatedRegionsList.didCall)
+
+        // Get regions from Persistence to ensure they were saved.
+        let regions = try XCTUnwrap(
+            try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
+            "Expected to get [Region] for \(RegionsService.storedRegionsUserDefaultsKey)"
+        )
+
+        XCTAssertEqual(regions.count, 1)
+        XCTAssertEqual(regions.first?.name, "Puget Sound")
     }
 
     /// It loads the bundled regions when the data in the user defaults is corrupted.
@@ -232,9 +188,7 @@ class RegionsServiceTests: OBATestCase {
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        expect(regionsService.regions.count) == 13
-
-        regionsService.cancelRequests()
+        XCTAssertEqual(regionsService.regions.count, 13)
     }
 
     /// It calls delegates to tell them that the current region is updated when that property is written.
@@ -245,36 +199,32 @@ class RegionsServiceTests: OBATestCase {
 
         let newRegion = Fixtures.customMinneapolisRegion
 
-        waitUntil { done in
-            self.testDelegate.newRegionSelectedCallbacks.append {
-                expect(regionsService.currentRegion) == newRegion
-                done()
-            }
-            regionsService.currentRegion = newRegion
-        }
+        regionsService.currentRegion = newRegion
+
+        XCTAssertDidCallDelegateMethodWithValue(testDelegate.newRegionSelected, newRegion, "Expected RegionsService to inform delegates of the new region selection")
+        XCTAssertEqual(regionsService.currentRegion, newRegion, "Expected RegionsService to update its currentRegion property to the new region")
     }
 
     // MARK: - Network Data
 
     // It updates the 'last updated at' date in user defaults when the regions list is downloaded.
-    func test_regionListUpdated_updatedAtDateIsWritten() {
+    func test_regionListUpdated_updatedAtDateIsWritten() async throws {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date.distantPast, forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        var service: RegionsService!
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        waitUntil { done in
-            self.testDelegate.updatedRegionsListCallbacks.append {
-                let newDate = self.userDefaults.value(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as! Date
-                let interval = newDate.timeIntervalSince(Date())
-                expect(interval).to(beCloseTo(0.0, within: 2.0))
-                expect(service.regions.first!.name) == "Puget Sound"
-                done()
-            }
-            service = RegionsService(apiService: self.regionsAPIService, locationService: self.locationService, userDefaults: self.userDefaults, bundledRegionsFilePath: self.bundledRegionsPath, apiPath: self.regionsAPIPath, delegate: self.testDelegate)
+        await regionsService.updateRegionsList()
+        XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
 
-            service.updateRegionsList()
-        }
+        let newDate = try XCTUnwrap(
+            userDefaults.value(forKey: RegionsService.regionsUpdatedAtUserDefaultsKey) as? Date,
+            "Expected \(RegionsService.regionsUpdatedAtUserDefaultsKey) to be of type Date"
+        )
+
+        let interval = newDate.timeIntervalSince(.now)
+        XCTAssertEqual(interval, 0.0, accuracy: 2.0, "Expected the regionsUpdatedAt time to be near the current time")
+        XCTAssertEqual(regionsService.regions.first?.name, "Puget Sound", "Expected a region to exist in the regionsService")
     }
 
     // It updates the current region when the regions list is downloaded.
