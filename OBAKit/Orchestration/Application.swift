@@ -14,6 +14,7 @@ import CoreLocation
 import OBAKitCore
 import SafariServices
 import MapKit
+import SwiftUI
 
 // MARK: - Protocols
 
@@ -141,7 +142,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Onboarding
 
-    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService, dataMigrator: dataMigrator)
+    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService)
 
     /// Performs the full onboarding process: location permissions, region selection, and data migration.
     public func performOnboarding() {
@@ -156,18 +157,21 @@ public class Application: CoreApplication, PushServiceDelegate {
     // MARK: - Onboarding/Data Migration
 
     /// When true, this means that the application's user defaults contain data that can be migrated into a modern format.
-    public var hasDataToMigrate: Bool { dataMigrationBulletin.hasDataToMigrate }
-
-    lazy var dataMigrationBulletin = DataMigrationBulletinManager(dataMigrator: dataMigrator)
+    public var hasDataToMigrate: Bool {
+        DataMigrator.standard.hasDataToMigrate
+    }
 
     /// If data exists to migrate, this method will prompt the user about whether they wish to migrate data from an old format to the new format.
     public func performDataMigration() {
-        guard
-            hasDataToMigrate,
-            let uiApp = self.delegate?.uiApplication
-        else { return }
+        let migrationView = UIHostingController(
+            rootView:
+                DataMigrationView()
+                .environment(\.coreApplication, self)
+        )
 
-        dataMigrationBulletin.show(in: uiApp)
+        if let topViewController {
+            self.viewRouter.present(migrationView, from: topViewController, isModal: true)
+        }
     }
 
     // MARK: - UI

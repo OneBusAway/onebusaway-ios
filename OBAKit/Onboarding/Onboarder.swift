@@ -13,18 +13,16 @@ import BLTNBoard
 import UIKit
 
 enum OnboardingState {
-    case unknown, locationPermissionPrompt, manualRegionSelection, dataMigration, complete
+    case unknown, locationPermissionPrompt, manualRegionSelection, complete
 }
 
 class Onboarder: NSObject {
     private let locationService: LocationService
     private let regionsService: RegionsService
-    private let dataMigrator: DataMigrator
 
-    init(locationService: LocationService, regionsService: RegionsService, dataMigrator: DataMigrator) {
+    init(locationService: LocationService, regionsService: RegionsService) {
         self.locationService = locationService
         self.regionsService = regionsService
-        self.dataMigrator = dataMigrator
     }
 
     func show(in application: UIApplication) {
@@ -42,7 +40,6 @@ class Onboarder: NSObject {
         switch state {
         case .locationPermissionPrompt: return locationPermissionItem
         case .manualRegionSelection: return regionPickerItem
-        case .dataMigration: return dataMigrationItem
         case .complete, .unknown: fatalError()
         }
     }
@@ -69,13 +66,6 @@ class Onboarder: NSObject {
 
     private lazy var regionPickerItem = RegionPickerItem(regionsService: regionsService)
 
-    // MARK: - DataMigrationItem
-
-    private lazy var dataMigrationItem = DataMigrationBulletinPage(dataMigrator: dataMigrator) { [weak self] in
-        guard let self = self else { return }
-        self.refreshUI()
-    }
-
     // MARK: - State Logic
 
     public var onboardingRequired: Bool {
@@ -88,9 +78,6 @@ class Onboarder: NSObject {
         }
         else if showRegionPicker {
             return .manualRegionSelection
-        }
-        else if showMigrator {
-            return .dataMigration
         }
         else {
             return .complete
@@ -106,9 +93,5 @@ class Onboarder: NSObject {
 
     private var showRegionPicker: Bool {
         regionsService.currentRegion == nil
-    }
-
-    private var showMigrator: Bool {
-        dataMigrator.shouldPerformMigration
     }
 }

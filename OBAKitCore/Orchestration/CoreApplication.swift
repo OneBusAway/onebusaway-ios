@@ -186,8 +186,6 @@ open class CoreApplication: NSObject,
 
     // MARK: - Migration
 
-    public lazy var dataMigrator = DataMigrator(userDefaults: config.userDefaults, delegate: self, application: self)
-
     public func migrate(userID: String) {
         userDefaults.set(userID, forKey: userUUIDDefaultsKey)
     }

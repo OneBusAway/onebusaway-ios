@@ -14,3 +14,7 @@ fileprivate class Localization: NSObject {}
 internal func OBALoc(_ key: String, value: String, comment: String) -> String {
     return NSLocalizedString(key, tableName: nil, bundle: Bundle(for: Localization.self), value: value, comment: comment)
 }
+
+internal func OBALoc(_ key: String, format: String, comment: String, _ arguments: CVarArg...) -> String {
+    return String(format: OBALoc(key, value: format, comment: comment), arguments)
+}
