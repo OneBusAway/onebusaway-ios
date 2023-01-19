@@ -334,6 +334,20 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     // MARK: - Public Methods
 
     /// Fetches the current list of `Region`s from the network.
+    public func refreshRegions() async throws {
+        guard let apiService, let apiPath else {
+            return
+        }
+
+        let regions = try await apiService.getRegions(apiPath: apiPath).list
+        guard !regions.isEmpty else {
+            return
+        }
+
+        self.regions = regions
+    }
+
+    /// Fetches the current list of `Region`s from the network.
     /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
     public func updateRegionsList(forceUpdate: Bool = false) async {
         // only update once per week, unless forceUpdate is true.
@@ -342,20 +356,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
-        guard
-            let apiService = apiService,
-            let apiPath = apiPath
-        else {
-            return
-        }
-
         do {
-            let regions = try await apiService.getRegions(apiPath: apiPath).list
-            guard !regions.isEmpty else {
-                return
-            }
-
-            self.regions = regions
+            try await refreshRegions()
             updateCurrentRegionFromLocation()
         } catch {
             notifyDelegatesDisplayError(error)
