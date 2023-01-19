@@ -49,7 +49,7 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
         .safeAreaInset(edge: .top) {
-            OnboardingHeaderView(imageSystemName: "globe", headerText: "Choose A Region")
+            OnboardingHeaderView(imageSystemName: "globe", headerText: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {
@@ -63,7 +63,7 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
                     .zIndex(-1) // Make the Map moving transition occur below the [Continue] button.
 
                 TaskButton(action: doSetCurrentRegion) {
-                    Text("Continue")
+                    Text(Strings.continue)
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
