@@ -9,19 +9,9 @@ import MapKit
 import SwiftUI
 import OBAKitCore
 
-protocol RegionsProvider: ObservableObject {
-    var regions: [Region] { get }
-    var currentRegion: Region? { get }
-
-    func refreshRegions() async throws
-
-    /// A ``currentRegion`` setter that is `async throws`.
-    func setCurrentRegion(to newRegion: Region) async throws
-}
-
-struct RegionPickerView<Provider: RegionsProvider>: View {
-    @ObservedObject public var regionsProvider: Provider
+struct RegionPickerView: View {
     @Environment(\.dismiss) var dismiss
+    var regionProvider: any RegionProvider
 
     /// The currently selected region.
     @State var selectedRegion: Region?
@@ -29,13 +19,13 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
     /// Whether to disable the `List` interactions. This is set to `true` during certain tasks.
     @State var disableInteractions: Bool = false
 
-    /// An error to display above the [Continue] button.
+    /// An error to display as an alert.
     @State var taskError: Error?
 
     var body: some View {
         List {
             Picker("", selection: $selectedRegion) {
-                ForEach(regionsProvider.regions, id: \.self) { region in
+                ForEach(regionProvider.regions, id: \.self) { region in
                     Text(region.name)
                         .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
                 }
@@ -73,37 +63,37 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
     }
 
     func setCurrentRegionIfPresent() {
-        if let currentRegion = regionsProvider.currentRegion, currentRegion != self.selectedRegion {
+        if let currentRegion = regionProvider.currentRegion, currentRegion != self.selectedRegion {
             self.selectedRegion = currentRegion
         }
     }
 
     @Sendable
-    func doSetCurrentRegion() async {
-        // Disable user interaction while task is running.
-        guard let selectedRegion,
-              !disableInteractions else {
+    private func doSetCurrentRegion() async {
+        guard let selectedRegion else {
             return
         }
 
-        disableInteractions = true
-        defer {
-            disableInteractions = false
+        // Set the current region, then dismiss the sheet if successful.
+        await doTaskAndTrackResults {
+            try await regionProvider.setCurrentRegion(to: selectedRegion)
         }
 
-        // Set the current region, then dismiss the sheet if successful.
-        do {
-            try await regionsProvider.setCurrentRegion(to: selectedRegion)
-            taskError = nil
-
-            self.dismiss()
-        } catch {
-            taskError = error
+        if taskError == nil {
+            dismiss()
         }
     }
 
     @Sendable
-    func doRefreshRegions() async {
+    private func doRefreshRegions() async {
+        await doTaskAndTrackResults {
+            try await regionProvider.refreshRegions()
+        }
+    }
+
+    /// Runs the task only if `disableInteractions == false`. Task errors are put into `taskError`.
+    @Sendable
+    private func doTaskAndTrackResults(_ task: () async throws -> Void) async {
         // Disable user interaction while task is running.
         guard !disableInteractions else {
             return
@@ -114,9 +104,9 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
             disableInteractions = false
         }
 
-        // Do the refreshing.
+        // Do the task.
         do {
-            try await regionsProvider.refreshRegions()
+            try await task()
             taskError = nil
         } catch {
             taskError = error
@@ -126,43 +116,15 @@ struct RegionPickerView<Provider: RegionsProvider>: View {
 
 #if DEBUG
 struct RegionPickerView_Previews: PreviewProvider {
-    class ExampleProvider: ObservableObject, RegionsProvider {
-        @Published var regions: [Region] = [
-            .regionForPreview(id: 0, name: "Tampa Bay", latitude: 27.9769105, longitude: -82.445851, latitudeSpan: 0.5424609, longitudeSpan: 0.5763579),
-            .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483),
-            .regionForPreview(id: 2, name: "MTA New York", latitude: 40.707678, longitude: -74.017681, latitudeSpan: 0.40939, longitudeSpan: 0.468666),
-            .regionForPreview(id: 3, name: "Atlanta", latitude: 33.74819, longitude: -84.39086, latitudeSpan: 0.066268, longitudeSpan: 0.051677),
-            .regionForPreview(id: 15, name: "Adelaide Metro", latitude: -34.833098, longitude: 138.621111, latitudeSpan: 0.52411, longitudeSpan: 0.285071)
-        ]
-
-        private(set) var currentRegion: Region?
-
-        init() {
-            self.currentRegion = regions[2]
-        }
-
-        func refreshRegions() async throws {
-            try await Task.sleep(nanoseconds: 1_000_000_000)
-
-            throw NSError(domain: "org.onebusaway.iphone", code: 418, userInfo: [
-                NSLocalizedDescriptionKey: "Refresh Regions error!"
-            ])
-        }
-
-        func setCurrentRegion(to newRegion: Region) async throws {
-            try await Task.sleep(nanoseconds: 1_000_000_000)
-
-            throw NSError(domain: "org.onebusaway.iphone", code: 418, userInfo: [
-                NSLocalizedDescriptionKey: "Set Current Region error!"
-            ])
-        }
-    }
-
     static var previews: some View {
         Text("Hello, World!")
             .sheet(isPresented: .constant(true)) {
-                RegionPickerView(regionsProvider: ExampleProvider())
+                RegionPickerView(regionProvider: Previews_SampleRegionProvider())
             }
+            .previewDisplayName("As a sheet")
+
+        RegionPickerView(regionProvider: Previews_SampleRegionProvider())
+            .previewDisplayName("Standalone (for previewing variants)")
     }
 }
 

@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-extension RegionsService: RegionsProvider {
+extension RegionsService: RegionProvider {
     func setCurrentRegion(to newRegion: Region) async throws {
         await MainActor.run {
             self.currentRegion = newRegion
