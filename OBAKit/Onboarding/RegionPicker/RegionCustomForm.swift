@@ -15,10 +15,10 @@ struct RegionCustomForm: View {
     @Environment(\.dismiss) var dismiss
     var regionProvider: any RegionProvider
 
-    public var existingRegion: Region?
+    public var editingRegion: Region?
 
     // MARK: Form Fields
-    @State private var regionName: String = ""
+    @State private var regionName: String = OBALoc("custom_region_builder_controller.example_data.region_name", value: "My Custom Region", comment: "Example custom region name")
     @State private var baseURLString: String = ""
     @State private var contactEmail: String = ""
     @State private var serviceArea: MKMapRect = MKMapRect(MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: 27.9654987, longitude: -82.5101761), latitudinalMeters: 2000, longitudinalMeters: 2000))
@@ -33,23 +33,12 @@ struct RegionCustomForm: View {
     // MARK: Other Form state
 
     @State private var disableForm: Bool = false
+    @State private var isPresentingDeleteConfirmation = false
     @State private var error: Error?
-
-    var navigationTitle: String {
-        if existingRegion == nil {
-            return OBALoc("custom_region_builder_controller.new_title", value: "Add Custom Region", comment: "Title for the region builder controller in add mode")
-        } else {
-            return OBALoc("custom_region_builder_controller.edit_title", value: "Edit Custom Region", comment: "Title for the region builder controller in edit mode")
-        }
-    }
 
     var body: some View {
         NavigationView {
             Form {
-                Section(OBALoc("custom_region_builder_controller.name_section.header_title", value: "Region Name", comment: "Title of the Region Name header.")) {
-                    TextField(OBALoc("custom_region_builder_controller.example_data.region_name", value: "My Custom Region", comment: "Example custom region name"), text: $regionName)
-                }
-
                 Section(OBALoc("custom_region_builder_controller.base_url_section.header_title", value: "Base URL", comment: "Title of the Base URL header.")) {
                     TextField("https://api.tampa.onebusaway.org/api/", text: $baseURLString)
                         .textContentType(.URL)
@@ -80,11 +69,21 @@ struct RegionCustomForm: View {
                     Text(OBALoc("custom_region_builder_controller.service_area_section.explanation", value: "Drag the map to the approximate service area of this region.", comment: "An explanation of dragging the map to highlight the service area of a custom region."))
                 }
             }
+            .renamableNavigationTitle($regionName) {
+                if editingRegion != nil {
+                    Button(role: .destructive) {
+                        isPresentingDeleteConfirmation = true
+                    } label: {
+                        Label(Strings.delete, systemImage: "trash")
+                    }
+                }
+            }
+            .confirmationDialog(Strings.confirmDelete, isPresented: $isPresentingDeleteConfirmation) {
+                Button(Strings.delete, role: .destructive, action: doDelete)
+            }
             .errorAlert(error: $error)
             .onAppear(perform: setInitialValues)
             .disabled(disableForm)
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationTitle(navigationTitle)
             .toolbar {
                 ToolbarItemGroup(placement: .confirmationAction) {
                     TaskButton(Strings.save, actionOptions: [.disableButton], action: doSave)
@@ -93,7 +92,7 @@ struct RegionCustomForm: View {
 
                 ToolbarItemGroup(placement: .cancellationAction) {
                     Button(Strings.cancel) {
-                        print()
+                        dismiss()
                     }
                 }
             }
@@ -101,14 +100,18 @@ struct RegionCustomForm: View {
     }
 
     func setInitialValues() {
-        guard let existingRegion else {
+        guard let editingRegion else {
             return
         }
 
-        regionName = existingRegion.name
-        baseURLString = existingRegion.OBABaseURL.path
-        contactEmail = existingRegion.contactEmail
-        serviceArea = existingRegion.serviceRect
+        regionName = editingRegion.name
+        baseURLString = editingRegion.OBABaseURL.path
+        contactEmail = editingRegion.contactEmail
+        serviceArea = editingRegion.serviceRect
+    }
+
+    func doDelete() {
+
     }
 
     @Sendable
@@ -127,7 +130,7 @@ struct RegionCustomForm: View {
             OBABaseURL: baseURL,
             coordinateRegion: MKCoordinateRegion(serviceArea),
             contactEmail: contactEmail,
-            regionIdentifier: existingRegion?.regionIdentifier
+            regionIdentifier: editingRegion?.regionIdentifier
         )
 
         do {
@@ -141,12 +144,12 @@ struct RegionCustomForm: View {
 
 struct RegionCustomForm_Previews: PreviewProvider {
     static var previews: some View {
-        RegionCustomForm(regionProvider: Previews_SampleRegionProvider(), existingRegion: nil)
+        RegionCustomForm(regionProvider: Previews_SampleRegionProvider(), editingRegion: nil)
             .previewDisplayName("Add new region")
 
         RegionCustomForm(
             regionProvider: Previews_SampleRegionProvider(),
-            existingRegion: .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483)
+            editingRegion: .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483)
         )
         .previewDisplayName("Edit existing region")
     }

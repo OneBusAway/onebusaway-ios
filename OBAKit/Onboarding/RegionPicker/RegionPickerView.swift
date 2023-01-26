@@ -22,12 +22,24 @@ struct RegionPickerView: View {
     /// An error to display as an alert.
     @State var taskError: Error?
 
+    /// The currently editing region.
+    @State var editingRegion: Region?
+
     var body: some View {
         List {
             Picker("", selection: $selectedRegion) {
                 ForEach(regionProvider.regions, id: \.self) { region in
                     Text(region.name)
                         .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
+                        .swipeActions(allowsFullSwipe: false) {
+                            if let isCustom = region.isCustom, isCustom {
+                                Button {
+                                    self.editingRegion = region
+                                } label: {
+                                    Label("Edit", systemImage: "pencil")
+                                }
+                            }
+                        }
                 }
             }
             .pickerStyle(.inline)
@@ -39,6 +51,9 @@ struct RegionPickerView: View {
         .disabled(disableInteractions)
         .onAppear(perform: setCurrentRegionIfPresent)
         .errorAlert(error: $taskError)
+        .sheet(item: $editingRegion, content: { region in
+            RegionCustomForm(regionProvider: regionProvider, editingRegion: region)
+        })
         .safeAreaInset(edge: .top) {
             OnboardingHeaderView(imageSystemName: "globe", headerText: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
         }
