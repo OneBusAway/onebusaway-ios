@@ -203,19 +203,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     // MARK: - Custom Regions
-
-    @available(*, deprecated, renamed: "add(customRegion:)")
-    public func addCustomRegion(_ region: Region) {
-        Task {
-            do {
-                try await add(customRegion: region)
-            }
-            catch {
-                Logger.error("Unable to write custom regions to user defaults: \(error)")
-            }
-        }
-    }
-
     /// Adds the provided custom region to the RegionsService.
     /// If an existing custom region with the same `regionIdentifier` exists, the new region replaces the existing region.
     /// - throws: Persistence storage errors.
@@ -255,29 +242,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         regions.remove(at: index)
         try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
-    }
-
-    /// Deletes the custom region with the matching identifier.
-    /// - Parameter identifier: The region identifier used to find the custom region to delete.
-    /// - Returns: True if the custom region was found and deleted, and false if it could not be found.
-    @available(*, deprecated, renamed: "delete(customRegionIdentifier:)")
-    @discardableResult public func deleteCustomRegion(identifier: RegionIdentifier) -> Bool {
-        var success = false
-        var regions = customRegions
-
-        if let idx = regions.firstIndex(where: { $0.regionIdentifier == identifier }) {
-            regions.remove(at: idx)
-
-            do {
-                try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
-                success = true
-            }
-            catch {
-                Logger.error("Unable to write custom regions to user defaults: \(error)")
-            }
-        }
-
-        return success
     }
 
     public var customRegions: [Region] {

@@ -122,7 +122,13 @@ public class MoreViewController: UIViewController,
 
         contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { [unowned self] _ in
 
-            let regionPicker = UIHostingController(rootView: RegionPickerView(regionProvider: self.application.regionsService))
+            let regionPicker = UIHostingController(
+                rootView: NavigationView {
+                    RegionPickerView(regionProvider: RegionPickerCoordinator(regionsService: self.application.regionsService))
+                        .interactiveDismissDisabled()
+                }.navigationViewStyle(.stack)
+            )
+
             self.application.viewRouter.present(regionPicker, from: self)
         }).typeErased)
 
