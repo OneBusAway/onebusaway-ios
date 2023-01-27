@@ -22,7 +22,7 @@ struct RegionPickerMap: View {
                     isMapExpanded.toggle()
                 }
             } label: {
-                Label("Show Map", systemImage: "chevron.compact.up")
+                Label("", systemImage: "chevron.compact.up")
                     .labelStyle(.iconOnly)
                     .imageScale(.large)
                     .font(.headline.weight(.heavy))
@@ -39,6 +39,7 @@ struct RegionPickerMap: View {
                     showsUserLocation: false,
                     userTrackingMode: .none
                 )
+                .accessibilityElement(children: .ignore)
                 .cornerRadius(24)
                 .transition(
                     .move(edge: .bottom)

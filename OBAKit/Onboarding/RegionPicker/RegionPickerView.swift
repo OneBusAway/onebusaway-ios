@@ -85,6 +85,7 @@ struct RegionPickerView<Provider: RegionProvider>: View {
             NavigationLink(destination: RegionCustomForm(regionProvider: regionProvider, editingRegion: $editingRegion), isActive: $isShowingCustomRegionSheet) {
                 EmptyView()
             }
+            .accessibilityHidden(true)
         }
 
         // Supplementary views
@@ -122,34 +123,14 @@ struct RegionPickerView<Provider: RegionProvider>: View {
         Label {
             Text(region.name)
         } icon: {
-            if region.isExperimental {
-                Image(systemName: experimentalRegionSystemImageName)
-                    .help(OBALoc(
-                        "region_picker.experimental_region_help_text",
-                        value: "Experimental region",
-                        comment: "Help text displayed on an experimental region."
-                    ))
-            }
-
-            if region.isActive == false {
-                Image(systemName: inactiveRegionSystemImageName)
-                    .help(OBALoc(
-                        "region_picker.inactive_region_help_text",
-                        value: "Inactive region",
-                        comment: "Help text displayed on an inactive region."
-                    ))
-            }
-
-            if let isCustom = region.isCustom, isCustom {
-                Image(systemName: "doc.fill")
-                    .help(OBALoc(
-                        "region_picker.custom_region_help_text",
-                        value: "Custom region",
-                        comment: "Help text displayed on a custom (user-created) region."
-                    ))
-            }
+            attributes(for: region)
         }
         .labelStyle(.titleAndIcon)
+        .accessibilityChildren {
+            Text(region.name)
+            attributes(for: region)
+        }
+        .accessibilityElement(children: .contain)
         .contextMenu {
             if let isCustom = region.isCustom, isCustom {
                 Button {
@@ -160,6 +141,31 @@ struct RegionPickerView<Provider: RegionProvider>: View {
                 }
                 .tint(.accentColor)
             }
+        }
+    }
+
+    @ViewBuilder
+    func attributes(for region: Region) -> some View {
+        let experimental = OBALoc("region_picker.experimental_region_help_text", value: "Experimental region", comment: "Help text displayed on an experimental region.")
+        let inactive = OBALoc("region_picker.inactive_region_help_text", value: "Inactive region", comment: "Help text displayed on an inactive region.")
+        let custom = OBALoc("region_picker.custom_region_help_text", value: "Custom region", comment: "Help text displayed on a custom (user-created) region.")
+
+        if region.isExperimental {
+            Image(systemName: experimentalRegionSystemImageName)
+                .accessibilityValue(experimental)
+                .help(experimental)
+        }
+
+        if region.isActive == false {
+            Image(systemName: inactiveRegionSystemImageName)
+                .accessibilityValue(inactive)
+                .help(inactive)
+        }
+
+        if let isCustom = region.isCustom, isCustom {
+            Image(systemName: "doc.fill")
+                .accessibilityValue(custom)
+                .help(custom)
         }
     }
 
