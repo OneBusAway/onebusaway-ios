@@ -7,10 +7,12 @@
 
 import OBAKitCore
 
-protocol RegionProvider {
+protocol RegionProvider: ObservableObject {
     /// OBA-regions and custom regions.
     var allRegions: [Region] { get }
     var currentRegion: Region? { get }
+
+    var automaticallySelectRegion: Bool { get set }
 
     func refreshRegions() async throws
 

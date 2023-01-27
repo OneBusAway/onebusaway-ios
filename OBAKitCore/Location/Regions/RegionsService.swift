@@ -11,7 +11,7 @@ import Foundation
 import CoreLocation
 
 @objc(OBARegionsServiceDelegate)
-public protocol RegionsServiceDelegate: NSObjectProtocol {
+public protocol RegionsServiceDelegate {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
     @objc optional func regionsService(_ service: RegionsService, willUpdateToRegion region: Region)

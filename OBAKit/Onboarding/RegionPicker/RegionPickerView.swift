@@ -9,9 +9,9 @@ import MapKit
 import SwiftUI
 import OBAKitCore
 
-struct RegionPickerView: View {
+struct RegionPickerView<Provider: RegionProvider>: View {
     @Environment(\.dismiss) var dismiss
-    var regionProvider: any RegionProvider
+    @ObservedObject var regionProvider: Provider
 
     // MARK: - Constants
     // These icons must match, for continuity. The user gets the meaning of these
@@ -53,16 +53,17 @@ struct RegionPickerView: View {
 
     var body: some View {
         List {
+            Toggle("Automatically select region", isOn: $regionProvider.automaticallySelectRegion)
             Picker("", selection: $selectedRegion) {
                 ForEach(filteredRegions, id: \.self) { region in
                     cell(for: region)
                         .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
                 }
             }
+            .disabled(regionProvider.automaticallySelectRegion)
             .pickerStyle(.inline)
             .labelsHidden()         // Hide picker header (title)
         }
-
         // List modifiers
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
@@ -71,6 +72,11 @@ struct RegionPickerView: View {
 
         // Lifecycle-related modifiers
         .onAppear(perform: setCurrentRegionIfPresent)
+        .onChange(of: regionProvider.automaticallySelectRegion) { [regionProvider] _ in
+            // When the user selects to automatically select a region, update
+            // selectedRegion with the new current region.
+            self.selectedRegion = regionProvider.currentRegion
+        }
 
         // Presentation-related modifiers
         .errorAlert(error: $taskError)
@@ -190,33 +196,28 @@ struct RegionPickerView: View {
 
     @Sendable
     private func doSetCurrentRegion() async {
-        guard let selectedRegion else {
+        guard !disableInteractions, let selectedRegion else {
             return
         }
 
-        // Set the current region, then dismiss the sheet if successful.
-        await doTaskAndTrackResults {
-            try await regionProvider.setCurrentRegion(to: selectedRegion)
+        disableInteractions = true
+        defer {
+            disableInteractions = false
         }
 
-        if taskError == nil {
+        // Set the current region, then dismiss the sheet if successful.
+        do {
+            try await regionProvider.setCurrentRegion(to: selectedRegion)
             await MainActor.run {
                 dismiss()
             }
+        } catch {
+            taskError = error
         }
     }
 
     @Sendable
     private func doRefreshRegions() async {
-        await doTaskAndTrackResults {
-            try await regionProvider.refreshRegions()
-        }
-    }
-
-    /// Runs the task only if `disableInteractions == false`. Task errors are put into `taskError`.
-    @Sendable
-    private func doTaskAndTrackResults(_ task: () async throws -> Void) async {
-        // Disable user interaction while task is running.
         guard !disableInteractions else {
             return
         }
@@ -228,7 +229,7 @@ struct RegionPickerView: View {
 
         // Do the task.
         do {
-            try await task()
+            try await regionProvider.refreshRegions()
             taskError = nil
         } catch {
             taskError = error

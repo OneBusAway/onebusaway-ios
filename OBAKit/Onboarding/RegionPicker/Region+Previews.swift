@@ -38,7 +38,14 @@ final class Previews_SampleRegionProvider: RegionProvider {
         .regionForPreview(id: 15, name: "Adelaide Metro", latitude: -34.833098, longitude: 138.621111, latitudeSpan: 0.52411, longitudeSpan: 0.285071)
     ]
 
-    private(set) var currentRegion: Region?
+    @Published fileprivate(set) var currentRegion: Region?
+    @Published var automaticallySelectRegion: Bool = false {
+        didSet {
+            if automaticallySelectRegion {
+                currentRegion = allRegions[3]
+            }
+        }
+    }
 
     init() {
         self.currentRegion = allRegions[2]
