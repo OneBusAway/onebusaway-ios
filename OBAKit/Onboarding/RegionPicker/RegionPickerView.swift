@@ -144,7 +144,7 @@ struct RegionPickerView: View {
             }
         }
         .labelStyle(.titleAndIcon)
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+        .contextMenu {
             if let isCustom = region.isCustom, isCustom {
                 Button {
                     self.editingRegion = region
