@@ -6,9 +6,13 @@
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
+
+import os.log
+
 public protocol APIService {
     var configuration: APIServiceConfiguration { get }
     var dataLoader: URLDataLoader { get }
+    var logger: os.Logger { get }
 
     /// - parameter dataLoader: For mocking network requests. Use `URLSession.shared` for production cases.
     init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader)

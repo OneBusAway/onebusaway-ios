@@ -1,5 +1,5 @@
 //
-//  RESTAPIService+Processing.swift
+//  APIService+GetData.swift
 //  OBAKitCore
 //
 //  Created by Alan Chu on 12/28/22.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension RESTAPIService {
+extension APIService {
     nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
@@ -17,7 +17,7 @@ extension RESTAPIService {
             logger.info("Begin network request for \(url, privacy: .public)")
             (data, response) = try await dataLoader.data(for: request)
             logger.info("Finish network request for \(url, privacy: .public)")
-        } catch (let error as NSError) {
+        } catch let error as NSError {
             logger.error("Failed network request for \(url, privacy: .public): \(error, privacy: .public)")
             if errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
@@ -58,7 +58,7 @@ extension RESTAPIService {
         return (data, httpResponse)
     }
 
-    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type) async throws -> T {
+    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type, using decoder: DataDecoder) async throws -> T {
         let (data, response) = try await self.getData(for: url)
 
         guard response.hasJSONContentType else {
@@ -67,7 +67,7 @@ extension RESTAPIService {
         }
 
         do {
-            return try self.decoder.decode(T.self, from: data)
+            return try decoder.decode(T.self, from: data)
         } catch {
             logger.error("Decoder failed for \(url, privacy: .public): \(error, privacy: .public)")
             throw error
@@ -75,8 +75,8 @@ extension RESTAPIService {
     }
 
     /// Convenience.
-    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
-        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self)
+    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type, using decoder: DataDecoder) async throws -> RESTAPIResponse<T> {
+        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
     }
 
     private nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
