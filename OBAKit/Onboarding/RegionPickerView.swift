@@ -52,7 +52,7 @@ struct RegionPickerView: View {
     }
 
     @ObservedObject var regionsProvider: RegionsProvider
-    @State var selectedRegionServiceRect: MKMapRect = .world
+    @State var selectedRegionServiceRect: MKMapRect?
     @State var selectedRegion: RegionViewModel?
 
     var body: some View {
@@ -74,13 +74,10 @@ struct RegionPickerView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {
-                Map(
-                    mapRect: $selectedRegionServiceRect,
-                    interactionModes: [],
-                    showsUserLocation: true,
-                    userTrackingMode: .none
-                )
-                .frame(width: .infinity, height: 300, alignment: .center)
+                RegionPickerMap(mapRect: Binding(get: {
+                    selectedRegion?.serviceRect
+                }, set: { _ in }), mapHeight: 200)
+                    .zIndex(-1) // Make the Map moving transition occur below the [Continue] button.
 
                 Button {
                     print()
