@@ -13,6 +13,31 @@ struct RegionPickerView: View {
     @Environment(\.dismiss) var dismiss
     var regionProvider: any RegionProvider
 
+    // MARK: - Constants
+    // These icons must match, for continuity. The user gets the meaning of these
+    // icons from the More Options menu, and there is no explanation text when
+    // displayed on the list.
+    private let inactiveRegionSystemImageName = "slash.circle.fill"
+    private let experimentalRegionSystemImageName = "testtube.2"
+
+    // MARK: - Filters
+    @State private var showInactiveRegions = false
+    @State private var showExperimentalRegions = false
+
+    var filteredRegions: [Region] {
+        var regions = regionProvider.allRegions
+
+        if !showInactiveRegions {
+            regions.removeAll(where: { $0.isActive == false })
+        }
+
+        if !showExperimentalRegions {
+            regions.removeAll(where: \.isExperimental)
+        }
+
+        return regions
+    }
+
     /// The currently selected region.
     @State var selectedRegion: Region?
 
@@ -24,22 +49,14 @@ struct RegionPickerView: View {
 
     /// The currently editing region.
     @State var editingRegion: Region?
+    @State var isShowingCustomRegionSheet: Bool = false
 
     var body: some View {
         List {
             Picker("", selection: $selectedRegion) {
-                ForEach(regionProvider.regions, id: \.self) { region in
-                    Text(region.name)
+                ForEach(filteredRegions, id: \.self) { region in
+                    cell(for: region)
                         .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
-                        .swipeActions(allowsFullSwipe: false) {
-                            if let isCustom = region.isCustom, isCustom {
-                                Button {
-                                    self.editingRegion = region
-                                } label: {
-                                    Label("Edit", systemImage: "pencil")
-                                }
-                            }
-                        }
                 }
             }
             .pickerStyle(.inline)
@@ -51,8 +68,10 @@ struct RegionPickerView: View {
         .disabled(disableInteractions)
         .onAppear(perform: setCurrentRegionIfPresent)
         .errorAlert(error: $taskError)
-        .sheet(item: $editingRegion, content: { region in
-            RegionCustomForm(regionProvider: regionProvider, editingRegion: region)
+        .sheet(isPresented: $isShowingCustomRegionSheet, onDismiss: {
+            editingRegion = nil
+        }, content: {
+            RegionCustomForm(regionProvider: regionProvider, editingRegion: editingRegion)
         })
         .safeAreaInset(edge: .top) {
             OnboardingHeaderView(imageSystemName: "globe", headerText: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
@@ -71,10 +90,82 @@ struct RegionPickerView: View {
                 }
                 .disabled(selectedRegion == nil || disableInteractions)
                 .buttonStyle(.borderedProminent)
+
+                regionOptions
             }
             .background(.background)
         }
         .padding()
+    }
+
+    @ViewBuilder
+    func cell(for region: Region) -> some View {
+        Label {
+            Text(region.name)
+        } icon: {
+            if region.isExperimental {
+                Image(systemName: experimentalRegionSystemImageName)
+                    .help(OBALoc(
+                        "region_picker.experimental_region_help_text",
+                        value: "Experimental region",
+                        comment: "Help text displayed on an experimental region."
+                    ))
+            }
+
+            if region.isActive == false {
+                Image(systemName: inactiveRegionSystemImageName)
+                    .help(OBALoc(
+                        "region_picker.inactive_region_help_text",
+                        value: "Inactive region",
+                        comment: "Help text displayed on an inactive region."
+                    ))
+            }
+
+            if let isCustom = region.isCustom, isCustom {
+                Image(systemName: "doc.fill")
+                    .help(OBALoc(
+                        "region_picker.custom_region_help_text",
+                        value: "Custom region",
+                        comment: "Help text displayed on a custom (user-created) region."
+                    ))
+            }
+        }
+        .labelStyle(.titleAndIcon)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if let isCustom = region.isCustom, isCustom {
+                Button {
+                    self.editingRegion = region
+                    self.isShowingCustomRegionSheet = true
+                } label: {
+                    Label(Strings.edit, systemImage: "pencil")
+                }
+                .tint(.accentColor)
+            }
+        }
+    }
+
+    /// `[More Options]` menu.
+    var regionOptions: some View {
+        Menu {
+            Button {
+                isShowingCustomRegionSheet = true
+            } label: {
+                Label(OBALoc("region_picker.new_custom_region_button", value: "New Custom Region", comment: "Title of a button that shows a region creation view controller."), systemImage: "doc.badge.plus")
+            }
+
+            Section {
+                Toggle(isOn: $showInactiveRegions) {
+                    Label(OBALoc("region_picker.show_inactive_regions_toggle", value: "Show Inactive", comment: "Title of a toggle that shows inactive regions."), systemImage: inactiveRegionSystemImageName)
+                }
+
+                Toggle(isOn: $showExperimentalRegions) {
+                    Label(OBALoc("region_picker.show_experimental_regions_toggle", value: "Show Experimental", comment: "Title of a toggle that shows experimental (beta) regions."), systemImage: experimentalRegionSystemImageName)
+                }
+            }
+        } label: {
+            Text("More Options")
+        }
+
     }
 
     func setCurrentRegionIfPresent() {
@@ -95,7 +186,9 @@ struct RegionPickerView: View {
         }
 
         if taskError == nil {
-            dismiss()
+            await MainActor.run {
+                dismiss()
+            }
         }
     }
 

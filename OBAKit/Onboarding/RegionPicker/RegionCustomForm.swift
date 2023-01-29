@@ -155,6 +155,7 @@ struct RegionCustomForm: View {
         do {
             try await regionProvider.add(customRegion: region)
             self.error = nil
+            self.dismiss()
         } catch {
             self.error = error
         }

@@ -8,7 +8,8 @@
 import OBAKitCore
 
 protocol RegionProvider {
-    var regions: [Region] { get }
+    /// OBA-regions and custom regions.
+    var allRegions: [Region] { get }
     var currentRegion: Region? { get }
 
     func refreshRegions() async throws
