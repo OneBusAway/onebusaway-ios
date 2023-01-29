@@ -345,7 +345,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return
         }
 
-        self.regions = regions
+        // FIXME: Audit which delegates are doing stuff on background thread, when they should be on Main.
+        await MainActor.run {
+            self.regions = regions
+        }
     }
 
     /// Fetches the current list of `Region`s from the network.
