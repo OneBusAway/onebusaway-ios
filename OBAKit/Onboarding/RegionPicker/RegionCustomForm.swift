@@ -83,7 +83,6 @@ struct RegionCustomForm: View {
             }
             .errorAlert(error: $error)
             .onAppear(perform: setInitialValues)
-            .disabled(disableForm)
             .toolbar {
                 ToolbarItemGroup(placement: .confirmationAction) {
                     TaskButton(Strings.save, actionOptions: [.disableButton], action: doSave)
@@ -96,6 +95,7 @@ struct RegionCustomForm: View {
                     }
                 }
             }
+            .disabled(disableForm)
         }
     }
 
@@ -111,7 +111,26 @@ struct RegionCustomForm: View {
     }
 
     func doDelete() {
+        Task {
+            guard !disableForm, let editingRegion else {
+                return
+            }
 
+            disableForm = true
+            defer {
+                disableForm = false
+            }
+
+            do {
+                try await regionProvider.delete(customRegion: editingRegion)
+
+                await MainActor.run {
+                    self.dismiss()
+                }
+            } catch {
+                self.error = error
+            }
+        }
     }
 
     @Sendable

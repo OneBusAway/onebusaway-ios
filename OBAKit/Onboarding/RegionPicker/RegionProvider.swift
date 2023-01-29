@@ -18,4 +18,7 @@ protocol RegionProvider {
 
     /// Adds the provided custom region to the RegionsService.
     func add(customRegion newRegion: Region) async throws
+
+    /// Deletes the provided custom region.
+    func delete(customRegion region: Region) async throws
 }

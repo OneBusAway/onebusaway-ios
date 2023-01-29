@@ -67,6 +67,16 @@ final class Previews_SampleRegionProvider: RegionProvider {
             NSLocalizedDescriptionKey: "\(#function) error!"
         ])
     }
+
+    func delete(customRegion region: Region) async throws {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+
+        guard let index = regions.firstIndex(of: region) else {
+            return
+        }
+
+        regions.remove(at: index)
+    }
 }
 
 #endif

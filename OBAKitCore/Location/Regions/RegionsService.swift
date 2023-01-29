@@ -230,9 +230,31 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
     }
 
+    /// Deletes the custom region. If the region could not be found, this method exits normally.
+    /// - parameter customRegion: The custom region to delete.
+    /// - throws: If `customRegion` is not a custom region, this method will throw.
+    public func delete(customRegion: Region) async throws {
+        try await delete(customRegionIdentifier: customRegion.regionIdentifier)
+    }
+
+    /// Deletes the custom region with the matching identifier. If a region with the given identifier could not be found, this method exits normally.
+    /// - parameter identifier: The region identifier used to find the custom region to delete.
+    /// - throws: If a custom region with the provided `identifier` could not be found, or is not a custom region, this method will throw.
+    public func delete(customRegionIdentifier identifier: RegionIdentifier) async throws {
+        var regions = customRegions
+
+        guard let index = regions.firstIndex(where: { $0.regionIdentifier == identifier }) else {
+            return
+        }
+
+        regions.remove(at: index)
+        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+    }
+
     /// Deletes the custom region with the matching identifier.
     /// - Parameter identifier: The region identifier used to find the custom region to delete.
     /// - Returns: True if the custom region was found and deleted, and false if it could not be found.
+    @available(*, deprecated, renamed: "delete(customRegionIdentifier:)")
     @discardableResult public func deleteCustomRegion(identifier: RegionIdentifier) -> Bool {
         var success = false
         var regions = customRegions
