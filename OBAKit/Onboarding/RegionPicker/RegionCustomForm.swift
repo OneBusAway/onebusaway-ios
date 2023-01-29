@@ -15,7 +15,7 @@ struct RegionCustomForm: View {
     @Environment(\.dismiss) var dismiss
     var regionProvider: any RegionProvider
 
-    public var editingRegion: Region?
+    @Binding public var editingRegion: Region?
 
     // MARK: Form Fields
     @State private var regionName: String = OBALoc("custom_region_builder_controller.example_data.region_name", value: "My Custom Region", comment: "Example custom region name")
@@ -37,66 +37,67 @@ struct RegionCustomForm: View {
     @State private var error: Error?
 
     var body: some View {
-        NavigationView {
-            Form {
-                Section(OBALoc("custom_region_builder_controller.base_url_section.header_title", value: "Base URL", comment: "Title of the Base URL header.")) {
-                    TextField("https://api.tampa.onebusaway.org/api/", text: $baseURLString)
-                        .textContentType(.URL)
-                }
-
-                Section(OBALoc("custom_region_builder_controller.contact_email_section.header_title", value: "Contact Email", comment: "Title of the Contact Email header.")) {
-                    TextField("contact@example.com", text: $contactEmail)
-                        .textContentType(.emailAddress)
-                }
-
-                Section {
-                    ZStack {
-                        Map(mapRect: $serviceArea)
-
-                        // Add a outlined border to indicate to the user that they
-                        // are picking a service "rectangle" on the map.
-                        Rectangle()
-                            .fill(.clear)
-                            .border(.selection, width: 7)
-                            .shadow(color: .gray, radius: 5)
-                            .frame(width: 270, height: 250)
-                            .allowsHitTesting(false)
-                    }
-                    .frame(minHeight: 300)
-                } header: {
-                    Text(OBALoc("custom_region_builder_controller.service_area_section.header_title", value: "Service Area", comment: "Title of the Service Area header."))
-                } footer: {
-                    Text(OBALoc("custom_region_builder_controller.service_area_section.explanation", value: "Drag the map to the approximate service area of this region.", comment: "An explanation of dragging the map to highlight the service area of a custom region."))
-                }
+        Form {
+            Section(OBALoc("custom_region_builder_controller.base_url_section.header_title", value: "Base URL", comment: "Title of the Base URL header.")) {
+                TextField("https://api.tampa.onebusaway.org/api/", text: $baseURLString)
+                    .textContentType(.URL)
             }
-            .renamableNavigationTitle($regionName) {
-                if editingRegion != nil {
-                    Button(role: .destructive) {
-                        isPresentingDeleteConfirmation = true
-                    } label: {
-                        Label(Strings.delete, systemImage: "trash")
-                    }
-                }
-            }
-            .confirmationDialog(Strings.confirmDelete, isPresented: $isPresentingDeleteConfirmation) {
-                Button(Strings.delete, role: .destructive, action: doDelete)
-            }
-            .errorAlert(error: $error)
-            .onAppear(perform: setInitialValues)
-            .toolbar {
-                ToolbarItemGroup(placement: .confirmationAction) {
-                    TaskButton(Strings.save, actionOptions: [.disableButton], action: doSave)
-                        .disabled(validateForm == false)
-                }
 
-                ToolbarItemGroup(placement: .cancellationAction) {
-                    Button(Strings.cancel) {
-                        dismiss()
-                    }
-                }
+            Section(OBALoc("custom_region_builder_controller.contact_email_section.header_title", value: "Contact Email", comment: "Title of the Contact Email header.")) {
+                TextField("contact@example.com", text: $contactEmail)
+                    .textContentType(.emailAddress)
             }
-            .disabled(disableForm)
+
+            Section {
+                ZStack {
+                    Map(mapRect: $serviceArea)
+
+                    // Add a outlined border to indicate to the user that they
+                    // are picking a service "rectangle" on the map.
+                    Rectangle()
+                        .fill(.clear)
+                        .border(.selection, width: 7)
+                        .shadow(color: .gray, radius: 5)
+                        .frame(width: 270, height: 250)
+                        .allowsHitTesting(false)
+                }
+                .frame(minHeight: 300)
+            } header: {
+                Text(OBALoc("custom_region_builder_controller.service_area_section.header_title", value: "Service Area", comment: "Title of the Service Area header."))
+            } footer: {
+                Text(OBALoc("custom_region_builder_controller.service_area_section.explanation", value: "Drag the map to the approximate service area of this region.", comment: "An explanation of dragging the map to highlight the service area of a custom region."))
+            }
         }
+        .renamableNavigationTitle($regionName) {
+            if editingRegion != nil {
+                Button(role: .destructive) {
+                    isPresentingDeleteConfirmation = true
+                } label: {
+                    Label(Strings.delete, systemImage: "trash")
+                }
+                .disabled(regionProvider.currentRegion == editingRegion)
+            }
+        }
+        .confirmationDialog(Strings.confirmDelete, isPresented: $isPresentingDeleteConfirmation) {
+            Button(Strings.delete, role: .destructive, action: doDelete)
+        }
+        .errorAlert(error: $error)
+        .onAppear(perform: setInitialValues)
+        .toolbar {
+            ToolbarItemGroup(placement: .confirmationAction) {
+                TaskButton(Strings.save, actionOptions: [.disableButton], action: doSave)
+                    .disabled(validateForm == false)
+            }
+
+            ToolbarItemGroup(placement: .cancellationAction) {
+                Button(Strings.cancel) {
+                    dismiss()
+                }
+            }
+        }
+        .interactiveDismissDisabled()
+        .navigationBarBackButtonHidden(true)
+        .disabled(disableForm)
     }
 
     func setInitialValues() {
@@ -154,8 +155,9 @@ struct RegionCustomForm: View {
 
         do {
             try await regionProvider.add(customRegion: region)
-            self.error = nil
-            self.dismiss()
+            await MainActor.run {
+                self.dismiss()
+            }
         } catch {
             self.error = error
         }
@@ -164,13 +166,17 @@ struct RegionCustomForm: View {
 
 struct RegionCustomForm_Previews: PreviewProvider {
     static var previews: some View {
-        RegionCustomForm(regionProvider: Previews_SampleRegionProvider(), editingRegion: nil)
-            .previewDisplayName("Add new region")
+        NavigationView {
+            RegionCustomForm(regionProvider: Previews_SampleRegionProvider(), editingRegion: .constant(nil))
+        }
+        .previewDisplayName("Add new region")
 
-        RegionCustomForm(
-            regionProvider: Previews_SampleRegionProvider(),
-            editingRegion: .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483)
-        )
+        NavigationView {
+            RegionCustomForm(
+                regionProvider: Previews_SampleRegionProvider(),
+                editingRegion: .constant(.regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483))
+            )
+        }
         .previewDisplayName("Edit existing region")
     }
 }

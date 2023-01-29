@@ -62,17 +62,26 @@ struct RegionPickerView: View {
             .pickerStyle(.inline)
             .labelsHidden()         // Hide picker header (title)
         }
+
+        // List modifiers
         .listSectionSeparator(.hidden)
         .listStyle(.plain)
         .refreshable(action: doRefreshRegions)
         .disabled(disableInteractions)
+
+        // Lifecycle-related modifiers
         .onAppear(perform: setCurrentRegionIfPresent)
+
+        // Presentation-related modifiers
         .errorAlert(error: $taskError)
-        .sheet(isPresented: $isShowingCustomRegionSheet, onDismiss: {
-            editingRegion = nil
-        }, content: {
-            RegionCustomForm(regionProvider: regionProvider, editingRegion: editingRegion)
-        })
+        .background {
+            // TODO: I hate this. iOS 16 has NavigationStack, so use it when we drop iOS 15.
+            NavigationLink(destination: RegionCustomForm(regionProvider: regionProvider, editingRegion: $editingRegion), isActive: $isShowingCustomRegionSheet) {
+                EmptyView()
+            }
+        }
+
+        // Supplementary views
         .safeAreaInset(edge: .top) {
             OnboardingHeaderView(imageSystemName: "globe", headerText: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
         }
@@ -95,6 +104,10 @@ struct RegionPickerView: View {
             }
             .background(.background)
         }
+
+        // Global
+        .interactiveDismissDisabled(selectedRegion == nil || disableInteractions)
+        .navigationBarHidden(true)
         .padding()
     }
 
@@ -148,6 +161,7 @@ struct RegionPickerView: View {
     var regionOptions: some View {
         Menu {
             Button {
+                editingRegion = nil
                 isShowingCustomRegionSheet = true
             } label: {
                 Label(OBALoc("region_picker.new_custom_region_button", value: "New Custom Region", comment: "Title of a button that shows a region creation view controller."), systemImage: "doc.badge.plus")
@@ -227,7 +241,9 @@ struct RegionPickerView_Previews: PreviewProvider {
     static var previews: some View {
         Text("Hello, World!")
             .sheet(isPresented: .constant(true)) {
-                RegionPickerView(regionProvider: Previews_SampleRegionProvider())
+                NavigationView {
+                    RegionPickerView(regionProvider: Previews_SampleRegionProvider())
+                }
             }
             .previewDisplayName("As a sheet")
 

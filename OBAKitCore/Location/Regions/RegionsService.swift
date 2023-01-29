@@ -243,6 +243,12 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     public func delete(customRegionIdentifier identifier: RegionIdentifier) async throws {
         var regions = customRegions
 
+        guard self.currentRegion?.regionIdentifier != identifier else {
+            throw UnstructuredError(
+                "Cannot delete the current selected region",
+                recoverySuggestion: "Choose a different region to be the currently selected region, before deleting this region.")
+        }
+
         guard let index = regions.firstIndex(where: { $0.regionIdentifier == identifier }) else {
             return
         }
