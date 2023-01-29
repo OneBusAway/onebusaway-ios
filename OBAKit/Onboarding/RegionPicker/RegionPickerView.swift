@@ -9,9 +9,11 @@ import MapKit
 import SwiftUI
 import OBAKitCore
 
-struct RegionPickerView<Provider: RegionProvider>: View {
-    @Environment(\.dismiss) var dismiss
+struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     @ObservedObject var regionProvider: Provider
+
+    var dismissBlock: VoidBlock?
+    @Environment(\.dismiss) var dismissAction
 
     // MARK: - Constants
     // These icons must match, for continuity. The user gets the meaning of these
@@ -72,10 +74,12 @@ struct RegionPickerView<Provider: RegionProvider>: View {
 
         // Lifecycle-related modifiers
         .onAppear(perform: setCurrentRegionIfPresent)
-        .onChange(of: regionProvider.automaticallySelectRegion) { [regionProvider] _ in
+        .onChange(of: regionProvider.currentRegion) { [regionProvider] _ in
             // When the user selects to automatically select a region, update
             // selectedRegion with the new current region.
-            self.selectedRegion = regionProvider.currentRegion
+            if regionProvider.automaticallySelectRegion {
+                self.selectedRegion = regionProvider.currentRegion
+            }
         }
 
         // Presentation-related modifiers
@@ -214,9 +218,7 @@ struct RegionPickerView<Provider: RegionProvider>: View {
         // Set the current region, then dismiss the sheet if successful.
         do {
             try await regionProvider.setCurrentRegion(to: selectedRegion)
-            await MainActor.run {
-                dismiss()
-            }
+            dismiss()
         } catch {
             taskError = error
         }

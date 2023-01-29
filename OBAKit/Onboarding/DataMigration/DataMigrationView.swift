@@ -9,7 +9,7 @@ import SwiftUI
 import OBAKitCore
 import UniformTypeIdentifiers
 
-struct DataMigrationView: View {
+struct DataMigrationView: View, OnboardingView {
     enum MigrationTask: Equatable {
         /// Creates a fake `UserDefaults` based on the plist at the path and performs a migration dry-run.
         case userDefaultsPlistFromData(Data)
@@ -22,7 +22,8 @@ struct DataMigrationView: View {
     //       In this specific view, we need `currentRegion` and `apiService` dependencies.
     @Environment(\.coreApplication) var application
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.dismiss) var dismissAction
+    var dismissBlock: VoidBlock?
 
     /// Migration results are displayed in a sheet.
     @State var migrationReport: DataMigrator.MigrationReport?
@@ -99,7 +100,9 @@ struct DataMigrationView: View {
     }
 
     private func handleReportDismiss() {
-        self.dismiss()
+        Task {
+            await self.dismiss()
+        }
     }
 
     private func handleUserProvidedItem(_ itemProviders: [NSItemProvider]) -> Bool {

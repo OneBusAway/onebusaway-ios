@@ -140,20 +140,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         configureAppearanceProxies()
     }
 
-    // MARK: - Onboarding
-
-    private lazy var onboarder = Onboarder(locationService: locationService, regionsService: regionsService)
-
-    /// Performs the full onboarding process: location permissions, region selection, and data migration.
-    public func performOnboarding() {
-        guard
-            onboarder.onboardingRequired,
-            let uiApp = self.delegate?.uiApplication
-        else { return }
-
-        onboarder.show(in: uiApp)
-    }
-
     // MARK: - Onboarding/Data Migration
 
     /// When true, this means that the application's user defaults contain data that can be migrated into a modern format.
@@ -324,8 +310,6 @@ public class Application: CoreApplication, PushServiceDelegate {
         configurePushNotifications(launchOptions: options)
         reloadRootUserInterface()
 
-        performOnboarding()
-
         reportAnalyticsUserProperties()
     }
 
@@ -428,13 +412,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     // MARK: - Regions Management
-
-    public func regionsServiceUnableToSelectRegion(_ service: RegionsService) {
-        guard let app = delegate?.uiApplication else { return }
-
-        onboarder.show(in: app)
-    }
-
     public func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool) {
         let label = value ? AnalyticsLabels.setRegionAutomatically : AnalyticsLabels.setRegionManually
         analytics?.reportEvent?(.userAction, label: label, value: nil)
