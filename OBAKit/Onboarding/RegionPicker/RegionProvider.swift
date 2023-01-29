@@ -15,4 +15,7 @@ protocol RegionProvider {
 
     /// A ``currentRegion`` setter that is `async throws`.
     func setCurrentRegion(to newRegion: Region) async throws
+
+    /// Adds the provided custom region to the RegionsService.
+    func add(customRegion newRegion: Region) async throws
 }

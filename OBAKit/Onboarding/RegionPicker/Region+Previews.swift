@@ -59,6 +59,14 @@ final class Previews_SampleRegionProvider: RegionProvider {
             NSLocalizedDescriptionKey: "\(#function) error!"
         ])
     }
+
+    func add(customRegion newRegion: OBAKitCore.Region) async throws {
+        try await Task.sleep(nanoseconds: 1_000_000_000)
+
+        throw NSError(domain: "org.onebusaway.iphone", code: 418, userInfo: [
+            NSLocalizedDescriptionKey: "\(#function) error!"
+        ])
+    }
 }
 
 #endif
