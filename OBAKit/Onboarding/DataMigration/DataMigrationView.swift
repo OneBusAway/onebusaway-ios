@@ -60,8 +60,6 @@ struct DataMigrationView: View {
         .listStyle(.plain)
         .safeAreaInset(edge: .top) {
             OnboardingHeaderView(imageSystemName: "arrow.up.doc.on.clipboard", headerText: OBALoc("data_migration_bulletin.data_upgrade_title", value: "Data Upgrade", comment: "Title for the DataMigrationBulletinPage."))
-            .frame(maxWidth: .infinity)
-            .background(.background)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 14) {

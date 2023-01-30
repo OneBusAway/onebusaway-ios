@@ -13,7 +13,7 @@ import BLTNBoard
 import UIKit
 
 enum OnboardingState {
-    case unknown, locationPermissionPrompt, manualRegionSelection, complete
+    case unknown, locationPermissionPrompt, complete
 }
 
 class Onboarder: NSObject {
@@ -39,7 +39,6 @@ class Onboarder: NSObject {
     private var currentBulletinPage: ThemedBulletinPage {
         switch state {
         case .locationPermissionPrompt: return locationPermissionItem
-        case .manualRegionSelection: return regionPickerItem
         case .complete, .unknown: fatalError()
         }
     }
@@ -62,10 +61,6 @@ class Onboarder: NSObject {
         self.refreshUI()
     }
 
-    // MARK: - RegionPickerItem
-
-    private lazy var regionPickerItem = RegionPickerItem(regionsService: regionsService)
-
     // MARK: - State Logic
 
     public var onboardingRequired: Bool {
@@ -75,9 +70,6 @@ class Onboarder: NSObject {
     var state: OnboardingState {
         if showPermissionPromptUI {
             return .locationPermissionPrompt
-        }
-        else if showRegionPicker {
-            return .manualRegionSelection
         }
         else {
             return .complete

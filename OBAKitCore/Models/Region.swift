@@ -194,7 +194,7 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
     /// - Parameter contactEmail: The contact email address for this region.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    public init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil) {
+    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil) {
         self.name = name
         self.regionIdentifier = regionIdentifier ?? 1000 + Int.random(in: 0...999)
         isActive = true
