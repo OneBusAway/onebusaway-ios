@@ -41,11 +41,13 @@ struct RegionCustomForm: View {
             Section(OBALoc("custom_region_builder_controller.base_url_section.header_title", value: "Base URL", comment: "Title of the Base URL header.")) {
                 TextField("https://api.tampa.onebusaway.org/api/", text: $baseURLString)
                     .textContentType(.URL)
+                    .keyboardType(.URL)
             }
 
             Section(OBALoc("custom_region_builder_controller.contact_email_section.header_title", value: "Contact Email", comment: "Title of the Contact Email header.")) {
                 TextField("contact@example.com", text: $contactEmail)
                     .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
             }
 
             Section {

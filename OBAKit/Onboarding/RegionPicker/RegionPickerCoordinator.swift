@@ -50,7 +50,11 @@ class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsServiceD
 
         await MainActor.run {
             self.allRegions = regionsService.allRegions
+            self.automaticallySelectRegion = false
         }
+
+        // Automatically set new regions to be the current region.
+        try await setCurrentRegion(to: newRegion)
     }
 
     func delete(customRegion region: OBAKitCore.Region) async throws {
