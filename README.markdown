@@ -9,58 +9,16 @@ OBAKit is a total rewrite of OneBusAway for iOS in the Swift programming languag
 * This codebase is built as a set of reusable frameworks, which can be used to make new apps or augment existing apps on a wide variety of platforms.
 * This codebase is meant to provide an easy way for transit agencies to create their own custom-branded transit apps without needing to fork the OneBusAway source code.
 * This codebase is intended to be easy to understand, test, and maintain. We try to emphasize clarity over cleverness, even at the risk of being somewhat more verbose at times.
+
 ## Quick Start
 
-To get started, you will need the following pieces of software installed on your computer:
+This project requires [XcodeGen](https://github.com/yonaskolb/XcodeGen) to generate Xcode project files. Third-party dependencies are installed via Xcode's Swift Package Manager.
 
-1. [Xcode 12.x](https://apps.apple.com/us/app/xcode/id497799835) - Once installed, please launch Xcode and install any ancillary pieces of software about which it may prompt you.
-1. [Homebrew](https://brew.sh) - A package manager used to install Xcodegen.
-1. [XcodeGen](https://github.com/yonaskolb/XcodeGen) - This is used to generate the `xcodeproj` file used to build the project.
-1. [SwiftLint](https://github.com/realm/SwiftLint) - A tool to enforce Swift style and conventions.
-1. [Ruby](https://www.ruby-lang.org/) - _This should already be installed on your Mac_. A dynamic, open source programming language with a focus on simplicity and productivity.
-1. [RVM](https://rvm.io) - _Optional, but very helpful_. RVM is a command-line tool which allows you to easily install, manage, and work with multiple Ruby environments from interpreters to sets of gems.
+See [wiki/Get-Started](https://github.com/OneBusAway/onebusaway-ios/wiki/Get-Started) for instructions.
 
-Once you have these pieces of software installed, clone the OneBusAway app repository on GitHub. (After this rewrite becomes the official version of the app, it will be in the OneBusAway GitHub repository; for now ask Aaron for an invitation.)
+## White Labeling
 
-    # Make sure you have Xcode 12.x and Homebrew installed.
-    xcode-select --install
-    brew install xcodegen
-    brew install swiftlint
-    # open the directory with the app code
-    cd OBAKit
-    # note: depending on your system configuration, you may need to run this command with sudo, i.e. sudo gem install bundler
-    gem install bundler
-    bundle install
-    scripts/generate_project OneBusAway
-    open OBAKit.xcodeproj
-
-## Project Files (.xcodeproj)
-
-The directions above include a command `scripts/generate_project OneBusAway` to create the `xcodeproj` project file.  If you just want to build the OneBusAway app, that's all you need.  Here is some additional information in case you want to generate a different app.
-
-OBAKit uses [XcodeGen](https://github.com/yonaskolb/XcodeGen) to create the `xcodeproj` file that makes Xcode function. XcodeGen takes a simple YAML file (`project.yml`) and turns it into a full-fledged `xcodeproj`. This makes it much easier to support white-labeling and managing multiple project targets.
-
-Call `scripts/generate_project` from the project root directory with the name of a directory in `Apps`. So to generate the OneBusAway app, you run the command:
-
-```bash
-scripts/generate_project OneBusAway
-```
-
-Run `scripts/generate_project` on its own to see a list of available app targets.
-
-## White Label Support
-
-To create your own app target, duplicate the `Apps/OneBusAway` directory and update all of the available variables with the ones that are relevant to your project. [Learn more about White Label support by reading the documentation on the subject](Tutorials/WhiteLabel.md).
-
-## Sub-Projects
-
-The app, whether it is OneBusAway, KiedyBus, YRTViva, or another, is just a thin shell on top of two frameworks: `OBAKitCore` and `OBAKit`.
-
-`OBAKitCore` is responsible for networking, data models and storage, location services, and region management.
-
-`OBAKit` provides an iOS-compatible user interface that can easily be created from any app that consumes `OBAKit`.
-
-`TodayView`, if your project supports it, is a widget that provides the user with easy access to a subset of their bookmarked transit routes from the [Today View](https://support.apple.com/guide/iphone/add-widgets-iphb8f1bf206/ios).
+The iOS codebase is a white-label product, read more about white-labeling at [wiki/White-Label](https://github.com/OneBusAway/onebusaway-ios/wiki/White-Label).
 
 ## Internationalization and Localization
 
