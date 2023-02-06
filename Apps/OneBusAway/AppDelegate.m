@@ -112,8 +112,19 @@
 }
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
-    self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
-    self.window.rootViewController = self.rootController;
+    void(^showRootController)(void) = ^{
+        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        self.window.rootViewController = self.rootController;
+    };
+
+    if ([OBAOnboardingNavigationController needsToOnboardWithApplication:application]) {
+        self.window.rootViewController = [[OBAOnboardingNavigationController alloc] initWithApplication:application completion:^{
+            showRootController();
+            [UIView transitionWithView:self.window duration:0.5 options:UIViewAnimationOptionTransitionFlipFromLeft animations:nil completion:nil];
+        }];
+    } else {
+        showRootController();
+    }
 }
 
 - (BOOL)canOpenURL:(NSURL*)url {
