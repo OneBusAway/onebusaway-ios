@@ -60,7 +60,7 @@ open class CoreApplication: NSObject,
     ///         for more information on the REST API.
     public private(set) var restAPIService: _RESTAPIService? {
         didSet {
-            alertsStore.apiService = restAPIService
+//            alertsStore.apiService = restAPIService
         }
     }
 
@@ -126,7 +126,7 @@ open class CoreApplication: NSObject,
 
     // MARK: - Obaco
 
-    @objc public private(set) var obacoService: ObacoAPIService? {
+    public private(set) var obacoService: ObacoAPIService? {
         didSet {
             notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
             alertsStore.obacoService = obacoService
@@ -145,9 +145,8 @@ open class CoreApplication: NSObject,
             let baseURL = config.obacoBaseURL
         else { return }
 
-        obacoNetworkQueue.cancelAllOperations()
-
-        obacoService = ObacoAPIService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: region.regionIdentifier, networkQueue: obacoNetworkQueue, delegate: self, dataLoader: config.dataLoader)
+        let configuration = APIServiceConfiguration(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier)
+        obacoService = ObacoAPIService(regionID: region.regionIdentifier, delegate: self, configuration: configuration, dataLoader: config.dataLoader)
     }
 
     // MARK: - UUID

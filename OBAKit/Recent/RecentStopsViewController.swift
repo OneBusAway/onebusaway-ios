@@ -105,7 +105,9 @@ public class RecentStopsViewController: UIViewController,
     }
 
     func onDeleteAlarm(_ viewModel: AlarmViewModel) {
-        self.application.obacoService?.deleteAlarm(url: viewModel.alarm.url)
+        Task {
+            try? await self.application.obacoService?.deleteAlarm(url: viewModel.alarm.url)
+        }
         self.application.userDataStore.delete(alarm: viewModel.alarm)
         self.listView.applyData(animated: true)
     }

@@ -65,7 +65,9 @@ class AlarmBuilder: NSObject {
             else { return }
 
             let minutes = item.timePickerManager.selectedMinutes
-            self.createAlarm(minutes: minutes)
+            Task {
+                await self.createAlarm(minutes: minutes)
+            }
         }
     }
 
@@ -87,7 +89,7 @@ class AlarmBuilder: NSObject {
 
     private var alarmOperation: DecodableOperation<Alarm>?
 
-    private func createAlarm(minutes: Int) {
+    private func createAlarm(minutes: Int) async {
         guard
             let modelService = application.obacoService,
             let pushService = application.pushService,
@@ -96,30 +98,31 @@ class AlarmBuilder: NSObject {
 
         let arrivalDeparture = self.arrivalDeparture
 
-        ProgressHUD.show()
+        await ProgressHUD.show()
 
-        pushService.requestPushID { [weak self] userPushID in
-            guard let self = self else { return }
-
-            let op = modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
-            op.complete { [weak self] result in
+        defer {
+            Task { @MainActor in
                 ProgressHUD.dismiss()
-                guard let self = self else { return }
-
-                switch result {
-                case .failure:
-                    self.delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
-                case .success(let response):
-                    let alarm = response
-                    alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
-                    alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
-                    self.delegate?.alarmBuilder(self, alarmCreated: alarm)
-                }
-
                 self.bulletinManager.dismissBulletin(animated: true)
             }
+        }
 
-            self.alarmOperation = op
+        let userPushID = await pushService.pushID()
+        let alarm: Alarm
+        do {
+            alarm = try await modelService.postAlarm(minutesBefore: minutes, arrivalDeparture: arrivalDeparture, userPushID: userPushID)
+        } catch {
+            self.delegate?.alarmBuilder(self, error: AlarmBuilderErrors.creationFailed)
+            return
+        }
+
+        alarm.deepLink = ArrivalDepartureDeepLink(arrivalDeparture: self.arrivalDeparture, regionID: currentRegion.regionIdentifier)
+        alarm.set(tripDate: self.arrivalDeparture.arrivalDepartureDate, alarmOffset: minutes)
+
+        if let delegate {
+            await MainActor.run {
+                delegate.alarmBuilder(self, alarmCreated: alarm)
+            }
         }
     }
 

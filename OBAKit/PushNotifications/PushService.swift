@@ -111,6 +111,14 @@ public class PushService: NSObject {
         serviceProvider.requestPushID(callback)
     }
 
+    public func pushID() async -> PushManagerUserID {
+        await withCheckedContinuation { continuation in
+            serviceProvider.requestPushID { userID in
+                continuation.resume(returning: userID)
+            }
+        }
+    }
+
     public var isRegisteredForRemoteNotifications: Bool {
         serviceProvider.isRegisteredForRemoteNotifications
     }

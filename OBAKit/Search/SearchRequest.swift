@@ -75,7 +75,7 @@ public class SearchManager: NSObject {
         case .address:    await searchAddress(request: request)
         case .route:      await searchRoute(request: request)
         case .stopNumber: searchStopNumber(request: request)
-        case .vehicleID:  searchVehicleID(request: request)
+        case .vehicleID:  await searchVehicleID(request: request)
         }
     }
 
@@ -138,25 +138,19 @@ public class SearchManager: NSObject {
         }
     }
 
-    private func searchVehicleID(request: SearchRequest) {
+    private func searchVehicleID(request: SearchRequest) async {
         guard let obacoService = application.obacoService else { return }
 
-        ProgressHUD.show()
+        await ProgressHUD.show()
 
-        let op = obacoService.getVehicles(matching: request.query)
-        op.complete { [weak self] result in
-            ProgressHUD.dismiss()
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                Task { @MainActor in
-                    self.application.displayError(error)
-                }
-            case .success(let response):
-                self.processSearchResults(request: request, matchingVehicles: response)
-            }
+        do {
+            let vehicles = try await obacoService.getVehicles(matching: request.query)
+            self.processSearchResults(request: request, matchingVehicles: vehicles)
+        } catch {
+            await self.application.displayError(error)
         }
+
+        await ProgressHUD.dismiss()
     }
 
     private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {

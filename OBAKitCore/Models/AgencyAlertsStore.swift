@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os.log
 
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
     @objc optional func agencyAlertsUpdated()
@@ -15,7 +16,6 @@ import Foundation
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var apiService: _RESTAPIService?
     public var betterAPIService: RESTAPIService?
     public var obacoService: ObacoAPIService?
 
@@ -58,7 +58,6 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
         agenciesOperation?.cancel()
-        obacoOperation?.cancel()
         queue.cancelAllOperations()
     }
 
@@ -73,8 +72,25 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
             agencies = try await betterAPIService.getAgenciesWithCoverage().list
         }
 
-        try await fetchRegionalAlerts(service: betterAPIService)
-        fetchObacoAlerts()
+        // Get agency alerts from OBA and Obaco.
+        let agencyAlerts = try await withThrowingTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
+            group.addTask {
+                try await self.fetchRegionalAlerts(service: betterAPIService)
+            }
+
+            group.addTask {
+                try await self.fetchObacoAlerts()
+            }
+
+            var alerts: [AgencyAlert] = []
+            for try await value in group {
+                alerts.append(contentsOf: value)
+            }
+
+            return alerts
+        }
+
+        await storeAgencyAlerts(agencyAlerts)
     }
 
     /// Convenience wrapper for ``update()``. Errors are reported via ``AgencyAlertsDelegate``.
@@ -91,26 +107,17 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     }
 
     // MARK: - REST API
-    private func fetchRegionalAlerts(service: RESTAPIService) async throws {
-        let alerts = try await service.getAlerts(agencies: agencies)
-        await MainActor.run {
-            self.storeAgencyAlerts(alerts)
-        }
+    private func fetchRegionalAlerts(service: RESTAPIService) async throws -> [AgencyAlert] {
+        return try await service.getAlerts(agencies: agencies)
     }
 
     // MARK: - Obaco
-
-    private var obacoOperation: AgencyAlertsOperation?
-
-    private func fetchObacoAlerts() {
-        guard let obacoService = obacoService else { return }
-
-        let op = obacoService.getAlerts(agencies: agencies)
-        op.complete { [weak self] (alerts) in
-            guard let self = self else { return }
-            self.storeAgencyAlerts(alerts)
+    private func fetchObacoAlerts() async throws -> [AgencyAlert] {
+        guard let obacoService else {
+            return []
         }
-        obacoOperation = op
+
+        return try await obacoService.getAlerts(agencies: agencies)
     }
 
     // MARK: - High Severity Alerts
@@ -162,6 +169,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private var alerts: Set<AgencyAlert> = []
 
+    @MainActor
     private func storeAgencyAlerts(_ agencyAlerts: [AgencyAlert]) {
         for alert in agencyAlerts {
             self.alerts.insert(alert)

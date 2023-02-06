@@ -32,7 +32,6 @@ open class OBATestCase: XCTestCase {
 
     open override func tearDown() {
         super.tearDown()
-        obacoService.networkQueue.cancelAllOperations()
         restService.networkQueue.cancelAllOperations()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
@@ -71,16 +70,8 @@ open class OBATestCase: XCTestCase {
     var obacoService: ObacoAPIService!
 
     func buildObacoService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> ObacoAPIService {
-        ObacoAPIService(
-            baseURL: obacoURL,
-            apiKey: apiKey,
-            uuid: uuid,
-            appVersion: appVersion,
-            regionID: obacoRegionID,
-            networkQueue: networkQueue ?? OperationQueue(),
-            delegate: nil,
-            dataLoader: dataLoader ?? MockDataLoader(testName: name)
-        )
+        let config = APIServiceConfiguration(baseURL: obacoURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: obacoRegionID)
+        return ObacoAPIService(regionID: obacoRegionID, delegate: nil, configuration: config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
     }
 
     // MARK: - Network/REST API Service
