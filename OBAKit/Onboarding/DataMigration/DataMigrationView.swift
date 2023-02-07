@@ -9,7 +9,7 @@ import SwiftUI
 import OBAKitCore
 import UniformTypeIdentifiers
 
-struct DataMigrationView: View, OnboardingView {
+public struct DataMigrationView: View, OnboardingView {
     enum MigrationTask: Equatable {
         /// Creates a fake `UserDefaults` based on the plist at the path and performs a migration dry-run.
         case userDefaultsPlistFromData(Data)
@@ -22,8 +22,12 @@ struct DataMigrationView: View, OnboardingView {
     //       In this specific view, we need `currentRegion` and `apiService` dependencies.
     @Environment(\.coreApplication) var application
     @Environment(\.dynamicTypeSize) var dynamicTypeSize
-    @Environment(\.dismiss) var dismissAction
-    var dismissBlock: VoidBlock?
+    @Environment(\.dismiss) public var dismissAction
+    public var dismissBlock: VoidBlock?
+
+    public init(dismissBlock: VoidBlock? = nil) {
+        self.dismissBlock = dismissBlock
+    }
 
     /// Migration results are displayed in a sheet.
     @State var migrationReport: DataMigrator.MigrationReport?
@@ -48,7 +52,7 @@ struct DataMigrationView: View, OnboardingView {
         }
     }
 
-    var body: some View {
+    public var body: some View {
         List {
             Section {
                 label(title: OBALoc("data_migration_bulletin.explanation_1", value: "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.", comment: "First bullet point of DataMigrationBulletinPage explanation"), systemImage: "star.square.on.square")

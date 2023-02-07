@@ -9,11 +9,16 @@ import MapKit
 import SwiftUI
 import OBAKitCore
 
-struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
+public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     @ObservedObject var regionProvider: Provider
 
-    var dismissBlock: VoidBlock?
-    @Environment(\.dismiss) var dismissAction
+    public var dismissBlock: VoidBlock?
+    @Environment(\.dismiss) public var dismissAction
+
+    public init(regionProvider: Provider, dismissBlock: VoidBlock? = nil) {
+        self.regionProvider = regionProvider
+        self.dismissBlock = dismissBlock
+    }
 
     // MARK: - Constants
     // These icons must match, for continuity. The user gets the meaning of these
@@ -53,7 +58,7 @@ struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     @State var editingRegion: Region?
     @State var isShowingCustomRegionSheet: Bool = false
 
-    var body: some View {
+    public var body: some View {
         List {
             Toggle("Automatically select region", isOn: $regionProvider.automaticallySelectRegion)
             Picker("", selection: $selectedRegion) {

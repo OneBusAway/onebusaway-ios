@@ -10,13 +10,18 @@ import OBAKitCore
 import CoreLocationUI
 
 /// Asks the user for one-time location authorization.
-struct RegionPickerLocationAuthorizationView<Provider: RegionProvider>: View, OnboardingView {
+public struct RegionPickerLocationAuthorizationView<Provider: RegionProvider>: View, OnboardingView {
     @ObservedObject var regionProvider: Provider
 
-    var dismissBlock: VoidBlock?
-    @Environment(\.dismiss) var dismissAction
+    public var dismissBlock: VoidBlock?
+    @Environment(\.dismiss) public var dismissAction
 
-    var body: some View {
+    public init(regionProvider: Provider, dismissBlock: VoidBlock? = nil) {
+        self.regionProvider = regionProvider
+        self.dismissBlock = dismissBlock
+    }
+
+    public var body: some View {
         List {
             Text(OBALoc("location_permission_bulletin.description_text", value: "Please allow the app to access your location to make it easier to find your transit stops.", comment: "Description of why we need location services"))
                 .listRowSeparator(.hidden)
