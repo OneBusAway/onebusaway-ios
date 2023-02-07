@@ -37,13 +37,6 @@ class TripFloatingPanelController: UIViewController,
     }
 
     weak var parentTripViewController: TripViewController?
-    weak var tripDetailsOperation: NetworkOperation? {
-        didSet {
-            self.progressView.observedProgress = tripDetailsOperation!.progress
-        }
-    }
-
-    private let operation: DecodableOperation<RESTAPIResponse<TripDetails>>?
 
     // MARK: - Init/Deinit
 
@@ -58,37 +51,21 @@ class TripFloatingPanelController: UIViewController,
         self.application = application
         self.tripConvertible = tripConvertible
         self.parentTripViewController = parentTripViewController
-        self.operation = nil
 
         super.init(nibName: nil, bundle: nil)
     }
 
-    /// Initializes the `TripDetailsController` with an OBA application object and an in-flight model operation.
+    /// Initializes the `TripDetailsController` with an OBA application object.
     /// - Parameter application: The application object
-    /// - Parameter operation: An operation that will result in a `TripDetails` object that can be used to finish configuring this controller.
-    init(application: Application, operation: DecodableOperation<RESTAPIResponse<TripDetails>>) {
+    /// - Parameter tripDetails: The `TripDetails` object to display.
+    init(application: Application, tripDetails: TripDetails) {
         self.application = application
-        self.operation = operation
+        self.tripDetails = tripDetails
 
         super.init(nibName: nil, bundle: nil)
-
-        self.operation?.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.tripDetails = response.entry
-            }
-        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
-    deinit {
-        operation?.cancel()
-    }
 
     // MARK: - UIViewController
 
@@ -104,6 +81,12 @@ class TripFloatingPanelController: UIViewController,
         view.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(outerStack)
         outerStack.pinToSuperview(.edges)
+    }
+
+    public override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+
+        listView.applyData(animated: false)
     }
 
     // MARK: - Public Methods
@@ -191,8 +174,6 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    public lazy var progressView = UIProgressView.autolayoutNew()
-
     private lazy var separatorView: UIView = {
         let view = UIView.autolayoutNew()
         view.backgroundColor = ThemeColors.shared.separator
@@ -202,7 +183,7 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, progressView, separatorView, listView])
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, listView])
 
     // MARK: - ListAdapterDataSource (Data Loading)
     func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
@@ -237,13 +218,26 @@ class TripFloatingPanelController: UIViewController,
 
     private func onSelectAdjacentTrip(_ adjacentTrip: AdjacentTripItem) {
         guard
-            let apiService = application.restAPIService,
+            let apiService = application.betterAPIService,
             let tripDetails = tripDetails
         else { return }
 
-        let op = apiService.getTrip(tripID: adjacentTrip.trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
-        let controller = TripFloatingPanelController(application: self.application, operation: op)
-        self.application.viewRouter.navigate(to: controller, from: self)
+        Task {
+            ProgressHUD.show()
+
+            do {
+                let tripDetails = try await apiService.getTrip(tripID: adjacentTrip.trip.id, vehicleID: tripDetails.status?.vehicleID, serviceDate: tripDetails.serviceDate)
+
+                await MainActor.run {
+                    let controller = TripFloatingPanelController(application: application, tripDetails: tripDetails.entry)
+                    self.application.viewRouter.navigate(to: controller, from: self)
+                }
+            } catch {
+                self.application.displayError(error)
+            }
+
+            ProgressHUD.dismiss()
+        }
     }
 
     private func onSelectTripStop(_ tripStop: TripStopViewModel) {

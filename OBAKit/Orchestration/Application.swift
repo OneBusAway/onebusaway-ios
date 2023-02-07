@@ -243,23 +243,20 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let apiService = restAPIService else { return }
+        guard let apiService = betterAPIService else { return }
 
-        let op = apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence)
-        op.complete { [weak self] result in
-            guard
-                let self = self,
-                let topController = self.topViewController
-            else { return }
+        Task(priority: .userInitiated) { [weak self] in
+            do {
+                let arrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence).entry
 
-            Task { @MainActor in
-                switch result {
-                case .failure(let error):
-                    self.displayError(error)
-                case .success(let response):
-                    let tripController = TripViewController(application: self, arrivalDeparture: response.entry)
-                    self.viewRouter.navigate(to: tripController, from: topController)
+                if let self, let topViewController = self.topViewController {
+                    await MainActor.run {
+                        let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
+                        self.viewRouter.navigate(to: tripController, from: topViewController)
+                    }
                 }
+            } catch {
+                await self?.displayError(error)
             }
         }
     }
