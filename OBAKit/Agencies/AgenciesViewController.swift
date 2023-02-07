@@ -12,7 +12,7 @@ import SafariServices
 import OBAKitCore
 
 /// Loads and displays a list of agencies in the current region.
-class AgenciesViewController: OperationController<DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>, [AgencyWithCoverage]>, OBAListViewDataSource {
+class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewDataSource {
     let listView = OBAListView()
 
     override func viewDidLoad() {
@@ -27,27 +27,22 @@ class AgenciesViewController: OperationController<DecodableOperation<RESTAPIResp
         title = OBALoc("agencies_controller.title", value: "Agencies", comment: "Title of the Agencies controller")
     }
 
-    override func loadData() -> DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>? {
-        guard let apiService = application.restAPIService else { return nil }
+    override func loadData() async throws -> [AgencyWithCoverage] {
+        guard let apiService = application.betterAPIService else {
+            throw UnstructuredError("No API Service")
+        }
 
         ProgressHUD.show()
-
-        let op = apiService.getAgenciesWithCoverage()
-        op.complete { [weak self] result in
-            ProgressHUD.dismiss()
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.data = response.list
+        defer {
+            Task { @MainActor in
+                ProgressHUD.dismiss()
             }
         }
 
-        return op
+        return try await apiService.getAgenciesWithCoverage().list
     }
 
+    @MainActor
     override func updateUI() {
         listView.applyData()
     }
