@@ -17,6 +17,7 @@ import SafariServices
 /// For example, this router can be used identically when the app is configured to
 /// use floating panels or standard `UINavigationController` stacks.
 ///
+@MainActor
 public class ViewRouter: NSObject, UINavigationControllerDelegate {
     public enum NavigationDestination {
         case stop(Stop)
