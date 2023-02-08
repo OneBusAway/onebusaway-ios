@@ -57,11 +57,8 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     /// Cancels all pending data operations.
     private func cancelAllOperations() {
-        agenciesOperation?.cancel()
         queue.cancelAllOperations()
     }
-
-    private var agenciesOperation: DecodableOperation<RESTAPIResponse<[AgencyWithCoverage]>>?
 
     private var agencies = [AgencyWithCoverage]()
 

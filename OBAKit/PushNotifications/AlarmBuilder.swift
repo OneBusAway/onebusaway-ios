@@ -71,10 +71,6 @@ class AlarmBuilder: NSObject {
         }
     }
 
-    deinit {
-        alarmOperation?.cancel()
-    }
-
     // MARK: - Public Methods
 
     public func showBulletin(above viewController: UIViewController) {
@@ -86,9 +82,6 @@ class AlarmBuilder: NSObject {
     }
 
     // MARK: - Alarm Creation
-
-    private var alarmOperation: DecodableOperation<Alarm>?
-
     private func createAlarm(minutes: Int) async {
         guard
             let modelService = application.obacoService,

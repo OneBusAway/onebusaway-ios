@@ -25,14 +25,11 @@ open class OBATestCase: XCTestCase {
 
         obacoService = buildObacoService()
 
-        restService = buildRESTService()
-
         betterRESTService = buildBetterRESTService()
     }
 
     open override func tearDown() {
         super.tearDown()
-        restService.networkQueue.cancelAllOperations()
         NSTimeZone.resetSystemTimeZone()
         userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
     }
@@ -82,24 +79,11 @@ open class OBATestCase: XCTestCase {
 
     var baseURL: URL { URL(string: "https://\(host)")! }
 
-    var restService: _RESTAPIService!
     var betterRESTService: RESTAPIService!
 
     func buildBetterRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
         return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
-    }
-
-    func buildRESTService(networkQueue: OperationQueue? = nil, dataLoader: MockDataLoader? = nil) -> _RESTAPIService {
-        _RESTAPIService(
-            baseURL: baseURL,
-            apiKey: apiKey,
-            uuid: uuid,
-            appVersion: appVersion,
-            networkQueue: networkQueue ?? OperationQueue(),
-            dataLoader: dataLoader ?? MockDataLoader(testName: name),
-            regionIdentifier: pugetSoundRegionIdentifier
-        )
     }
 
     // MARK: - Network Request Stubbing

@@ -213,7 +213,6 @@ public class MapRegionManager: NSObject,
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
-        requestStopsOperation?.cancel()
     }
 
     // MARK: - Global Map Helpers
@@ -329,10 +328,6 @@ public class MapRegionManager: NSObject,
             delegate.mapRegionManagerDismissSearch?(self)
         }
     }
-
-    // MARK: - Operations
-
-    private var requestStopsOperation: DecodableOperation<RESTAPIResponse<[Stop]>>?
 
     // MARK: - Setters
 

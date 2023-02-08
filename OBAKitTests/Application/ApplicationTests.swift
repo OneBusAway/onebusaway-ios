@@ -122,7 +122,7 @@ class ApplicationTests: OBATestCase {
         let currentRegion = regionsService.currentRegion
         expect(currentRegion).toNot(beNil())
 
-        expect(app.restAPIService).toNot(beNil())
+        expect(app.betterAPIService).toNot(beNil())
     }
 
     // MARK: - When location not been authorized
@@ -148,7 +148,7 @@ class ApplicationTests: OBATestCase {
         expect(locManager.headingUpdatesStarted).to(beFalse())
 
         expect(app.regionsService.currentRegion).to(beNil())
-        expect(app.restAPIService).to(beNil())
+        expect(app.betterAPIService).to(beNil())
     }
 
     func test_app_locationNewlyAuthorized() {
@@ -171,13 +171,13 @@ class ApplicationTests: OBATestCase {
         expect(locManager.locationUpdatesStarted).to(beFalse())
         expect(locManager.headingUpdatesStarted).to(beFalse())
 
-        expect(app.restAPIService).to(beNil())
+        expect(app.betterAPIService).to(beNil())
 
         locationService.requestInUseAuthorization()
         waitUntil { (done) in
             expect(locManager.locationUpdatesStarted).to(beTrue())
             expect(locManager.headingUpdatesStarted).to(beTrue())
-            expect(app.restAPIService).toNot(beNil())
+            expect(app.betterAPIService).toNot(beNil())
 
             done()
         }
