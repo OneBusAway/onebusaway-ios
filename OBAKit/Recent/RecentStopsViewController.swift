@@ -77,7 +77,7 @@ public class RecentStopsViewController: UIViewController,
     }
 
     func showDeepLink(deepLink: ArrivalDepartureDeepLink) async {
-        guard let apiService = self.application.betterAPIService else { return }
+        guard let apiService = self.application.apiService else { return }
         await MainActor.run {
             ProgressHUD.show()
         }

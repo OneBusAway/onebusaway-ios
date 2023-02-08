@@ -25,7 +25,7 @@ class TripDetailsModelOperationTests: OBATestCase {
 
     override func setUp() {
         super.setUp()
-        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
     func checkExpectations(_ tripDetails: TripDetails) {
@@ -62,7 +62,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: vehicleTripAPIPath, with: data)
 
-        let trip = try await betterRESTService.getVehicleTrip(vehicleID: vehicleID).entry
+        let trip = try await restService.getVehicleTrip(vehicleID: vehicleID).entry
         self.checkExpectations(trip)
     }
 
@@ -70,7 +70,7 @@ class TripDetailsModelOperationTests: OBATestCase {
         let data = Fixtures.loadData(file: "trip_details_1_18196913.json")
         dataLoader.mock(URLString: tripDetailsAPIPath, with: data)
 
-        let trip = try await betterRESTService.getTrip(tripID: tripID, vehicleID: "12345", serviceDate: Date()).entry
+        let trip = try await restService.getTrip(tripID: tripID, vehicleID: "12345", serviceDate: Date()).entry
         self.checkExpectations(trip)
     }
 }

@@ -81,7 +81,7 @@ public class SearchManager: NSObject {
 
     private func searchAddress(request: SearchRequest) async {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
@@ -102,7 +102,7 @@ public class SearchManager: NSObject {
 
     private func searchRoute(request: SearchRequest) async {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             let mapRect = application.mapRegionManager.lastVisibleMapRect
         else {
             return
@@ -117,7 +117,7 @@ public class SearchManager: NSObject {
     }
 
     private func searchStopNumber(request: SearchRequest) {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             return
         }
 
@@ -154,7 +154,7 @@ public class SearchManager: NSObject {
     }
 
     private func processSearchResults(request: SearchRequest, matchingVehicles: [AgencyVehicle]) {
-        guard let apiService = application.betterAPIService else { return }
+        guard let apiService = application.apiService else { return }
 
         if matchingVehicles.count > 1 {
             // Show a disambiguation UI.

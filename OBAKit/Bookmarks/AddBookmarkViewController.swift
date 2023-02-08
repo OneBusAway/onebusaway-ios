@@ -95,7 +95,7 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
 
     // MARK: - Data and UI
     override func loadData() async throws -> [ArrivalDeparture] {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             throw UnstructuredError("No API Service")
         }
 

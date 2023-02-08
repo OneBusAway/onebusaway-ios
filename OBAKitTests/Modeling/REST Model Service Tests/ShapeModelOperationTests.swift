@@ -20,12 +20,12 @@ class ShapeModelOperationTests: OBATestCase {
     let shapeID = "shape_1_20010002"
 
     func testLoading_success() async throws {
-        let dataLoader = betterRESTService.dataLoader as! MockDataLoader
+        let dataLoader = restService.dataLoader as! MockDataLoader
 
         let data = Fixtures.loadData(file: "shape_1_20010002.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/shape/\(shapeID).json", with: data)
 
-        let response = try await betterRESTService.getShape(id: shapeID)
+        let response = try await restService.getShape(id: shapeID)
         let polyline = try XCTUnwrap(response.entry.polyline)
         let coordinate = polyline.coordinate
         expect(coordinate.latitude).to(beCloseTo(47.6229))

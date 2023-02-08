@@ -24,7 +24,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
     override func setUp() {
         super.setUp()
 
-        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
     func stubVehicle14351Success() {
@@ -48,7 +48,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
 
         // TODO: XCTAssertThrowsError does not support async. Make a XCTAssertThrowsAPIError helper method.
         do {
-            _ = try await betterRESTService.getVehicle(vehicleID: vehicleID)
+            _ = try await restService.getVehicle(vehicleID: vehicleID)
             XCTFail("Expected a captive portal response to throw an error.")
         } catch(let error as APIError) {
             if case APIError.captivePortal = error {
@@ -64,7 +64,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
     func testLoading_vehicleStatus_success() async throws {
         stubVehicle14351Success()
 
-        let vehicle = try await betterRESTService.getVehicle(vehicleID: vehicleID).entry
+        let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
         expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
         expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
         expect(vehicle.location!.coordinate.latitude).to(beCloseTo(47.6195))
@@ -78,7 +78,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
     func testLoading_tripStatus_success() async throws {
         stubVehicle14351Success()
 
-        let vehicle = try await betterRESTService.getVehicle(vehicleID: vehicleID).entry
+        let vehicle = try await restService.getVehicle(vehicleID: vehicleID).entry
         expect(vehicle.vehicleID) == "1_4351"
         expect(vehicle.lastUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
         expect(vehicle.lastLocationUpdateTime) == Date.fromComponents(year: 2020, month: 05, day: 07, hour: 21, minute: 59, second: 04)
@@ -139,7 +139,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
     func testLoading_references_success() async throws {
         stubVehicle14351Success()
 
-        let response = try await betterRESTService.getVehicle(vehicleID: vehicleID)
+        let response = try await restService.getVehicle(vehicleID: vehicleID)
         let references = try XCTUnwrap(response.references)
         expect(references.agencies.count) == 1
         expect(references.routes.count) == 3
@@ -154,7 +154,7 @@ class VehicleStatusModelOperationTests: OBATestCase {
         let data = Fixtures.loadData(file: "frequency-vehicle.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/vehicle/\(vehicleID).json", with: data)
 
-        let response = try await betterRESTService.getVehicle(vehicleID: vehicleID)
+        let response = try await restService.getVehicle(vehicleID: vehicleID)
         let frequency = try XCTUnwrap(response.entry.tripStatus.frequency)
 
         expect(frequency).toNot(beNil())

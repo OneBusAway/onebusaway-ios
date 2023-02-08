@@ -57,7 +57,7 @@ public class BookmarkDataLoader: NSObject {
 
     private func loadData(bookmark: Bookmark) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             bookmark.isTripBookmark
         else { return }
 

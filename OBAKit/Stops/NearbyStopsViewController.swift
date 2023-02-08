@@ -69,7 +69,7 @@ class NearbyStopsViewController: UIViewController,
     }
 
     func loadStops() async {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             return
         }
 

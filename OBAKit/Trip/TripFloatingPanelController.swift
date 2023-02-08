@@ -218,7 +218,7 @@ class TripFloatingPanelController: UIViewController,
 
     private func onSelectAdjacentTrip(_ adjacentTrip: AdjacentTripItem) {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             let tripDetails = tripDetails
         else { return }
 

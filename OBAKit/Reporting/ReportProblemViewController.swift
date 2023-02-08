@@ -59,7 +59,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
 
     // MARK: - OperationController
     override func loadData() async throws -> StopArrivals {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             throw UnstructuredError("")
         }
 

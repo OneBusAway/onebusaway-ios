@@ -17,12 +17,12 @@ import CoreLocation
 
 class RegionalAlertsModelOperationTests: OBATestCase {
     func testSuccessfulRequest() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader)
         Fixtures.stubAllAgencyAlerts(dataLoader: dataLoader)
 
         let agencies = try! Fixtures.loadRESTAPIPayload(type: [AgencyWithCoverage].self, fileName: "agencies_with_coverage.json")
-        let alerts = try await betterRESTService.getAlerts(agencies: agencies)
+        let alerts = try await restService.getAlerts(agencies: agencies)
         expect(alerts.count) == 20
     }
 }

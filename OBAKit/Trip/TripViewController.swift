@@ -281,7 +281,7 @@ class TripViewController: UIViewController,
     }
 
     private func loadTripDetails(isProgrammatic: Bool) async {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             return
         }
 
@@ -344,7 +344,7 @@ class TripViewController: UIViewController,
 
     private func loadMapPolyline(isProgrammatic: Bool) async {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             routePolyline == nil // No need to reload the polyline if we already have it
         else {
             return

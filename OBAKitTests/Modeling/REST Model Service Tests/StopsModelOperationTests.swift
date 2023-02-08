@@ -24,7 +24,7 @@ class StopsModelOperationTests: OBATestCase {
 
     override func setUp() {
         super.setUp()
-        dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        dataLoader = (restService.dataLoader as! MockDataLoader)
     }
 
     func stubApiCall() {
@@ -62,27 +62,27 @@ class StopsModelOperationTests: OBATestCase {
     func testLoading_coordinate_success() async throws {
         stubApiCall()
 
-        self.checkExpectations(try await betterRESTService.getStops(coordinate: coordinate))
+        self.checkExpectations(try await restService.getStops(coordinate: coordinate))
     }
 
     func testLoading_region_success() async throws {
         stubApiCall()
 
         let region = MKCoordinateRegion(center: self.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1))
-        self.checkExpectations(try await betterRESTService.getStops(region: region))
+        self.checkExpectations(try await restService.getStops(region: region))
     }
 
     func testLoading_circularRegion_success() async throws {
         stubApiCall()
 
         let circularRegion = CLCircularRegion(center: self.coordinate, radius: 100.0, identifier: "query")
-        self.checkExpectations(try await betterRESTService.getStops(circularRegion: circularRegion, query: "query"))
+        self.checkExpectations(try await restService.getStops(circularRegion: circularRegion, query: "query"))
     }
 
     func testLoading_specificID_success() async throws {
         stubApiCall()
 
-        let stop = try await betterRESTService.getStop(id: "1_29270").entry
+        let stop = try await restService.getStop(id: "1_29270").entry
         expect(stop.code) == "29270"
         expect(stop.direction) == .e
         expect(stop.id) == "1_29270"

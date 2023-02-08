@@ -30,7 +30,7 @@ class DataMigrator_Tests: OBATestCase {
         }
 
         // Get API service ready
-        self.dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        self.dataLoader = (restService.dataLoader as! MockDataLoader)
 
         stubRegions(dataLoader: dataLoader)
         stubAgenciesWithCoverage(dataLoader: dataLoader, baseURL: Fixtures.pugetSoundRegion.OBABaseURL)
@@ -67,7 +67,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_basicProperties() async throws {
-        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
+        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         // Check results metadata
         XCTAssertNotNil(report.dateFinished)
@@ -87,7 +87,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_recentStops() async throws {
-        let results = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
+        let results = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         let recentStopErrors = results.recentStopsMigrationResult.filter { key, value in
             if case Result.failure = value {
@@ -119,7 +119,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_bookmarkGroups() async throws {
-        _ = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
+        _ = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         let groups = dataStore.bookmarkGroups.sorted(by: { $1.sortOrder > $0.sortOrder })
         XCTAssertEqual(groups.count, 3)
@@ -138,7 +138,7 @@ class DataMigrator_Tests: OBATestCase {
     }
 
     func testMigration_bookmarks() async throws {
-        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.betterRESTService)
+        let report = try await self.migrator.performMigration(migrationParameters, apiService: self.restService)
 
         // MARK: Testing the graceful handling of migration failures
         // Get the failing `BookmarkMigration` object, so we can test the dictionary key.

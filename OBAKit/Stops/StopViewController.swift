@@ -440,7 +440,7 @@ public class StopViewController: UIViewController,
 
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() async {
-        guard let apiService = application.betterAPIService else { return }
+        guard let apiService = application.apiService else { return }
 
         title = Strings.updating
 

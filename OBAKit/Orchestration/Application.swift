@@ -96,7 +96,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         }
 
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
-            guard let self, let apiService = self.betterAPIService else {
+            guard let self, let apiService = self.apiService else {
                 return
             }
 
@@ -243,7 +243,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let apiService = betterAPIService else { return }
+        guard let apiService = apiService else { return }
 
         Task(priority: .userInitiated) { [weak self] in
             do {

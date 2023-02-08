@@ -147,7 +147,7 @@ class VehicleProblemViewController: FormViewController {
 
     private func submitForm() async {
         guard
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             let tripProblemCode = problemCodePicker.value
         else { return }
 

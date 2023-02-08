@@ -20,13 +20,13 @@ class StopsForRouteModelOperationTests: OBATestCase {
     let routeID = "12345"
 
     func testLoading_success() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         dataLoader.mock(
             URLString: "https://www.example.com/api/where/stops-for-route/\(routeID).json",
             with: Fixtures.loadData(file: "stops-for-route-1_100002.json")
         )
 
-        let response = try await betterRESTService.getStopsForRoute(routeID: routeID)
+        let response = try await restService.getStopsForRoute(routeID: routeID)
 
         let stopsForRoute = response.entry
         expect(stopsForRoute.route.routeDescription) == "Capitol Hill - Downtown Seattle"

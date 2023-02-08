@@ -170,7 +170,7 @@ public struct DataMigrationView: View, OnboardingView {
             throw UnstructuredError("No current region is set.")
         }
 
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             throw UnstructuredError("No API service is set.")
         }
 

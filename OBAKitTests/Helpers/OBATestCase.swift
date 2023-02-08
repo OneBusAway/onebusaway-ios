@@ -25,7 +25,7 @@ open class OBATestCase: XCTestCase {
 
         obacoService = buildObacoService()
 
-        betterRESTService = buildBetterRESTService()
+        restService = buildRESTService()
     }
 
     open override func tearDown() {
@@ -79,9 +79,9 @@ open class OBATestCase: XCTestCase {
 
     var baseURL: URL { URL(string: "https://\(host)")! }
 
-    var betterRESTService: RESTAPIService!
+    var restService: RESTAPIService!
 
-    func buildBetterRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
+    func buildRESTService(dataLoader: MockDataLoader? = nil) -> RESTAPIService {
         let config = APIServiceConfiguration(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, regionIdentifier: pugetSoundRegionIdentifier)
         return RESTAPIService(config, dataLoader: dataLoader ?? MockDataLoader(testName: name))
     }

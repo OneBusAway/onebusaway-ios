@@ -58,9 +58,9 @@ open class CoreApplication: NSObject,
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    public private(set) var betterAPIService: RESTAPIService? {
+    public private(set) var apiService: RESTAPIService? {
         didSet {
-            alertsStore.betterAPIService = betterAPIService
+            alertsStore.apiService = apiService
         }
     }
 
@@ -114,7 +114,7 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.betterAPIService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
+        self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
     }
 
     // MARK: - Obaco

@@ -28,7 +28,7 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
     }
 
     override func loadData() async throws -> [AgencyWithCoverage] {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             throw UnstructuredError("No API Service")
         }
 

@@ -16,7 +16,7 @@ import os.log
 }
 
 public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
-    public var betterAPIService: RESTAPIService?
+    public var apiService: RESTAPIService?
     public var obacoService: ObacoAPIService?
 
     private let userDefaults: UserDefaults
@@ -63,16 +63,16 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     private var agencies = [AgencyWithCoverage]()
 
     public func update() async throws {
-        guard let betterAPIService else { return }
+        guard let apiService else { return }
 
         if agencies.isEmpty {
-            agencies = try await betterAPIService.getAgenciesWithCoverage().list
+            agencies = try await apiService.getAgenciesWithCoverage().list
         }
 
         // Get agency alerts from OBA and Obaco.
         let agencyAlerts = try await withThrowingTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
             group.addTask {
-                try await self.fetchRegionalAlerts(service: betterAPIService)
+                try await self.fetchRegionalAlerts(service: apiService)
             }
 
             group.addTask {
