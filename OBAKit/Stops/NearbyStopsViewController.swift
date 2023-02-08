@@ -93,7 +93,7 @@ class NearbyStopsViewController: UIViewController,
             }
         } catch {
             // TODO: (ualch9) Show error inline instead of presenting an ugly error.
-            await self.application.displayError(error)
+            self.application.displayError(error)
         }
     }
 

@@ -49,7 +49,8 @@ public enum APIError: Error, LocalizedError {
             let fmt = OBALoc("api_error.request_failure_fmt", value: "The server encountered an error while trying to respond to your request, producing the status code %d. (URL: %@)", comment: "An error that is produced in response to HTTP status codes outside of 200-299.")
             return String(format: fmt, response.statusCode, String(response.url?.absoluteString.split(separator: "?").first ?? "(nil)"))
         case .requestNotFound(let response):
-            return "404, not found" // TODO: this
+            let fmt = OBALoc("api_error.request_not_found", value: "404 Not found (%@)", comment: "An error that is produced in response to HTTP status code 404")
+            return String(format: fmt, response.url?.absoluteString ?? "(nil)")
         }
     }
 }
