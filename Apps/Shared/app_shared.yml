@@ -89,7 +89,7 @@ packages:
         exactVersion: 3.7.4
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
-        exactVersion: 5.3.6
+        exactVersion: 5.4.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 2.6.0

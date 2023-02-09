@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xmartlabs/Eureka.git",
       "state" : {
-        "revision" : "a7523afdfe38478c6d5706a8ac01d26590835493",
-        "version" : "5.3.6"
+        "revision" : "b6e35acf77a5551070afa6248935ec68e71f22af",
+        "version" : "5.4.0"
       }
     },
     {
