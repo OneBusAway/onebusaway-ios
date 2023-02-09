@@ -63,7 +63,7 @@ class OBAFloatingPanelController: FloatingPanelController {
 
     private func updateAccessibilityValue() {
         let accessibilityValue: String?
-        switch self.position {
+        switch self.state {
         case .full:
             accessibilityValue = OBALoc("floating_panel.controller.position.full", value: "Full screen", comment: "A voiceover title describing that the card's visibility is taking up the full screen.")
         case .half:
@@ -72,33 +72,39 @@ class OBAFloatingPanelController: FloatingPanelController {
             accessibilityValue = OBALoc("floating_panel.controller.position.minimized", value: "Minimized", comment: "A voiceover title describing that the card's visibility taking up the minimum amount of screen.")
         case .hidden:
             accessibilityValue = nil
+        default:
+            accessibilityValue = String(describing: state)
         }
 
         surfaceView.grabberHandle.accessibilityValue = accessibilityValue
     }
 
     @objc private func accessibilityActionExpandPanel() -> Bool {
-        let availableAnchors = self.layout.supportedPositions.sorted(by: \.rawValue)
-        guard let anchor = availableAnchors.firstIndex(of: self.position),
-              anchor != 0       // Enum value of `0` is equivalent to `full`.
-        else { return false }
+        let availableAnchors = self.layout.anchors
 
-        self.move(to: availableAnchors[anchor - 1], animated: true, completion: { [weak self] in
+        guard let currentAnchorIndex = availableAnchors.index(forKey: self.state),
+              let newAnchorIndex = availableAnchors.index(currentAnchorIndex, offsetBy: 1, limitedBy: availableAnchors.endIndex) else {
+            return false
+        }
+
+        self.move(to: availableAnchors[newAnchorIndex].key, animated: true) { [weak self] in
             self?.updateAccessibilityValue()
-        })
+        }
 
         return true
     }
 
     @objc private func accessibilityActionCollapsePanel() -> Bool {
-        let availableAnchors = self.layout.supportedPositions.sorted(by: \.rawValue)
-        guard let anchor = availableAnchors.firstIndex(of: self.position),
-              anchor != availableAnchors.count - 1
-        else { return false }
+        let availableAnchors = self.layout.anchors
 
-        self.move(to: availableAnchors[anchor + 1], animated: true, completion: { [weak self] in
+        guard let currentAnchorIndex = availableAnchors.index(forKey: self.state),
+              let newAnchorIndex = availableAnchors.index(currentAnchorIndex, offsetBy: -1, limitedBy: availableAnchors.endIndex) else {
+            return false
+        }
+
+        self.move(to: availableAnchors[newAnchorIndex].key, animated: true) { [weak self] in
             self?.updateAccessibilityValue()
-        })
+        }
 
         return true
     }

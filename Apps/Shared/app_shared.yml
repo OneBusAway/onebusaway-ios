@@ -92,7 +92,7 @@ packages:
         exactVersion: 5.3.6
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 1.7.6
+        exactVersion: 2.6.0
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0
