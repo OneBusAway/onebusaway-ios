@@ -11,7 +11,7 @@ import OBAKitCore
 struct TripArrivalVieww: View {
     var viewModel: TripArrivalViewModel
 
-    @State var deemphasizePastTrips: Bool = false
+    @State var deemphasizePastTrips: Bool = true
 
     var body: some View {
         HStack {
@@ -32,7 +32,7 @@ struct TripArrivalVieww: View {
 
             DepartureTimeBadgeView(date: viewModel.date, temporalState: viewModel.temporalState, scheduleStatus: viewModel.scheduleStatus)
         }
-        .opacity(deemphasizePastTrips ? 0.3 : 1.0)
+        .opacity(deemphasizePastTrips && viewModel.temporalState == .past ? 0.3 : 1.0)
     }
 }
 
@@ -40,8 +40,9 @@ struct TripArrivalVieww: View {
 struct TripArrivalVieww_Previews: PreviewProvider {
     static var previews: some View {
         List {
-            TripArrivalVieww(viewModel: .pastDelayed, deemphasizePastTrips: true)
-            TripArrivalVieww(viewModel: .futureExample)
+            ForEach(TripArrivalViewModel.all) { tripArrival in
+                TripArrivalVieww(viewModel: tripArrival)
+            }
         }
     }
 }

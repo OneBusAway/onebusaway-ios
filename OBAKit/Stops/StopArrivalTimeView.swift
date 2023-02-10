@@ -11,9 +11,14 @@ import OBAKitCore
 struct DepartureTimeBadgeView: View {
     @Environment(\.themeColors) var themeColors
 
+    // TODO: This needs to do something.
+    @State var flashChangesOnAppear: Bool = false
+
     var date: Date
     var temporalState: TemporalState
     var scheduleStatus: ScheduleStatus
+
+    var backgroundColor: Color = .clear
 
     var body: some View {
         Text(text)
