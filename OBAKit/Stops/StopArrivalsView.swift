@@ -31,25 +31,23 @@ struct StopArrivalsView: View {
                     empty
                 } else {
                     ForEach(arrivalDepartures) { arrDep in
-                        NavigationLink {
-                            Text(arrDep.routeAndHeadsign)
-                        } label: {
-                            TripArrivalVieww(viewModel: arrDep)
-                        }
+                        TripArrivalVieww(viewModel: arrDep)
+                            .onListSelection {
+                                if selectedItem == arrDep {
+                                    selectedItem = nil
+                                } else {
+                                    selectedItem = arrDep
+                                }
+                            }
+                            .listRowBackground(selectedItem == arrDep ? Color(UIColor.systemGroupedBackground) : nil)
                     }
-//                    Picker("", selection: $selectedItem) {
-//                        ForEach(arrivalDepartures, id: \.self) { arrivalDeparture in
-////                            TripArrivalVieww(viewModel: arrivalDeparture)
-////                                .tag(Optional(arrivalDeparture))
-//                        }
-//                    }
-//                    .pickerStyle(.inline)
-//                    .labelsHidden()
-
                 }
             } footer: {
                 Text("Selected \(selectedItem?.routeAndHeadsign ?? "N/A")")
             }
+        }
+        .onAppear {
+            selectedItem = nil
         }
         .refreshable {
             guard !isLoading else {
