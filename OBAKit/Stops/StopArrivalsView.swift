@@ -9,41 +9,28 @@ import SwiftUI
 import OBAKitCore
 
 struct StopArrivalsView: View {
-    @Environment(\.coreApplication) var application
+    @ObservedObject var controller: ArrivalDepartureController
 
-    var stopID: StopID
-
-    @State var error: Error?
+    init(_ application: Application, stopID: StopID) {
+        self.controller = ArrivalDepartureController(application: application, stopID: stopID)
+    }
 
     @State var isLoading: Bool = true
-    @State var minutesBefore: UInt = 10
-    @State var minutesAfter: UInt = 60
-
-    @State var arrivalDepartures: [TripArrivalViewModel] = []
-    @State var selectedItem: TripArrivalViewModel?
+    @State var selectedItem: ArrivalDepartureController.ArrivalDepartureIdentifier?
 
     var body: some View {
         List {
             Section {
-                if isLoading {
+                if isLoading && controller.arrivalDepartures.isEmpty {
                     loading
-                } else if arrivalDepartures.isEmpty {
+                } else if controller.arrivalDepartures.isEmpty {
                     empty
                 } else {
-                    ForEach(arrivalDepartures) { arrDep in
-                        TripArrivalVieww(viewModel: arrDep)
-                            .onListSelection {
-                                if selectedItem == arrDep {
-                                    selectedItem = nil
-                                } else {
-                                    selectedItem = arrDep
-                                }
-                            }
-                            .listRowBackground(selectedItem == arrDep ? Color(UIColor.systemGroupedBackground) : nil)
-                    }
+                    arrivalDeparturesView
+                    loadMore
                 }
             } footer: {
-                Text("Selected \(selectedItem?.routeAndHeadsign ?? "N/A")")
+                Text("Selected \(String(describing: selectedItem))")
             }
         }
         .onAppear {
@@ -57,30 +44,12 @@ struct StopArrivalsView: View {
             isLoading = true
         }
         .task(id: isLoading, priority: .userInitiated) {
-            guard isLoading, let apiService = application.apiService else {
+            guard isLoading else {
                 return
             }
 
-//            try? await Task.sleep(nanoseconds: 2_000_000_000)
-
-            let stopArrivals: StopArrivals
-            do {
-                stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter).entry
-            } catch {
-                await MainActor.run {
-                    self.error = error
-                }
-
-                return
-            }
-
-            let viewModels = stopArrivals.arrivalsAndDepartures.map(TripArrivalViewModel.fromArrivalDeparture)
-
-            await MainActor.run {
-                self.arrivalDepartures = viewModels
-            }
-
-            self.isLoading = false
+            await controller.load()
+            isLoading = false
         }
     }
 
@@ -90,9 +59,37 @@ struct StopArrivalsView: View {
     }
 
     var loading: some View {
-        ForEach(0..<5) { _ in
-            TripArrivalVieww(viewModel: .loadingIndicator)
+        Text("Loading")
+//        ForEach(0..<5) { _ in
+//            TripArrivalVieww(viewModel: .loadingIndicator)
+//        }
+//        .redacted(reason: .placeholder)
+    }
+
+    // MARK: - Has data content
+    var arrivalDeparturesView: some View {
+        ForEach(controller.arrivalDepartures) { arrDep in
+            TripArrivalVieww(object: arrDep)
+                .onListSelection {
+                    if selectedItem == arrDep.id {
+                        selectedItem = nil
+                    } else {
+                        selectedItem = arrDep.id
+                    }
+                }
+                .listRowBackground(selectedItem == arrDep.id ? Color(UIColor.systemGroupedBackground) : nil)
+                .contextMenu {
+                    Button("asdf", action: {})
+                }
         }
-        .redacted(reason: .placeholder)
+    }
+
+    @ViewBuilder
+    var loadMore: some View {
+        Button("Load More") {
+            self.controller.minutesAfter += 30
+            self.isLoading = true
+        }
+        .disabled(isLoading)
     }
 }

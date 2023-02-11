@@ -85,8 +85,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
 
         let stopController = UIHostingController(
-            rootView: StopArrivalsView(stopID: stop.id)
-                .environment(\.coreApplication, application)
+            rootView: StopArrivalsView(application, stopID: stop.id)
+//                .environment(\.coreApplication, application)
         )
 //        let stopController = StopViewController(application: application, stop: stop)
 //        stopController.bookmarkContext = bookmark
@@ -97,8 +97,8 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
 
         let stopController = UIHostingController(
-            rootView: StopArrivalsView(stopID: stopID)
-                .environment(\.coreApplication, application)
+            rootView: StopArrivalsView(application, stopID: stopID)
+//                .environment(\.coreApplication, application)
         )
 //        let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)
