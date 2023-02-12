@@ -9,21 +9,21 @@ import SwiftUI
 import OBAKitCore
 
 struct TripArrivalVieww: View {
-    @ObservedObject var object: ArrivalDepartureController.ArrivalDepartureObject
+    @ObservedObject var viewModel: ArrivalDepartureViewModel
 
     @State var deemphasizePastTrips: Bool = true
 
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text(object.routeAndHeadsign)
+                Text(viewModel.routeAndHeadsign)
                     .font(.headline)
                 StopArrivalExplanationView(
-                    arrivalDepartureDate: object.arrivalDepartureDate,
-                    scheduleStatus: object.scheduleStatus,
-                    temporalState: object.temporalState,
-                    arrivalDepartureStatus: object.arrivalDepartureStatus,
-                    scheduleDeviationInMinutes: object.scheduleDeviationInMinutes
+                    arrivalDepartureDate: viewModel.arrivalDepartureDate,
+                    scheduleStatus: viewModel.scheduleStatus,
+                    temporalState: viewModel.temporalState,
+                    arrivalDepartureStatus: viewModel.arrivalDepartureStatus,
+                    scheduleDeviationInMinutes: viewModel.scheduleDeviationInMinutes
                 )
                     .font(.subheadline)
             }
@@ -31,22 +31,22 @@ struct TripArrivalVieww: View {
             Spacer()
 
             DepartureTimeBadgeView(
-                date: $object.arrivalDepartureDate,
-                temporalState: $object.temporalState,
-                scheduleStatus: $object.scheduleStatus)
+                date: $viewModel.arrivalDepartureDate,
+                temporalState: $viewModel.temporalState,
+                scheduleStatus: $viewModel.scheduleStatus)
         }
-        .opacity(deemphasizePastTrips && object.temporalState == .past ? 0.3 : 1.0)
+        .opacity(deemphasizePastTrips && viewModel.temporalState == .past ? 0.3 : 1.0)
     }
 }
 
 #if DEBUG
-//struct TripArrivalVieww_Previews: PreviewProvider {
-//    static var previews: some View {
-//        List {
-//            ForEach(TripArrivalViewModel.all) { tripArrival in
-//                TripArrivalVieww(viewModel: tripArrival)
-//            }
-//        }
-//    }
-//}
+struct TripArrivalVieww_Previews: PreviewProvider {
+    static var previews: some View {
+        List {
+            ForEach(ArrivalDepartureViewModel.all) { tripArrival in
+                TripArrivalVieww(viewModel: tripArrival)
+            }
+        }
+    }
+}
 #endif

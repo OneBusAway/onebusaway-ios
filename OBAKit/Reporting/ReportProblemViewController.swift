@@ -112,7 +112,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
     }
 
     func onSelectArrivalDeparture(_ arrivalDepartureItem: ArrivalDepartureItem) {
-        guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.arrivalDepartureID }) else { return }
+        guard let arrDep = data?.arrivalsAndDepartures.first(where: { $0.id == arrivalDepartureItem.id }) else { return }
         let controller = VehicleProblemViewController(application: self.application, arrivalDeparture: arrDep)
         self.navigationController?.pushViewController(controller, animated: true)
     }

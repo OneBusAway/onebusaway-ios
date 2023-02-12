@@ -16,7 +16,7 @@ struct StopArrivalsView: View {
     }
 
     @State var isLoading: Bool = true
-    @State var selectedItem: ArrivalDepartureController.ArrivalDepartureIdentifier?
+    @State var selectedItem: ArrivalDeparture.Identifier?
 
     var body: some View {
         List {
@@ -25,6 +25,7 @@ struct StopArrivalsView: View {
                     loading
                 } else if controller.arrivalDepartures.isEmpty {
                     empty
+                    loadMore
                 } else {
                     arrivalDeparturesView
                     loadMore
@@ -69,7 +70,7 @@ struct StopArrivalsView: View {
     // MARK: - Has data content
     var arrivalDeparturesView: some View {
         ForEach(controller.arrivalDepartures) { arrDep in
-            TripArrivalVieww(object: arrDep)
+            TripArrivalVieww(viewModel: arrDep)
                 .onListSelection {
                     if selectedItem == arrDep.id {
                         selectedItem = nil
@@ -86,10 +87,21 @@ struct StopArrivalsView: View {
 
     @ViewBuilder
     var loadMore: some View {
-        Button("Load More") {
-            self.controller.minutesAfter += 30
-            self.isLoading = true
+        VStack(alignment: .leading) {
+            Button("Load More") {
+                self.controller.minutesAfter += 30
+                self.isLoading = true
+            }
+            .disabled(isLoading)
+
+            timeRange
         }
-        .disabled(isLoading)
+    }
+
+    @ViewBuilder
+    var timeRange: some View {
+        if let dateInterval = controller.dateInterval {
+            Text(dateInterval)
+        }
     }
 }
