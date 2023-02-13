@@ -1,5 +1,5 @@
 //
-//  ArrivalDepartureViewModel.swift
+//  ArrivalDepartureViewObject.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 2/12/23.
@@ -8,7 +8,7 @@
 import SwiftUI
 import OBAKitCore
 
-class ArrivalDepartureViewModel: Identifiable, ObservableObject/*, Comparable*/ {
+class ArrivalDepartureViewObject: Identifiable, ObservableObject/*, Comparable*/ {
     let id: ArrivalDeparture.Identifier
 
     @Published var routeAndHeadsign: String
@@ -49,7 +49,7 @@ class ArrivalDepartureViewModel: Identifiable, ObservableObject/*, Comparable*/ 
     }
 
     @MainActor
-    func update(with newValues: ArrivalDepartureViewModel) {
+    func update(with newValues: ArrivalDepartureViewObject) {
         precondition(newValues.id == self.id)
 
         self.routeAndHeadsign = newValues.routeAndHeadsign
@@ -76,8 +76,8 @@ class ArrivalDepartureViewModel: Identifiable, ObservableObject/*, Comparable*/ 
 
 #if DEBUG
 
-extension ArrivalDepartureViewModel {
-    static var all: [ArrivalDepartureViewModel] {
+extension ArrivalDepartureViewObject {
+    static var all: [ArrivalDepartureViewObject] {
         return [
             .pastArrivingEarly,
             .presentDepartingDelayed
@@ -92,7 +92,7 @@ extension ArrivalDepartureViewModel {
         return .now.addingTimeInterval(60 * Double(minutes))
     }
 
-    static var pastArrivingEarly: ArrivalDepartureViewModel {
+    static var pastArrivingEarly: ArrivalDepartureViewObject {
         let id = ArrivalDeparture.Identifier(serviceDate: startOfToday, stopID: "1_1234", routeID: "1_4567", tripID: "1_987654321", stopSequence: 0)
         return .init(
             id: id,
@@ -105,7 +105,7 @@ extension ArrivalDepartureViewModel {
         )
     }
 
-    static var presentDepartingDelayed: ArrivalDepartureViewModel {
+    static var presentDepartingDelayed: ArrivalDepartureViewObject {
         let id = ArrivalDeparture.Identifier(serviceDate: startOfToday, stopID: "1_1234", routeID: "1_4321", tripID: "1_123454321", stopSequence: 0)
         return .init(
             id: id,
