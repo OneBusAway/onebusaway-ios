@@ -11,18 +11,39 @@ import OBAKitCore
 struct DepartureTimeBadgeView: View {
     @Environment(\.themeColors) var themeColors
 
-    @State var shouldFlashChanges: Bool = true
-    @State var pendingFlash: Bool = false
-    @State var isVisible: Bool = false
-
-    var lastShownMinutes: String?
+    // MARK: - Bindings
+    var shouldFlashChanges: Bool
 
     @Binding var date: Date
     @Binding var temporalState: TemporalState
     @Binding var scheduleStatus: ScheduleStatus
 
+    /// - parameter shouldFlashChanges: Briefly flash the `minutes` field if it changes value to visually notify the user of a new time.
+    init(
+        date: Binding<Date>,
+        temporalState: Binding<TemporalState>,
+        scheduleStatus: Binding<ScheduleStatus>,
+        shouldFlashChanges: Bool = true
+    ) {
+        self._date = date
+        self._temporalState = temporalState
+        self._scheduleStatus = scheduleStatus
+        self.shouldFlashChanges = shouldFlashChanges
+    }
+
+    // MARK: - Internal State
+
+    /// We need to flash the background at the next available opportunity, such as when `isVisible == true`.
+    @State private var pendingFlash: Bool = false
+
+    /// Is the view currently visible? Value changes based on `.onAppear` and `.onDisappear`.
+    @State private var isVisible: Bool = false
+
+    /// Keep track of the last value
+    private var lastShownMinutes: String?
+
     @State private var untilMinutes: Int = 0
-    @State var backgroundColor: Color = .clear
+    @State private var backgroundColor: Color = .clear
 
     var body: some View {
         Text(text)
@@ -43,9 +64,10 @@ struct DepartureTimeBadgeView: View {
             .onDisappear {
                 isVisible = false
             }
+            .accessibilityAddTraits(.updatesFrequently)
     }
 
-    func updateUntilMinutes() {
+    private func updateUntilMinutes() {
         let oldUntilMinutes = untilMinutes
         untilMinutes = Int(date.timeIntervalSinceNow / 60.0)
 
@@ -55,7 +77,7 @@ struct DepartureTimeBadgeView: View {
     }
 
     @MainActor
-    func flashBackgroundIfNeeded() {
+    private func flashBackgroundIfNeeded() {
         guard shouldFlashChanges else {
             return
         }
@@ -70,7 +92,7 @@ struct DepartureTimeBadgeView: View {
         }
     }
 
-    var text: String {
+    private var text: String {
         switch temporalState {
         case .present: return OBALoc("formatters.now", value: "NOW", comment: "Short formatted time text for arrivals/departures occurring now.")
         default:
@@ -79,7 +101,7 @@ struct DepartureTimeBadgeView: View {
         }
     }
 
-    var color: Color {
+    private var color: Color {
         let _color: UIColor
 
         switch scheduleStatus {

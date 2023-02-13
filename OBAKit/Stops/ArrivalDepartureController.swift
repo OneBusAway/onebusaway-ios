@@ -9,7 +9,7 @@ import SwiftUI
 import OBAKitCore
 
 class ArrivalDepartureController: ObservableObject {
-    @MainActor @Published private(set) var arrivalDepartures: [ArrivalDepartureViewModel] = []
+    @MainActor @Published private(set) var arrivalDepartures: [ArrivalDepartureViewObject] = []
     private var stopArrivals: StopArrivals?
 
     @Published var minutesBefore: UInt = 10
@@ -62,7 +62,7 @@ class ArrivalDepartureController: ObservableObject {
             return
         }
 
-        let newArrivalDepartures = stopArrivals.arrivalsAndDepartures.map(ArrivalDepartureViewModel.init)
+        let newArrivalDepartures = stopArrivals.arrivalsAndDepartures.map(ArrivalDepartureViewObject.init)
 
         // todo: use OrderedDictionary?
         await MainActor.run {

@@ -70,7 +70,7 @@ struct StopArrivalsView: View {
     // MARK: - Has data content
     var arrivalDeparturesView: some View {
         ForEach(controller.arrivalDepartures) { arrDep in
-            TripArrivalVieww(viewModel: arrDep)
+            ArrivalDepartureView(viewObject: arrDep)
                 .onListSelection {
                     if selectedItem == arrDep.id {
                         selectedItem = nil
