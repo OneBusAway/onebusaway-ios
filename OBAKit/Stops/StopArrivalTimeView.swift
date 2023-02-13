@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 2/9/23.
 //
 
+import Combine
 import SwiftUI
 import OBAKitCore
 
@@ -18,16 +19,19 @@ struct DepartureTimeBadgeView: View {
     @Binding var temporalState: TemporalState
     @Binding var scheduleStatus: ScheduleStatus
 
+    /// - parameter updatingTimer: A timer that triggers the `minutes` field to update with the current relative value. The default timer runs every 10 seconds.
     /// - parameter shouldFlashChanges: Briefly flash the `minutes` field if it changes value to visually notify the user of a new time.
     init(
         date: Binding<Date>,
         temporalState: Binding<TemporalState>,
         scheduleStatus: Binding<ScheduleStatus>,
+        updatingTimer: Timer.TimerPublisher = Timer.publish(every: 10, on: .main, in: .common),
         shouldFlashChanges: Bool = true
     ) {
         self._date = date
         self._temporalState = temporalState
         self._scheduleStatus = scheduleStatus
+        self.updateUntilMinutesTimer = updatingTimer.autoconnect()
         self.shouldFlashChanges = shouldFlashChanges
     }
 
@@ -45,6 +49,8 @@ struct DepartureTimeBadgeView: View {
     @State private var untilMinutes: Int = 0
     @State private var backgroundColor: Color = .clear
 
+    private let updateUntilMinutesTimer: Publishers.Autoconnect<Timer.TimerPublisher>
+
     var body: some View {
         Text(text)
             .foregroundColor(color)
@@ -52,6 +58,9 @@ struct DepartureTimeBadgeView: View {
             .font(.headline)
             .onChange(of: pendingFlash) { _ in
                 flashBackgroundIfNeeded()
+            }
+            .onReceive(updateUntilMinutesTimer) { _ in
+                updateUntilMinutes()
             }
             .onChange(of: date) { _ in
                 updateUntilMinutes()
