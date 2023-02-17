@@ -76,7 +76,6 @@ public class MapViewController: UIViewController,
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     deinit {
-        weatherOperation?.cancel()
         application.mapRegionManager.removeDelegate(self)
         application.locationService.removeDelegate(self)
     }
@@ -255,8 +254,6 @@ public class MapViewController: UIViewController,
         present(alert, animated: true, completion: nil)
     }
 
-    private var weatherOperation: DecodableOperation<WeatherForecast>?
-
     private var forecast: WeatherForecast? {
         didSet {
             if let forecast = forecast {
@@ -273,16 +270,16 @@ public class MapViewController: UIViewController,
     private func loadWeather() {
         guard let apiService = application.obacoService else { return }
 
-        let op = apiService.getWeather()
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            self.forecast = try? result.get()
-            if case let .failure(error) = result {
+        Task {
+            do {
+                let forecast = try await apiService.getWeather()
+                await MainActor.run {
+                    self.forecast = forecast
+                }
+            } catch {
                 Logger.error(error.localizedDescription)
             }
         }
-        weatherOperation = op
     }
 
     // MARK: - Map Type

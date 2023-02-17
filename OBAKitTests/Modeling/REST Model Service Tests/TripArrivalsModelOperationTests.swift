@@ -21,11 +21,11 @@ class TripArrivalsModelOperationTests: OBATestCase {
     lazy var apiPath = "https://www.example.com/api/where/arrival-and-departure-for-stop/\(stopID).json"
 
     func testLoading_success() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "arrival-and-departure-for-stop-MTS_11589.json")
         dataLoader.mock(URLString: apiPath, with: data)
 
-        let response = try await betterRESTService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: "trip123", serviceDate: Date(timeIntervalSince1970: 1234567890), vehicleID: "vehicle_123", stopSequence: 1)
+        let response = try await restService.getTripArrivalDepartureAtStop(stopID: stopID, tripID: "trip123", serviceDate: Date(timeIntervalSince1970: 1234567890), vehicleID: "vehicle_123", stopSequence: 1)
         let arrDep = response.entry
 
         expect(arrDep.arrivalEnabled).to(beTrue())

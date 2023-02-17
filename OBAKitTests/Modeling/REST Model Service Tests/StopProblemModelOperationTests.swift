@@ -27,7 +27,7 @@ class StopProblemModelOperationTests: OBATestCase {
     ]
 
     func testSuccessfulRequest() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(data: Fixtures.loadData(file: "report_stop_problem.json")) { request -> Bool in
             let url = request.url!
@@ -36,7 +36,7 @@ class StopProblemModelOperationTests: OBATestCase {
         }
 
         let report = RESTAPIService.StopProblemReport(stopID: stopID, code: .locationWrong, comment: comment, location: location)
-        let response = try await betterRESTService.getStopProblem(report: report)
+        let response = try await restService.getStopProblem(report: report)
         expect(response.code) == 200
     }
 }

@@ -61,7 +61,7 @@ extension AgencyAlertListViewConverters where Self: UIViewController {
         return OBAListViewSection(id: sectionID, title: title, contents: items)
     }
 
-    func presentAlert(_ alert: TransitAlertDataListViewModel) {
+    @MainActor func presentAlert(_ alert: TransitAlertDataListViewModel) {
         application.viewRouter.navigateTo(alert: alert.transitAlert, from: self)
     }
 }

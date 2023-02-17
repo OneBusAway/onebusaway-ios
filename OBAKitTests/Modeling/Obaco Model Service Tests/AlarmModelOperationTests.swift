@@ -17,31 +17,20 @@ import CoreLocation
 
 class AlarmModelOperationTests: OBATestCase {
 
-    func testSuccessfulAlarmCreation() {
+    func testSuccessfulAlarmCreation() async throws {
         let data = Fixtures.loadData(file: "create_alarm.json")
-        let arrivalDeparture = try! Fixtures.loadRESTAPIPayload(type: ArrivalDeparture.self, fileName: "arrival-and-departure-for-stop-1_11420.json")
+        let arrivalDeparture = try Fixtures.loadRESTAPIPayload(type: ArrivalDeparture.self, fileName: "arrival-and-departure-for-stop-1_11420.json")
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
         dataLoader.mock(URLString: "https://alerts.example.com/api/v1/regions/1/alarms", with: data)
 
-        let op = obacoService.postAlarm(minutesBefore: 1, arrivalDeparture: arrivalDeparture, userPushID: "123")
-
-        waitUntil { done in
-            op.complete { result in
-                switch result {
-                case .failure(let error):
-                    print("TODO FIXME handle error! \(error)")
-                case .success(let response):
-                    expect(response.url) == URL(string: "https://alerts.example.com/regions/1/alarms/1234567890")!
-                    done()
-                }
-            }
-        }
+        let alarm = try await obacoService.postAlarm(minutesBefore: 1, arrivalDeparture: arrivalDeparture, userPushID: "123")
+        XCTAssertEqual(alarm.url.absoluteString, "https://alerts.example.com/regions/1/alarms/1234567890")
     }
 
-    func testSuccessfulAlarmDeletion() {
-        let alarm = try! Fixtures.loadAlarm()
-        expect(alarm).toNot(beNil())
+    func testSuccessfulAlarmDeletion() async throws {
+        let alarm = try Fixtures.loadAlarm()
+        XCTAssertNotNil(alarm)
 
         let dataLoader = (obacoService.dataLoader as! MockDataLoader)
         dataLoader.mock(data: Data()) { (request) -> Bool in
@@ -49,15 +38,8 @@ class AlarmModelOperationTests: OBATestCase {
             request.httpMethod == "DELETE"
         }
 
-        waitUntil { done in
-            let op = self.obacoService.deleteAlarm(url: alarm.url)
-
-            let completion = BlockOperation {
-                expect(op.response!.statusCode) == 200
-                done()
-            }
-            completion.addDependency(op)
-            self.obacoService.networkQueue.addOperation(completion)
-        }
+        let (_, response) = try await obacoService.deleteAlarm(url: alarm.url)
+        let httpResponse = try XCTUnwrap(response as? HTTPURLResponse, "Expected deleteAlarm response to be of type HTTPURLResponse")
+        XCTAssertEqual(httpResponse.statusCode, 200)
     }
 }

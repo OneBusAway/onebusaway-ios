@@ -58,15 +58,9 @@ open class CoreApplication: NSObject,
     ///
     /// - Note: See [develop.onebusaway.org](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/index.html)
     ///         for more information on the REST API.
-    public private(set) var restAPIService: _RESTAPIService? {
+    public private(set) var apiService: RESTAPIService? {
         didSet {
-            alertsStore.apiService = restAPIService
-        }
-    }
-
-    public private(set) var betterAPIService: RESTAPIService? {
-        didSet {
-            alertsStore.betterAPIService = betterAPIService
+            alertsStore.apiService = apiService
         }
     }
 
@@ -120,13 +114,12 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.betterAPIService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
-        self.restAPIService = _RESTAPIService(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, networkQueue: config.queue, dataLoader: config.dataLoader, regionIdentifier: region.regionIdentifier)
+        self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
     }
 
     // MARK: - Obaco
 
-    @objc public private(set) var obacoService: ObacoAPIService? {
+    public private(set) var obacoService: ObacoAPIService? {
         didSet {
             notificationCenter.post(name: obacoServiceUpdatedNotification, object: obacoService)
             alertsStore.obacoService = obacoService
@@ -145,9 +138,8 @@ open class CoreApplication: NSObject,
             let baseURL = config.obacoBaseURL
         else { return }
 
-        obacoNetworkQueue.cancelAllOperations()
-
-        obacoService = ObacoAPIService(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionID: region.regionIdentifier, networkQueue: obacoNetworkQueue, delegate: self, dataLoader: config.dataLoader)
+        let configuration = APIServiceConfiguration(baseURL: baseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier)
+        obacoService = ObacoAPIService(regionID: region.regionIdentifier, delegate: self, configuration: configuration, dataLoader: config.dataLoader)
     }
 
     // MARK: - UUID

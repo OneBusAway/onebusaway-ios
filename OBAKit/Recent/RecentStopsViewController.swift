@@ -77,7 +77,7 @@ public class RecentStopsViewController: UIViewController,
     }
 
     func showDeepLink(deepLink: ArrivalDepartureDeepLink) async {
-        guard let apiService = self.application.betterAPIService else { return }
+        guard let apiService = self.application.apiService else { return }
         await MainActor.run {
             ProgressHUD.show()
         }
@@ -105,7 +105,9 @@ public class RecentStopsViewController: UIViewController,
     }
 
     func onDeleteAlarm(_ viewModel: AlarmViewModel) {
-        self.application.obacoService?.deleteAlarm(url: viewModel.alarm.url)
+        Task {
+            try? await self.application.obacoService?.deleteAlarm(url: viewModel.alarm.url)
+        }
         self.application.userDataStore.delete(alarm: viewModel.alarm)
         self.listView.applyData(animated: true)
     }

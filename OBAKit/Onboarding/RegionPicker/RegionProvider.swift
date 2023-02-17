@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-protocol RegionProvider: ObservableObject {
+public protocol RegionProvider: ObservableObject {
     /// OBA-regions and custom regions.
     var allRegions: [Region] { get }
     var currentRegion: Region? { get }

@@ -18,11 +18,11 @@ import MapKit
 
 class AgenciesWithCoverageModelOperationTests: OBATestCase {
     func testLoading_success() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "agencies_with_coverage.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/agencies-with-coverage.json", with: data)
 
-        let response = try await betterRESTService.getAgenciesWithCoverage()
+        let response = try await restService.getAgenciesWithCoverage()
 
         let agencies = response.list
         let childrens = try XCTUnwrap(agencies.first)

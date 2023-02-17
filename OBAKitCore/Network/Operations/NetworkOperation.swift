@@ -9,10 +9,6 @@
 
 import Foundation
 
-public protocol Requestable {
-    var request: URLRequest { get }
-}
-
 public enum APIError: Error, LocalizedError {
     case captivePortal
     case invalidContentType(originalError: Error?, expectedContentType: String, actualContentType: String?)
@@ -53,66 +49,8 @@ public enum APIError: Error, LocalizedError {
             let fmt = OBALoc("api_error.request_failure_fmt", value: "The server encountered an error while trying to respond to your request, producing the status code %d. (URL: %@)", comment: "An error that is produced in response to HTTP status codes outside of 200-299.")
             return String(format: fmt, response.statusCode, String(response.url?.absoluteString.split(separator: "?").first ?? "(nil)"))
         case .requestNotFound(let response):
-            return "404, not found" // TODO: this
+            let fmt = OBALoc("api_error.request_not_found", value: "404 Not found (%@)", comment: "An error that is produced in response to HTTP status code 404")
+            return String(format: fmt, response.url?.absoluteString ?? "(nil)")
         }
-    }
-}
-
-/// This class makes API calls to the OBA REST service and converts the server's responses into model objects.
-///
-/// - NOTE: The code in this class is largely identical to `ObacoOperation`. If a change is made here,
-/// please be sure to make a change in that file too. Search for the text `AB-20200427` to find that reference.
-public class NetworkOperation: AsyncOperation, Requestable {
-    public let request: URLRequest
-    public private(set) var response: HTTPURLResponse?
-    public private(set) var data: Data?
-
-    public let progress: Progress = Progress(totalUnitCount: 1)
-
-    private var dataTask: URLSessionDataTask?
-    private let dataLoader: URLDataLoader
-
-    public convenience init(url: URL, dataLoader: URLDataLoader) {
-        self.init(request: NetworkOperation.buildRequest(for: url), dataLoader: dataLoader)
-    }
-
-    public init(request: URLRequest, dataLoader: URLDataLoader) {
-        self.request = request
-        self.dataLoader = dataLoader
-        super.init()
-        self.name = request.url?.absoluteString ?? "(Unknown)"
-    }
-
-    public override func start() {
-        super.start()
-
-        let task = dataLoader.dataTask(with: request) { [weak self] (data, response, error) in
-            guard let self = self, !self.isCancelled else { return }
-
-            self.set(data: data, response: response as? HTTPURLResponse, error: error)
-            self.finish()
-        }
-        progress.addChild(task.progress, withPendingUnitCount: 1)
-        task.resume()
-        self.dataTask = task
-    }
-
-    func set(data: Data?, response: HTTPURLResponse?, error: Error?) {
-        self.data = data
-        self.response = response
-        self.error = error
-    }
-
-    public override func cancel() {
-        super.cancel()
-        dataTask?.cancel()
-        finish()
-    }
-
-    class func buildRequest(for url: URL) -> URLRequest {
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-
-        return request
     }
 }

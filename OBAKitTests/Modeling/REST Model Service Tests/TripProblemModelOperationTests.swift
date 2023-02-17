@@ -37,7 +37,7 @@ class TripProblemModelOperationTests: OBATestCase {
     ]
 
     func testSuccessfulRequest() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(data: Fixtures.loadData(file: "report_trip_problem.json")) { request -> Bool in
             let url = request.url!
@@ -46,7 +46,7 @@ class TripProblemModelOperationTests: OBATestCase {
         }
 
         let report = RESTAPIService.TripProblemReport(tripID: tripID, serviceDate: serviceDate, vehicleID: vehicleID, stopID: stopID, code: code, comment: comment, userOnVehicle: userOnVehicle, location: location)
-        let response = try await betterRESTService.getTripProblem(report: report)
+        let response = try await restService.getTripProblem(report: report)
         expect(response.code) == 200
     }
 }

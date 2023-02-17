@@ -28,7 +28,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
     override func setUp() {
         super.setUp()
 
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(
             URLString: makeUrlString(stopID: campusParkwayStopID),
@@ -47,7 +47,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
     }
 
     func test_arrivalAndDepartureStatus() async throws {
-        let arrivals = try await betterRESTService.getArrivalsAndDeparturesForStop(id: galerStopID, minutesBefore: 5, minutesAfter: 30).entry
+        let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: galerStopID, minutesBefore: 5, minutesAfter: 30).entry
 
         expect(arrivals.arrivalsAndDepartures.count) == 5
 
@@ -63,7 +63,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
     }
 
     func testLoading_success() async throws {
-        let arrivals = try await betterRESTService.getArrivalsAndDeparturesForStop(id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30).entry
+        let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: campusParkwayStopID, minutesBefore: 5, minutesAfter: 30).entry
 
         expect(arrivals.nearbyStops.count) == 4
         expect(arrivals.nearbyStops.count) == 4
@@ -127,7 +127,7 @@ class StopArrivalsModelOperationTests: OBATestCase {
         // There are some indications that the data shape from RVTD is different from some other regions.
         // This test is meant to ensure that these different data sources work equally well.
 
-        let arrivals = try await betterRESTService.getArrivalsAndDeparturesForStop(id: rvtdStopID, minutesBefore: 5, minutesAfter: 30).entry
+        let arrivals = try await restService.getArrivalsAndDeparturesForStop(id: rvtdStopID, minutesBefore: 5, minutesAfter: 30).entry
         expect(arrivals.nearbyStops.count) == 3
         expect(arrivals.serviceAlerts.count) == 0
 

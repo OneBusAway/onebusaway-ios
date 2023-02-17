@@ -69,6 +69,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     // MARK: - Public Properties
 
     /// Responsible for figuring out how to navigate between view controllers.
+    @MainActor
     lazy var viewRouter = ViewRouter(application: self)
 
     /// Responsible for creating stop 'badges' for the map.
@@ -89,34 +90,32 @@ public class Application: CoreApplication, PushServiceDelegate {
                 let topVC = self.topViewController
             else { return }
 
-            self.viewRouter.navigateTo(stop: stop, from: topVC)
+            Task { @MainActor in
+                self.viewRouter.navigateTo(stop: stop, from: topVC)
+            }
         }
 
         router?.showArrivalDepartureDeepLink = { [weak self] deepLink in
-            guard
-                let self = self,
-                let apiService = self.restAPIService
-            else { return }
+            guard let self, let apiService = self.apiService else {
+                return
+            }
 
-            ProgressHUD.show()
+            Task(priority: .userInitiated) {
+                await ProgressHUD.show()
 
-            let op = apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence)
-            op.complete { [weak self] result in
-                ProgressHUD.dismiss()
+                do {
+                    let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
 
-                guard
-                    let self = self,
-                    let topVC = self.topViewController
-                else { return }
-
-                switch result {
-                case .failure(let error):
-                    Task { @MainActor in
-                        self.displayError(error)
+                    await MainActor.run {
+                        if let topViewController = self.topViewController {
+                            self.viewRouter.navigateTo(arrivalDeparture: arrDep, from: topViewController)
+                        }
                     }
-                case .success(let response):
-                    self.viewRouter.navigateTo(arrivalDeparture: response.entry, from: topVC)
+                } catch {
+                    await self.displayError(error)
                 }
+
+                await ProgressHUD.dismiss()
             }
         }
 
@@ -148,6 +147,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     /// If data exists to migrate, this method will prompt the user about whether they wish to migrate data from an old format to the new format.
+    @MainActor
     public func performDataMigration() {
         let migrationView = UIHostingController(
             rootView:
@@ -243,23 +243,20 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func pushService(_ pushService: PushService, received pushBody: AlarmPushBody) {
-        guard let apiService = restAPIService else { return }
+        guard let apiService = apiService else { return }
 
-        let op = apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence)
-        op.complete { [weak self] result in
-            guard
-                let self = self,
-                let topController = self.topViewController
-            else { return }
+        Task(priority: .userInitiated) { [weak self] in
+            do {
+                let arrivalDeparture = try await apiService.getTripArrivalDepartureAtStop(stopID: pushBody.stopID, tripID: pushBody.tripID, serviceDate: pushBody.serviceDate, vehicleID: pushBody.vehicleID, stopSequence: pushBody.stopSequence).entry
 
-            switch result {
-            case .failure(let error):
-                Task { @MainActor in
-                    self.displayError(error)
+                if let self, let topViewController = self.topViewController {
+                    await MainActor.run {
+                        let tripController = TripViewController(application: self, arrivalDeparture: arrivalDeparture)
+                        self.viewRouter.navigate(to: tripController, from: topViewController)
+                    }
                 }
-            case .success(let response):
-                let tripController = TripViewController(application: self, arrivalDeparture: response.entry)
-                self.viewRouter.navigate(to: tripController, from: topController)
+            } catch {
+                await self?.displayError(error)
             }
         }
     }
@@ -280,12 +277,14 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         alertBulletin = AgencyAlertBulletin(agencyAlert: alert, locale: locale)
         alertBulletin?.showMoreInformationHandler = { url in
-            if let topViewController = self.topViewController {
-                let safari = SFSafariViewController(url: url)
-                self.viewRouter.present(safari, from: topViewController, isModal: true)
-            }
-            else {
-                self.open(url, options: [:], completionHandler: nil)
+            Task { @MainActor in
+                if let topViewController = self.topViewController {
+                    let safari = SFSafariViewController(url: url)
+                    self.viewRouter.present(safari, from: topViewController, isModal: true)
+                }
+                else {
+                    self.open(url, options: [:], completionHandler: nil)
+                }
             }
         }
         alertBulletin?.show(in: app)
@@ -373,6 +372,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         return appLinksRouter.route(userActivity: userActivity)
     }
 
+    @MainActor
     @objc public func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         guard let scheme = Bundle.main.extensionURLScheme else {
             return false

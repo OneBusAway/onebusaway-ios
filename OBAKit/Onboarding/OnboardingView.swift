@@ -11,7 +11,7 @@ import CoreLocationUI
 
 // As of iOS 15/16, there is no way to set a custom `@Environment(\.dismiss)`.
 // While Onboarding, we don't want the views to `dismiss` normally.
-protocol OnboardingView: View {
+public protocol OnboardingView: View {
     /// When dismissing itself, the View should use `dismissBlock()`, or `@Environment(\.dismiss)` if the former is `nil`.
     var dismissBlock: VoidBlock? { get set }
 
@@ -22,7 +22,7 @@ protocol OnboardingView: View {
 }
 
 extension OnboardingView where Self: View {
-    @MainActor func dismiss() {
+    @MainActor public func dismiss() {
         if let dismissBlock {
             dismissBlock()
         } else {
