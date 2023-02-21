@@ -275,4 +275,13 @@ extension RESTAPIService {
             decodeRESTAPIResponseAs: [AgencyWithCoverage].self
         )
     }
+
+    // MARK: - Helpers
+    nonisolated func getData<T: Decodable>(for url: URL, decodeAs decodeType: T.Type) async throws -> T {
+        return try await getData(for: url, decodeAs: decodeType, using: self.decoder)
+    }
+
+    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
+        return try await getData(for: url, decodeRESTAPIResponseAs: decodeType, using: self.decoder)
+    }
 }

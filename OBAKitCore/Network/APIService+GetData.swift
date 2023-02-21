@@ -1,5 +1,5 @@
 //
-//  RESTAPIService+Processing.swift
+//  APIService+GetData.swift
 //  OBAKitCore
 //
 //  Created by Alan Chu on 12/28/22.
@@ -7,18 +7,15 @@
 
 import Foundation
 
-extension RESTAPIService {
-    nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-
+extension APIService {
+    nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response): (Data, URLResponse)
         do {
-            logger.info("Begin network request for \(url, privacy: .public)")
+            logger.info("Begin network request for \(request.description, privacy: .public)")
             (data, response) = try await dataLoader.data(for: request)
-            logger.info("Finish network request for \(url, privacy: .public)")
-        } catch (let error as NSError) {
-            logger.error("Failed network request for \(url, privacy: .public): \(error, privacy: .public)")
+            logger.info("Finish network request for \(request.description, privacy: .public)")
+        } catch let error as NSError {
+            logger.error("Failed network request for \(request.description, privacy: .public): \(error, privacy: .public)")
             if errorLooksLikeCaptivePortal(error) {
                 throw APIError.captivePortal
             } else {
@@ -27,16 +24,16 @@ extension RESTAPIService {
         }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Failed network request for \(url, privacy: .public): missing response.")
+            logger.error("Failed network request for \(request.description, privacy: .public): missing response.")
             throw APIError.networkFailure(nil)
         }
 
         guard 200...299 ~= httpResponse.statusCode else {
             if httpResponse.statusCode == 404 {
-                logger.error("Failed network request for \(url, privacy: .public): 404 not found.")
+                logger.error("Failed network request for \(request.description, privacy: .public): 404 not found.")
                 throw APIError.requestNotFound(httpResponse)
             } else {
-                logger.error("Failed network request for \(url, privacy: .public): \(httpResponse).")
+                logger.error("Failed network request for \(request.description, privacy: .public): \(httpResponse).")
                 throw APIError.requestFailure(httpResponse)
             }
         }
@@ -46,19 +43,26 @@ extension RESTAPIService {
         // data (e.g. a non-existent Stop ID), it should return a 404 error to you.
         // Instead, it gives a 200 and a blank body.
         if httpResponse.expectedContentLength == 0 && httpResponse.statusCode == 200 {
-            logger.error("Failed network request for \(url, privacy: .public): 404 not found.")
+            logger.error("Failed network request for \(request.description, privacy: .public): 404 not found.")
             throw APIError.requestNotFound(httpResponse)
         }
 
-        guard data.isEmpty == false else {
-            logger.error("Failed network request for \(url, privacy: .public): missing response body.")
+        if request.httpMethod == "GET" && data.isEmpty {
+            logger.error("Failed network request for \(request.description, privacy: .public): missing response body.")
             throw APIError.noResponseBody
         }
 
         return (data, httpResponse)
     }
 
-    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type) async throws -> T {
+    nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
+
+        return try await data(for: request)
+    }
+
+    nonisolated func getData<T: Decodable>(for url: URL, decodeAs: T.Type, using decoder: DataDecoder) async throws -> T {
         let (data, response) = try await self.getData(for: url)
 
         guard response.hasJSONContentType else {
@@ -67,7 +71,7 @@ extension RESTAPIService {
         }
 
         do {
-            return try self.decoder.decode(T.self, from: data)
+            return try decoder.decode(T.self, from: data)
         } catch {
             logger.error("Decoder failed for \(url, privacy: .public): \(error, privacy: .public)")
             throw error
@@ -75,8 +79,8 @@ extension RESTAPIService {
     }
 
     /// Convenience.
-    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type) async throws -> RESTAPIResponse<T> {
-        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self)
+    nonisolated func getData<T: Decodable>(for url: URL, decodeRESTAPIResponseAs decodeType: T.Type, using decoder: DataDecoder) async throws -> RESTAPIResponse<T> {
+        return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
     }
 
     private nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {

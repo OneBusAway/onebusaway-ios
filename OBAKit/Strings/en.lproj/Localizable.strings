@@ -98,22 +98,22 @@
 "custom_region_builder_controller.service_area_section.header_title" = "Service Area";
 
 /* Action button title for the DataMigrationBulletinPage. */
-"data_migration_bulletin.action_button" = "Migrate";
+"data_migration_bulletin.action_button" = "Continue";
 
 /* Dismissal button title for the DataMigrationBulletinPage. */
-"data_migration_bulletin.dismiss_button" = "Maybe Later…";
+"data_migration_bulletin.dismiss_button" = "Not Now";
 
 /* An error message that appears when the user needs to have data migrated, but is not connected to the Internet. */
 "data_migration_bulletin.errors.no_api_service_available" = "Check your internet connection and try again.";
 
 /* An error message that appears when the data migrator runs but no data can be migrated. */
-"data_migration_bulletin.errors.no_data_to_migrate" = "You're all set!";
+"data_migration_bulletin.errors.no_data_to_migrate" = "No data to upgrade";
 
 /* An error message that appears when the data migrator runs without a pending migration. */
-"data_migration_bulletin.errors.no_migration_pending" = "No data migration is pending.";
+"data_migration_bulletin.errors.no_migration_pending" = "No data upgrade is pending.";
 
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
-"data_migration_bulletin.finished_loading" = "We're all done upgrading your data. Thanks for your patience!";
+"data_migration_bulletin.finished_loading" = "Data Upgrade Complete";
 
 /* Explanatory text that tells the user how to migrate their data later on. */
 "data_migration_bulletin.migrate_later_text" = "You can upgrade your data later by going to the More tab > Settings, and then tapping on the Migrate Data button.";

@@ -84,10 +84,6 @@ public class StopViewController: UIViewController,
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
     // MARK: - Data
-
-    /// The data-loading operation for this controller.
-    var operation: DecodableOperation<RESTAPIResponse<StopArrivals>>?
-
     /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
@@ -163,7 +159,6 @@ public class StopViewController: UIViewController,
     deinit {
         reloadTimer.invalidate()
         enableIdleTimer()
-        operation?.cancel()
     }
 
     // MARK: - UIViewController Overrides
@@ -445,9 +440,7 @@ public class StopViewController: UIViewController,
 
     /// Reloads data from the server and repopulates the UI once it finishes loading.
     func updateData() async {
-        operation?.cancel()
-
-        guard let apiService = application.betterAPIService else { return }
+        guard let apiService = application.apiService else { return }
 
         title = Strings.updating
 

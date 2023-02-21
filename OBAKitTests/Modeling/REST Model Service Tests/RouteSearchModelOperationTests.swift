@@ -23,11 +23,11 @@ class RouteSearchModelOperationTests: OBATestCase {
     lazy var region = CLCircularRegion(center: center, radius: radius, identifier: "identifier")
 
     func testLoading_success() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
         let data = Fixtures.loadData(file: "routes-for-location-10.json")
         dataLoader.mock(URLString: "https://www.example.com/api/where/routes-for-location.json", with: data)
 
-        let response = try await betterRESTService.getRoute(query: query, region: region)
+        let response = try await restService.getRoute(query: query, region: region)
         let routes = response.list
 
         expect(routes.count) == 1

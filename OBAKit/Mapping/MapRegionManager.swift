@@ -213,7 +213,6 @@ public class MapRegionManager: NSObject,
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
-        requestStopsOperation?.cancel()
     }
 
     // MARK: - Global Map Helpers
@@ -229,7 +228,7 @@ public class MapRegionManager: NSObject,
     // MARK: - Data Loading
 
     func requestDataForMapRegion() async {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             return
         }
 
@@ -329,10 +328,6 @@ public class MapRegionManager: NSObject,
             delegate.mapRegionManagerDismissSearch?(self)
         }
     }
-
-    // MARK: - Operations
-
-    private var requestStopsOperation: DecodableOperation<RESTAPIResponse<[Stop]>>?
 
     // MARK: - Setters
 
@@ -469,7 +464,7 @@ public class MapRegionManager: NSObject,
     // MARK: - Search/Route
 
     func _loadSearchResponse(_ searchResponse: SearchResponse, route: Route) async {
-        guard let apiService = application.betterAPIService else {
+        guard let apiService = application.apiService else {
             return
         }
 

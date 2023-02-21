@@ -8,11 +8,12 @@
 import Foundation
 import os.log
 
+/// Makes API calls to the OBA REST service and converts the server's responses into model objects.
 public actor RESTAPIService: APIService {
     public let configuration: APIServiceConfiguration
     public nonisolated let dataLoader: URLDataLoader
 
-    let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "RESTAPIService")
+    public let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "RESTAPIService")
 
     nonisolated let urlBuilder: RESTAPIURLBuilder
     nonisolated let decoder: JSONDecoder

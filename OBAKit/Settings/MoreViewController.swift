@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import SwiftUI
 import MessageUI
 import OBAKitCore
 import SafariServices
@@ -119,10 +120,16 @@ public class MoreViewController: UIViewController,
     var myLocationSection: OBAListViewSection {
         var contents: [AnyOBAListViewItem] = []
 
-        contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { _ in
-            let regionPicker = RegionPickerViewController(application: self.application)
-            let nav = self.application.viewRouter.buildNavigation(controller: regionPicker)
-            self.application.viewRouter.present(nav, from: self)
+        contents.append(OBAListRowView.ValueViewModel(title: OBALoc("more_controller.my_location.region_row_title", value: "Region", comment: "Title of the row that lets the user choose their current region."), subtitle: application.currentRegion?.name, onSelectAction: { [unowned self] _ in
+
+            let regionPicker = UIHostingController(
+                rootView: NavigationView {
+                    RegionPickerView(regionProvider: RegionPickerCoordinator(regionsService: self.application.regionsService))
+                        .interactiveDismissDisabled()
+                }.navigationViewStyle(.stack)
+            )
+
+            self.application.viewRouter.present(regionPicker, from: self)
         }).typeErased)
 
         if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {

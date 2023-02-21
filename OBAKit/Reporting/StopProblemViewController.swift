@@ -120,7 +120,7 @@ class StopProblemViewController: FormViewController {
             let codeRow = form.rowBy(tag: "stopProblemCode") as? PickerInputRow<StopProblemCode>,
             let commentRow = form.rowBy(tag: "comments") as? TextAreaRow,
             let stopProblemCode = codeRow.value,
-            let apiService = application.betterAPIService
+            let apiService = application.apiService
         else { return }
 
         let location = isLocationSharingPermitted ? application.locationService.currentLocation : nil

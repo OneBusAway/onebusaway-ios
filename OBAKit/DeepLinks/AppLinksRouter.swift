@@ -140,7 +140,7 @@ public class AppLinksRouter: NSObject {
             let userInfo = userActivity.userInfo,
             let stopID = userInfo[UserActivityBuilder.UserInfoKeys.stopID] as? StopID,
             let regionID = userInfo[UserActivityBuilder.UserInfoKeys.regionID] as? Int,
-            let apiService = application.betterAPIService,
+            let apiService = application.apiService,
             application.currentRegion?.regionIdentifier == regionID
             else {
                 return false

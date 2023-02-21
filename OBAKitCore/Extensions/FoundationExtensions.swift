@@ -128,14 +128,23 @@ public extension Bundle {
 public extension Dictionary where Key == String {
 
     /// Creates a new `Dictionary<String, Value>` from the XML Property List at `plistPath`.
-    /// - Parameter plistPath: The path to the XML Property List file.
+    /// - Throws: `Data(contentsOf:)` or `PropertyListSerialization.propertyList(from:format:)` errors.
+    /// - Parameter plistPath: The file path to the XML Property List file.
     init?(plistPath: String) throws {
-        var format = PropertyListSerialization.PropertyListFormat.xml
+        let url = URL(fileURLWithPath: plistPath)
+        try self.init(plistData: try Data(contentsOf: url))
+    }
 
-        guard
-            let data = FileManager.default.contents(atPath: plistPath),
-            let decoded = try PropertyListSerialization.propertyList(from: data, options: [], format: &format) as? [String: Value]
-        else { return nil }
+    /// Creates a new `Dictionary<String, Value>` from the XML Property List, `data`.
+    /// - Throws: `PropertyListSerialization.propertyList(from:format:)` errors.
+    /// - Parameter data: The  XML Property List as Data.
+    init?(plistData data: Data) throws {
+        var format = PropertyListSerialization.PropertyListFormat.xml
+        let decoded = try PropertyListSerialization.propertyList(from: data, format: &format)
+
+        guard let decoded = decoded as? [String: Value] else {
+            return nil
+        }
 
         self = decoded
     }

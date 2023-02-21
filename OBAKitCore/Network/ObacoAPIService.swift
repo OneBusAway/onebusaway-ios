@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os.log
 
 public protocol ObacoServiceDelegate: NSObjectProtocol {
     var shouldDisplayRegionalTestAlerts: Bool { get }
@@ -16,57 +17,59 @@ public protocol ObacoServiceDelegate: NSObjectProtocol {
 /// API service client for the Obaco (`alerts.onebusaway.org`) service.
 ///
 /// Obaco provides services like weather, trip status, and alarms to the iOS app.
-public class ObacoAPIService: _APIService {
+public actor ObacoAPIService: APIService {
+    public let configuration: APIServiceConfiguration
+    public nonisolated let dataLoader: URLDataLoader
 
-    private let regionID: Int
+    public let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "ObacoAPIService")
 
-    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionID: Int, networkQueue: OperationQueue, delegate: ObacoServiceDelegate?, dataLoader: URLDataLoader) {
-        self.regionID = regionID
-        self.delegate = delegate
-        super.init(baseURL: baseURL, apiKey: apiKey, uuid: uuid, appVersion: appVersion, networkQueue: networkQueue, dataLoader: dataLoader)
-    }
+    private let regionID: RegionIdentifier
+    private weak var delegate: ObacoServiceDelegate?
 
-    private func buildOperation<T>(type: T.Type, URL: URL) -> DecodableOperation<T> where T: Decodable {
-        return DecodableOperation(type: type, decoder: JSONDecoder.obacoServiceDecoder, URL: URL, dataLoader: dataLoader)
-    }
-
-    // MARK: - Delegate
-
-    public weak var delegate: ObacoServiceDelegate?
-
-    private var shouldDisplayRegionalTestAlerts: Bool {
-        guard let delegate = delegate else {
+    private var shouldDisplayRegionTestAlerts: Bool {
+        guard let delegate else {
             return false
         }
 
         return delegate.shouldDisplayRegionalTestAlerts
     }
 
-    // MARK: - URL Construction
+    public init(regionID: RegionIdentifier, delegate: ObacoServiceDelegate?, configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
+        self.regionID = regionID
+        self.delegate = delegate
+        self.configuration = configuration
+        self.dataLoader = dataLoader
+    }
 
-    private func buildURL(path: String, queryItems: [URLQueryItem]? = nil) -> URL {
-        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+    /// - precondition: `configuration.regionIdentifier` must be non-nil.
+    public init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader) {
+        guard let regionID = configuration.regionIdentifier else {
+            preconditionFailure("Configuration must have a region identifier.")
+        }
+
+        self.regionID = regionID
+        self.delegate = nil
+        self.configuration = configuration
+        self.dataLoader = dataLoader
+    }
+
+    private nonisolated func buildURL(path: String, queryItems: [URLQueryItem] = []) -> URL {
+        var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)!
         components.appendPath(path)
-        components.queryItems = defaultQueryItems + (queryItems ?? [])
+        components.queryItems = configuration.defaultQueryItems + queryItems
 
         return components.url!
     }
 
-    // MARK: - Weather
+    public nonisolated func getWeather() async throws -> WeatherForecast {
+        let path = String(format: "/api/v1/regions/%d/weather.json", regionID)
+        let url = buildURL(path: path)
 
-    public func getWeather() -> DecodableOperation<WeatherForecast> {
-        let apiPath = String(format: "/api/v1/regions/%d/weather.json", regionID)
-        let url = buildURL(path: apiPath)
-        let operation = buildOperation(type: WeatherForecast.self, URL: url)
-        enqueueOperation(operation)
-
-        return operation
+        return try await getData(for: url, decodeAs: WeatherForecast.self, using: JSONDecoder.obacoServiceDecoder)
     }
 
-    // MARK: - Alarms
-
-    public func postAlarm(minutesBefore: Int, arrivalDeparture: ArrivalDeparture, userPushID: String) -> DecodableOperation<Alarm> {
-        return postAlarm(
+    public nonisolated func postAlarm(minutesBefore: Int, arrivalDeparture: ArrivalDeparture, userPushID: String) async throws -> Alarm {
+        return try await postAlarm(
             secondsBefore: TimeInterval(minutesBefore * 60),
             stopID: arrivalDeparture.stopID,
             tripID: arrivalDeparture.tripID,
@@ -77,7 +80,7 @@ public class ObacoAPIService: _APIService {
         )
     }
 
-    public func postAlarm(
+    public nonisolated func postAlarm(
         secondsBefore: TimeInterval,
         stopID: StopID,
         tripID: String,
@@ -85,7 +88,7 @@ public class ObacoAPIService: _APIService {
         vehicleID: String?,
         stopSequence: Int,
         userPushID: String
-    ) -> DecodableOperation<Alarm> {
+    ) async throws -> Alarm {
         let url = buildURL(path: String(format: "/api/v1/regions/%d/alarms", regionID))
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
@@ -104,39 +107,48 @@ public class ObacoAPIService: _APIService {
         }
         urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
 
-        let operation = DecodableOperation(type: Alarm.self, decoder: JSONDecoder.obacoServiceDecoder, request: urlRequest as URLRequest, dataLoader: dataLoader)
-        enqueueOperation(operation)
-        return operation
+        let (data, _) = try await data(for: urlRequest as URLRequest)
+        return try JSONDecoder.obacoServiceDecoder.decode(Alarm.self, from: data)
     }
 
-    @discardableResult public func deleteAlarm(url: URL) -> NetworkOperation {
+    @discardableResult public nonisolated func deleteAlarm(url: URL) async throws -> (Data, URLResponse) {
         let request = NSMutableURLRequest(url: url)
         request.httpMethod = "DELETE"
-        let op = NetworkOperation(request: request as URLRequest, dataLoader: dataLoader)
-        enqueueOperation(op)
-        return op
+
+        return try await data(for: request as URLRequest)
     }
 
     // MARK: - Vehicles
-
-    public func getVehicles(matching query: String) -> DecodableOperation<[AgencyVehicle]> {
+    public nonisolated func getVehicles(matching query: String) async throws -> [AgencyVehicle] {
         let apiPath = String(format: "/api/v1/regions/%d/vehicles", regionID)
         let url = buildURL(path: apiPath, queryItems: [URLQueryItem(name: "query", value: query)])
-        let op = buildOperation(type: [AgencyVehicle].self, URL: url)
-        enqueueOperation(op)
-        return op
+
+        return try await getData(for: url, decodeAs: [AgencyVehicle].self, using: JSONDecoder.obacoServiceDecoder)
     }
 
     // MARK: - Alerts
-
-    public func getAlerts(agencies: [AgencyWithCoverage]) -> AgencyAlertsOperation {
-        let queryItems = shouldDisplayRegionalTestAlerts ? [URLQueryItem(name: "test", value: "1")] : nil
+    public func getAlerts(agencies: [AgencyWithCoverage]) async throws -> [AgencyAlert] {
+        let queryItems = self.shouldDisplayRegionTestAlerts ? [URLQueryItem(name: "test", value: "1")] : []
         let apiPath = String(format: "/api/v1/regions/%d/alerts.pb", regionID)
         let url = buildURL(path: apiPath, queryItems: queryItems)
 
-        let op = AgencyAlertsOperation(agencies: agencies, URL: url, dataLoader: dataLoader)
-        enqueueOperation(op)
+        let (data, _) = try await getData(for: url)
+        let message = try TransitRealtime_FeedMessage(serializedData: data)
+        let entities = message.entity
 
-        return op
+        var qualifiedEntities: [TransitRealtime_FeedEntity] = []
+        for entity in entities {
+            let hasAlert = entity.hasAlert
+            let alert = entity.alert
+            let isAgencyWide = AgencyAlert.isAgencyWideAlert(alert: alert)
+
+            if hasAlert && isAgencyWide {
+                qualifiedEntities.append(entity)
+            }
+        }
+
+        return qualifiedEntities.compactMap { (entity: TransitRealtime_FeedEntity) -> AgencyAlert? in
+            return try? AgencyAlert(feedEntity: entity, agencies: agencies)
+        }
     }
 }

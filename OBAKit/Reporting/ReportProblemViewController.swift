@@ -15,7 +15,7 @@ import OBAKitCore
 /// From here, a user can report a problem either about a `Stop` or about a trip at that stop.
 ///
 /// - Note: This view controller expects to be presented modally.
-class ReportProblemViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, StopArrivals>,
+class ReportProblemViewController: TaskController<StopArrivals>,
     OBAListViewDataSource {
 
     private let stop: Stop
@@ -58,28 +58,22 @@ class ReportProblemViewController: OperationController<DecodableOperation<RESTAP
     let listView = OBAListView()
 
     // MARK: - OperationController
-
-    override func loadData() -> DecodableOperation<RESTAPIResponse<StopArrivals>>? {
-        guard let apiService = application.restAPIService else { return nil }
+    override func loadData() async throws -> StopArrivals {
+        guard let apiService = application.apiService else {
+            throw UnstructuredError("")
+        }
 
         ProgressHUD.show()
-
-        let op = apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
-        op.complete { [weak self] result in
-            ProgressHUD.dismiss()
-
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.data = response.entry
+        defer {
+            Task { @MainActor in
+                ProgressHUD.dismiss()
             }
         }
-        return op
+
+        return try await apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30).entry
     }
 
+    @MainActor
     override func updateUI() {
         listView.applyData()
     }

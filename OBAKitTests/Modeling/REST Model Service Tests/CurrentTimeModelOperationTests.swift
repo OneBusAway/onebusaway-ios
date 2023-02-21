@@ -18,13 +18,13 @@ import CoreLocation
 class CurrentTimeModelOperationTests: OBATestCase {
 
     func testCurrentTime_success() async throws {
-        let dataLoader = (betterRESTService.dataLoader as! MockDataLoader)
+        let dataLoader = (restService.dataLoader as! MockDataLoader)
 
         dataLoader.mock(
             URLString: "https://www.example.com/api/where/current-time.json",
             with: Fixtures.loadData(file: "current_time.json"))
 
-        let response = try await betterRESTService.getCurrentTime()
+        let response = try await restService.getCurrentTime()
         expect(response.currentTime) == 1343587068277
     }
 }

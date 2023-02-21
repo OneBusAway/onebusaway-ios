@@ -11,7 +11,7 @@ import Foundation
 import CoreLocation
 
 @objc(OBARegionsServiceDelegate)
-public protocol RegionsServiceDelegate: NSObjectProtocol {
+public protocol RegionsServiceDelegate {
     @objc optional func regionsServiceUnableToSelectRegion(_ service: RegionsService)
     @objc optional func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region])
     @objc optional func regionsService(_ service: RegionsService, willUpdateToRegion region: Region)
@@ -75,10 +75,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         self.locationService.addDelegate(self)
-    }
-
-    deinit {
-        cancelRequests()
     }
 
     // MARK: - Delegates
@@ -207,44 +203,45 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     }
 
     // MARK: - Custom Regions
-
-    public func addCustomRegion(_ region: Region) {
+    /// Adds the provided custom region to the RegionsService.
+    /// If an existing custom region with the same `regionIdentifier` exists, the new region replaces the existing region.
+    /// - throws: Persistence storage errors.
+    public func add(customRegion newRegion: Region) async throws {
         var regions = customRegions
-
-        if let idx = regions.firstIndex(where: { $0.regionIdentifier == region.regionIdentifier }) {
-            regions.remove(at: idx)
+        if let index = regions.firstIndex(where: { $0.regionIdentifier == newRegion.regionIdentifier }) {
+            regions.remove(at: index)
         }
 
-        regions.append(region)
+        regions.append(newRegion)
 
-        do {
-            try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
-        }
-        catch {
-            Logger.error("Unable to write custom regions to user defaults: \(error)")
-        }
+        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
     }
 
-    /// Deletes the custom region with the matching identifier.
-    /// - Parameter identifier: The region identifier used to find the custom region to delete.
-    /// - Returns: True if the custom region was found and deleted, and false if it could not be found.
-    @discardableResult public func deleteCustomRegion(identifier: RegionIdentifier) -> Bool {
-        var success = false
+    /// Deletes the custom region. If the region could not be found, this method exits normally.
+    /// - parameter customRegion: The custom region to delete.
+    /// - throws: If `customRegion` is not a custom region, this method will throw.
+    public func delete(customRegion: Region) async throws {
+        try await delete(customRegionIdentifier: customRegion.regionIdentifier)
+    }
+
+    /// Deletes the custom region with the matching identifier. If a region with the given identifier could not be found, this method exits normally.
+    /// - parameter identifier: The region identifier used to find the custom region to delete.
+    /// - throws: If a custom region with the provided `identifier` could not be found, or is not a custom region, this method will throw.
+    public func delete(customRegionIdentifier identifier: RegionIdentifier) async throws {
         var regions = customRegions
 
-        if let idx = regions.firstIndex(where: { $0.regionIdentifier == identifier }) {
-            regions.remove(at: idx)
-
-            do {
-                try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
-                success = true
-            }
-            catch {
-                Logger.error("Unable to write custom regions to user defaults: \(error)")
-            }
+        guard self.currentRegion?.regionIdentifier != identifier else {
+            throw UnstructuredError(
+                "Cannot delete the current selected region",
+                recoverySuggestion: "Choose a different region to be the currently selected region, before deleting this region.")
         }
 
-        return success
+        guard let index = regions.firstIndex(where: { $0.regionIdentifier == identifier }) else {
+            return
+        }
+
+        regions.remove(at: index)
+        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
     }
 
     public var customRegions: [Region] {
@@ -338,43 +335,38 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     // MARK: - Public Methods
 
     /// Fetches the current list of `Region`s from the network.
+    public func refreshRegions() async throws {
+        guard let apiService, let apiPath else {
+            return
+        }
+
+        let regions = try await apiService.getRegions(apiPath: apiPath).list
+        guard !regions.isEmpty else {
+            return
+        }
+
+        // FIXME: Audit which delegates are doing stuff on background thread, when they should be on Main.
+        await MainActor.run {
+            self.regions = regions
+        }
+    }
+
+    /// Fetches the current list of `Region`s from the network.
     /// - Parameter forceUpdate: Forces an update of the regions list, even if the last update happened less than one week ago.
-    public func updateRegionsList(forceUpdate: Bool = false) {
+    public func updateRegionsList(forceUpdate: Bool = false) async {
         // only update once per week, unless forceUpdate is true.
         if !shouldUpdateRegionList && !forceUpdate {
             notifyDelegatesRegionListUpdateCancelled()
             return
         }
 
-        guard
-            let apiService = apiService,
-            let apiPath = apiPath
-        else {
-            return
+        do {
+            try await refreshRegions()
+            updateCurrentRegionFromLocation()
+        } catch {
+            notifyDelegatesDisplayError(error)
         }
-
-        let op = apiService.getRegions(apiPath: apiPath)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.notifyDelegatesDisplayError(error)
-            case .success(let response):
-                guard response.list.count > 0 else { return }
-                self.regions = response.list
-                self.updateCurrentRegionFromLocation()
-            }
-        }
-        self.regionsOperation = op
     }
-
-    /// Cancels active network requests, if any exist.
-    public func cancelRequests() {
-        regionsOperation?.cancel()
-    }
-
-    private var regionsOperation: DecodableOperation<RESTAPIResponse<[Region]>>?
 
     // MARK: - LocationServiceDelegate
 

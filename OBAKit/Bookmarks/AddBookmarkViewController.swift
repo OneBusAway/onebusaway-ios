@@ -18,7 +18,7 @@ protocol BookmarkEditorDelegate: NSObjectProtocol {
 /// The entry-point view controller for creating a new bookmark.
 ///
 /// - Note: This controller expects to be presented modally.
-class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIResponse<StopArrivals>>, [ArrivalDeparture]>, OBAListViewDataSource {
+class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListViewDataSource {
     private let stop: Stop
     private weak var delegate: BookmarkEditorDelegate?
 
@@ -52,14 +52,13 @@ class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIR
 
     // MARK: - OBAListView
     let listView = OBAListView()
-    var error: Error?
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
         return [wholeStopBookmarkSection, tripBookmarkSection].compactMap { $0 }
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
-        if let error = error {
+        if let error {
             return .standard(.init(error: error))
         } else {
             return nil
@@ -95,25 +94,15 @@ class AddBookmarkViewController: OperationController<DecodableOperation<RESTAPIR
     }
 
     // MARK: - Data and UI
-
-    override func loadData() -> DecodableOperation<RESTAPIResponse<StopArrivals>>? {
-        guard let apiService = application.restAPIService else { return nil }
-
-        let op = apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30)
-        op.complete { [weak self] result in
-            guard let self = self else { return }
-
-            switch result {
-            case .failure(let error):
-                self.application.displayError(error)
-            case .success(let response):
-                self.data = response.entry.arrivalsAndDepartures
-            }
+    override func loadData() async throws -> [ArrivalDeparture] {
+        guard let apiService = application.apiService else {
+            throw UnstructuredError("No API Service")
         }
 
-        return op
+        return try await apiService.getArrivalsAndDeparturesForStop(id: stop.id, minutesBefore: 30, minutesAfter: 30).entry.arrivalsAndDepartures
     }
 
+    @MainActor
     override func updateUI() {
         listView.applyData()
     }
