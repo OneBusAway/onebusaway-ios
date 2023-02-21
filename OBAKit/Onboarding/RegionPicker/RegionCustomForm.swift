@@ -166,6 +166,7 @@ struct RegionCustomForm: View {
     }
 }
 
+#if DEBUG
 struct RegionCustomForm_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
@@ -182,3 +183,4 @@ struct RegionCustomForm_Previews: PreviewProvider {
         .previewDisplayName("Edit existing region")
     }
 }
+#endif
