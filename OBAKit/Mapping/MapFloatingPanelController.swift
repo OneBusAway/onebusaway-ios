@@ -14,7 +14,7 @@ import OBAKitCore
 protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
-    func mapPanelController(_ controller: MapFloatingPanelController, moveTo position: FloatingPanelPosition, animated: Bool)
+    func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool)
 }
 
 /// This is the view controller that powers the drawer on the `MapViewController`.

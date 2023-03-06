@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/xmartlabs/Eureka.git",
       "state" : {
-        "revision" : "a7523afdfe38478c6d5706a8ac01d26590835493",
-        "version" : "5.3.6"
+        "revision" : "b6e35acf77a5551070afa6248935ec68e71f22af",
+        "version" : "5.4.0"
       }
     },
     {
@@ -77,8 +77,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SCENEE/FloatingPanel.git",
       "state" : {
-        "revision" : "ca7596e1cae161415f54059a8c44b82c95724160",
-        "version" : "1.7.6"
+        "revision" : "d6bbf92339c9c002ba66895878ba0acaa7c1a05a",
+        "version" : "2.6.0"
       }
     },
     {
