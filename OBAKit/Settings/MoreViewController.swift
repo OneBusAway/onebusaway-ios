@@ -175,15 +175,6 @@ public class MoreViewController: UIViewController,
                     guard let url = Bundle.main.privacyPolicyURL else { return }
                     let safari = SFSafariViewController(url: url)
                     self.application.viewRouter.present(safari, from: self)
-                }),
-
-            OBAListRowView.DefaultViewModel(
-                title: OBALoc(
-                    "more_controller.weather_credits_row",
-                    value: "Weather forecasts powered by Dark Sky",
-                    comment: "Weather forecast attribution"),
-                onSelectAction: { _ in
-                    self.application.open(URL(string: "https://darksky.net/poweredby/")!, options: [:], completionHandler: nil)
                 })
         ])
     }
