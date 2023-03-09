@@ -373,6 +373,8 @@ class MapViewController: UIViewController,
         // Set a content view controller.
         panel.set(contentViewController: childController)
 
+        panel.contentInsetAdjustmentBehavior = .never
+
         if let scrollableChildController = childController as? Scrollable {
             panel.track(scrollView: scrollableChildController.scrollView)
         }
@@ -393,6 +395,10 @@ class MapViewController: UIViewController,
 
         // Track a scroll view (or the siblings) in the content view controller.
         panel.track(scrollView: mapPanelController.listView)
+
+        // Content Inset Adjustment + OBAListView don't play well together and causes undefined behavior,
+        // as described in "OBAListView "sticky" row behavior while scrolling in panel" (#321)
+        panel.contentInsetAdjustmentBehavior = .never
 
         return panel
     }()
