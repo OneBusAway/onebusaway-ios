@@ -61,6 +61,7 @@ struct StopPreferencesWrappedView: View {
         NavigationView {
             StopPreferencesView(viewModel: $viewModel)
         }
+        .navigationViewStyle(.stack)
         .onReceive(Just(viewModel.selectedRoutes), perform: { _ in
             guard let delegate = delegate else {
                 return
