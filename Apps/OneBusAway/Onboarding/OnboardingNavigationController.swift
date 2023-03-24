@@ -45,7 +45,7 @@ public class OnboardingNavigationController: UINavigationController {
             return true
         }
 
-        return application.regionsService.currentRegion == nil || application.hasDataToMigrate
+        return application.regionsService.currentRegion == nil || application.shouldPerformMigration
     }
 
     public init(application: Application, dataMigrator: DataMigrator = .standard, completion: @escaping VoidBlock) {
