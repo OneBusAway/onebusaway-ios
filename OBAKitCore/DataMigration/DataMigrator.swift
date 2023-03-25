@@ -70,6 +70,8 @@ public class DataMigrator {
         }
     }
 
+    /// Returns whether we should prompt the user to perform a data migration.
+    /// If the user has performed the migration before, this returns `false`.
     public var shouldPerformMigration: Bool {
         return extractor.hasDataToMigrate && isMigrationPending
     }

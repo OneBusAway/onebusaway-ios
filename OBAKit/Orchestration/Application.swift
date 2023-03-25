@@ -141,6 +141,12 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Onboarding/Data Migration
 
+    /// Returns whether we should prompt the user to perform a data migration.
+    /// If the user has performed the migration before, this returns `false`.
+    public var shouldPerformMigration: Bool {
+        DataMigrator.standard.shouldPerformMigration
+    }
+
     /// When true, this means that the application's user defaults contain data that can be migrated into a modern format.
     public var hasDataToMigrate: Bool {
         DataMigrator.standard.hasDataToMigrate
