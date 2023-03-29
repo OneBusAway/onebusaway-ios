@@ -520,40 +520,49 @@ class MapViewController: UIViewController,
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse) {
-        AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await AlertPresenter.show(errorMessage: OBALoc("map_controller.no_search_results_found", value: "No search results were found.", comment: "A generic message shown when the user's search query produces no search results."), presentingController: self)
+        }
     }
 
     public func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse) {
-        let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
-        let nav = UINavigationController(rootViewController: searchResults)
-        application.viewRouter.present(nav, from: self, isModal: true)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let searchResults = SearchResultsController(searchResponse: response, application: application, delegate: self)
+            let nav = UINavigationController(rootViewController: searchResults)
+            application.viewRouter.present(nav, from: self, isModal: true)
+        }
     }
 
+    @MainActor
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
-        guard let result = response.results.first else { return }
+        Task { @MainActor [weak self] in
+            guard let self, let result = response.results.first else { return }
 
-        statusOverlay.isHidden = true
+            statusOverlay.isHidden = true
 
-        switch result {
-        case let result as MKMapItem:
-            let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
-            showSemiModalPanel(childController: mapItemController)
-        case let result as StopsForRoute:
-            let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
-            showSemiModalPanel(childController: routeStopController)
-        case let result as Stop:
-            show(stop: result)
-        case let result as VehicleStatus:
-            if let convertible = TripConvertible(vehicleStatus: result) {
-                let tripController = TripViewController(application: application, tripConvertible: convertible)
-                application.viewRouter.navigate(to: tripController, from: self)
+            switch result {
+            case let result as MKMapItem:
+                let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
+                showSemiModalPanel(childController: mapItemController)
+            case let result as StopsForRoute:
+                let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
+                showSemiModalPanel(childController: routeStopController)
+            case let result as Stop:
+                show(stop: result)
+            case let result as VehicleStatus:
+                if let convertible = TripConvertible(vehicleStatus: result) {
+                    let tripController = TripViewController(application: application, tripConvertible: convertible)
+                    application.viewRouter.navigate(to: tripController, from: self)
+                }
+                else {
+                    let msg = OBALoc("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
+                    await AlertPresenter.show(errorMessage: msg, presentingController: self)
+                }
+            default:
+                fatalError()
             }
-            else {
-                let msg = OBALoc("map_controller.vehicle_not_on_trip_error", value: "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.", comment: "This message appears when a searched-for vehicle doesn't have an assigned trip.")
-                AlertPresenter.show(errorMessage: msg, presentingController: self)
-            }
-        default:
-            fatalError()
         }
     }
 

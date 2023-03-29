@@ -966,7 +966,9 @@ public class StopViewController: UIViewController,
 
     func alarmBuilder(_ alarmBuilder: AlarmBuilder, error: Error) {
         ProgressHUD.dismiss()
-        AlertPresenter.show(error: error, presentingController: self)
+        Task { @MainActor in
+            await AlertPresenter.show(error: error, presentingController: self)
+        }
     }
 
     // MARK: - Bookmarks
