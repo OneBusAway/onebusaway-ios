@@ -303,8 +303,8 @@ class TripViewController: UIViewController,
         do {
             trip = try await apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate).entry
         } catch {
+            await self.application.displayError(error)
             await MainActor.run {
-                self.application.displayError(error)
                 self.dataLoadFeedbackGenerator.dataLoad(.failed)
             }
             return
@@ -360,7 +360,7 @@ class TripViewController: UIViewController,
                 }
             }
         } catch {
-            self.application.displayError(error)
+            await self.application.displayError(error)
         }
     }
 
