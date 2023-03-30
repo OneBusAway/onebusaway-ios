@@ -205,7 +205,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     /// Accounts for whether the section has a header or not.
     func itemForIndexPath(_ indexPath: IndexPath) -> AnyOBAListViewItem? {
+        guard indexPath.section < lastDataSourceSnapshot.count else {
+            return nil
+        }
+
         var correctedItemIndex = indexPath.item
+
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
             guard correctedItemIndex != 0 else { return nil }
             correctedItemIndex -= 1
