@@ -203,7 +203,9 @@ public class MapRegionManager: NSObject,
 
         mapView.delegate = self
 
-        renderRegionsOnMap()
+        Task { @MainActor [weak self] in
+            await self?.renderRegionsOnMap()
+        }
     }
 
     deinit {
@@ -632,14 +634,17 @@ public class MapRegionManager: NSObject,
     // MARK: - Regions
 
     public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
-        renderRegionsOnMap()
+        Task { @MainActor [weak self] in
+            await self?.renderRegionsOnMap()
+        }
     }
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         mapView.setVisibleMapRect(region.serviceRect, animated: true)
     }
 
-    private func renderRegionsOnMap() {
+    @MainActor
+    private func renderRegionsOnMap() async {
         mapView.updateAnnotations(with: application.regionsService.regions)
     }
 }
