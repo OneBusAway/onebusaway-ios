@@ -180,8 +180,8 @@ class VehicleProblemViewController: FormViewController {
         } catch {
             await MainActor.run {
                 ProgressHUD.dismiss()
-                AlertPresenter.show(error: error, presentingController: self)
             }
+            await AlertPresenter.show(error: error, presentingController: self)
         }
     }
 }

@@ -234,7 +234,10 @@ class SettingsViewController: FormViewController {
                     let activity = UIActivityViewController(activityItems: [xmlPath], applicationActivities: nil)
                     self.present(activity, animated: true, completion: nil)
                 } catch let ex {
-                    AlertPresenter.show(error: ex, presentingController: self)
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        await AlertPresenter.show(error: ex, presentingController: self)
+                    }
                 }
             }
         }

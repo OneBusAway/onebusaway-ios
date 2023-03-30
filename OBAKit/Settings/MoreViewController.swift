@@ -264,7 +264,10 @@ public class MoreViewController: UIViewController,
         controller.dismiss(animated: true, completion: nil)
 
         if let error = error {
-            AlertPresenter.show(error: error, presentingController: self)
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await AlertPresenter.show(error: error, presentingController: self)
+            }
         }
     }
 
@@ -305,7 +308,10 @@ public class MoreViewController: UIViewController,
     }
 
     public func farePayments(_ farePayments: FarePayments, present error: Error) {
-        AlertPresenter.show(error: error, presentingController: self)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await AlertPresenter.show(error: error, presentingController: self)
+        }
     }
 
     // MARK: - Regions Service Delegate

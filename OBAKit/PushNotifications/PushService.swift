@@ -92,8 +92,10 @@ public class PushService: NSObject {
     }
 
     private func displayMessage(_ message: String) {
-        if let presentingController = delegate?.pushServicePresentingController(self) {
-            AlertPresenter.showDismissableAlert(title: message, message: nil, presentingController: presentingController)
+        Task { @MainActor in
+            if let presentingController = delegate?.pushServicePresentingController(self) {
+                await AlertPresenter.showDismissableAlert(title: message, message: nil, presentingController: presentingController)
+            }
         }
     }
 
