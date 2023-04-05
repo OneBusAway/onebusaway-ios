@@ -393,9 +393,6 @@ class MapViewController: UIViewController,
         // Set a content view controller.
         panel.set(contentViewController: mapPanelController)
 
-        // Track a scroll view (or the siblings) in the content view controller.
-        panel.track(scrollView: mapPanelController.listView)
-
         // Content Inset Adjustment + OBAListView don't play well together and causes undefined behavior,
         // as described in "OBAListView "sticky" row behavior while scrolling in panel" (#321)
         panel.contentInsetAdjustmentBehavior = .never
@@ -417,7 +414,7 @@ class MapViewController: UIViewController,
         // Floating Panel is fully open because it looks weird.
         let floatingPanelPositionIsCollapsed = vc.state == .tip || vc.state == .hidden
         statusOverlay.isHidden = vc.state == .full
-        mapPanelController.listView.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
+        mapPanelController.currentScrollView?.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
 
         // Disables voiceover interacting with map elements (such as streets and POIs).
         // See #431.
@@ -467,6 +464,16 @@ class MapViewController: UIViewController,
 
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
         floatingPanel.move(to: .full, animated: true)
+    }
+
+    func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController) {
+        // If there is a new scroll view, tell floating panel to track the new scroll view.
+        // Else, untrack its currently tracking scroll view.
+        if let newScrollView = controller.currentScrollView {
+            floatingPanel.track(scrollView: newScrollView)
+        } else if let currentTrackingScrollView = floatingPanel.trackingScrollView {
+            floatingPanel.untrack(scrollView: currentTrackingScrollView)
+        }
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool) {
