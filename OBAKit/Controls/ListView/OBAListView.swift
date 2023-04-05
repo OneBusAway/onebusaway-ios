@@ -286,7 +286,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     // MARK: - Data source
     public func applyData(animated: Bool = true) {
         var sections = self.obaDataSource?.items(for: self) ?? []
-        self.emptyDataConfiguration(isEmpty: self.lastDataSourceSnapshot.isEmpty)
+        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
 
         if let collapsibleDelegate = self.collapsibleSectionsDelegate {
             // Add collapsed state to the section, if it is allowed to collapse.
