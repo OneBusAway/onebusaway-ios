@@ -119,7 +119,7 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
                     self.delegate?.dismissModalController(self)
                 }
             } catch {
-                self.application.displayError(error)
+                await self.application.displayError(error)
             }
         }
     }

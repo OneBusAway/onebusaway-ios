@@ -205,7 +205,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     /// Accounts for whether the section has a header or not.
     func itemForIndexPath(_ indexPath: IndexPath) -> AnyOBAListViewItem? {
+        guard indexPath.section < lastDataSourceSnapshot.count else {
+            return nil
+        }
+
         var correctedItemIndex = indexPath.item
+
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
             guard correctedItemIndex != 0 else { return nil }
             correctedItemIndex -= 1
@@ -281,7 +286,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     // MARK: - Data source
     public func applyData(animated: Bool = true) {
         var sections = self.obaDataSource?.items(for: self) ?? []
-        self.emptyDataConfiguration(isEmpty: self.lastDataSourceSnapshot.isEmpty)
+        self.emptyDataConfiguration(isEmpty: sections.isEmpty)
 
         if let collapsibleDelegate = self.collapsibleSectionsDelegate {
             // Add collapsed state to the section, if it is allowed to collapse.

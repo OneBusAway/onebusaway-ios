@@ -233,7 +233,7 @@ class TripFloatingPanelController: UIViewController,
                     self.application.viewRouter.navigate(to: controller, from: self)
                 }
             } catch {
-                self.application.displayError(error)
+                await self.application.displayError(error)
             }
 
             ProgressHUD.dismiss()

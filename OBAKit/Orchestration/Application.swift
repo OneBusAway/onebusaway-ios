@@ -297,8 +297,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     func agencyAlertsStore(_ store: AgencyAlertsStore, displayError error: Error) {
-        Task { @MainActor in
-            self.displayError(error)
+        Task {
+            await self.displayError(error)
         }
     }
 
@@ -434,8 +434,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     public func regionsService(_ service: RegionsService, displayError error: Error) {
-        Task { @MainActor in
-            displayError(error)
+        Task {
+            await displayError(error)
         }
     }
 
@@ -457,8 +457,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     ///
     /// - Parameter error: The error to display.
     @MainActor
-    public override func displayError(_ error: Error) {
-        super.displayError(error)
+    public override func displayError(_ error: Error) async {
+        await super.displayError(error)
         guard let uiApp = delegate?.uiApplication else { return }
         let bulletin = ErrorBulletin(application: self, message: error.localizedDescription)
         bulletin.show(in: uiApp)

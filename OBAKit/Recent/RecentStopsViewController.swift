@@ -100,7 +100,7 @@ public class RecentStopsViewController: UIViewController,
                 self.application.viewRouter.navigateTo(arrivalDeparture: response.entry, from: self)
             }
         } catch {
-            self.application.displayError(error)
+            await self.application.displayError(error)
         }
     }
 
