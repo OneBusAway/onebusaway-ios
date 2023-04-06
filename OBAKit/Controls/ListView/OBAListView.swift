@@ -244,7 +244,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
                 trailingSwipeActions(for: indexPath)
             }
 
-            return NSCollectionLayoutSection.list(using: configuration, layoutEnvironment: environment)
+            return NSCollectionLayoutSection.readableContentGuideList(using: configuration, layoutEnvironment: environment)
         }
     }
 
