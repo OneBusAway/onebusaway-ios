@@ -92,8 +92,8 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     private var diffableDataSource: UICollectionViewDiffableDataSource<Section, ItemType>!
     private var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private lazy var emptyDataView: EmptyDataSetView = {
-        let view = EmptyDataSetView(alignment: .top)
-        view.translatesAutoresizingMaskIntoConstraints = false
+        let view = EmptyDataSetView()
+        view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin]
         return view
     }()
 

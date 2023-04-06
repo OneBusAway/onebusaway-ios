@@ -393,6 +393,8 @@ class MapViewController: UIViewController,
         // Set a content view controller.
         panel.set(contentViewController: mapPanelController)
 
+        panel.contentMode = .fitToBounds
+
         // Content Inset Adjustment + OBAListView don't play well together and causes undefined behavior,
         // as described in "OBAListView "sticky" row behavior while scrolling in panel" (#321)
         panel.contentInsetAdjustmentBehavior = .never
