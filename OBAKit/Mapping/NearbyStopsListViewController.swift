@@ -90,16 +90,24 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     // MARK: - UICollectionView properties
     private var collectionView: UICollectionView!
     private var diffableDataSource: UICollectionViewDiffableDataSource<Section, ItemType>!
+    private var headerCellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private lazy var emptyDataView: EmptyDataSetView = {
-        let view = EmptyDataSetView(alignment: .top)
-        view.translatesAutoresizingMaskIntoConstraints = false
+        let view = EmptyDataSetView()
+        view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin]
         return view
     }()
 
     // MARK: - UIViewController lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        self.headerCellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, ItemType> { cell, _, item in
+            var config = cell.defaultContentConfiguration()
+            config.text = item.title
+            config.textProperties.font = .preferredFont(forTextStyle: .headline)
+            cell.contentConfiguration = config
+        }
 
         self.cellRegistration = UICollectionView.CellRegistration<UICollectionViewListCell, ItemType> { cell, _, item in
             var config = cell.defaultContentConfiguration()
@@ -129,25 +137,17 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
             config.backgroundColor = .clear
             config.headerMode = .firstItemInSection
 
-            let section = NSCollectionLayoutSection.list(using: config, layoutEnvironment: layoutEnvironment)
-
-            // Change the section's content insets reference to the readable content.
-            // This changes the way that the insets in the section's contentInsets property are interpreted.
-            section.contentInsetsReference = .readableContent
-
-            // Zero out the default leading/trailing contentInsets, but preserve the default top/bottom values.
-            // This ensures each section will be inset horizontally exactly to the readable content width.
-            var contentInsets = section.contentInsets
-            contentInsets.leading = 0
-            contentInsets.trailing = 0
-            section.contentInsets = contentInsets
-
-            return section
+            return NSCollectionLayoutSection.readableContentGuideList(using: config, layoutEnvironment: layoutEnvironment)
         }
     }
 
     private func cellFor(_ collectionView: UICollectionView, indexPath: IndexPath, itemIdentifier: ItemType) -> UICollectionViewCell? {
-        return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: itemIdentifier)
+        switch itemIdentifier.type {
+        case .header:
+            return collectionView.dequeueConfiguredReusableCell(using: headerCellRegistration, for: indexPath, item: itemIdentifier)
+        case .alert, .stop:
+            return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: itemIdentifier)
+        }
     }
 
     private func toggleEmptyDataView(isShowing: Bool) {
