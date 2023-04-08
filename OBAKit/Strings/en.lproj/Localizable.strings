@@ -79,26 +79,20 @@
 /* Title of the Contact Email header. */
 "custom_region_builder_controller.contact_email_section.header_title" = "Contact Email";
 
-/* Title for the region builder controller in edit mode */
-"custom_region_builder_controller.edit_title" = "Edit Custom Region";
-
 /* Example custom region name */
 "custom_region_builder_controller.example_data.region_name" = "My Custom Region";
 
-/* Title of the Region Name header. */
-"custom_region_builder_controller.name_section.header_title" = "Region Name";
-
-/* Title for the region builder controller in add mode */
-"custom_region_builder_controller.new_title" = "Add Custom Region";
-
-/* The error that is shown when the custom region builder does not have all of its fields filled in. */
-"custom_region_builder_controller.save_validation_error" = "Please fill out all fields";
+/* An explanation of dragging the map to highlight the service area of a custom region. */
+"custom_region_builder_controller.service_area_section.explanation" = "Drag the map to the approximate service area of this region.";
 
 /* Title of the Service Area header. */
 "custom_region_builder_controller.service_area_section.header_title" = "Service Area";
 
 /* Action button title for the DataMigrationBulletinPage. */
 "data_migration_bulletin.action_button" = "Continue";
+
+/* Title for the DataMigrationBulletinPage. */
+"data_migration_bulletin.data_upgrade_title" = "Data Upgrade";
 
 /* Dismissal button title for the DataMigrationBulletinPage. */
 "data_migration_bulletin.dismiss_button" = "Not Now";
@@ -110,13 +104,26 @@
 "data_migration_bulletin.errors.no_data_to_migrate" = "No data to upgrade";
 
 /* An error message that appears when the data migrator runs without a pending migration. */
-"data_migration_bulletin.errors.no_migration_pending" = "No data upgrade is pending.";
+"data_migration_bulletin.errors.no_migration_pending" = "No data migration is pending";
+
+/* First bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_1" = "Upgrade your Recent Stops and Bookmarks to work with the latest version of the app, you only need to do this once.";
+
+/* Second bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_2" = "You will not be able to see your Recent Stops or Bookmarks until you upgrade.";
+
+/* Third bullet point of DataMigrationBulletinPage explanation */
+"data_migration_bulletin.explanation_3" = "Upgrading may take a bit of time, and a Wi-Fi or mobile connection is required during the upgrade.";
 
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
-"data_migration_bulletin.finished_loading" = "Data Upgrade Complete";
+"data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
 
-/* Explanatory text that tells the user how to migrate their data later on. */
-"data_migration_bulletin.migrate_later_text" = "You can upgrade your data later by going to the More tab > Settings, and then tapping on the Migrate Data button.";
+
+/* Title for the Summary section of a data migration report */
+"data_migration_bulletin.report_summary_title" = "Summary";
+
+/* Button title to let the user view a data migration report. */
+"data_migration_bulletin.view_report_button" = "View Report";
 
 /* Indicates that the user wants to create a duplicate bookmark. */
 "edit_book_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
@@ -174,6 +181,9 @@
 
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
+
+/* Button the user can tap on to disallow access to their location. */
+"location_permission_bulletin.do_not_use_location_button_text" = "Don't use my location";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Welcome!";
@@ -337,9 +347,6 @@
 /* Updates and Alerts header text */
 "more_controller.updates_and_alerts.header" = "Updates and Alerts";
 
-/* Weather forecast attribution */
-"more_controller.weather_credits_row" = "Weather forecasts powered by Dark Sky";
-
 /* Title of the alert that tells the user they've disabled debug mode. */
 "more_header.debug_disabled.title" = "Debug Mode Disabled";
 
@@ -436,23 +443,26 @@
 /* A button on the region mismatch alert that updates the map's current location to be the specified region. e.g. 'Show Puget Sound on the map' */
 "region_mismatch_bulletin.update_map_button_fmt" = "Show %@ on the map";
 
-/* Descriptive text for the region picker card. */
-"region_picker.description_text" = "Choose your transit region to use the app.";
+/* Help text displayed on a custom (user-created) region. */
+"region_picker.custom_region_help_text" = "Custom region";
 
-/* Title of the Regions section. */
-"region_picker.region_section.title" = "Regions";
+/* Help text displayed on an experimental region. */
+"region_picker.experimental_region_help_text" = "Experimental region";
+
+/* Help text displayed on an inactive region. */
+"region_picker.inactive_region_help_text" = "Inactive region";
+
+/* Title of a button that shows a region creation view controller. */
+"region_picker.new_custom_region_button" = "New Custom Region";
+
+/* Title of a toggle that shows experimental (beta) regions. */
+"region_picker.show_experimental_regions_toggle" = "Show Experimental";
+
+/* Title of a toggle that shows inactive regions. */
+"region_picker.show_inactive_regions_toggle" = "Show Inactive";
 
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Choose Region";
-
-/* Title of a button that shows a region creation view controller. */
-"region_picker_controller.add_custom_region_button" = "Add Custom Region";
-
-/* Title next to the switch that toggles whether the user can manually pick their region. */
-"region_picker_controller.automatically_select_region_switch_title" = "Automatically select region";
-
-/* Region Picker view controller title */
-"region_picker_controller.title" = "Select a Region";
 
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";

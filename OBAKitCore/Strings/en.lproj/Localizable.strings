@@ -13,6 +13,9 @@
 /* An error that is produced in response to HTTP status codes outside of 200-299. */
 "api_error.request_failure_fmt" = "The server encountered an error while trying to respond to your request, producing the status code %1$d. (URL: %2$@)";
 
+/* An error that is produced in response to HTTP status code 404 */
+"api_error.request_not_found" = "404 Not found (%@)";
+
 /* This will appear on a button or as a title, and indicates that this UI will create a new bookmark. */
 "common.add_alarm" = "Add Alarm";
 
