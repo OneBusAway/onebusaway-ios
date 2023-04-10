@@ -210,6 +210,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         hyperconnectivityCancellable = Hyperconnectivity.Publisher()
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
+            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
             .sink(receiveValue: { [weak self] result in
                 guard let self = self else { return }
                 if result.isConnected {
