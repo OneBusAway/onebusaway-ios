@@ -38,13 +38,87 @@ final class GeohashCacheTests: XCTestCase {
             cache[bellevue] = expectedBellevueElements
             XCTAssertEqual(cache[bellevue], expectedBellevueElements)
         }
+    }
 
-        // Test discarding content. After discarding, it is expected that Seattle still exists, but Bellevue is removed.
-        XCTContext.runActivity(named: "Test discarding elements of non-activeGeohashes") { _ in
-            cache.discardContentIfPossible()
+    func testDifference() throws {
+        // MARK: Setup
+        var cache = GeohashCache<[String]>()
 
-            XCTAssertEqual(cache[seattle], expectedSeattleElements, "Expected Seattle elements to not be removed, since it is an active geohash")
-            XCTAssertNil(cache[bellevue], "Expected Bellevue elements to be removed, since it is an inactive geohash")
+        cache[seattle] = expectedSeattleElements
+        cache[bellevue] = expectedBellevueElements
+
+        cache.activeGeohashes = [seattle]
+
+        // MARK: Test
+        // After discarding, it is expected that Seattle still exists, but Bellevue is removed.
+        let difference = cache.discardContentIfPossible()
+
+        XCTContext.runActivity(named: "Test element difference") { _ in
+            var removedElements: [[String]] = []
+            for diff in difference.elementChanges {
+                switch diff {
+                case .insertion(_):
+                    XCTFail("There should be no insertion changes")
+                case .removal(let element):
+                    removedElements.append(element)
+                }
+            }
+
+            XCTAssertEqual(removedElements.count, 1)
+            XCTAssertEqual(removedElements.first, expectedBellevueElements)
         }
+
+        XCTContext.runActivity(named: "Test key difference") { _ in
+            var removedKeys: Set<Geohash> = []
+            for diff in difference.keyChanges {
+                switch diff {
+                case .insertion(_):
+                    XCTFail("There should be no insertion changes")
+                case .removal(let key):
+                    removedKeys.insert(key)
+                }
+            }
+
+            XCTAssertEqual(removedKeys.count, 1)
+            XCTAssertEqual(removedKeys.first, bellevue)
+        }
+    }
+
+    func testUpsert() throws {
+        var cache = GeohashCache<[String]>()
+
+        // Testing initial insertion.
+        // - Expected key changes: one insertion.
+        // - Expected element changes: one insertion.
+        let initialSeattleElement = ["initial", "element"]
+        let initialDifference = cache.upsert(geohash: seattle, element: initialSeattleElement)
+
+        XCTAssertEqual(initialDifference.keyChanges.count, 1)
+        XCTAssertEqual(initialDifference.keyChanges.first, .insertion(seattle))
+
+        XCTAssertEqual(initialDifference.elementChanges.count, 1)
+        XCTAssertEqual(initialDifference.elementChanges.first, .insertion(initialSeattleElement))
+
+        // Testing updating of existing geohash.
+        // - Expected key changes: zero.
+        // - Expected element changes: one removal and one insertion.
+        let secondSeattleElement = ["final", "seattle"]
+        let secondDifference = cache.upsert(geohash: seattle, element: secondSeattleElement)
+
+        XCTAssertTrue(secondDifference.keyChanges.isEmpty)
+
+        XCTAssertEqual(secondDifference.elementChanges.count, 2)
+        XCTAssertEqual(secondDifference.elementChanges[0], .removal(initialSeattleElement), "Removal should occur first in the diff collection")
+        XCTAssertEqual(secondDifference.elementChanges[1], .insertion(secondSeattleElement), "Insertion should occur after the removal")
+
+        // Test upserting a new geohash, with at least 1 other existing geohash
+        let initialBellevueElement = ["bellevue"]
+
+        let initialBellevueDifference = cache.upsert(geohash: bellevue, element: initialBellevueElement)
+        XCTAssertEqual(initialBellevueDifference.keyChanges.count, 1)
+        XCTAssertEqual(initialBellevueDifference.keyChanges.first, .insertion(bellevue))
+
+        XCTAssertEqual(initialBellevueDifference.elementChanges.count, 1)
+        XCTAssertEqual(initialBellevueDifference.elementChanges.first, .insertion(initialBellevueElement))
     }
 }
