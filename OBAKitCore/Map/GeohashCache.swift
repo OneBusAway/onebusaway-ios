@@ -7,22 +7,22 @@
 
 import Foundation
 
-public struct GeohashCache<Element> {
-    public struct Difference<KeyType, ElementType> {
-        public enum Change<ChangeType> {
-            case removal(ChangeType)
-            case insertion(ChangeType)
-        }
-
-        let keyChanges: [Change<KeyType>]
-        let elementChanges: [Change<ElementType>]
-
-        fileprivate init(keyChanges: [Change<KeyType>], elementChanges: [Change<ElementType>]) {
-            self.keyChanges = keyChanges
-            self.elementChanges = elementChanges
-        }
+public struct GeohashCacheDifference<KeyType, ElementType> {
+    public enum Change<ChangeType> {
+        case removal(ChangeType)
+        case insertion(ChangeType)
     }
 
+    public let keyChanges: [Change<KeyType>]
+    public let elementChanges: [Change<ElementType>]
+
+    fileprivate init(keyChanges: [Change<KeyType>], elementChanges: [Change<ElementType>]) {
+        self.keyChanges = keyChanges
+        self.elementChanges = elementChanges
+    }
+}
+
+public struct GeohashCache<Element> {
     public var geohashes: [Geohash] {
         Array(cache.keys)
     }
@@ -55,9 +55,9 @@ public struct GeohashCache<Element> {
     }
 
     @discardableResult
-    public mutating func upsert(geohash: Geohash, element: Element) -> Difference<Geohash, Element> {
-        let geohashDiff: [Difference<Geohash, Element>.Change<Geohash>]
-        var elementDiff: [Difference<Geohash, Element>.Change<Element>] = []
+    public mutating func upsert(geohash: Geohash, element: Element) -> GeohashCacheDifference<Geohash, Element> {
+        let geohashDiff: [GeohashCacheDifference<Geohash, Element>.Change<Geohash>]
+        var elementDiff: [GeohashCacheDifference<Geohash, Element>.Change<Element>] = []
 
         if self.contains(geohash: geohash), let existingElement = cache[geohash] {
             geohashDiff = []
@@ -69,14 +69,14 @@ public struct GeohashCache<Element> {
         self.cache[geohash] = element
         elementDiff.append(.insertion(element))
 
-        return Difference(keyChanges: geohashDiff, elementChanges: elementDiff)
+        return GeohashCacheDifference(keyChanges: geohashDiff, elementChanges: elementDiff)
     }
 
     /// Removes non-active geohashes from memory.
     @discardableResult
-    public mutating func discardContentIfPossible() -> Difference<Geohash, Element> {
-        var geohashDiff: [Difference<Geohash, Element>.Change<Geohash>] = []
-        var elementDiff: [Difference<Geohash, Element>.Change<Element>] = []
+    public mutating func discardContentIfPossible() -> GeohashCacheDifference<Geohash, Element> {
+        var geohashDiff: [GeohashCacheDifference<Geohash, Element>.Change<Geohash>] = []
+        var elementDiff: [GeohashCacheDifference<Geohash, Element>.Change<Element>] = []
 
         // TODO: Don't remove elements of neighboring active-geohashes.
 
@@ -88,15 +88,15 @@ public struct GeohashCache<Element> {
             self.cache[geohash] = nil
         }
 
-        return Difference(keyChanges: geohashDiff, elementChanges: elementDiff)
+        return GeohashCacheDifference(keyChanges: geohashDiff, elementChanges: elementDiff)
     }
 }
 
 // MARK: - GeohashCache.Difference.Change Equatable methods
-extension GeohashCache.Difference.Change: Equatable where KeyType: Equatable, ElementType: Equatable, ChangeType: Equatable {
+extension GeohashCacheDifference.Change: Equatable where KeyType: Equatable, ElementType: Equatable, ChangeType: Equatable {
     public static func == (
-        lhs: GeohashCache<Element>.Difference<KeyType, ElementType>.Change<ChangeType>,
-        rhs: GeohashCache<Element>.Difference<KeyType, ElementType>.Change<ChangeType>
+        lhs: GeohashCacheDifference<KeyType, ElementType>.Change<ChangeType>,
+        rhs: GeohashCacheDifference<KeyType, ElementType>.Change<ChangeType>
     ) -> Bool {
         switch (lhs, rhs) {
         case (.insertion(let lhsElement), .insertion(let rhsElement)):
