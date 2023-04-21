@@ -28,8 +28,6 @@ We are using Transifex to localize OneBusAway. You can help out by visiting [the
 
 Install the Transifex command line client (`tx`) by following the instructions here: https://docs.transifex.com/client/installing-the-client
 
-For help configuring your Python environment on macOS, look here: https://opensource.com/article/19/5/python-3-default-mac
-
 Use `tx` by following the instructions here: https://docs.transifex.com/client/introduction
 
 Get an API token to use with `tx` by following the instructions here: https://docs.transifex.com/account/authentication
