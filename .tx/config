@@ -1,17 +1,17 @@
 [main]
 host = https://www.transifex.com
 
-[onebusaway-ios.obakitcore]
-file_filter = OBAKitCore/Strings/<lang>.lproj/Localizable.strings
+[o:open-transit-software-foundation:p:onebusaway-ios:r:obakit]
+file_filter  = OBAKit/Strings/<lang>.lproj/Localizable.strings
+source_file  = OBAKit/Strings/en.lproj/Localizable.strings
+source_lang  = en_US
+type         = STRINGS
 minimum_perc = 0
-source_file = OBAKitCore/Strings/en.lproj/Localizable.strings
-source_lang = en_US
-type = STRINGS
 
-[onebusaway-ios.obakit]
-file_filter = OBAKit/Strings/<lang>.lproj/Localizable.strings
+[o:open-transit-software-foundation:p:onebusaway-ios:r:obakitcore]
+file_filter  = OBAKitCore/Strings/<lang>.lproj/Localizable.strings
+source_file  = OBAKitCore/Strings/en.lproj/Localizable.strings
+source_lang  = en_US
+type         = STRINGS
 minimum_perc = 0
-source_file = OBAKit/Strings/en.lproj/Localizable.strings
-source_lang = en_US
-type = STRINGS
 
