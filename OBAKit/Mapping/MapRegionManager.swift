@@ -40,7 +40,9 @@ protocol MapRegionMapViewDelegate: NSObjectProtocol {
 public class MapRegionManager: NSObject,
     MKMapViewDelegate,
     RegionsServiceDelegate,
-    StopAnnotationDelegate {
+    StopAnnotationDelegate,
+    RESTAPIServiceProviding,
+    StopCacheDelegate {
 
     public static let DefaultLoadDataRegionFudgeFactor: Double = 1.1
 
@@ -61,6 +63,9 @@ public class MapRegionManager: NSObject,
     public var preferredLoadDataRegionFudgeFactor: Double = MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
     private let application: Application
+    public var apiService: RESTAPIService? {
+        application.apiService
+    }
 
     private var regionChangeRequestTimer: Timer?
 
@@ -190,6 +195,7 @@ public class MapRegionManager: NSObject,
         ])
 
         super.init()
+        self.stopsCache = StopCache(apiServiceProvider: self, delegate: self)
 
         application.locationService.addDelegate(self)
         application.regionsService.addDelegate(self)
@@ -228,9 +234,56 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - Data Loading
+    @MainActor
+    public func cacheDidUpdate(_ cache: StopCache, difference: GeohashCacheDifference<Geohash, StopCache.Entry>) async {
+        for keyDiff in difference.keyChanges {
+            await tileDidUpdate(keyDiff)
+        }
+
+        for entryDiff in difference.elementChanges {
+            await stopDidUpdate(entryDiff)
+        }
+    }
+
+    @MainActor
+    private func tileDidUpdate(_ diff: GeohashCacheDifference<Geohash, StopCache.Entry>.Change<Geohash>) async {
+        switch diff {
+        case .insertion(let geohash):
+            if geohashPolygon[geohash] == nil {
+                let polygon = MKPolygon(coordinateRegion: geohash.region)
+                geohashPolygon[geohash] = polygon
+                mapView.addOverlay(polygon)
+            }
+        case .removal(let geohash):
+            if let polygon = geohashPolygon[geohash] {
+                mapView.removeOverlay(polygon)
+            }
+        }
+    }
+
+    @MainActor
+    private func stopDidUpdate(_ diff: GeohashCacheDifference<Geohash, StopCache.Entry>.Change<StopCache.Entry>) async {
+        switch diff {
+        case .insertion(let entry):
+            let annotationsToAdd = entry.stops.filter { stop in
+                !isBookmark(stop)
+            }
+
+            mapView.addAnnotations(annotationsToAdd)
+        case .removal(let entry):
+            let annotationsToRemove = entry.stops.filter { stop in
+                !isBookmark(stop)
+            }
+
+            mapView.removeAnnotations(entry.stops)
+        }
+    }
+
+    var geohashPolygon: [Geohash: MKPolygon] = [:]
 
     func requestDataForMapRegion() async {
-        guard let apiService = application.apiService else {
+        let coordinateToLoad = await mapView.centerCoordinate
+        guard let geohash = Geohash(coordinateToLoad, precision: StopCache.DefaultGeohashPrecision) else {
             return
         }
 
@@ -244,19 +297,12 @@ public class MapRegionManager: NSObject,
             }
         }
 
-        var mapRegion = await mapView.region
-        mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
-        mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
-
         do {
-            let stops = try await apiService.getStops(region: mapRegion).list
-
-            await MainActor.run {
-                // Some UI code is dependent on this being changed on Main.
-                self.stops = stops
-            }
+            try await stopsCache.loadStops(for: geohash)
         } catch {
-            await self.application.displayError(error)
+            if !(error is CancellationError) {
+                await self.application.displayError(error)
+            }
         }
     }
 
@@ -304,7 +350,7 @@ public class MapRegionManager: NSObject,
 
     private func notifyDelegatesStopsChanged() {
         for delegate in delegates.allObjects {
-            delegate.mapRegionManager?(self, stopsUpdated: stops)
+//            delegate.mapRegionManager?(self, stopsUpdated: Array(indexedStops.values))
         }
     }
 
@@ -335,34 +381,66 @@ public class MapRegionManager: NSObject,
 
     public var bookmarks = [Bookmark]() {
         didSet {
-            displayUniqueStopAnnotations()
+            updateVisibleBookmarks()
         }
     }
 
-    public private(set) var stops = [Stop]() {
-        didSet {
-            displayUniqueStopAnnotations()
-        }
+    private var stopsCache: StopCache!
+    private var bookmarkStops: Set<Stop.ID> = []
+
+    // MARK: - Bookmark Annotation handling
+    // Bookmarks are always visible on the map, regardless of data freshness.
+    // Bookmark annotations are added first, and proactively added/removed
+    //   as bookmarks update.
+    // When loading tiles, we check if a Stop is a bookmark to avoid adding the same stop twice.
+    private func isBookmark(_ stop: Stop) -> Bool {
+        return bookmarkStops.contains(stop.id)
     }
 
-    private func displayUniqueStopAnnotations() {
-        mapView.removeAnnotations(type: Bookmark.self)
-        var bookmarksHash = [StopID: Bookmark]()
+    private func updateVisibleBookmarks() {
+        var annotationsToAdd: [Bookmark] = []
+        for bookmark in bookmarks {
+            guard !bookmarkStops.contains(bookmark.stopID) else {
+                continue
+            }
 
-        for bm in bookmarks {
-            bookmarksHash[bm.stopID] = bm
+            annotationsToAdd.append(bookmark)
         }
 
-        mapView.addAnnotations(Array(bookmarksHash.values))
+        // Remove standard Stop annotation, before adding the Bookmark annotation.
+        let stopIDToAnnotationMap = Dictionary(grouping: mapView.annotations.filter(type: Stop.self), by: \.id)
+        for annotation in annotationsToAdd {
+            if let standardStopAnnotation = stopIDToAnnotationMap[annotation.stopID] {
+                self.mapView.removeAnnotations(standardStopAnnotation)
+            }
+        }
 
-        let bookmarkStopIDs = Set(bookmarksHash.keys)
-        let rejectedStops = stops.filter { bookmarkStopIDs.contains($0.id) }
-        let acceptedStops = stops.filter { !rejectedStops.contains($0) }
+        // Finally, add the Bookmark annotations.
+        mapView.addAnnotations(annotationsToAdd)
+    }
 
-        mapView.removeAnnotations(rejectedStops)
-        mapView.addAnnotations(acceptedStops)
+    /// - returns: If this bookmark was handled.
+    private func handlePotentialBookmark(_ stop: Stop) -> Bool {
+        guard !bookmarkStops.contains(stop.id) else {
+            // If the Stop ID is in the addedBookmarks set, then it is a bookmark.
+            // We break out of it early since it is already added to the map.
+            return true
+        }
 
-        notifyDelegatesStopsChanged()
+        // Try to find the bookmark
+        let bookmark = bookmarks.first { bookmark in
+            bookmark.stopID == stop.id
+        }
+
+        // If the stop is not a bookmark, exit.
+        guard let bookmark else {
+            return false
+        }
+
+        mapView.addAnnotation(bookmark)
+        bookmarkStops.insert(bookmark.stopID)
+
+        return true
     }
 
     // MARK: - Map Status Overlay
@@ -391,7 +469,7 @@ public class MapRegionManager: NSObject,
         searchResponse = nil
         mapView.removeAllAnnotations()
         mapView.removeOverlays(mapView.overlays)
-        reloadStopAnnotations()
+//        reloadStopAnnotations()
     }
 
     private func searchResponseOverridesStopLoading() -> Bool {
@@ -517,6 +595,7 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - Map View Delegate
+    private var loadingStopsTask: [Task<Void, any Error>]?
 
     private func reloadStopAnnotations() {
         if searchResponseOverridesStopLoading() {
@@ -537,9 +616,9 @@ public class MapRegionManager: NSObject,
             }
         }
 
-        regionChangeRequestTimer?.invalidate()
-
-        regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
+//        regionChangeRequestTimer?.invalidate()
+//
+//        regionChangeRequestTimer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(requestDataForMapRegion(_:)), userInfo: nil, repeats: false)
     }
 
     private var isHidingRegions: Bool? {
@@ -561,7 +640,17 @@ public class MapRegionManager: NSObject,
         lastVisibleMapRect = mapView.visibleMapRect
 
         reloadRegionAnnotations()
-        reloadStopAnnotations()
+
+
+//        loadingStopsTask?.cancel()
+//        loadingStopsTask = Task(priority: .high) {
+//            await requestDataForMapRegion()
+////            try await loadStops()
+//        }
+//        reloadStopAnnotations()
+        Task {
+            await requestDataForMapRegion()
+        }
     }
 
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
@@ -624,6 +713,15 @@ public class MapRegionManager: NSObject,
             renderer.strokeColor = ThemeColors.shared.brand.withAlphaComponent(0.75)
             renderer.lineWidth = 3.0
             renderer.lineCap = .round
+
+            return renderer
+        }
+
+        if let polygon = overlay as? MKPolygon {
+            let renderer = MKPolygonRenderer(polygon: polygon)
+            renderer.strokeColor = .black
+            renderer.lineWidth = 3.0
+            renderer.fillColor = UIColor.green.withAlphaComponent(0.5)
 
             return renderer
         }
