@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GeohashKit
 
 public struct GeohashCacheDifference<KeyType, ElementType> {
     public enum Change<ChangeType> {

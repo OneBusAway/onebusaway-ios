@@ -8,6 +8,7 @@
 import os.log
 import MapKit
 import Foundation
+import GeohashKit
 
 public protocol RESTAPIServiceProviding: AnyObject {
     var apiService: RESTAPIService? { get }

@@ -93,6 +93,9 @@ packages:
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 2.6.0
+    GeohashKit:
+        url: https://github.com/ualch9/GeohashKit.git
+        exactVersion: 3.0.0
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0

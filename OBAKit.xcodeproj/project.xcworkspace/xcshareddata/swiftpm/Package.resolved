@@ -82,6 +82,15 @@
       }
     },
     {
+      "identity" : "geohashkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ualch9/GeohashKit.git",
+      "state" : {
+        "revision" : "d514b5af0b43bdb0a0912eaa036442f4d02f5661",
+        "version" : "3.0.0"
+      }
+    },
+    {
       "identity" : "googleappmeasurement",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/GoogleAppMeasurement.git",

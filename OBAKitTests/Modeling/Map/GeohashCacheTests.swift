@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import GeohashKit
 @testable import OBAKitCore
 
 final class GeohashCacheTests: XCTestCase {
