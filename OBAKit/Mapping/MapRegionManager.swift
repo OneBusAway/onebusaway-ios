@@ -282,11 +282,9 @@ public class MapRegionManager: NSObject,
 
     var geohashPolygon: [Geohash: MKPolygon] = [:]
 
+    // Recursively look for geohashes to load
     func requestDataForMapRegion() async {
-        let coordinateToLoad = await mapView.centerCoordinate
-        guard let geohash = Geohash(coordinateToLoad, precision: StopCache.DefaultGeohashPrecision) else {
-            return
-        }
+        let geohashes = await mapView.region.geohashes(precision: StopCache.DefaultGeohashPrecision)
 
         await MainActor.run {
             notifyDelegatesDataLoadingStarted()
@@ -298,13 +296,30 @@ public class MapRegionManager: NSObject,
             }
         }
 
-        do {
-            try await stopsCache.loadStops(for: geohash)
-        } catch {
-            if !(error is CancellationError) {
-                await self.application.displayError(error)
+        print(geohashes.map(\.geohash))
+
+        let tasks = await withTaskGroup(of: (Geohash, Result<Void, Error>).self) { taskGroup in
+            var results: [Geohash: Result<Void, Error>] = [:]
+
+            for geohash in geohashes {
+                taskGroup.addTask {
+                    do {
+                        try await self.stopsCache.loadStops(for: geohash)
+                        return (geohash, .success(Void()))
+                    } catch {
+                        return (geohash, .failure(error))
+                    }
+                }
             }
+
+            for await result in taskGroup {
+                results[result.0] = result.1
+            }
+
+            return results
         }
+
+        print(tasks)
     }
 
     @objc func requestDataForMapRegion(_ timer: Timer) {

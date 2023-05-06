@@ -19,6 +19,7 @@ public protocol StopCacheDelegate: AnyObject {
 }
 
 public actor StopCache {
+    // MARK: - Structs and such
     public static let DefaultGeohashPrecision = 6  // Geohash precision of 6 yields cells of approximately 1.22x0.61km
     static let DefaultExpirationInMinutes = 60
 
@@ -38,14 +39,11 @@ public actor StopCache {
         }
     }
 
+    // MARK: - Properties
     public weak var apiServiceProvider: RESTAPIServiceProviding?
     public weak var delegate: StopCacheDelegate?
 
     private let logger: os.Logger
-
-    /// Stop IDs that are excluded from the standard caching behavior.
-    /// For example, user-bookmarked stops are always shown, since a copy of it is saved on-device.
-//    public var excludeStops: Set<Stop.ID> = []
 
     /// Computed stops.
     public var stops: [Stop] {
