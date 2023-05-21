@@ -30,7 +30,7 @@ class TripFloatingPanelController: UIViewController,
 
     var tripConvertible: TripConvertible? {
         didSet {
-            if isLoadedAndOnScreen, let arrivalDeparture = stopArrivalView.arrivalDeparture {
+            if isLoadedAndOnScreen, let arrivalDeparture = tripConvertible?.arrivalDeparture {
                 stopArrivalView.arrivalDeparture = arrivalDeparture
             }
         }
