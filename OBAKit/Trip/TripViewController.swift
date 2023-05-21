@@ -21,7 +21,7 @@ class TripViewController: UIViewController,
 
     public let application: Application
 
-    private let tripConvertible: TripConvertible
+    private(set) var tripConvertible: TripConvertible
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
@@ -283,35 +283,42 @@ class TripViewController: UIViewController,
         }
     }
 
-    private func loadTripDetails(isProgrammatic: Bool) async {
+    private func loadTripConvertible(isProgrammatic: Bool) async throws {
         guard let apiService = application.apiService else {
             return
         }
 
-        self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
+        guard let arrivalDeparture = tripConvertible.arrivalDeparture else {
+            return
+        }
 
-        defer {
-            Task { @MainActor in
-                self.navigationItem.rightBarButtonItem = self.reloadButton
-            }
+        let newArrDep = try await apiService.getTripArrivalDepartureAtStop(
+            stopID: arrivalDeparture.stopID,
+            tripID: arrivalDeparture.tripID,
+            serviceDate: arrivalDeparture.serviceDate,
+            vehicleID: arrivalDeparture.vehicleID,
+            stopSequence: arrivalDeparture.stopSequence
+        ).entry
+
+        await MainActor.run {
+            self.tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
+            self.tripDetailsController.tripConvertible = TripConvertible(arrivalDeparture: newArrDep)
+        }
+    }
+
+    private func loadTripDetails(isProgrammatic: Bool) async throws {
+        guard let apiService = application.apiService else {
+            return
         }
 
         // Let the user still look at data if there was already details from a previous request.
         self.floatingPanel.surfaceView.grabberHandle.isHidden = self.tripDetailsController.tripDetails == nil
 
-        let trip: TripDetails
-        do {
-            trip = try await apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate).entry
-        } catch {
-            await self.application.displayError(error)
-            await MainActor.run {
-                self.dataLoadFeedbackGenerator.dataLoad(.failed)
-            }
-            return
-        }
+        let trip = try await apiService.getTrip(tripID: tripConvertible.trip.id, vehicleID: tripConvertible.vehicleID, serviceDate: tripConvertible.serviceDate).entry
 
         await MainActor.run {
             self.tripDetailsController.tripDetails = trip
+
             self.mapView.updateAnnotations(with: trip.stopTimes)
 
             self.currentTripStatus = trip.status
@@ -331,15 +338,13 @@ class TripViewController: UIViewController,
 
             self.floatingPanel.surfaceView.grabberHandle.isHidden = false
         }
-
-        self.dataLoadFeedbackGenerator.dataLoad(.success)
     }
 
     // MARK: - Map Data
 
     private var routePolyline: MKPolyline?
 
-    private func loadMapPolyline(isProgrammatic: Bool) async {
+    private func loadMapPolyline(isProgrammatic: Bool) async throws {
         guard
             let apiService = application.apiService,
             routePolyline == nil // No need to reload the polyline if we already have it
@@ -347,20 +352,16 @@ class TripViewController: UIViewController,
             return
         }
 
-        do {
-            let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
-            await MainActor.run {
-                guard let polyline = response.entry.polyline else {
-                    return
-                }
-                self.routePolyline = polyline
-                self.mapView.addOverlay(polyline)
-                if !self.mapView.hasBeenTouched {
-                    self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
-                }
+        let response = try await apiService.getShape(id: tripConvertible.trip.shapeID)
+        await MainActor.run {
+            guard let polyline = response.entry.polyline else {
+                return
             }
-        } catch {
-            await self.application.displayError(error)
+            self.routePolyline = polyline
+            self.mapView.addOverlay(polyline)
+            if !self.mapView.hasBeenTouched {
+                self.mapView.visibleMapRect = self.mapView.mapRectThatFits(polyline.boundingMapRect, edgePadding: UIEdgeInsets(top: 60, left: 20, bottom: 128, right: 20))
+            }
         }
     }
 
@@ -377,17 +378,36 @@ class TripViewController: UIViewController,
         }
 
         loadDataTask = Task {
-            await withTaskGroup(of: Void.self) { group in
-                group.addTask {
-                    await self.loadTripDetails(isProgrammatic: isProgrammatic)
+            self.navigationItem.rightBarButtonItem = self.activityIndicatorButton
+
+            do {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    group.addTask {
+                        try await self.loadTripDetails(isProgrammatic: isProgrammatic)
+                    }
+
+                    group.addTask {
+                        try await self.loadTripConvertible(isProgrammatic: isProgrammatic)
+                    }
+
+                    group.addTask {
+                        try await self.loadMapPolyline(isProgrammatic: isProgrammatic)
+                    }
+
+                    try await group.waitForAll()
                 }
 
-                group.addTask {
-                    await self.loadMapPolyline(isProgrammatic: isProgrammatic)
+                await MainActor.run {
+                    self.dataLoadFeedbackGenerator.dataLoad(.success)
                 }
-
-                await group.waitForAll()
+            } catch {
+                await self.application.displayError(error)
+                await MainActor.run {
+                    self.dataLoadFeedbackGenerator.dataLoad(.failed)
+                }
             }
+
+            self.navigationItem.rightBarButtonItem = self.reloadButton
         }
     }
 
