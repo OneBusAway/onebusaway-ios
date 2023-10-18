@@ -92,3 +92,5 @@ public class WeatherForecast: NSObject, Decodable {
         }
     }
 }
+
+// swiftlint:enable nesting

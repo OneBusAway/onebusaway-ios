@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import UniformTypeIdentifiers
 import MobileCoreServices
 
 // MARK: - Scrollable
@@ -351,15 +352,6 @@ extension UILayoutPriority {
 // MARK: - UIPasteboard
 
 public extension UIPasteboard {
-
-    private var UTTypeRTF: String {
-        (kUTTypeRTF as String)
-    }
-
-    private var UTTypePlainText: String {
-        (kUTTypeUTF8PlainText as String)
-    }
-
     /// A convenience method for setting the pasteboard to an attributed string as RTF data.
     /// - Parameter attributedString: The attributed string to which the pasteboard will be set.
     /// - Note: adapted from [https://stackoverflow.com/a/21911997/136839](https://stackoverflow.com/a/21911997/136839)
@@ -372,7 +364,7 @@ public extension UIPasteboard {
             let rtfString = NSString(data: rtfData, encoding: String.Encoding.utf8.rawValue)
         else { return }
 
-        items = [[UTTypeRTF: rtfString, UTTypePlainText: attributedString.string]]
+        items = [[UTType.rtf.identifier: rtfString, UTType.plainText.identifier: attributedString.string]]
     }
 }
 

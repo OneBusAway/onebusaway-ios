@@ -14,7 +14,7 @@ import OBAKitCore
 
 private var throttleWorkItems = [AnyHashable: DispatchWorkItem]()
 private var lastDebounceCallTimes = [AnyHashable: DispatchTime]()
-private let nilContext: AnyHashable = arc4random()
+private let nilContext: AnyHashable = UInt32.random(in: UInt32.min...UInt32.max)
 
 public extension DispatchQueue {
     /**

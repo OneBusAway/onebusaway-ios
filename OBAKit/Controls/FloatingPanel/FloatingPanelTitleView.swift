@@ -35,20 +35,7 @@ class FloatingPanelTitleView: UIView {
 
     // MARK: - Close Button
 
-    public let closeButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setImage(Icons.closeCircle, for: .normal)
-        button.accessibilityLabel = Strings.close
-        button.setContentHuggingPriority(.required, for: .horizontal)
-        button.setContentCompressionResistancePriority(.required, for: .vertical)
-        NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: 40.0),
-            button.widthAnchor.constraint(equalToConstant: 40.0)
-        ])
-        button.imageEdgeInsets = UIEdgeInsets(top: ThemeMetrics.padding, left: ThemeMetrics.padding, bottom: ThemeMetrics.padding, right: ThemeMetrics.padding)
-        return button
-    }()
+    public let closeButton = UIButton.buildCloseButton()
 
     private lazy var closeButtonWrapper: UIView = {
         let wrapper = closeButton.embedInWrapperView(setConstraints: false)

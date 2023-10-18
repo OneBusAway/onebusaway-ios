@@ -48,9 +48,12 @@ class SearchListViewController: UIViewController, Scrollable, OBAListViewDataSou
         }
 
         var sections = delegate.searchInteractor.searchModeObjects(text: delegate.searchBarText)
+
+        // swiftlint:disable unused_enumerated
         for (idx, _) in sections.enumerated() {
             sections[idx].configuration.backgroundColor = .clear
         }
+        // swiftlint:enable unused_enumerated
 
         return sections
     }

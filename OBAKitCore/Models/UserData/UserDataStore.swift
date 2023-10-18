@@ -310,6 +310,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         add(bookmark, to: group, index: .max)
     }
 
+    // swiftlint:disable for_where
+
     public func checkForDuplicates(bookmark: Bookmark) -> Bool {
         for candidate in bookmarks {
             if bookmark.isEqualish(candidate) {
@@ -318,6 +320,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         return false
     }
+
+    // swiftlint:enable for_where
 
     public func add(_ bookmark: Bookmark, to group: BookmarkGroup?, index: Int) {
         let oldGroupID = bookmark.groupID

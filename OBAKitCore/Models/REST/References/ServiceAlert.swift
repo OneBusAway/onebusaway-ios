@@ -301,3 +301,5 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
         }
     }
 }
+
+// swiftlint:enable nesting
