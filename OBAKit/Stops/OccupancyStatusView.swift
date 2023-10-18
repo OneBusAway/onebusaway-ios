@@ -264,3 +264,5 @@ struct OccupancyStatusView_Previews: PreviewProvider {
 }
 
 #endif
+
+// swiftlint:enable no_fallthrough_only

@@ -53,8 +53,8 @@ extension Formatters {
 
                 let formatString: String
                 switch (secondArrDepIsArrival, thirdArrDepIsArrival) {
-                case (true, true):  formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingtwoarrivals_fmt", value: "Following two arrivals in %d minutes and %d minutes.", comment: "Voiceover text describing the two additional arrivals in the near-future, regardless of realtime data availability.")
-                case (false, false):formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt", value: "Following two departures in %d minutes and %d minutes.", comment: "Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability.")
+                case (true, true): formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingtwoarrivals_fmt", value: "Following two arrivals in %d minutes and %d minutes.", comment: "Voiceover text describing the two additional arrivals in the near-future, regardless of realtime data availability.")
+                case (false, false): formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingtwodepartures_fmt", value: "Following two departures in %d minutes and %d minutes.", comment: "Voiceover text describing the two additional departures in the near-future, regardless of realtime data availability.")
                 case (true, false): formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingarrivalthendeparture_fmt", value: "Following arrival in %d minutes and departure in %d minutes.", comment: "Voiceover text describing an arrival, then a departure in the near-future, regardless of realtime data availability.")
                 case (false, true): formatString = OBALoc("voiceover.bookmarkarrivaldata.value.followingdeparturethenarrival_fmt", value: "Following departure in %d minutes and arrival in %d minutes.", comment: "Voiceover text describing a departure, then an arrival in the near-future, regardless of realtime data availability.")
                 }

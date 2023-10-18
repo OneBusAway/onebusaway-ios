@@ -123,11 +123,13 @@ public class Stop: NSObject, Identifiable, Codable, HasReferences {
     public var prioritizedRouteTypeForDisplay: Route.RouteType {
         let priorities: [Route.RouteType] = [.ferry, .lightRail, .subway, .rail, .bus]
 
+        // swiftlint:disable for_where
         for t in priorities {
             if routeTypes.contains(t) {
                 return t
             }
         }
+        // swiftlint:enable for_where
 
         return .unknown
     }

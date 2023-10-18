@@ -142,3 +142,5 @@ public class StopsForRoute: NSObject, Identifiable, Decodable, HasReferences {
         }
     }
 }
+
+// swiftlint:enable nesting

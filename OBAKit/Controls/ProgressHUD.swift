@@ -11,7 +11,7 @@
 
 import UIKit
 
-// swiftlint:disable comment_spacing control_statement cyclomatic_complexity no_space_in_method_call unused_closure_parameter notification_center_detachment file_length opening_brace switch_case_alignment
+// swiftlint:disable comment_spacing control_statement cyclomatic_complexity no_space_in_method_call unused_closure_parameter notification_center_detachment file_length opening_brace switch_case_alignment for_where
 
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 public enum AnimationType {
@@ -338,7 +338,7 @@ public class ProgressHUD: UIView {
 	private func setupBackground(_ interaction: Bool) {
 
 		if (viewBackground == nil) {
-			let mainWindow = UIApplication.shared.windows.first ?? UIWindow()
+			let mainWindow = UIApplication.shared.keyWindowFromScene ?? UIWindow()
 			viewBackground = UIView(frame: self.bounds)
 			mainWindow.addSubview(viewBackground!)
 		}
@@ -550,7 +550,7 @@ public class ProgressHUD: UIView {
 			let inputSetContainerView = NSClassFromString("UIInputSetContainerView"),
 			let inputSetHostView = NSClassFromString("UIInputSetHostView") {
 
-			for window in UIApplication.shared.windows {
+            for window in UIApplication.shared.activeWindows {
 				if window.isKind(of: keyboardWindowClass) {
 					for firstSubView in window.subviews {
 						if firstSubView.isKind(of: inputSetContainerView) {
@@ -1270,3 +1270,5 @@ private class ProgressView: UIView {
 		labelPercentage.text = "\(Int(value*100))%"
 	}
 }
+
+// swiftlint:enable comment_spacing control_statement cyclomatic_complexity no_space_in_method_call unused_closure_parameter notification_center_detachment file_length opening_brace switch_case_alignment for_where

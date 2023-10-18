@@ -387,3 +387,5 @@ private func isSeparator(_ value: Int32) -> Bool {
 }
 
 private typealias IntegerCoordinates = (latitude: Int, longitude: Int)
+
+// swiftlint:enable colon comma vertical_whitespace

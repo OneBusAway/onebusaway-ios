@@ -67,11 +67,15 @@ extension Stop: Searchable {
             return true
         }
 
+        // swiftlint:disable for_where
+
         for route in routes {
             if route.matchesQuery(query) {
                 return true
             }
         }
+
+        // swiftlint:enable for_where
 
         return false
     }

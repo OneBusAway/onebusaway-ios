@@ -9,6 +9,8 @@
 
 import Foundation
 
+// swiftlint:disable cyclomatic_complexity function_body_length
+
 public protocol DataMigrationDelegate: AnyObject {
     func migrate(recentStop: Stop) async throws
     func migrate(userID: String) async throws
@@ -81,7 +83,6 @@ public class DataMigrator {
         return extractor.hasDataToMigrate
     }
 
-    // swiftlint:disable cyclomatic_complexity function_body_length
     /// Perform migration, with the specified `parameters`, against the provided `apiService`. See source code for implementation details.
     /// - precondition: `parameters.regionIdentifier` must be equal to `apiService.configuration.regionIdentifier`, or else this will throw an error.
     /// - precondition: `extractor.hasDataToMigrate == true`, or else this will throw an error.
@@ -242,7 +243,6 @@ public class DataMigrator {
         return results
     }
 
-    // swiftlint:disable syntactic_sugar
     /// An `NSURLError` is considered a "critical error".
     nonisolated func throwCriticalErrorIfAny<ResultType>(_ results: Dictionary<some Hashable, Result<ResultType, Error>>.Values) throws {
         for result in results {
@@ -377,3 +377,5 @@ public class DataMigrator {
         }
     }
 }
+
+// swiftlint:enable cyclomatic_complexity function_body_length

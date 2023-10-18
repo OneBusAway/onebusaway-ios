@@ -17,6 +17,7 @@ public class EmptyDataSetView: UIView {
     }
 
     // MARK: - Constants
+
     fileprivate static let DefaultColor = ThemeColors.shared.secondaryLabel
 
     var topConstraint: NSLayoutConstraint!
@@ -55,8 +56,8 @@ public class EmptyDataSetView: UIView {
         }
     }
 
-    /// Configuration for the button. Set to `nil` to hide the button. See `ButtonConfig.init` for additional details.
     // MARK: - UI
+
     public var alignment: EmptyDataSetAlignment = .center {
         didSet {
             layoutView()
