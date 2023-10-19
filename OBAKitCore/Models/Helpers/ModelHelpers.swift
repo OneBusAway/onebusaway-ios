@@ -10,12 +10,13 @@
 import Foundation
 
 class ModelHelpers: NSObject {
-    /// Converts a date that represents the 1970 epoch date to `nil`.
-    ///
+    /// Converts a date from before the specified `earlierDate` to `nil`.
+    /// 
     /// - Parameter date: A date
-    /// - Returns: Nil if the date was represented by the value `0` and the date otherwise.
-    public static func nilifyEpochDate(_ date: Date) -> Date? {
-        if date == Date(timeIntervalSince1970: 0) {
+    /// - Parameter earlierDate: The lower bound for returning `date`.
+    /// - Returns: `date` if date >= `earlierDate`; otherwise `nil`.
+    public static func nilifyDate(_ date: Date, earlierThan earlierDate: Date) -> Date? {
+        if date < earlierDate {
             return nil
         }
         else {
