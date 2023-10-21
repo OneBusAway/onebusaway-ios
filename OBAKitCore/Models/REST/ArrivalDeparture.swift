@@ -145,13 +145,13 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         predicted = try container.decode(Bool.self, forKey: .predicted)
 
         if let predictedArrivalDate = try container.decodeIfPresent(Date.self, forKey: .predictedArrival) {
-            predictedArrival = ModelHelpers.nilifyEpochDate(predictedArrivalDate)
+            predictedArrival = ModelHelpers.nilifyDate(predictedArrivalDate, earlierThan: Date(timeIntervalSinceReferenceDate: 1.0))
         } else {
             predictedArrival = nil
         }
 
         if let predictedDepartureDate = try container.decodeIfPresent(Date.self, forKey: .predictedDeparture) {
-            predictedDeparture = ModelHelpers.nilifyEpochDate(predictedDepartureDate)
+            predictedDeparture = ModelHelpers.nilifyDate(predictedDepartureDate, earlierThan: Date(timeIntervalSinceReferenceDate: 1.0))
         } else {
             predictedDeparture = nil
         }
