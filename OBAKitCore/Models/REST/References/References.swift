@@ -12,7 +12,7 @@ import Foundation
 public class References: NSObject, Decodable {
     public let agencies: [Agency]
     public let routes: [Route]
-    public let serviceAlerts: [ServiceAlert]
+    let situations: [SituationREST]
     public let stops: [Stop]
     public let trips: [Trip]
 
@@ -23,8 +23,7 @@ public class References: NSObject, Decodable {
     // MARK: - Initialization
 
     private enum CodingKeys: String, CodingKey {
-        case agencies, routes, stops, trips
-        case alerts = "situations"
+        case agencies, routes, stops, trips, situations
     }
 
     public required init(from decoder: Decoder) throws {
@@ -32,8 +31,8 @@ public class References: NSObject, Decodable {
 
         // Sort entries for binary search.
 
-        let serviceAlerts = try container.decodeIfPresent([ServiceAlert].self, forKey: .alerts) ?? []
-        self.serviceAlerts = serviceAlerts.sorted(by: \.id)
+        let situations = try container.decodeIfPresent([SituationREST].self, forKey: .situations) ?? []
+        self.situations = situations.sorted(by: \.id)
 
         let agencies = try container.decodeIfPresent([Agency].self, forKey: .agencies) ?? []
         self.agencies = agencies.sorted(by: \.id)
@@ -48,18 +47,6 @@ public class References: NSObject, Decodable {
         self.trips = trips.sorted(by: \.id)
 
         super.init()
-
-        let regionIdentifier = decoder.userInfo[References.regionIdentifierUserInfoKey] as? Int
-
-        // depends: Agency, Route, Stop, Trip
-        serviceAlerts.loadReferences(self, regionIdentifier: regionIdentifier)
-
-        // depends: Agency
-        routes.loadReferences(self, regionIdentifier: regionIdentifier)
-
-        // depends: Route
-        stops.loadReferences(self, regionIdentifier: regionIdentifier)
-        trips.loadReferences(self, regionIdentifier: regionIdentifier)
     }
 }
 
@@ -99,17 +86,6 @@ extension References {
 
     public func routesWithIDs(_ ids: [String]) -> [Route] {
         return routes.filter { ids.contains($0.id) }
-    }
-
-    // MARK: - Service Alerts
-
-    public func alertWithID(_ id: String?) -> ServiceAlert? {
-        guard let id = id else { return nil }
-        return serviceAlerts.binarySearch(sortedBy: \.id, element: id)?.element
-    }
-
-    public func serviceAlertsWithIDs(_ ids: [String]) -> [ServiceAlert] {
-        return serviceAlerts.filter { ids.contains($0.id) }
     }
 
     // MARK: - Stops

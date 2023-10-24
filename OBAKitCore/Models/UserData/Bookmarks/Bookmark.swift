@@ -60,7 +60,8 @@ import Foundation
     // MARK: - Init
 
     public convenience init(name: String, regionIdentifier: Int, arrivalDeparture: ArrivalDeparture) {
-        self.init(name: name, regionIdentifier: regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
+        fatalError("\(#function) unimplemented")
+//        self.init(name: name, regionIdentifier: regionIdentifier, arrivalDeparture: arrivalDeparture, stop: arrivalDeparture.stop)
     }
 
     public convenience init(name: String, regionIdentifier: Int, stop: Stop) {

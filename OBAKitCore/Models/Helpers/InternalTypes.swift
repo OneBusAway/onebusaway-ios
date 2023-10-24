@@ -32,6 +32,10 @@ extension CLLocation {
 
         self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
     }
+
+    func asOBALocationModel() -> LocationModel {
+        return LocationModel(latitude: coordinate.latitude, longitude: coordinate.longitude)
+    }
 }
 
 extension JSONDecoder {

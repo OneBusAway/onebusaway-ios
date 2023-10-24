@@ -11,16 +11,16 @@ import Foundation
 import CoreLocation
 
 /// The `tripStatus` element captures information about the current status of a transit vehicle serving a trip. It is returned as a sub-element in a number of REST API calls.
-public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
+public struct TripStatus: Identifiable, Codable, Hashable {
     public var id: String {
         return self.activeTripID
     }
 
     /// the trip id of the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
-    let activeTripID: String
+    public let activeTripID: String
 
     /// the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
-    public private(set) var activeTrip: Trip!
+//    public private(set) var activeTrip: Trip!
 
     /// the index of the active trip into the sequence of trips for the active block. Compare to `blockTripSequence`
     /// in `ArrivalAndDeparture` to determine where the active block location is relative to an arrival-and-departure.
@@ -32,7 +32,7 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
 
     /// The closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
-    public private(set) var closestStop: Stop!
+//    public private(set) var closestStop: Stop!
 
     /// the time offset, in seconds, from the closest stop to the current position of the transit vehicle
     /// among the stop times of the current trip. If the number is positive, the stop is coming up.
@@ -68,11 +68,11 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
 
     /// Similar to `closestStopID`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
-    let nextStopID: StopID?
+    public let nextStopID: StopID?
 
     /// Similar to `closestStop`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
-    public private(set) var nextStop: Stop?
+//    public private(set) var nextStop: Stop?
 
     /// Similar to `closestStopTimeOffset`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -105,10 +105,10 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
     public let serviceDate: Date
 
     /// References to `Situation`s for active service alerts applicable to this trip.
-    let situationIDs: [String]
+    public let situationIDs: [String]
 
     /// Active service alerts applicable to this trip.
-    public private(set) var serviceAlerts = [ServiceAlert]()
+//    public private(set) var serviceAlerts = [ServiceAlert]()
 
     /// Status modifier for the trip
     public let statusModifier: StatusModifier
@@ -126,6 +126,15 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
             case "SCHEDULED": return .scheduled
             case "CANCELED": return .canceled
             default: return .other(status)
+            }
+        }
+
+        func encode() -> String {
+            switch self {
+            case .default: return "DEFAULT"
+            case .scheduled: return "SCHEDULED"
+            case .canceled: return "CANCELED"
+            case .other(let status): return status
             }
         }
     }
@@ -154,7 +163,7 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         case frequency
     }
 
-    public required init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         activeTripID = try container.decode(String.self, forKey: .activeTripID)
@@ -194,84 +203,34 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
     }
 
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        activeTrip = references.tripWithID(activeTripID)!
-        closestStop = references.stopWithID(closestStopID)!
-        nextStop = references.stopWithID(nextStopID)
-        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-        self.regionIdentifier = regionIdentifier
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(activeTripID, forKey: .activeTripID)
+        try container.encode(blockTripSequence, forKey: .blockTripSequence)
+
+        try container.encode(closestStopID, forKey: .closestStopID)
+        try container.encode(closestStopTimeOffset, forKey: .closestStopTimeOffset)
+        try container.encode(distanceAlongTrip, forKey: .distanceAlongTrip)
+        try container.encodeIfPresent(frequency, forKey: .frequency)
+        try container.encode(lastKnownDistanceAlongTrip, forKey: .lastKnownDistanceAlongTrip)
+        try container.encode(lastKnownOrientation, forKey: .lastKnownOrientation)
+        try container.encode(lastLocationUpdateTime, forKey: .lastLocationUpdateTime)
+
+        try container.encodeIfPresent(lastKnownLocation?.asOBALocationModel(), forKey:.lastKnownLocation)
+        try container.encode(situationIDs, forKey: .situationIDs)
+
+        try container.encode(statusModifier.encode(), forKey: .status)
+        try container.encode(totalDistanceAlongTrip, forKey: .totalDistanceAlongTrip)
+        try container.encode(vehicleID, forKey: .vehicleID)
     }
 
-    // MARK: - Equality
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? TripStatus else { return false }
-        return
-            activeTrip == rhs.activeTrip &&
-            activeTripID == rhs.activeTripID &&
-            blockTripSequence == rhs.blockTripSequence &&
-            closestStop == rhs.closestStop &&
-            closestStopID == rhs.closestStopID &&
-            closestStopTimeOffset == rhs.closestStopTimeOffset &&
-            distanceAlongTrip == rhs.distanceAlongTrip &&
-            frequency == rhs.frequency &&
-            isRealTime == rhs.isRealTime &&
-            lastKnownDistanceAlongTrip == rhs.lastKnownDistanceAlongTrip &&
-            lastKnownLocation == rhs.lastKnownLocation &&
-            lastKnownOrientation == rhs.lastKnownOrientation &&
-            lastLocationUpdateTime == rhs.lastLocationUpdateTime &&
-            lastUpdate == rhs.lastUpdate &&
-            nextStop == rhs.nextStop &&
-            nextStopID == rhs.nextStopID &&
-            nextStopTimeOffset == rhs.nextStopTimeOffset &&
-            orientation == rhs.orientation &&
-            phase == rhs.phase &&
-            position == rhs.position &&
-            regionIdentifier == rhs.regionIdentifier &&
-            scheduleDeviation == rhs.scheduleDeviation &&
-            scheduledDistanceAlongTrip == rhs.scheduledDistanceAlongTrip &&
-            serviceAlerts == rhs.serviceAlerts &&
-            serviceDate == rhs.serviceDate &&
-            situationIDs == rhs.situationIDs &&
-            statusModifier == rhs.statusModifier &&
-            totalDistanceAlongTrip == rhs.totalDistanceAlongTrip &&
-            vehicleID == rhs.vehicleID
-    }
-
-    override public var hash: Int {
-        var hasher = Hasher()
-        hasher.combine(activeTrip)
-        hasher.combine(activeTripID)
-        hasher.combine(blockTripSequence)
-        hasher.combine(closestStop)
-        hasher.combine(closestStopID)
-        hasher.combine(closestStopTimeOffset)
-        hasher.combine(distanceAlongTrip)
-        hasher.combine(frequency)
-        hasher.combine(isRealTime)
-        hasher.combine(lastKnownDistanceAlongTrip)
-        hasher.combine(lastKnownLocation)
-        hasher.combine(lastKnownOrientation)
-        hasher.combine(lastLocationUpdateTime)
-        hasher.combine(lastUpdate)
-        hasher.combine(nextStop)
-        hasher.combine(nextStopID)
-        hasher.combine(nextStopTimeOffset)
-        hasher.combine(orientation)
-        hasher.combine(phase)
-        hasher.combine(position)
-        hasher.combine(regionIdentifier)
-        hasher.combine(scheduleDeviation)
-        hasher.combine(scheduledDistanceAlongTrip)
-        hasher.combine(serviceAlerts)
-        hasher.combine(serviceDate)
-        hasher.combine(situationIDs)
-        hasher.combine(statusModifier)
-        hasher.combine(totalDistanceAlongTrip)
-        hasher.combine(vehicleID)
-
-        return hasher.finalize()
-    }
+//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
+//        activeTrip = references.tripWithID(activeTripID)!
+//        closestStop = references.stopWithID(closestStopID)!
+//        nextStop = references.stopWithID(nextStopID)
+//        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
+//        self.regionIdentifier = regionIdentifier
+//    }
 }
 
 /// :nodoc:

@@ -108,26 +108,26 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Find recent stops that match `searchText`
     /// - Parameter searchText: The search string
-    func findRecentStops(matching searchText: String) -> [Stop]
+//    func findRecentStops(matching searchText: String) -> [Stop]
 
     /// A list of recently-viewed stops
-    var recentStops: [Stop] { get }
+//    var recentStops: [Stop] { get }
 
     /// Add a `Stop` to the list of recently-viewed `Stop`s
     ///
     /// - Parameter stop: The stop to add to the list
     /// - Parameter region: The `Region` in which this `Stop` resides.
-    func addRecentStop(_ stop: Stop, region: Region)
+//    func addRecentStop(_ stop: Stop, region: Region)
 
     /// Deletes all recent stops.
-    func deleteAllRecentStops()
+//    func deleteAllRecentStops()
 
     /// Deletes the specified Stop from the list of recent stops.
     /// - Parameter recentStop: The stop to delete.
-    func delete(recentStop: Stop)
+//    func delete(recentStop: Stop)
 
     /// The maximum number of recent stops that will be stored.
-    var maximumRecentStopsCount: Int { get }
+//    var maximumRecentStopsCount: Int { get }
 
     // MARK: - Alarms
 
@@ -158,11 +158,11 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Lets you check whether the passed-in service has been viewed by the user or not.
     /// - Parameter serviceAlert: The service alert to check the read status of.
-    func isUnread(serviceAlert: ServiceAlert) -> Bool
+//    func isUnread(serviceAlert: ServiceAlert) -> Bool
 
     /// Lets you mark a service alert as having been read.
     /// - Parameter serviceAlert: The service alert to mark read.
-    func markRead(serviceAlert: ServiceAlert)
+//    func markRead(serviceAlert: ServiceAlert)
 }
 
 // MARK: - Stop Preferences
@@ -543,13 +543,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     // MARK: - Service Alerts
 
-    public func isUnread(serviceAlert: ServiceAlert) -> Bool {
-        readAlerts[serviceAlert.id] ?? true
-    }
-
-    public func markRead(serviceAlert: ServiceAlert) {
-        readAlerts[serviceAlert.id] = false
-    }
+//    public func isUnread(serviceAlert: ServiceAlert) -> Bool {
+//        readAlerts[serviceAlert.id] ?? true
+//    }
+//
+//    public func markRead(serviceAlert: ServiceAlert) {
+//        readAlerts[serviceAlert.id] = false
+//    }
 
     private var readAlerts: [String: Bool] {
         get {

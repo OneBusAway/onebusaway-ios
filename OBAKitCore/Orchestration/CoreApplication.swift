@@ -200,7 +200,8 @@ open class CoreApplication: NSObject,
 
     public func migrate(recentStop: Stop) {
         guard let currentRegion = currentRegion else { return }
-        userDataStore.addRecentStop(recentStop, region: currentRegion)
+        fatalError("\(#function) unimplemented.")
+//        userDataStore.addRecentStop(recentStop, region: currentRegion)
     }
 
     public func migrate(bookmark: Bookmark, group: BookmarkGroup?) {

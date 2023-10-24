@@ -86,7 +86,7 @@ public class AgencyAlert: NSObject, Identifiable {
             throw AlertError.invalidAlert
         }
 
-        guard let selectedAgency = agencies.filter({ $0.agencyID == gtfsAgency.agencyID }).first else {
+        guard let selectedAgency = agencies.filter({ $0.id == gtfsAgency.agencyID }).first else {
             throw AlertError.unknownAgency
         }
 
@@ -99,7 +99,7 @@ public class AgencyAlert: NSObject, Identifiable {
             AgencyAlert.isAgencyWideAlert(alert: feedEntity.alert),
             let gtfsAgency = AgencyAlert.findAgencyInList(list: feedEntity.alert.informedEntity),
             gtfsAgency.hasAgencyID,
-            gtfsAgency.agencyID == agency.agencyID
+            gtfsAgency.agencyID == agency.id
         else {
             throw AlertError.invalidAlert
         }
@@ -130,7 +130,7 @@ public class AgencyAlert: NSObject, Identifiable {
 
     override public var debugDescription: String {
         let desc = super.debugDescription
-        let props: [String: Any] = ["id": id as Any, "agencyID": agencyID as Any, "agency": (agency?.agency.name ?? "(nil)") as Any]
+        let props: [String: Any] = ["id": id as Any, "agencyID": agencyID as Any]
         return "\(desc) \(props)"
     }
 }

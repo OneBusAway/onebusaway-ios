@@ -485,10 +485,10 @@ public class Formatters: NSObject {
         if let direction = directionString(stop.direction) {
             parts.append(direction)
         }
-
-        if let routes = Formatters.formattedRoutes(stop.routes) {
-            parts.append(routes)
-        }
+        fatalError("\(#function) unimplemented")
+//        if let routes = Formatters.formattedRoutes(stop.routes) {
+//            parts.append(routes)
+//        }
 
         let fmt = OBALoc("formatters.stop_id_fmt", value: "Stop ID: %@", comment: "A string that prefixes a stop ID to tell the user what that value is.")
         parts.append(String(format: fmt, stop.code))
@@ -631,11 +631,12 @@ public class Formatters: NSObject {
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
     /// - Returns: A human-readable list of the passed-in `Route`s.
     public class func formattedAgenciesForRoutes(_ routes: [Route]) -> String {
-        return routes
-            .compactMap { $0.agency.name }
-            .uniqued
-            .sorted()
-            .joined(separator: ", ")
+        fatalError("\(#function) unimplemented")
+//        return routes
+//            .compactMap { $0.agency.name }
+//            .uniqued
+//            .sorted()
+//            .joined(separator: ", ")
     }
 
     /// Returns an adjective form of the passed-in cardinal direction. For example `n` -> `Northbound`

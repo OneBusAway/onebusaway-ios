@@ -20,10 +20,11 @@ public class TripConvertible: NSObject {
     }
 
     public init?(vehicleStatus: VehicleStatus) {
-        guard vehicleStatus.trip != nil else {
-            return nil
-        }
-        self.vehicleStatus = vehicleStatus
+        fatalError("\(#function) unimplemented.")
+//        guard vehicleStatus.trip != nil else {
+//            return nil
+//        }
+//        self.vehicleStatus = vehicleStatus
     }
 
     public var vehicleID: String? {
@@ -35,7 +36,8 @@ public class TripConvertible: NSObject {
     }
 
     public var trip: Trip {
-        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
+        fatalError("\(#function) unimplemented.")
+//        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
     }
 
     public var serviceDate: Date {

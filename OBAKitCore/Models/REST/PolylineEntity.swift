@@ -10,20 +10,10 @@
 import Foundation
 import MapKit
 
-public class PolylineEntity: NSObject, Decodable {
+public struct PolylineEntity: Codable, Hashable {
     public let points: String
 
-    private enum CodingKeys: String, CodingKey {
-        case points
+    public var polyline: MKPolyline? {
+        Polyline(encodedPolyline: points).mkPolyline
     }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        points = try container.decode(String.self, forKey: .points)
-    }
-
-    public lazy var polyline: MKPolyline? = {
-        let p = Polyline(encodedPolyline: points)
-        return p.mkPolyline
-    }()
 }

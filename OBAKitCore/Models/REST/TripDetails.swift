@@ -9,7 +9,8 @@
 
 import Foundation
 
-public class TripDetails: NSObject, Identifiable, Decodable, HasReferences {
+public struct TripDetails: Identifiable, Codable, Hashable {
+    /// Equivalent to `tripID`.
     public var id: String {
         return self.tripID
     }
@@ -22,81 +23,80 @@ public class TripDetails: NSObject, Identifiable, Decodable, HasReferences {
 
     /// The ID for the represented trip.
     public let tripID: String
-    public private(set) var trip: Trip!
 
     public let serviceDate: Date
 
     /// Contains information about the current status of the transit vehicle serving this trip.
     public let status: TripStatus?
 
-    /// The ID of the default time zone for this trip. e.g. `America/Los_Angeles`.
-    public let timeZone: String
-
-    /// Specific details about which stops are visited during the course of the trip and at what times
-    public let stopTimes: [TripStopTime]
-
-    /// If this trip is part of a block and has an incoming trip from another route, this element will give the id of the incoming trip.
-    let previousTripID: String?
-
-    /// If this trip is part of a block and has an incoming trip from another route, this element will provide the incoming trip.
-    public private(set) var previousTrip: Trip?
-
-    /// If this trip is part of a block and has an outgoing trip to another route, this element will give the id of the outgoing trip.
-    let nextTripID: String?
-
-    /// If this trip is part of a block and has an outgoing trip to another route, this will provide the outgoing trip.
-    public private(set) var nextTrip: Trip?
+    public let schedule: Schedule
 
     /// Contains the IDs for any active `Situation` elements that currently apply to the trip.
-    let situationIDs: [String]
+    public let situationIDs: [String]
 
-    /// Contains any active `ServiceAlert` elements that currently apply to the trip.
-    public private(set) var serviceAlerts = [ServiceAlert]()
-
-    public private(set) var regionIdentifier: Int?
-
-    private enum CodingKeys: String, CodingKey {
+    internal enum CodingKeys: String, CodingKey {
         case frequency
         case tripID = "tripId"
         case serviceDate
         case status
         case schedule
-        case timeZone
-        case stopTimes
-        case previousTripID = "previousTripId"
-        case nextTripID = "nextTripId"
+//        case timeZone
+//        case stopTimes
+//        case previousTripID = "previousTripId"
+//        case nextTripID = "nextTripId"
         case situationIDs = "situationIds"
     }
 
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
+//    public init(from decoder: Decoder) throws {
+//        let container = try decoder.container(keyedBy: CodingKeys.self)
+//
+//        frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
+//        tripID = try container.decode(String.self, forKey: .tripID)
+//        serviceDate = try container.decode(Date.self, forKey: .serviceDate)
+//        status = try container.decodeIfPresent(TripStatus.self, forKey: .status)
+//        situationIDs = try container.decode([String].self, forKey: .situationIDs)
+//
+//        let scheduleContainer = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .schedule)
+//        timeZone = try scheduleContainer.decode(String.self, forKey: .timeZone)
+//        stopTimes = try scheduleContainer.decode([TripStopTime].self, forKey: .stopTimes)
+//        previousTripID = try scheduleContainer.decodeIfPresent(String.self, forKey: .previousTripID)
+//        nextTripID = try scheduleContainer.decodeIfPresent(String.self, forKey: .nextTripID)
+//    }
 
-        frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
-        tripID = try container.decode(String.self, forKey: .tripID)
-        serviceDate = try container.decode(Date.self, forKey: .serviceDate)
-        status = try container.decodeIfPresent(TripStatus.self, forKey: .status)
+//    public func encode(to encoder: Encoder) throws {
+//        var container = encoder.container(keyedBy: CodingKeys.self)
+//        try container.encodeIfPresent(frequency, forKey: .frequency)
+//        try container.encode(tripID, forKey: .tripID)
+//        try container.encode(serviceDate, forKey: .serviceDate)
+//        try container.encodeIfPresent(status, forKey: .status)
+//        try container.encode(situationIDs, forKey: .situationIDs)
+//
+//        var scheduleContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .schedule)
+//
+//        try scheduleContainer.encode(timeZone, forKey: .timeZone)
+//        try scheduleContainer.encode(stopTimes, forKey: .stopTimes)
+//        try scheduleContainer.encodeIfPresent(previousTripID, forKey: .previousTripID)
+//        try scheduleContainer.encodeIfPresent(nextTripID, forKey: .nextTripID)
+//    }
 
-        let schedule = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .schedule)
-        timeZone = try schedule.decode(String.self, forKey: .timeZone)
-        stopTimes = try schedule.decode([TripStopTime].self, forKey: .stopTimes)
-        for st in stopTimes {
-            st.serviceDate = serviceDate
+    // MARK: - Nested Types
+    public struct Schedule: Codable, Hashable {
+        /// The ID of the default time zone for this trip. e.g. `America/Los_Angeles`.
+        public let timeZone: String
+
+        /// Specific details about which stops are visited during the course of the trip and at what times
+        public let stopTimes: [TripStopTime]
+
+        /// If this trip is part of a block and has an incoming trip from another route, this element will give the id of the incoming trip.
+        public let previousTripID: String?
+
+        /// If this trip is part of a block and has an outgoing trip to another route, this element will give the id of the outgoing trip.
+        public let nextTripID: String?
+
+        enum CodingKeys: String, CodingKey {
+            case timeZone, stopTimes
+            case previousTripID = "previousTripId"
+            case nextTripID = "nextTripId"
         }
-
-        previousTripID = try schedule.decodeIfPresent(String.self, forKey: .previousTripID)
-        nextTripID = try schedule.decodeIfPresent(String.self, forKey: .nextTripID)
-        situationIDs = try container.decode([String].self, forKey: .situationIDs)
-    }
-
-    // MARK: - HasReferences
-
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        trip = references.tripWithID(tripID)!
-        previousTrip = references.tripWithID(previousTripID)
-        nextTrip = references.tripWithID(nextTripID)
-        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-        stopTimes.loadReferences(references, regionIdentifier: regionIdentifier)
-        status?.loadReferences(references, regionIdentifier: regionIdentifier)
-        self.regionIdentifier = regionIdentifier
     }
 }

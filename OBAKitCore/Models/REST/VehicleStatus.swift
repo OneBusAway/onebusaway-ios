@@ -10,7 +10,7 @@
 import Foundation
 import CoreLocation
 
-public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
+public struct VehicleStatus: Identifiable, Codable, Hashable {
     public var id: String {
         return self.vehicleID
     }
@@ -28,10 +28,10 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
     public let location: CLLocation?
 
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
-    let tripID: TripIdentifier?
+    public let tripID: TripIdentifier?
 
     /// The vehicle's current trip
-    public private(set) var trip: Trip?
+//    public private(set) var trip: Trip?
 
     /// the current journey phase of the vehicle
     public let phase: String
@@ -41,8 +41,6 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
 
     /// Provides additional status information for the vehicle's trip.
     public let tripStatus: TripStatus
-
-    public private(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
         case vehicleID = "vehicleId"
@@ -55,7 +53,7 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
         case tripStatus = "tripStatus"
     }
 
-    public required init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         vehicleID = try container.decode(String.self, forKey: .vehicleID)
@@ -76,9 +74,15 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
     }
 
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        trip = references.tripWithID(tripID)
-        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
-        self.regionIdentifier = regionIdentifier
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(vehicleID, forKey: .vehicleID)
+        try container.encode(lastUpdateTime, forKey: .lastUpdateTime)
+        try container.encode(lastLocationUpdateTime, forKey: .lastLocationUpdateTime)
+        try container.encode(tripID, forKey: .tripID)
+        try container.encode(phase, forKey: .phase)
+        try container.encode(status, forKey: .status)
+        try container.encode(location?.asOBALocationModel(), forKey: .location)
+        try container.encode(tripStatus, forKey: .tripStatus)
     }
 }

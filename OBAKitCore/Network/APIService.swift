@@ -19,17 +19,17 @@ public protocol APIService {
 }
 
 public struct APIServiceConfiguration {
-    let baseURL: URL
-    let apiKey: String
-    let uuid: String
-    let appVersion: String
-    let regionIdentifier: Int?
+    public let baseURL: URL
+    public let apiKey: String
+    public let uuid: String
+    public let appVersion: String
+    public let regionIdentifier: Int?
 
     /// Generated query items from the initializer. Include this set of query items with every request you make.
-    let defaultQueryItems: [URLQueryItem]
+    public let defaultQueryItems: [URLQueryItem]
 
     /// - parameter baseURL: Any queries included in the `baseURL` will be moved to the `defaultQueryItems`.
-    init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionIdentifier: Int?) {
+    public init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionIdentifier: Int?) {
         self.apiKey = apiKey
         self.uuid = uuid
         self.appVersion = appVersion

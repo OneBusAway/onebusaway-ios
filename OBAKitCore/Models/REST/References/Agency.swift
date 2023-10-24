@@ -9,7 +9,8 @@
 
 import Foundation
 
-public class Agency: NSObject, Identifiable, Codable {
+/// - SeeAlso: [OneBusAway Agency documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/elements/agency.html)
+public struct Agency: Identifiable, Codable, Hashable {
     public let disclaimer: String?
     public let email: String?
     public let fareURL: URL?
@@ -21,7 +22,7 @@ public class Agency: NSObject, Identifiable, Codable {
     public let timeZone: String
     public let agencyURL: URL
 
-    private enum CodingKeys: String, CodingKey {
+    internal enum CodingKeys: String, CodingKey {
         case disclaimer
         case email
         case fareURL = "fareUrl"
@@ -34,7 +35,7 @@ public class Agency: NSObject, Identifiable, Codable {
         case agencyURL = "url"
     }
 
-    public required init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         disclaimer = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .disclaimer))
@@ -50,24 +51,17 @@ public class Agency: NSObject, Identifiable, Codable {
         agencyURL = try container.decode(URL.self, forKey: .agencyURL)
     }
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(disclaimer, forKey: .disclaimer)
-        try container.encodeIfPresent(email, forKey: .email)
-        try container.encodeIfPresent(fareURL?.absoluteString, forKey: .fareURL)
-        try container.encode(id, forKey: .id)
-        try container.encode(language, forKey: .language)
-        try container.encode(name, forKey: .name)
-        try container.encode(phone, forKey: .phone)
-        try container.encode(isPrivateService, forKey: .isPrivateService)
-        try container.encode(timeZone, forKey: .timeZone)
-        try container.encode(agencyURL, forKey: .agencyURL)
-    }
-
-    public override var debugDescription: String {
-        var descriptionBuilder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
-        descriptionBuilder.add(key: "name", value: name)
-        descriptionBuilder.add(key: "id", value: id)
-        return descriptionBuilder.description
-    }
+//    public func encode(to encoder: Encoder) throws {
+//        var container = encoder.container(keyedBy: CodingKeys.self)
+//        try container.encodeIfPresent(disclaimer, forKey: .disclaimer)
+//        try container.encodeIfPresent(email, forKey: .email)
+//        try container.encodeIfPresent(fareURL?.absoluteString, forKey: .fareURL)
+//        try container.encode(id, forKey: .id)
+//        try container.encode(language, forKey: .language)
+//        try container.encode(name, forKey: .name)
+//        try container.encode(phone, forKey: .phone)
+//        try container.encode(isPrivateService, forKey: .isPrivateService)
+//        try container.encode(timeZone, forKey: .timeZone)
+//        try container.encode(agencyURL, forKey: .agencyURL)
+//    }
 }

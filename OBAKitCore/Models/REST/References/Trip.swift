@@ -9,7 +9,7 @@
 
 import Foundation
 
-public class Trip: NSObject, Identifiable, Decodable, HasReferences {
+public struct Trip: Identifiable, Codable, Hashable {
     /// The block_id field identifies the block to which the trip belongs.
     ///
     /// A block consists of a single trip or many sequential trips made using
@@ -31,9 +31,6 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
 
     /// The route_id field contains an ID that uniquely identifies a route.
     public let routeID: String
-
-    /// The Route served by this trip.
-    public var route: Route!
 
     public let routeShortName: String?
 
@@ -61,9 +58,7 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
     /// Use this field to distinguish between different patterns of service in the same route.
     public let headsign: String?
 
-    public private(set) var regionIdentifier: Int?
-
-    private enum CodingKeys: String, CodingKey {
+    internal enum CodingKeys: String, CodingKey {
         case blockID = "blockId"
         case direction
         case headsign = "tripHeadsign"
@@ -76,7 +71,7 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
         case timeZone
     }
 
-    public required init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         blockID = try container.decode(String.self, forKey: .blockID)
         direction = try? container.decodeIfPresent(String.self, forKey: .direction)
@@ -90,54 +85,14 @@ public class Trip: NSObject, Identifiable, Decodable, HasReferences {
         timeZone = String.nilifyBlankValue(try container.decode(String.self, forKey: .timeZone))
     }
 
-    // MARK: - HasReferences
-
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        route = references.routeWithID(routeID)
-        self.regionIdentifier = regionIdentifier
-    }
-
     // MARK: - Route Descriptions
 
     /// A 'best effort' determination of the headsign for this `Trip`'s route.
     public var routeHeadsign: String {
-        let bestShortName = routeShortName ?? route.shortName
-        let headsign = self.headsign
-
-        return [bestShortName, headsign].compactMap { $0 }.joined(separator: " - ")
-    }
-
-    // MARK: - Equality
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? Trip else { return false }
-        return
-            blockID == rhs.blockID &&
-            direction == rhs.direction &&
-            headsign == rhs.headsign &&
-            id == rhs.id &&
-            regionIdentifier == rhs.regionIdentifier &&
-            routeID == rhs.routeID &&
-            routeShortName == rhs.routeShortName &&
-            serviceID == rhs.serviceID &&
-            shapeID == rhs.shapeID &&
-            shortName == rhs.shortName &&
-            timeZone == rhs.timeZone
-    }
-
-    override public var hash: Int {
-        var hasher = Hasher()
-        hasher.combine(blockID)
-        hasher.combine(direction)
-        hasher.combine(headsign)
-        hasher.combine(id)
-        hasher.combine(regionIdentifier)
-        hasher.combine(routeID)
-        hasher.combine(routeShortName)
-        hasher.combine(serviceID)
-        hasher.combine(shapeID)
-        hasher.combine(shortName)
-        hasher.combine(timeZone)
-        return hasher.finalize()
+        fatalError("\(#function) unimplemented")
+//        let bestShortName = routeShortName ?? route.shortName
+//        let headsign = self.headsign
+//
+//        return [bestShortName, headsign].compactMap { $0 }.joined(separator: " - ")
     }
 }

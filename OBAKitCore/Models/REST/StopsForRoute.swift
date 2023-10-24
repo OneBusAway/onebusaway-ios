@@ -19,109 +19,61 @@ import MapKit
 /// “stop groupings” that are used to group the stops into useful collections. Currently, the main
 /// grouping provided organizes the set of stops by direction of travel for the route. Finally,
 /// this method also returns a set of polylines that can be used to draw the path traveled by the route.
-public class StopsForRoute: NSObject, Identifiable, Decodable, HasReferences {
-    public var id: String {
-        return routeID
-    }
-
-    let routeID: String
-    public private(set) var route: Route!
-
-    public let rawPolylines: [String]
-    public lazy var polylines: [MKPolyline] = rawPolylines.compactMap { Polyline(encodedPolyline: $0).mkPolyline }
-
-    public lazy var mapRect: MKMapRect = {
-        var bounds = MKMapRect.null
-        for p in polylines {
-            bounds = bounds.union(p.boundingMapRect)
-        }
-        return bounds
-    }()
-
-    let stopIDs: [String]
-    public private(set) var stops: [Stop]!
-
-    public private(set) var regionIdentifier: Int?
-
-    public let stopGroupings: [StopGrouping]
-
-    private enum CodingKeys: String, CodingKey {
+public struct StopsForRoute: Identifiable, Codable {
+    enum CodingKeys: String, CodingKey {
         case routeID = "routeId"
-        case rawPolylines = "polylines"
+        case polylines
         case stopIDs = "stopIds"
         case stopGroupings
     }
 
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        routeID = try container.decode(String.self, forKey: .routeID)
-        rawPolylines = try container.decode([PolylineEntity].self, forKey: .rawPolylines).compactMap { $0.points }
-        stopIDs = try container.decode([String].self, forKey: .stopIDs)
-        stopGroupings = try container.decode([StopGrouping].self, forKey: .stopGroupings)
+    public var id: String {
+        return routeID
     }
 
-    // MARK: - HasReferences
+    public let routeID: String
+    public let polylines: [PolylineEntity]
+    public let stopIDs: [String]
+    public let stopGroupings: [StopGrouping]
 
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        route = references.routeWithID(routeID)!
-        stops = references.stopsWithIDs(stopIDs)
-        stopGroupings.loadReferences(references, regionIdentifier: regionIdentifier)
-        self.regionIdentifier = regionIdentifier
+    public var mapRect: MKMapRect {
+        return polylines.reduce(into: MKMapRect.null) { partialResult, polyline in
+            if let boundingMapRect = polyline.polyline?.boundingMapRect {
+                partialResult.union(boundingMapRect)
+            }
+        }
     }
 
     // MARK: - Nested Types
 
-    // MARK: - StopGrouping
-
-    public class StopGrouping: NSObject, Decodable, HasReferences {
+    // MARK: StopGrouping
+    public struct StopGrouping: Codable {
         public let ordered: Bool
         public let groupingType: String
-        public let stopGroups: [StopGroup]
+        public let stopGroups: [StopsForRoute.StopGroup]
 
-        public private(set) var regionIdentifier: Int?
-
-        private enum CodingKeys: String, CodingKey {
-            case ordered
+        enum CodingKeys: String, CodingKey {
+            case ordered, stopGroups
             case groupingType = "type"
-            case stopGroups
-        }
-
-        public required init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            ordered = try container.decode(Bool.self, forKey: .ordered)
-            groupingType = try container.decode(String.self, forKey: .groupingType)
-            stopGroups = try container.decode([StopGroup].self, forKey: .stopGroups)
-        }
-
-        public func loadReferences(_ references: References, regionIdentifier: Int?) {
-            stopGroups.loadReferences(references, regionIdentifier: regionIdentifier)
-            self.regionIdentifier = regionIdentifier
         }
     }
 
     // MARK: - StopGroup
-
-    public class StopGroup: NSObject, Decodable, HasReferences {
+    public struct StopGroup: Identifiable, Codable/*, HasReferences*/ {
         public let id: String
+
         public let name: String
         public let groupingType: String
-        public let polylines: [String]
+        public let polylines: [PolylineEntity]
+        public let stopIDs: [String]
 
-        let stopIDs: [String]
-        public private(set) var stops = [Stop]()
-
-        public private(set) var regionIdentifier: Int?
-
-        private enum CodingKeys: String, CodingKey {
-            case id
-            case name
+        enum CodingKeys: String, CodingKey {
+            case id, name, polylines
             case groupingType = "type"
-            case polylines
             case stopIDs = "stopIds"
         }
 
-        public required init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
 
             id = try container.decode(String.self, forKey: .id)
@@ -130,15 +82,20 @@ public class StopsForRoute: NSObject, Identifiable, Decodable, HasReferences {
             name = try nameContainer.decode(String.self, forKey: .name)
             groupingType = try nameContainer.decode(String.self, forKey: .groupingType)
 
-            let polylineEntities = try container.decode([PolylineEntity].self, forKey: .polylines)
-            polylines = polylineEntities.compactMap { $0.points }
-
+            polylines = try container.decode([PolylineEntity].self, forKey: .polylines)
             stopIDs = try container.decode([String].self, forKey: .stopIDs)
         }
 
-        public func loadReferences(_ references: References, regionIdentifier: Int?) {
-            stops = references.stopsWithIDs(stopIDs)
-            self.regionIdentifier = regionIdentifier
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(id, forKey: .id)
+
+            var nameContainer = container.nestedContainer(keyedBy: CodingKeys.self, forKey: .name)
+            try nameContainer.encode(name, forKey: .name)
+            try nameContainer.encode(groupingType, forKey: .groupingType)
+
+            try container.encode(stopIDs, forKey: .stopIDs)
+            try container.encode(polylines, forKey: .polylines)
         }
     }
 }
