@@ -53,12 +53,12 @@ public struct ArrivalDeparture: Identifiable, Hashable {
     public let predicted: Bool
 
     /// Predicted arrival time. `nil` if no real-time information is available.
-    @CodedAt("scheduledArrivalTime")
+    @CodedAt("predictedArrivalTime")
     @CodedBy(Date.NillifyDate(ifEarlierThan: Date(timeIntervalSinceReferenceDate: 1)))
     let predictedArrival: Date?
 
     /// Predicted departure time. `nil` if no real-time information is available.
-    @CodedAt("scheduledDepartureTime")
+    @CodedAt("predictedDepartureTime")
     @CodedBy(Date.NillifyDate(ifEarlierThan: Date(timeIntervalSinceReferenceDate: 1)))
     let predictedDeparture: Date?
 
