@@ -8,20 +8,14 @@
 //
 
 import Foundation
+import MetaCodable
 import MapKit
 
-public class PolylineEntity: NSObject, Decodable {
+@Codable
+public struct PolylineEntity: Hashable {
     public let points: String
 
-    private enum CodingKeys: String, CodingKey {
-        case points
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        points = try container.decode(String.self, forKey: .points)
-    }
-
+    @IgnoreCoding
     public lazy var polyline: MKPolyline? = {
         let p = Polyline(encodedPolyline: points)
         return p.mkPolyline
