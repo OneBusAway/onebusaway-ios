@@ -24,14 +24,28 @@ extension URL {
         }
 
         func decodeIfPresent(from decoder: Decoder) throws -> URL? {
-            let container = try decoder.singleValueContainer()
-            let string = try container.decode(String.self)
-
-            guard string.isEmpty == false else {
+            guard let container = try? decoder.singleValueContainer(),
+                  let string = try? container.decode(String.self),
+                  string.isEmpty == false else {
                 return nil
             }
 
             return URL(string: string)
+        }
+    }
+}
+
+extension String {
+    struct NillifyEmptyString: HelperCoder {
+        func decode(from decoder: Decoder) throws -> String {
+            return try decoder.singleValueContainer().decode(String.self)
+        }
+
+        func decodeIfPresent(from decoder: Decoder) throws -> String? {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+
+            return string.isEmpty ? nil : string
         }
     }
 }
