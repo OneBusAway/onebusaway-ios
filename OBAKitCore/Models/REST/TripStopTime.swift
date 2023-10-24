@@ -8,69 +8,47 @@
 //
 
 import Foundation
+import MetaCodable
 
-public class TripStopTime: NSObject, Decodable, HasReferences {
-
+@Codable
+public struct TripStopTime: Hashable, Comparable/* HasReferences*/ {
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop.
-    private let arrival: TimeInterval
-
-    public private(set) var arrivalDate: Date!
+    @CodedAt("arrivalTime")
+    public let arrival: TimeInterval
 
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop
-    private let departure: TimeInterval
-
-    public private(set) var departureDate: Date!
+    @CodedAt("departureTime")
+    public let departure: TimeInterval
 
     /// The stop id of the stop visited during the trip
+    @CodedAt("stopId")
     public let stopID: StopID
 
+    public let distanceAlongTrip: Double
+
+    public static func < (lhs: TripStopTime, rhs: TripStopTime) -> Bool {
+        lhs.distanceAlongTrip < rhs.distanceAlongTrip
+    }
+
+    public func arrivalDate(relativeTo tripDetails: TripDetails) -> Date {
+        tripDetails.serviceDate.addingTimeInterval(arrival)
+    }
+
+    public func departureDate(relativeTo tripDetails: TripDetails) -> Date {
+        tripDetails.serviceDate.addingTimeInterval(departure)
+    }
+
+//    public private(set) var arrivalDate: Date!
+//    public private(set) var departureDate: Date!
+
+
     /// The stop visited during the trip.
-    public private(set) var stop: Stop!
+//    public private(set) var stop: Stop!
 
-    var serviceDate: Date! {
-        didSet {
-            arrivalDate = Calendar.current.date(byAdding: .second, value: Int(arrival), to: serviceDate)
-            departureDate = Calendar.current.date(byAdding: .second, value: Int(departure), to: serviceDate)
-        }
-    }
+//    public private(set) var regionIdentifier: Int?
 
-    public private(set) var regionIdentifier: Int?
-
-    private enum CodingKeys: String, CodingKey {
-        case arrival = "arrivalTime"
-        case departure = "departureTime"
-        case stopID = "stopId"
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        arrival = try container.decode(TimeInterval.self, forKey: .arrival)
-        departure = try container.decode(TimeInterval.self, forKey: .departure)
-        stopID = try container.decode(String.self, forKey: .stopID)
-    }
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? TripStopTime else { return false }
-
-        return
-            arrival == rhs.arrival &&
-            departure == rhs.departure &&
-            regionIdentifier == rhs.regionIdentifier &&
-            stopID == rhs.stopID
-    }
-
-    public override var hash: Int {
-        var hasher = Hasher()
-        hasher.combine(arrival)
-        hasher.combine(departure)
-        hasher.combine(regionIdentifier)
-        hasher.combine(stopID)
-        return hasher.finalize()
-    }
-
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        stop = references.stopWithID(stopID)!
-        self.regionIdentifier = regionIdentifier
-    }
+//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
+//        stop = references.stopWithID(stopID)!
+//        self.regionIdentifier = regionIdentifier
+//    }
 }
