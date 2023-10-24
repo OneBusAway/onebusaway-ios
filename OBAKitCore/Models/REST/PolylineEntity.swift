@@ -15,9 +15,7 @@ import MapKit
 public struct PolylineEntity: Hashable {
     public let points: String
 
-    @IgnoreCoding
-    public lazy var polyline: MKPolyline? = {
-        let p = Polyline(encodedPolyline: points)
-        return p.mkPolyline
-    }()
+    var polyline: MKPolyline? {
+        Polyline(encodedPolyline: points).mkPolyline
+    }
 }

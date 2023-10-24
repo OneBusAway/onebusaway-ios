@@ -46,6 +46,11 @@ extension Date {
 
             return Date(timeIntervalSince1970: milliseconds / 1000)
         }
+
+        func encode(_ value: Date, to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(value.timeIntervalSince1970 * 1000)
+        }
     }
 }
 
