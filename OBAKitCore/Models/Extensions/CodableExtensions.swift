@@ -32,6 +32,10 @@ extension URL {
 
             return URL(string: string)
         }
+
+        func encode(_ value: URL, to encoder: Encoder) throws {
+            fatalError("\(#function) unimplemented")
+        }
     }
 }
 

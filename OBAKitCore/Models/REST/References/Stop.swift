@@ -103,9 +103,9 @@ extension Stop {
         }
     }
 
-    public var routes: [Route] {
-        return []   // TODO: This
-    }
+//    public var routes: [Route] {
+//        return []   // TODO: This
+//    }
 
     /// All unique route types at this Stop.
     public var routeTypes: Set<Route.RouteType> {
