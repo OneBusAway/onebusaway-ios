@@ -78,7 +78,7 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
 
     public func loadReferences(_ references: References, regionIdentifier: Int?) {
         trip = references.tripWithID(tripID)
-        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
+//        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
         self.regionIdentifier = regionIdentifier
     }
 }

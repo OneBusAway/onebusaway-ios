@@ -10,9 +10,9 @@
 import Foundation
 import CoreLocation
 
-struct LocationModel: Codable {
-    let latitude: Double
-    let longitude: Double
+public struct LocationModel: Codable, Hashable {
+    public let latitude: Double
+    public let longitude: Double
 
     enum CodingKeys: String, CodingKey {
         case latitude = "lat"

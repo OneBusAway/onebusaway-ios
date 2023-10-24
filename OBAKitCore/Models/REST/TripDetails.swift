@@ -96,7 +96,7 @@ public class TripDetails: NSObject, Identifiable, Decodable, HasReferences {
         nextTrip = references.tripWithID(nextTripID)
         serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stopTimes.loadReferences(references, regionIdentifier: regionIdentifier)
-        status?.loadReferences(references, regionIdentifier: regionIdentifier)
+//        status?.loadReferences(references, regionIdentifier: regionIdentifier)
         self.regionIdentifier = regionIdentifier
     }
 }

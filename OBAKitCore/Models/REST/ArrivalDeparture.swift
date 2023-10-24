@@ -8,10 +8,23 @@
 //
 
 import Foundation
+import MetaCodable
 
 public typealias TripIdentifier = String
 
-public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences {
+@Codable
+public struct ArrivalDeparture: Identifiable, Hashable {
+    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
+    public struct Identifier: Hashable {
+        let stopID: String
+        let tripID: String
+        let routeID: String
+        let status: ArrivalDepartureStatus
+    }
+
+    public var id: Identifier {
+        Identifier(stopID: stopID, tripID: tripID, routeID: routeID, status: arrivalDepartureStatus)
+    }
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool
@@ -30,6 +43,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     /// Information about frequency based scheduling, if applicable to the trip
     public let frequency: Frequency?
 
+    @CodedAt("lastUpdateTime")
     public let lastUpdated: Date
 
     /// The number of stops between the arriving transit vehicle and the current stop (doesn’t include the current stop)
@@ -39,45 +53,56 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     public let predicted: Bool
 
     /// Predicted arrival time. `nil` if no real-time information is available.
+    @CodedAt("scheduledArrivalTime")
+    @CodedBy(Date.NillifyDate(ifEarlierThan: Date(timeIntervalSinceReferenceDate: 1)))
     let predictedArrival: Date?
 
     /// Predicted departure time. `nil` if no real-time information is available.
+    @CodedAt("scheduledDepartureTime")
+    @CodedBy(Date.NillifyDate(ifEarlierThan: Date(timeIntervalSinceReferenceDate: 1)))
     let predictedDeparture: Date?
 
     /// the route id for the arriving vehicle
+    @CodedAt("routeId")
     public let routeID: RouteID
 
     /// the route for the arriving vehicle
-    public var route: Route!
+//    public var route: Route!
 
     /// the route long name that potentially overrides the route long name in the referenced `Route` element
-    private let _routeLongName: String?
+    @CodedBy(String.NillifyEmptyString())
+    public let routeLongName: String?
 
     /// the route short name that potentially overrides the route short name in the referenced `Route` element
-    private let _routeShortName: String?
+    @CodedBy(String.NillifyEmptyString())
+    public let routeShortName: String?
 
     /// The arrival date according to the schedule
-    let scheduledArrival: Date
+    @CodedAt("scheduledArrivalTime")
+    public let scheduledArrival: Date
 
     /// The departure date according to the schedule
-    let scheduledDeparture: Date
+    @CodedAt("scheduledDepartureTime")
+    public let scheduledDeparture: Date
 
     /// Time of midnight for start of the service date for the trip
     public let serviceDate: Date
 
     /// Active service alert IDs for this trip.
-    let situationIDs: [String]
+    @CodedAt("situationIds")
+    public let situationIDs: [String]
 
     /// Active service alerts for this trip
-    public private(set) var serviceAlerts = [ServiceAlert]()
+//    public private(set) var serviceAlerts = [ServiceAlert]()
 
     public let status: String
 
     /// The stop id of the stop the vehicle is arriving at
+    @CodedAt("stopId")
     public let stopID: StopID
 
     /// The stop the vehicle is arriving at
-    public var stop: Stop!
+//    public var stop: Stop!
 
     /// The index of the stop into the sequence of stops that make up the trip for this arrival
     public let stopSequence: Int
@@ -86,147 +111,66 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     public let totalStopsInTrip: Int?
 
     /// The trip headsign that potentially overrides the trip headsign in the referenced `Trip` element
-    private let _tripHeadsign: String?
+    @CodedBy(String.NillifyEmptyString())
+    public let tripHeadsign: String?
 
     /// The trip id for the arriving vehicle
+    @CodedAt("tripId")
     public let tripID: TripIdentifier
 
     /// The Trip for the arriving vehicle
-    public var trip: Trip!
+//    public var trip: Trip!
 
     /// Trip-specific status for the arriving transit vehicle
+    @IgnoreEncoding
     public let tripStatus: TripStatus?
 
     /// The ID of the arriving transit vehicle
+    @CodedAt("vehicleId")
+    @CodedBy(String.NillifyEmptyString())
     public let vehicleID: String?
 
-    public private(set) var regionIdentifier: Int?
-
-    private enum CodingKeys: String, CodingKey {
-        case arrivalEnabled
-        case blockTripSequence
-        case departureEnabled
-        case distanceFromStop
-        case frequency
-        case occupancyStatus
-        case historicalOccupancyStatus = "historicalOccupancy"
-        case lastUpdated = "lastUpdateTime"
-        case numberOfStopsAway
-        case predicted
-        case predictedArrival = "predictedArrivalTime"
-        case predictedDeparture = "predictedDepartureTime"
-        case routeID = "routeId"
-        case routeLongName
-        case routeShortName
-        case scheduledArrival = "scheduledArrivalTime"
-        case scheduledDeparture = "scheduledDepartureTime"
-        case serviceDate
-        case situationIDs = "situationIds"
-        case status
-        case stopID = "stopId"
-        case stopSequence
-        case totalStopsInTrip
-        case tripHeadsign
-        case tripID = "tripId"
-        case tripStatus
-        case vehicleID = "vehicleId"
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        arrivalEnabled = try container.decode(Bool.self, forKey: .arrivalEnabled)
-        blockTripSequence = try container.decode(Int.self, forKey: .blockTripSequence)
-        departureEnabled = try container.decode(Bool.self, forKey: .departureEnabled)
-        distanceFromStop = try container.decode(Double.self, forKey: .distanceFromStop)
-        frequency = try? container.decodeIfPresent(Frequency.self, forKey: .frequency)
-        lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
-        numberOfStopsAway = try container.decode(Int.self, forKey: .numberOfStopsAway)
-        predicted = try container.decode(Bool.self, forKey: .predicted)
-
-        if let predictedArrivalDate = try container.decodeIfPresent(Date.self, forKey: .predictedArrival) {
-            predictedArrival = ModelHelpers.nilifyDate(predictedArrivalDate, earlierThan: Date(timeIntervalSinceReferenceDate: 1.0))
-        } else {
-            predictedArrival = nil
-        }
-
-        if let predictedDepartureDate = try container.decodeIfPresent(Date.self, forKey: .predictedDeparture) {
-            predictedDeparture = ModelHelpers.nilifyDate(predictedDepartureDate, earlierThan: Date(timeIntervalSinceReferenceDate: 1.0))
-        } else {
-            predictedDeparture = nil
-        }
-
-        routeID = try container.decode(RouteID.self, forKey: .routeID)
-
-        _routeLongName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeLongName))
-        _routeShortName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
-        scheduledArrival = try container.decode(Date.self, forKey: .scheduledArrival)
-        scheduledDeparture = try container.decode(Date.self, forKey: .scheduledDeparture)
-        serviceDate = try container.decode(Date.self, forKey: .serviceDate)
-
-        situationIDs = try container.decode([String].self, forKey: .situationIDs)
-
-        status = try container.decode(String.self, forKey: .status)
-
-        stopID = try container.decode(String.self, forKey: .stopID)
-
-        stopSequence = try container.decode(Int.self, forKey: .stopSequence)
-        totalStopsInTrip = try? container.decodeIfPresent(Int.self, forKey: .totalStopsInTrip)
-        _tripHeadsign = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .tripHeadsign))
-
-        tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
-
-        tripStatus = try? container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
-        vehicleID = String.nilifyBlankValue(try container.decode(String.self, forKey: .vehicleID))
-
-        occupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .occupancyStatus)
-        historicalOccupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .historicalOccupancyStatus)
-    }
+//    public private(set) var regionIdentifier: Int?
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        route = references.routeWithID(routeID)!
-        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-        stop = references.stopWithID(stopID)!
-        trip = references.tripWithID(tripID)!
-        tripStatus?.loadReferences(references, regionIdentifier: regionIdentifier)
-        self.regionIdentifier = regionIdentifier
-    }
+//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
+//        route = references.routeWithID(routeID)!
+//        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
+//        stop = references.stopWithID(stopID)!
+//        trip = references.tripWithID(tripID)!
+//        tripStatus?.loadReferences(references, regionIdentifier: regionIdentifier)
+//        self.regionIdentifier = regionIdentifier
+//    }
 
     // MARK: - Helpers/Names
 
-    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
-    public var id: String {
-        return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
-    }
-
-    /// Provides the best available trip headsign.
-    public var tripHeadsign: String? {
-        return _tripHeadsign ?? trip.headsign
-    }
-
-    /// Provides the best available long name for this route.
-    public var routeLongName: String? {
-        return _routeLongName ?? route.longName
-    }
-
-    /// Provides the best available short name for this route.
-    public var routeShortName: String {
-        return _routeShortName ?? route.shortName
-    }
-
+//    /// Provides the best available trip headsign.
+//    public var tripHeadsign: String? {
+//        return _tripHeadsign ?? trip.headsign
+//    }
+//
+//    /// Provides the best available long name for this route.
+//    public var routeLongName: String? {
+//        return _routeLongName ?? route.longName
+//    }
+//
+//    /// Provides the best available short name for this route.
+//    public var routeShortName: String {
+//        return _routeShortName ?? route.shortName
+//    }
+//
     /// Provides the best available name for this route.
-    public var routeName: String {
-        return routeShortName
-    }
+//    public var routeName: String {
+//        return routeShortName
+//    }
 
     /// A composite of the route name and headsign.
-    public var routeAndHeadsign: String {
-        [String.nilifyBlankValue(routeName), String.nilifyBlankValue(tripHeadsign)]
-            .compactMap { $0 }
-            .joined(separator: " - ")
-    }
+//    public var routeAndHeadsign: String {
+//        [String.nilifyBlankValue(routeName), String.nilifyBlankValue(tripHeadsign)]
+//            .compactMap { $0 }
+//            .joined(separator: " - ")
+//    }
 
     // MARK: - Helpers/Statuses+Times
 
@@ -329,6 +273,7 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
     /// For transit systems that support it, this value represents the historical occupancy
     /// of the vehicle represented by this ArrivalDeparture object.
+    @CodedAt("historicalOccupancy")
     public let historicalOccupancyStatus: OccupancyStatus?
 
     public enum OccupancyStatus: String, Codable {
@@ -340,111 +285,6 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         case crushedStandingRoomOnly = "CRUSHED_STANDING_ROOM_ONLY"
         case full = "FULL"
         case notAcceptingPassengers = "NOT_ACCEPTING_PASSENGERS"
-    }
-
-    // MARK: - Equality and Hashing
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? ArrivalDeparture else { return false }
-        return
-            arrivalEnabled == rhs.arrivalEnabled &&
-            blockTripSequence == rhs.blockTripSequence &&
-            departureEnabled == rhs.departureEnabled &&
-            distanceFromStop == rhs.distanceFromStop &&
-            frequency == rhs.frequency &&
-            lastUpdated == rhs.lastUpdated &&
-            numberOfStopsAway == rhs.numberOfStopsAway &&
-            occupancyStatus == rhs.occupancyStatus &&
-            predicted == rhs.predicted &&
-            predictedArrival == rhs.predictedArrival &&
-            predictedDeparture == rhs.predictedDeparture &&
-            regionIdentifier == rhs.regionIdentifier &&
-            routeID == rhs.routeID &&
-            route == rhs.route &&
-            _routeLongName == rhs._routeLongName &&
-            _routeShortName == rhs._routeShortName &&
-            scheduledArrival == rhs.scheduledArrival &&
-            scheduledDeparture == rhs.scheduledDeparture &&
-            serviceDate == rhs.serviceDate &&
-            situationIDs == rhs.situationIDs &&
-            serviceAlerts == rhs.serviceAlerts &&
-            status == rhs.status &&
-            stopID == rhs.stopID &&
-            stop == rhs.stop &&
-            stopSequence == rhs.stopSequence &&
-            totalStopsInTrip == rhs.totalStopsInTrip &&
-            _tripHeadsign == rhs._tripHeadsign &&
-            tripID == rhs.tripID &&
-            trip == rhs.trip &&
-            tripStatus == rhs.tripStatus &&
-            vehicleID == rhs.vehicleID
-    }
-
-    override public var hash: Int {
-        var hasher = Hasher()
-        hasher.combine(arrivalEnabled)
-        hasher.combine(blockTripSequence)
-        hasher.combine(departureEnabled)
-        hasher.combine(distanceFromStop)
-        hasher.combine(frequency)
-        hasher.combine(lastUpdated)
-        hasher.combine(numberOfStopsAway)
-        hasher.combine(occupancyStatus)
-        hasher.combine(predicted)
-        hasher.combine(predictedArrival)
-        hasher.combine(predictedDeparture)
-        hasher.combine(regionIdentifier)
-        hasher.combine(routeID)
-        hasher.combine(route)
-        hasher.combine(_routeLongName)
-        hasher.combine(_routeShortName)
-        hasher.combine(scheduledArrival)
-        hasher.combine(scheduledDeparture)
-        hasher.combine(serviceDate)
-        hasher.combine(situationIDs)
-        hasher.combine(serviceAlerts)
-        hasher.combine(status)
-        hasher.combine(stopID)
-        hasher.combine(stop)
-        hasher.combine(stopSequence)
-        hasher.combine(totalStopsInTrip)
-        hasher.combine(_tripHeadsign)
-        hasher.combine(tripID)
-        hasher.combine(trip)
-        hasher.combine(tripStatus)
-        hasher.combine(vehicleID)
-        return hasher.finalize()
-    }
-
-    public override var debugDescription: String {
-        var builder = DebugDescriptionBuilder(baseDescription: super.debugDescription)
-        builder.add(key: "routeAndHeadsign", value: routeAndHeadsign)
-        builder.add(key: "arrivalEnabled", value: arrivalEnabled)
-        builder.add(key: "blockTripSequence", value: blockTripSequence)
-        builder.add(key: "departureEnabled", value: departureEnabled)
-        builder.add(key: "distanceFromStop", value: distanceFromStop)
-        builder.add(key: "frequency", value: frequency)
-        builder.add(key: "lastUpdated", value: lastUpdated)
-        builder.add(key: "numberOfStopsAway", value: numberOfStopsAway)
-        builder.add(key: "occupancyStatus", value: occupancyStatus)
-        builder.add(key: "predicted", value: predicted)
-        builder.add(key: "predictedArrival", value: predictedArrival)
-        builder.add(key: "predictedDeparture", value: predictedDeparture)
-        builder.add(key: "regionIdentifier", value: regionIdentifier)
-        builder.add(key: "routeID", value: routeID)
-        builder.add(key: "scheduledArrival", value: scheduledArrival)
-        builder.add(key: "scheduledDeparture", value: scheduledDeparture)
-        builder.add(key: "serviceDate", value: serviceDate)
-        builder.add(key: "situationIDs", value: situationIDs)
-        builder.add(key: "status", value: status)
-        builder.add(key: "stopID", value: stopID)
-        builder.add(key: "stopSequence", value: stopSequence)
-        builder.add(key: "totalStopsInTrip", value: totalStopsInTrip)
-        builder.add(key: "_tripHeadsign", value: _tripHeadsign)
-        builder.add(key: "tripID", value: tripID)
-        builder.add(key: "tripStatus", value: tripStatus)
-        builder.add(key: "vehicleID", value: vehicleID)
-        return builder.description
     }
 }
 
@@ -473,22 +313,23 @@ public extension Sequence where Element == ArrivalDeparture {
     /// - Parameter preferences: The `StopPreferences` object that will be used to hide `ArrivalDeparture`s.
     /// - Parameter filter: Whether the groups should also be filtered (i.e. have `Route`s hidden).
     func group(preferences: StopPreferences, filter: Bool) -> [GroupedArrivalDeparture] {
-        let hiddenRoutes = Set(preferences.hiddenRoutes)
-
-        var groups = [Route: [ArrivalDeparture]]()
-
-        for arrDep in self {
-            if filter && hiddenRoutes.contains(arrDep.routeID) {
-                continue
-            }
-
-            var list = groups[arrDep.route, default: [ArrivalDeparture]()]
-            list.append(arrDep)
-            groups[arrDep.route] = list
-        }
-
-        return groups.map { (k, v) -> GroupedArrivalDeparture in
-            GroupedArrivalDeparture(route: k, arrivalDepartures: v)
-        }
+        fatalError("\(#function) unimplemented.")
+//        let hiddenRoutes = Set(preferences.hiddenRoutes)
+//
+//        var groups = [Route: [ArrivalDeparture]]()
+//
+//        for arrDep in self {
+//            if filter && hiddenRoutes.contains(arrDep.routeID) {
+//                continue
+//            }
+//
+//            var list = groups[arrDep.route, default: [ArrivalDeparture]()]
+//            list.append(arrDep)
+//            groups[arrDep.route] = list
+//        }
+//
+//        return groups.map { (k, v) -> GroupedArrivalDeparture in
+//            GroupedArrivalDeparture(route: k, arrivalDepartures: v)
+//        }
     }
 }

@@ -35,7 +35,8 @@ public class TripConvertible: NSObject {
     }
 
     public var trip: Trip {
-        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
+        fatalError("\(#function) unimplemented.")
+//        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
     }
 
     public var serviceDate: Date {

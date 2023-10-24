@@ -154,7 +154,8 @@ public class Formatters: NSObject {
     // MARK: Accessibility label
     /// Creates a localized string appropriate for using in UIAccessibility.accessibilityLabel. Example: "Route 49 - University District Broadway"
     public func accessibilityLabel(for arrivalDeparture: ArrivalDeparture) -> String {
-        return accessibilityLabelForArrivalDeparture(routeAndHeadsign: arrivalDeparture.routeAndHeadsign)
+        fatalError("\(#function) unimplemented.")
+//        return accessibilityLabelForArrivalDeparture(routeAndHeadsign: arrivalDeparture.routeAndHeadsign)
     }
 
     /// Creates a localized string appropriate for using in UIAccessibility.accessibilityLabel. Example: "Route 49 - University District Broadway"

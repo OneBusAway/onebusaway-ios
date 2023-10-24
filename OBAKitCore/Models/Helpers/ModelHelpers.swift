@@ -8,6 +8,46 @@
 //
 
 import Foundation
+import MetaCodable
+
+extension Date {
+    /// Nullifies a Date if it is from before the specified `earlierDate`.
+    class NillifyDate: HelperCoder {
+        let cutoff: Date
+
+        init(ifEarlierThan cutoff: Date) {
+            self.cutoff = cutoff
+        }
+
+        func decode(from decoder: Decoder) throws -> Date {
+            let date = try decoder.singleValueContainer().decode(Date.self)
+            guard date > cutoff else {
+                throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Date is earlier than the cutoff: \(cutoff)"))
+            }
+
+            return date
+        }
+
+        func decodeIfPresent(from decoder: Decoder) throws -> Date? {
+            let date = try decoder.singleValueContainer().decode(Date.self)
+            guard date > cutoff else {
+                return nil
+            }
+
+            return date
+        }
+    }
+
+    /// Decodes a date expressed in milliseconds since the 1970 epoch date.
+    class EpochMilliseconds: HelperCoder {
+        func decode(from decoder: Decoder) throws -> Date {
+            let container = try decoder.singleValueContainer()
+            let milliseconds = try container.decode(Double.self)
+
+            return Date(timeIntervalSince1970: milliseconds / 1000)
+        }
+    }
+}
 
 class ModelHelpers: NSObject {
     /// Converts a date from before the specified `earlierDate` to `nil`.

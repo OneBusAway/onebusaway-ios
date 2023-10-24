@@ -35,7 +35,8 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
             return _serviceAlerts
         }
         else {
-            return arrivalsAndDepartures.flatMap { $0.serviceAlerts }
+            fatalError("\(#function) unimplemented.")
+//            return arrivalsAndDepartures.flatMap { $0.serviceAlerts }
         }
     }
 
@@ -67,7 +68,7 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
         nearbyStops = references.stopsWithIDs(nearbyStopIDs)
         _serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
         stop = references.stopWithID(stopID)!
-        arrivalsAndDepartures.loadReferences(references, regionIdentifier: regionIdentifier)
+//        arrivalsAndDepartures.loadReferences(references, regionIdentifier: regionIdentifier)
         self.regionIdentifier = regionIdentifier
     }
 }

@@ -20,7 +20,8 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
     public let vehicleID: String?
 
     public convenience init(arrivalDeparture: ArrivalDeparture, regionID: Int) {
-        self.init(title: arrivalDeparture.routeAndHeadsign, regionID: regionID, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
+        fatalError("\(#function) unimplemented.")
+//        self.init(title: arrivalDeparture.routeAndHeadsign, regionID: regionID, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
     }
 
     public init(title: String, regionID: Int, stopID: StopID, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
