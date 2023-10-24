@@ -24,7 +24,7 @@ extension RESTAPIService {
     }
 
     public nonisolated func getAlerts(agency: AgencyWithCoverage) async throws -> [AgencyAlert] {
-        let url = urlBuilder.getRESTRegionalAlerts(agencyID: agency.agencyID)
+        let url = urlBuilder.getRESTRegionalAlerts(agencyID: agency.id)
         let (data, _) = try await self.getData(for: url)
 
         let message = try TransitRealtime_FeedMessage(serializedData: data)
