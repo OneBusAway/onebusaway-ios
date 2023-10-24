@@ -632,7 +632,7 @@ public class Formatters: NSObject {
     /// - Returns: A human-readable list of the passed-in `Route`s.
     public class func formattedAgenciesForRoutes(_ routes: [Route]) -> String {
         return routes
-            .compactMap { $0.agency.name }
+            .compactMap { $0.agencyID } // TODO: check me before merge!
             .uniqued
             .sorted()
             .joined(separator: ", ")

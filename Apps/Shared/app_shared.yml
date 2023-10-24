@@ -93,12 +93,18 @@ packages:
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 2.6.0
+    GRDB:
+        url: https://github.com/groue/GRDB.swift.git
+        exactVersion: 6.20.2
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.3.0
+    MetaCodable:
+        url: https://github.com/SwiftyLab/MetaCodable.git
+        exactVersion: 1.0.0
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
         minorVersion: 3.11.2

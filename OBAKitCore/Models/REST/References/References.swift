@@ -55,7 +55,7 @@ public class References: NSObject, Decodable {
         serviceAlerts.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Agency
-        routes.loadReferences(self, regionIdentifier: regionIdentifier)
+//        routes.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Route
         stops.loadReferences(self, regionIdentifier: regionIdentifier)

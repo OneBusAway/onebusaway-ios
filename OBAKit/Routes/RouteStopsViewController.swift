@@ -46,7 +46,8 @@ class RouteStopsViewController: VisualEffectViewController,
         super.viewDidLoad()
 
         titleView.titleLabel.text = stopsForRoute.route.shortName
-        titleView.subtitleLabel.text = stopsForRoute.route.longName ?? stopsForRoute.route.agency.name
+        titleView.subtitleLabel.text = stopsForRoute.route.longName ?? "placeholder for agency name"
+//        titleView.subtitleLabel.text = stopsForRoute.route.longName ?? stopsForRoute.route.agency.name
         titleView.closeButton.addTarget(self, action: #selector(close), for: .touchUpInside)
 
         listView.obaDataSource = self

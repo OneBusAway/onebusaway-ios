@@ -8,6 +8,33 @@
 //
 
 import Foundation
+import MetaCodable
+
+extension URL {
+    struct DecodeGarbageURL: HelperCoder {
+        func decode(from decoder: Decoder) throws -> URL {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+
+            guard let url = URL(string: string) else {
+                throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid URL string"))
+            }
+
+            return url
+        }
+
+        func decodeIfPresent(from decoder: Decoder) throws -> URL? {
+            let container = try decoder.singleValueContainer()
+            let string = try container.decode(String.self)
+
+            guard string.isEmpty == false else {
+                return nil
+            }
+
+            return URL(string: string)
+        }
+    }
+}
 
 extension KeyedDecodingContainer {
 

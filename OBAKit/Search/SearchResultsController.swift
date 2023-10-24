@@ -89,9 +89,13 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
     }
 
     private func row(for route: Route, tapHandler: VoidBlock?) -> AnyOBAListViewItem? {
-        return OBAListRowView.SubtitleViewModel(title: route.shortName, subtitle: route.agency.name, accessoryType: .none) { _ in
+        return OBAListRowView.SubtitleViewModel(title: route.shortName, subtitle: nil, accessoryType: .none) { _ in
             tapHandler?()
         }.typeErased
+
+//        return OBAListRowView.SubtitleViewModel(title: route.shortName, subtitle: route.agency.name, accessoryType: .none) { _ in
+//            tapHandler?()
+//        }.typeErased
     }
 
     private func row(for stop: Stop, tapHandler: VoidBlock?) -> AnyOBAListViewItem? {

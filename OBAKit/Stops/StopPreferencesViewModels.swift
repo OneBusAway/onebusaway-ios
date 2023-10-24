@@ -22,7 +22,7 @@ struct StopPreferencesRouteViewModel: Identifiable, Hashable, Equatable {
     init(_ route: Route) {
         self.id = route.id
         self.displayName = route.longName ?? route.shortName
-        self.agencyName = route.agency.name
+        self.agencyName = "AGENCY " + route.agencyID 
     }
 }
 

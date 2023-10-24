@@ -472,7 +472,7 @@ class TripViewController: UIViewController,
         let renderer = MKPolylineRenderer(polyline: overlay as! MKPolyline) // swiftlint:disable:this force_cast
 
         // Tries to use an agency provided color, if available.
-        var strokeColor = tripConvertible.arrivalDeparture?.route.color ?? ThemeColors.shared.brand
+        var strokeColor = /*tripConvertible.arrivalDeparture?.route.color ?? */ThemeColors.shared.brand
 
         // If the user has High Contrast or Reduce Transparency turned ON in iOS,
         // don't apply the transparency to the stroke color.
@@ -506,9 +506,9 @@ class TripViewController: UIViewController,
 
         if let annotationView = annotationView as? PulsingVehicleAnnotationView {
             vehicleAnnotationView = annotationView
-            if let color = tripConvertible.arrivalDeparture?.route.color {
-                annotationView.realTimeAnnotationColor = color
-            }
+//            if let color = tripConvertible.arrivalDeparture?.route.color {
+//                annotationView.realTimeAnnotationColor = color
+//            }
         }
         else if let annotationView = annotationView as? PulsingAnnotationView {
             userLocationAnnotationView = annotationView

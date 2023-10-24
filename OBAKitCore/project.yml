@@ -6,7 +6,9 @@ targets:
     dependencies:
       - package: CocoaLumberjack
       - package: CocoaLumberjackSwift
+      - package: MetaCodable
       - package: SwiftProtobuf
+      - package: GRDB
     scheme:
       gatherCoverageData: true
     info:
