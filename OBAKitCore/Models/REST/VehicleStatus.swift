@@ -8,30 +8,54 @@
 //
 
 import Foundation
+import MetaCodable
 import CoreLocation
 
-public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
-    public var id: String {
-        return self.vehicleID
-    }
+extension CLLocation {
+    class OBALocationCoder: HelperCoder {
+        private enum CodingKeys: String, CodingKey {
+            case lat, lon
+        }
 
+        func decode(from decoder: Decoder) throws -> CLLocation {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let lat = try container.decode(Double.self, forKey: .lat)
+            let lon = try container.decode(Double.self, forKey: .lon)
+
+            return CLLocation(latitude: lat, longitude: lon)
+        }
+
+        func encode(_ value: CLLocation, to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(value.coordinate.latitude, forKey: .lat)
+            try container.encode(value.coordinate.longitude, forKey: .lon)
+        }
+    }
+}
+
+@Codable
+public struct VehicleStatus: Identifiable, Hashable/*, HasReferences*/ {
     /// The id of the vehicle
-    public let vehicleID: String
+    @CodedAt("vehicleId")
+    public let id: String
 
     /// The last known real-time update from the transit vehicle
     public let lastUpdateTime: Date?
 
     /// The last known real-time update from the transit vehicle containing a location update
+    @CodedBy(Date.NillifyDate(ifEarlierThan: Date(timeIntervalSinceReferenceDate: 1)))
     public let lastLocationUpdateTime: Date?
 
     /// The last known location of the vehicle
+    @CodedBy(CLLocation.OBALocationCoder())
     public let location: CLLocation?
 
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
-    let tripID: TripIdentifier?
+    @CodedAt("tripId") @CodedBy(String.NillifyEmptyString())
+    public let tripID: TripIdentifier?
 
     /// The vehicle's current trip
-    public private(set) var trip: Trip?
+//    public private(set) var trip: Trip?
 
     /// the current journey phase of the vehicle
     public let phase: String
@@ -42,43 +66,11 @@ public class VehicleStatus: NSObject, Identifiable, Decodable, HasReferences {
     /// Provides additional status information for the vehicle's trip.
     public let tripStatus: TripStatus
 
-    public private(set) var regionIdentifier: Int?
+//    public private(set) var regionIdentifier: Int?
 
-    private enum CodingKeys: String, CodingKey {
-        case vehicleID = "vehicleId"
-        case lastUpdateTime = "lastUpdateTime"
-        case lastLocationUpdateTime = "lastLocationUpdateTime"
-        case location = "location"
-        case tripID = "tripId"
-        case phase = "phase"
-        case status = "status"
-        case tripStatus = "tripStatus"
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        vehicleID = try container.decode(String.self, forKey: .vehicleID)
-        lastUpdateTime = try container.decode(Date.self, forKey: .lastUpdateTime)
-        let updateTime = try container.decode(Date.self, forKey: .lastLocationUpdateTime)
-        if updateTime == Date(timeIntervalSince1970: 0) {
-            lastLocationUpdateTime = nil
-        }
-        else {
-            lastLocationUpdateTime = updateTime
-        }
-
-        tripID = String.nilifyBlankValue(try container.decode(TripIdentifier.self, forKey: .tripID))
-
-        phase = try container.decode(String.self, forKey: .phase)
-        status = try container.decode(String.self, forKey: .status)
-        location = try? CLLocation(container: container, key: .location)
-        tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
-    }
-
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        trip = references.tripWithID(tripID)
-//        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
-        self.regionIdentifier = regionIdentifier
-    }
+//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
+//        trip = references.tripWithID(tripID)
+////        tripStatus.loadReferences(references, regionIdentifier: regionIdentifier)
+//        self.regionIdentifier = regionIdentifier
+//    }
 }

@@ -74,7 +74,7 @@ public struct TripStatus: Identifiable, Hashable {
     /// Similar to `closestStopID`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
     @CodedAt("nextStop")
-    let nextStopID: StopID?
+    public let nextStopID: StopID?
 
     /// Similar to `closestStop`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
@@ -156,6 +156,7 @@ public struct TripStatus: Identifiable, Hashable {
     public let totalDistanceAlongTrip: Double
 
     /// If real-time arrival info is available, this lists the id of the transit vehicle currently running the trip.
+    @CodedAt("vehicleId")
     public let vehicleID: String?
 
 //    public private(set) var regionIdentifier: Int?
