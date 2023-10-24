@@ -486,9 +486,10 @@ public class Formatters: NSObject {
             parts.append(direction)
         }
 
-        if let routes = Formatters.formattedRoutes(stop.routes) {
-            parts.append(routes)
-        }
+        // TODO: This
+//        if let routes = Formatters.formattedRoutes(stop.routes) {
+//            parts.append(routes)
+//        }
 
         let fmt = OBALoc("formatters.stop_id_fmt", value: "Stop ID: %@", comment: "A string that prefixes a stop ID to tell the user what that value is.")
         parts.append(String(format: fmt, stop.code))
@@ -499,7 +500,7 @@ public class Formatters: NSObject {
     /// Provides the a localized string representing the cardinal direction that is passed in. For example, `.n` returns `"North"`.
     /// - Parameter direction: The direction enum value.
     /// - Returns: A localized string representing the direction.
-    public class func directionString(_ direction: Direction) -> String? {
+    public class func directionString(_ direction: Stop.Direction) -> String? {
         switch direction {
         case .n: return OBALoc("formatters.cardinal_direction.north", value: "North", comment: "North Direction")
         case .ne: return OBALoc("formatters.cardinal_direction.northeast", value: "Northeast", comment: "Northeast Direction")
@@ -516,7 +517,7 @@ public class Formatters: NSObject {
     /// Provides an abbreviation of the cardinal direction that is passed in. For example, `.n` returns `"N"`.
     /// - Parameter direction: The direction enum value.
     /// - Returns: A localized string representing the direction.
-    public class func directionAbbreviation(_ direction: Direction) -> String? {
+    public class func directionAbbreviation(_ direction: Stop.Direction) -> String? {
         switch direction {
         case .n: return OBALoc("formatters.cardinal_direction_abbrev.north", value: "N", comment: "Abbreviation for North")
         case .ne: return OBALoc("formatters.cardinal_direction_abbrev.northeast", value: "NE", comment: "Abbreviation for Northeast")
@@ -642,7 +643,7 @@ public class Formatters: NSObject {
     ///
     /// - Parameter direction: The cardinal direction
     /// - Returns: An adjective form of that direction
-    public class func adjectiveFormOfCardinalDirection(_ direction: Direction) -> String? {
+    public class func adjectiveFormOfCardinalDirection(_ direction: Stop.Direction) -> String? {
         switch direction {
         case .n: return OBALoc("formatters.cardinal_adjective.north", value: "Northbound", comment: "Headed in a northern direction")
         case .ne: return OBALoc("formatters.cardinal_adjective.northeast", value: "NE bound", comment: "Headed in a northeastern direction")

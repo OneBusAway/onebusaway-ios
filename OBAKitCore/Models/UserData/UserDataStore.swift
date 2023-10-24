@@ -108,26 +108,26 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Find recent stops that match `searchText`
     /// - Parameter searchText: The search string
-    func findRecentStops(matching searchText: String) -> [Stop]
-
-    /// A list of recently-viewed stops
-    var recentStops: [Stop] { get }
-
-    /// Add a `Stop` to the list of recently-viewed `Stop`s
-    ///
-    /// - Parameter stop: The stop to add to the list
-    /// - Parameter region: The `Region` in which this `Stop` resides.
-    func addRecentStop(_ stop: Stop, region: Region)
-
-    /// Deletes all recent stops.
-    func deleteAllRecentStops()
-
-    /// Deletes the specified Stop from the list of recent stops.
-    /// - Parameter recentStop: The stop to delete.
-    func delete(recentStop: Stop)
-
-    /// The maximum number of recent stops that will be stored.
-    var maximumRecentStopsCount: Int { get }
+//    func findRecentStops(matching searchText: String) -> [Stop]
+//
+//    /// A list of recently-viewed stops
+//    var recentStops: [Stop] { get }
+//
+//    /// Add a `Stop` to the list of recently-viewed `Stop`s
+//    ///
+//    /// - Parameter stop: The stop to add to the list
+//    /// - Parameter region: The `Region` in which this `Stop` resides.
+//    func addRecentStop(_ stop: Stop, region: Region)
+//
+//    /// Deletes all recent stops.
+//    func deleteAllRecentStops()
+//
+//    /// Deletes the specified Stop from the list of recent stops.
+//    /// - Parameter recentStop: The stop to delete.
+//    func delete(recentStop: Stop)
+//
+//    /// The maximum number of recent stops that will be stored.
+//    var maximumRecentStopsCount: Int { get }
 
     // MARK: - Alarms
 

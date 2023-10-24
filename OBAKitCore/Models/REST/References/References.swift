@@ -58,7 +58,7 @@ public class References: NSObject, Decodable {
 //        routes.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Route
-        stops.loadReferences(self, regionIdentifier: regionIdentifier)
+//        stops.loadReferences(self, regionIdentifier: regionIdentifier)
         trips.loadReferences(self, regionIdentifier: regionIdentifier)
     }
 }
