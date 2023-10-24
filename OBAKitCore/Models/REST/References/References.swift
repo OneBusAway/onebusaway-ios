@@ -49,10 +49,10 @@ public class References: NSObject, Decodable {
 
         super.init()
 
-        let regionIdentifier = decoder.userInfo[References.regionIdentifierUserInfoKey] as? Int
+//        let regionIdentifier = decoder.userInfo[References.regionIdentifierUserInfoKey] as? Int
 
         // depends: Agency, Route, Stop, Trip
-        serviceAlerts.loadReferences(self, regionIdentifier: regionIdentifier)
+//        serviceAlerts.loadReferences(self, regionIdentifier: regionIdentifier)
 
         // depends: Agency
 //        routes.loadReferences(self, regionIdentifier: regionIdentifier)

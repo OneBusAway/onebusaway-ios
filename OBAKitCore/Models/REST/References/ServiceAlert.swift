@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import MetaCodable
 
 // swiftlint:disable nesting
 
@@ -15,106 +16,51 @@ import Foundation
 ///
 /// - Note: The JSON data structure from which a `ServiceAlert` is created is called a "Situation". However, the feature
 ///         is referred to as a "Service Alert" pretty much everywhere else, and that is why it is referred to as such here.
-public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
+@Codable
+public struct ServiceAlert: Identifiable, Hashable {
+    public let id: String
+
     public let activeWindows: Set<TimeWindow>
 
+    @CodedAt("allAffects")
     public let affectedEntities: [AffectedEntity]
 
-    public private(set) var affectedAgencies: Set<Agency> = []
-    public private(set) var affectedRoutes: Set<Route> = []
-    public private(set) var affectedStops: Set<Stop> = []
-    public private(set) var affectedTrips: Set<Trip> = []
+//    public private(set) var affectedAgencies: Set<Agency> = []
+//    public private(set) var affectedRoutes: Set<Route> = []
+//    public private(set) var affectedStops: Set<Stop> = []
+//    public private(set) var affectedTrips: Set<Trip> = []
 
     public let consequences: [Consequence]
+
+    @CodedAt("creationTime")
     public let createdAt: Date
+
+    @CodedAt("description")
     public let situationDescription: TranslatedString?
-    public let id: String
     public let publicationWindows: [TimeWindow]
     public let reason: String
     public let severity: String
     public let summary: TranslatedString?
+
+    @CodedAt("url")
     public let urlString: TranslatedString?
 
-    public private(set) var regionIdentifier: Int?
-
-    enum CodingKeys: String, CodingKey {
-        case activeWindows
-        case affectedEntities = "allAffects"
-        case consequences
-        case createdAt = "creationTime"
-        case situationDescription = "description"
-        case id
-        case publicationWindows
-        case reason
-        case severity
-        case summary
-        case url
-    }
-
-    public required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        activeWindows = try container.decode(Set<TimeWindow>.self, forKey: .activeWindows)
-        affectedEntities = try container.decode([AffectedEntity].self, forKey: .affectedEntities)
-        consequences = try container.decode([Consequence].self, forKey: .consequences)
-        createdAt = try container.decode(Date.self, forKey: .createdAt)
-        situationDescription = try container.decodeIfPresent(TranslatedString.self, forKey: .situationDescription)
-        id = try container.decode(String.self, forKey: .id)
-        publicationWindows = try container.decode([TimeWindow].self, forKey: .publicationWindows)
-        reason = try container.decode(String.self, forKey: .reason)
-        severity = try container.decode(String.self, forKey: .severity)
-        self.summary = try container.decodeIfPresent(TranslatedString.self, forKey: .summary)
-        self.urlString = try container.decodeIfPresent(TranslatedString.self, forKey: .url)
-    }
-
-    public override func isEqual(_ object: Any?) -> Bool {
-        guard let rhs = object as? ServiceAlert else { return false }
-        return
-            activeWindows == rhs.activeWindows &&
-            affectedEntities == rhs.affectedEntities &&
-            consequences == rhs.consequences &&
-            createdAt == rhs.createdAt &&
-            situationDescription == rhs.situationDescription &&
-            id == rhs.id &&
-            publicationWindows == rhs.publicationWindows &&
-            regionIdentifier == rhs.regionIdentifier &&
-            reason == rhs.reason &&
-            severity == rhs.severity &&
-            summary == rhs.summary &&
-            urlString == rhs.urlString
-    }
-
-    override public var hash: Int {
-        var hasher = Hasher()
-        hasher.combine(activeWindows)
-        hasher.combine(affectedEntities)
-        hasher.combine(consequences)
-        hasher.combine(createdAt)
-        hasher.combine(id)
-        hasher.combine(publicationWindows)
-        hasher.combine(reason)
-        hasher.combine(regionIdentifier)
-        hasher.combine(severity)
-        hasher.combine(situationDescription)
-        hasher.combine(summary)
-        hasher.combine(urlString)
-        return hasher.finalize()
-    }
+//    public private(set) var regionIdentifier: Int?
 
     // MARK: - HasReferences
 
-    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-        affectedAgencies = Set<Agency>(affectedEntities.compactMap { references.agencyWithID($0.agencyID) })
-        affectedRoutes = Set<Route>(affectedEntities.compactMap { references.routeWithID($0.routeID) })
-        affectedStops = Set<Stop>(affectedEntities.compactMap { references.stopWithID($0.stopID) })
-        affectedTrips = Set<Trip>(affectedEntities.compactMap { references.tripWithID($0.tripID) })
-        self.regionIdentifier = regionIdentifier
-    }
+//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
+//        affectedAgencies = Set<Agency>(affectedEntities.compactMap { references.agencyWithID($0.agencyID) })
+//        affectedRoutes = Set<Route>(affectedEntities.compactMap { references.routeWithID($0.routeID) })
+//        affectedStops = Set<Stop>(affectedEntities.compactMap { references.stopWithID($0.stopID) })
+//        affectedTrips = Set<Trip>(affectedEntities.compactMap { references.tripWithID($0.tripID) })
+//        self.regionIdentifier = regionIdentifier
+//    }
 
     // MARK: - TimeWindow
 
     /// The range of `Date`s in which a `ServiceAlert` is in effect.
-    public class TimeWindow: NSObject, Decodable, Comparable {
+    public struct TimeWindow: Codable, Hashable, Comparable {
         public let from: Date
         public let to: Date
 
@@ -131,174 +77,71 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
             case from, to
         }
 
-        public required init(from decoder: Decoder) throws {
+        public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))
             to = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .to)))
         }
 
-        public override func isEqual(_ object: Any?) -> Bool {
-            guard let rhs = object as? TimeWindow else { return false }
-            return from == rhs.from && to == rhs.to
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(from.timeIntervalSince1970, forKey: .from)
+            try container.encode(to.timeIntervalSince1970, forKey: .to)
         }
 
         public static func < (lhs: ServiceAlert.TimeWindow, rhs: ServiceAlert.TimeWindow) -> Bool {
             return lhs.interval < rhs.interval
-        }
-
-        override public var hash: Int {
-            var hasher = Hasher()
-            hasher.combine(from)
-            hasher.combine(to)
-            return hasher.finalize()
         }
     }
 
     // MARK: - AffectedEntity
 
     /// Models the agency, application, direction, route, stop, and/or trip affected by a `ServiceAlert`.
-    public class AffectedEntity: NSObject, Codable {
+    @Codable
+    public struct AffectedEntity: Hashable {
+
+        @CodedAt("agencyId")
         public let agencyID: String?
+
+        @CodedAt("applicationId")
         public let applicationID: String?
+
+        @CodedAt("directionId")
         public let directionID: String?
+
+        @CodedAt("routeId")
         public let routeID: String?
+
+        @CodedAt("stopId")
         public let stopID: StopID?
+
+        @CodedAt("tripId")
         public let tripID: String?
-
-        enum CodingKeys: String, CodingKey {
-            case agencyID = "agencyId"
-            case applicationID = "applicationId"
-            case directionID = "directionId"
-            case routeID = "routeId"
-            case stopID = "stopId"
-            case tripID = "tripId"
-        }
-
-        public required init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-
-            agencyID = String.nilifyBlankValue((try container.decode(String.self, forKey: .agencyID)))
-            applicationID = String.nilifyBlankValue((try container.decode(String.self, forKey: .applicationID)))
-            directionID = String.nilifyBlankValue((try container.decode(String.self, forKey: .directionID)))
-            routeID = String.nilifyBlankValue((try container.decode(String.self, forKey: .routeID)))
-            stopID = String.nilifyBlankValue((try container.decode(String.self, forKey: .stopID)))
-            tripID = String.nilifyBlankValue((try container.decode(String.self, forKey: .tripID)))
-        }
-
-        public override func isEqual(_ object: Any?) -> Bool {
-            guard let rhs = object as? AffectedEntity else { return false }
-            return
-                agencyID == rhs.agencyID &&
-                applicationID == rhs.applicationID &&
-                directionID == rhs.directionID &&
-                routeID == rhs.routeID &&
-                stopID == rhs.stopID &&
-                tripID == rhs.tripID
-        }
-
-        override public var hash: Int {
-            var hasher = Hasher()
-            hasher.combine(agencyID)
-            hasher.combine(applicationID)
-            hasher.combine(directionID)
-            hasher.combine(routeID)
-            hasher.combine(stopID)
-            hasher.combine(tripID)
-            return hasher.finalize()
-        }
     }
-
-    // MARK: - Consequence
-
-    /// Models the effects of a `ServiceAlert`.
-    public class Consequence: NSObject, Decodable {
-        public let condition: String
-        public let conditionDetails: ConditionDetails?
-
-        enum CodingKeys: String, CodingKey {
-            case condition, conditionDetails
-        }
-
-        public required init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            condition = try container.decode(String.self, forKey: .condition)
-            conditionDetails = try container.decodeIfPresent(ConditionDetails.self, forKey: .conditionDetails)
-        }
-
-        public override func isEqual(_ object: Any?) -> Bool {
-            guard let rhs = object as? Consequence else { return false }
-            return condition == rhs.condition && conditionDetails == rhs.conditionDetails
-        }
-
-        override public var hash: Int {
-            var hasher = Hasher()
-            hasher.combine(condition)
-            hasher.combine(conditionDetails)
-            return hasher.finalize()
-        }
-    }
-
-    // MARK: - ConditionDetails
 
     /// Models the particular details of a `Consequence`, which is part of a `ServiceAlert`.
-    public class ConditionDetails: NSObject, Decodable {
+    @Codable
+    public struct ConditionDetails: Hashable {
+
+        @CodedAt("diversionPath", "points")
         public let diversionPath: String
+
+        @CodedAt("diversionStopIds")
         public let stopIDs: [String]
-
-        enum CodingKeys: String, CodingKey {
-            case diversionPath
-            case points
-            case stopIDs = "diversionStopIds"
-        }
-
-        public required init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            let diversionPathWrapper = try container.nestedContainer(keyedBy: CodingKeys.self, forKey: .diversionPath)
-
-            diversionPath = try diversionPathWrapper.decode(String.self, forKey: .points)
-            stopIDs = try container.decode([String].self, forKey: .stopIDs)
-        }
-
-        public override func isEqual(_ object: Any?) -> Bool {
-            guard let rhs = object as? ConditionDetails else { return false }
-            return diversionPath == rhs.diversionPath && stopIDs == rhs.stopIDs
-        }
-
-        override public var hash: Int {
-            var hasher = Hasher()
-            hasher.combine(diversionPath)
-            hasher.combine(stopIDs)
-            return hasher.finalize()
-        }
     }
 
-    // MARK: - TranslatedString
+    /// Models the effects of a `ServiceAlert`.
+    @Codable
+    public struct Consequence: Hashable {
+        public let condition: String
+        public let conditionDetails: ServiceAlert.ConditionDetails?
+    }
 
     /// A `ServiceAlert`'s method of describing potentially-localized information.
-    public class TranslatedString: NSObject, Decodable {
+    @Codable
+    public struct TranslatedString: Hashable {
         public let lang: String
         public let value: String
-
-        enum CodingKeys: String, CodingKey {
-            case lang, value
-        }
-
-        init(lang: String, value: String) {
-            self.lang = lang
-            self.value = value
-        }
-
-        public override func isEqual(_ object: Any?) -> Bool {
-            guard let rhs = object as? TranslatedString else { return false }
-            return lang == rhs.lang && value == rhs.value
-        }
-
-        override public var hash: Int {
-            var hasher = Hasher()
-            hasher.combine(lang)
-            hasher.combine(value)
-            return hasher.finalize()
-        }
     }
 }
 

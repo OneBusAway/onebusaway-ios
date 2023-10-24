@@ -158,11 +158,11 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Lets you check whether the passed-in service has been viewed by the user or not.
     /// - Parameter serviceAlert: The service alert to check the read status of.
-    func isUnread(serviceAlert: ServiceAlert) -> Bool
+//    func isUnread(serviceAlert: ServiceAlert) -> Bool
 
     /// Lets you mark a service alert as having been read.
     /// - Parameter serviceAlert: The service alert to mark read.
-    func markRead(serviceAlert: ServiceAlert)
+//    func markRead(serviceAlert: ServiceAlert)
 }
 
 // MARK: - Stop Preferences

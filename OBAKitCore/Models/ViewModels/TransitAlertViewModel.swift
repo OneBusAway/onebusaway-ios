@@ -33,9 +33,10 @@ extension ServiceAlert: TransitAlertViewModel {
             body = "\(situationDescription.value)\r\n\r\n"
         }
 
-        if affectedAgencies.count > 0 {
-            body = body.appending(affectedAgencies.map { $0.name }.sorted().joined(separator: ", "))
-        }
+        // TODO: this
+//        if affectedAgencies.count > 0 {
+//            body = body.appending(affectedAgencies.map { $0.name }.sorted().joined(separator: ", "))
+//        }
 
         return body
     }
