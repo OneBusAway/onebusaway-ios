@@ -12,6 +12,10 @@ import MetaCodable
 
 @Codable
 public struct Trip: Identifiable, Hashable {
+
+    /// The id field contains an ID that identifies a trip. The trip id is dataset unique.
+    public let id: String
+
     /// The block_id field identifies the block to which the trip belongs.
     ///
     /// A block consists of a single trip or many sequential trips made using
@@ -29,15 +33,9 @@ public struct Trip: Identifiable, Hashable {
     /// specify names for each direction with the `trip_headsign` field.
     public let direction: String?
 
-    /// The id field contains an ID that identifies a trip. The trip id is dataset unique.
-    public let id: String
-
     /// The route_id field contains an ID that uniquely identifies a route
     @CodedAt("routeId")
     public let routeID: String
-
-    /// The Route served by this trip.
-//    public var route: Route!
 
     @CodedBy(String.NillifyEmptyString())
     public let routeShortName: String?
@@ -70,9 +68,6 @@ public struct Trip: Identifiable, Hashable {
     /// Use this field to distinguish between different patterns of service in the same route.
     @CodedAt("tripHeadsign")
     public let headsign: String?
-
-//    public private(set) var regionIdentifier: Int?
-
 }
 
 extension Trip {

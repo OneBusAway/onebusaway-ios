@@ -12,10 +12,15 @@ import GRDB
 extension Trip: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCreator {
     public static let databaseTableName: String = "trips"
 
+    // MARK: - Associations
     static let route = belongsTo(Route.self)
+
+    /// The Route served by this trip.
     public var route: QueryInterfaceRequest<Route> {
         request(for: Trip.route)
     }
+
+    // MARK: - DatabaseTableCreator methods
 
     public static func createTable(in database: GRDB.Database) throws {
         try database.create(table: Trip.databaseTableName) { table in

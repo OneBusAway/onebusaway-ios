@@ -20,13 +20,11 @@ extension TripDetails: FetchableRecord, PersistableRecord, TableRecord, Database
     }
 
     static private let previousTrip = belongsTo(Trip.self, using: ForeignKey([Columns.previousTripId]))
-//    static private let previousTrip = hasOne(Trip.self)
     public var previousTrip: QueryInterfaceRequest<Trip> {
         request(for: TripDetails.previousTrip)
     }
 
     static private let nextTrip = belongsTo(Trip.self, using: ForeignKey([Columns.nextTripId]))
-//    static private let nextTrip = hasOne(Trip.self)
     public var nextTrip: QueryInterfaceRequest<Trip> {
         request(for: TripDetails.nextTrip)
     }
