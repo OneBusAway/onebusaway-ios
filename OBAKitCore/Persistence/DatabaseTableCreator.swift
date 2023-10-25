@@ -10,5 +10,12 @@
 import GRDB
 
 public protocol DatabaseTableCreator {
+
+    /// Additional tables may be created by providing their types here. Tables specified here are created after `createTable(in:)` is called.
+    static var additionalTableCreators: [DatabaseTableCreator.Type] { get }
     static func createTable(in database: Database) throws
+}
+
+extension DatabaseTableCreator {
+    public static var additionalTableCreators: [DatabaseTableCreator.Type] { return [] }
 }

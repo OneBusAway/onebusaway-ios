@@ -21,28 +21,28 @@ extension AgencyAlert: TransitAlertViewModel {
     // nop. already conforms to transitalertdata.
 }
 
-extension ServiceAlert: TransitAlertViewModel {
-    public func title(forLocale locale: Locale) -> String? {
-        return summary?.value
-    }
-
-    public func body(forLocale locale: Locale) -> String? {
-        var body = ""
-
-        if let situationDescription = situationDescription {
-            body = "\(situationDescription.value)\r\n\r\n"
-        }
+//extension ServiceAlert: TransitAlertViewModel {
+//    public func title(forLocale locale: Locale) -> String? {
+//        return summary?.value
+//    }
+//
+//    public func body(forLocale locale: Locale) -> String? {
+//        var body = ""
+//
+//        if let situationDescription = situationDescription {
+//            body = "\(situationDescription.value)\r\n\r\n"
+//        }
 
         // TODO: this
 //        if affectedAgencies.count > 0 {
 //            body = body.appending(affectedAgencies.map { $0.name }.sorted().joined(separator: ", "))
 //        }
 
-        return body
-    }
-
-    public func url(forLocale locale: Locale) -> URL? {
-        guard let urlString = self.urlString else { return nil }
-        return URL(string: urlString.value)
-    }
-}
+//        return body
+//    }
+//
+//    public func url(forLocale locale: Locale) -> URL? {
+//        guard let urlString = self.urlString else { return nil }
+//        return URL(string: urlString.value)
+//    }
+//}

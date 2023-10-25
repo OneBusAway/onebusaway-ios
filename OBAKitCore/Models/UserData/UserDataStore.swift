@@ -543,13 +543,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     // MARK: - Service Alerts
 
-    public func isUnread(serviceAlert: ServiceAlert) -> Bool {
-        readAlerts[serviceAlert.id] ?? true
-    }
-
-    public func markRead(serviceAlert: ServiceAlert) {
-        readAlerts[serviceAlert.id] = false
-    }
+//    public func isUnread(serviceAlert: ServiceAlert) -> Bool {
+//        readAlerts[serviceAlert.id] ?? true
+//    }
+//
+//    public func markRead(serviceAlert: ServiceAlert) {
+//        readAlerts[serviceAlert.id] = false
+//    }
 
     private var readAlerts: [String: Bool] {
         get {

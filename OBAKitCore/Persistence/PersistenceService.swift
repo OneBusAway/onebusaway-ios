@@ -32,7 +32,8 @@ public actor PersistenceService {
             Route.self,
             Trip.self,
             TripDetails.self,
-            StopRouteRelation.self
+            StopRouteRelation.self,
+            Situation.self
         ]
 
         public init(regionIdentifier: Int, databaseLocation: DatabaseLocation) {
@@ -71,6 +72,10 @@ public actor PersistenceService {
         migrator.registerMigration("createUsingTableCreators") { db in
             for tableCreator in configuration.tableCreators {
                 try tableCreator.createTable(in: db)
+
+                for additionalCreator in tableCreator.additionalTableCreators {
+                    try additionalCreator.createTable(in: db)
+                }
             }
         }
 
@@ -82,12 +87,14 @@ public actor PersistenceService {
     }
 
     public func processAPIResponse<T: Decodable>(_ apiResponse: RESTAPIResponse<T>) async throws {
-        guard let persistableRecord = apiResponse.entry as? PersistableRecord else {
-            fatalError("Object is not PersistableRecord \(String(describing: T.self))")
-        }
 
         // References are processed first
         try await processReferences(apiResponse)
+
+        guard let persistableRecord = apiResponse.entry as? PersistableRecord else {
+            logger.error("Attempted to insert non-PersistableRecord \"\(String(describing: T.self))\". ")
+            return
+        }
 
         try await database.write { db in
             try persistableRecord.insert(db, onConflict: .replace)
@@ -115,6 +122,10 @@ public actor PersistenceService {
 
             for trip in references.trips {
                 try trip.insert(db, onConflict: .replace)
+            }
+
+            for situation in references.situations {
+                try situation.insert(into: db)
             }
         }
     }
