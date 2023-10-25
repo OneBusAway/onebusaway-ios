@@ -20,10 +20,32 @@ struct SituationREST: Decodable, Identifiable {
     let summary: TranslatedString?          /* JSON Text */
     let url: TranslatedString?              /* JSON Text */
 
+    let allAffects: [AffectedEntityREST]    /* hasMany() */
     let consequences: [Consequence]         /* JSON Text */
 
     let activeWindows: [TimeWindow]         /* hasMany(ActiveWindow.self) */
     let publicationWindows: [TimeWindow]    /* hasMany(PublicationWindow.self) */
+}
+
+@Codable
+struct AffectedEntityREST {
+    @CodedAt("agencyId") @CodedBy(String.NillifyEmptyString())
+    public let agencyID: Agency.ID?
+
+    @CodedAt("applicationId") @CodedBy(String.NillifyEmptyString())
+    public let applicationID: String?
+
+    @CodedAt("directionId") @CodedBy(String.NillifyEmptyString())
+    public let directionID: String?
+
+    @CodedAt("routeId") @CodedBy(String.NillifyEmptyString())
+    public let routeID: RouteID?
+
+    @CodedAt("stopId") @CodedBy(String.NillifyEmptyString())
+    public let stopID: StopID?
+
+    @CodedAt("tripId") @CodedBy(String.NillifyEmptyString())
+    public let tripID: TripIdentifier?
 }
 
 /// The range of `Date`s in which a `ServiceAlert` is in effect.

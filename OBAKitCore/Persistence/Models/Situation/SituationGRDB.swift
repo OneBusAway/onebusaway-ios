@@ -15,7 +15,8 @@ extension Situation: FetchableRecord, PersistableRecord, TableRecord, DatabaseTa
 
     static public var additionalTableCreators: [DatabaseTableCreator.Type] = [
         ActiveWindowSituationRelation.self,
-        PublicationWindowSituationRelation.self
+        PublicationWindowSituationRelation.self,
+        AffectedSituationRelation.self
     ]
 
     enum Columns {
@@ -53,6 +54,11 @@ extension SituationREST {
         // First, insert everything except for relationships.
         let situationToInsert = Situation(id: id, creationTime: creationTime, description: description, reason: reason, severity: severity, summary: summary, url: url, consequences: consequences)
         try situationToInsert.insert(database, onConflict: .replace)
+
+        for allAffect in self.allAffects {
+            let relation = AffectedSituationRelation(situationID: situationToInsert.id, allAffect)
+            try relation.insert(database, onConflict: .replace)
+        }
 
         for activeWindow in activeWindows {
             let relation = ActiveWindowSituationRelation(situationID: situationToInsert.id, from: activeWindow.from, to: activeWindow.to)

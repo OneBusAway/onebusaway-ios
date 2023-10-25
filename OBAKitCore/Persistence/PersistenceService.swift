@@ -124,6 +124,7 @@ public actor PersistenceService {
                 try trip.insert(db, onConflict: .replace)
             }
 
+            // Situation should occur last, since it may reference agencies, routes, stops, trips, etc.
             for situation in references.situations {
                 try situation.insert(into: db)
             }
