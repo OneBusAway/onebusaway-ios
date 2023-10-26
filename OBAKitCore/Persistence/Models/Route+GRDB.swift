@@ -12,25 +12,51 @@ import GRDB
 extension Route: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCreator {
     static public let databaseTableName: String = "routes"
 
+    static private let agency = belongsTo(Agency.self)
+    var agency: QueryInterfaceRequest<Agency> {
+        request(for: Route.agency)
+    }
+
     public static func createTable(in database: Database) throws {
         try database.create(table: databaseTableName) { table in
-            table.column("id", .text).primaryKey()
-            table.column("agencyId", .text).notNull()
-            table.column("description", .text)
-            table.column("longName", .text)
-            table.column("shortName", .text).notNull()
-            table.column("color", .text)
-            table.column("textColor", .text)
-            table.column("type", .integer).notNull()
-            table.column("url", .text)
+            table.column(Columns.id.name, .text)
+                .notNull()
+                .primaryKey()
+            table.column(Columns.agencyID.name, .text)
+                .notNull()
+                .references(Agency.databaseTableName)
+            table.column(Columns.description.name, .text)
+            table.column(Columns.longName.name, .text)
+            table.column(Columns.shortName.name, .text).notNull()
+            table.column(Columns.color.name, .text)
+            table.column(Columns.textColor.name, .text)
+            table.column(Columns.type.name, .integer).notNull()
+            table.column(Columns.url.name, .text)
         }
     }
 
-    // Due to `GRDB/EncodableRecord+Encodable.swift:48: Fatal error: single value encoding is not supported` and it currently doesn't play nice with MetaCodable's expanded macro.
+    enum Columns {
+        static let id = Column(CodingKeys.id)
+        static let agencyID = Column(CodingKeys.agencyID)
+        static let description = Column(CodingKeys.routeDescription)
+        static let longName = Column(CodingKeys.longName)
+        static let shortName = Column(CodingKeys.shortName)
+        static let color = Column(CodingKeys.color)
+        static let textColor = Column(CodingKeys.textColor)
+        static let type = Column(CodingKeys.routeType)
+        static let url = Column(CodingKeys.routeURL)
+    }
 
-    enum Columns: String, ColumnExpression {
-        case agencyID = "agencyId"
-        case id, description, longName, shortName, color, textColor, type, url
+    public init(row: Row) throws {
+        id = row[Columns.id]
+        agencyID = row[Columns.agencyID]
+        routeDescription = row[Columns.description]
+        longName = row[Columns.longName]
+        shortName = row[Columns.shortName]
+        color = row[Columns.color]
+        textColor = row[Columns.textColor]
+        routeType = row[Columns.type]
+        routeURL = row[Columns.url]
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -41,7 +67,9 @@ extension Route: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableC
         container[Columns.shortName] = shortName
         container[Columns.color] = color
         container[Columns.textColor] = textColor
-        container[Columns.type] = routeType.rawValue
-        container[Columns.url] = routeURL?.relativeString
+        container[Columns.type] = routeType
+        container[Columns.url] = routeURL
     }
 }
+
+extension Route.RouteType: DatabaseValueConvertible { }

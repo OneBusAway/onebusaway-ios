@@ -58,10 +58,10 @@ extension AffectedSituationRelation: FetchableRecord, PersistableRecord, TableRe
         request(for: AffectedSituationRelation.situation)
     }
 
-//    static private let agency = belongsTo(Agency.self)
-//    var agency: QueryInterfaceRequest<Agency> {
-//        request(for: AffectedSituationRelation.agency)
-//    }
+    static private let agency = belongsTo(Agency.self)
+    var agency: QueryInterfaceRequest<Agency> {
+        request(for: AffectedSituationRelation.agency)
+    }
 
     static private let route = belongsTo(Route.self)
     var route: QueryInterfaceRequest<Route> {
@@ -97,7 +97,7 @@ extension AffectedSituationRelation: FetchableRecord, PersistableRecord, TableRe
                 .indexed()
                 .references(Situation.databaseTableName, onDelete: .cascade)
             table.column(Columns.agencyID.name, .text)
-//                .references()
+                .references(Agency.databaseTableName)
             table.column(Columns.applicationID.name, .text)
             table.column(Columns.directionID.name, .text)
             table.column(Columns.routeID.name, .text)

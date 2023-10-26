@@ -67,14 +67,6 @@ public struct Route: Identifiable, Hashable {
 
     @CodedAt("url") @CodedBy(URL.DecodeGarbageURL())
     public let routeURL: URL?
-
-//    // MARK: - HasReferences
-//
-//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-//        agency = references.agencyWithID(agencyID)
-//        self.regionIdentifier = regionIdentifier
-//    }
-//
 }
 
 // MARK: - [Route] Extensions

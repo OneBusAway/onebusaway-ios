@@ -28,6 +28,7 @@ public actor PersistenceService {
         public let databaseLocation: DatabaseLocation
 
         public let tableCreators: [DatabaseTableCreator.Type] = [
+            Agency.self,
             Stop.self,
             Route.self,
             Trip.self,
@@ -107,6 +108,10 @@ public actor PersistenceService {
         }
 
         try await database.write { db in
+            for agency in references.agencies {
+                try agency.insert(db, onConflict: .replace)
+            }
+
             for route in references.routes {
                 try route.insert(db, onConflict: .replace)
             }

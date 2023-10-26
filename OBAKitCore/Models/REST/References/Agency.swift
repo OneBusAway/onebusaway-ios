@@ -13,7 +13,7 @@ import GRDB
 
 /// - SeeAlso: [OneBusAway Agency documentation](http://developer.onebusaway.org/modules/onebusaway-application-modules/current/api/where/elements/agency.html)
 @Codable
-public struct Agency: Identifiable, Hashable, FetchableRecord, PersistableRecord {
+public struct Agency: Identifiable, Hashable {
     public let id: String
     public let name: String
 
