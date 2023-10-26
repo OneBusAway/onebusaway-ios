@@ -24,31 +24,34 @@ extension Trip: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
 
     public static func createTable(in database: GRDB.Database) throws {
         try database.create(table: Trip.databaseTableName) { table in
-            table.column("id", .text).primaryKey()
-            table.column("blockId", .text).notNull()
-            table.column("direction", .text)
-            table.column("routeShortName", .text)
-            table.column("serviceId", .text).notNull()
-            table.column("shapeId", .text).notNull()
-            table.column("timeZone", .text)
-            table.column("tripShortName", .text)
-            table.column("tripHeadsign", .text)
-
-            table.column("routeId", .text)
+            table.column(Columns.id.name, .text)
+                .notNull()
+                .primaryKey()
+            table.column(Columns.blockID.name, .text).notNull()
+            table.column(Columns.direction.name, .text)
+            table.column(Columns.routeShortName.name, .text)
+            table.column(Columns.serviceID.name, .text).notNull()
+            table.column(Columns.shapeID.name, .text).notNull()
+            table.column(Columns.timeZone.name, .text)
+            table.column(Columns.shortName.name, .text)
+            table.column(Columns.headsign.name, .text)
+            table.column(Columns.routeID.name, .text)
                 .notNull()
                 .references(Route.databaseTableName)
         }
     }
 
-    // Due to `GRDB/EncodableRecord+Encodable.swift:48: Fatal error: single value encoding is not supported` and it currently doesn't play nice with MetaCodable's expanded macro.
-
-    enum Columns: String, ColumnExpression {
-        case id
-        case blockID = "blockId"
-        case routeID = "routeId"
-        case serviceID = "serviceId"
-        case shapeID = "shapeId"
-        case direction, routeShortName, timeZone, tripShortName, tripHeadsign
+    enum Columns {
+        static let id = Column(CodingKeys.id)
+        static let blockID = Column(CodingKeys.blockID)
+        static let direction = Column(CodingKeys.direction)
+        static let routeID = Column(CodingKeys.routeID)
+        static let routeShortName = Column(CodingKeys.routeShortName)
+        static let serviceID = Column(CodingKeys.serviceID)
+        static let shapeID = Column(CodingKeys.shapeID)
+        static let timeZone = Column(CodingKeys.timeZone)
+        static let shortName = Column(CodingKeys.shortName)
+        static let headsign = Column(CodingKeys.headsign)
     }
 
     public init(row: Row) throws {
@@ -60,8 +63,8 @@ extension Trip: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
         serviceID = row[Columns.serviceID]
         shapeID = row[Columns.shapeID]
         timeZone = row[Columns.timeZone]
-        shortName = row[Columns.tripShortName]
-        headsign = row[Columns.tripHeadsign]
+        shortName = row[Columns.shortName]
+        headsign = row[Columns.headsign]
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -73,7 +76,7 @@ extension Trip: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
         container[Columns.serviceID] = serviceID
         container[Columns.shapeID] = shapeID
         container[Columns.timeZone] = timeZone
-        container[Columns.tripShortName] = shortName
-        container[Columns.tripHeadsign] = headsign
+        container[Columns.shortName] = shortName
+        container[Columns.headsign] = headsign
     }
 }
