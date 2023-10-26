@@ -70,12 +70,19 @@ public actor PersistenceService {
         // Migration registration
         var migrator = DatabaseMigrator()
         migrator.registerMigration("createUsingTableCreators") { db in
-            for tableCreator in configuration.tableCreators {
-                try tableCreator.createTable(in: db)
+            let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "PersistenceService-DatabaseMigrator")
+            var additionalTableCreators: [DatabaseTableCreator.Type] = []
 
-                for additionalCreator in tableCreator.additionalTableCreators {
-                    try additionalCreator.createTable(in: db)
-                }
+            for tableCreator in configuration.tableCreators {
+                logger.trace("Creating table: \(String(describing: tableCreator))")
+                try tableCreator.createTable(in: db)
+                additionalTableCreators.append(contentsOf: tableCreator.additionalTableCreators)
+            }
+
+            // Additional tables are usually for relationships. These should be created last, since SQLite needs to reference other tables.
+            for additionalCreator in additionalTableCreators {
+                logger.trace("Creating additional table: \(String(describing: additionalCreator))")
+                try additionalCreator.createTable(in: db)
             }
         }
 
