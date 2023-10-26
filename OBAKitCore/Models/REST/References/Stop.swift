@@ -64,10 +64,10 @@ public struct Stop: Identifiable, Hashable {
     public let id: StopID
 
     @CodedAt("lat")
-    fileprivate let latitude: Double
+    let latitude: Double
 
     @CodedAt("lon")
-    fileprivate let longitude: Double
+    let longitude: Double
 
     /// Identifies whether this stop represents a stop, station, or station entrance.
     @Default(LocationType.unknown)
@@ -78,9 +78,9 @@ public struct Stop: Identifiable, Hashable {
 
     /// A list of route IDs served by this stop.
     ///
-    /// Route IDs correspond to values in References.
+    /// This value is only decoded/encoded via Codable. When retrieving from GRDB, this value will be empty.
     @CodedAt("routeIds")
-    public let routeIDs: [RouteID]
+    let routeIDs: [RouteID]
 
     /// Denotes the availability of wheelchair boarding at this stop.
     @Default(WheelchairBoarding.unknown)

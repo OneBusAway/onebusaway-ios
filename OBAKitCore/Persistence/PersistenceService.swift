@@ -33,7 +33,6 @@ public actor PersistenceService {
             Route.self,
             Trip.self,
             TripDetails.self,
-            StopRouteRelation.self,
             Situation.self
         ]
 
@@ -118,11 +117,6 @@ public actor PersistenceService {
 
             for stop in references.stops {
                 try stop.insert(db, onConflict: .replace)
-
-                for routeID in stop.routeIDs {
-                    try StopRouteRelation(stopID: stop.id, routeID: routeID)
-                        .insert(db, onConflict: .replace)
-                }
             }
 
             for trip in references.trips {
