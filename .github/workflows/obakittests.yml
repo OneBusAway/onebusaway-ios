@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-12
+    runs-on: macos-13-arm64
 
     steps:
     - uses: actions/checkout@v2
@@ -21,7 +21,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode 14
-      run: sudo xcode-select -switch /Applications/Xcode_14.2.app
+      run: sudo xcode-select -switch /Applications/Xcode_15.0.1.app
 
     - name: Install xcodegen
       run: brew install xcodegen
