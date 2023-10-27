@@ -98,6 +98,7 @@ include:
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml
   - path: OBAKitCore/project.yml
+  - path: OBAKitCoreTests/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
   - path: OBAKitUITests/project.yml

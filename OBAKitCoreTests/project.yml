@@ -1,0 +1,13 @@
+targets:
+  OBAKitCoreTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: .
+      - path: ../OBAKitTests/fixtures
+        group: OBAKitTests
+    dependencies:
+      - target: OBAKitCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES

@@ -6,6 +6,7 @@ targets:
     dependencies:
       - package: CocoaLumberjack
       - package: CocoaLumberjackSwift
+      - package: GRDB
       - package: SwiftProtobuf
     scheme:
       gatherCoverageData: true

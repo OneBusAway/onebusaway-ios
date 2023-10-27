@@ -93,6 +93,9 @@ packages:
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
         exactVersion: 2.6.0
+    GRDB:
+        url: https://github.com/groue/GRDB.swift.git
+        exactVersion: 6.20.2
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.1.0
