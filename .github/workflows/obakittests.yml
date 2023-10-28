@@ -34,6 +34,7 @@ jobs:
       run: xcodebuild clean build-for-testing
         -scheme 'App'
         -destination 'platform=iOS Simulator,OS=17.0,name=iPhone 15'
+        -allowProvisioningUpdates
 
     # Unit Test
     - name: OBAKit Unit Test
