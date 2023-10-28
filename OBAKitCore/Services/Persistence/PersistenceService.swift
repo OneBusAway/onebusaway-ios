@@ -108,6 +108,15 @@ public actor PersistenceService {
         }
     }
 
+    public func processAPIResponseAndReturnObject<T: Decodable & PersistableRecord>(_ apiResponse: RESTAPIResponse<T>) async throws -> T {
+
+        // References are processed first
+        try await processReferences(apiResponse)
+        return try await database.write { db in
+            try apiResponse.entry.inserted(db, onConflict: .replace)
+        }
+    }
+
     public func processReferences(_ apiResponse: ReferencesProvider) async throws {
         guard let references = apiResponse.references else {
             return

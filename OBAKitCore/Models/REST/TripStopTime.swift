@@ -9,7 +9,7 @@
 
 import Foundation
 
-public struct TripStopTime: Codable, Hashable, Comparable/* HasReferences*/ {
+public struct TripStopTime: Codable, Hashable, Comparable {
     /// Time, in seconds since the start of the service date, when the trip arrives at the specified stop.
     public let arrival: TimeInterval
 

@@ -9,7 +9,7 @@
 
 import Foundation
 
-public struct StopArrivals: Identifiable, Codable/*, HasReferences*/ {
+public struct StopArrivals: Identifiable, Codable {
     public var id: String {
         return self.stopID
     }

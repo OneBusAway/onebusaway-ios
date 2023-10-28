@@ -64,6 +64,7 @@ public struct TimeWindow: Decodable {
         case from, to
     }
 
+    // TimeWindow uses secondsSince1970 instead of milliseconds.
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))

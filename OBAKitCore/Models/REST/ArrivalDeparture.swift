@@ -172,55 +172,6 @@ public struct ArrivalDeparture: Identifiable, Codable, Hashable {
         historicalOccupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .historicalOccupancyStatus)
     }
 
-//    public func encode(to encoder: Encoder) throws {
-//        var container = encoder.container(keyedBy: CodingKeys.self)
-//        try container.encode(arrivalEnabled, forKey: .arrivalEnabled)
-//        try container.encode(blockTripSequence, forKey: .blockTripSequence)
-//        try container.encode(departureEnabled, forKey: .departureEnabled)
-//        try container.encode(distanceFromStop, forKey: .distanceFromStop)
-//        try container.encodeIfPresent(frequency, forKey: .frequency)
-//        try container.encode(lastUpdated, forKey: .lastUpdated)
-//        try container.encode(numberOfStopsAway, forKey: .numberOfStopsAway)
-//        try container.encode(predicted, forKey: .predicted)
-//
-//        try container.encodeIfPresent(predictedArrival, forKey: .predictedArrival)
-//        try container.encodeIfPresent(predictedDeparture, forKey: .predictedDeparture)
-//
-//        try container.encode(routeID, forKey: .routeID)
-//        try container.encodeIfPresent(routeLongName, forKey: .routeLongName)
-//        try container.encodeIfPresent(routeShortName, forKey: .routeShortName)
-//        try container.encode(scheduledArrival, forKey: .scheduledArrival)
-//        try container.encode(scheduledDeparture, forKey: .scheduledDeparture)
-//        try container.encode(serviceDate, forKey: .serviceDate)
-//
-//        try container.encode(situationIDs, forKey: .situationIDs)
-//        try container.encode(status, forKey: .status)
-//        try container.encode(stopID, forKey: .stopID)
-//        try container.encode(stopSequence, forKey: .stopSequence)
-//
-//        try container.encodeIfPresent(totalStopsInTrip, forKey: .totalStopsInTrip)
-//        try container.encodeIfPresent(tripHeadsign, forKey: .tripHeadsign)
-//
-//        try container.encode(tripID, forKey: .tripID)
-//
-//        try container.encodeIfPresent(tripStatus, forKey: .tripStatus)
-//        try container.encodeIfPresent(vehicleID, forKey: .vehicleID)
-//
-//        try container.encodeIfPresent(occupancyStatus, forKey: .occupancyStatus)
-//        try container.encodeIfPresent(historicalOccupancyStatus, forKey: .historicalOccupancyStatus)
-//    }
-
-    // MARK: - HasReferences
-
-//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-//        route = references.routeWithID(routeID)!
-//        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-//        stop = references.stopWithID(stopID)!
-//        trip = references.tripWithID(tripID)!
-//        tripStatus?.loadReferences(references, regionIdentifier: regionIdentifier)
-//        self.regionIdentifier = regionIdentifier
-//    }
-
     // MARK: - Helpers/Names
 
     /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.

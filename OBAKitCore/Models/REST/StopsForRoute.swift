@@ -59,7 +59,7 @@ public struct StopsForRoute: Identifiable, Codable {
     }
 
     // MARK: - StopGroup
-    public struct StopGroup: Identifiable, Codable/*, HasReferences*/ {
+    public struct StopGroup: Identifiable, Codable {
         public let id: String
 
         public let name: String
