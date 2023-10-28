@@ -48,5 +48,3 @@ extension Route: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableC
         static let routeURL = Column(CodingKeys.routeURL)
     }
 }
-
-extension Route.RouteType: DatabaseValueConvertible { }

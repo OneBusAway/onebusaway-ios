@@ -50,18 +50,4 @@ public struct Agency: Identifiable, Codable, Hashable {
         timeZone = try container.decode(String.self, forKey: .timeZone)
         agencyURL = try container.decode(URL.self, forKey: .agencyURL)
     }
-
-//    public func encode(to encoder: Encoder) throws {
-//        var container = encoder.container(keyedBy: CodingKeys.self)
-//        try container.encodeIfPresent(disclaimer, forKey: .disclaimer)
-//        try container.encodeIfPresent(email, forKey: .email)
-//        try container.encodeIfPresent(fareURL?.absoluteString, forKey: .fareURL)
-//        try container.encode(id, forKey: .id)
-//        try container.encode(language, forKey: .language)
-//        try container.encode(name, forKey: .name)
-//        try container.encode(phone, forKey: .phone)
-//        try container.encode(isPrivateService, forKey: .isPrivateService)
-//        try container.encode(timeZone, forKey: .timeZone)
-//        try container.encode(agencyURL, forKey: .agencyURL)
-//    }
 }

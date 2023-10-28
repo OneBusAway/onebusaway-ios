@@ -43,32 +43,6 @@ extension Stop: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
         static let routeIDs = Column(CodingKeys.routeIDs)
     }
 
-//    public init(row: Row) throws {
-//        id = row[Columns.id]
-//        name = row[Columns.name]
-//        code = row[Columns.code]
-//        _direction = row[Columns.direction]
-//
-//        let (latitude, longitude) = (row[Columns.latitude], row[Columns.longitude])
-//        location = CLLocation(latitude: latitude, longitude: longitude)
-//
-//        locationType = row[Columns.locationType]
-//        wheelchairBoarding = row[Columns.wheelchairBoarding]
-//
-//        self.routeIDs = []
-//    }
-//
-//    public func encode(to container: inout PersistenceContainer) throws {
-//        container[Columns.id] = id
-//        container[Columns.name] = name
-//        container[Columns.code] = code
-//        container[Columns.direction] = direction
-//        container[Columns.latitude] = latitude
-//        container[Columns.longitude] = longitude
-//        container[Columns.locationType] = locationType
-//        container[Columns.wheelchairBoarding] = wheelchairBoarding
-//    }
-
     public func aroundInsert(_ db: Database, insert: () throws -> InsertionSuccess) throws {
         _ = try insert()
 
@@ -78,7 +52,3 @@ extension Stop: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
         }
     }
 }
-
-//extension Stop.Direction: DatabaseValueConvertible { }
-//extension Stop.LocationType: DatabaseValueConvertible { }
-//extension Stop.WheelchairBoarding: DatabaseValueConvertible { }

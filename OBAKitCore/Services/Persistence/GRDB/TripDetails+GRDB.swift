@@ -51,34 +51,4 @@ extension TripDetails: FetchableRecord, PersistableRecord, TableRecord, Database
             table.column(Columns.situationIDs.name, .jsonText)
         }
     }
-
-//    public init(row: Row) throws {
-//        frequency = row[Columns.frequency]
-//        tripID = row[Columns.tripID]
-//        serviceDate = row[Columns.serviceDate]
-//        status = row[Columns.status]
-//        timeZone = row[Columns.timeZone]
-//        stopTimes = row[Columns.stopTimes]
-//        previousTripID = row[Columns.previousTripID]
-//        nextTripID = row[Columns.nextTripID]
-//        situationIDs = []
-//    }
-//
-//    public func encode(to container: inout PersistenceContainer) throws {
-//        container[Columns.tripID] = tripID
-//        container[Columns.serviceDate] = serviceDate
-//        container[Columns.status] = status
-//        container[Columns.timeZone] = timeZone
-//        container[Columns.stopTimes] = stopTimes
-//        container[Columns.previousTripID] = previousTripID
-//        container[Columns.nextTripID] = nextTripID
-//    }
 }
-
-extension TripStatus: DatabaseValueConvertible { }
-extension Frequency: DatabaseValueConvertible { }
-
-extension TripStopTime: DatabaseValueConvertible { }
-//extension Array: StatementBinding where Element == TripStopTime { }
-//extension Array: SQLExpressible where Element == TripStopTime { }
-//extension Array: DatabaseValueConvertible where Element == TripStopTime { }

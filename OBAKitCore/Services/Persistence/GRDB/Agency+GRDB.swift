@@ -42,30 +42,4 @@ extension Agency: FetchableRecord, PersistableRecord, TableRecord, DatabaseTable
             table.column(Columns.agencyURL.name, .text).notNull()
         }
     }
-
-    public init(row: Row) throws {
-        id = row[Columns.id]
-        name = row[Columns.name]
-        disclaimer = row[Columns.disclaimer]
-        email = row[Columns.email]
-        fareURL = row[Columns.fareURL]
-        language = row[Columns.language]
-        phone = row[Columns.phone]
-        isPrivateService = row[Columns.isPrivateService]
-        timeZone = row[Columns.timeZone]
-        agencyURL = row[Columns.agencyURL]
-    }
-
-    public func encode(to container: inout PersistenceContainer) throws {
-        container[Columns.id] = id
-        container[Columns.name] = name
-        container[Columns.disclaimer] = disclaimer
-        container[Columns.email] = email
-        container[Columns.fareURL] = fareURL
-        container[Columns.language] = language
-        container[Columns.phone] = phone
-        container[Columns.isPrivateService] = isPrivateService
-        container[Columns.timeZone] = timeZone
-        container[Columns.agencyURL] = agencyURL
-    }
 }

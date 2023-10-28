@@ -53,30 +53,4 @@ extension Trip: FetchableRecord, PersistableRecord, TableRecord, DatabaseTableCr
         static let shortName = Column(CodingKeys.shortName)
         static let headsign = Column(CodingKeys.headsign)
     }
-
-    public init(row: Row) throws {
-        id = row[Columns.id]
-        blockID = row[Columns.blockID]
-        direction = row[Columns.direction]
-        routeID = row[Columns.routeID]
-        routeShortName = row[Columns.routeShortName]
-        serviceID = row[Columns.serviceID]
-        shapeID = row[Columns.shapeID]
-        timeZone = row[Columns.timeZone]
-        shortName = row[Columns.shortName]
-        headsign = row[Columns.headsign]
-    }
-
-    public func encode(to container: inout PersistenceContainer) throws {
-        container[Columns.id] = id
-        container[Columns.blockID] = blockID
-        container[Columns.direction] = direction
-        container[Columns.routeID] = routeID
-        container[Columns.routeShortName] = routeShortName
-        container[Columns.serviceID] = serviceID
-        container[Columns.shapeID] = shapeID
-        container[Columns.timeZone] = timeZone
-        container[Columns.shortName] = shortName
-        container[Columns.headsign] = headsign
-    }
 }

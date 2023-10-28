@@ -78,11 +78,11 @@ public struct Trip: Identifiable, Codable, Hashable {
         headsign = try? container.decodeIfPresent(String.self, forKey: .headsign)
         id = try container.decode(String.self, forKey: .id)
         routeID = try container.decode(String.self, forKey: .routeID)
-        routeShortName = String.nilifyBlankValue(try container.decode(String.self, forKey: .routeShortName))
+        routeShortName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .routeShortName))
         serviceID = try container.decode(String.self, forKey: .serviceID)
         shapeID = try container.decode(String.self, forKey: .shapeID)
-        shortName = String.nilifyBlankValue(try container.decode(String.self, forKey: .shortName))
-        timeZone = String.nilifyBlankValue(try container.decode(String.self, forKey: .timeZone))
+        shortName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .shortName))
+        timeZone = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .timeZone))
     }
 
     // MARK: - Route Descriptions
