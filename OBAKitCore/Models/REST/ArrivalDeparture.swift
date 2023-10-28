@@ -68,16 +68,10 @@ public struct ArrivalDeparture: Identifiable, Codable, Hashable {
     /// Active service alert IDs for this trip.
     public let situationIDs: [String]
 
-    /// Active service alerts for this trip
-//    public private(set) var serviceAlerts = [ServiceAlert]()
-
     public let status: String
 
     /// The stop id of the stop the vehicle is arriving at
     public let stopID: StopID
-
-    /// The stop the vehicle is arriving at
-//    public var stop: Stop!
 
     /// The index of the stop into the sequence of stops that make up the trip for this arrival
     public let stopSequence: Int
@@ -91,16 +85,11 @@ public struct ArrivalDeparture: Identifiable, Codable, Hashable {
     /// The trip id for the arriving vehicle
     public let tripID: TripIdentifier
 
-    /// The Trip for the arriving vehicle
-//    public var trip: Trip!
-
     /// Trip-specific status for the arriving transit vehicle
     public let tripStatus: TripStatus?
 
     /// The ID of the arriving transit vehicle
     public let vehicleID: String?
-
-//    public private(set) var regionIdentifier: Int?
 
     private enum CodingKeys: String, CodingKey {
         case arrivalEnabled

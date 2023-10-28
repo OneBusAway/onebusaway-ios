@@ -25,13 +25,10 @@ public struct VehicleStatus: Identifiable, Codable, Hashable {
     public let lastLocationUpdateTime: Date?
 
     /// The last known location of the vehicle
-    public let location: CLLocation?
+    public let location: LocationModel?
 
     /// The id of the vehicle's current trip, which can be used to look up the referenced `trip` element in the `references` section of the data.
     public let tripID: TripIdentifier?
-
-    /// The vehicle's current trip
-//    public private(set) var trip: Trip?
 
     /// the current journey phase of the vehicle
     public let phase: String
@@ -70,19 +67,8 @@ public struct VehicleStatus: Identifiable, Codable, Hashable {
 
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)
-        location = try? CLLocation(container: container, key: .location)
+        location = try container.decode(LocationModel.self, forKey: .location)
+//        location = try? CLLocation(container: container, key: .location)
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(vehicleID, forKey: .vehicleID)
-        try container.encode(lastUpdateTime, forKey: .lastUpdateTime)
-        try container.encode(lastLocationUpdateTime, forKey: .lastLocationUpdateTime)
-        try container.encode(tripID, forKey: .tripID)
-        try container.encode(phase, forKey: .phase)
-        try container.encode(status, forKey: .status)
-        try container.encode(location?.asOBALocationModel(), forKey: .location)
-        try container.encode(tripStatus, forKey: .tripStatus)
     }
 }

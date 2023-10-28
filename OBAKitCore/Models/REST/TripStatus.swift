@@ -19,9 +19,6 @@ public struct TripStatus: Identifiable, Codable, Hashable {
     /// the trip id of the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
     public let activeTripID: String
 
-    /// the trip the vehicle is actively serving. All trip-specific values will be in reference to this active trip
-//    public private(set) var activeTrip: Trip!
-
     /// the index of the active trip into the sequence of trips for the active block. Compare to `blockTripSequence`
     /// in `ArrivalAndDeparture` to determine where the active block location is relative to an arrival-and-departure.
     public let blockTripSequence: Int
@@ -29,10 +26,6 @@ public struct TripStatus: Identifiable, Codable, Hashable {
     /// the id of the closest stop to the current location of the transit vehicle, whether from schedule or
     /// real-time predicted location data
     public let closestStopID: StopID
-
-    /// The closest stop to the current location of the transit vehicle, whether from schedule or
-    /// real-time predicted location data
-//    public private(set) var closestStop: Stop!
 
     /// the time offset, in seconds, from the closest stop to the current position of the transit vehicle
     /// among the stop times of the current trip. If the number is positive, the stop is coming up.
@@ -52,7 +45,7 @@ public struct TripStatus: Identifiable, Codable, Hashable {
 
     /// Last known location of the transit vehicle. This differs from the existing position field,
     /// in that the position field is potential extrapolated forward from the last known position and other data.
-    public let lastKnownLocation: CLLocation?
+    public let lastKnownLocation: LocationModel?
 
     /// The last known orientation value received in real-time from the transit vehicle.
     public let lastKnownOrientation: CLLocationDirection?
@@ -70,10 +63,6 @@ public struct TripStatus: Identifiable, Codable, Hashable {
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
     public let nextStopID: StopID?
 
-    /// Similar to `closestStop`, except that it always captures the next stop, not the closest stop.
-    /// Optional, as a vehicle may have progressed past the last stop in a trip.
-//    public private(set) var nextStop: Stop?
-
     /// Similar to `closestStopTimeOffset`, except that it always captures the next stop, not the closest stop.
     /// Optional, as a vehicle may have progressed past the last stop in a trip.
     public let nextStopTimeOffset: Int
@@ -90,7 +79,7 @@ public struct TripStatus: Identifiable, Codable, Hashable {
     /// present if the trip is actively running. If real-time arrival data is available,
     /// the position will take that into account, otherwise the position reflects the
     /// scheduled position of the vehicle.
-    public let position: CLLocation?
+    public let position: LocationModel?
 
     /// True if we have real-time arrival info available for this trip
     public let isRealTime: Bool
@@ -106,9 +95,6 @@ public struct TripStatus: Identifiable, Codable, Hashable {
 
     /// References to `Situation`s for active service alerts applicable to this trip.
     public let situationIDs: [String]
-
-    /// Active service alerts applicable to this trip.
-//    public private(set) var serviceAlerts = [ServiceAlert]()
 
     /// Status modifier for the trip
     public let statusModifier: StatusModifier
@@ -176,7 +162,7 @@ public struct TripStatus: Identifiable, Codable, Hashable {
         distanceAlongTrip = try container.decode(Double.self, forKey: .distanceAlongTrip)
         frequency = try container.decodeIfPresent(Frequency.self, forKey: .frequency)
         lastKnownDistanceAlongTrip = try container.decodeIfPresent(Int.self, forKey: .lastKnownDistanceAlongTrip)
-        lastKnownLocation = try? CLLocation(container: container, key: .lastKnownLocation)
+        lastKnownLocation = try container.decodeIfPresent(LocationModel.self, forKey: .lastKnownLocation)
         lastKnownOrientation = try container.decodeIfPresent(CLLocationDirection.self, forKey: .lastKnownOrientation)
         lastLocationUpdateTime = try container.decode(Int.self, forKey: .lastLocationUpdateTime)
 
@@ -188,7 +174,7 @@ public struct TripStatus: Identifiable, Codable, Hashable {
         nextStopTimeOffset = try container.decode(Int.self, forKey: .nextStopTimeOffset)
         orientation = try container.decode(CLLocationDirection.self, forKey: .orientation)
         phase = try container.decode(String.self, forKey: .phase)
-        position = try? CLLocation(container: container, key: .position)
+        position = try container.decodeIfPresent(LocationModel.self, forKey: .position)
         isRealTime = try container.decode(Bool.self, forKey: .isRealTime)
         scheduleDeviation = try container.decode(TimeInterval.self, forKey: .scheduleDeviation)
         scheduledDistanceAlongTrip = try container.decode(Double.self, forKey: .scheduledDistanceAlongTrip)
@@ -216,21 +202,14 @@ public struct TripStatus: Identifiable, Codable, Hashable {
         try container.encode(lastKnownOrientation, forKey: .lastKnownOrientation)
         try container.encode(lastLocationUpdateTime, forKey: .lastLocationUpdateTime)
 
-        try container.encodeIfPresent(lastKnownLocation?.asOBALocationModel(), forKey:.lastKnownLocation)
+        try container.encodeIfPresent(lastKnownLocation, forKey: .lastKnownLocation)
+//        try container.encodeIfPresent(lastKnownLocation?.asOBALocationModel(), forKey:.lastKnownLocation)
         try container.encode(situationIDs, forKey: .situationIDs)
 
         try container.encode(statusModifier.encode(), forKey: .status)
         try container.encode(totalDistanceAlongTrip, forKey: .totalDistanceAlongTrip)
         try container.encode(vehicleID, forKey: .vehicleID)
     }
-
-//    public func loadReferences(_ references: References, regionIdentifier: Int?) {
-//        activeTrip = references.tripWithID(activeTripID)!
-//        closestStop = references.stopWithID(closestStopID)!
-//        nextStop = references.stopWithID(nextStopID)
-//        serviceAlerts = references.serviceAlertsWithIDs(situationIDs)
-//        self.regionIdentifier = regionIdentifier
-//    }
 }
 
 /// :nodoc:

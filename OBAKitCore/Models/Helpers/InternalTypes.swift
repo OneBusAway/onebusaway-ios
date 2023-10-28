@@ -10,9 +10,9 @@
 import Foundation
 import CoreLocation
 
-struct LocationModel: Codable {
-    let latitude: Double
-    let longitude: Double
+public struct LocationModel: Codable, Hashable {
+    public let latitude: Double
+    public let longitude: Double
 
     enum CodingKeys: String, CodingKey {
         case latitude = "lat"
@@ -20,23 +20,19 @@ struct LocationModel: Codable {
     }
 }
 
-extension CLLocation {
-    convenience init(locationModel: LocationModel) {
-        self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
+#if canImport(CoreLocation)
+import CoreLocation
+
+extension LocationModel {
+    public var coordinates: CLLocationCoordinate2D {
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
-    convenience init?<K>(container: KeyedDecodingContainer<K>, key: K) throws where K: CodingKey {
-        guard let locationModel = try container.decodeIfPresent(LocationModel.self, forKey: key) else {
-            return nil
-        }
-
-        self.init(latitude: locationModel.latitude, longitude: locationModel.longitude)
-    }
-
-    func asOBALocationModel() -> LocationModel {
-        return LocationModel(latitude: coordinate.latitude, longitude: coordinate.longitude)
+    public var location: CLLocation {
+        return CLLocation(latitude: latitude, longitude: longitude)
     }
 }
+#endif
 
 extension JSONDecoder {
     class var obacoServiceDecoder: JSONDecoder {

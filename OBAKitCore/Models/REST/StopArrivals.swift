@@ -20,14 +20,8 @@ public struct StopArrivals: Identifiable, Codable/*, HasReferences*/ {
     /// A list of nearby stop IDs.
     public let nearbyStopIDs: [StopID]
 
-    /// A list of nearby `Stop`s.
-//    public private(set) var nearbyStops = [Stop]()
-
     /// A list of active service alert IDs.
     public let situationIDs: [String]
-
-    /// Active service alerts tied to the `StopArrivals` model.
-//    private var _serviceAlerts = [ServiceAlert]()
 
     /// Returns this model's list of service alerts, if any exist. If this model does not have any, then it returns a flattened list of its `ArrivalDepartures` objects' service alerts.
 //    public var serviceAlerts: [ServiceAlert] {
@@ -42,9 +36,6 @@ public struct StopArrivals: Identifiable, Codable/*, HasReferences*/ {
 
     /// The stop ID for the stop this represents.
     public let stopID: StopID
-
-    /// The stop to which this object refers.
-//    public var stop: Stop!
 
     enum CodingKeys: String, CodingKey {
         case arrivalsAndDepartures

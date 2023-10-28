@@ -91,9 +91,3 @@ extension SituationREST {
 //        return lhs.interval < rhs.interval
 //    }
 //}
-
-// MARK: - JSONText/DatabaseValueConvertible
-
-extension TranslatedString: DatabaseValueConvertible { }
-extension Consequence: DatabaseValueConvertible { }
-extension Consequence.Details: DatabaseValueConvertible { }

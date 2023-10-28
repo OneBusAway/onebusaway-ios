@@ -22,8 +22,8 @@ final class VehicleStatusTests: OBAKitCoreTestCase {
         XCTAssertEqual(vehicle.lastUpdateTime, Date(timeIntervalSinceReferenceDate: 610581544), "Expected lastUpdateTime to be 2020-05-07T21:59:04Z")
 
         let location = try XCTUnwrap(vehicle.location)
-        XCTAssertEqual(location.coordinate.latitude, 47.6195, accuracy: 0.0001)
-        XCTAssertEqual(location.coordinate.longitude, -122.3244, accuracy: 0.0001)
+        XCTAssertEqual(location.latitude, 47.6195, accuracy: 0.0001)
+        XCTAssertEqual(location.longitude, -122.3244, accuracy: 0.0001)
         XCTAssertEqual(vehicle.phase, "in_progress")
         XCTAssertEqual(vehicle.status, "SCHEDULED")
     }
@@ -62,12 +62,12 @@ final class VehicleStatusTests: OBAKitCoreTestCase {
         XCTAssertEqual(tripStatus.vehicleID, "1_4351")
 
         let lastKnownLocation = try XCTUnwrap(tripStatus.lastKnownLocation)
-        XCTAssertEqual(lastKnownLocation.coordinate.latitude, 47.61949539, accuracy: 0.000001)
-        XCTAssertEqual(lastKnownLocation.coordinate.longitude, -122.32442474, accuracy: 0.000001)
+        XCTAssertEqual(lastKnownLocation.latitude, 47.61949539, accuracy: 0.000001)
+        XCTAssertEqual(lastKnownLocation.longitude, -122.32442474, accuracy: 0.000001)
 
         let position = try XCTUnwrap(tripStatus.position)
-        XCTAssertEqual(position.coordinate.latitude, 47.6195, accuracy: 0.0001)
-        XCTAssertEqual(position.coordinate.longitude, -122.3244, accuracy: 0.0001)
+        XCTAssertEqual(position.latitude, 47.6195, accuracy: 0.0001)
+        XCTAssertEqual(position.longitude, -122.3244, accuracy: 0.0001)
     }
 
     func testVehicleFrequency() async throws {

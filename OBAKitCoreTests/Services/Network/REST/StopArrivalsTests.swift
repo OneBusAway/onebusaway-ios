@@ -99,8 +99,8 @@ final class StopArrivalsTests: OBAKitCoreTestCase {
         XCTAssertEqual(tripStatus.lastUpdate, Date(timeIntervalSince1970: 1541141749))
 
         let lastKnownLocation = try XCTUnwrap(tripStatus.lastKnownLocation)
-        XCTAssertEqual(lastKnownLocation.coordinate.latitude, 47.66180419921875, accuracy: 0.000001)
-        XCTAssertEqual(lastKnownLocation.coordinate.longitude, -122.31656646728516, accuracy: 0.000001)
+        XCTAssertEqual(lastKnownLocation.latitude, 47.66180419921875, accuracy: 0.000001)
+        XCTAssertEqual(lastKnownLocation.longitude, -122.31656646728516, accuracy: 0.000001)
     }
 
     func testLoadingRogueValley() async throws {
