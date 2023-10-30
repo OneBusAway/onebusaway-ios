@@ -9,6 +9,7 @@
 
 import Foundation
 
+/// ``Situation`` is colloquially known as a `ServiceAlert`
 public typealias ServiceAlert = Situation
 
 /// An alert about transit service that affects one or more of the following:  `Agency`,  `Route`, `Stop`, or `Trip`.

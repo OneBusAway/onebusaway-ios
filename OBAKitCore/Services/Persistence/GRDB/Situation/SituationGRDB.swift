@@ -71,23 +71,3 @@ extension SituationREST {
         }
     }
 }
-
-//protocol DateIntervalProviding: Codable, Comparable, Hashable {
-//    var to: Date { get }
-//    var from: Date { get }
-//}
-//
-//extension DateIntervalProviding {
-//    public var interval: DateInterval {
-//        // Sometimes, `to` is equal to 1970, which will mess this up.
-//        if to < from {
-//            return DateInterval(start: from, end: from)
-//        } else {
-//            return DateInterval(start: from, end: to)
-//        }
-//    }
-//
-//    public static func <(lhs: Self, rhs: Self) -> Bool {
-//        return lhs.interval < rhs.interval
-//    }
-//}

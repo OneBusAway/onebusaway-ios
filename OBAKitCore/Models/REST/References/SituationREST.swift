@@ -9,8 +9,20 @@
 
 import GRDB
 
+/// Model for decoding Situation objects in the format of the REST API.
+/// To insert a Situation into an SQLite database, use ``SituationREST.insert(into:)`` helper, which
+/// creates a ``Situation`` struct and creates the necessary relationships.
+///
+/// In general, ``SituationREST`` is only for decoding from the OBA API. Use ``Situation`` for all other cases.
 struct SituationREST: Decodable, Identifiable {
+    // SituationREST is a separate data model from Situation because
+    // some relationships are better represented as relation tables 
+    // in the database for a nicer SQLite querying experience.
+    //
+    // Rather than having one "super" model that augment certain properties,
+    // SituationREST is very clearly marked for only decoding REST responses.
     typealias ID = String
+
     let id: ID                              /* PRIMARY KEY: Text */
     let creationTime: Date                  /* Datetime */
     let description: TranslatedString?      /* JSON Text */
@@ -19,11 +31,11 @@ struct SituationREST: Decodable, Identifiable {
     let summary: TranslatedString?          /* JSON Text */
     let url: TranslatedString?              /* JSON Text */
 
-    let allAffects: [AffectedEntityREST]    /* hasMany() */
+    let allAffects: [AffectedEntityREST]    /* hasMany(AffectedSituationRelation) */
     let consequences: [Consequence]         /* JSON Text */
 
-    let activeWindows: [TimeWindow]         /* hasMany(ActiveWindow.self) */
-    let publicationWindows: [TimeWindow]    /* hasMany(PublicationWindow.self) */
+    let activeWindows: [TimeWindow]         /* hasMany(ActiveWindow) */
+    let publicationWindows: [TimeWindow]    /* hasMany(PublicationWindow) */
 }
 
 struct AffectedEntityREST: Decodable {
@@ -56,9 +68,18 @@ struct AffectedEntityREST: Decodable {
 }
 
 /// The range of `Date`s in which a `ServiceAlert` is in effect.
-public struct TimeWindow: Decodable {
+public struct TimeWindow: Decodable, Comparable, Hashable {
     public let from: Date
     public let to: Date
+
+    public var interval: DateInterval {
+        // Sometimes, `to` is equal to 1970, which will mess this up.
+        if to < from {
+            return DateInterval(start: from, end: from)
+        } else {
+            return DateInterval(start: from, end: to)
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
         case from, to
@@ -69,5 +90,9 @@ public struct TimeWindow: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))
         to = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .to)))
+    }
+
+    public static func < (lhs: TimeWindow, rhs: TimeWindow) -> Bool {
+        return lhs.interval < rhs.interval
     }
 }
