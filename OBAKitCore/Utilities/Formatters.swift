@@ -485,7 +485,7 @@ public class Formatters: NSObject {
         if let direction = directionString(stop.direction) {
             parts.append(direction)
         }
-        fatalError("\(#function) unimplemented")
+        fatalError("PR-686 error: \(#function) unimplemented")
 //        if let routes = Formatters.formattedRoutes(stop.routes) {
 //            parts.append(routes)
 //        }
@@ -631,7 +631,7 @@ public class Formatters: NSObject {
     /// - Parameter routes: An array of `Route`s from which the string will be generated.
     /// - Returns: A human-readable list of the passed-in `Route`s.
     public class func formattedAgenciesForRoutes(_ routes: [Route]) -> String {
-        fatalError("\(#function) unimplemented")
+        fatalError("PR-686 error: \(#function) unimplemented")
 //        return routes
 //            .compactMap { $0.agency.name }
 //            .uniqued

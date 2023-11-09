@@ -84,15 +84,4 @@ public struct Trip: Identifiable, Codable, Hashable {
         shortName = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .shortName))
         timeZone = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .timeZone))
     }
-
-    // MARK: - Route Descriptions
-
-    /// A 'best effort' determination of the headsign for this `Trip`'s route.
-    public var routeHeadsign: String {
-        fatalError("\(#function) unimplemented")
-//        let bestShortName = routeShortName ?? route.shortName
-//        let headsign = self.headsign
-//
-//        return [bestShortName, headsign].compactMap { $0 }.joined(separator: " - ")
-    }
 }

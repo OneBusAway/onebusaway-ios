@@ -68,7 +68,6 @@ public struct VehicleStatus: Identifiable, Codable, Hashable {
         phase = try container.decode(String.self, forKey: .phase)
         status = try container.decode(String.self, forKey: .status)
         location = try container.decode(LocationModel.self, forKey: .location)
-//        location = try? CLLocation(container: container, key: .location)
         tripStatus = try container.decode(TripStatus.self, forKey: .tripStatus)
     }
 }

@@ -23,17 +23,6 @@ public struct StopArrivals: Identifiable, Codable {
     /// A list of active service alert IDs.
     public let situationIDs: [String]
 
-    /// Returns this model's list of service alerts, if any exist. If this model does not have any, then it returns a flattened list of its `ArrivalDepartures` objects' service alerts.
-//    public var serviceAlerts: [ServiceAlert] {
-//        if _serviceAlerts.count > 0 {
-//            return _serviceAlerts
-//        }
-//        else {
-//            fatalError("\(#function) unimplemented.")
-//            return arrivalsAndDepartures.flatMap { $0.serviceAlerts }
-//        }
-//    }
-
     /// The stop ID for the stop this represents.
     public let stopID: StopID
 

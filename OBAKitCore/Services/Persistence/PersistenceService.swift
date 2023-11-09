@@ -43,7 +43,7 @@ public actor PersistenceService {
     }
 
     public let configuration: Configuration
-    public let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "PersistenceService")
+    public let logger = os.Logger(subsystem: "OBAKitCore", category: "PersistenceService")
     public let database: DatabaseQueue
 
     public init(_ configuration: Configuration) throws {
@@ -70,7 +70,7 @@ public actor PersistenceService {
         // Migration registration
         var migrator = DatabaseMigrator()
         migrator.registerMigration("createUsingTableCreators") { db in
-            let logger = os.Logger(subsystem: "org.onebusaway.iphone", category: "PersistenceService-DatabaseMigrator")
+            let logger = os.Logger(subsystem: "OBAKitCore", category: "PersistenceService-DatabaseMigrator")
             var additionalTableCreators: [DatabaseTableCreator.Type] = []
 
             for tableCreator in configuration.tableCreators {
@@ -86,9 +86,7 @@ public actor PersistenceService {
             }
         }
 
-        #if DEBUG
         migrator.eraseDatabaseOnSchemaChange = true
-        #endif
 
         try migrator.migrate(database)
     }

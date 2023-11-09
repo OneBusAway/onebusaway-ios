@@ -179,29 +179,9 @@ public struct ArrivalDeparture: Identifiable, Codable, Hashable {
         return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
     }
 
-    /// Provides the best available trip headsign.
-//    public var tripHeadsign: String? {
-//        return _tripHeadsign ?? trip.headsign
-//    }
-
-    /// Provides the best available long name for this route.
-//    public var routeLongName: String? {
-//        return _routeLongName ?? route.longName
-//    }
-
-    /// Provides the best available short name for this route.
-//    public var routeShortName: String {
-//        return _routeShortName ?? route.shortName
-//    }
-
-    /// Provides the best available name for this route.
-//    public var routeName: String {
-//        return routeShortName
-//    }
-
     /// A composite of the route name and headsign.
     public var routeAndHeadsign: String {
-        fatalError("\(#function) unimplemented")
+        fatalError("PR-686 error: \(#function) unimplemented")
 //        [String.nilifyBlankValue(routeName), String.nilifyBlankValue(tripHeadsign)]
 //            .compactMap { $0 }
 //            .joined(separator: " - ")

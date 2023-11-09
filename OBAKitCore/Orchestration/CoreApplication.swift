@@ -200,7 +200,7 @@ open class CoreApplication: NSObject,
 
     public func migrate(recentStop: Stop) {
         guard let currentRegion = currentRegion else { return }
-        fatalError("\(#function) unimplemented.")
+        fatalError("PR-686 error: \(#function) unimplemented.")
 //        userDataStore.addRecentStop(recentStop, region: currentRegion)
     }
 

@@ -96,8 +96,6 @@ public struct Stop: Identifiable, Codable, Hashable {
     public let name: String
 
     /// A list of route IDs served by this stop.
-    ///
-    /// This value is only decoded/encoded via Codable. When retrieving from GRDB, this value will be empty.
     let routeIDs: [RouteID]
 
     /// Denotes the availability of wheelchair boarding at this stop.
@@ -117,13 +115,13 @@ extension Stop {
 
     /// All unique route types at this Stop.
     public var routeTypes: Set<Route.RouteType> {
-        fatalError("\(#function) unimplemented.")
+        fatalError("PR-686 error: \(#function) unimplemented.")
 //        return Set(routes.map { $0.routeType })
     }
 
     /// The route type that should be used to represent this Stop on a map.
     public var prioritizedRouteTypeForDisplay: Route.RouteType {
-        fatalError("\(#function) unimplemented.")
+        fatalError("PR-686 error: \(#function) unimplemented.")
 //        let priorities: [Route.RouteType] = [.ferry, .lightRail, .subway, .rail, .bus]
 //
 //        // swiftlint:disable for_where

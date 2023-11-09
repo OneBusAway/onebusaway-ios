@@ -104,31 +104,6 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter bookmark: The bookmark that will compared to the current list of bookmarks.
     func checkForDuplicates(bookmark: Bookmark) -> Bool
 
-    // MARK: - Recent Stops
-
-    /// Find recent stops that match `searchText`
-    /// - Parameter searchText: The search string
-//    func findRecentStops(matching searchText: String) -> [Stop]
-
-    /// A list of recently-viewed stops
-//    var recentStops: [Stop] { get }
-
-    /// Add a `Stop` to the list of recently-viewed `Stop`s
-    ///
-    /// - Parameter stop: The stop to add to the list
-    /// - Parameter region: The `Region` in which this `Stop` resides.
-//    func addRecentStop(_ stop: Stop, region: Region)
-
-    /// Deletes all recent stops.
-//    func deleteAllRecentStops()
-
-    /// Deletes the specified Stop from the list of recent stops.
-    /// - Parameter recentStop: The stop to delete.
-//    func delete(recentStop: Stop)
-
-    /// The maximum number of recent stops that will be stored.
-//    var maximumRecentStopsCount: Int { get }
-
     // MARK: - Alarms
 
     /// Deletes (but does not deregister) all `Alarm`s that have arrived/departed.
@@ -153,16 +128,6 @@ public protocol UserDataStore: NSObjectProtocol {
     ///
     /// - Note: Only applies if the user is using a tab-style UI.
     var lastSelectedView: SelectedTab { get set }
-
-    // MARK: - Service Alerts
-
-    /// Lets you check whether the passed-in service has been viewed by the user or not.
-    /// - Parameter serviceAlert: The service alert to check the read status of.
-//    func isUnread(serviceAlert: ServiceAlert) -> Bool
-
-    /// Lets you mark a service alert as having been read.
-    /// - Parameter serviceAlert: The service alert to mark read.
-//    func markRead(serviceAlert: ServiceAlert)
 }
 
 // MARK: - Stop Preferences

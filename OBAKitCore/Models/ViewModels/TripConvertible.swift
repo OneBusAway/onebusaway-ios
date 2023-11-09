@@ -20,7 +20,7 @@ public class TripConvertible: NSObject {
     }
 
     public init?(vehicleStatus: VehicleStatus) {
-        fatalError("\(#function) unimplemented.")
+        fatalError("PR-686 error: \(#function) unimplemented.")
 //        guard vehicleStatus.trip != nil else {
 //            return nil
 //        }
@@ -36,7 +36,7 @@ public class TripConvertible: NSObject {
     }
 
     public var trip: Trip {
-        fatalError("\(#function) unimplemented.")
+        fatalError("PR-686 error: \(#function) unimplemented.")
 //        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
     }
 

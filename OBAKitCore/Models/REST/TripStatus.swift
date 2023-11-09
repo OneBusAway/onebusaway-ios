@@ -203,7 +203,6 @@ public struct TripStatus: Identifiable, Codable, Hashable {
         try container.encode(lastLocationUpdateTime, forKey: .lastLocationUpdateTime)
 
         try container.encodeIfPresent(lastKnownLocation, forKey: .lastKnownLocation)
-//        try container.encodeIfPresent(lastKnownLocation?.asOBALocationModel(), forKey:.lastKnownLocation)
         try container.encode(situationIDs, forKey: .situationIDs)
 
         try container.encode(statusModifier.encode(), forKey: .status)
