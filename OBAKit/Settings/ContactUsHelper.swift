@@ -153,7 +153,7 @@ class ContactUsHelper: NSObject {
         // App/Settings
         values.append(AppDebugValue(label: "App Version", value: Bundle.main.appVersion))
         values.append(AppDebugValue(label: "OS Version", value: UIDevice.current.systemVersion))
-        values.append(AppDebugValue(label: "Locale", value: Locale.current.languageCode ?? "None"))
+        values.append(AppDebugValue(label: "Locale", value: Locale.current.language.languageCode?.identifier ?? "None"))
         values.append(AppDebugValue(label: "VoiceOver Running", value: String(UIAccessibility.isVoiceOverRunning)))
         values.append(AppDebugValue(label: "Bookmark Count", value: String(application.userDataStore.bookmarks.count)))
 
