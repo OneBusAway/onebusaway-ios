@@ -8,14 +8,14 @@ settings:
   base:
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
     CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
-    MARKETING_VERSION: 23.2.4
+    MARKETING_VERSION: 23.3.0
 
 options:
   minimumXcodeGenVersion: 2.17
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "16.0"
 
 ############
 # App

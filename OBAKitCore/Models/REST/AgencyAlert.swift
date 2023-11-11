@@ -51,7 +51,7 @@ public class AgencyAlert: NSObject, Identifiable {
     }
 
     private func selectLanguageCode(locale: Locale) -> String {
-        locale.languageCode ?? defaultLanguageCode
+        locale.language.languageCode?.identifier ?? defaultLanguageCode
     }
 
     private let defaultLanguageCode = "en"
