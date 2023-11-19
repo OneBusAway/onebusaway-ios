@@ -68,7 +68,6 @@ public class MoreViewController: UIViewController,
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
         return [
             headerSection,
-            debugSection,
             updatesAndAlertsSection,
             myLocationSection,
             helpOutSection,
@@ -78,23 +77,7 @@ public class MoreViewController: UIViewController,
 
     // MARK: Header section
     var headerSection: OBAListViewSection {
-        return OBAListViewSection(id: "header", contents: [MoreHeaderItem(onSelectAction: { _ in self.toggleDebug() })])
-    }
-
-    func toggleDebug() {
-        self.application.userDataStore.debugMode.toggle()
-        self.listView.applyData()
-
-        let title: String
-        if self.application.userDataStore.debugMode {
-            title = OBALoc("more_header.debug_enabled.title", value: "Debug Mode Enabled", comment: "Title of the alert that tells the user they've enabled debug mode.")
-        }
-        else {
-            title = OBALoc("more_header.debug_disabled.title", value: "Debug Mode Disabled", comment: "Title of the alert that tells the user they've disabled debug mode.")
-        }
-        let alert = UIAlertController(title: title, message: nil, preferredStyle: .alert)
-        alert.addAction(UIAlertAction.dismissAction)
-        self.present(alert, animated: true, completion: nil)
+        return OBAListViewSection(id: "header", contents: [MoreHeaderItem()])
     }
 
     // MARK: Updates and alerts section
@@ -207,37 +190,6 @@ public class MoreViewController: UIViewController,
                     self.application.open(url, options: [:], completionHandler: nil)
                 }),
         ])
-    }
-
-    // MARK: Debug section
-    var debugSection: OBAListViewSection? {
-        guard application.userDataStore.debugMode else { return nil }
-        var contents: [AnyOBAListViewItem] = []
-        if application.shouldShowCrashButton {
-            let crashApp = OBALoc(
-                "more_controller.debug_section.crash_row",
-                value: "Crash the App",
-                comment: "Title for a button that will crash the app.")
-
-            contents.append(OBAListRowView.DefaultViewModel(title: crashApp, onSelectAction: { _ in
-                self.application.performTestCrash()
-            }).typeErased)
-        }
-
-        let pushIDTitle = OBALoc(
-            "more_controller.debug_section.push_id.title",
-            value: "Push ID",
-            comment: "Title for the Push Notification ID row in the More Controller")
-
-        let pushID = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
-
-        contents.append(OBAListRowView.ValueViewModel(title: pushIDTitle, subtitle: pushID, onSelectAction: { _ in
-            if let pushID = self.application.pushService?.pushUserID {
-                UIPasteboard.general.string = pushID
-            }
-        }).typeErased)
-
-        return OBAListViewSection(id: "debug", title: OBALoc("more_controller.debug_section.header", value: "Debug", comment: "Section title for debugging helpers"), contents: contents)
     }
 
     // MARK: - Actions
