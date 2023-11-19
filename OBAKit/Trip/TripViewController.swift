@@ -81,11 +81,9 @@ class TripViewController: UIViewController,
             floatingPanel.addPanel(toParent: self)
         }
 
-        if #available(iOS 15.0, *) {
-            let appearance = UINavigationBarAppearance()
-            appearance.configureWithDefaultBackground()
-            navigationItem.scrollEdgeAppearance = appearance
-        }
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        navigationItem.scrollEdgeAppearance = appearance
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -94,9 +92,7 @@ class TripViewController: UIViewController,
         disableIdleTimer()
         beginUserActivity()
 
-        if #available(iOS 15, *) {
-            setContentScrollView(tripDetailsController.listView, for: .bottom)
-        }
+        setContentScrollView(tripDetailsController.listView, for: .bottom)
     }
 
     override func viewDidAppear(_ animated: Bool) {

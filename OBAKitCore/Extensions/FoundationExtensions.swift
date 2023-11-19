@@ -45,6 +45,39 @@ public extension Bundle {
         return URL(string: str)
     }
 
+    /// A helper method for accessing the bundle's `DonationsEnabled`
+    var donationsEnabled: Bool {
+        guard let dict = OBAKitConfig, let val = dict["DonationsEnabled"] as? Bool else {
+            return false
+        }
+
+        return val
+    }
+
+    /// A helper method for accessing the bundle's `StripePublishableKey.production` value, if defined.
+    var stripePublishableProductionKey: String? {
+        guard
+            let dict = OBAKitConfig,
+            let keys = dict["StripePublishableKeys"] as? [String: String]
+        else {
+            return nil
+        }
+
+        return keys["production"]
+    }
+
+    /// A helper method for accessing the bundle's `StripePublishableKeys.test` value, if defined.
+    var stripePublishableTestKey: String? {
+        guard
+            let dict = OBAKitConfig,
+            let keys = dict["StripePublishableKeys"] as? [String: String]
+        else {
+            return nil
+        }
+
+        return keys["test"]
+    }
+
     /// A helper method for accessing the bundle's `ExtensionURLScheme`.
     ///
     /// `extensionURLScheme` is used as an `init()` parameter on `URLSchemeRouter`.

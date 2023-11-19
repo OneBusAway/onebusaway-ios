@@ -80,6 +80,22 @@ public actor ObacoAPIService: APIService {
         )
     }
 
+    public nonisolated func postCreatePaymentIntent(donationAmountInCents: Int, recurring: Bool) async throws -> PaymentIntentResponse {
+        let url = buildURL(path: "/api/v1/payment_intents")
+        let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
+        urlRequest.httpMethod = "POST"
+
+        let params: [String: Any] = [
+            "donation_amount_in_cents": donationAmountInCents,
+            "donation_frequency": recurring ? "recurring" : "onetime"
+        ]
+
+        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+
+        let (data, _) = try await data(for: urlRequest as URLRequest)
+        return try JSONDecoder.obacoServiceDecoder.decode(PaymentIntentResponse.self, from: data)
+    }
+
     public nonisolated func postAlarm(
         secondsBefore: TimeInterval,
         stopID: StopID,

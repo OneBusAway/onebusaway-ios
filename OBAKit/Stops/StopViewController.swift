@@ -11,6 +11,7 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
+import StripePaymentSheet
 
 // swiftlint:disable file_length
 
@@ -37,6 +38,7 @@ public class StopViewController: UIViewController,
     /// The available sections in this view controller.
     enum ListSections {
         case stopHeader
+        case donations
         case emptyData
         case serviceAlerts
         case arrivalDepartures(suffix: String)
@@ -175,10 +177,11 @@ public class StopViewController: UIViewController,
         listView.formatters = application.formatters
 
         listView.register(listViewItem: ArrivalDepartureItem.self)
-        listView.register(listViewItem: StopArrivalWalkItem.self)
-        listView.register(listViewItem: MessageButtonItem.self)
-        listView.register(listViewItem: StopHeaderItem.self)
+        listView.register(listViewItem: DonationListItem.self)
         listView.register(listViewItem: EmptyDataSetItem.self)
+        listView.register(listViewItem: MessageButtonItem.self)
+        listView.register(listViewItem: StopArrivalWalkItem.self)
+        listView.register(listViewItem: StopHeaderItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -546,6 +549,11 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection?] = []
 
         sections.append(stopHeaderSection)
+
+        if let donationsSection {
+            sections.append(donationsSection)
+        }
+
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)
 
@@ -614,13 +622,98 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Data/Stop Header
+
     private var stopHeaderSection: OBAListViewSection? {
         guard let stop = stop else { return nil }
         let item = StopHeaderItem(stop: stop, application: application)
         return listViewSection(for: .stopHeader, title: nil, items: [item])
     }
 
+    // MARK: - Data/Donations
+
+    private var donationsSection: OBAListViewSection? {
+        guard application.donationsManager.shouldRequestDonations else { return nil }
+        let item = DonationListItem { [weak self] _ in
+            self?.showDonationUI()
+        } onLearnMoreAction: { [weak self] _ in
+            self?.showDonationUI()
+        } onCloseAction: { [weak self] _ in
+            self?.showDonationDismissUI()
+        }
+
+        return listViewSection(for: .donations, title: nil, items: [item])
+    }
+
+    private func showDonationUI() {
+        guard let obacoService = application.obacoService else { return }
+        let donationModel = DonationModel(obacoService: obacoService, analytics: application.analytics)
+        let learnMoreView = DonationLearnMoreView { [weak self] donated in
+            guard donated else { return }
+
+            let alert = UIAlertController(
+                title: OBALoc("donations.thank_you_alert.title", value: "Thank you for your support!", comment: "The title of the alert shown when the user donates."),
+                message: nil,
+                preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self?.present(alert, animated: true)
+                self?.application.donationsManager.dismissDonationsRequests()
+                self?.refresh()
+            }
+        }
+            .environmentObject(donationModel)
+            .environmentObject(AnalyticsModel(application.analytics))
+
+        present(UIHostingController(rootView: learnMoreView), animated: true)
+    }
+
+    private func showDonationDismissUI() {
+        let alertController = UIAlertController(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.title",
+                value: "Please don't dismiss this request",
+                comment: "Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
+            ),
+            message: OBALoc(
+                "donations.donations_dismiss_alert.message",
+                value: "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.",
+                comment: "Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page"
+            ),
+            preferredStyle: .actionSheet
+        )
+
+        alertController.addAction(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.button_dismiss",
+                value: "I Don't Want to Help Right Now",
+                comment: "Dismiss button on the alert"
+            ),
+            style: .destructive
+        ) { _ in
+            self.application.donationsManager.dismissDonationsRequests()
+            self.refresh()
+        }
+
+        alertController.addAction(
+            title: OBALoc(
+                "donations.donations_dismiss_alert.button_remind_later",
+                value: "Remind Me Later",
+                comment: "A button that prompts the system to remind them to donate later."
+            ),
+            style: .default
+        ) { _ in
+            self.application.donationsManager.remindUserLater()
+            self.refresh()
+        }
+
+        alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
+
+        present(alertController, animated: true)
+    }
+
     // MARK: - Data/Stop Arrivals
+
     private var stopArrivalsSection: [OBAListViewSection] {
         guard let stopArrivals = self.stopArrivals else { return [] }
         var sections: [OBAListViewSection] = []

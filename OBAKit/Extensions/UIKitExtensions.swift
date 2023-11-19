@@ -74,5 +74,4 @@ extension UIApplication {
 
         return windows ?? []
     }
-
 }

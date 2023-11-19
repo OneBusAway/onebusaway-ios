@@ -29,6 +29,8 @@ public class Strings: NSObject {
 
     public static let delete = OBALoc("common.delete", value: "Delete", comment: "The verb 'to delete', as in to destroy something.")
 
+    public static let donate = OBALoc("common.donate", value: "Donate", comment: "The verb 'to donate', as in to give money to a charitable cause.")
+
     public static let confirmDelete = OBALoc("common.confirmdelete", value: "Confirm Delete", comment: "Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item.")
 
     public static let dismiss = OBALoc("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")
