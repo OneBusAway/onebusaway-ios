@@ -36,7 +36,7 @@ private func haveEqualRGBValues(_ actual: UIColor?, _ expected: UIColor?) -> Boo
 ///
 /// - Parameter expectedValue: The expected value of this expression.
 /// - Returns: A predicate
-public func beCloseTo(_ expectedValue: UIColor) -> Predicate<UIColor> {
+public func beCloseTo(_ expectedValue: UIColor) -> Nimble.Predicate<UIColor> {
     return Predicate.define { actualExpression in
         let errorMessage = "be close to <\(stringify(expectedValue))>"
         let actualValue = try actualExpression.evaluate()

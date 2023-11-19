@@ -102,11 +102,9 @@ class MapViewController: UIViewController,
 
         floatingPanel.addPanel(toParent: self)
 
-        if #available(iOS 15.0, *) {
-            let appearance = UITabBarAppearance()
-            appearance.configureWithDefaultBackground()
-            tabBarItem.scrollEdgeAppearance = appearance
-        }
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+        tabBarItem.scrollEdgeAppearance = appearance
 
         view.insertSubview(toolbar, aboveSubview: mapView)
 
@@ -173,7 +171,7 @@ class MapViewController: UIViewController,
 
         var zoomLevel = 17
 
-        if #available(iOS 14.0, *), application.locationService.accuracyAuthorization == .reducedAccuracy {
+        if application.locationService.accuracyAuthorization == .reducedAccuracy {
             zoomLevel = 11
         }
 

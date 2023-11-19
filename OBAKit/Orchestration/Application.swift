@@ -15,6 +15,7 @@ import OBAKitCore
 import SafariServices
 import MapKit
 import SwiftUI
+import StripeApplePay
 
 // MARK: - Protocols
 
@@ -67,6 +68,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     private let config: AppConfig
 
     // MARK: - Public Properties
+
+    lazy var donationsManager = DonationsManager(bundle: applicationBundle, userDefaults: userDefaults)
 
     /// Responsible for figuring out how to navigate between view controllers.
     @MainActor
@@ -310,6 +313,16 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
+        #if DEBUG
+        if let stripePublishableKey = applicationBundle.stripePublishableTestKey {
+            StripeAPI.defaultPublishableKey = stripePublishableKey
+        }
+        #else
+        if let stripePublishableKey = applicationBundle.stripePublishableProductionKey {
+            StripeAPI.defaultPublishableKey = stripePublishableKey
+        }
+        #endif
+
         application.shortcutItems = nil
 
         configurePushNotifications(launchOptions: options)
@@ -380,6 +393,10 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @MainActor
     @objc public func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+        if StripeAPI.handleURLCallback(with: url) {
+            return true
+        }
+
         guard let scheme = Bundle.main.extensionURLScheme else {
             return false
         }
