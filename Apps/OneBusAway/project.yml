@@ -54,6 +54,7 @@ targets:
                 NSExceptionAllowsInsecureHTTPLoads: true
             }
           }
+        NSCameraUsageDescription: This app uses Stripe to process credit cards. You can use Stripe to scan your credit card number with your camera.
         NSHumanReadableCopyright: © Open Transit Software Foundation
         NSUserActivityTypes:
           - org.onebusaway.iphone.user_activity.stop
