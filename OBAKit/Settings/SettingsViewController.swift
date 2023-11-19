@@ -241,6 +241,7 @@ class SettingsViewController: FormViewController {
                 guard let self, let pushUserID = application.pushService?.pushUserID else { return }
                 UIPasteboard.general.string = pushUserID
 
+                // Sets the text to a "copied to clipboard" confirmation message, then after 2 seconds, shows the push ID again.
                 row.value = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
                 row.reload()
 
