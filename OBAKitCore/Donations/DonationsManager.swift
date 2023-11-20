@@ -65,6 +65,10 @@ public class DonationsManager {
 
     // MARK: - State
 
+    public var donationsEnabled: Bool {
+        bundle.donationsEnabled
+    }
+
     /// When true, it means the app should show an inline donation request UI.
     public var shouldRequestDonations: Bool {
         if !bundle.donationsEnabled { return false }

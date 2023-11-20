@@ -68,6 +68,7 @@ public class MoreViewController: UIViewController,
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
         return [
             headerSection,
+            donateSection,
             updatesAndAlertsSection,
             myLocationSection,
             helpOutSection,
@@ -78,6 +79,30 @@ public class MoreViewController: UIViewController,
     // MARK: Header section
     var headerSection: OBAListViewSection {
         return OBAListViewSection(id: "header", contents: [MoreHeaderItem()])
+    }
+
+    // MARK: Donate section
+    var donateSection: OBAListViewSection? {
+        guard application.donationsManager.donationsEnabled else { return nil }
+
+        let header = OBALoc(
+            "more_controller.donate",
+            value: "Donate to OneBusAway",
+            comment: "Header for the donate section."
+        )
+
+        return OBAListViewSection(id: "donate", title: header, contents: [
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.donate_description",
+                    value: "Your support helps us improve OneBusAway",
+                    comment: "The call to action for the More controller's donate buton"),
+                onSelectAction: { _ in
+                    let url = URL(string: "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/")!
+                    self.application.open(url, options: [:], completionHandler: nil)
+                }
+            )
+        ])
     }
 
     // MARK: Updates and alerts section
