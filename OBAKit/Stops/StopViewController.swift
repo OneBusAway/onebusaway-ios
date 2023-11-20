@@ -650,14 +650,8 @@ public class StopViewController: UIViewController,
         let learnMoreView = DonationLearnMoreView { [weak self] donated in
             guard donated else { return }
 
-            let alert = UIAlertController(
-                title: OBALoc("donations.thank_you_alert.title", value: "Thank you for your support!", comment: "The title of the alert shown when the user donates."),
-                message: nil,
-                preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self?.present(alert, animated: true)
+                self?.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
                 self?.application.donationsManager.dismissDonationsRequests()
                 self?.refresh()
             }

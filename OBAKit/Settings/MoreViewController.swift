@@ -97,12 +97,27 @@ public class MoreViewController: UIViewController,
                     "more_controller.donate_description",
                     value: "Your support helps us improve OneBusAway",
                     comment: "The call to action for the More controller's donate buton"),
-                onSelectAction: { _ in
-                    let url = URL(string: "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/")!
-                    self.application.open(url, options: [:], completionHandler: nil)
+                onSelectAction: { [weak self] _ in
+                    self?.showDonationUI()
                 }
             )
         ])
+    }
+
+    private func showDonationUI() {
+        guard let obacoService = application.obacoService else { return }
+        let donationModel = DonationModel(obacoService: obacoService, analytics: application.analytics)
+        let learnMoreView = DonationLearnMoreView { [weak self] donated in
+            guard donated else { return }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self?.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
+            }
+        }
+            .environmentObject(donationModel)
+            .environmentObject(AnalyticsModel(application.analytics))
+
+        present(UIHostingController(rootView: learnMoreView), animated: true)
     }
 
     // MARK: Updates and alerts section

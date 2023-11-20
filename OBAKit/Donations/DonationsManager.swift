@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OBAKitCore
 
 /// Manages the visibility of donation requests.
 public class DonationsManager {
@@ -78,5 +79,17 @@ public class DonationsManager {
         }
 
         return donationRequestDismissedDate == nil
+    }
+
+    // MARK: - UI
+
+    public static func buildDonationThankYouAlert() -> UIAlertController {
+        let alert = UIAlertController(
+            title: Strings.donationThankYouTitle,
+            message: Strings.donationThankYouBody,
+            preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
+
+        return alert
     }
 }
