@@ -45,19 +45,28 @@ public extension Bundle {
         return URL(string: str)
     }
 
-    /// A helper method for accessing the bundle's `DonationsEnabled`
+    /// A helper method for accessing the bundle's `Donations.Enabled` setting
     var donationsEnabled: Bool {
-        guard let dict = OBAKitConfig, let val = dict["DonationsEnabled"] as? Bool else {
+        guard let dict = donationsConfig, let val = dict["Enabled"] as? Bool else {
             return false
         }
 
         return val
     }
 
-    /// A helper method for accessing the bundle's `StripePublishableKey.production` value, if defined.
+    /// A helper method for accessing the bundle's `Donations.ApplePayMerchantID` setting.
+    var applePayMerchantID: String? {
+        guard let dict = donationsConfig else {
+            return nil
+        }
+
+        return dict["ApplePayMerchantID"] as? String
+    }
+
+    /// A helper method for accessing the bundle's `Donations.StripePublishableKey.production` value, if defined.
     var stripePublishableProductionKey: String? {
         guard
-            let dict = OBAKitConfig,
+            let dict = donationsConfig,
             let keys = dict["StripePublishableKeys"] as? [String: String]
         else {
             return nil
@@ -66,16 +75,27 @@ public extension Bundle {
         return keys["production"]
     }
 
-    /// A helper method for accessing the bundle's `StripePublishableKeys.test` value, if defined.
+    /// A helper method for accessing the bundle's `Donations.StripePublishableKeys.test` value, if defined.
     var stripePublishableTestKey: String? {
         guard
-            let dict = OBAKitConfig,
+            let dict = donationsConfig,
             let keys = dict["StripePublishableKeys"] as? [String: String]
         else {
             return nil
         }
 
         return keys["test"]
+    }
+
+    var donationManagementPortal: URL? {
+        guard
+            let dict = donationsConfig,
+            let urlString = dict["DonationManagementPortal"] as? String
+        else {
+            return nil
+        }
+
+        return URL(string: urlString)
     }
 
     /// A helper method for accessing the bundle's `ExtensionURLScheme`.
@@ -140,6 +160,14 @@ public extension Bundle {
 
     private var OBAKitConfig: [AnyHashable: Any]? {
         optionalValue(for: "OBAKitConfig", type: [AnyHashable: Any].self)
+    }
+
+    private var donationsConfig: [AnyHashable: Any]? {
+        guard let OBAKitConfig else {
+            return nil
+        }
+
+        return OBAKitConfig["Donations"] as? [AnyHashable: Any]
     }
 
     private func url(for key: String) -> URL? {
