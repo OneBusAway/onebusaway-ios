@@ -38,19 +38,13 @@ class SettingsViewController: FormViewController {
             +++ mapSection
             +++ alertsSection
             +++ accessibilitySection
+            +++ debugSection
 
         if application.analytics != nil {
             form +++ privacySection
         }
 
-        if application.userDataStore.debugMode {
-            form +++ debugSection
-        }
-
-        if application.hasDataToMigrate || application.userDataStore.debugMode {
-            form +++ migrateDataSection
-        }
-
+        form +++ migrateDataSection
         form +++ exportDataSection
 
         form.setValues([
@@ -62,6 +56,7 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
+            debugModeEnabled: application.userDataStore.debugMode
         ])
     }
 
@@ -104,8 +99,14 @@ class SettingsViewController: FormViewController {
             application.analytics?.setReportingEnabled?(reportingEnabled)
         }
 
+        if let debugEnabled = values[debugModeEnabled] as? Bool {
+            application.userDataStore.debugMode = debugEnabled
+        }
+
         if let alwaysRefreshRegions = values[RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey] as? Bool {
             application.userDefaults.set(alwaysRefreshRegions, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
+        } else {
+            application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
     }
 
@@ -187,12 +188,72 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Debug Section
 
+    private let debugModeEnabled = "debugModeEnabled"
+    private let crashAppKey = "crashAppKey"
+    private let pushIDKey = "pushIDKey"
+
     private lazy var debugSection: Section = {
         let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
 
         section <<< SwitchRow {
+            $0.tag = debugModeEnabled
+            $0.title = OBALoc("settings_controller.debug_section.debug_mode", value: "Debug Mode", comment: "Settings > Debug section > Debug mode")
+            $0.onChange { [weak self] row in
+                guard let self, let refreshRegionsRow = form.rowBy(tag: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey) as? SwitchRow, let value = row.value, value == false else { return }
+
+                refreshRegionsRow.value = false
+            }
+        }
+
+        section <<< SwitchRow {
             $0.tag = RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey
             $0.title = OBALoc("settings_controller.debug_section.always_refresh_regions", value: "Refresh regions on every launch", comment: "Settings > Debug section > Refresh regions on every launch")
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+            })
+        }
+
+        section <<< LabelRow {
+            $0.tag = crashAppKey
+            $0.title = OBALoc("more_controller.debug_section.crash_row", value: "Crash the app", comment: "Title for a button that will crash the app.")
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false) && self.application.shouldShowCrashButton
+            })
+            $0.onCellSelection { [weak self] _, _ in
+                guard let self else { return }
+                self.application.performTestCrash()
+            }
+            $0.cellUpdate { cell, _ in
+                let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+                cell.accessoryView = imageView
+            }
+        }
+
+        section <<< TextRow {
+            $0.tag = pushIDKey
+            $0.title = OBALoc("more_controller.debug_section.push_id.title", value: "Push ID", comment: "Title for the Push Notification ID row in the More Controller")
+            $0.value = application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+            })
+            $0.disabled = true
+            $0.onCellSelection { [weak self] _, row in
+                guard let self, let pushUserID = application.pushService?.pushUserID else { return }
+                UIPasteboard.general.string = pushUserID
+
+                // Sets the text to a "copied to clipboard" confirmation message, then after 2 seconds, shows the push ID again.
+                row.value = OBALoc("clipboard.copied_text_confirmation", value: "Copied to clipboard", comment: "This is displayed to confirm that something has been copied to clipboard.")
+                row.reload()
+
+                Task {
+                    try await Task.sleep(for: .seconds(2))
+                    row.value = self.application.pushService?.pushUserID ?? OBALoc("more_controller.debug_section.push_id.not_available", value: "Not available", comment: "This is displayed instead of the user's push ID if the value is not available.")
+                    row.reload()
+                }
+            }
+            $0.cellUpdate { cell, _ in
+                cell.titleLabel?.textColor = .label
+            }
         }
 
         return section
@@ -210,6 +271,10 @@ class SettingsViewController: FormViewController {
                 self.application.performDataMigration()
             }
         }
+
+        section.hidden = application.hasDataToMigrate ? false : Condition.function([debugModeEnabled], { form in
+            return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+        })
 
         return section
     }()
