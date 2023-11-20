@@ -31,6 +31,10 @@ public class Strings: NSObject {
 
     public static let donate = OBALoc("common.donate", value: "Donate", comment: "The verb 'to donate', as in to give money to a charitable cause.")
 
+    public static let donationThankYouTitle = OBALoc("common.donation_thank_you.title", value: "Thank you for your support!", comment: "Title of an alert to display to the user after they donate to OTSF")
+
+    public static let donationThankYouBody = OBALoc("common.donation_thank_you.body", value: "Your support will help us continue to improve OneBusAway.", comment: "The body of the message to display to the user after they donate to OTSF")
+
     public static let confirmDelete = OBALoc("common.confirmdelete", value: "Confirm Delete", comment: "Asks the user to confirm a delete action. Typically this is showned when the user taps a 'delete' button on an important item.")
 
     public static let dismiss = OBALoc("common.dismiss", value: "Dismiss", comment: "The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts.")

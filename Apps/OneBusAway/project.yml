@@ -64,16 +64,19 @@ targets:
           AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
           DeepLinkServerBaseAddress: https://onebusaway.co
-          DonationsEnabled: true
+          Donations:
+            Enabled: true
+            ApplePayMerchantID: merchant.org.onebusaway.iphone
+            DonationManagementPortal: "https://onebusaway.co/manage-donations"
+            StripePublishableKeys:
+              test: pk_test_51O20R8BsTfxG3EeliQswtDI6etwUu6cdYX7AIT2HkyI7iMbI2Ltqz0R06EkM7SmRTYJfOPwum1iTJgrJpoLoB8ii00eUXFwHjT
+              production: pk_live_51O20R8BsTfxG3EelVtkEOa5zmx9MPoAXi2Jrcx8PvBUwYvKlXEJdL3nYHF7Vmd1UZ6tKyrZrKUx89bwMmSaN5HIr0096SVUJts
           ExtensionURLScheme: onebusaway
           PrivacyPolicyURL: https://onebusaway.org/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
           RESTServerAPIKey: org.onebusaway.iphone
           RegionsServerBaseAddress: https://regions.onebusaway.org
           RegionsServerAPIPath: /regions-v3.json
-          StripePublishableKeys:
-            test: pk_test_51O20R8BsTfxG3EeliQswtDI6etwUu6cdYX7AIT2HkyI7iMbI2Ltqz0R06EkM7SmRTYJfOPwum1iTJgrJpoLoB8ii00eUXFwHjT
-            production: pk_live_51O20R8BsTfxG3EelVtkEOa5zmx9MPoAXi2Jrcx8PvBUwYvKlXEJdL3nYHF7Vmd1UZ6tKyrZrKUx89bwMmSaN5HIr0096SVUJts
     settings:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J

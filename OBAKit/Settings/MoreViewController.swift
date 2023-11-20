@@ -68,6 +68,7 @@ public class MoreViewController: UIViewController,
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
         return [
             headerSection,
+            donateSection,
             updatesAndAlertsSection,
             myLocationSection,
             helpOutSection,
@@ -78,6 +79,45 @@ public class MoreViewController: UIViewController,
     // MARK: Header section
     var headerSection: OBAListViewSection {
         return OBAListViewSection(id: "header", contents: [MoreHeaderItem()])
+    }
+
+    // MARK: Donate section
+    var donateSection: OBAListViewSection? {
+        guard application.donationsManager.donationsEnabled else { return nil }
+
+        let header = OBALoc(
+            "more_controller.donate",
+            value: "Donate to OneBusAway",
+            comment: "Header for the donate section."
+        )
+
+        return OBAListViewSection(id: "donate", title: header, contents: [
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.donate_description",
+                    value: "Your support helps us improve OneBusAway",
+                    comment: "The call to action for the More controller's donate buton"),
+                onSelectAction: { [weak self] _ in
+                    self?.showDonationUI()
+                }
+            )
+        ])
+    }
+
+    private func showDonationUI() {
+        guard let obacoService = application.obacoService else { return }
+        let donationModel = DonationModel(obacoService: obacoService, analytics: application.analytics)
+        let learnMoreView = DonationLearnMoreView { [weak self] donated in
+            guard donated else { return }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self?.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
+            }
+        }
+            .environmentObject(donationModel)
+            .environmentObject(AnalyticsModel(application.analytics))
+
+        present(UIHostingController(rootView: learnMoreView), animated: true)
     }
 
     // MARK: Updates and alerts section

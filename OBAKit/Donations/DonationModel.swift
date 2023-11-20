@@ -8,6 +8,7 @@
 import StripePaymentSheet
 import SwiftUI
 import OBAKitCore
+import PassKit
 
 extension PaymentSheetResult: Equatable {
     public static func == (lhs: PaymentSheetResult, rhs: PaymentSheetResult) -> Bool {
@@ -37,28 +38,11 @@ class DonationModel: ObservableObject {
     @MainActor
     func donate(_ amountInCents: Int, recurring: Bool) async {
         analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donateButtonTapped, value: String(amountInCents))
-        let mode = PaymentSheet.IntentConfiguration.Mode.payment(
-            amount: amountInCents,
-            currency: "USD",
-            setupFutureUsage: recurring ? .offSession : nil
+
+        let paymentSheet = PaymentSheet(
+            intentConfiguration: buildIntentConfiguration(amountInCents, recurring: recurring),
+            configuration: buildPaymentSheetConfiguration(amountInCents, recurring: recurring)
         )
-        let intentConfig = PaymentSheet.IntentConfiguration(mode: mode) { [weak self] _, _, intentCreationCallback in
-            let strongSelf = self
-            Task {
-                await strongSelf?.handleConfirm(amountInCents, recurring, intentCreationCallback)
-            }
-        }
-
-        var configuration = PaymentSheet.Configuration()
-
-        configuration.billingDetailsCollectionConfiguration.name = .always
-        configuration.billingDetailsCollectionConfiguration.email = .always
-
-        if let extensionURLScheme = Bundle.main.extensionURLScheme {
-            configuration.returnURL = "\(extensionURLScheme)://stripe-redirect"
-        }
-
-        let paymentSheet = PaymentSheet(intentConfiguration: intentConfig, configuration: configuration)
 
         guard let presenter = UIApplication.shared.keyWindowFromScene?.topViewController else {
             fatalError()
@@ -70,7 +54,88 @@ class DonationModel: ObservableObject {
         }
     }
 
-    func handleConfirm(_ amountInCents: Int, _ recurring: Bool, _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) async {
+    private func buildIntentConfiguration(_ amountInCents: Int, recurring: Bool) -> PaymentSheet.IntentConfiguration {
+        let mode = PaymentSheet.IntentConfiguration.Mode.payment(
+            amount: amountInCents,
+            currency: "USD",
+            setupFutureUsage: recurring ? .offSession : nil
+        )
+        let intentConfig = PaymentSheet.IntentConfiguration(mode: mode) { [weak self] _, _, intentCreationCallback in
+            let strongSelf = self
+            Task {
+                await strongSelf?.handleConfirm(amountInCents, recurring, intentCreationCallback)
+            }
+        }
+        return intentConfig
+    }
+
+    private func buildPaymentSheetConfiguration(_ amountInCents: Int, recurring: Bool) -> PaymentSheet.Configuration {
+        var configuration = PaymentSheet.Configuration()
+
+        configuration.billingDetailsCollectionConfiguration.name = .always
+        configuration.billingDetailsCollectionConfiguration.email = .always
+        configuration.applePay = buildApplePayConfiguration(amountInCents, recurring: recurring)
+
+        if let extensionURLScheme = Bundle.main.extensionURLScheme {
+            configuration.returnURL = "\(extensionURLScheme)://stripe-redirect"
+        }
+
+        return configuration
+    }
+
+    private func buildApplePayConfiguration(_ amountInCents: Int, recurring: Bool) -> PaymentSheet.ApplePayConfiguration? {
+        guard
+            let merchantID = Bundle.main.applePayMerchantID,
+            let managementURL = Bundle.main.donationManagementPortal
+        else {
+            return nil
+        }
+
+        let recurringHandlers: PaymentSheet.ApplePayConfiguration.Handlers?
+
+        if recurring {
+            recurringHandlers = PaymentSheet.ApplePayConfiguration.Handlers(
+                paymentRequestHandler: { request in
+                    let applePayLabel = OBALoc(
+                        "donations.apple_pay.recurring_donation_label",
+                        value: "OneBusAway Recurring Donation",
+                        comment: "Required label for Apple Pay for a recurring donation"
+                    )
+                    let billing = PKRecurringPaymentSummaryItem(
+                        label: applePayLabel,
+                        amount: NSDecimalNumber(decimal: Decimal(amountInCents) / 100)
+                    )
+
+                    // Payment starts today
+                    billing.startDate = Date()
+
+                    // Pay once a month.
+                    billing.intervalUnit = .month
+                    billing.intervalCount = 1
+
+                    request.recurringPaymentRequest = PKRecurringPaymentRequest(
+                        paymentDescription: applePayLabel,
+                        regularBilling: billing,
+                        managementURL: managementURL
+                    )
+                    request.paymentSummaryItems = [billing]
+
+                    return request
+                }
+            )
+        }
+        else {
+            recurringHandlers = nil
+        }
+
+        return PaymentSheet.ApplePayConfiguration(
+            merchantId: merchantID,
+            merchantCountryCode: "US",
+            customHandlers: recurringHandlers
+        )
+    }
+
+    private func handleConfirm(_ amountInCents: Int, _ recurring: Bool, _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) async {
         do {
             let intent = try await obacoService.postCreatePaymentIntent(donationAmountInCents: amountInCents, recurring: recurring)
             intentCreationCallback(.success(intent.clientSecret))
