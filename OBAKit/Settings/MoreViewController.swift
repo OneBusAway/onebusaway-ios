@@ -87,7 +87,7 @@ public class MoreViewController: UIViewController,
 
         let header = OBALoc(
             "more_controller.donate",
-            value: "Donate to OneBusAway",
+            value: "Be a Supporter",
             comment: "Header for the donate section."
         )
 
@@ -95,7 +95,7 @@ public class MoreViewController: UIViewController,
             OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.donate_description",
-                    value: "Your support helps us improve OneBusAway",
+                    value: "Donate to OneBusAway",
                     comment: "The call to action for the More controller's donate buton"),
                 onSelectAction: { [weak self] _ in
                     self?.showDonationUI()
