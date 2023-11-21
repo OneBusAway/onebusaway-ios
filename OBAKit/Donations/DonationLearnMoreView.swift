@@ -151,7 +151,7 @@ struct DonationLearnMoreView: View {
 
             As a key project of the Open Transit Software Foundation, a 501(c)(3) non-profit, we rely on the goodwill of users like you to keep running and making this software better.
 
-            Every year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that OneBusAway remains free, updated, and accessible to everyone. A small donation, even just the cost of a single bus ride at $2.75, can make all the difference.
+            Every year, only a small fraction of our users donate, but every contribution, big or small, helps ensure that OneBusAway remains free, updated, and accessible to everyone. A small donation, even just the cost of one week of commuting, $27.50, can make all the difference.
 
             Your tax-deductible contribution ensures that OneBusAway remains free and accessible for everyone. Let's shape the future of transit together!
 
@@ -164,7 +164,7 @@ struct DonationLearnMoreView: View {
                 Button {
                     showFullExplanation = true
                 } label: {
-                    Text("Learn More...")
+                    Text("Expand...")
                         .foregroundColor(.accentColor)
                 }
             }

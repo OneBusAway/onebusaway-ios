@@ -87,7 +87,7 @@ public class MoreViewController: UIViewController,
 
         let header = OBALoc(
             "more_controller.donate",
-            value: "Donate to OneBusAway",
+            value: "Be a Supporter",
             comment: "Header for the donate section."
         )
 
@@ -95,18 +95,46 @@ public class MoreViewController: UIViewController,
             OBAListRowView.DefaultViewModel(
                 title: OBALoc(
                     "more_controller.donate_description",
-                    value: "Your support helps us improve OneBusAway",
+                    value: "Donate to OneBusAway",
                     comment: "The call to action for the More controller's donate buton"),
                 onSelectAction: { [weak self] _ in
                     self?.showDonationUI()
+                }
+            ),
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.manage_donations",
+                    value: "Manage Donations",
+                    comment: "A button that will open a web based donation portal."),
+                onSelectAction: { [weak self] _ in
+                    guard
+                        let self = self,
+                        let donationManagementPortal = self.application.applicationBundle.donationManagementPortal
+                    else {
+                        return
+                    }
+
+                    let safari = SFSafariViewController(url: donationManagementPortal)
+                    self.application.viewRouter.present(safari, from: self)
                 }
             )
         ])
     }
 
     private func showDonationUI() {
-        guard let obacoService = application.obacoService else { return }
-        let donationModel = DonationModel(obacoService: obacoService, analytics: application.analytics)
+        guard
+            let obacoService = application.obacoService,
+            application.donationsManager.donationsEnabled
+        else {
+            return
+        }
+
+        let donationModel = DonationModel(
+            obacoService: obacoService,
+            donationsManager: application.donationsManager,
+            analytics: application.analytics
+        )
+
         let learnMoreView = DonationLearnMoreView { [weak self] donated in
             guard donated else { return }
 
