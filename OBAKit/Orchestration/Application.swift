@@ -313,15 +313,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
-        #if DEBUG
-        if let stripePublishableKey = applicationBundle.stripePublishableTestKey {
-            StripeAPI.defaultPublishableKey = stripePublishableKey
-        }
-        #else
-        if let stripePublishableKey = applicationBundle.stripePublishableProductionKey {
-            StripeAPI.defaultPublishableKey = stripePublishableKey
-        }
-        #endif
+        donationsManager.refreshStripePublishableKey()
 
         application.shortcutItems = nil
 
