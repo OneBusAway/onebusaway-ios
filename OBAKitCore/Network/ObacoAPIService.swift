@@ -99,7 +99,8 @@ public actor ObacoAPIService: APIService {
             "test_mode": testMode ? "1" : "0"
         ]
 
-        urlRequest.httpBody = NetworkHelpers.dictionary(toHTTPBodyData: params)
+        let json = try JSONSerialization.data(withJSONObject: params, options: [])
+        urlRequest.httpBody = json
 
         let (data, _) = try await data(for: urlRequest as URLRequest)
         return try JSONDecoder.obacoServiceDecoder.decode(PaymentIntentResponse.self, from: data)
