@@ -25,13 +25,15 @@ extension PaymentSheetResult: Equatable {
 
 class DonationModel: ObservableObject {
     let obacoService: ObacoAPIService
+    let donationsManager: DonationsManager
     let analytics: Analytics?
     @Published var result: PaymentSheetResult?
     @Published var paymentSheet: PaymentSheet?
     @Published var donationComplete = false
 
-    init(obacoService: ObacoAPIService, analytics: Analytics?) {
+    init(obacoService: ObacoAPIService, donationsManager: DonationsManager, analytics: Analytics?) {
         self.obacoService = obacoService
+        self.donationsManager = donationsManager
         self.analytics = analytics
     }
 
@@ -64,9 +66,31 @@ class DonationModel: ObservableObject {
         let intentConfig = PaymentSheet.IntentConfiguration(
             mode: mode
         ) { [weak self] paymentMethod, _, intentCreationCallback in
-            let strongSelf = self
+            let obacoService = self?.obacoService
+            let testMode = self?.donationsManager.stripeTestMode ?? true
+
             Task {
-                await strongSelf?.handleConfirm(amountInCents, recurring, intentCreationCallback)
+                guard
+                    let name = paymentMethod.billingDetails?.name,
+                    let email = paymentMethod.billingDetails?.email,
+                    let obacoService
+                else {
+                    intentCreationCallback(.failure(Errors.missingNameOrEmail))
+                    return
+                }
+
+                do {
+                    let intentResponse = try await obacoService.postCreatePaymentIntent(
+                        donationAmountInCents: amountInCents,
+                        recurring: recurring,
+                        name: name,
+                        email: email,
+                        testMode: testMode
+                    )
+                    intentCreationCallback(.success(intentResponse.clientSecret))
+                } catch let error {
+                    intentCreationCallback(.failure(error))
+                }
             }
         }
         return intentConfig
@@ -115,7 +139,7 @@ class DonationModel: ObservableObject {
                     amount: NSDecimalNumber(decimal: Decimal(amountInCents) / 100)
                 )
                 request.paymentSummaryItems = [billing]
-                request.requiredShippingContactFields = [.emailAddress]
+                request.requiredShippingContactFields = [.emailAddress, .name]
                 return request
             }
         )
@@ -147,7 +171,7 @@ class DonationModel: ObservableObject {
                     managementURL: managementURL
                 )
                 request.paymentSummaryItems = [billing]
-                request.requiredShippingContactFields = [.emailAddress]
+                request.requiredShippingContactFields = [.emailAddress, .name]
 
                 if #available(iOS 17.0, *) {
                     request.applePayLaterAvailability = .unavailable(.recurringTransaction)
@@ -158,12 +182,15 @@ class DonationModel: ObservableObject {
         )
     }
 
-    private func handleConfirm(_ amountInCents: Int, _ recurring: Bool, _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) async {
-        do {
-            let intent = try await obacoService.postCreatePaymentIntent(donationAmountInCents: amountInCents, recurring: recurring, testMode: false) // abxoxo TODO
-            intentCreationCallback(.success(intent.clientSecret))
-        } catch let error {
-            intentCreationCallback(.failure(error))
+    // MARK: - Errors
+
+    enum Errors: Error, LocalizedError {
+        case missingNameOrEmail
+
+        var errorDescription: String? {
+            switch self {
+            case .missingNameOrEmail: OBALoc("donation_models.errors.missingNameOrEmail", value: "Donations can only be processed with your name and email", comment: "An error that will be displayed to the user when we lack sufficient data to process their donation.")
+            }
         }
     }
 }
