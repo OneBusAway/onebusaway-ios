@@ -100,6 +100,23 @@ public class MoreViewController: UIViewController,
                 onSelectAction: { [weak self] _ in
                     self?.showDonationUI()
                 }
+            ),
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.manage_donations",
+                    value: "Manage Donations",
+                    comment: "A button that will open a web based donation portal."),
+                onSelectAction: { [weak self] _ in
+                    guard
+                        let self = self,
+                        let donationManagementPortal = self.application.applicationBundle.donationManagementPortal
+                    else {
+                        return
+                    }
+
+                    let safari = SFSafariViewController(url: donationManagementPortal)
+                    self.application.viewRouter.present(safari, from: self)
+                }
             )
         ])
     }
