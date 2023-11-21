@@ -119,6 +119,10 @@ class DonationModel: ObservableObject {
                         managementURL: managementURL
                     )
                     request.paymentSummaryItems = [billing]
+                    request.requiredBillingContactFields = [.emailAddress]
+                    if #available(iOS 17.0, *) {
+                        request.applePayLaterAvailability = .unavailable(.recurringTransaction)
+                    }
 
                     return request
                 }
