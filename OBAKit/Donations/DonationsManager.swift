@@ -7,6 +7,7 @@
 
 import Foundation
 import OBAKitCore
+import StripeApplePay
 
 /// Manages the visibility of donation requests.
 public class DonationsManager {
@@ -18,6 +19,10 @@ public class DonationsManager {
     public init(bundle: Bundle, userDefaults: UserDefaults) {
         self.bundle = bundle
         self.userDefaults = userDefaults
+
+        self.userDefaults.register(
+            defaults: [DonationsManager.forceStripeTestModeDefaultsKey: false]
+        )
     }
 
     // MARK: - Bundle
@@ -29,6 +34,7 @@ public class DonationsManager {
     private let userDefaults: UserDefaults
     private static let donationRequestDismissedDateKey = "donationRequestDismissedDateKey"
     private static let donationRequestReminderDateKey = "donationRequestReminderDateKey"
+    public static let forceStripeTestModeDefaultsKey = "forceStripeTestMode"
 
     // MARK: - Dismiss Donations Request
 
@@ -79,6 +85,29 @@ public class DonationsManager {
         }
 
         return donationRequestDismissedDate == nil
+    }
+
+    // MARK: - Stripe Mode and Key
+
+    public var stripeTestMode: Bool {
+#if DEBUG
+        return true
+#else
+        return userDefaults.bool(forKey: DonationsManager.forceStripeTestModeDefaultsKey)
+#endif
+    }
+
+    public var stripePublishableKey: String? {
+        if stripeTestMode {
+            bundle.stripePublishableTestKey
+        }
+        else {
+            bundle.stripePublishableProductionKey
+        }
+    }
+
+    public func refreshStripePublishableKey() {
+        StripeAPI.defaultPublishableKey = stripePublishableKey
     }
 
     // MARK: - UI

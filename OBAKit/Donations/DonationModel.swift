@@ -60,7 +60,10 @@ class DonationModel: ObservableObject {
             currency: "USD",
             setupFutureUsage: recurring ? .offSession : nil
         )
-        let intentConfig = PaymentSheet.IntentConfiguration(mode: mode) { [weak self] _, _, intentCreationCallback in
+
+        let intentConfig = PaymentSheet.IntentConfiguration(
+            mode: mode
+        ) { [weak self] paymentMethod, _, intentCreationCallback in
             let strongSelf = self
             Task {
                 await strongSelf?.handleConfirm(amountInCents, recurring, intentCreationCallback)
@@ -91,53 +94,73 @@ class DonationModel: ObservableObject {
             return nil
         }
 
-        let recurringHandlers: PaymentSheet.ApplePayConfiguration.Handlers?
-
-        if recurring {
-            recurringHandlers = PaymentSheet.ApplePayConfiguration.Handlers(
-                paymentRequestHandler: { request in
-                    let applePayLabel = OBALoc(
-                        "donations.apple_pay.recurring_donation_label",
-                        value: "OneBusAway Recurring Donation",
-                        comment: "Required label for Apple Pay for a recurring donation"
-                    )
-                    let billing = PKRecurringPaymentSummaryItem(
-                        label: applePayLabel,
-                        amount: NSDecimalNumber(decimal: Decimal(amountInCents) / 100)
-                    )
-
-                    // Payment starts today
-                    billing.startDate = Date()
-
-                    // Pay once a month.
-                    billing.intervalUnit = .month
-                    billing.intervalCount = 1
-
-                    request.recurringPaymentRequest = PKRecurringPaymentRequest(
-                        paymentDescription: applePayLabel,
-                        regularBilling: billing,
-                        managementURL: managementURL
-                    )
-                    request.paymentSummaryItems = [billing]
-
-                    return request
-                }
-            )
-        }
-        else {
-            recurringHandlers = nil
-        }
-
         return PaymentSheet.ApplePayConfiguration(
             merchantId: merchantID,
             merchantCountryCode: "US",
-            customHandlers: recurringHandlers
+            buttonType: .support,
+            customHandlers: recurring ? buildRecurringApplePayConfigurationHandlers(amountInCents, managementURL: managementURL) : buildOneTimeApplePayConfigurationHandlers(amountInCents)
+        )
+    }
+
+    private func buildOneTimeApplePayConfigurationHandlers(_ amountInCents: Int) -> PaymentSheet.ApplePayConfiguration.Handlers {
+        return PaymentSheet.ApplePayConfiguration.Handlers(
+            paymentRequestHandler: { request in
+                let applePayLabel = OBALoc(
+                    "donations.apple_pay.donation_label",
+                    value: "OneBusAway Donation",
+                    comment: "Required label for Apple Pay for a one-time donation"
+                )
+                let billing = PKPaymentSummaryItem(
+                    label: applePayLabel,
+                    amount: NSDecimalNumber(decimal: Decimal(amountInCents) / 100)
+                )
+                request.paymentSummaryItems = [billing]
+                request.requiredShippingContactFields = [.emailAddress]
+                return request
+            }
+        )
+    }
+
+    private func buildRecurringApplePayConfigurationHandlers(_ amountInCents: Int, managementURL: URL) -> PaymentSheet.ApplePayConfiguration.Handlers {
+        return PaymentSheet.ApplePayConfiguration.Handlers(
+            paymentRequestHandler: { request in
+                let applePayLabel = OBALoc(
+                    "donations.apple_pay.recurring_donation_label",
+                    value: "OneBusAway Recurring Donation",
+                    comment: "Required label for Apple Pay for a recurring donation"
+                )
+                let billing = PKRecurringPaymentSummaryItem(
+                    label: applePayLabel,
+                    amount: NSDecimalNumber(decimal: Decimal(amountInCents) / 100)
+                )
+
+                // Payment starts today
+                billing.startDate = Date()
+
+                // Pay once a month.
+                billing.intervalUnit = .month
+                billing.intervalCount = 1
+
+                request.recurringPaymentRequest = PKRecurringPaymentRequest(
+                    paymentDescription: applePayLabel,
+                    regularBilling: billing,
+                    managementURL: managementURL
+                )
+                request.paymentSummaryItems = [billing]
+                request.requiredShippingContactFields = [.emailAddress]
+
+                if #available(iOS 17.0, *) {
+                    request.applePayLaterAvailability = .unavailable(.recurringTransaction)
+                }
+
+                return request
+            }
         )
     }
 
     private func handleConfirm(_ amountInCents: Int, _ recurring: Bool, _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) async {
         do {
-            let intent = try await obacoService.postCreatePaymentIntent(donationAmountInCents: amountInCents, recurring: recurring)
+            let intent = try await obacoService.postCreatePaymentIntent(donationAmountInCents: amountInCents, recurring: recurring, testMode: false) // abxoxo TODO
             intentCreationCallback(.success(intent.clientSecret))
         } catch let error {
             intentCreationCallback(.failure(error))

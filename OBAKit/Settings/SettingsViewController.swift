@@ -56,6 +56,7 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
+            DonationsManager.forceStripeTestModeDefaultsKey: application.userDefaults.bool(forKey: DonationsManager.forceStripeTestModeDefaultsKey),
             debugModeEnabled: application.userDataStore.debugMode
         ])
     }
@@ -107,6 +108,11 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(alwaysRefreshRegions, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         } else {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
+        }
+
+        if let forceStripeTestMode = values[DonationsManager.forceStripeTestModeDefaultsKey] as? Bool {
+            application.userDefaults.set(forceStripeTestMode, forKey: DonationsManager.forceStripeTestModeDefaultsKey)
+            application.donationsManager.refreshStripePublishableKey()
         }
     }
 
@@ -227,6 +233,14 @@ class SettingsViewController: FormViewController {
                 let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
                 cell.accessoryView = imageView
             }
+        }
+
+        section <<< SwitchRow {
+            $0.tag = DonationsManager.forceStripeTestModeDefaultsKey
+            $0.title = OBALoc("settings_controller.debug_section.force_stripe_test_mode", value: "Force Stripe test mode", comment: "Settings > Debug section > Force Stripe test mode")
+            $0.hidden = Condition.function([debugModeEnabled], { form in
+                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+            })
         }
 
         section <<< TextRow {
