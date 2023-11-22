@@ -44,6 +44,7 @@ public protocol PushServiceProvider: NSObjectProtocol {
 public protocol PushServiceDelegate: NSObjectProtocol {
     func pushServicePresentingController(_ pushService: PushService) -> UIViewController?
     func pushService(_ pushService: PushService, received arrivalDeparture: AlarmPushBody)
+    func pushService(_ pushService: PushService, receivedDonationPrompt id: String?)
 }
 
 // MARK: - PushService
@@ -87,8 +88,13 @@ public class PushService: NSObject {
             }
             return
         }
-
-        displayMessage(message)
+        else if key == "donation" {
+            let testID = additionalData["donation"] as? String
+            delegate?.pushService(self, receivedDonationPrompt: testID)
+        }
+        else {
+            displayMessage(message)
+        }
     }
 
     private func displayMessage(_ message: String) {

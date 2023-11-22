@@ -122,30 +122,10 @@ public class MoreViewController: UIViewController,
     }
 
     private func showDonationUI() {
-        guard
-            let obacoService = application.obacoService,
-            application.donationsManager.donationsEnabled
-        else {
-            return
-        }
-
-        let donationModel = DonationModel(
-            obacoService: obacoService,
-            donationsManager: application.donationsManager,
-            analytics: application.analytics
-        )
-
-        let learnMoreView = DonationLearnMoreView { [weak self] donated in
-            guard donated else { return }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self?.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
-            }
-        }
-            .environmentObject(donationModel)
-            .environmentObject(AnalyticsModel(application.analytics))
-
-        present(UIHostingController(rootView: learnMoreView), animated: true)
+        guard application.donationsManager.donationsEnabled else { return }
+        let view = application.donationsManager.buildLearnMoreView(presentingController: self)
+        let hostingController = UIHostingController(rootView: view)
+        present(hostingController, animated: true)
     }
 
     // MARK: Updates and alerts section

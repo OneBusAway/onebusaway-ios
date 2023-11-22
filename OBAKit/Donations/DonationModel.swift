@@ -23,19 +23,40 @@ extension PaymentSheetResult: Equatable {
     }
 }
 
+/// `DonationModel` is an `ObservableObject` for use in SwiftUI that manages the donation process.
+///
+/// It manages the donation data, communicates with the server, and provides updates to the UI.
+/// The `DonationModel` class is responsible for handling the donation process, including
+/// creating payment intents, presenting the payment sheet, and reporting analytics events.
+///
+/// Usage:
+///     - Create an instance of `DonationModel` with the required dependencies.
+///     - Call the `donate(_:recurring:)` method to initiate a donation with a
+///       specified amount in cents and recurrence.
+///     - Observe the `result` and `donationComplete` properties for updates on the donation process.
+///
 class DonationModel: ObservableObject {
     let obacoService: ObacoAPIService
     let donationsManager: DonationsManager
     let analytics: Analytics?
+    let donationPushNotificationID: String?
     @Published var result: PaymentSheetResult?
     @Published var paymentSheet: PaymentSheet?
     @Published var donationComplete = false
 
-    init(obacoService: ObacoAPIService, donationsManager: DonationsManager, analytics: Analytics?) {
+    init(
+        obacoService: ObacoAPIService,
+        donationsManager: DonationsManager,
+        analytics: Analytics?,
+        donationPushNotificationID: String?
+    ) {
         self.obacoService = obacoService
         self.donationsManager = donationsManager
         self.analytics = analytics
+        self.donationPushNotificationID = donationPushNotificationID
     }
+
+    // MARK: - Donation Sheet
 
     @MainActor
     func donate(_ amountInCents: Int, recurring: Bool) async {
@@ -51,8 +72,32 @@ class DonationModel: ObservableObject {
         }
 
         paymentSheet.present(from: presenter) { [weak self] result in
+            self?.reportResult(result, amountInCents: amountInCents)
             self?.result = result
             self?.donationComplete = true
+        }
+    }
+
+    private func reportResult(_ result: PaymentSheetResult, amountInCents: Int) {
+        var label: String?
+        var value: Any?
+
+        switch result {
+        case .completed:
+            label = AnalyticsLabels.donationSuccess
+            value = String(amountInCents)
+        case .failed(let error):
+            label = AnalyticsLabels.donationError
+            value = error.localizedDescription
+        case .canceled: break
+        }
+
+        if result == .completed, let donationPushNotificationID {
+            analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donationPushNotificationSuccess, value: donationPushNotificationID)
+        }
+
+        if let label {
+            analytics?.reportEvent?(.userAction, label: label, value: value)
         }
     }
 
