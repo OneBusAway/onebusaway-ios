@@ -1,6 +1,6 @@
 {
-    "author": "Aaron Brethorst",
-    "author_url": "https://github.com/aaronbrethorst/OBAKit",
+    "author": "Open Transit Software Foundation",
+    "author_url": "https://github.com/onebusaway/onebusaway-ios",
     "module": "OBAKit",
     "documentation": "Tutorials/*.md",
     "custom_categories": [
@@ -8,7 +8,6 @@
             "name": "Tutorials",
             "children": [
                 "ContextMenus",
-                "IGListKit",
                 "WhiteLabel"
             ]
         },
