@@ -56,3 +56,5 @@ docs
 
 # But do save the docs script
 !scripts/docs
+
+OBAKitTests.xcresult
