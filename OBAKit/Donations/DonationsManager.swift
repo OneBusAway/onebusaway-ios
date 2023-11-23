@@ -8,6 +8,7 @@
 import Foundation
 import OBAKitCore
 import StripeApplePay
+import SwiftUI
 
 /// Manages the visibility of donation requests.
 public class DonationsManager {
@@ -16,18 +17,30 @@ public class DonationsManager {
     /// - Parameters:
     ///   - bundle: The application bundle. Usually, `Bundle.main`
     ///   - userDefaults: The user defaults object.
-    public init(bundle: Bundle, userDefaults: UserDefaults) {
+    ///   - obacoService: The Obaco API service.
+    ///   - analytics: The Analytics object.
+    public init(
+        bundle: Bundle,
+        userDefaults: UserDefaults,
+        obacoService: ObacoAPIService?,
+        analytics: Analytics?
+    ) {
         self.bundle = bundle
         self.userDefaults = userDefaults
+        self.obacoService = obacoService
+        self.analytics = analytics
 
         self.userDefaults.register(
             defaults: [DonationsManager.forceStripeTestModeDefaultsKey: false]
         )
     }
 
-    // MARK: - Bundle
+    // MARK: - Data
 
     private let bundle: Bundle
+    private let obacoService: ObacoAPIService?
+    private let analytics: Analytics?
+
 
     // MARK: - User Defaults
 
@@ -73,7 +86,7 @@ public class DonationsManager {
     // MARK: - State
 
     public var donationsEnabled: Bool {
-        bundle.donationsEnabled
+        bundle.donationsEnabled && obacoService != nil
     }
 
     /// When true, it means the app should show an inline donation request UI.
@@ -120,5 +133,34 @@ public class DonationsManager {
         alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
 
         return alert
+    }
+
+    func buildObservableDonationModel(donationPushNotificationID: String? = nil) -> DonationModel? {
+        guard donationsEnabled, let obacoService else {
+            return nil
+        }
+
+        return DonationModel(
+            obacoService: obacoService,
+            donationsManager: self,
+            analytics: analytics,
+            donationPushNotificationID: donationPushNotificationID
+        )
+    }
+
+    func buildLearnMoreView(presentingController: UIViewController, donationPushNotificationID: String? = nil) -> some View {
+        guard let donationModel = buildObservableDonationModel(donationPushNotificationID: donationPushNotificationID) else {
+            fatalError()
+        }
+
+        return DonationLearnMoreView { donated in
+            guard donated else { return }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                presentingController.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
+            }
+        }
+        .environmentObject(donationModel)
+        .environmentObject(AnalyticsModel(analytics))
     }
 }

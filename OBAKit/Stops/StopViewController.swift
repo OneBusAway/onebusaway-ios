@@ -646,17 +646,11 @@ public class StopViewController: UIViewController,
 
     private func showDonationUI() {
         guard
-            let obacoService = application.obacoService,
-            application.donationsManager.donationsEnabled
+            application.donationsManager.donationsEnabled,
+            let donationModel = application.donationsManager.buildObservableDonationModel()
         else {
             return
         }
-
-        let donationModel = DonationModel(
-            obacoService: obacoService,
-            donationsManager: application.donationsManager,
-            analytics: application.analytics
-        )
 
         let learnMoreView = DonationLearnMoreView { [weak self] donated in
             guard donated else { return }

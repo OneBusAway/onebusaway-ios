@@ -68,13 +68,18 @@ public class AnalyticsLabels: NSObject {
 
     /// Label used when a donation fails due to the user canceling it.
     @objc public static let donationCanceled = "Donation Canceled"
+
+    /// Label used when a push notification associated with a call for donations is tapped.
+    @objc public static let donationPushNotificationTapped = "Donation Push Notification Tapped"
+
+    /// Label used when a push notification results in a donation
+    @objc public static let donationPushNotificationSuccess = "Donation Push Notification Success"
 }
 
 /// Reported analytics events.
 @objc(OBAAnalyticsEvent)
 public enum AnalyticsEvent: Int {
     case userAction
-    case systemAction
 }
 
 /// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.

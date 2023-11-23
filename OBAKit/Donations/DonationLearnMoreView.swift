@@ -77,23 +77,15 @@ struct DonationLearnMoreView: View {
         .onChange(of: donationModel.donationComplete) { newValue in
             guard newValue else { return }
 
-            var label: String?
-            var value: Any?
-            var shouldDismiss = true
+            let shouldDismiss: Bool
 
             switch donationModel.result {
             case .completed:
-                label = AnalyticsLabels.donationSuccess
-                value = String(selectedAmountInCents)
-            case .failed(let error):
-                label = AnalyticsLabels.donationError
-                value = error.localizedDescription
+                shouldDismiss = true
+            case .failed:
+                shouldDismiss = true
             case .canceled, .none:
                 shouldDismiss = false
-            }
-
-            if let label {
-                analyticsModel.analytics?.reportEvent?(.systemAction, label: label, value: value)
             }
 
             if shouldDismiss {
