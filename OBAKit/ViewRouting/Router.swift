@@ -107,13 +107,9 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
     public func navigateTo(alert: TransitAlertViewModel, locale: Locale = .current, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .transitAlert(alert)) else { return }
 
-        if let url = alert.url(forLocale: locale) {
-            let safari = SFSafariViewController(url: url)
-            present(safari, from: fromController, isModal: true)
-        } else {
-            let view = TransitAlertDetailViewController(alert)
-            present(view, from: fromController)
-        }
+        let view = TransitAlertDetailViewController(alert, locale: locale)
+        let navigationController = UINavigationController(rootViewController: view)
+        present(navigationController, from: fromController)
     }
 
     // MARK: - Helpers

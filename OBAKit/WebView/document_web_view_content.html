@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta content='initial-scale=1.0, user-scalable=no' name='viewport'>
+    <style type='text/css'>
+        :root {
+            color-scheme: light dark;
+        }
+
+        html {
+            overflow-x: hidden;
+        }
+
+        body {
+            -webkit-text-size-adjust: none;
+            font-family: system, -apple-system, "Helvetica Neue", Helvetica, sans-serif;
+            padding: 8px;
+            overflow-x: hidden;
+        }
+
+        @media screen and (prefers-color-scheme:light) {
+            body {
+                background-color: #fff;
+                color: #000;
+            }
+        }
+
+        @media screen and (prefers-color-scheme:dark) {
+            body {
+                background-color: #000;
+                color: #fff;
+            }
+        }
+
+        code,
+        pre {
+            max-width: 300px;
+            overflow-x: hidden;
+        }
+
+        code h1 {
+            font-size: 0.85rem;
+        }
+
+        h1 {
+            font-size: 1.25em;
+            line-height: 1.25;
+        }
+
+        h2 {
+            font-size: 0.85rem;
+        }
+
+        .page-content {
+            line-height: 1.5;
+        }
+
+        .actions {
+            margin-top: 8px;
+        }
+
+        .actions__button-container {
+            margin: 0 auto;
+        }
+
+        .actions__button-container__button {
+            background: {{{accent_color}}};
+            color: {{{accent_foreground_color}}};
+            display: block;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            width: 100%;
+            font-weight: 500;
+            padding: 0.75rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class='page-content'>
+        {{{oba_page_content}}}
+    </div>
+    <div class='actions'>
+        {{{oba_page_actions}}}
+    </div>
+</body>
+
+</html>

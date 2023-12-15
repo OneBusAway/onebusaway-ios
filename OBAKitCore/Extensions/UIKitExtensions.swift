@@ -79,6 +79,11 @@ public extension UIBarButtonItem {
 // Adapted from https://cocoacasts.com/from-hex-to-uicolor-and-back-in-swift
 public extension UIColor {
 
+    /// Returns the accent color defined in the app's xcasset bundle. Make sure this is set, or calling it will crash the app!
+    static var accentColor: UIColor {
+        return UIColor(named: "AccentColor")!
+    }
+
     /// Initializes a `UIColor` using `0-255` range `Int` values.
     /// - Parameter r: Red, `0-255`.
     /// - Parameter g: Green, `0-255`.
@@ -135,28 +140,78 @@ public extension UIColor {
     }
 
     // MARK: - From UIColor to String
-
+    
+    /// Generates a hex value from the receiver
+    ///
+    /// The hex values _do not_ have leading `#` values.
+    /// In other words, `UIColor.red` -> `ff0000`.
+    ///
+    /// - Parameter alpha: Whether to include the alpha channel.
+    /// - Returns: The hex string.
     func toHex(alpha: Bool = false) -> String? {
-        guard let components = cgColor.components, components.count >= 3 else {
+        let components = cgColor.components
+        let numberOfComponents = cgColor.numberOfComponents
+
+        var r: CGFloat = 0
+        var g: CGFloat = 0
+        var b: CGFloat = 0
+        var a: CGFloat = 1
+
+        switch numberOfComponents {
+        case 2: // Grayscale
+            r = components?[0] ?? 0
+            g = components?[0] ?? 0
+            b = components?[0] ?? 0
+            a = components?[1] ?? 1
+        case 4: // RGBA
+            r = components?[0] ?? 0
+            g = components?[1] ?? 0
+            b = components?[2] ?? 0
+            a = components?[3] ?? 1
+        default:
             return nil
         }
 
-        let r = Float(components[0])
-        let g = Float(components[1])
-        let b = Float(components[2])
-        var a = Float(1.0)
-
-        if components.count >= 4 {
-            a = Float(components[3])
-        }
-
         if alpha {
-            return String(format: "%02lX%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255), lroundf(a * 255))
-        }
-        else {
-            return String(format: "%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
+            return String(format: "%02lX%02lX%02lX%02lX",
+                          lroundf(Float(r) * 255),
+                          lroundf(Float(g) * 255),
+                          lroundf(Float(b) * 255),
+                          lroundf(Float(a) * 255))
+        } else {
+            return String(format: "%02lX%02lX%02lX",
+                          lroundf(Float(r) * 255),
+                          lroundf(Float(g) * 255),
+                          lroundf(Float(b) * 255))
         }
     }
+
+    // MARK: - Luminance
+
+    /// Returns a dark text color if the receiver is light, and light if the receiver is dark.
+    var contrastingTextColor: UIColor {
+        if isLightColor {
+            return UIColor.darkText
+        }
+        else {
+            return UIColor.lightText
+        }
+    }
+
+    /// Determine if the receiver is a 'light' or 'dark' color.
+    var isLightColor: Bool {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        self.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+        // Calculating the Perceived Luminance
+        let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+        return luminance > 0.5
+    }
+
 }
 
 // MARK: - UICollectionView
