@@ -276,7 +276,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private var presentDonationUIOnActive = false
-    private var donationPromptID: String? = nil
+    private var donationPromptID: String?
 
     public func pushService(_ pushService: PushService, receivedDonationPrompt id: String?) {
         guard let topViewController else {
