@@ -41,7 +41,6 @@ public class DonationsManager {
     private let obacoService: ObacoAPIService?
     private let analytics: Analytics?
 
-
     // MARK: - User Defaults
 
     private let userDefaults: UserDefaults
