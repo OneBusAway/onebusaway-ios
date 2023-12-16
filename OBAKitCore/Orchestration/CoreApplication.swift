@@ -87,8 +87,20 @@ open class CoreApplication: NSObject,
         Task {
             await regionsService.updateRegionsList()
         }
+        refreshServices()
+    }
+
+    /// This function reloads the REST API and Obaco Services.
+    private func refreshServices() {
         refreshRESTAPIService()
         refreshObacoService()
+        apiServicesRefreshed()
+    }
+
+    /// Called after the REST API and Obaco Services have been reloaded.
+    /// The default implementation is a no-op.
+    open func apiServicesRefreshed() {
+        // nop
     }
 
     // MARK: - Agency Alerts
@@ -178,8 +190,7 @@ open class CoreApplication: NSObject,
     }()
 
     open func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {
-        refreshRESTAPIService()
-        refreshObacoService()
+        refreshServices()
     }
 
     open func regionsService(_ service: RegionsService, updatedRegion region: Region) {

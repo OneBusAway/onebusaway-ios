@@ -17,7 +17,6 @@ public class DonationsManager {
     /// - Parameters:
     ///   - bundle: The application bundle. Usually, `Bundle.main`
     ///   - userDefaults: The user defaults object.
-    ///   - obacoService: The Obaco API service.
     ///   - analytics: The Analytics object.
     public init(
         bundle: Bundle,
@@ -27,7 +26,6 @@ public class DonationsManager {
     ) {
         self.bundle = bundle
         self.userDefaults = userDefaults
-        self.obacoService = obacoService
         self.analytics = analytics
 
         self.userDefaults.register(
@@ -38,7 +36,7 @@ public class DonationsManager {
     // MARK: - Data
 
     private let bundle: Bundle
-    private let obacoService: ObacoAPIService?
+    var obacoService: ObacoAPIService?
     private let analytics: Analytics?
 
     // MARK: - User Defaults

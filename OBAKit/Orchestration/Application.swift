@@ -338,8 +338,6 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
-        donationsManager.refreshStripePublishableKey()
-
         application.shortcutItems = nil
 
         configurePushNotifications(launchOptions: options)
@@ -436,6 +434,13 @@ public class Application: CoreApplication, PushServiceDelegate {
         return true
     }
 
+    override public func apiServicesRefreshed() {
+        super.apiServicesRefreshed()
+
+        donationsManager.obacoService = obacoService
+        donationsManager.refreshStripePublishableKey()
+    }
+
     // MARK: - Appearance and Themes
 
     /// Sets default styles for several UIAppearance proxies in order to customize the app's look and feel
@@ -458,6 +463,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     // MARK: - Regions Management
+
     public func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool) {
         let label = value ? AnalyticsLabels.setRegionAutomatically : AnalyticsLabels.setRegionManually
         analytics?.reportEvent?(.userAction, label: label, value: nil)
