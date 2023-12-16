@@ -140,7 +140,7 @@ public extension UIColor {
     }
 
     // MARK: - From UIColor to String
-    
+
     /// Generates a hex value from the receiver
     ///
     /// The hex values _do not_ have leading `#` values.
