@@ -17,11 +17,6 @@ targets:
       - path: Apps/Shared/CommonClient
         name: Common
         group: OneBusAway
-      - path: Apps/Shared/OneSignal
-        name: OneSignal
-        group: OneBusAway
-    dependencies:
-      - package: OneSignal
     entitlements:
       path: Apps/OneBusAway/OneBusAway.entitlements
       properties:
