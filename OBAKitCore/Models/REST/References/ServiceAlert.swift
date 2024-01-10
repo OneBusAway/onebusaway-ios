@@ -134,7 +134,13 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))
-            to = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .to)))
+
+            if let rawToValue = try container.decodeIfPresent(Int.self, forKey: .to) {
+                to = Date(timeIntervalSince1970: TimeInterval(rawToValue))
+            }
+            else {
+                to = Date.distantFuture
+            }
         }
 
         public override func isEqual(_ object: Any?) -> Bool {
