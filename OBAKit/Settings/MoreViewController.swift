@@ -123,9 +123,12 @@ public class MoreViewController: UIViewController,
 
     private func showDonationUI() {
         guard application.donationsManager.donationsEnabled else { return }
+
+#if canImport(Stripe)
         let view = application.donationsManager.buildLearnMoreView(presentingController: self)
         let hostingController = UIHostingController(rootView: view)
         present(hostingController, animated: true)
+#endif
     }
 
     // MARK: Updates and alerts section

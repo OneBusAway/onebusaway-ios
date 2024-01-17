@@ -10,3 +10,7 @@ targets:
         product: FirebaseAnalytics
       - package: Firebase
         product: FirebaseCrashlytics
+    sources:
+      - path: ./Analytics
+        name: Analytics
+        group: Features

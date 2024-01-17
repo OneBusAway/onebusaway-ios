@@ -9,6 +9,8 @@ import SwiftUI
 import UIKit
 import OBAKitCore
 
+#if canImport(Stripe)
+
 enum DonationRecurrence: String, CaseIterable, Identifiable {
     case oneTime
     case recurring
@@ -241,3 +243,5 @@ struct DonationLearnMoreView: View {
 //    abxoxo - needs environment object added.
 //    DonationLearnMoreView()
 //  }
+
+#endif

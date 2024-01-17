@@ -1,0 +1,19 @@
+targets:
+  App:
+    info:
+      path: Apps/OneBusAway/Info.plist
+      properties:
+        NSCameraUsageDescription: This app uses Stripe to process credit cards. You can use Stripe to scan your credit card number with your camera.
+  OBAKit:
+    dependencies:
+      - package: stripe-ios-spm
+        product: Stripe
+      - package: stripe-ios-spm
+        product: StripeApplePay
+      - package: stripe-ios-spm
+        product: StripePaymentSheet
+
+packages:
+    stripe-ios-spm:
+        url: https://github.com/stripe/stripe-ios-spm.git
+        minorVersion: 23.18.2

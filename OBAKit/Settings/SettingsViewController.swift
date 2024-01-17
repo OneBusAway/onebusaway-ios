@@ -56,7 +56,7 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
-            DonationsManager.forceStripeTestModeDefaultsKey: application.userDefaults.bool(forKey: DonationsManager.forceStripeTestModeDefaultsKey),
+            DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue: application.userDefaults.bool(forKey: DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue),
             debugModeEnabled: application.userDataStore.debugMode
         ])
     }
@@ -110,8 +110,8 @@ class SettingsViewController: FormViewController {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
 
-        if let forceStripeTestMode = values[DonationsManager.forceStripeTestModeDefaultsKey] as? Bool {
-            application.userDefaults.set(forceStripeTestMode, forKey: DonationsManager.forceStripeTestModeDefaultsKey)
+        if application.donationsManager.donationsEnabled, let forceStripeTestMode = values[DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue] as? Bool {
+            application.userDefaults.set(forceStripeTestMode, forKey: DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue)
             application.donationsManager.refreshStripePublishableKey()
         }
     }
@@ -235,12 +235,14 @@ class SettingsViewController: FormViewController {
             }
         }
 
-        section <<< SwitchRow {
-            $0.tag = DonationsManager.forceStripeTestModeDefaultsKey
-            $0.title = OBALoc("settings_controller.debug_section.force_stripe_test_mode", value: "Force Stripe test mode", comment: "Settings > Debug section > Force Stripe test mode")
-            $0.hidden = Condition.function([debugModeEnabled], { form in
-                return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
-            })
+        if application.donationsManager.donationsEnabled {
+            section <<< SwitchRow {
+                $0.tag = DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue
+                $0.title = OBALoc("settings_controller.debug_section.force_stripe_test_mode", value: "Force Stripe test mode", comment: "Settings > Debug section > Force Stripe test mode")
+                $0.hidden = Condition.function([debugModeEnabled], { form in
+                    return !((form.rowBy(tag: self.debugModeEnabled) as? SwitchRow)?.value ?? false)
+                })
+            }
         }
 
         section <<< TextRow {

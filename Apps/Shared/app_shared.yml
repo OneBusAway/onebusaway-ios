@@ -99,12 +99,6 @@ packages:
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.3.0
-    OneSignal:
-        url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
-        minorVersion: 3.11.2
-    stripe-ios-spm:
-        url: https://github.com/stripe/stripe-ios-spm.git
-        minorVersion: 23.18.2
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.19.1

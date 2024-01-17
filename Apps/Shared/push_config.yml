@@ -4,6 +4,8 @@ targets:
       SystemCapabilities:
         com.apple.Push:
           enabled: 1
+    dependencies:
+      - package: OneSignal
     entitlements:
       properties:
         aps-environment: development
@@ -11,3 +13,12 @@ targets:
       properties:
         UIBackgroundModes:
           - remote-notification
+    sources:
+      - path: ./OneSignal
+        name: OneSignal
+        group: Features
+
+packages:
+    OneSignal:
+        url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
+        minorVersion: 3.11.2
