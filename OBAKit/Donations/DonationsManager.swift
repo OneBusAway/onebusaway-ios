@@ -7,8 +7,14 @@
 
 import Foundation
 import OBAKitCore
-import StripeApplePay
 import SwiftUI
+
+public enum DonationsUserDefaultsKeys: String, RawRepresentable {
+    case forceStripeTestModeDefaultsKey = "forceStripeTestMode"
+}
+
+#if canImport(Stripe)
+import StripeApplePay
 
 /// Manages the visibility of donation requests.
 public class DonationsManager {
@@ -29,7 +35,7 @@ public class DonationsManager {
         self.analytics = analytics
 
         self.userDefaults.register(
-            defaults: [DonationsManager.forceStripeTestModeDefaultsKey: false]
+            defaults: [DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue: false]
         )
     }
 
@@ -44,7 +50,6 @@ public class DonationsManager {
     private let userDefaults: UserDefaults
     private static let donationRequestDismissedDateKey = "donationRequestDismissedDateKey"
     private static let donationRequestReminderDateKey = "donationRequestReminderDateKey"
-    public static let forceStripeTestModeDefaultsKey = "forceStripeTestMode"
 
     // MARK: - Dismiss Donations Request
 
@@ -103,7 +108,7 @@ public class DonationsManager {
 #if DEBUG
         return true
 #else
-        return userDefaults.bool(forKey: DonationsManager.forceStripeTestModeDefaultsKey)
+        return userDefaults.bool(forKey: DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue)
 #endif
     }
 
@@ -161,3 +166,27 @@ public class DonationsManager {
         .environmentObject(AnalyticsModel(analytics))
     }
 }
+#else
+public class DonationsManager {
+    public init(
+        bundle: Bundle,
+        userDefaults: UserDefaults,
+        obacoService: ObacoAPIService?,
+        analytics: Analytics?
+    ) {}
+
+    public var donationsEnabled: Bool {
+        false
+    }
+
+    public var shouldRequestDonations: Bool {
+        false
+    }
+
+    public func dismissDonationsRequests() {}
+
+    public func remindUserLater() {}
+
+    public func refreshStripePublishableKey() {}
+}
+#endif

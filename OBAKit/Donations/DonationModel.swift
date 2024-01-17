@@ -5,23 +5,11 @@
 //  Created by Aaron Brethorst on 11/11/23.
 //
 
+#if canImport(Stripe)
 import StripePaymentSheet
 import SwiftUI
 import OBAKitCore
 import PassKit
-
-extension PaymentSheetResult: Equatable {
-    public static func == (lhs: PaymentSheetResult, rhs: PaymentSheetResult) -> Bool {
-        switch (lhs, rhs) {
-        case (.completed, .completed), (.canceled, .canceled):
-            return true
-        case (.failed(let lhsError), .failed(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
-        default:
-            return false
-        }
-    }
-}
 
 /// `DonationModel` is an `ObservableObject` for use in SwiftUI that manages the donation process.
 ///
@@ -239,3 +227,8 @@ class DonationModel: ObservableObject {
         }
     }
 }
+
+#else
+class DonationModel: ObservableObject {
+}
+#endif

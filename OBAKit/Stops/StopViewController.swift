@@ -11,7 +11,9 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
+#if canImport(Stripe)
 import StripePaymentSheet
+#endif
 
 // swiftlint:disable file_length
 
@@ -645,6 +647,7 @@ public class StopViewController: UIViewController,
     }
 
     private func showDonationUI() {
+#if canImport(Stripe)
         guard
             application.donationsManager.donationsEnabled,
             let donationModel = application.donationsManager.buildObservableDonationModel()
@@ -665,6 +668,7 @@ public class StopViewController: UIViewController,
             .environmentObject(AnalyticsModel(application.analytics))
 
         present(UIHostingController(rootView: learnMoreView), animated: true)
+#endif
     }
 
     private func showDonationDismissUI() {

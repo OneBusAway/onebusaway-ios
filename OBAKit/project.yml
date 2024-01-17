@@ -10,12 +10,6 @@ targets:
       - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel
-      - package: stripe-ios-spm
-        product: Stripe
-      - package: stripe-ios-spm
-        product: StripeApplePay
-      - package: stripe-ios-spm
-        product: StripePaymentSheet
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
