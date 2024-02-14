@@ -7,33 +7,38 @@
 
 extension RESTAPIService {
     // MARK: - Regional Alerts
-    public nonisolated func getAlerts(agencies: [AgencyWithCoverage]) async throws -> [AgencyAlert] {
-        return try await withThrowingTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
+    public nonisolated func getAlerts(agencies: [AgencyWithCoverage]) async -> [AgencyAlert] {
+        return await withTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
             for agency in agencies {
                 group.addTask {
-                    return try await self.getAlerts(agency: agency)
+                    return await self.getAlerts(agency: agency)
                 }
             }
 
             var alerts: [AgencyAlert] = []
-            for try await result in group {
+            for await result in group {
                 alerts.append(contentsOf: result)
             }
             return alerts
         }
     }
 
-    public nonisolated func getAlerts(agency: AgencyWithCoverage) async throws -> [AgencyAlert] {
+    public nonisolated func getAlerts(agency: AgencyWithCoverage) async -> [AgencyAlert] {
         let url = urlBuilder.getRESTRegionalAlerts(agencyID: agency.agencyID)
-        let (data, _) = try await self.getData(for: url)
 
-        let message = try TransitRealtime_FeedMessage(serializedData: data)
-        return message.entity
-            .filter(isQualifiedAlert)
-            .compactMap {
-                // TODO: Don't swallow error
-                try? AgencyAlert(feedEntity: $0, agencies: [agency])
-            }
+        do {
+            let (data, _) = try await self.getData(for: url)
+            let message = try TransitRealtime_FeedMessage(serializedData: data)
+            return message.entity
+                .filter(isQualifiedAlert)
+                .compactMap {
+                    // TODO: Don't swallow error
+                    try? AgencyAlert(feedEntity: $0, agencies: [agency])
+                }
+        } catch {
+            logger.error("getAlerts() failed for \(agency.agency.name, privacy: .public): \(error, privacy: .public)")
+            return []
+        }
     }
 
     private nonisolated func isQualifiedAlert(_ entity: TransitRealtime_FeedEntity) -> Bool {

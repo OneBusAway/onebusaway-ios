@@ -72,7 +72,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         // Get agency alerts from OBA and Obaco.
         let agencyAlerts = try await withThrowingTaskGroup(of: [AgencyAlert].self) { group -> [AgencyAlert] in
             group.addTask {
-                try await self.fetchRegionalAlerts(service: apiService)
+                await self.fetchRegionalAlerts(service: apiService)
             }
 
             group.addTask {
@@ -104,8 +104,8 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
     }
 
     // MARK: - REST API
-    private func fetchRegionalAlerts(service: RESTAPIService) async throws -> [AgencyAlert] {
-        return try await service.getAlerts(agencies: agencies)
+    private func fetchRegionalAlerts(service: RESTAPIService) async -> [AgencyAlert] {
+        return await service.getAlerts(agencies: agencies)
     }
 
     // MARK: - Obaco
