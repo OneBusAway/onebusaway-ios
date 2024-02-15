@@ -70,6 +70,13 @@ extension APIService {
             throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: response.contentType)
         }
 
+        if data.count < 10 && String(data: data, encoding: .utf8) == "null" {
+            // 10 ^^^ is arbitrary. This could really be 8 or maybe even 4, but this is a
+            // belt and suspenders check.
+            logger.error("Decoder failed for \(url, privacy: .public): endpoint returned the string 'null' instead of a real value.")
+            throw APIError.invalidContentType(originalError: nil, expectedContentType: "json", actualContentType: "nothing")
+        }
+
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
