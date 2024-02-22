@@ -12,6 +12,23 @@ import Foundation
 public typealias TripIdentifier = String
 
 public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences {
+    public struct Identifier: Hashable {
+        public let serviceDate: Date
+        public let stopID: StopID
+        public let routeID: RouteID
+        public let tripID: TripIdentifier
+        public let stopSequence: Int
+
+        public init(serviceDate: Date, stopID: StopID, routeID: RouteID, tripID: TripIdentifier, stopSequence: Int) {
+            self.serviceDate = serviceDate
+            self.stopID = stopID
+            self.routeID = routeID
+            self.tripID = tripID
+            self.stopSequence = stopSequence
+        }
+    }
+
+    public let id: Identifier
 
     /// true if this transit vehicle is one that riders could arrive on
     public let arrivalEnabled: Bool
@@ -181,6 +198,8 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
 
         occupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .occupancyStatus)
         historicalOccupancyStatus = try container.decodeIfPresent(OccupancyStatus.self, forKey: .historicalOccupancyStatus)
+
+        id = Identifier(serviceDate: serviceDate, stopID: stopID, routeID: routeID, tripID: tripID, stopSequence: stopSequence)
     }
 
     // MARK: - HasReferences
@@ -195,12 +214,6 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
     }
 
     // MARK: - Helpers/Names
-
-    /// Provides an ID for this arrival departure consisting of its Stop, Trip, and Route IDs.
-    public var id: String {
-        return "stop=\(stopID),trip=\(tripID),route=\(routeID),status=\(arrivalDepartureStatus)"
-    }
-
     /// Provides the best available trip headsign.
     public var tripHeadsign: String? {
         return _tripHeadsign ?? trip.headsign
