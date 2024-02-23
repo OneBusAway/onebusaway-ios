@@ -28,6 +28,9 @@ open class CoreApplication: NSObject,
     /// Shared user defaults
     @objc public let userDefaults: UserDefaults
 
+    /// Default file manager.
+    private let fileManager: RegionsServiceFileManagerProtocol
+
     /// The underlying implementation of our data stores.
     private let userDefaultsStore: UserDefaultsStore
 
@@ -47,7 +50,7 @@ open class CoreApplication: NSObject,
     @objc public let locationService: LocationService
 
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
-    @objc public lazy var regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
+    @objc public lazy var regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
 
     /// Helper property that returns `regionsService.currentRegion`.
     @objc public var currentRegion: Region? {
@@ -73,6 +76,7 @@ open class CoreApplication: NSObject,
         self.config = config
 
         userDefaults = config.userDefaults
+        fileManager = FileManager.default
         userDefaultsStore = UserDefaultsStore(userDefaults: userDefaults)
 
         locationService = config.locationService

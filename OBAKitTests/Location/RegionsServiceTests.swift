@@ -43,6 +43,7 @@ class RegionsServiceTests: OBATestCase {
     var locationManagerMock: LocationManagerMock!
     var locationService: LocationService!
     var dataLoader: MockDataLoader!
+    var fileManager: RegionsServiceFileManagerProtocol!
 
     override func setUp() {
         super.setUp()
@@ -51,6 +52,7 @@ class RegionsServiceTests: OBATestCase {
         locationManagerMock = LocationManagerMock()
         locationService = LocationService(userDefaults: UserDefaults(), locationManager: locationManagerMock)
         dataLoader = (regionsAPIService.dataLoader as! MockDataLoader)
+        fileManager = RegionsServiceFileManagerMock()
     }
 
     // MARK: - Upon creating the Regions Service
@@ -59,7 +61,7 @@ class RegionsServiceTests: OBATestCase {
     func test_init_loadsBundledRegions() {
         stubRegions(dataLoader: dataLoader)
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
         XCTAssertEqual(service.regions.count, 13)
     }
 
@@ -68,10 +70,9 @@ class RegionsServiceTests: OBATestCase {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistData = try PropertyListEncoder().encode([customRegion])
-        userDefaults.set(plistData, forKey: RegionsService.storedRegionsUserDefaultsKey)
-
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        try fileManager.save([customRegion], to: RegionsService.defaultRegionsPath)
+        
+        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
         let firstRegion = try XCTUnwrap(service.regions.first)
         XCTAssertEqual(firstRegion.name, "Custom Region", "Expected the first region to be the custom region")
@@ -83,14 +84,13 @@ class RegionsServiceTests: OBATestCase {
         stubRegions(dataLoader: dataLoader)
 
         let customRegion = Fixtures.customMinneapolisRegion
-        let plistArrayData = try PropertyListEncoder().encode([customRegion])
-        userDefaults.set(plistArrayData, forKey: RegionsService.storedRegionsUserDefaultsKey)
+        try fileManager.save(customRegion, to: RegionsService.defaultRegionsPath)
         userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
 
         let plistData = try PropertyListEncoder().encode(customRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
         XCTAssertEqual(service.currentRegion, customRegion)
     }
@@ -98,11 +98,11 @@ class RegionsServiceTests: OBATestCase {
     func test_init_loadsCurrentRegion_autoSelectEnabled() throws {
         stubRegions(dataLoader: dataLoader)
 
-        let plistData = try PropertyListEncoder().encode(Fixtures.customMinneapolisRegion)
+        let plistData = try JSONEncoder().encode(Fixtures.customMinneapolisRegion)
         userDefaults.set(plistData, forKey: RegionsService.currentRegionUserDefaultsKey)
         locationManagerMock.location = CLLocation(latitude: 47.632445, longitude: -122.312607)
 
-        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
+        let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
 
         let currentRegion = try XCTUnwrap(service.currentRegion)
         XCTAssertEqual(currentRegion.name, "Puget Sound")
@@ -112,7 +112,7 @@ class RegionsServiceTests: OBATestCase {
     func test_init_updateRegionsList() async {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList()
 
@@ -124,7 +124,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList()
 
@@ -137,7 +137,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList(forceUpdate: true)
         XCTAssertFalse(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to not inform delegates that a region update was cancelled")
@@ -151,7 +151,7 @@ class RegionsServiceTests: OBATestCase {
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         userDefaults.set(true, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList()
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
@@ -165,15 +165,15 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList(forceUpdate: true)
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall)
 
         // Get regions from Persistence to ensure they were saved.
         let regions = try XCTUnwrap(
-            try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey),
-            "Expected to get [Region] for \(RegionsService.storedRegionsUserDefaultsKey)"
+            try fileManager.load([Region].self, from: RegionsService.defaultRegionsPath),
+            "Expected to get [Region] from \(RegionsService.defaultRegionsPath.path)"
         )
 
         XCTAssertEqual(regions.count, 1)
@@ -181,12 +181,12 @@ class RegionsServiceTests: OBATestCase {
     }
 
     /// It loads the bundled regions when the data in the user defaults is corrupted.
-    func test_corruptedDefaults() {
+    func test_corruptedDefaults() throws {
         stubRegions(dataLoader: dataLoader)
 
-        self.userDefaults.set(["hello world!"], forKey: RegionsService.storedRegionsUserDefaultsKey)
+        try XCTUnwrap(fileManager.save(["hello world!"], to: RegionsService.defaultRegionsPath))
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         XCTAssertEqual(regionsService.regions.count, 13)
     }
@@ -195,7 +195,7 @@ class RegionsServiceTests: OBATestCase {
     func test_regionUpdated_notifications() {
         stubRegions(dataLoader: dataLoader)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         let newRegion = Fixtures.customMinneapolisRegion
 
@@ -212,7 +212,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegionsJustPugetSound(dataLoader: dataLoader)
         userDefaults.set(Date.distantPast, forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
 
-        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
+        let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, fileManager: fileManager, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
         await regionsService.updateRegionsList()
         XCTAssertTrue(testDelegate.updatedRegionsList.didCall, "Expected RegionsService to inform delegates that the regionsList was updated")
