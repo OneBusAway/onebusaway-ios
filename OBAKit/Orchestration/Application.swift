@@ -591,6 +591,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     public lazy var features = FeatureAvailability(config: self.config, application: self)
 }
 
+// MARK: UIScreenshotServiceDelegate
 extension Application: UIScreenshotServiceDelegate {
     public func screenshotService(_ screenshotService: UIScreenshotService, generatePDFRepresentationWithCompletion completionHandler: @escaping (Data?, Int, CGRect) -> Void) {
         guard let topVC = UIApplication.shared.keyWindowFromScene?.topViewController,
