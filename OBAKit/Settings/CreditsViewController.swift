@@ -36,13 +36,16 @@ class CreditsViewController: UIViewController, AppContext, OBAListViewDataSource
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
         listView.obaDataSource = self
         listView.applyData()

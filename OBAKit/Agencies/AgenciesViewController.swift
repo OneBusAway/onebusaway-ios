@@ -14,6 +14,11 @@ import OBAKitCore
 /// Loads and displays a list of agencies in the current region.
 class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewDataSource {
     let listView = OBAListView()
+    
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,7 +26,6 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
         view.backgroundColor = ThemeColors.shared.systemBackground
 
         listView.obaDataSource = self
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
         title = OBALoc("agencies_controller.title", value: "Agencies", comment: "Title of the Agencies controller")

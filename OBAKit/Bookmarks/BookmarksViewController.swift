@@ -91,6 +91,11 @@ public class BookmarksViewController: UIViewController,
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
+    
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -100,7 +105,6 @@ public class BookmarksViewController: UIViewController,
         listView.contextMenuDelegate = self
         listView.formatters = application.formatters
         listView.register(listViewItem: BookmarkArrivalViewModel.self)
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
         rebuildSortMenu()

@@ -348,6 +348,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         reloadRootUserInterface()
 
         reportAnalyticsUserProperties()
+        UIApplication.shared.delegate?.window??.windowScene?.screenshotService?.delegate = self
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {
@@ -588,4 +589,33 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// `.notRunning` means that a feature is available, but not fully configured. This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
     /// `.running` means that the feature is ready to use.
     public lazy var features = FeatureAvailability(config: self.config, application: self)
+}
+
+extension Application: UIScreenshotServiceDelegate {
+    public func screenshotService(_ screenshotService: UIScreenshotService, generatePDFRepresentationWithCompletion completionHandler: @escaping (Data?, Int, CGRect) -> Void) {
+        guard let topVC = UIApplication.shared.keyWindowFromScene?.topViewController,
+              let scrollerView = topVC.view as? OBAListView,
+              scrollerView.contentSize.height != .zero else {
+            completionHandler(nil, 0, .zero)
+            return
+        }
+        let data = NSMutableData()
+        UIGraphicsBeginPDFContextToData(data, .zero, nil)
+        UIGraphicsBeginPDFPageWithInfo(.init(origin: .zero, size: scrollerView.contentSize), nil)
+        if let context = UIGraphicsGetCurrentContext() {
+            let frame = scrollerView.frame
+            let contentOffset = scrollerView.contentOffset
+            let contentInset = scrollerView.contentInset
+            scrollerView.contentOffset = .zero
+            scrollerView.contentInset = .zero
+            scrollerView.frame = .init(origin: .zero, size: scrollerView.contentSize)
+            scrollerView.layer.render(in: context)
+            scrollerView.frame = frame
+            scrollerView.contentOffset = contentOffset
+            scrollerView.contentInset = contentInset
+        }
+        UIGraphicsEndPDFContext()
+        let y = scrollerView.contentSize.height - scrollerView.contentOffset.y - scrollerView.frame.height
+        completionHandler(data as Data, 0, .init(origin: CGPoint(x: 0, y: y), size: topVC.view.frame.size))
+    }
 }

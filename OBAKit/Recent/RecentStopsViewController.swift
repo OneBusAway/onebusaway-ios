@@ -37,6 +37,10 @@ public class RecentStopsViewController: UIViewController,
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,7 +48,6 @@ public class RecentStopsViewController: UIViewController,
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: OBALoc("recent_stops.delete_all", value: "Delete All", comment: "A button that deletes all of the recent stops in the app."), style: .plain, target: self, action: #selector(deleteAll))
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        view.addSubview(listView)
         listView.contextMenuDelegate = self
         listView.pinToSuperview(.edges)
     }

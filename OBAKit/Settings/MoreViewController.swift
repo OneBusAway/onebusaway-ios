@@ -51,11 +51,14 @@ public class MoreViewController: UIViewController,
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         listView.obaDataSource = self
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
         view.backgroundColor = ThemeColors.shared.systemBackground

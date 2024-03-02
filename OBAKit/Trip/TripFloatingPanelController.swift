@@ -68,6 +68,10 @@ class TripFloatingPanelController: UIViewController,
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,7 +83,6 @@ class TripFloatingPanelController: UIViewController,
         listView.register(listViewItem: TripStopViewModel.self)
 
         view.backgroundColor = ThemeColors.shared.systemBackground
-        view.addSubview(outerStack)
         outerStack.pinToSuperview(.edges)
     }
 

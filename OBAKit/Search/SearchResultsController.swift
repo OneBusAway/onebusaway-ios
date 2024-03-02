@@ -34,13 +34,16 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
         titleView.subtitleLabel.text = subtitleText(from: searchResponse)
 
         listView.obaDataSource = self
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UIViewController Lifecycle
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     override public func viewDidLoad() {
         super.viewDidLoad()
