@@ -85,7 +85,8 @@
 #pragma mark - OBAApplicationDelegate
 
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    return [self.app application:app open:url options:options];
+    [CustomRegionDeepLink parseURL:url application:self.app];
+    return YES;
 }
 
 - (UIApplication*)uiApplication {
