@@ -30,30 +30,6 @@ import MapKit
             displayErrorMessage(application: application)
             return
         }
-
-//        guard let apiService = application.apiService else {
-//            return
-//        }
-
-//        Task { @MainActor in
-//            do {
-//
-//                application.viewRouter.rootNavigateTo(page: .map)
-//
-//                guard let regionCoordinate = try await apiService.getAgenciesWithCoverage().list.first?.region ?? nil else { return  }
-//
-//                // Attempt to extract otp-url if present
-//                let otpUrlString = queryItems.first(where: { $0.name == "otp-url" })?.value
-//                let otpUrl = otpUrlString != nil ? URL(string: otpUrlString!) : nil
-//
-//                let regionProvider = RegionPickerCoordinator(regionsService: application.regionsService)
-//
-//                // Set current region based on given URL
-//                let currentRegion = Region(name: name, OBABaseURL: obaUrl, coordinateRegion: regionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: otpUrl)
-//
-//                try await regionProvider.setCurrentRegion(to: currentRegion)
-//            }
-//        }
     }
 
     static func displayErrorMessage(application: Application) {
