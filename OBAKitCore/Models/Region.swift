@@ -194,7 +194,8 @@ public class Region: NSObject, Identifiable, Codable {
     /// - Parameter coordinateRegion: The coordinate region that circumscribes this region.
     /// - Parameter contactEmail: The contact email address for this region.
     /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
-    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil) {
+    /// - Parameter regionIdentifier: The identifier for this region. If unassigned, it will be given a random value.
+    public required init(name: String, OBABaseURL: URL, coordinateRegion: MKCoordinateRegion, contactEmail: String, regionIdentifier: Int? = nil, openTripPlannerURL: URL? = nil) {
         self.name = name
         self.regionIdentifier = regionIdentifier ?? 1000 + Int.random(in: 0...999)
         isActive = true
@@ -207,12 +208,14 @@ public class Region: NSObject, Identifiable, Codable {
         regionBounds = [bound]
         self.contactEmail = contactEmail
 
+        self.openTripPlannerURL = openTripPlannerURL
+
         // Uninitialized properties
         facebookURL = nil
         language = "en_US"
         open311Servers = []
         openTripPlannerContactEmail = nil
-        openTripPlannerURL = nil
+
         paymentAndroidAppID = nil
         paymentWarningBody = nil
         paymentWarningTitle = nil
