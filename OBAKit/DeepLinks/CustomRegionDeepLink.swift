@@ -30,14 +30,43 @@ import MapKit
             displayErrorMessage(application: application)
             return
         }
+
+        guard let apiService = application.apiService else {
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                application.viewRouter.rootNavigateTo(page: .map)
+
+                guard var regionCoordinate = try await apiService.getAgenciesWithCoverage().list.first?.region ?? nil else { return  }
+
+                // Manually set the span of latitude and longitude delta because the value of latitude and longitude region is very small
+                regionCoordinate.span.latitudeDelta = 2
+                regionCoordinate.span.longitudeDelta = 2
+
+                // Attempt to extract otp-url if present
+                let otpUrlString = queryItems.first(where: { $0.name == "otp-url" })?.value
+                let otpUrl = otpUrlString != nil ? URL(string: otpUrlString!) : nil
+
+                // Create region provider
+                let regionProvider = RegionPickerCoordinator(regionsService: application.regionsService)
+
+                // Set current region based on given URL
+                let currentRegion = Region(name: name, OBABaseURL: obaUrl, coordinateRegion: regionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: otpUrl)
+
+                // Add and set current region
+                try await regionProvider.add(customRegion: currentRegion)
+                try await regionProvider.setCurrentRegion(to: currentRegion)
+            }
+        }
+
     }
 
     static func displayErrorMessage(application: Application) {
         DispatchQueue.main.async {
-            // Obtain the current window scene
+            // Obtain the current window and key window
             guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-
-            // Get the key window for that scene
             guard let keyWindow = windowScene.windows.first(where: { $0.isKeyWindow }) else { return }
 
             let alertController = UIAlertController(
