@@ -67,6 +67,8 @@ class TransitAlertDetailViewController: UIViewController, WKScriptMessageHandler
 
         let view = DocumentWebView(frame: view.bounds, configuration: configuration)
         view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.isOpaque = false
+        view.backgroundColor = ThemeColors.shared.systemBackground
 
         if #available(iOS 16.4, *) {
             view.isInspectable = true

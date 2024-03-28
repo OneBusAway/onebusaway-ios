@@ -84,6 +84,8 @@ class CreditViewerController: UIViewController {
     override func viewDidLoad() {
         webView.frame = view.bounds
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        webView.isOpaque = false
+        webView.backgroundColor = ThemeColors.shared.systemBackground
         view.addSubview(webView)
 
         let mungedCredits = "<code>\(licenseText.replacingOccurrences(of: "\n", with: "<br>"))</code>"
