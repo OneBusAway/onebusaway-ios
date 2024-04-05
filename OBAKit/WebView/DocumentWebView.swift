@@ -25,20 +25,23 @@ class DocumentWebView: WKWebView {
     /// - Parameter htmlFragment: The content to render in the web view.
     /// - Parameter actionButtonTitle: The title of the optional button shown at the bottom of the web view.
     func setPageContent(_ htmlFragment: String, actionButtonTitle: String? = nil) {
-        var content = pageBody.replacingOccurrences(of: "{{{oba_page_content}}}", with: htmlFragment)
-        content = content.replacingOccurrences(of: "{{{accent_color}}}", with: accentHexColor)
-        content = content.replacingOccurrences(of: "{{{accent_foreground_color}}}", with: accentForegroundColor)
+        var content = pageBody
+            .replacingOccurrences(of: "{{{oba_page_content}}}", with: htmlFragment)
+            .replacingOccurrences(of: "{{{accent_color}}}", with: accentHexColor)
+            .replacingOccurrences(of: "{{{accent_foreground_color}}}", with: accentForegroundColor)
 
-        if let actionButtonTitle {
-            let buttonText = """
-            <div class="actions__button-container">
-                <button type="button" class="actions__button-container__button" onclick="window.webkit.messageHandlers.actionButtonClicked.postMessage({})">
-                    \(actionButtonTitle)
-                </button>
-            </div>
-            """
-            content = content.replacingOccurrences(of: "{{{oba_page_actions}}}", with: buttonText)
+        // Construct button HTML if actionButtonTitle is present and not empty
+        let buttonText: String? = actionButtonTitle.flatMap { title in
+            title.isEmpty ? nil : """
+                <div class="actions__button-container">
+                    <button type="button" class="actions__button-container__button" onclick="window.webkit.messageHandlers.actionButtonClicked.postMessage({})">
+                        \(title)
+                    </button>
+                </div>
+                """
         }
+        // Use coalescing operator to remove action button placeholder if buttonText is nil
+        content = content.replacingOccurrences(of: "{{{oba_page_actions}}}", with: buttonText ?? "")
 
         loadHTMLString(content, baseURL: nil)
     }
