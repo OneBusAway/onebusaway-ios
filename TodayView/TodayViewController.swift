@@ -183,7 +183,7 @@ class TodayViewController: UIViewController, BookmarkDataDelegate, NCWidgetProvi
         }
 
         let router = URLSchemeRouter(scheme: Bundle.main.extensionURLScheme!)
-        let url = router.encode(stopID: bookmark.stopID, regionID: bookmark.regionIdentifier)
+        let url = router.encodeViewStop(stopID: bookmark.stopID, regionID: bookmark.regionIdentifier)
 
         extensionContext?.open(url, completionHandler: nil)
     }
