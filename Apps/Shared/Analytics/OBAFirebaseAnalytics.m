@@ -52,7 +52,7 @@
     NSString *eventName = nil;
 
     if (event == OBAAnalyticsEventUserAction) {
-        eventName = kFIRParameterContentType;
+        eventName = kFIREventSelectContent;
     }
     else {
         [OBALogger error:[NSString stringWithFormat:@"Invalid call to -reportEventWithCategory: %@ label: %@ value: %@", @(event), label, value]];
