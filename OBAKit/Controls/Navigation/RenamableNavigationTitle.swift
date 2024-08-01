@@ -99,7 +99,6 @@ fileprivate struct RenamableNavigationTitle<MenuItems: View>: ViewModifier {
             .frame(maxWidth: geometry.size.width, alignment: .center)
             .position(x: geometry.frame(in: .local).midX, y: geometry.frame(in: .local).midY)
         }
-
     }
 }
 
@@ -110,26 +109,19 @@ extension View {
     /// - precondition: `title` cannot be an empty string.
     /// - postcondition: The title will not be set to an empty string. If the user inputs an empty title, it is defaulted back to the pre-editing title.
     /// - parameter title: The string to display in the navigation title. When the user renames the text, it is updating the binding.
-    /// - parameter forceCustomImplementation: Forces the use of the custom implementation (polyfill). This is primarily used for previews.
     /// - parameter menuItems: Additional actions to display in the menu. A `Rename` action is already included by default.
     @ViewBuilder
     func renamableNavigationTitle<C>(
         _ title: Binding<String>,
-        forceCustomImplementation: Bool = false,
         @ViewBuilder menuItems: () -> C = { EmptyView() }
     ) -> some View where C: View {
-        if #available(iOS 16.0, *), !forceCustomImplementation {
-            self
-                .navigationBarTitleDisplayMode(.inline)
-                .navigationTitle(title)
-                .toolbarTitleMenu {
-                    RenameButton()
-                    menuItems()
-                }
-        } else {
-            // Apply our custom implementation of the navigation title, since iOS 16 APIs are unavailable.
-            modifier(RenamableNavigationTitle(title: title, menuItems: menuItems))
-        }
+        self
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(title)
+            .toolbarTitleMenu {
+                RenameButton()
+                menuItems()
+            }
     }
 }
 
@@ -137,7 +129,6 @@ extension View {
 
 fileprivate struct RenamableNavigationTitlePreview: View {
     @State var title = "Hello, world!LONGLONGLONGLONGLONGLONGLONGLONG"
-    var forceCustomImplementation: Bool = false
 
     @State var isShowingAlert = false
 
@@ -152,7 +143,7 @@ fileprivate struct RenamableNavigationTitlePreview: View {
                 title += "+"
             }
         }
-        .renamableNavigationTitle($title, forceCustomImplementation: forceCustomImplementation)
+        .renamableNavigationTitle($title)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Leading", action: {})
@@ -167,21 +158,16 @@ fileprivate struct RenamableNavigationTitlePreview: View {
 
 struct RenamableNavigationTitle_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            RenamableNavigationTitlePreview(forceCustomImplementation: true)
-        }
-        .previewDisplayName("Custom implementation (iOS 15)")
-
         // Test the truncation of the navigation title, and title respecting
         // other toolbar items.
         NavigationView {
-            RenamableNavigationTitlePreview(title: "asdfLongLongLongLongLongLongLongLongLong", forceCustomImplementation: true)
+            RenamableNavigationTitlePreview(title: "asdfLongLongLongLongLongLongLongLongLong")
         }
-        .previewDisplayName("Custom implementation, long title (iOS 15)")
+        .previewDisplayName("long title")
 
         NavigationView {
             RenamableNavigationTitlePreview()
         }
-        .previewDisplayName("iOS stock implementation (iOS 16+)")
+        .previewDisplayName("No title")
     }
 }

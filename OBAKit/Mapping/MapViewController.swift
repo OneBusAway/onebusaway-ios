@@ -211,10 +211,8 @@ class MapViewController: UIViewController,
             alert.addAction(keepLocationOffButton)
         case .impreciseLocation:
             alert.addAction(goToSettingsButton)
-            if #available(iOS 14, *) {
-                alert.addAction(title: OBALoc("locationservices_alert_request_precise_location_once.button", value: "Allow Once", comment: "")) { _ in
-                    self.application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "MapStatusView")
-                }
+            alert.addAction(title: OBALoc("locationservices_alert_request_precise_location_once.button", value: "Allow Once", comment: "")) { _ in
+                self.application.locationService.requestTemporaryFullAccuracyAuthorization(withPurposeKey: "MapStatusView")
             }
             alert.addAction(title: OBALoc("locationservices_alert_keep_precise_location_off.button", value: "Keep Precise Location Off", comment: ""), handler: nil)
         case .locationServicesUnavailable, .locationServicesOn:

@@ -61,11 +61,8 @@ class TripViewController: UIViewController,
         super.viewDidLoad()
 
         // Don't show user location if accuracy is reduced to avoid user confusion.
-        if #available(iOS 14, *) {
-            mapView.showsUserLocation = application.locationService.isLocationUseAuthorized && application.locationService.accuracyAuthorization == .fullAccuracy
-        } else {
-            mapView.showsUserLocation = application.locationService.isLocationUseAuthorized
-        }
+        mapView.showsUserLocation = application.locationService.isLocationUseAuthorized && application.locationService.accuracyAuthorization == .fullAccuracy
+
         mapView.showsTraffic = application.mapRegionManager.mapViewShowsTraffic
         mapView.showsScale = application.mapRegionManager.mapViewShowsScale
         application.mapRegionManager.registerAnnotationViews(mapView: mapView)
