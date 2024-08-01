@@ -123,12 +123,10 @@ class MapStatusView: UIView {
 
     // MARK: - State changes
     func state(for service: LocationService) -> State {
-        if #available(iOS 14, *) {
-            return .init(service.authorizationStatus,
-                           isImprecise: service.accuracyAuthorization == .reducedAccuracy)
-        } else {
-            return .init(service.authorizationStatus)
-        }
+        return .init(
+            service.authorizationStatus,
+            isImprecise: service.accuracyAuthorization == .reducedAccuracy
+        )
     }
 
     func configure(with service: LocationService) {

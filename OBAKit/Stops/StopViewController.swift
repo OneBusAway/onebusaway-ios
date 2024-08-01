@@ -271,18 +271,10 @@ public class StopViewController: UIViewController,
         // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
             filterButtonTitle = "FILTER (ON)"
-            if #available(iOS 15, *) {
-                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
-            } else {
-                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle.fill")
-            }
+            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
         } else {
             filterButtonTitle = "FILTER (OFF)"
-            if #available(iOS 15, *) {
-                filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
-            } else {
-                filterButtonImage = UIImage(systemName: "line.horizontal.3.decrease.circle")
-            }
+            filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle")
         }
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
@@ -406,12 +398,7 @@ public class StopViewController: UIViewController,
         var sortMenu: UIMenu
         let sortMenuTitle = OBALoc("stop_preferences_controller.sorting_section.header_title", value: "Sort By", comment: "Title of the Sorting section")
         let sortMenuImage = UIImage(systemName: "arrow.up.arrow.down")
-        if #available(iOS 15, *) {
-            // Submenus in iOS 15 looks better.
-            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
-        } else {
-            sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, options: .displayInline, children: [sortByTime, sortByRoute])
-        }
+        sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
 
         return sortMenu
     }

@@ -137,11 +137,7 @@ class AwesomeSpotlightView: UIView {
         let continueLabelWidth = skipButtonModel.isEnable ? 0.7 * bounds.size.width : bounds.size.width
         let continueLabelHeight: CGFloat = 30.0
 
-        if #available(iOS 11.0, *) {
-            continueLabel = UILabel(frame: CGRect(x: 0, y: bounds.size.height - continueLabelHeight - safeAreaInsets.bottom, width: continueLabelWidth, height: continueLabelHeight))
-        } else {
-            continueLabel = UILabel(frame: CGRect(x: 0, y: bounds.size.height - continueLabelHeight, width: continueLabelWidth, height: continueLabelHeight))
-        }
+        continueLabel = UILabel(frame: CGRect(x: 0, y: bounds.size.height - continueLabelHeight - safeAreaInsets.bottom, width: continueLabelWidth, height: continueLabelHeight))
 
         continueLabel.font = continueButtonModel.font
         continueLabel.textAlignment = .center
@@ -156,11 +152,7 @@ class AwesomeSpotlightView: UIView {
         let skipSpotlightButtonWidth = bounds.size.width - continueLabelWidth
         let skipSpotlightButtonHeight: CGFloat = 30.0
 
-        if #available(iOS 11.0, *) {
-            skipSpotlightButton = UIButton(frame: CGRect(x: continueLabelWidth, y: bounds.size.height - skipSpotlightButtonHeight - safeAreaInsets.bottom, width: skipSpotlightButtonWidth, height: skipSpotlightButtonHeight))
-        } else {
-            skipSpotlightButton = UIButton(frame: CGRect(x: continueLabelWidth, y: bounds.size.height - skipSpotlightButtonHeight, width: skipSpotlightButtonWidth, height: skipSpotlightButtonHeight))
-        }
+        skipSpotlightButton = UIButton(frame: CGRect(x: continueLabelWidth, y: bounds.size.height - skipSpotlightButtonHeight - safeAreaInsets.bottom, width: skipSpotlightButtonWidth, height: skipSpotlightButtonHeight))
 
         skipSpotlightButton.addTarget(self, action: #selector(AwesomeSpotlightView.skipSpotlight), for: .touchUpInside)
         skipSpotlightButton.setTitle(skipButtonModel.title, for: [])
