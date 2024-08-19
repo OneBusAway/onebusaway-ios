@@ -1,0 +1,208 @@
+author: Open Transit Software Foundation
+author_url: https://github.com/onebusaway/onebusaway-ios
+module: OBAKit
+documentation: Tutorials/*.md
+swift_build_tool: xcodebuild
+xcodebuild_arguments:
+  - -project
+  - OBAKit.xcodeproj
+  - -scheme
+  - OBAKit
+  - -configuration
+  - Debug
+  - -sdk
+  - iphonesimulator
+  - -verbose
+  - CODE_SIGN_IDENTITY=
+  - CODE_SIGNING_REQUIRED=NO
+  - CODE_SIGNING_ALLOWED=NO
+  - CODE_SIGN_ENTITLEMENTS=
+  - ENTITLEMENTS_REQUIRED=NO
+custom_categories:
+  - name: Tutorials
+    children:
+      - ContextMenus
+      - WhiteLabel
+  - name: Orchestration
+    children:
+      - Application
+      - CoreApplication
+      - AppConfig
+      - CoreAppConfig
+  - name: OBA Classic UI
+    children:
+      - ClassicApplicationRootController
+      - MapViewController
+      - MoreViewController
+      - RecentStopsViewController
+      - StopViewController
+  - name: REST API
+    children:
+      - RESTAPIService
+      - Agency
+      - AgencyAlert
+      - AgencyAlertsStore
+      - AgencyWithCoverage
+      - ArrivalDeparture
+      - CoreRESTAPIResponse
+      - Frequency
+      - HasReferences
+      - Open311Server
+      - PolylineEntity
+      - RESTAPIResponse
+      - References
+      - Route
+      - ServiceAlert
+      - Stop
+      - StopArrivals
+      - StopsForRoute
+      - Trip
+      - TripDetails
+      - TripStatus
+      - TripStopTime
+      - VehicleStatus
+  - name: Regions API
+    children:
+      - Region
+      - RegionsAPIService
+  - name: OneBusAway.co (Obaco) API
+    children:
+      - ObacoAPIService
+      - AgencyVehicle
+      - Alarm
+      - WeatherForecast
+  - name: Bookmarks
+    children:
+      - Bookmark
+      - BookmarkDataLoader
+      - BookmarkGroup
+      - BookmarksViewController
+  - name: Operations
+    children:
+      - AgencyAlertsOperation
+      - AsyncOperation
+      - DecodableOperation
+      - MultiAgencyAlertsOperation
+      - NetworkOperation
+      - PlacemarkSearchOperation
+  - name: Other Services
+    children:
+      - APIService
+      - LocationService
+      - MapRegionManager
+      - RegionsService
+  - name: User Data
+    children:
+      - UserDataStore
+      - UserDefaultsStore
+  - name: Push Notifications
+    children:
+      - AlarmPushBody
+      - PushErrors
+      - PushManagerUserID
+      - PushManagerUserIDCallback
+      - PushService
+      - PushServiceDelegate
+      - PushServiceErrorHandler
+      - PushServiceNotificationReceivedHandler
+      - PushServiceProvider
+  - name: Analytics
+    children:
+      - Analytics
+      - AnalyticsKeys
+      - AnalyticsLabels
+      - AnalyticsEvent
+  - name: Search
+    children:
+      - SearchManager
+      - SearchRequest
+      - SearchResponse
+      - SearchType
+      - SearchResultsController
+  - name: Deep Linking
+    children:
+      - AppInterop
+      - AppLinksRouter
+      - ArrivalDepartureDeepLink
+      - StopURLData
+      - TripConvertible
+      - URLSchemeRouter
+      - ViewRouter
+  - name: Foundation Extensions
+    children:
+      - Array
+      - Bundle
+      - Dictionary
+      - DispatchQueue
+      - HTTPURLResponse
+      - MeasurementFormatter
+      - Sequence
+      - Set
+      - String
+      - URL
+      - URLComponents
+      - URLSession
+      - UUID
+      - UserDefaults
+  - name: CoreLocation Extensions
+    children:
+      - CLAuthorizationStatus
+      - CLCircularRegion
+      - CLLocationCoordinate2D
+      - CLLocationDirection
+      - CLLocationManager
+  - name: MapKit Extensions
+    children:
+      - MKDirections
+      - MKMapPoint
+      - MKMapRect
+      - MKMapSize
+      - MKMapView
+      - MKUserLocation
+  - name: UIKit Extensions
+    children:
+      - UIAlertAction
+      - UIAlertController
+      - UIBarButtonItem
+      - UIButton
+      - UICollectionView
+      - UIColor
+      - UIDevice
+      - UIEdgeInsets
+      - UIFont
+      - UIImage
+      - UILabel
+      - UILayoutGuide
+      - UIPasteboard
+      - UIStackView
+      - UIView
+      - UIViewController
+      - UIWindow
+  - name: Third Party Extensions
+    children:
+      - Connectivity
+  - name: Miscellaneous UI
+    children:
+      - CollectionController
+      - DepartureTimeBadge
+      - EmptyDataSetView
+      - Formatters
+      - ImageBadgeRenderer
+      - Strings
+      - ThemeColors
+      - ThemeMetrics
+      - VisualEffectViewController
+  - name: Protobuf Alerts
+    children:
+      - TransitRealtime_Alert
+      - TransitRealtime_EntitySelector
+      - TransitRealtime_FeedEntity
+      - TransitRealtime_FeedHeader
+      - TransitRealtime_FeedMessage
+      - TransitRealtime_Position
+      - TransitRealtime_TimeRange
+      - TransitRealtime_TranslatedString
+      - TransitRealtime_TripDescriptor
+      - TransitRealtime_TripUpdate
+      - TransitRealtime_VehicleDescriptor
+      - TransitRealtime_VehiclePosition
