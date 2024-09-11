@@ -10,6 +10,7 @@ targets:
       - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel
+      - package: OTPKit
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
@@ -23,11 +24,11 @@ targets:
       base:
         APPLICATION_EXTENSION_API_ONLY: false
       configs:
-          Debug:
-            LD_RUNPATH_SEARCH_PATHS:
-              - "$(inherited)"
-              - "@executable_path/Frameworks"
-          Release:
-            LD_RUNPATH_SEARCH_PATHS:
-              - "$(inherited)"
-              - "@executable_path/Frameworks"
+        Debug:
+          LD_RUNPATH_SEARCH_PATHS:
+            - "$(inherited)"
+            - "@executable_path/Frameworks"
+        Release:
+          LD_RUNPATH_SEARCH_PATHS:
+            - "$(inherited)"
+            - "@executable_path/Frameworks"
