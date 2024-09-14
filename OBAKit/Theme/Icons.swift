@@ -44,6 +44,16 @@ class Icons: NSObject {
         configureForTabIcon(systemImage(named: "bookmark.fill"))
     }
 
+    /// The Map tab icon, for apps using a tab bar UI metaphor.
+    public class var tripPlannerTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "bus"))
+    }
+
+    /// The Map tab selected icon, for apps using a tab bar UI metaphor.
+    public class var tripPlannerSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "bus.fill"))
+    }
+
     /// A More tab icon, for apps using a tab bar UI metaphor.
     public class var moreTabIcon: UIImage {
         configureForTabIcon(systemImage(named: "ellipsis.circle"))

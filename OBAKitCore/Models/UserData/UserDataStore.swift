@@ -10,7 +10,7 @@
 import Foundation
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
-    case map, recentStops, bookmarks, settings
+    case map, recentStops, bookmarks, tripPlanner, settings
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -565,8 +565,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     private func upsert(bookmark: Bookmark) {
         if
             let existing = findBookmark(id: bookmark.id),
-            let index = bookmarks.firstIndex(of: existing)
-        {
+            let index = bookmarks.firstIndex(of: existing) {
             bookmarks.remove(at: index)
             bookmarks.insert(bookmark, at: index)
         }
