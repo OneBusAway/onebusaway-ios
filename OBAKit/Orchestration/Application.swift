@@ -15,6 +15,7 @@ import OBAKitCore
 import SafariServices
 import MapKit
 import SwiftUI
+import OTPKit
 #if canImport(Stripe)
 import StripeApplePay
 #endif
@@ -89,6 +90,8 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     lazy var searchManager = SearchManager(application: self)
 
+    public private(set) var tripPlannerService: TripPlannerService?
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
@@ -147,6 +150,7 @@ public class Application: CoreApplication, PushServiceDelegate {
         super.init(config: config)
 
         configureAppearanceProxies()
+        refreshServices()
     }
 
     // MARK: - Onboarding/Data Migration
@@ -540,6 +544,31 @@ public class Application: CoreApplication, PushServiceDelegate {
             await displayError(error)
         }
     }
+
+    public override func regionsService(_ service: RegionsService, willUpdateToRegion region: Region) {
+        refreshServices()
+    }
+
+    func refreshServices() {
+        /// Recreates the `restAPIService` from the current region. This is
+        /// called when the app launches and when the current region changes.
+        guard let region = regionsService.currentRegion, let url = region.openTripPlannerURL else {
+            tripPlannerService = nil
+            NotificationCenter.default.post(name: .tripPlannerServiceDidChange, object: self)
+                return
+            }
+
+        tripPlannerService = TripPlannerService(
+                apiClient: RestAPI(baseURL: url),
+                locationManager: CLLocationManager(),
+                searchCompleter: MKLocalSearchCompleter()
+            )
+
+        tripPlannerService?.changeMapCamera(to: region.coordinate)
+
+            print("trip planner service: ", tripPlannerService)
+        NotificationCenter.default.post(name: .tripPlannerServiceDidChange, object: self)
+        }
 
     // MARK: - Analytics
 

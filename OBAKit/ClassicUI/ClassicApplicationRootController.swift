@@ -16,6 +16,7 @@ public class ClassicApplicationRootController: UITabBarController {
         case map = 0
         case recentStops
         case bookmarks
+        case tripPlanner
         case more
     }
 
@@ -23,33 +24,79 @@ public class ClassicApplicationRootController: UITabBarController {
 
     @objc public init(application: Application) {
         self.application = application
-
-        self.mapController = MapViewController(application: application)
-        self.recentStopsController = RecentStopsViewController(application: application)
-        self.bookmarksController = BookmarksViewController(application: application)
-        self.moreController = MoreViewController(application: application)
-
         super.init(nibName: nil, bundle: nil)
-
         self.application.viewRouter.rootController = self
-
-        let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
-        let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController)
-        let bookmarksNav = application.viewRouter.buildNavigation(controller: self.bookmarksController)
-        let moreNav = application.viewRouter.buildNavigation(controller: self.moreController)
-
-        viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
-
-        selectedIndex = application.userDataStore.lastSelectedView.rawValue
+        setupControllers()
+        observeTripPlannerServiceChanges()
     }
-
-    let mapController: MapViewController
-    let recentStopsController: RecentStopsViewController
-    let bookmarksController: BookmarksViewController
-    let moreController: MoreViewController
 
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    private lazy var mapController: MapViewController = {
+        MapViewController(application: application)
+    }()
+
+    private lazy var recentStopsController: RecentStopsViewController = {
+        RecentStopsViewController(application: application)
+    }()
+
+    private lazy var bookmarksController: BookmarksViewController = {
+        BookmarksViewController(application: application)
+    }()
+
+    private lazy var moreController: MoreViewController = {
+        MoreViewController(application: application)
+    }()
+
+    private var currentViewControllers: [UIViewController] {
+        let mapNav = application.viewRouter.buildNavigation(controller: mapController, prefersLargeTitles: false)
+        let recentStopsNav = application.viewRouter.buildNavigation(controller: recentStopsController)
+        let bookmarksNav = application.viewRouter.buildNavigation(controller: bookmarksController)
+        let moreNav = application.viewRouter.buildNavigation(controller: moreController)
+
+        var controllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
+
+        if let tripPlannerService = application.tripPlannerService {
+            let tripPlannerController = TripPlannerHostingController(tripPlannerService: tripPlannerService)
+            let tripPlannerNav = application.viewRouter.buildNavigation(controller: tripPlannerController)
+            controllers.insert(tripPlannerNav, at: 3) // Insert before 'more'
+        }
+
+        return controllers
+    }
+
+    private func setupControllers() {
+        updateViewControllers()
+    }
+
+    private func observeTripPlannerServiceChanges() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(updateViewControllers),
+            name: .tripPlannerServiceDidChange,
+            object: application
+        )
+    }
+
+    @objc private func updateViewControllers() {
+        let newViewControllers = currentViewControllers
+
+        if newViewControllers != viewControllers {
+            viewControllers = newViewControllers
+
+            // Ensure the selected index is still valid
+            if selectedIndex >= newViewControllers.count {
+                selectedIndex = 0
+            }
+
+            application.userDataStore.lastSelectedView = SelectedTab(rawValue: selectedIndex) ?? .map
+        }
     }
 
     public override func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {

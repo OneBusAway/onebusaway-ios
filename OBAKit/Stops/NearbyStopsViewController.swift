@@ -128,7 +128,7 @@ class NearbyStopsViewController: UIViewController,
             directions[stop.direction] = list
         }
 
-        let tapHandler = { [unowned self] (vm: StopViewModel) -> Void in
+        let tapHandler = { [unowned self] (vm: StopViewModel) in
             self.application.viewRouter.navigateTo(stopID: vm.stopID, from: self)
         }
 
