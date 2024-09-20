@@ -21,4 +21,4 @@ targets:
 packages:
     OneSignal:
         url: https://github.com/OneSignal/OneSignal-iOS-SDK.git
-        minorVersion: 3.11.2
+        minorVersion: 3.12.9
