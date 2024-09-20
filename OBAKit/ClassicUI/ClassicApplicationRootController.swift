@@ -31,6 +31,8 @@ public class ClassicApplicationRootController: UITabBarController {
 
         super.init(nibName: nil, bundle: nil)
 
+        self.tabBar.isTranslucent = false
+
         self.application.viewRouter.rootController = self
 
         let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
