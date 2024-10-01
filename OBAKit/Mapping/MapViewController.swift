@@ -202,7 +202,7 @@ class MapViewController: UIViewController,
 
         switch mapStatusViewState {
         case .notDetermined:
-            alert.addAction(title: OBALoc("locationservices_alert_request_access.button", value: "Allow Access to Location", comment: "")) { _ in
+            alert.addAction(title: Strings.continue) { _ in
                 self.application.locationService.requestInUseAuthorization()
             }
             alert.addAction(keepLocationOffButton)
