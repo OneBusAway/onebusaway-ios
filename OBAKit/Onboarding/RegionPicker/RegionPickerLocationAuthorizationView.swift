@@ -41,13 +41,6 @@ public struct RegionPickerLocationAuthorizationView<Provider: RegionProvider>: V
                 .cornerRadius(8)
                 .labelStyle(.titleAndIcon)
                 .foregroundColor(.white)
-
-                Button {
-                    regionProvider.automaticallySelectRegion = false
-                    dismiss()
-                } label: {
-                    Label(OBALoc("location_permission_bulletin.do_not_use_location_button_text", value: "Don't use my location", comment: "Button the user can tap on to disallow access to their location."), systemImage: "location.slash")
-                }
             }
             .symbolVariant(.fill)
             .tint(.blue) // .accentColor might fail LocationButton's contrast test, so we'll just use the standard blue.

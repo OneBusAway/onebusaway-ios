@@ -213,9 +213,6 @@
 "locationservices_alert_off.title" = "OneBusAway works best with your location.";
 
 /* No comment provided by engineer. */
-"locationservices_alert_request_access.button" = "Allow Access to Location";
-
-/* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Allow Once";
 
 /* Explains the purpose of the Manage Bookmarks controller */
