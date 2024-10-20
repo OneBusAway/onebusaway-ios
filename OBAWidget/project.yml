@@ -1,0 +1,17 @@
+targets:
+  OBAWidget:
+    type: app-extension
+    platform: iOS
+    sources: ["."]
+    dependencies:
+      - target: OBAKitCore
+      - sdk: SwiftUI.framework
+      - sdk: WidgetKit.framework
+    entitlements:
+      path: OBAWidget.entitlements
+    info:
+      path: Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+
