@@ -10,7 +10,7 @@ import WidgetKit
 import SwiftUI
 
 struct OBAWidget: Widget {
-    let kind: String = "OBATodayViewWidget"
+    let kind: String = "OBAWidget"
     let dataProvider = WidgetDataProvider.shared
     
     var body: some WidgetConfiguration {
@@ -30,7 +30,7 @@ struct OBAWidget: Widget {
 #Preview(as: .systemMedium) {
     OBAWidget()
 } timeline: {
-    BookmarkEntry(date: .now, bookmarkDepartures: [])
-    BookmarkEntry(date: .distantFuture, bookmarkDepartures: [])
+    BookmarkEntry(date: .now, bookmarks: [])
+    BookmarkEntry(date: .distantFuture, bookmarks: [])
 }
 

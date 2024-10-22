@@ -19,26 +19,27 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     
     // MARK: Placeholder
     func placeholder(in context: Context) -> BookmarkEntry {
-        BookmarkEntry(date: .now, bookmarkDepartures: [])
+        BookmarkEntry(date: .now, bookmarks: [])
     }
     
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> BookmarkEntry {
-        let data = await dataProvider.loadData()
         
-        let entry = BookmarkEntry(date: .now, bookmarkDepartures: data)
-     
+        await dataProvider.loadData()
+        let data = await dataProvider.getBookmarks()
+        
+        let entry = BookmarkEntry(date: .now, bookmarks: data)
+
         return entry
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
         
-        let data = await dataProvider.loadData()
-  
-        let entry = BookmarkEntry(date: .now, bookmarkDepartures: data)
+        await dataProvider.loadData()
+        let data = await dataProvider.getBookmarks()
         
+        let entry = BookmarkEntry(date: .now, bookmarks: data)
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 3, to: Date())!
         
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
-    
 }

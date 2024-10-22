@@ -48,15 +48,15 @@ struct OBAWidgetEntryView: View {
             Spacer().frame(height: 10)
             
             //MARK: Bookmark Row View
-            if !entry.bookmarkDepartures.isEmpty {
+            if !entry.bookmarks.isEmpty {
                 VStack(spacing: 10) {
                     ForEach(
-                        entry.bookmarkDepartures.prefix(maxBookmarkCount), id: \.self
-                    ) { bmDep in
+                        entry.bookmarks.prefix(maxBookmarkCount), id: \.self
+                    ) { bookmark in
                         WidgetRowView(
-                            bookmark: bmDep.bookmark,
+                            bookmark: bookmark,
                             formatters: dataProvider.formatters,
-                            departures: bmDep.departures
+                            departures: loadArrivalDeparture(with: bookmark)
                         )
                     }
                 }
@@ -70,13 +70,21 @@ struct OBAWidgetEntryView: View {
     
     // MARK: Helper functions
     private func formattedDate(_ date: Date) -> String {
-        if entry.bookmarkDepartures.isEmpty {
+        if entry.bookmarks.isEmpty {
             return "--"
         }
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
         return formatter.string(from: date)
         
+    }
+    
+    private func loadArrivalDeparture(with bm: Bookmark) -> [ArrivalDeparture]? {
+        guard let key = TripBookmarkKey(bookmark: bm) else {
+            return nil
+        }
+        let departures = dataProvider.lookupArrivalDeparture(with: key)
+        return departures
     }
     
     //MARK: Empty state view
@@ -97,6 +105,6 @@ struct OBAWidgetEntryView: View {
 #Preview(as: .systemMedium) {
     OBAWidget()
 } timeline: {
-    BookmarkEntry(date: .now, bookmarkDepartures: [])
-    BookmarkEntry(date: .distantFuture, bookmarkDepartures: [])
+    BookmarkEntry(date: .now, bookmarks: [])
+    BookmarkEntry(date: .distantFuture, bookmarks: [])
 }

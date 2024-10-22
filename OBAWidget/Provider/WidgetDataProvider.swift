@@ -9,14 +9,11 @@ import Foundation
 import OBAKitCore
 import CoreLocation
 
-public struct BookmarkDeparture: Hashable {
-    let bookmark: Bookmark
-    let departures: [ArrivalDeparture]
-}
 
 /// `WidgetDataProvider` is responsible for fetching and providing relevant data to the widget timeline provider.
+@MainActor
 class WidgetDataProvider: NSObject, ObservableObject {
-
+    
     public let formatters = Formatters(
         locale: Locale.autoupdatingCurrent,
         calendar: Calendar.autoupdatingCurrent,
@@ -24,12 +21,6 @@ class WidgetDataProvider: NSObject, ObservableObject {
     )
     
     static let shared = WidgetDataProvider()
- 
-    //MARK: initializer
-    override init(){
-        super.init()
-    }
-    
     private let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
     
     private lazy var locationManager = CLLocationManager()
@@ -37,7 +28,6 @@ class WidgetDataProvider: NSObject, ObservableObject {
         userDefaults: userDefaults,
         locationManager: locationManager
     )
-    
     
     private lazy var app: CoreApplication = {
         let bundledRegions = Bundle.main.path(forResource: "regions", ofType: "json")!
@@ -55,17 +45,14 @@ class WidgetDataProvider: NSObject, ObservableObject {
     }
     
     /// Loads arrivals and departures for all favorited bookmarks for widget efficiently.
-    /// Returns an array of `BookmarkDepartures`.
-    public func loadData() async -> [BookmarkDeparture] {
+    public func loadData() async {
         guard let apiService = app.apiService else {
-            return []
+            return
         }
         
-        var bookmarkDepartures: [BookmarkDeparture] = []
+        let bookmarks = getBookmarks().filter { $0.isTripBookmark }
         
-        let bookmarks = bestAvailableBookmarks
-        
-        await withTaskGroup(of: BookmarkDeparture?.self) { group in
+        await withTaskGroup(of: Void.self) { group in
             for bookmark in bookmarks {
                 group.addTask {
                     do {
@@ -75,25 +62,30 @@ class WidgetDataProvider: NSObject, ObservableObject {
                             minutesAfter: 60
                         ).entry
                         
-                        let departures = stopArrivals.arrivalsAndDepartures
+                        // Update the tripBookmarkKeys dictionary on the main thread
+                        await MainActor.run {
+                            let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
+                            for (key, deps) in keysAndDeps {
+                                self.arrDepDic[key] = deps
+                            }
+                        }
                         
-                        return BookmarkDeparture(
-                            bookmark: bookmark,
-                            departures: departures
-                        )
-                    }catch{
-                        print("Error Fetching data for bookmark \(bookmark.name) : \(error)")
-                        return nil
+                    } catch {
+                        print("Error Fetching data for bookmark \(bookmark.name): \(error)")
                     }
                 }
             }
-            
-            for await result in group {
-                if let data = result {
-                    bookmarkDepartures.append(data)
-                }
-            }
         }
-        return bookmarkDepartures
     }
+    
+    public func lookupArrivalDeparture(with key: TripBookmarkKey) -> [ArrivalDeparture] {
+        return arrDepDic[key, default: []]
+    }
+    
+    public func getBookmarks() -> [Bookmark] {
+        return bestAvailableBookmarks
+    }
+    
+    private var arrDepDic = [TripBookmarkKey: [ArrivalDeparture]]()
+    
 }

@@ -10,6 +10,6 @@ import WidgetKit
 
 struct BookmarkEntry: TimelineEntry {
     let date: Date
-    let bookmarkDepartures: [BookmarkDeparture]
+    let bookmarks: [Bookmark]
 //    let isRefreshing: Bool
 }

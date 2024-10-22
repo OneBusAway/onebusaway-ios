@@ -33,7 +33,8 @@ struct WidgetRowView: View {
         } else {
             return OBALoc("today_screen.tap_for_more_information",
                           value: "Tap for more information",
-                          comment: "Tap for more information subheading on Today view")
+                          comment: "Tap for more information subheading on Today view"
+                         )
         }
     }
     
@@ -60,6 +61,7 @@ struct WidgetRowView: View {
     }
     
     // MARK: - Departure Time Badges
+    
     private var departureTimeBadges: some View {
         HStack(spacing: 5) {
             ForEach(departures?.prefix(Constants.maxDeparturesToShow) ?? [], id: \.self) { departure in
@@ -72,6 +74,7 @@ struct WidgetRowView: View {
     }
     
     // MARK: - Helper Functions
+    
     private func updateNextDepartureLabel() -> String {
         guard let departures = departures else {
             return OBALoc("today_screen.tap_for_more_information",
