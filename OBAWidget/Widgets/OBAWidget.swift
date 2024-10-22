@@ -21,7 +21,6 @@ struct OBAWidget: Widget {
             OBAWidgetEntryView(entry: entry, dataProvider: dataProvider)
                 .containerBackground(.fill.quaternary, for: .widget)
         }
-        .description("Select Bookmarks to display.")
         .supportedFamilies([.systemMedium, .systemLarge])
         
     }

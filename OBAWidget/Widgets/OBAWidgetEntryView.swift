@@ -10,49 +10,32 @@ import SwiftUI
 import WidgetKit
 
 struct OBAWidgetEntryView: View {
-    
     var entry: BookmarkTimelineProvider.Entry
     let dataProvider: WidgetDataProvider
     @Environment(\.widgetFamily) var widgetFamily
     
     private var maxBookmarkCount: Int {
-        switch widgetFamily {
-        case .systemLarge:
-            return 7
-        case .systemMedium:
-            return 2
-        default:
-            return 2
-        }
+        widgetFamily == .systemLarge ? 7 : 2
     }
     
     var body: some View {
         VStack(alignment: .leading) {
-            
-            //MARK: Header View
-            VStack(alignment: .leading) {
-                HStack {
-                    VStack {
-                        HStack{
-                            Text("Last updated at: \(formattedDate(entry.date))")
-                                .font(.system(size: 12))
-                                .foregroundStyle(.secondary)
-                                .fontWeight(.medium)
-                        }
-                    }
-                    Spacer()
-                    VStack { RefreshButton().invalidatableContent() }
-                }
+            // MARK: Header View
+            HStack {
+                Text("Last updated at: \(formattedDate(entry.date))")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .fontWeight(.medium)
+                
+                Spacer()
+                RefreshButton().invalidatableContent()
             }
+            .padding(.bottom, 10)
             
-            Spacer().frame(height: 10)
-            
-            //MARK: Bookmark Row View
+            // MARK: Bookmark Row View
             if !entry.bookmarks.isEmpty {
                 VStack(spacing: 10) {
-                    ForEach(
-                        entry.bookmarks.prefix(maxBookmarkCount), id: \.self
-                    ) { bookmark in
+                    ForEach(entry.bookmarks.prefix(maxBookmarkCount), id: \.self) { bookmark in
                         WidgetRowView(
                             bookmark: bookmark,
                             formatters: dataProvider.formatters,
@@ -64,37 +47,38 @@ struct OBAWidgetEntryView: View {
                 emptyStateView
                     .multilineTextAlignment(.center)
             }
+            
             Spacer()
         }
     }
     
     // MARK: Helper functions
-    private func formattedDate(_ date: Date) -> String {
-        if entry.bookmarks.isEmpty {
-            return "--"
-        }
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a"
-        return formatter.string(from: date)
-        
+        return formatter
+    }()
+    
+    private func formattedDate(_ date: Date) -> String {
+        entry.bookmarks.isEmpty ? "--" : Self.dateFormatter.string(from: date)
     }
     
-    private func loadArrivalDeparture(with bm: Bookmark) -> [ArrivalDeparture]? {
-        guard let key = TripBookmarkKey(bookmark: bm) else {
-            return nil
+    private func loadArrivalDeparture(with bookmark: Bookmark) -> [ArrivalDeparture]? {
+        TripBookmarkKey(bookmark: bookmark).flatMap {
+            dataProvider.lookupArrivalDeparture(with: $0)
         }
-        let departures = dataProvider.lookupArrivalDeparture(with: key)
-        return departures
     }
     
-    //MARK: Empty state view
+    // MARK: Empty state view
     private var emptyStateView: some View {
         VStack {
             Spacer()
             Text(
                 OBALoc(
                     "today_screen.no_data_description",
-                    value: "Add bookmarks to Today View Bookmarks to see them here.", comment: "")
+                    value: "Add bookmarks to Today View Bookmarks to see them here.",
+                    comment: ""
+                )
             )
             Spacer()
         }
