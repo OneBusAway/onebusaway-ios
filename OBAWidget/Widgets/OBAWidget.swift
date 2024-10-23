@@ -32,4 +32,3 @@ struct OBAWidget: Widget {
     BookmarkEntry(date: .now, bookmarks: [])
     BookmarkEntry(date: .distantFuture, bookmarks: [])
 }
-

@@ -17,6 +17,7 @@ private enum Constants {
     static let fontSize: CGFloat = 13
 }
 
+
 // MARK: - WidgetRowView
 struct WidgetRowView: View {
     let bookmark: Bookmark?
@@ -31,10 +32,7 @@ struct WidgetRowView: View {
         if departures != nil {
             return updateNextDepartureLabel()
         } else {
-            return OBALoc("today_screen.tap_for_more_information",
-                          value: "Tap for more information",
-                          comment: "Tap for more information subheading on Today view"
-                         )
+            return LocalizationKeys.tapForMoreInformation
         }
     }
     
@@ -42,21 +40,24 @@ struct WidgetRowView: View {
         HStack {
             VStack(alignment: .leading) {
                 Text(bookmarkTitle)
-                    .font(.system(size: Constants.fontSize,
-                                  weight: .semibold))
+                    .font(.system(size: Constants.fontSize, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 
                 Text(nextDepartureLabel)
                     .font(.system(size: Constants.fontSize))
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(width: Constants.rowWidth,
-                   alignment: .leading )
+            // if the badge is hidden take up the full width otherwise use constant
+            .frame(maxWidth: departures?.isEmpty == false ? Constants.rowWidth : .infinity, alignment: .leading)
             
             Spacer()
             
-            departureTimeBadges
+            if departures?.isEmpty == false {
+                departureTimeBadges
+            }
         }
     }
     
@@ -77,18 +78,13 @@ struct WidgetRowView: View {
     
     private func updateNextDepartureLabel() -> String {
         guard let departures = departures else {
-            return OBALoc("today_screen.tap_for_more_information",
-                          value: "Tap for more information",
-                          comment: "Tap for more information subheading on Today view")
+            return LocalizationKeys.tapForMoreInformation
         }
         
         if let firstDeparture = departures.first {
             return formatters.formattedScheduleDeviation(for: firstDeparture)
         } else {
-            return String(format: OBALoc("today_view.no_departures_in_next_n_minutes_fmt",
-                                         value: "No departures in the next %@ minutes",
-                                         comment: ""),
-                          String(Constants.minutes))
+            return String(format: LocalizationKeys.noDeparturesInNextNMinutes, String(Constants.minutes))
         }
     }
 }

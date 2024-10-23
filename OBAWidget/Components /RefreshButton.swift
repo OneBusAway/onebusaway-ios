@@ -10,7 +10,6 @@ import AppIntents
 import WidgetKit
 
 //  MARK: - RefreshWidgetIntent
-/// `RefreshWidgetIntent` is an `AppIntent` that manually refreshes the widget's timeline.
 /// Since there's no built-in user interaction method for reloading widget timelines,
 /// this intent serves as a workaround to provide that functionality via a button.
 struct RefreshWidgetIntent: AppIntent {
@@ -38,8 +37,8 @@ struct RefreshButton: View {
                     .font(.system(size: 12))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal,5)
-            .padding(.vertical, 3)
+            .padding(.horizontal,6)
+            .padding(.vertical, 4)
             .background(Color(.brand))
             .cornerRadius(8)
         }

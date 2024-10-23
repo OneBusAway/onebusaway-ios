@@ -68,7 +68,10 @@ class WidgetDataProvider: NSObject, ObservableObject {
                 }
             }
         } catch {
-            Logger.error("Error fetching data for bookmark \(bookmark.name): \(error)")
+            Logger
+                .error(
+                    "Error fetching data for bookmark \(bookmark.name) with bookmark id: \(bookmark.id): \(error)"
+                )
         }
     }
     
