@@ -59,7 +59,6 @@ extension View {
 struct BadgeStyle: ViewModifier {
     let backgroundColor: Color
     let accessibilityLabel: String
-    
     func body(content: Content) -> some View {
         content
             .font(.system(size: 13))

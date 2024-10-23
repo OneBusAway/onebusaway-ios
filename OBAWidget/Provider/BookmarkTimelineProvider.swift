@@ -25,7 +25,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> BookmarkEntry {
         
         await dataProvider.loadData()
-        let data = await dataProvider.getBookmarks()
+        let data = dataProvider.getBookmarks()
         
         let entry = BookmarkEntry(date: .now, bookmarks: data)
 
@@ -35,7 +35,7 @@ struct BookmarkTimelineProvider: AppIntentTimelineProvider {
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<BookmarkEntry> {
         
         await dataProvider.loadData()
-        let data = await dataProvider.getBookmarks()
+        let data = dataProvider.getBookmarks()
         
         let entry = BookmarkEntry(date: .now, bookmarks: data)
         let nextUpdate = Calendar.current.date(byAdding: .hour, value: 3, to: Date())!

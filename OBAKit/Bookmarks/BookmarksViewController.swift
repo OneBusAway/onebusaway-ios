@@ -160,7 +160,6 @@ public class BookmarksViewController: UIViewController,
     }
     
     // MARK: Refresh Widget
-    
     func reloadWidget() {
         print("Reloading the widget")
         WidgetCenter.shared.reloadTimelines(ofKind: "OBAWidget")
