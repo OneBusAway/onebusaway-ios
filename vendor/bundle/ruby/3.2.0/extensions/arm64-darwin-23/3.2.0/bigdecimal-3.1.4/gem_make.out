@@ -1,0 +1,53 @@
+current directory: /Users/muhammadhilmytsaqifveradin/Documents/GSOC-APPLICATION/OBA-iOS-Local/onebusaway-ios/vendor/bundle/ruby/3.2.0/gems/bigdecimal-3.1.4/ext/bigdecimal
+/Users/muhammadhilmytsaqifveradin/.rvm/rubies/ruby-3.2.2/bin/ruby extconf.rb
+checking for __builtin_clz()... yes
+checking for __builtin_clzl()... yes
+checking for __builtin_clzll()... yes
+checking for float.h... yes
+checking for math.h... yes
+checking for stdbool.h... yes
+checking for stdlib.h... yes
+checking for x86intrin.h... no
+checking for _lzcnt_u32() in x86intrin.h... no
+checking for _lzcnt_u64() in x86intrin.h... no
+checking for intrin.h... no
+checking for __lzcnt() in intrin.h... no
+checking for __lzcnt64() in intrin.h... no
+checking for _BitScanReverse() in intrin.h... no
+checking for _BitScanReverse64() in intrin.h... no
+checking for labs() in stdlib.h... yes
+checking for llabs() in stdlib.h... yes
+checking for finite() in math.h... no
+checking for isfinite() in math.h... no
+checking for ruby/atomic.h... yes
+checking for ruby/internal/has/builtin.h... yes
+checking for ruby/internal/static_assert.h... yes
+checking for rb_rational_num() in ruby.h... yes
+checking for rb_rational_den() in ruby.h... yes
+checking for rb_complex_real() in ruby.h... yes
+checking for rb_complex_imag() in ruby.h... yes
+checking for rb_opts_exception_p() in ruby.h... yes
+checking for rb_category_warn() in ruby.h... yes
+checking for RB_WARN_CATEGORY_DEPRECATED in ruby.h... yes
+creating Makefile
+
+current directory: /Users/muhammadhilmytsaqifveradin/Documents/GSOC-APPLICATION/OBA-iOS-Local/onebusaway-ios/vendor/bundle/ruby/3.2.0/gems/bigdecimal-3.1.4/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20240818-92610-bsg1uj sitelibdir\=./.gem.20240818-92610-bsg1uj clean
+
+current directory: /Users/muhammadhilmytsaqifveradin/Documents/GSOC-APPLICATION/OBA-iOS-Local/onebusaway-ios/vendor/bundle/ruby/3.2.0/gems/bigdecimal-3.1.4/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20240818-92610-bsg1uj sitelibdir\=./.gem.20240818-92610-bsg1uj
+compiling bigdecimal.c
+bigdecimal.c:7174:18: warning: variable 'prec' set but not used [-Wunused-but-set-variable]
+    SIGNED_VALUE prec;
+                 ^
+1 warning generated.
+compiling missing.c
+linking shared-object bigdecimal.bundle
+ld: warning: ignoring duplicate libraries: '-lruby.3.2'
+
+current directory: /Users/muhammadhilmytsaqifveradin/Documents/GSOC-APPLICATION/OBA-iOS-Local/onebusaway-ios/vendor/bundle/ruby/3.2.0/gems/bigdecimal-3.1.4/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20240818-92610-bsg1uj sitelibdir\=./.gem.20240818-92610-bsg1uj install
+/opt/homebrew/opt/coreutils/bin/ginstall -c -m 0755 bigdecimal.bundle ./.gem.20240818-92610-bsg1uj
+
+current directory: /Users/muhammadhilmytsaqifveradin/Documents/GSOC-APPLICATION/OBA-iOS-Local/onebusaway-ios/vendor/bundle/ruby/3.2.0/gems/bigdecimal-3.1.4/ext/bigdecimal
+make DESTDIR\= sitearchdir\=./.gem.20240818-92610-bsg1uj sitelibdir\=./.gem.20240818-92610-bsg1uj clean
