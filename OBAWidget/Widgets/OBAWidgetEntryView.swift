@@ -25,7 +25,9 @@ struct OBAWidgetEntryView: View {
         VStack(alignment: .leading) {
             // MARK: Header View
             HStack {
-                Text("Last updated at: \(entry.lastUpdatedAt)")
+                Text(
+                    "Last updated at: \(entry.lastUpdatedAt(with: dataProvider.formatters))"
+                )
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                     .fontWeight(.medium)
