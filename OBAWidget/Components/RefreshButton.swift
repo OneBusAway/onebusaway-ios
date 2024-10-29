@@ -10,13 +10,11 @@ import AppIntents
 import WidgetKit
 
 //  MARK: - RefreshWidgetIntent
-/// Since there's no built-in user interaction method for reloading widget timelines,
-/// this intent serves as a workaround to provide that functionality via a button.
+/// this intent serves as a way to refresh the widget and its timelines.
 struct RefreshWidgetIntent: AppIntent {
     static var title: LocalizedStringResource = "Refresh Widget"
     
     func perform() async throws -> some IntentResult {
-        // This forces the widget to refresh
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }
