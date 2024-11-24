@@ -6,10 +6,12 @@ DerivedData/
 Apps/**/Info.plist
 Apps/**/*.entitlements
 TodayView/**/*.entitlements
+OBAWidget/**/*.entitlements
 OBAKit/Info.plist
 OBAKitCore/Info.plist
 OBAKitTests/Info.plist
 TodayView/Info.plist
+OBAWidget/Info.plist
 /project.yml
 
 ## SwiftPM
