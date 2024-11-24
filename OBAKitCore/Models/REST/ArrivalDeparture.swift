@@ -340,6 +340,8 @@ public class ArrivalDeparture: NSObject, Identifiable, Decodable, HasReferences 
         case crushedStandingRoomOnly = "CRUSHED_STANDING_ROOM_ONLY"
         case full = "FULL"
         case notAcceptingPassengers = "NOT_ACCEPTING_PASSENGERS"
+        case noDataAvailable = "NO_DATA_AVAILABLE"
+        case notBoardable = "NOT_BOARDABLE"
     }
 
     // MARK: - Equality and Hashing
