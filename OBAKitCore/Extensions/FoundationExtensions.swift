@@ -150,6 +150,15 @@ public extension Bundle {
 
         return URL(string: str)
     }
+    /// A helper method for accessing the bundle's Tutorial URL
+    var TutorialURL: URL? {
+        guard
+            let dict = OBAKitConfig,
+            let str = dict["TutorialURL"] as? String
+        else { return nil }
+
+        return URL(string: str)
+    }
 
     var appDevelopersEmailAddress: String? {
         guard let dict = OBAKitConfig else { return nil }
