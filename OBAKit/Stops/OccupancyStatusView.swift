@@ -66,8 +66,10 @@ class OccupancyStatusView: UIView {
             humanReadable = OBALoc("occupancy_status.crushed_standing_room_only", value: "Crushed standing room only", comment: "Vehicle occupancy is very high")
         case .full:
             humanReadable = OBALoc("occupancy_status.full", value: "Full", comment: "Vehicle occupancy is full")
+        case .notBoardable: fallthrough
         case .notAcceptingPassengers:
             humanReadable = OBALoc("occupancy_status.not_accepting_passengers", value: "Not accepting passengers", comment: "Vehicle is not accepting any passengers")
+        case .noDataAvailable: fallthrough
         case .unknown:
             humanReadable = OBALoc("occupancy_status.unknown", value: "Unknown", comment: "Vehicle occupancy status is unknown.")
         }
@@ -104,9 +106,11 @@ class OccupancyStatusView: UIView {
             showImageView(at: 0)
             showImageView(at: 1)
             showImageView(at: 2)
+        case .notBoardable: fallthrough
         case .notAcceptingPassengers:
             noPassengersWrapper.isHidden = false
             outerStack.insertArrangedSubview(noPassengersWrapper, at: 0)
+        case .noDataAvailable: fallthrough
         case .unknown:
             break
         }
