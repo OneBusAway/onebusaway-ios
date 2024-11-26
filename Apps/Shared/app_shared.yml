@@ -29,6 +29,7 @@ targets:
       - target: OBAKitCore
       - target: OBAKit
       - target: TodayView
+      - target: OBAWidget
     info:
       properties:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
