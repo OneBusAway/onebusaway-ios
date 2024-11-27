@@ -45,6 +45,9 @@ public class Region: NSObject, Identifiable, Codable {
 
     /// The base URL for making OBA REST API requests.
     public let OBABaseURL: URL
+    
+    /// The base URL for sidecar server (i.e. OneBusAway.co/Obaco) REST API requests
+    public let sidecarBaseURL: URL?
 
     /// The base URL for making Service Interface for Real Time Information (SIRI) requests.
     ///
@@ -162,6 +165,7 @@ public class Region: NSObject, Identifiable, Codable {
         case isActive = "active"
         case isCustom = "custom"
         case isExperimental = "experimental"
+        case sidecarBaseURL = "sidecarBaseUrl"
         case OBABaseURL = "obaBaseUrl"
         case siriBaseURL = "siriBaseUrl"
         case openTripPlannerURL = "otpBaseUrl"
@@ -203,6 +207,7 @@ public class Region: NSObject, Identifiable, Codable {
         isCustom = true
 
         self.OBABaseURL = OBABaseURL
+        self.sidecarBaseURL = nil
 
         let bound = RegionBound(lat: coordinateRegion.center.latitude, lon: coordinateRegion.center.longitude, latSpan: coordinateRegion.span.latitudeDelta, lonSpan: coordinateRegion.span.longitudeDelta)
         regionBounds = [bound]
@@ -242,6 +247,7 @@ public class Region: NSObject, Identifiable, Codable {
         isCustom = (try? container.decodeIfPresent(Bool.self, forKey: .isCustom)) ?? false
 
         OBABaseURL = try container.decode(URL.self, forKey: .OBABaseURL)
+        sidecarBaseURL = try? container.decodeIfPresent(URL.self, forKey: .sidecarBaseURL)
         siriBaseURL = try? container.decodeIfPresent(URL.self, forKey: .siriBaseURL)
         openTripPlannerURL = try? container.decodeIfPresent(URL.self, forKey: .openTripPlannerURL)
         stopInfoURL = try? container.decodeIfPresent(URL.self, forKey: .stopInfoURL)
@@ -281,6 +287,7 @@ public class Region: NSObject, Identifiable, Codable {
         try container.encode(isExperimental, forKey: .isExperimental)
         try container.encode(isCustom, forKey: .isCustom)
         try container.encode(OBABaseURL, forKey: .OBABaseURL)
+        try container.encode(sidecarBaseURL, forKey: .sidecarBaseURL)
         try container.encodeIfPresent(siriBaseURL, forKey: .siriBaseURL)
         try container.encodeIfPresent(openTripPlannerURL, forKey: .openTripPlannerURL)
         try container.encodeIfPresent(stopInfoURL, forKey: .stopInfoURL)
@@ -320,6 +327,7 @@ public class Region: NSObject, Identifiable, Codable {
             isExperimental == rhs.isExperimental &&
             isCustom == rhs.isCustom &&
             OBABaseURL == rhs.OBABaseURL &&
+            sidecarBaseURL == rhs.sidecarBaseURL &&
             siriBaseURL == rhs.siriBaseURL &&
             openTripPlannerURL == rhs.openTripPlannerURL &&
             stopInfoURL == rhs.stopInfoURL &&
@@ -350,6 +358,7 @@ public class Region: NSObject, Identifiable, Codable {
         hasher.combine(isExperimental)
         hasher.combine(isCustom)
         hasher.combine(OBABaseURL)
+        hasher.combine(sidecarBaseURL)
         hasher.combine(siriBaseURL)
         hasher.combine(openTripPlannerURL)
         hasher.combine(stopInfoURL)
