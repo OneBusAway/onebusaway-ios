@@ -60,7 +60,7 @@ class RegionsServiceTests: OBATestCase {
         stubRegions(dataLoader: dataLoader)
 
         let service = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsPath)
-        XCTAssertEqual(service.regions.count, 13)
+        XCTAssertEqual(service.regions.count, 17)
     }
 
     // It loads regions saved to the user defaults when they exist
@@ -129,7 +129,7 @@ class RegionsServiceTests: OBATestCase {
         await regionsService.updateRegionsList()
 
         XCTAssertTrue(testDelegate.regionUpdateCancelled.didCall, "Expected RegionsService to inform delegates that the region update was cancelled")
-        XCTAssertEqual(regionsService.regions.count, 13)
+        XCTAssertEqual(regionsService.regions.count, 17)
     }
 
     /// It *does* download a list of regions—even if the list was last updated less than a week ago—if the update is forced..
@@ -188,7 +188,7 @@ class RegionsServiceTests: OBATestCase {
 
         let regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegionsPath, apiPath: regionsAPIPath, delegate: testDelegate)
 
-        XCTAssertEqual(regionsService.regions.count, 13)
+        XCTAssertEqual(regionsService.regions.count, 17)
     }
 
     /// It calls delegates to tell them that the current region is updated when that property is written.
