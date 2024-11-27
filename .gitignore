@@ -60,3 +60,4 @@ docs
 !scripts/docs
 
 OBAKitTests.xcresult
+.DS_Store
