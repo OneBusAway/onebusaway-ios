@@ -94,7 +94,27 @@ targets:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.TodayView
-
+  OBAWidget:
+    sources: ["Apps/OneBusAway/Assets.xcassets"]
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.org.onebusaway.iphone
+    info:
+      properties:
+        CFBundleDisplayName: OneBusAway
+        OBAKitConfig:
+          AppGroup: group.org.onebusaway.iphone
+          BundledRegionsFileName: regions.json
+          DeepLinkServerBaseAddress: https://onebusaway.co
+          ExtensionURLScheme: onebusaway
+          RESTServerAPIKey: org.onebusaway.iphone
+          RegionsServerBaseAddress: https://regions.onebusaway.org
+          RegionsServerAPIPath: /regions-v3.json
+    settings:
+      base:
+        DEVELOPMENT_TEAM: 4ZQCMA634J
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.OBAWidget
 include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
@@ -105,3 +125,4 @@ include:
   - path: OBAKitTests/project.yml
   - path: OBAKitUITests/project.yml
   - path: TodayView/project.yml
+  - path: OBAWidget/project.yml

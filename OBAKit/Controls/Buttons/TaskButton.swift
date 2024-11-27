@@ -39,7 +39,6 @@ struct TaskButton<Label: View>: View {
 
                     await action()
                     progressViewTask?.cancel()
-
                     isDisabled = false
                     showProgressView = false
                 }
@@ -47,7 +46,6 @@ struct TaskButton<Label: View>: View {
             label: {
                 ZStack {
                     label().opacity(showProgressView ? 0 : 1)
-
                     if showProgressView {
                         ProgressView()
                     }
