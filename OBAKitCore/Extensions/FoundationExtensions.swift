@@ -35,16 +35,6 @@ public extension Bundle {
     /// A helper method for easily accessing the bundle's `NSUserActivityTypes`.
     var userActivityTypes: [String]? { optionalValue(for: "NSUserActivityTypes", type: [String].self) }
 
-    /// A helper method for accessing the bundle's `DeepLinkServerBaseAddress`
-    var deepLinkServerBaseAddress: URL? {
-        guard
-            let dict = OBAKitConfig,
-            let str = dict["DeepLinkServerBaseAddress"] as? String
-        else { return nil }
-
-        return URL(string: str)
-    }
-
     /// A helper method for accessing the bundle's `Donations.Enabled` setting
     var donationsEnabled: Bool {
         guard let dict = donationsConfig, let val = dict["Enabled"] as? Bool else {

@@ -205,10 +205,7 @@ class DonationModel: ObservableObject {
                 )
                 request.paymentSummaryItems = [billing]
                 request.requiredShippingContactFields = [.emailAddress, .name]
-
-                if #available(iOS 17.0, *) {
-                    request.applePayLaterAvailability = .unavailable(.recurringTransaction)
-                }
+                request.applePayLaterAvailability = .unavailable(.recurringTransaction)
 
                 return request
             }

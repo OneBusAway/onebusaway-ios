@@ -16,4 +16,4 @@ targets:
 packages:
     stripe-ios-spm:
         url: https://github.com/stripe/stripe-ios-spm.git
-        minorVersion: 23.30.0
+        minorVersion: 24.1.0

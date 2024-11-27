@@ -20,6 +20,24 @@ See [wiki/Get-Started](https://github.com/OneBusAway/onebusaway-ios/wiki/Get-Sta
 
 The iOS codebase is a white-label product, read more about white-labeling at [wiki/White-Label](https://github.com/OneBusAway/onebusaway-ios/wiki/White-Label).
 
+### Custom Regions
+
+You can quickly add a custom region to the app by creating a specially formed link and then tapping on it in Mobile Safari:
+
+Example:
+
+```
+onebusaway://add-region?name=Unitrans&oba-url=https%3A%2F%2Fonebusaway-unitrans.onrender.com%2F
+```
+
+Breaking it down:
+
+* Scheme: `onebusaway`
+* Host: `add-region`
+* Query Params:
+    * `name` - the name of the region
+    * `oba-url` - the URL encoded address of the server
+
 ## Internationalization and Localization
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._

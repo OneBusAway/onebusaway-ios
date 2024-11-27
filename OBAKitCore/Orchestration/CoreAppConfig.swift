@@ -21,7 +21,6 @@ import CoreLocation
 open class CoreAppConfig: NSObject {
     public let regionsBaseURL: URL?
     public let regionsAPIPath: String?
-    public let obacoBaseURL: URL?
     public let apiKey: String
     public let appVersion: String
     public let queue: OperationQueue
@@ -41,7 +40,6 @@ open class CoreAppConfig: NSObject {
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress!,
-            obacoBaseURL: appBundle.deepLinkServerBaseAddress,
             apiKey: appBundle.restServerAPIKey!,
             appVersion: appBundle.appVersion,
             userDefaults: userDefaults,
@@ -55,7 +53,6 @@ open class CoreAppConfig: NSObject {
 
     /// This initializer will let you specify all properties.
     /// - Parameter regionsBaseURL: The base URL for the Regions server.
-    /// - Parameter obacoBaseURL: The base URL for the Obaco server.
     /// - Parameter apiKey: Your API key for the REST API server.
     /// - Parameter appVersion: The version of the app.
     /// - Parameter userDefaults: The user defaults object.
@@ -65,7 +62,6 @@ open class CoreAppConfig: NSObject {
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     public init(
         regionsBaseURL: URL?,
-        obacoBaseURL: URL?,
         apiKey: String,
         appVersion: String,
         userDefaults: UserDefaults,
@@ -76,7 +72,6 @@ open class CoreAppConfig: NSObject {
         dataLoader: URLDataLoader
     ) {
         self.regionsBaseURL = regionsBaseURL
-        self.obacoBaseURL = obacoBaseURL
         self.apiKey = apiKey
         self.appVersion = appVersion
         self.queue = queue

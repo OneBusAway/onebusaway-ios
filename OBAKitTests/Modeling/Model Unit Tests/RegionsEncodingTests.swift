@@ -21,7 +21,7 @@ class RegionsEncodingTests: OBATestCase {
     func testRoundtrippingRegion() {
         let regionsObjects = try! Fixtures.loadRESTAPIPayload(type: [Region].self, fileName: "regions-v3.json")
 
-        expect(regionsObjects.count) == 13
+        expect(regionsObjects.count) == 17
 
         let tampa = regionsObjects[0]
         expect(tampa.name) == "Tampa Bay"
@@ -31,14 +31,15 @@ class RegionsEncodingTests: OBATestCase {
         let roundTripped = try! PropertyListDecoder().decode([Region].self, from: plistData)
         let tampaRT = roundTripped[0]
 
-        expect(roundTripped.count) == 13
+        expect(roundTripped.count) == 17
 
         expect(tampaRT.regionIdentifier) == 0
         expect(tampaRT.name) == "Tampa Bay"
-        expect(tampaRT.versionInfo) == "1.1.11-SNAPSHOT|1|1|11|SNAPSHOT|6950d86123a7a9e5f12065bcbec0c516f35d86d9"
+
+        expect(tampaRT.versionInfo) == "2.4.15-cs|2|4|15|cs|d41e1a8978da14e98a2e19d109a23018957db7cf"
         expect(tampaRT.language) == "en_US"
 
-        expect(tampaRT.supportsEmbeddedSocial).to(beTrue())
+        expect(tampaRT.supportsEmbeddedSocial).to(beFalse())
         expect(tampaRT.supportsOBADiscoveryAPIs).to(beTrue())
         expect(tampaRT.supportsOTPBikeshare).to(beTrue())
         expect(tampaRT.supportsSiriRealtimeAPIs).to(beTrue())
@@ -52,14 +53,15 @@ class RegionsEncodingTests: OBATestCase {
         expect(tampaRT.twitterURL) == URL(string: "https://mobile.twitter.com/OBA_tampa")!
 
         expect(tampaRT.OBABaseURL) == URL(string: "https://api.tampa.onebusaway.org/api/")!
+        expect(tampa.sidecarBaseURL) == URL(string: "https://onebusaway.co")!
         expect(tampaRT.siriBaseURL) == URL(string: "https://tampa.onebusaway.org/onebusaway-api-webapp/siri/")!
         expect(tampaRT.openTripPlannerURL) == URL(string: "https://otp.prod.obahart.org/otp/")!
         expect(tampaRT.stopInfoURL).to(beNil())
 
         expect(tampaRT.paymentWarningBody).to(beNil())
         expect(tampaRT.paymentWarningTitle).to(beNil())
-        expect(tampaRT.paymentAndroidAppID) == "co.bytemark.hart"
-        expect(tampaRT.paymentiOSAppStoreIdentifier) == "1140553099"
+        expect(tampaRT.paymentAndroidAppID) == "co.bytemark.flamingo"
+        expect(tampaRT.paymentiOSAppStoreIdentifier) == "1487465395"
         expect(tampaRT.paymentiOSAppURLScheme) == "fb313213768708402HART"
 
         let open311 = tampaRT.open311Servers!.first!
