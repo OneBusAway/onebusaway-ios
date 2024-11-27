@@ -29,7 +29,6 @@ public class AppConfig: CoreAppConfig {
     ) {
         self.init(
             regionsBaseURL: appBundle.regionsServerBaseAddress,
-            obacoBaseURL: appBundle.deepLinkServerBaseAddress,
             apiKey: appBundle.restServerAPIKey!,
             appVersion: appBundle.appVersion,
             userDefaults: userDefaults,
@@ -44,7 +43,6 @@ public class AppConfig: CoreAppConfig {
 
     /// This initializer will let you specify all properties.
     /// - Parameter regionsBaseURL: The base URL for the Regions server.
-    /// - Parameter obacoBaseURL: The base URL for the Obaco server.
     /// - Parameter apiKey: Your API key for the REST API server.
     /// - Parameter appVersion: The version of the app.
     /// - Parameter userDefaults: The user defaults object.
@@ -55,7 +53,6 @@ public class AppConfig: CoreAppConfig {
     /// - Parameter regionsAPIPath: The API Path on the Regions server to the regions file.
     public init(
         regionsBaseURL: URL?,
-        obacoBaseURL: URL?,
         apiKey: String,
         appVersion: String,
         userDefaults: UserDefaults,
@@ -69,7 +66,6 @@ public class AppConfig: CoreAppConfig {
         self.analytics = analytics
         super.init(
             regionsBaseURL: regionsBaseURL,
-            obacoBaseURL: obacoBaseURL,
             apiKey: apiKey,
             appVersion: appVersion,
             userDefaults: userDefaults,

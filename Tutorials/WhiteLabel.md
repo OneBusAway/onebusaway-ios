@@ -140,7 +140,6 @@ These are parameters specified in your app's `project.yml` file that customizes 
   OBAKitConfig:
     AppGroup: group.org.onebusaway.iphone
     BundledRegionsFileName: regions.json
-    DeepLinkServerBaseAddress: https://onebusaway.co
     ExtensionURLScheme: onebusaway
     RESTServerAPIKey: org.onebusaway.iphone
     RegionsServerBaseAddress: https://regions.onebusaway.org
