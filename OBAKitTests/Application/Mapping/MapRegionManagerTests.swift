@@ -21,7 +21,6 @@ class MapRegionManagerTests: OBATestCase {
     private func makeConfig(locationService: LocationService, bundledRegionsPath: String, dataLoader: MockDataLoader) -> AppConfig {
         AppConfig(
             regionsBaseURL: regionsURL,
-            obacoBaseURL: obacoURL,
             apiKey: apiKey,
             appVersion: appVersion,
             userDefaults: userDefaults,

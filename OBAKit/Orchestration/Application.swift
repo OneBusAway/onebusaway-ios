@@ -93,7 +93,8 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// Handles all deep-linking into the app.
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
-        let router = AppLinksRouter(baseURL: applicationBundle.deepLinkServerBaseAddress, application: self)
+        let router = AppLinksRouter(application: self)
+        
         router?.showStopHandler = { [weak self] stop in
             guard
                 let self = self,
@@ -604,7 +605,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         /// Feature status of the Obaco service.
         public var obaco: FeatureStatus {
-            switch (config.obacoBaseURL, application?.obacoService) {
+            switch (application?.regionsService.currentRegion?.sidecarBaseURL, application?.obacoService) {
             case (nil, nil): return .off
             case (_, nil): return .notRunning
             default: return .running
@@ -622,7 +623,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         /// Feature status of Deep Linking.
         public var deepLinking: FeatureStatus {
-            switch (config.obacoBaseURL, application?.appLinksRouter) {
+            switch (application?.regionsService.currentRegion?.sidecarBaseURL, application?.appLinksRouter) {
             case (nil, nil): return .off
             case (_, nil): return .notRunning
             default: return .running

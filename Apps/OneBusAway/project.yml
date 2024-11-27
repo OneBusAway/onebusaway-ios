@@ -55,7 +55,6 @@ targets:
           AppDevelopersEmailAddress: iphone-app@onebusaway.org
           AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
-          DeepLinkServerBaseAddress: https://onebusaway.co
           Donations:
             Enabled: true
             ApplePayMerchantID: merchant.org.onebusaway.iphone
@@ -85,7 +84,6 @@ targets:
         OBAKitConfig:
           AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
-          DeepLinkServerBaseAddress: https://onebusaway.co
           ExtensionURLScheme: onebusaway
           RESTServerAPIKey: org.onebusaway.iphone
           RegionsServerBaseAddress: https://regions.onebusaway.org
@@ -106,7 +104,6 @@ targets:
         OBAKitConfig:
           AppGroup: group.org.onebusaway.iphone
           BundledRegionsFileName: regions.json
-          DeepLinkServerBaseAddress: https://onebusaway.co
           ExtensionURLScheme: onebusaway
           RESTServerAPIKey: org.onebusaway.iphone
           RegionsServerBaseAddress: https://regions.onebusaway.org

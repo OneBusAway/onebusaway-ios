@@ -52,7 +52,6 @@ targets:
           AppDevelopersEmailAddress: iphone-app@onebusaway.org
           AppGroup: group.info.mta.bustime
           BundledRegionsFileName: regions.json
-          DeepLinkServerBaseAddress: https://onebusaway.co
           ExtensionURLScheme: bustime
           PrivacyPolicyURL: https://new.mta.info/privacy-policy
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
@@ -75,7 +74,6 @@ targets:
         OBAKitConfig:
           AppGroup: group.info.mta.bustime
           BundledRegionsFileName: regions.json
-          DeepLinkServerBaseAddress: https://onebusaway.co
           ExtensionURLScheme: bustime
           RESTServerAPIKey: test
           RegionsServerBaseAddress: https://regions.onebusaway.org
