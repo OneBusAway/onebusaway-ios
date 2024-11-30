@@ -34,6 +34,10 @@ final class ServiceAlertListController: UIViewController,
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,7 +45,6 @@ final class ServiceAlertListController: UIViewController,
         view.backgroundColor = ThemeColors.shared.systemBackground
 
         listView.obaDataSource = self
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
     }
 
