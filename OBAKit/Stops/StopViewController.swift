@@ -1094,7 +1094,7 @@ public class StopViewController: UIViewController,
             return
         }
 
-        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region)
+        let url = appLinksRouter.encode(arrivalDeparture: arrivalDeparture, region: region) as Any
 
         let activityController = UIActivityViewController(activityItems: [self, url], applicationActivities: nil)
 
