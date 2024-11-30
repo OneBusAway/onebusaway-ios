@@ -79,7 +79,9 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
 
         // Lifecycle-related modifiers
         .onAppear(perform: setCurrentRegionIfPresent)
-        .onChange(of: regionProvider.currentRegion, initial: false) { newRegion, _ in
+        .onChange(of: regionProvider.currentRegion, initial: false) { _, newRegion in
+            // When the user selects to automatically select a region, update
+            // selectedRegion with the new current region.
             if regionProvider.automaticallySelectRegion {
                 self.selectedRegion = newRegion
             }
