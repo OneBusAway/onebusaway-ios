@@ -109,24 +109,18 @@ class HoverBarPassThroughView: UIView {
             shadowView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: blurRadius),
             shadowView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: -blurRadius)
         ])
-    }
 
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            transition(to: traitCollection.userInterfaceStyle)
-        }
-    }
-
-    private func transition(to style: UIUserInterfaceStyle) {
-        switch style {
-        case .light, .unspecified:
-            showShadow = true
-        case .dark:
-            showShadow = false
-        @unknown default:
-            fatalError()
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            if self.traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+                switch self.traitCollection.userInterfaceStyle {
+                case .light, .unspecified:
+                    self.showShadow = true
+                case .dark:
+                    self.showShadow = false
+                @unknown default:
+                    fatalError()
+                }
+            }
         }
     }
 

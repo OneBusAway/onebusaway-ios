@@ -178,6 +178,10 @@ final class TripStopCell: OBAListViewCell {
         ])
 
         isAccessibilityElement = true
+        
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            self.layoutAccessibility()
+        }
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -229,11 +233,6 @@ final class TripStopCell: OBAListViewCell {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        layoutAccessibility()
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
         layoutAccessibility()
     }
 

@@ -118,6 +118,12 @@ class PulsingAnnotationView: MKAnnotationView {
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         calloutOffset = CGPoint(x: 0, y: 4)
         self.bounds = bounds
+        
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
+                self.rebuildLayers()
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -159,14 +165,6 @@ class PulsingAnnotationView: MKAnnotationView {
                 addSubview(imageView)
             }
             bringSubviewToFront(imageView)
-        }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.userInterfaceStyle != previousTraitCollection?.userInterfaceStyle {
-            rebuildLayers()
         }
     }
 

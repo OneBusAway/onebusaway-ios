@@ -141,6 +141,11 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         isAccessibilityElement = true
         accessibilityTraits = [.button, .updatesFrequently]
+        
+        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
+        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+            self.layoutView()
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -243,11 +248,6 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         accessibilityLabel = nil
         accessibilityValue = nil
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        layoutView()
     }
 
     override var isHighlighted: Bool {

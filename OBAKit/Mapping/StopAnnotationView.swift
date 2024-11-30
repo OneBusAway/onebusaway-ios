@@ -76,10 +76,16 @@ class StopAnnotationView: MKAnnotationView {
         updateAccessibility()
 
         NotificationCenter.default.addObserver(self, selector: #selector(voiceoverStatusDidChange), name: UIAccessibility.voiceOverStatusDidChangeNotification, object: nil)
+        
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+            if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
+                self.rebuildIcon()
+            }
+        }
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-
+    
     // MARK: - Annotation View Overrides
 
     public override func prepareForReuse() {
@@ -103,17 +109,6 @@ class StopAnnotationView: MKAnnotationView {
         else if let stop = annotation as? Stop {
             prepareForDisplay(stop: stop, delegate: delegate)
         }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        guard
-            let stop = annotation as? Stop,
-            let delegate = delegate
-        else { return }
-
-        image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
     }
 
     // MARK: - Annotation Rendering
@@ -178,5 +173,14 @@ class StopAnnotationView: MKAnnotationView {
         // Callouts are finicky when in VoiceOver. When VoiceOver is running,
         // we should skip the callout and push directly to the annotation's destination view.
         canShowCallout = !UIAccessibility.isVoiceOverRunning
+    }
+    
+    private func rebuildIcon() {
+        guard
+            let stop = annotation as? Stop,
+            let delegate = delegate
+        else { return }
+
+        image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
     }
 }
