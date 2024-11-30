@@ -34,10 +34,10 @@ fileprivate struct RenamableNavigationTitle<MenuItems: View>: ViewModifier {
                 // way to have an `onChange` to fire on initial value.
                 textFieldValue = title
             }
-            .onChange(of: title) { newValue in
+            .onChange(of: title) { _, newValue in
                 textFieldValue = newValue
             }
-            .onChange(of: isEditing) { newIsEditing in
+            .onChange(of: isEditing) { _, newIsEditing in
                 isFocusedOnTextField = newIsEditing
             }
     }
