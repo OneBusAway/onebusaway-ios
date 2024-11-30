@@ -74,6 +74,11 @@ class WalkTimeView: UIView {
         ])
 
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
+        
+        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
+        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+            self.setNeedsDisplay()
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -119,11 +124,6 @@ class WalkTimeView: UIView {
 
         maximumIntrinsicHeight = max(maximumIntrinsicHeight, intrinsic.height)
         return CGSize(width: UIView.noIntrinsicMetric, height: maximumIntrinsicHeight)
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        setNeedsDisplay()
     }
 
     @objc fileprivate func deviceOrientationDidChange(_ notification: Notification) {

@@ -149,6 +149,11 @@ class StopHeaderView: UIView {
         ])
 
         addGestureRecognizer(toggleRouteDetailsGestureRecognizer)
+        
+        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
+        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+            self.configureView()
+        }
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -198,11 +203,6 @@ class StopHeaderView: UIView {
         }
 
         self.stackPaddingBottomHeight.constant = suggestedHeight
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        self.configureView()
     }
 
     @objc private func toggleRouteDetails(_ sender: UITapGestureRecognizer) {
