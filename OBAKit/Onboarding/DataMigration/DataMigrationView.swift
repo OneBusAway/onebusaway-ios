@@ -105,7 +105,7 @@ public struct DataMigrationView: View, OnboardingView {
 
     private func handleReportDismiss() {
         Task {
-            await self.dismiss()
+            self.dismiss()
         }
     }
 

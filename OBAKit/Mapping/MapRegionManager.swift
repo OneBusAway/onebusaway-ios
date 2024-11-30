@@ -244,7 +244,7 @@ public class MapRegionManager: NSObject,
             }
         }
 
-        var mapRegion = await mapView.region
+        var mapRegion = mapView.region
         mapRegion.span.latitudeDelta *= preferredLoadDataRegionFudgeFactor
         mapRegion.span.longitudeDelta *= preferredLoadDataRegionFudgeFactor
 
