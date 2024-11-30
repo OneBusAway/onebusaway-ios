@@ -76,7 +76,7 @@ struct DonationLearnMoreView: View {
         .alert("Enter an amount in U.S. dollars", isPresented: otherAmountSelected) {
             buildOtherAmountAlert()
         }
-        .onChange(of: donationModel.donationComplete) { newValue in
+        .onChange(of: donationModel.donationComplete) { _, newValue in
             guard newValue else { return }
 
             let shouldDismiss: Bool
