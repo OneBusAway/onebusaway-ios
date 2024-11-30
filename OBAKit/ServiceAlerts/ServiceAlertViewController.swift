@@ -9,7 +9,7 @@
 
 import UIKit
 import OBAKitCore
-import WebKit
+@preconcurrency import WebKit
 import SafariServices
 
 // swiftlint:disable function_body_length
