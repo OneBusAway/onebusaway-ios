@@ -543,9 +543,9 @@ class MapViewController: UIViewController,
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
         Task { @MainActor [weak self] in
             guard let self, let result = response.results.first else { return }
-            
+
             statusOverlay.isHidden = true
-            
+
             switch result {
             case let result as MKMapItem:
                 let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
