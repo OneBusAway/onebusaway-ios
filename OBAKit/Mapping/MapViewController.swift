@@ -540,7 +540,6 @@ class MapViewController: UIViewController,
         }
     }
 
-    @MainActor
     public func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse) {
         Task { @MainActor [weak self] in
             guard let self, let result = response.results.first else { return }

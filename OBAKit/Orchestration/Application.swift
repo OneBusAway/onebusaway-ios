@@ -112,7 +112,7 @@ public class Application: CoreApplication, PushServiceDelegate {
             }
 
             Task(priority: .userInitiated) {
-                await ProgressHUD.show()
+                ProgressHUD.show()
 
                 do {
                     let arrDep = try await apiService.getTripArrivalDepartureAtStop(stopID: deepLink.stopID, tripID: deepLink.tripID, serviceDate: deepLink.serviceDate, vehicleID: deepLink.vehicleID, stopSequence: deepLink.stopSequence).entry
@@ -126,7 +126,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                     await self.displayError(error)
                 }
 
-                await ProgressHUD.dismiss()
+                ProgressHUD.dismiss()
             }
         }
 
