@@ -338,6 +338,9 @@
 /* A link to the app's Privacy Policy */
 "more_controller.privacy_row_title" = "Privacy Policy";
 
+/* A link to the app's Tutorial */
+"more_controller.tutorial_row_title" = "Tutorial";
+
 /* Title of the More tab */
 "more_controller.title" = "More";
 
