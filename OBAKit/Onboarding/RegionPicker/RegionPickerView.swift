@@ -141,7 +141,7 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
             .padding()
         }
     }
-    
+
     @ViewBuilder
     func cell(for region: Region) -> some View {
         Label {
