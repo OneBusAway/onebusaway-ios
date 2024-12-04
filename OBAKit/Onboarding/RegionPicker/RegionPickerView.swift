@@ -59,72 +59,87 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     @State var isShowingCustomRegionSheet: Bool = false
 
     public var body: some View {
-        List {
-            Toggle("Automatically select region", isOn: $regionProvider.automaticallySelectRegion)
-            Picker("", selection: $selectedRegion) {
-                ForEach(filteredRegions, id: \.self) { region in
-                    cell(for: region)
-                        .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
+        NavigationStack {
+            List {
+                Toggle(
+                    "Automatically select region",
+                    isOn: $regionProvider.automaticallySelectRegion)
+                Picker("", selection: $selectedRegion) {
+                    ForEach(filteredRegions, id: \.self) { region in
+                        cell(for: region)
+                            .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
+                    }
+                }
+                .disabled(regionProvider.automaticallySelectRegion)
+                .pickerStyle(.inline)
+                .labelsHidden()  // Hide picker header (title)
+            }
+            // List modifiers
+            .listSectionSeparator(.hidden)
+            .listStyle(.plain)
+            .refreshable(action: doRefreshRegions)
+            .disabled(disableInteractions)
+            .navigationDestination(isPresented: $isShowingCustomRegionSheet) {
+                RegionCustomForm(
+                    regionProvider: regionProvider,
+                    editingRegion: $editingRegion
+                )
+            }
+
+            // Lifecycle-related modifiers
+            .onAppear(perform: setCurrentRegionIfPresent)
+            .onChange(of: regionProvider.currentRegion) { [regionProvider] _ in
+                // When the user selects to automatically select a region, update
+                // selectedRegion with the new current region.
+                if regionProvider.automaticallySelectRegion {
+                    self.selectedRegion = regionProvider.currentRegion
                 }
             }
-            .disabled(regionProvider.automaticallySelectRegion)
-            .pickerStyle(.inline)
-            .labelsHidden()         // Hide picker header (title)
-        }
-        // List modifiers
-        .listSectionSeparator(.hidden)
-        .listStyle(.plain)
-        .refreshable(action: doRefreshRegions)
-        .disabled(disableInteractions)
 
-        // Lifecycle-related modifiers
-        .onAppear(perform: setCurrentRegionIfPresent)
-        .onChange(of: regionProvider.currentRegion, initial: false) { _, newRegion in
-            // When the user selects to automatically select a region, update
-            // selectedRegion with the new current region.
-            if regionProvider.automaticallySelectRegion {
-                self.selectedRegion = newRegion
-            }
-        }
-
-        // Presentation-related modifiers
-        .errorAlert(error: $taskError)
-        .background {
-            // TODO: I hate this. iOS 16 has NavigationStack, so use it when we drop iOS 15.
-            NavigationLink(destination: RegionCustomForm(regionProvider: regionProvider, editingRegion: $editingRegion), isActive: $isShowingCustomRegionSheet) {
-                EmptyView()
-            }
-            .accessibilityHidden(true)
-        }
-
-        // Supplementary views
-        .safeAreaInset(edge: .top) {
-            OnboardingHeaderView(imageSystemName: "globe", headerText: OBALoc("region_picker.title", value: "Choose Region", comment: "Title of the Region Picker Item, which lets the user choose a new region from the map."))
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 14) {
-                RegionPickerMap(mapRect: Binding(get: {
-                    selectedRegion?.serviceRect
-                }, set: { _ in }), mapHeight: 200)
-                    .zIndex(-1) // Make the Map moving transition occur below the [Continue] button.
-
-                TaskButton(action: doSetCurrentRegion) {
-                    Text(Strings.continue)
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 32)
-                }
-                .disabled(selectedRegion == nil || disableInteractions)
-                .buttonStyle(.borderedProminent)
-
-                regionOptions
-            }
+            // Presentation-related modifiers
+            .errorAlert(error: $taskError)
             .background(.background)
-        }
 
-        // Global
-        .interactiveDismissDisabled(selectedRegion == nil || disableInteractions)
-        .navigationBarHidden(true)
-        .padding()
+            // Supplementary views
+            .safeAreaInset(edge: .top) {
+                OnboardingHeaderView(
+                    imageSystemName: "globe",
+                    headerText: OBALoc(
+                        "region_picker.title", value: "Choose Region",
+                        comment:
+                            "Title of the Region Picker Item, which lets the user choose a new region from the map."
+                    ))
+            }
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 14) {
+                    RegionPickerMap(
+                        mapRect: Binding(
+                            get: {
+                                selectedRegion?.serviceRect
+                            }, set: { _ in }), mapHeight: 200
+                    )
+                    .zIndex(-1)  // Make the Map moving transition occur below the [Continue] button.
+
+                    TaskButton(action: doSetCurrentRegion) {
+                        Text(Strings.continue)
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .disabled(selectedRegion == nil || disableInteractions)
+                    .buttonStyle(.borderedProminent)
+
+                    regionOptions
+                }
+                .background(.background)
+            }
+
+            // Global
+            .interactiveDismissDisabled(
+                selectedRegion == nil || disableInteractions
+            )
+            .navigationBarHidden(true)
+            .padding()
+        }
     }
 
     @ViewBuilder
