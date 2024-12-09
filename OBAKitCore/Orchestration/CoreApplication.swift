@@ -129,6 +129,15 @@ open class CoreApplication: NSObject,
         self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
     }
 
+    public func getNewRefreshedRESTAPIService() -> RESTAPIService? {
+        guard let region = regionsService.currentRegion else {
+            return nil
+        }
+        let apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
+
+        return apiService
+    }
+
     // MARK: - Obaco
 
     public private(set) var obacoService: ObacoAPIService? {
