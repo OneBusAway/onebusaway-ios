@@ -10,28 +10,24 @@ import CoreLocation
 
 /// `WidgetDataProvider` is responsible for fetching and providing relevant data to the widget timeline provider.
 class WidgetDataProvider: NSObject, ObservableObject {
-    
-    public let formatters = Formatters(
-        locale: Locale.autoupdatingCurrent,
-        calendar: Calendar.autoupdatingCurrent,
-        themeColors: ThemeColors.shared
-    )
-    
     static let shared = WidgetDataProvider()
+
     private let userDefaults = UserDefaults(suiteName: Bundle.main.appGroup!)!
-    
     private lazy var locationManager = CLLocationManager()
     private lazy var locationService = LocationService(
         userDefaults: userDefaults,
         locationManager: locationManager
     )
-    
+
     private lazy var app: CoreApplication = {
-        let bundledRegions = Bundle.main.path(forResource: "regions", ofType: "json")!
-        let config = CoreAppConfig(appBundle: Bundle.main, userDefaults: userDefaults, bundledRegionsFilePath: bundledRegions)
+        let config = CoreAppConfig(
+            appBundle: Bundle.main,
+            userDefaults: userDefaults,
+            bundledRegionsFilePath: Bundle.main.path(forResource: "regions", ofType: "json")!
+        )
         return CoreApplication(config: config)
     }()
-    
+
     private var bestAvailableBookmarks: [Bookmark] {
         var bookmarks = app.userDataStore.favoritedBookmarks
         if bookmarks.isEmpty {
@@ -39,21 +35,41 @@ class WidgetDataProvider: NSObject, ObservableObject {
         }
         return bookmarks
     }
-    
+
+    /// Dictionary mapping trip bookmark keys to arrival/departure data.
+    private var arrDepDic = [TripBookmarkKey: [ArrivalDeparture]]()
+
+    /// Formatters for localization and styling.
+    let formatters = Formatters(
+        locale: Locale.autoupdatingCurrent,
+        calendar: Calendar.autoupdatingCurrent,
+        themeColors: ThemeColors.shared
+    )
+
     /// Loads arrivals and departures for all favorited bookmarks for the widget.
-    public func loadData() async {
-        arrDepDic = [:]
+    func loadData() async {
+        arrDepDic = [:] 
+
         guard let apiService = app.getNewRefreshedRESTAPIService() else {
+            Logger.error("Failed to get REST API Service.")
             return
         }
 
         let bookmarks = getBookmarks()
+        guard !bookmarks.isEmpty else {
+            Logger.info("No bookmarks found to load data.")
+            return
+        }
 
-        for bookmark in bookmarks {
-            await fetchArrivalData(for: bookmark, apiService: apiService)
+        await withTaskGroup(of: Void.self) { group in
+            bookmarks.forEach { bookmark in
+                group.addTask { [weak self] in
+                    await self?.fetchArrivalData(for: bookmark, apiService: apiService)
+                }
+            }
         }
     }
-    
+
     /// Fetch arrival data for a specific bookmark and update the dictionary.
     private func fetchArrivalData(for bookmark: Bookmark, apiService: RESTAPIService) async {
         do {
@@ -62,31 +78,27 @@ class WidgetDataProvider: NSObject, ObservableObject {
                 minutesBefore: 0,
                 minutesAfter: 60
             ).entry
-            
+
             await MainActor.run {
-                let keysAndDeps = stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements
-                for (key, deps) in keysAndDeps {
-                    self.arrDepDic[key] = deps
+                stopArrivals.arrivalsAndDepartures.tripKeyGroupedElements.forEach { key, deps in
+                    arrDepDic[key] = deps
                 }
             }
         } catch {
-            Logger
-                .error(
-                    "Error fetching data for bookmark \(bookmark.name) with bookmark id: \(bookmark.id): \(error)"
-                )
+            Logger.error("""
+            Error fetching data for bookmark: '\(bookmark.name)' 
+            (ID: \(bookmark.id)). Error: \(error.localizedDescription)
+            """)
         }
     }
-    
+
     /// Looks up arrival and departure data for a given trip key.
-    public func lookupArrivalDeparture(with key: TripBookmarkKey) -> [ArrivalDeparture] {
-        return arrDepDic[key, default: []]
+    func lookupArrivalDeparture(with key: TripBookmarkKey) -> [ArrivalDeparture] {
+        arrDepDic[key, default: []]
     }
-    
-    /// Retrieves the best available bookmarks.
+
+    /// Gets bookmarks of the selected region.
     public func getBookmarks() -> [Bookmark] {
         return bestAvailableBookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == app.regionsService.currentRegion?.id }
     }
-    
-    /// Dictionary to store arrival and departure data grouped by trip keys.
-    private var arrDepDic = [TripBookmarkKey: [ArrivalDeparture]]()
 }
