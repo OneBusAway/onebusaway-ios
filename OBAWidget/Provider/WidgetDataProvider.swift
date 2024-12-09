@@ -42,11 +42,13 @@ class WidgetDataProvider: NSObject, ObservableObject {
     
     /// Loads arrivals and departures for all favorited bookmarks for the widget.
     public func loadData() async {
-        guard let apiService = app.apiService else { return }
-        
+        arrDepDic = [:]
+        guard let apiService = app.getNewRefreshedRESTAPIService() else {
+            return
+        }
+
         let bookmarks = getBookmarks()
-            .filter { $0.isTripBookmark && $0.regionIdentifier == app.regionsService.currentRegion?.id }
-        
+
         for bookmark in bookmarks {
             await fetchArrivalData(for: bookmark, apiService: apiService)
         }
@@ -82,7 +84,7 @@ class WidgetDataProvider: NSObject, ObservableObject {
     
     /// Retrieves the best available bookmarks.
     public func getBookmarks() -> [Bookmark] {
-        return bestAvailableBookmarks
+        return bestAvailableBookmarks.filter { $0.isTripBookmark && $0.regionIdentifier == app.regionsService.currentRegion?.id }
     }
     
     /// Dictionary to store arrival and departure data grouped by trip keys.
