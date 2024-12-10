@@ -8,7 +8,7 @@
 #if canImport(Stripe)
 import StripePaymentSheet
 
-extension PaymentSheetResult: Equatable {
+extension PaymentSheetResult: @retroactive Equatable {
     public static func == (lhs: PaymentSheetResult, rhs: PaymentSheetResult) -> Bool {
         switch (lhs, rhs) {
         case (.completed, .completed), (.canceled, .canceled):

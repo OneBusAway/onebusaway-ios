@@ -13,7 +13,7 @@ import OBAKitCore
 
 // MARK: - Bookmark/MKAnnotation
 
-extension Bookmark: MKAnnotation {
+extension Bookmark: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         stop.coordinate
     }
@@ -25,7 +25,7 @@ extension Bookmark: MKAnnotation {
 
 // MARK: - Region/MKAnnotation
 
-extension Region: MKAnnotation {
+extension Region: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         centerCoordinate
     }
@@ -41,7 +41,7 @@ extension Region: MKAnnotation {
 /// Includes additional methods for rendering extra data directly onto the map.
 ///
 /// - Note: See `StopAnnotationView`for more details.
-extension Stop: MKAnnotation {
+extension Stop: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         location.coordinate
     }
@@ -64,7 +64,7 @@ extension Stop: MKAnnotation {
 // MARK: - TripStatus/MKAnnotation
 
 /// Adds conformance to `MKAnnotation` to `TripStatus`.
-extension TripStatus: MKAnnotation {
+extension TripStatus: @retroactive MKAnnotation {
 
     public var coordinate: CLLocationCoordinate2D {
         lastKnownLocation?.coordinate ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
@@ -85,7 +85,7 @@ extension TripStatus: MKAnnotation {
 /// Adds conformance to `MKAnnotation` to `TripStopTime`.
 ///
 /// - Note: See `MinimalStopAnnotationView`for more details.
-extension TripStopTime: MKAnnotation {
+extension TripStopTime: @retroactive MKAnnotation {
     public var coordinate: CLLocationCoordinate2D {
         stop.location.coordinate
     }

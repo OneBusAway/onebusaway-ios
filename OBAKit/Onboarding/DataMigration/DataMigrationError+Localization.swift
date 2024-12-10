@@ -7,7 +7,7 @@
 
 import OBAKitCore
 
-extension DataMigrationError: LocalizedError {
+extension DataMigrationError: @retroactive LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidAPIService(let explanation):
@@ -22,7 +22,7 @@ extension DataMigrationError: LocalizedError {
     }
 }
 
-extension DataMigrationBookmarkError: LocalizedError {
+extension DataMigrationBookmarkError: @retroactive LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noActiveTrips:
