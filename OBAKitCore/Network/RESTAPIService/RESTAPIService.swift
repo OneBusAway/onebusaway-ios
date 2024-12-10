@@ -9,7 +9,7 @@ import Foundation
 import os.log
 
 /// Makes API calls to the OBA REST service and converts the server's responses into model objects.
-public actor RESTAPIService: APIService {
+public actor RESTAPIService: @preconcurrency APIService {
     public let configuration: APIServiceConfiguration
     public nonisolated let dataLoader: URLDataLoader
 
