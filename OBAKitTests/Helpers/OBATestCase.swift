@@ -98,10 +98,10 @@ open class OBATestCase: XCTestCase {
         )
     }
 
-    func stubRegions(dataLoader: MockDataLoader) {
+    func stubRegions(dataLoader: MockDataLoader, fixtureFile: String = "regions-v3.json") {
         dataLoader.mock(
             URLString: "https://regions.example.com/regions-v3.json",
-            with: Fixtures.loadData(file: "regions-v3.json")
+            with: Fixtures.loadData(file: fixtureFile)
         )
     }
 
