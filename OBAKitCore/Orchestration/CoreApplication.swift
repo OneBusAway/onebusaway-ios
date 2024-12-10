@@ -91,7 +91,7 @@ open class CoreApplication: NSObject,
     }
 
     /// This function reloads the REST API and Obaco Services.
-    private func refreshServices() {
+    public func refreshServices() {
         refreshRESTAPIService()
         refreshObacoService()
         apiServicesRefreshed()
