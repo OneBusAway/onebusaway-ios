@@ -91,7 +91,7 @@ open class CoreApplication: NSObject,
     }
 
     /// This function reloads the REST API and Obaco Services.
-    private func refreshServices() {
+    public func refreshServices() {
         refreshRESTAPIService()
         refreshObacoService()
         apiServicesRefreshed()
@@ -127,15 +127,6 @@ open class CoreApplication: NSObject,
         }
 
         self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
-    }
-
-    public func getNewRefreshedRESTAPIService() -> RESTAPIService? {
-        guard let region = regionsService.currentRegion else {
-            return nil
-        }
-        let apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
-
-        return apiService
     }
 
     // MARK: - Obaco

@@ -48,9 +48,11 @@ class WidgetDataProvider: NSObject, ObservableObject {
 
     /// Loads arrivals and departures for all favorited bookmarks for the widget.
     func loadData() async {
-        arrDepDic = [:] 
 
-        guard let apiService = app.getNewRefreshedRESTAPIService() else {
+        arrDepDic = [:]
+        app.refreshServices()
+
+        guard let apiService = app.apiService else {
             Logger.error("Failed to get REST API Service.")
             return
         }
