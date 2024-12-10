@@ -178,8 +178,8 @@ final class TripStopCell: OBAListViewCell {
         ])
 
         isAccessibilityElement = true
-        
-        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
+
+        registerForTraitChanges([UITraitPreferredContentSizeCategory.self]) { (self: Self, _) in
             self.layoutAccessibility()
         }
     }

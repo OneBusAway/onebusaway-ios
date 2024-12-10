@@ -629,10 +629,8 @@ class MapViewController: UIViewController,
             }
             else {
                 promptUserOnRegionMismatch = false
-                if
-                    let regionMismatchBulletin = RegionMismatchBulletin(application: application),
-                    let uiApp = application.delegate?.uiApplication
-                {
+                if let regionMismatchBulletin = RegionMismatchBulletin(application: application),
+                   let uiApp = application.delegate?.uiApplication {
                     self.regionMismatchBulletin = regionMismatchBulletin
                     self.regionMismatchBulletin?.show(in: uiApp)
                 }

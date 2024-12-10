@@ -116,7 +116,8 @@ final class TripBookmarkTableCell: OBAListViewCell {
     ])
 
     // MARK: - UI Builders
-    private class func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
+
+    private static func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
         let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: textStyle))
         label.setContentCompressionResistancePriority(.required, for: .vertical)
         label.setCompressionResistance(horizontal: .required, vertical: .required)
@@ -141,9 +142,9 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
         isAccessibilityElement = true
         accessibilityTraits = [.button, .updatesFrequently]
-        
+
         let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
-        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+        registerForTraitChanges(sizeTraits) { (self: Self, _) in
             self.layoutView()
         }
     }

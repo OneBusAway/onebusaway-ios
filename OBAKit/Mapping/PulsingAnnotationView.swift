@@ -118,7 +118,7 @@ class PulsingAnnotationView: MKAnnotationView {
         layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         calloutOffset = CGPoint(x: 0, y: 4)
         self.bounds = bounds
-        
+
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
                 self.rebuildLayers()

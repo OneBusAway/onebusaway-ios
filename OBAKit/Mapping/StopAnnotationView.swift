@@ -76,7 +76,7 @@ class StopAnnotationView: MKAnnotationView {
         updateAccessibility()
 
         NotificationCenter.default.addObserver(self, selector: #selector(voiceoverStatusDidChange), name: UIAccessibility.voiceOverStatusDidChangeNotification, object: nil)
-        
+
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
                 self.rebuildIcon()
@@ -174,7 +174,7 @@ class StopAnnotationView: MKAnnotationView {
         // we should skip the callout and push directly to the annotation's destination view.
         canShowCallout = !UIAccessibility.isVoiceOverRunning
     }
-    
+
     private func rebuildIcon() {
         guard
             let stop = annotation as? Stop,
