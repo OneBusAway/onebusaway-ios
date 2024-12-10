@@ -11,9 +11,9 @@ import OBAKitCore
 
 struct ConfigurationAppIntent: AppIntent, WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Bookmarks"
-    static var description: IntentDescription = IntentDescription("")
-    
-    
-    
-}
+    static var description: IntentDescription = IntentDescription("Get the transit info")
 
+    func perform() async throws -> some IntentResult {
+        return .result()
+    }
+}
