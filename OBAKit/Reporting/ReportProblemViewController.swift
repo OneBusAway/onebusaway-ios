@@ -40,6 +40,10 @@ class ReportProblemViewController: TaskController<StopArrivals>,
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -50,7 +54,6 @@ class ReportProblemViewController: TaskController<StopArrivals>,
         listView.formatters = application.formatters
         listView.register(listViewItem: ArrivalDepartureItem.self)
 
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
     }
 
