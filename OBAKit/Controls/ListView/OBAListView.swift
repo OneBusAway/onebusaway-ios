@@ -115,6 +115,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         let reuseIdentifier = formattedConfig.obaContentView.ReuseIdentifier
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath)
+        if (obaDataSource?.items(for: self) ?? [])[indexPath.section].hasHeader,
+           indexPath.row == 0 {
+            cell.accessibilityTraits = .header
+        }
 
         guard let obaView = cell as? OBAListViewCell else {
             fatalError("You are trying to use a cell in OBAListView that isn't OBAListViewCell.")
@@ -144,7 +148,12 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     }
 
     func listCell(_ collectionView: UICollectionView, indexPath: IndexPath, item: AnyOBAListViewItem, config: UIListContentConfiguration, accessories: [UICellAccessory?]) -> UICollectionViewListCell? {
-        return collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: item)
+        let cell = collectionView.dequeueConfiguredReusableCell(using: listCellRegistration, for: indexPath, item: item)
+        if (obaDataSource?.items(for: self) ?? [])[indexPath.section].hasHeader,
+           indexPath.row == 0 {
+            cell.accessibilityTraits = .header
+        }
+        return cell
     }
 
     // MARK: - Item selection actions
