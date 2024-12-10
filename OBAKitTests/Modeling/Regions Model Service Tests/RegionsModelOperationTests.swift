@@ -81,4 +81,15 @@ class RegionsModelOperationTests: OBATestCase {
         expect(pugetSound.centerCoordinate.latitude).to(beCloseTo(47.795091214055))
         expect(pugetSound.centerCoordinate.longitude).to(beCloseTo(-122.49868405298474))
     }
+
+// WIP Fix for #777
+//    func testDecoderError() async throws {
+//        let dataLoader = regionsAPIService.dataLoader as! MockDataLoader
+//        stubRegions(dataLoader: dataLoader, fixtureFile: "decoder-failure__regions-v3.json")
+//
+//        let response = try await regionsAPIService.getRegions(apiPath: regionsAPIPath)
+//
+//        let regions = response.list
+//        expect(regions.count) == 17
+//    }
 }
