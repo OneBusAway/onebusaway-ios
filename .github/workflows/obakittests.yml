@@ -8,12 +8,12 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: .build
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -21,7 +21,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode 15
-      run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+      run: sudo xcode-select -switch /Applications/Xcode_16.1.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -33,7 +33,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 15'
+        -destination 'platform=iOS Simulator,name=iPhone 16'
         -quiet
 
     # Unit Test
@@ -42,7 +42,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 15'
+        -destination 'platform=iOS Simulator,name=iPhone 16'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
