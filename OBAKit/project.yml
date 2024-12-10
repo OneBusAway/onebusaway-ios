@@ -13,6 +13,7 @@ targets:
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint
+        basedOnDependencyAnalysis: false
     scheme:
       gatherCoverageData: true
     info:
