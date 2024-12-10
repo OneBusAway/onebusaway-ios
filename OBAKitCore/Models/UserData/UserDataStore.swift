@@ -563,10 +563,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     // MARK: - Private Helpers
 
     private func upsert(bookmark: Bookmark) {
-        if
-            let existing = findBookmark(id: bookmark.id),
-            let index = bookmarks.firstIndex(of: existing)
-        {
+        if let existing = findBookmark(id: bookmark.id), let index = bookmarks.firstIndex(of: existing) {
             bookmarks.remove(at: index)
             bookmarks.insert(bookmark, at: index)
         }

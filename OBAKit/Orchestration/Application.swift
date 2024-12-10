@@ -94,7 +94,7 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Handles all deep-linking into the app.
     @objc public private(set) lazy var appLinksRouter: AppLinksRouter? = {
         let router = AppLinksRouter(application: self)
-        
+
         router?.showStopHandler = { [weak self] stop in
             guard
                 let self = self,

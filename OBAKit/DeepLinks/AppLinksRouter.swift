@@ -20,7 +20,7 @@ public class AppLinksRouter: NSObject {
     public init?(application: Application) {
         self.application = application
     }
-    
+
     /// The base URL for all operations in this object.
     private var baseURL: URL? {
         application.regionsService.currentRegion?.sidecarBaseURL
@@ -33,7 +33,7 @@ public class AppLinksRouter: NSObject {
     ///   - region: The region in which the link will exist.
     public func url(for stop: Stop, region: Region) -> URL? {
         guard let baseURL else { return nil }
-        
+
         guard var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false) else { return nil }
         components.path = String(format: "/regions/%d/stops/%@", region.regionIdentifier, stop.id)
 
@@ -49,7 +49,7 @@ public class AppLinksRouter: NSObject {
     ///   - region: The region in which the `ArrivalDeparture` exists.
     public func encode(arrivalDeparture: ArrivalDeparture, region: Region) -> URL? {
         guard let baseURL else { return nil }
-        
+
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.path = String(format: deepLinkPathFormat, region.regionIdentifier, arrivalDeparture.stopID)
         components.queryItems = [

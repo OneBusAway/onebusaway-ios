@@ -74,9 +74,9 @@ class WalkTimeView: UIView {
         ])
 
         NotificationCenter.default.addObserver(self, selector: #selector(deviceOrientationDidChange), name: UIDevice.orientationDidChangeNotification, object: nil)
-        
+
         let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
-        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+        registerForTraitChanges(sizeTraits) { (self: Self, _) in
             self.setNeedsDisplay()
         }
     }

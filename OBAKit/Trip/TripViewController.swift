@@ -30,7 +30,7 @@ class TripViewController: UIViewController,
         self.tripConvertible = tripConvertible
 
         super.init(nibName: nil, bundle: nil)
-        
+
         registerTraitChangeCallback()
     }
 
@@ -39,7 +39,7 @@ class TripViewController: UIViewController,
         self.tripConvertible = TripConvertible(arrivalDeparture: arrivalDeparture)
 
         super.init(nibName: nil, bundle: nil)
-        
+
         registerTraitChangeCallback()
     }
 
@@ -50,10 +50,10 @@ class TripViewController: UIViewController,
     deinit {
         enableIdleTimer()
     }
-    
+
     private func registerTraitChangeCallback() {
         let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self, UITraitPreferredContentSizeCategory.self]
-        registerForTraitChanges(sizeTraits) { (self: Self, previousTraitCollection: UITraitCollection) in
+        registerForTraitChanges(sizeTraits) { (self: Self, _) in
             self.updateTitleView()
         }
     }

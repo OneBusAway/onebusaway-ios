@@ -158,13 +158,13 @@ public class BookmarksViewController: UIViewController,
         let sortMenu = UIMenu(title: Strings.sort, options: .displayInline, children: [groupSortAction, distanceSortAction])
         navigationItem.rightBarButtonItem = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "arrow.up.arrow.down.circle"), menu: sortMenu)
     }
-    
+
     // MARK: Refresh Widget
     func reloadWidget() {
         print("Reloading the widget")
         WidgetCenter.shared.reloadTimelines(ofKind: "OBAWidget")
     }
-    
+
     // MARK: - Refresh Control
 
     @objc private func refreshControlPulled() {
