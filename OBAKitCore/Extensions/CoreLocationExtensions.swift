@@ -11,7 +11,8 @@ import CoreGraphics
 import CoreLocation
 import MapKit
 
-extension CLAuthorizationStatus: LosslessStringConvertible {
+extension CLAuthorizationStatus: @retroactive CustomStringConvertible {}
+extension CLAuthorizationStatus: @retroactive LosslessStringConvertible {
     public init?(_ description: String) { nil }
 
     public var description: String {

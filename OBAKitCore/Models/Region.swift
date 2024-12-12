@@ -45,7 +45,7 @@ public class Region: NSObject, Identifiable, Codable {
 
     /// The base URL for making OBA REST API requests.
     public let OBABaseURL: URL
-    
+
     /// The base URL for sidecar server (i.e. OneBusAway.co/Obaco) REST API requests
     public let sidecarBaseURL: URL?
 

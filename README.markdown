@@ -90,6 +90,12 @@ Now, replace the file `OBAKitCore/Models/Protobuf/gtfs-realtime.proto` with the 
 
 You can find the latest version of the GTFS-RT protobuf file in the https://github.com/google/transit/ repository.
 
+### Update macOS/Xcode versions for GitHub Actions CI
+
+1. Find the latest version of macOS and Xcode here: https://github.com/actions/runner-images/tree/main/images/macos
+2. Update the `.github/obakittests.yml` file accordingly.
+3. [There's no step 3](https://www.youtube.com/watch?v=ihOxl1v5BRk).
+
 ### Fix "Missing package product" build errors
 
 In Xcode: File Menu -> Packages -> Reset Package Caches
