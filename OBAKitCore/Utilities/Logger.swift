@@ -32,7 +32,7 @@ import CocoaLumberjackSwift
     }
 
     func info(_ message: String) {
-        DDLogInfo(message)
+        DDLogInfo("\(message)")
     }
 
     // MARK: - Warn
@@ -42,7 +42,7 @@ import CocoaLumberjackSwift
     }
 
     func warn(_ message: String) {
-        DDLogWarn(message)
+        DDLogWarn("\(message)")
     }
 
     // MARK: - Error
@@ -52,6 +52,6 @@ import CocoaLumberjackSwift
     }
 
     func error(_ message: String) {
-        DDLogError(message)
+        DDLogError("\(message)")
     }
 }

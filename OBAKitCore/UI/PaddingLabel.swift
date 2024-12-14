@@ -30,11 +30,15 @@ public class PaddingLabel: UILabel {
     public init(insets: UIEdgeInsets) {
         self.insets = insets
         super.init(frame: .zero)
+
+        registerForTraitChanges()
     }
 
     override public init(frame: CGRect) {
         self.insets = UIEdgeInsets(top: 4, left: 8, bottom: 4, right: 8)
         super.init(frame: frame)
+
+        registerForTraitChanges()
     }
 
     required init?(coder: NSCoder) {
@@ -53,9 +57,10 @@ public class PaddingLabel: UILabel {
                       height: size.height + insets.top + insets.bottom)
     }
 
-    override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        configure()
+    func registerForTraitChanges() {
+        registerForTraitChanges([UITraitAccessibilityContrast.self]) { (self: Self, _) in
+            self.configure()
+        }
     }
 
     func configure() {
