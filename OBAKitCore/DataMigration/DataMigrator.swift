@@ -145,7 +145,7 @@ public class DataMigrator {
         //    ╚═══════════════╝
 
         // The API service must be configured to the same region as parameters.regionIdentifier.
-        guard let apiServiceRegionIdentifier = apiService.configuration.regionIdentifier,
+        guard let apiServiceRegionIdentifier = await apiService.configuration.regionIdentifier,
               apiServiceRegionIdentifier == parameters.regionIdentifier else {
             throw DataMigrationError.invalidAPIService("The API must be configured to the same region as parameters.regionIdentifier")
         }

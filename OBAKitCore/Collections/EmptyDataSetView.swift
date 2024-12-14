@@ -137,6 +137,12 @@ public class EmptyDataSetView: UIView {
         NSLayoutConstraint.activate([topConstraint, leadingConstraint, trailingConstraint, bottomConstraint, centerYConstraint])
 
         layoutView()
+
+        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self]
+        registerForTraitChanges(sizeTraits) { (self: Self, _) in
+            self.layoutView()
+        }
+
     }
 
     required init?(coder: NSCoder) {
@@ -153,11 +159,6 @@ public class EmptyDataSetView: UIView {
         bottomConstraint.priority     = isCentered ? .defaultLow : .required
 
         layoutIfNeeded()
-    }
-
-    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        self.layoutView()
     }
 
     // MARK: - Configure with error
