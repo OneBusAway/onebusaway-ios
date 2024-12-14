@@ -521,7 +521,6 @@ public extension UIViewController {
     func removeChildController(_ controller: UIViewController) {
         controller.willMove(toParent: nil)
         controller.view.removeFromSuperview()
-        setOverrideTraitCollection(nil, forChild: controller)
         controller.removeFromParent()
     }
 

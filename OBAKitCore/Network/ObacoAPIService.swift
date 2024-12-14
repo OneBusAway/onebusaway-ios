@@ -53,17 +53,18 @@ public actor ObacoAPIService: @preconcurrency APIService {
         self.dataLoader = dataLoader
     }
 
-    private nonisolated func buildURL(path: String, queryItems: [URLQueryItem] = []) -> URL {
-        var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)!
+    private nonisolated func buildURL(path: String, queryItems: [URLQueryItem] = []) async -> URL {
+        let baseURL = await configuration.baseURL
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.appendPath(path)
-        components.queryItems = configuration.defaultQueryItems + queryItems
+        components.queryItems = await configuration.defaultQueryItems + queryItems
 
         return components.url!
     }
 
     public nonisolated func getWeather() async throws -> WeatherForecast {
         let path = String(format: "/api/v1/regions/%d/weather.json", regionID)
-        let url = buildURL(path: path)
+        let url = await buildURL(path: path)
 
         return try await getData(for: url, decodeAs: WeatherForecast.self, using: JSONDecoder.obacoServiceDecoder)
     }
@@ -87,7 +88,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         email: String,
         testMode: Bool
     ) async throws -> PaymentIntentResponse {
-        let url = buildURL(path: "/api/v1/payment_intents")
+        let url = await buildURL(path: "/api/v1/payment_intents")
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
 
@@ -115,7 +116,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
         stopSequence: Int,
         userPushID: String
     ) async throws -> Alarm {
-        let url = buildURL(path: String(format: "/api/v1/regions/%d/alarms", regionID))
+        let url = await buildURL(path: String(format: "/api/v1/regions/%d/alarms", regionID))
         let urlRequest = NSMutableURLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10)
         urlRequest.httpMethod = "POST"
 
@@ -147,7 +148,7 @@ public actor ObacoAPIService: @preconcurrency APIService {
     // MARK: - Vehicles
     public nonisolated func getVehicles(matching query: String) async throws -> [AgencyVehicle] {
         let apiPath = String(format: "/api/v1/regions/%d/vehicles", regionID)
-        let url = buildURL(path: apiPath, queryItems: [URLQueryItem(name: "query", value: query)])
+        let url = await buildURL(path: apiPath, queryItems: [URLQueryItem(name: "query", value: query)])
 
         return try await getData(for: url, decodeAs: [AgencyVehicle].self, using: JSONDecoder.obacoServiceDecoder)
     }
@@ -156,10 +157,10 @@ public actor ObacoAPIService: @preconcurrency APIService {
     public func getAlerts(agencies: [AgencyWithCoverage]) async throws -> [AgencyAlert] {
         let queryItems = self.shouldDisplayRegionTestAlerts ? [URLQueryItem(name: "test", value: "1")] : []
         let apiPath = String(format: "/api/v1/regions/%d/alerts.pb", regionID)
-        let url = buildURL(path: apiPath, queryItems: queryItems)
+        let url = await buildURL(path: apiPath, queryItems: queryItems)
 
         let (data, _) = try await getData(for: url)
-        let message = try TransitRealtime_FeedMessage(serializedData: data)
+        let message = try TransitRealtime_FeedMessage(serializedBytes: data)
         let entities = message.entity
 
         var qualifiedEntities: [TransitRealtime_FeedEntity] = []
