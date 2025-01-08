@@ -40,13 +40,16 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
         listView.obaDataSource = self
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
     }
 
