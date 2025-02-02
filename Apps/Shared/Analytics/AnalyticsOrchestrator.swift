@@ -9,19 +9,17 @@
 
 import OBAKitCore
 import OBAKit
-import FirebaseCore
-import FirebaseAnalytics
 
 @objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
     private let userDefaults: UserDefaults
+    private var firebaseAnalytics: FirebaseAnalytics?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
     }
     
     @objc public func configure(userID: String) {
-        FirebaseApp.configure()
-        Analytics.setUserID(userID)
+        firebaseAnalytics = FirebaseAnalytics(userID: userID)
     }
     
     public func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
@@ -29,7 +27,7 @@ import FirebaseAnalytics
     }
 
     @objc public func logEvent(name: String, parameters: [String: Any]) {
-        Analytics.logEvent(name, parameters: parameters)
+        firebaseAnalytics?.logEvent(name: name, parameters: parameters)
     }
 
     @objc public func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?) {
@@ -38,32 +36,15 @@ import FirebaseAnalytics
             return
         }
 
-        let eventName = AnalyticsEventSelectContent
-
-        var parameters: [String: Any] = [:]
-        parameters[AnalyticsParameterItemID] = label
-
-        if let value = value as? String {
-            parameters[AnalyticsParameterItemVariant] = value
-        }
-
-        logEvent(name: eventName, parameters: parameters)
+        firebaseAnalytics?.reportEvent(event, label: label, value: value)
     }
 
     @objc public func reportSearchQuery(_ query: String) {
-        Analytics.logEvent(AnalyticsEventSearch, parameters: [AnalyticsParameterSearchTerm: query])
+        firebaseAnalytics?.reportSearchQuery(query)
     }
 
     @objc public func reportStopViewed(name: String, id: String, stopDistance: String) {
-        logEvent(
-            name: AnalyticsEventViewItem,
-            parameters: [
-                AnalyticsParameterItemID: id,
-                AnalyticsParameterItemName: name,
-                AnalyticsParameterItemCategory: "stops",
-                AnalyticsParameterLocationID: stopDistance
-            ]
-        )
+        firebaseAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
     }
 
     @objc public func reportSetRegion(_ name: String) {
@@ -72,7 +53,7 @@ import FirebaseAnalytics
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
         userDefaults.set(enabled, forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
-        Analytics.setAnalyticsCollectionEnabled(enabled)
+        firebaseAnalytics?.setReportingEnabled(enabled)
     }
 
     @objc public func reportingEnabled() -> Bool {
@@ -80,6 +61,6 @@ import FirebaseAnalytics
     }
 
     @objc public func setUserProperty(key: String, value: String?) {
-        Analytics.setUserProperty(value ?? "", forName: key)
+        firebaseAnalytics?.setUserProperty(key: key, value: value)
     }
 }
