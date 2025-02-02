@@ -12,7 +12,6 @@
 @import OBAKit;
 @import OneSignal;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
-#import "OBAFirebaseAnalytics.h"
 #import "App-Swift.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
