@@ -88,6 +88,8 @@ public enum AnalyticsEvent: Int {
 /// implement it similarly in order to use your own custom analytics provider.
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {
+    @objc func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?)
+
     @objc optional func logEvent(name: String, parameters: [String: Any])
     @objc optional func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
 

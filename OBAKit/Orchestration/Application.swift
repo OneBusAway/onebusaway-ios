@@ -529,6 +529,8 @@ public class Application: CoreApplication, PushServiceDelegate {
     public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         super.regionsService(service, updatedRegion: region)
 
+        analytics?.updateServer(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
+
         analytics?.reportSetRegion?(region.name)
 
         if !regionsService.automaticallySelectRegion {

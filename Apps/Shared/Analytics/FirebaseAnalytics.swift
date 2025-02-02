@@ -23,6 +23,10 @@ import FirebaseAnalytics
         FirebaseApp.configure()
         Analytics.setUserID(userID)
     }
+    
+    public func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
+        // abxoxo todo
+    }
 
     @objc public func logEvent(name: String, parameters: [String: Any]) {
         Analytics.logEvent(name, parameters: parameters)
