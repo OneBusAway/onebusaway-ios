@@ -84,7 +84,7 @@ public enum AnalyticsEvent: Int {
 
 /// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.
 ///
-/// `OBAFirebaseAnalytics`, located in `Apps/Shared/CommonClient`, implements this protocol, and you can
+/// `AnalyticsOrchestrator`, located in `Apps/Shared/CommonClient`, implements this protocol, and you can
 /// implement it similarly in order to use your own custom analytics provider.
 @objc(OBAAnalytics)
 public protocol Analytics: NSObjectProtocol {

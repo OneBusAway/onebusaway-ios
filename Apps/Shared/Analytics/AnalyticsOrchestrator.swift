@@ -12,14 +12,14 @@ import OBAKit
 import FirebaseCore
 import FirebaseAnalytics
 
-@objc(OBAFirebaseAnalytics) public class FirebaseAnalytics: NSObject, OBAKit.Analytics {
+@objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
     private let userDefaults: UserDefaults
 
-    required public init(userDefaults: UserDefaults) {
+    @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
     }
     
-    public func configure(userID: String) {
+    @objc public func configure(userID: String) {
         FirebaseApp.configure()
         Analytics.setUserID(userID)
     }
