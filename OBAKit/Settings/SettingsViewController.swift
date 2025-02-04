@@ -51,7 +51,7 @@ class SettingsViewController: FormViewController {
             mapSectionShowsScale: application.mapRegionManager.mapViewShowsScale,
             mapSectionShowsTraffic: application.mapRegionManager.mapViewShowsTraffic,
             mapSectionShowsHeading: application.mapRegionManager.mapViewShowsHeading,
-            privacySectionReportingEnabled: application.analytics?.reportingEnabled?() ?? false,
+            privacySectionReportingEnabled: application.analytics?.reportingEnabled() ?? false,
             DataLoadFeedbackGenerator.EnabledUserDefaultsKey: application.userDefaults.bool(forKey: DataLoadFeedbackGenerator.EnabledUserDefaultsKey),
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
@@ -97,7 +97,7 @@ class SettingsViewController: FormViewController {
         }
 
         if let reportingEnabled = values[privacySectionReportingEnabled] as? Bool {
-            application.analytics?.setReportingEnabled?(reportingEnabled)
+            application.analytics?.setReportingEnabled(reportingEnabled)
         }
 
         if let debugEnabled = values[debugModeEnabled] as? Bool {

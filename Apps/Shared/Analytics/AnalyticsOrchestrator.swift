@@ -13,6 +13,7 @@ import OBAKit
 @objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
     private let userDefaults: UserDefaults
     private var firebaseAnalytics: FirebaseAnalytics?
+    private var plausibleAnalytics: PlausibleAnalytics?
 
     @objc required public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
@@ -23,37 +24,51 @@ import OBAKit
     }
     
     public func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
-        // abxoxo todo
-    }
+        plausibleAnalytics = nil
 
-    @objc public func logEvent(name: String, parameters: [String: Any]) {
-        firebaseAnalytics?.logEvent(name: name, parameters: parameters)
-    }
-
-    @objc public func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?) {
-        guard event == .userAction else {
-            Logger.error("Invalid call to -reportEventWithCategory: \(event) label: \(label) value: \(value ?? "")")
+        guard let analyticsServerURL else {
             return
         }
 
-        firebaseAnalytics?.reportEvent(event, label: label, value: value)
+        if reportingEnabled() {
+            plausibleAnalytics = PlausibleAnalytics(defaultDomainURL: defaultDomainURL, analyticsServerURL: analyticsServerURL)
+        }
+    }
+
+    @objc public func reportEvent(pageURL: String, label: String, value: Any?) {
+        firebaseAnalytics?.reportEvent(label: label, value: value)
+        Task {
+            await plausibleAnalytics?.reportEvent(pageURL: pageURL, label: label, value: value)
+        }
     }
 
     @objc public func reportSearchQuery(_ query: String) {
         firebaseAnalytics?.reportSearchQuery(query)
+
+        Task {
+            await plausibleAnalytics?.reportSearchQuery(query)
+        }
     }
 
     @objc public func reportStopViewed(name: String, id: String, stopDistance: String) {
         firebaseAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
+
+        Task {
+            await plausibleAnalytics?.reportStopViewed(name: name, id: id, stopDistance: stopDistance)
+        }
     }
 
     @objc public func reportSetRegion(_ name: String) {
         setUserProperty(key: "RegionName", value: name)
+        // n/a for Plausible since it'll be constrained on a per-region basis by the server URL.
     }
 
     @objc public func setReportingEnabled(_ enabled: Bool) {
         userDefaults.set(enabled, forKey: AnalyticsKeys.reportingEnabledUserDefaultsKey)
         firebaseAnalytics?.setReportingEnabled(enabled)
+        if !enabled {
+            plausibleAnalytics = nil
+        }
     }
 
     @objc public func reportingEnabled() -> Bool {
@@ -62,5 +77,6 @@ import OBAKit
 
     @objc public func setUserProperty(key: String, value: String?) {
         firebaseAnalytics?.setUserProperty(key: key, value: value)
+        plausibleAnalytics?.setUserProperty(key: key, value: value)
     }
 }

@@ -294,7 +294,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
 #if canImport(Stripe)
-        analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donationPushNotificationTapped, value: id)
+        analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
         presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
@@ -376,6 +376,10 @@ public class Application: CoreApplication, PushServiceDelegate {
             alertController.addAction(UIAlertAction(title: Strings.ok, style: .default))
             topViewController.present(alertController, animated: true)
             presentAddRegionAlertOnActive = false
+        }
+
+        if let region = regionsService.currentRegion, let analytics {
+            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
         }
     }
 
@@ -523,19 +527,19 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     public func regionsService(_ service: RegionsService, changedAutomaticRegionSelection value: Bool) {
         let label = value ? AnalyticsLabels.setRegionAutomatically : AnalyticsLabels.setRegionManually
-        analytics?.reportEvent?(.userAction, label: label, value: nil)
+        analytics?.reportEvent(pageURL: "app://localhost/regions", label: label, value: nil)
     }
 
     public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         super.regionsService(service, updatedRegion: region)
 
         if let analytics {
-            analytics.updateServer?(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
+            analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
 
-            analytics.reportSetRegion?(region.name)
+            analytics.reportSetRegion(region.name)
 
             if !regionsService.automaticallySelectRegion {
-                analytics.reportEvent?(.userAction, label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
+                analytics.reportEvent(pageURL: "app://localhost/regions", label: AnalyticsLabels.manuallySelectedRegionChanged, value: region.name)
             }
         }
     }
@@ -548,11 +552,11 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     // MARK: - Analytics
 
-    @objc public private(set) var analytics: Analytics?
+    public private(set) var analytics: Analytics?
 
     private func reportAnalyticsUserProperties() {
         let val = UIAccessibility.isVoiceOverRunning ? "YES" : "NO"
-        analytics?.setUserProperty?(key: "accessibility", value: val)
+        analytics?.setUserProperty(key: "accessibility", value: val)
     }
 
     // MARK: - Error Visualization

@@ -48,7 +48,7 @@ class DonationModel: ObservableObject {
 
     @MainActor
     func donate(_ amountInCents: Int, recurring: Bool) async {
-        analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donateButtonTapped, value: String(amountInCents))
+        analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donateButtonTapped, value: String(amountInCents))
 
         let paymentSheet = PaymentSheet(
             intentConfiguration: buildIntentConfiguration(amountInCents, recurring: recurring),
@@ -81,11 +81,11 @@ class DonationModel: ObservableObject {
         }
 
         if result == .completed, let donationPushNotificationID {
-            analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donationPushNotificationSuccess, value: donationPushNotificationID)
+            analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationSuccess, value: donationPushNotificationID)
         }
 
         if let label {
-            analytics?.reportEvent?(.userAction, label: label, value: value)
+            analytics?.reportEvent(pageURL: "app://localhost/donations", label: label, value: value)
         }
     }
 

@@ -160,7 +160,7 @@ class MapViewController: UIViewController,
 
     @objc func centerMapOnUserLocationViaTap(_ sender: Any?) {
         guard isLoadedAndOnScreen else { return }
-        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapShowUserLocationButtonTapped, value: nil)
+        application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapShowUserLocationButtonTapped, value: nil)
         centerMapOnUserLocation()
     }
 
@@ -498,7 +498,7 @@ class MapViewController: UIViewController,
             // When VoiceOver is running, StopAnnotationView does not display a callout due to
             // VoiceOver limitations with MKMapView. Therefore, we should skip any callouts
             // and just go directly to pushing the stop onto the navigation stack.
-            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
         }
     }
@@ -516,10 +516,10 @@ class MapViewController: UIViewController,
 
     func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         if let stop = view.annotation as? Stop {
-            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
         } else if let bookmark = view.annotation as? Bookmark {
-            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
+            application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: bookmark.stop)
         }
     }

@@ -10,18 +10,32 @@
 import Foundation
 import OBAKit
 
-struct LoggedEvent {
-    public let name: String
-    public let parameters: [String: Any]
-}
-
 struct ReportedEvent {
-    public let event: AnalyticsEvent
+    public let pageURL: String
     public let label: String
     public let value: Any?
 }
 
 class AnalyticsMock: NSObject, Analytics {
+    func reportSearchQuery(_ query: String) {
+        //
+    }
+    
+    func reportStopViewed(name: String, id: String, stopDistance: String) {
+        //
+    }
+    
+    func reportSetRegion(_ name: String) {
+        //
+    }
+    
+    func setUserProperty(key: String, value: String?) {
+        //
+    }
+
+    func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {
+        //
+    }
 
     private var isReportingEnabled = true
 
@@ -33,14 +47,9 @@ class AnalyticsMock: NSObject, Analytics {
         return isReportingEnabled
     }
 
-    public private(set) var loggedEvents = [LoggedEvent]()
     public private(set) var reportedEvents = [ReportedEvent]()
 
-    func logEvent(name: String, parameters: [String: Any]) {
-        loggedEvents.append(LoggedEvent(name: name, parameters: parameters))
-    }
-
-    func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?) {
-        reportedEvents.append(ReportedEvent(event: event, label: label, value: value))
+    func reportEvent(pageURL: String, label: String, value: Any?) {
+        reportedEvents.append(ReportedEvent(pageURL: pageURL, label: label, value: value))
     }
 }

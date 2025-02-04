@@ -168,13 +168,11 @@ public class MoreViewController: UIViewController,
 
         if let currentRegion = application.currentRegion, currentRegion.supportsMobileFarePayment {
             contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.pay_fare", value: "Pay My Fare", comment: "Title of the mobile fare payment row"), onSelectAction: { _ in
-                self.logRowTapAnalyticsEvent(name: "Pay Fare")
                 self.farePayments.beginFarePaymentsWorkflow()
             }).typeErased)
         }
 
         contents.append(OBAListRowView.DefaultViewModel(title: OBALoc("more_controller.my_location.agencies", value: "Agencies", comment: "Title of the Agencies row in the My Location section"), onSelectAction: { _ in
-            self.logRowTapAnalyticsEvent(name: "Show Agencies")
             let agencies = AgenciesViewController(application: self.application)
             self.application.viewRouter.navigate(to: agencies, from: self)
         }).typeErased)
@@ -281,14 +279,14 @@ public class MoreViewController: UIViewController,
         // Contact Developers
         sheet.addAction(title: OBALoc("more_controller.contact_developers", value: "Feature Request/Bug Report", comment: "Title of the action sheet option for contacting the developers of the app.")) { [weak self] _ in
             guard let self = self else { return }
-            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_app_feedback_email")
+            self.application.analytics?.reportEvent(pageURL: "app://localhost/more", label: AnalyticsLabels.reportProblem, value: "feedback_app_feedback_email")
             self.presentEmailFeedbackForm(target: .appDevelopers)
         }
 
         // Contact Transit Agency
         sheet.addAction(title: OBALoc("more_controller.contact_transit", value: "Vehicle/Schedule Problem", comment: "Title of the action sheet option for contacting a user's transit agency.")) { [weak self] _ in
             guard let self = self else { return }
-            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_customer_service")
+            self.application.analytics?.reportEvent(pageURL: "app://localhost/more", label: AnalyticsLabels.reportProblem, value: "feedback_customer_service")
             self.presentEmailFeedbackForm(target: .transitAgency)
         }
 
@@ -321,11 +319,5 @@ public class MoreViewController: UIViewController,
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         self.listView.applyData()
-    }
-
-    // MARK: - Private Helpers
-
-    private func logRowTapAnalyticsEvent(name: String) {
-        application.analytics?.logEvent?(name: "infoRowTapped", parameters: ["row": name])
     }
 }

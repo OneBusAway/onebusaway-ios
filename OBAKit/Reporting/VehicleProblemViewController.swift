@@ -107,7 +107,7 @@ class VehicleProblemViewController: FormViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
+        application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "feedback_trip_problem")
 
         let commentsRow = TextAreaRow()
 
@@ -171,7 +171,7 @@ class VehicleProblemViewController: FormViewController {
 
         do {
             _ = try await apiService.getTripProblem(report: report)
-            self.application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
+            self.application.analytics?.reportEvent(pageURL: "app://localhost/vehicle-problem", label: AnalyticsLabels.reportProblem, value: "Reported Trip Problem")
 
             await MainActor.run {
                 ProgressHUD.showSuccessAndDismiss()
