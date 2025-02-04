@@ -107,7 +107,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     public private(set) var inSearchMode = false {
         didSet {
             if inSearchMode {
-                application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.searchSelected, value: nil)
+                application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.searchSelected, value: nil)
                 mapPanelDelegate?.mapPanelControllerDisplaySearch(self)
             }
             else {
@@ -200,7 +200,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     func performSearch(request: SearchRequest) {
         if let searchText = searchBar.text {
-            application.analytics?.reportSearchQuery?(searchText)
+            application.analytics?.reportSearchQuery(searchText)
         }
 
         searchBar.resignFirstResponder()

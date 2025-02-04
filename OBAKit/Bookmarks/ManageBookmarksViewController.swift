@@ -66,7 +66,7 @@ class ManageBookmarksViewController: FormViewController {
         }
 
         if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
-            application.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
+            application.analytics?.reportEvent(pageURL: "app://localhost/bookmarks", label: AnalyticsLabels.removeBookmark, value: AnalyticsLabels.addRemoveBookmarkValue(routeID: routeID, headsign: headsign, stopID: bookmark.stopID))
         }
         application.userDataStore.delete(bookmark: bookmark)
 

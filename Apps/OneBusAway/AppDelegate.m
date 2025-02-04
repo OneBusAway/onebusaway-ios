@@ -12,14 +12,13 @@
 @import OBAKit;
 @import OneSignal;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
-#import "OBAFirebaseAnalytics.h"
 #import "App-Swift.h"
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
 @property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
-@property(nonatomic,strong) OBAFirebaseAnalytics *analyticsClient;
+@property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
 @end
 
 @implementation AppDelegate
@@ -46,7 +45,7 @@
 //        NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:data options:0 format:nil error:nil];
 //        [_userDefaults registerDefaults:plist];
 
-        _analyticsClient = [[OBAFirebaseAnalytics alloc] initWithUserDefaults:_userDefaults];
+        _analyticsClient = [[OBAAnalyticsOrchestrator alloc] initWithUserDefaults:_userDefaults];
 
         OBAAppConfig *appConfig = [[OBAAppConfig alloc] initWithAppBundle:NSBundle.mainBundle userDefaults:_userDefaults analytics:_analyticsClient];
 

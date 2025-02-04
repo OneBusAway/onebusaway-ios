@@ -46,7 +46,7 @@ struct DonationLearnMoreView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             Button("Close") {
-                analyticsModel.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donationCanceled, value: nil)
+                analyticsModel.analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationCanceled, value: nil)
                 dismiss()
             }
             .buttonStyle(.borderedProminent)
@@ -71,7 +71,7 @@ struct DonationLearnMoreView: View {
         .interactiveDismissDisabled() // disabled to make sure that we can always get analytics data for a user-initiated dismissal.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .onFirstAppear {
-            analyticsModel.analytics?.reportEvent?(.userAction, label: AnalyticsLabels.donationLearnMoreShown, value: nil)
+            analyticsModel.analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationLearnMoreShown, value: nil)
         }
         .alert("Enter an amount in U.S. dollars", isPresented: otherAmountSelected) {
             buildOtherAmountAlert()
