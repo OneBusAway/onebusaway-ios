@@ -190,6 +190,17 @@ public class MoreViewController: UIViewController,
         return OBAListViewSection(id: "about", title: header, contents: [
             OBAListRowView.DefaultViewModel(
                 title: OBALoc(
+                    "more_controller.tutorial_row_title",
+                    value: "Tutorial",
+                    comment: "A link to how to use the App"),
+                onSelectAction: { _ in
+                    guard let url = Bundle.main.TutorialURL else { return }
+                    let safari = SFSafariViewController(url: url)
+                    self.application.viewRouter.present(safari, from: self)
+                }),
+            
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
                     "more_controller.credits_row_title",
                     value: "Credits",
                     comment: "Credits - like who should get credit for creating this."),
