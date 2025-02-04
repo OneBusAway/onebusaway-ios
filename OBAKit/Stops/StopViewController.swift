@@ -101,7 +101,7 @@ public class StopViewController: UIViewController,
         if let region = application.currentRegion {
             application.userDataStore.addRecentStop(stop, region: region)
         }
-        application.analytics?.reportStopViewed?(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
+        application.analytics?.reportStopViewed(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
     }
 
     /// Arrival/Departure data for this stop.

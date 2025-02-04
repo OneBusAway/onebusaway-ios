@@ -76,12 +76,6 @@ public class AnalyticsLabels: NSObject {
     @objc public static let donationPushNotificationSuccess = "Donation Push Notification Success"
 }
 
-/// Reported analytics events.
-@objc(OBAAnalyticsEvent)
-public enum AnalyticsEvent: Int {
-    case userAction
-}
-
 /// Implement this protocol for reporting analytics events in order to be able to plug in a custom provider of your choosing.
 ///
 /// `AnalyticsOrchestrator`, located in `Apps/Shared/CommonClient`, implements this protocol, and you can
@@ -90,15 +84,14 @@ public enum AnalyticsEvent: Int {
 public protocol Analytics: NSObjectProtocol {
     @objc optional func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?)
 
-    @objc optional func logEvent(name: String, parameters: [String: Any])
-    @objc optional func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?)
+    @objc func reportEvent(pageURL: String, label: String, value: Any?)
 
-    @objc optional func reportSearchQuery(_ query: String)
-    @objc optional func reportStopViewed(name: String, id: String, stopDistance: String)
-    @objc optional func reportSetRegion(_ name: String)
+    @objc func reportSearchQuery(_ query: String)
+    @objc func reportStopViewed(name: String, id: String, stopDistance: String)
+    @objc func reportSetRegion(_ name: String)
 
-    @objc optional func setReportingEnabled(_ enabled: Bool)
-    @objc optional func reportingEnabled() -> Bool
+    @objc func setReportingEnabled(_ enabled: Bool)
+    @objc func reportingEnabled() -> Bool
 
-    @objc optional func setUserProperty(key: String, value: String?)
+    @objc func setUserProperty(key: String, value: String?)
 }

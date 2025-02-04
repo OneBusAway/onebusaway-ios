@@ -10,19 +10,17 @@ import OBAKit
 import FirebaseCore
 import FirebaseAnalytics
 
-class FirebaseAnalytics: NSObject, OBAKit.Analytics {
+class FirebaseAnalytics: NSObject {
     init(userID: String) {
         FirebaseApp.configure()
         Analytics.setUserID(userID)
     }
 
-    @objc public func logEvent(name: String, parameters: [String: Any]) {
+    private func logEvent(name: String, parameters: [String: Any]) {
         Analytics.logEvent(name, parameters: parameters)
     }
 
-    @objc public func reportEvent(_ event: AnalyticsEvent, label: String, value: Any?) {
-        let eventName = AnalyticsEventSelectContent
-
+    public func reportEvent(label: String, value: Any?) {
         var parameters: [String: Any] = [:]
         parameters[AnalyticsParameterItemID] = label
 
@@ -30,14 +28,14 @@ class FirebaseAnalytics: NSObject, OBAKit.Analytics {
             parameters[AnalyticsParameterItemVariant] = value
         }
 
-        logEvent(name: eventName, parameters: parameters)
+        logEvent(name: AnalyticsEventSelectContent, parameters: parameters)
     }
 
-    @objc public func reportSearchQuery(_ query: String) {
+    public func reportSearchQuery(_ query: String) {
         Analytics.logEvent(AnalyticsEventSearch, parameters: [AnalyticsParameterSearchTerm: query])
     }
 
-    @objc public func reportStopViewed(name: String, id: String, stopDistance: String) {
+    public func reportStopViewed(name: String, id: String, stopDistance: String) {
         logEvent(
             name: AnalyticsEventViewItem,
             parameters: [
@@ -49,19 +47,15 @@ class FirebaseAnalytics: NSObject, OBAKit.Analytics {
         )
     }
 
-    @objc public func reportSetRegion(_ name: String) {
+    public func reportSetRegion(_ name: String) {
         setUserProperty(key: "RegionName", value: name)
     }
 
-    @objc public func setReportingEnabled(_ enabled: Bool) {
+    public func setReportingEnabled(_ enabled: Bool) {
         Analytics.setAnalyticsCollectionEnabled(enabled)
     }
-
-    @objc public func reportingEnabled() -> Bool {
-        return true
-    }
-
-    @objc public func setUserProperty(key: String, value: String?) {
+    
+    public func setUserProperty(key: String, value: String?) {
         Analytics.setUserProperty(value ?? "", forName: key)
     }
 }

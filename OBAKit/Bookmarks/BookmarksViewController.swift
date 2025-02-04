@@ -301,8 +301,8 @@ public class BookmarksViewController: UIViewController,
         let deleteConfirmation = UIAction(title: Strings.confirmDelete, image: Icons.delete, attributes: .destructive) { _ in
             // Report remove bookmark event to analytics
             if let routeID = bookmark.routeID, let headsign = bookmark.tripHeadsign {
-                self.application.analytics?.reportEvent?(
-                    .userAction,
+                self.application.analytics?.reportEvent(
+                    pageURL: "app://localhost/bookmarks",
                     label: AnalyticsLabels.removeBookmark,
                     value: AnalyticsLabels.addRemoveBookmarkValue(
                         routeID: routeID,
