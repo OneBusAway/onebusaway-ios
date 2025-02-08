@@ -53,6 +53,7 @@ targets:
           RegionsServerAPIPath: /regions-v4.json
     settings:
       base:
+        DEVELOPMENT_TEAM: 85APG5FQFE
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
   TodayView:
     sources: ["Apps/KiedyBus/Assets.xcassets"]
@@ -72,8 +73,8 @@ targets:
           RegionsServerAPIPath: /regions-v4.json
     settings:
       base:
+        DEVELOPMENT_TEAM: 85APG5FQFE
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.TodayView
-
 include:
   - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
