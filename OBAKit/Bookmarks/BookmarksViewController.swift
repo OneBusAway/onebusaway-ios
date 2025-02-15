@@ -186,12 +186,10 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - List view
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        if sortBookmarksByGroup {
-            return listItemsSortedByGroup()
-        }
-        else {
-            return listItemsSortedByDistance()
-        }
+        if !sortBookmarksByGroup && application.locationService.currentLocation == nil {
+                return listItemsSortedByGroup()
+            }
+        return sortBookmarksByGroup ? listItemsSortedByGroup() : listItemsSortedByDistance()
     }
 
     /// Creates an `OBAListViewSection` containing the specified bookmarks.
@@ -226,17 +224,16 @@ public class BookmarksViewController: UIViewController,
         let title: String
         let body: String
 
-        switch (application.hasDataToMigrate, distanceSortRequestedButUnavailable) {
-        case (true, _):
-            title = Strings.emptyBookmarkTitle
-            body = Strings.emptyBookmarkBodyWithPendingMigration
-        case (false, false):
-            title = Strings.emptyBookmarkTitle
-            body = Strings.emptyBookmarkBody
-        case (false, true):
-            title = Strings.locationUnavailable
-            body = OBALoc("bookmarks_controller.unable_to_sort_by_distance_error", value: "We can't sort your bookmarks by distance because your location is not available.", comment: "An error message displayed on the bookmarks tab when the user has Sort By Distance enabled and their location isn't available.")
-        }
+        if application.hasDataToMigrate {
+                title = Strings.emptyBookmarkTitle
+                body = Strings.emptyBookmarkBodyWithPendingMigration
+            } else if application.userDataStore.bookmarks.isEmpty {
+                title = Strings.emptyBookmarkTitle
+                body = Strings.emptyBookmarkBody
+            } else {
+                // Don't show empty state if we have bookmarks
+                return nil
+            }
 
         return .standard(.init(title: title, body: body))
     }
@@ -275,7 +272,7 @@ public class BookmarksViewController: UIViewController,
     /// Builds a single item array that contains a list of all bookmarks in the current region sorted by distance from the current user.
     private func listItemsSortedByDistance() -> [OBAListViewSection] {
         guard let currentLocation = application.locationService.currentLocation else {
-            return []
+            return listItemsSortedByGroup()
         }
 
         let bookmarks = application.userDataStore.bookmarks.sorted(by: {
