@@ -166,6 +166,10 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - UIViewController Overrides
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
@@ -185,7 +189,6 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
 
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
         listView.addSubview(refreshControl)
 
