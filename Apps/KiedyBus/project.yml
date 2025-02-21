@@ -49,7 +49,7 @@ targets:
           ExtensionURLScheme: kiedybus
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
-          RegionsServerBaseAddress: http://kiedybus.pl
+          RegionsServerBaseAddress: https://kiedybus.pl
           RegionsServerAPIPath: /regions-v4.json
     settings:
       base:
