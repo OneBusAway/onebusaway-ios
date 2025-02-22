@@ -16,7 +16,6 @@ OBAWidget/Info.plist
 
 ## SwiftPM
 OBAKit.xcodeproj/**
-!OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 ## Various settings
 *.pbxuser

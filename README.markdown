@@ -100,6 +100,10 @@ You can find the latest version of the GTFS-RT protobuf file in the https://gith
 
 In Xcode: File Menu -> Packages -> Reset Package Caches
 
+### Update Your App's Package.resolved file
+
+Run the script `scripts/update_package_resolved`
+
 # Third Party Libraries
 
 These are third party libraries directly included inside of this project.
