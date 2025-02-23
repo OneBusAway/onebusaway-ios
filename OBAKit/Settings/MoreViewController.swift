@@ -85,6 +85,9 @@ public class MoreViewController: UIViewController,
     var donateSection: OBAListViewSection? {
         guard application.donationsManager.donationsEnabled else { return nil }
 
+        // Temporarily disabled because Apple is being ridiculous.
+        return nil
+
         let header = OBALoc(
             "more_controller.donate",
             value: "Be a Supporter",
