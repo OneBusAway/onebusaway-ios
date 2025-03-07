@@ -273,6 +273,7 @@ class MapViewController: UIViewController,
                     self.forecast = forecast
                 }
             } catch {
+                weatherButton.isHidden = true
                 Logger.error(error.localizedDescription)
             }
         }
