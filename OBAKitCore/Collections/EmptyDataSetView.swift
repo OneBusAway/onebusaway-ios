@@ -116,7 +116,9 @@ public class EmptyDataSetView: UIView {
 
         NSLayoutConstraint.activate([
             imageViewHeightConstraint,
-            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor)
+            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),
+            titleLabel.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 0.9),
+            bodyLabel.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 0.9)
         ])
 
         // TOOD: Use readableContentGuides instead of layoutMarginsGuide.
