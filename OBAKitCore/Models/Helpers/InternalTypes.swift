@@ -37,7 +37,19 @@ extension CLLocation {
 extension JSONDecoder {
     class var obacoServiceDecoder: JSONDecoder {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds, .withTimeZone]
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            let fixedDateString = dateString.replacingOccurrences(of: "+00:00", with: "Z")
+
+            if let date = formatter.date(from: fixedDateString) {
+                return date
+            } else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date format")
+            }
+        }
 
         return decoder
     }
