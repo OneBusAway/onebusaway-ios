@@ -515,6 +515,9 @@
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "Search Results";
 
+/* Error message shown when a vehicle has no trips available. */
+"search_results_controller.no_trips_available" = "This vehicle is not currently on any trips.";
+
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Affected Agencies";
 
