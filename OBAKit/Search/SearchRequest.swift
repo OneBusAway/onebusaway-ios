@@ -11,6 +11,20 @@ import Foundation
 import MapKit
 import OBAKitCore
 
+// MARK: - SearchError
+
+/// Defines errors that can occur during search operations in the app.
+public enum SearchError: Error, LocalizedError {
+    case noTripsAvailable
+
+    public var errorDescription: String? {
+        switch self {
+        case .noTripsAvailable:
+            return OBALoc("search_results_controller.no_trips_available", value: "This vehicle is not currently on any trips.", comment: "Error message shown when a vehicle has no trips available.")
+        }
+    }
+}
+
 // MARK: - SearchType
 
 /// Describes what kind of search the user is performing.

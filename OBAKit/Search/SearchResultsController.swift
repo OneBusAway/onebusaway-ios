@@ -118,6 +118,9 @@ public class SearchResultsController: UIViewController, AppContext, OBAListViewD
                     self.application.mapRegionManager.searchResponse = response
                     self.delegate?.dismissModalController(self)
                 }
+            } catch DecodingError.keyNotFound {
+                let error = SearchError.noTripsAvailable
+                await self.application.displayError(error)
             } catch {
                 await self.application.displayError(error)
             }
