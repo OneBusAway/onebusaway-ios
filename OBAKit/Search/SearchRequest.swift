@@ -110,7 +110,9 @@ public class SearchManager: NSObject {
 
         do {
             let response = try await apiService.getRoute(query: request.query, region: CLCircularRegion(mapRect: mapRect))
-            self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
+            await MainActor.run {
+                self.application.mapRegionManager.searchResponse = SearchResponse(request: request, results: response.list, boundingRegion: nil, error: nil)
+            }
         } catch {
             await self.application.displayError(error)
         }
