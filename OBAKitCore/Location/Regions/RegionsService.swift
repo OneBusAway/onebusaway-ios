@@ -314,7 +314,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     /// Returns `true` if the list of `Region`s should be updated from the server.
     ///
-    /// By default, this method only returns `true` if it has been at least a week since the last successful refresh,
+    /// By default, this method only returns `true` if it has been at least a day since the last successful refresh,
     /// however you can override this to force it to update the list of `Region`s on every launch if you set the
     /// `UserDefaults` key `RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey` to `true`.
     /// You can set this value to `true` either through some console trickery, or by toggling the setting in the Settings controller
@@ -328,8 +328,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             return true
         }
 
-        // True if it has been at least the number of seconds in a week since the last update.
-        return abs(lastUpdatedAt.timeIntervalSinceNow) >= 604800
+        // True if it has been at least the number of seconds in a day since the last update.
+        return abs(lastUpdatedAt.timeIntervalSinceNow) >= 86400
     }
 
     // MARK: - Public Methods
