@@ -34,10 +34,8 @@ struct RegionPickerMap: View {
 
             if let mapRect, isMapExpanded {
                 Map(
-                    mapRect: .constant(mapRect),
-                    interactionModes: [],
-                    showsUserLocation: false,
-                    userTrackingMode: .none
+                    position: .constant(.rect(mapRect)),
+                    interactionModes: []
                 )
                 .accessibilityElement(children: .ignore)
                 .cornerRadius(24)
