@@ -61,9 +61,22 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     public var body: some View {
         NavigationStack {
             List {
-                Toggle(
-                    "Automatically select region",
-                    isOn: $regionProvider.automaticallySelectRegion)
+                HStack {
+                    Toggle(
+                        "Automatically select region",
+                        isOn: $regionProvider.automaticallySelectRegion)
+
+                    Button {
+                        Task {
+                            await doRefreshRegions()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(disableInteractions || regionProvider.automaticallySelectRegion)
+                    .buttonStyle(.plain)
+                }
+
                 Picker("", selection: $selectedRegion) {
                     ForEach(filteredRegions, id: \.self) { region in
                         cell(for: region)
