@@ -24,6 +24,9 @@ public class Region: NSObject, Identifiable, Codable {
         return self.regionIdentifier
     }
 
+    /// Unique instance identifier for equality and hashing purposes.
+    let instanceId = UUID()
+
     /// The unique ID for the region.
     public let regionIdentifier: RegionIdentifier
 
@@ -329,6 +332,7 @@ public class Region: NSObject, Identifiable, Codable {
     public override func isEqual(_ object: Any?) -> Bool {
         guard let rhs = object as? Region else { return false }
         return name == rhs.name &&
+            instanceId == rhs.instanceId &&
             regionIdentifier == rhs.regionIdentifier &&
             isActive == rhs.isActive &&
             isExperimental == rhs.isExperimental &&
@@ -362,6 +366,7 @@ public class Region: NSObject, Identifiable, Codable {
         var hasher = Hasher()
         hasher.combine(name)
         hasher.combine(regionIdentifier)
+        hasher.combine(instanceId)
         hasher.combine(isActive)
         hasher.combine(isExperimental)
         hasher.combine(isCustom)
