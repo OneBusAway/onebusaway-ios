@@ -49,6 +49,11 @@ class AgencyAlertsViewController: UIViewController,
     }
 
     // MARK: - UIViewController
+    public override func loadView() {
+        super.loadView()
+        self.view = listView
+    }
+    
     public override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -58,7 +63,6 @@ class AgencyAlertsViewController: UIViewController,
         listView.collapsibleSectionsDelegate = self
         listView.contextMenuDelegate = self
         listView.refreshControl = refreshControl
-        view.addSubview(listView)
         listView.pinToSuperview(.edges)
 
         view.backgroundColor = ThemeColors.shared.systemBackground
