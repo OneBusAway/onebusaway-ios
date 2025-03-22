@@ -15,8 +15,9 @@ public struct AlarmPushBody: Codable {
     let tripID: TripIdentifier
     let stopID: StopID
     let regionID: Int
-    let vehicleID: String
+    let vehicleID: String?
     let serviceDate: Date
+    let serviceDateEpochTimestamp: Int64
     let stopSequence: Int
 
     private enum CodingKeys: String, CodingKey {
@@ -33,8 +34,9 @@ public struct AlarmPushBody: Codable {
         tripID = try container.decode(TripIdentifier.self, forKey: .tripID)
         stopID = try container.decode(StopID.self, forKey: .stopID)
         regionID = try container.decode(Int.self, forKey: .regionID)
-        vehicleID = try container.decode(String.self, forKey: .vehicleID)
-        serviceDate = try container.decode(Date.self, forKey: .serviceDate)
+        vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
+        serviceDateEpochTimestamp = try container.decode(Int64.self, forKey: .serviceDate)
+        serviceDate = Date(timeIntervalSince1970: Double(serviceDateEpochTimestamp) / 1000)
         stopSequence = try container.decode(Int.self, forKey: .stopSequence)
     }
 }

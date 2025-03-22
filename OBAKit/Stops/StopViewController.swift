@@ -539,9 +539,10 @@ public class StopViewController: UIViewController,
 
         sections.append(stopHeaderSection)
 
-        if let donationsSection {
-            sections.append(donationsSection)
-        }
+        // Temporarily commented out because Apple is being ridiculous.
+//        if let donationsSection {
+//            sections.append(donationsSection)
+//        }
 
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)

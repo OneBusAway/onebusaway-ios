@@ -49,10 +49,11 @@ targets:
           ExtensionURLScheme: kiedybus
           PrivacyPolicyURL: https://www.goeuropa.eu
           RESTServerAPIKey: web
-          RegionsServerBaseAddress: http://kiedybus.pl
+          RegionsServerBaseAddress: https://kiedybus.pl
           RegionsServerAPIPath: /regions-v4.json
     settings:
       base:
+        DEVELOPMENT_TEAM: 85APG5FQFE
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
   TodayView:
     sources: ["Apps/KiedyBus/Assets.xcassets"]
@@ -72,8 +73,28 @@ targets:
           RegionsServerAPIPath: /regions-v4.json
     settings:
       base:
+        DEVELOPMENT_TEAM: 85APG5FQFE
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.TodayView
-
+  OBAWidget:
+    sources: ["Apps/KiedyBus/Assets.xcassets"]
+    entitlements:
+      properties:
+        com.apple.security.application-groups:
+          - group.pl.kiedybus.iphone
+    info:
+      properties:
+        CFBundleDisplayName: KiedyBus
+        OBAKitConfig:
+          AppGroup: group.pl.kiedybus.iphone
+          BundledRegionsFileName: regions.json
+          ExtensionURLScheme: kiedybus
+          RESTServerAPIKey: pl.kiedybus.iphone
+          RegionsServerBaseAddress: https://kiedybus.pl
+          RegionsServerAPIPath: /regions-v4.json
+    settings:
+      base:
+        DEVELOPMENT_TEAM: 85APG5FQFE
+        PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.OBAWidget
 include:
   - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
@@ -81,3 +102,4 @@ include:
   - path: OBAKitTests/project.yml
   - path: OBAKitUITests/project.yml
   - path: TodayView/project.yml
+  - path: OBAWidget/project.yml

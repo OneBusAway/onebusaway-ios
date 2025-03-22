@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+
+app = ARGV[0]
+
+if app.nil?
+  display_usage_information
+  puts ""
+  puts "Defaulting to OneBusAway."
+  app = "OneBusAway"
+  puts ""
+end
+
+puts `cp OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved #{package_resolved_path(app)}`
+
+BEGIN {
+  def display_usage_information
+    puts "Usage: scripts/generate_project <APP NAME>"
+    puts "Available Apps:"
+    apps = (Dir.glob("Apps/*") - ["Apps/Shared"]).sort
+    apps.each do |app|
+      puts "  #{app.split("/").last}"
+    end
+  end
+
+  def package_resolved_path(app)
+    "Apps/#{app}/Package.resolved"
+  end
+}

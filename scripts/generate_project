@@ -3,7 +3,7 @@
 app = ARGV[0]
 
 if app.nil?
-  display_usage_information()
+  display_usage_information
   puts ""
   puts "Defaulting to OneBusAway."
   app = "OneBusAway"
@@ -17,11 +17,12 @@ generate_project(app)
 puts `scripts/version`
 
 BEGIN {
-  def display_usage_information()
+  def display_usage_information
     puts "Usage: scripts/generate_project <APP NAME>"
     puts "Available Apps:"
-    (Dir.glob("Apps/*") - ["Apps/Shared"]).each do |app|
-      puts "    #{app.split("/").last}"
+    apps = (Dir.glob("Apps/*") - ["Apps/Shared"]).sort
+    apps.each do |app|
+      puts "  #{app.split("/").last}"
     end
   end
 
@@ -34,11 +35,18 @@ BEGIN {
   end
 
   def generate_project(app)
+    `rm -rf OBAKit.xcodeproj`
     `cp #{project_yml_path(app)} .`
     puts `xcodegen`
+    `mkdir -p OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm`
+    `cp #{package_resolved_path(app)} OBAKit.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/`
   end
 
   def project_yml_path(app)
     "Apps/#{app}/project.yml"
+  end
+
+  def package_resolved_path(app)
+    "Apps/#{app}/Package.resolved"
   end
 }
