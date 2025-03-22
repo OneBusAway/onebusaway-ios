@@ -186,10 +186,15 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - List view
     public func items(for listView: OBAListView) -> [OBAListViewSection] {
-        if !sortBookmarksByGroup && application.locationService.currentLocation == nil {
-                return listItemsSortedByGroup()
-            }
-        return sortBookmarksByGroup ? listItemsSortedByGroup() : listItemsSortedByDistance()
+        if sortBookmarksByGroup {
+            return listItemsSortedByGroup()
+        }
+        else if application.locationService.currentLocation == nil {
+            return listItemsSortedByGroup()
+        }
+        else {
+            return listItemsSortedByDistance()
+        }
     }
 
     /// Creates an `OBAListViewSection` containing the specified bookmarks.
@@ -227,10 +232,12 @@ public class BookmarksViewController: UIViewController,
         if application.hasDataToMigrate {
                 title = Strings.emptyBookmarkTitle
                 body = Strings.emptyBookmarkBodyWithPendingMigration
-            } else if application.userDataStore.bookmarks.isEmpty {
+            }
+            else if application.userDataStore.bookmarks.isEmpty {
                 title = Strings.emptyBookmarkTitle
                 body = Strings.emptyBookmarkBody
-            } else {
+            }
+            else {
                 // Don't show empty state if we have bookmarks
                 return nil
             }
