@@ -1,0 +1,59 @@
+
+/*
+  Localization.strings
+  OneBusAway Watch
+
+  Created for OneBusAway Watch App
+*/
+
+// General
+"app_name" = "OneBusAway";
+"loading" = "Loading...";
+"error_occurred" = "An error occurred";
+"retry" = "Retry";
+"ok" = "OK";
+"cancel" = "Cancel";
+
+// Home Screen
+"nearby_stops" = "Nearby Stops";
+"no_stops_found" = "No stops found nearby";
+"check_connection" = "Check your connection and try again";
+"location_access_denied" = "Location access is denied";
+"enable_location" = "Please enable location services in Settings";
+
+// Arrivals Screen
+"arrivals" = "Arrivals";
+"upcoming_arrivals" = "Upcoming Arrivals";
+"no_upcoming_arrivals" = "No upcoming arrivals";
+"add_to_favorites" = "Add to Favorites";
+"remove_from_favorites" = "Remove from Favorites";
+"due" = "Due";
+"min" = "min";
+
+// Favorites Screen
+"favorites" = "Favorites";
+"no_favorites" = "No favorite stops";
+"add_some_favorites" = "Add some favorites by tapping the star icon on the arrivals screen";
+"sync_with_phone" = "Sync with iPhone";
+
+// Settings Screen
+"settings" = "Settings";
+"refresh_settings" = "Refresh Settings";
+"refresh_interval" = "Refresh Interval";
+"notifications" = "Notifications";
+"enable_notifications" = "Enable Notifications";
+"haptic_feedback" = "Haptic Feedback";
+"sync" = "Sync";
+"sync_with_iphone" = "Sync with iPhone";
+"sync_now" = "Sync Now";
+"about" = "About";
+"version" = "Version";
+
+// Complications
+"next_bus" = "Next Bus";
+"no_arrivals" = "No Arrivals";
+
+// Notifications
+"bus_arriving_soon" = "Bus Arriving Soon";
+"arriving_at" = "Arriving at";
+
