@@ -301,7 +301,6 @@ public class StopViewController: UIViewController,
 
         let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
             if self.isListFiltered {
-                // Only change value if it's different to avoid unnecessary data loading.
                 self.isListFiltered = false
             }
         }
