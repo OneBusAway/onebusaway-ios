@@ -1022,7 +1022,7 @@ public class StopViewController: UIViewController,
             return false
         }
 
-        return arrivalDeparture.temporalState == .future
+        return arrivalDeparture.arrivalDepartureMinutes > 1
     }
 
     private var alarmBuilder: AlarmBuilder?
