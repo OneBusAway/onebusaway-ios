@@ -11,9 +11,6 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
-#if canImport(Stripe)
-import StripePaymentSheet
-#endif
 
 // swiftlint:disable file_length
 
@@ -539,10 +536,9 @@ public class StopViewController: UIViewController,
 
         sections.append(stopHeaderSection)
 
-        // Temporarily commented out because Apple is being ridiculous.
-//        if let donationsSection {
-//            sections.append(donationsSection)
-//        }
+        if let donationsSection {
+            sections.append(donationsSection)
+        }
 
         sections.append(serviceAlertsSection)
         sections.append(contentsOf: stopArrivalsSection)
@@ -635,7 +631,6 @@ public class StopViewController: UIViewController,
     }
 
     private func showDonationUI() {
-#if canImport(Stripe)
         guard
             application.donationsManager.donationsEnabled,
             let donationModel = application.donationsManager.buildObservableDonationModel()
@@ -643,20 +638,11 @@ public class StopViewController: UIViewController,
             return
         }
 
-        let learnMoreView = DonationLearnMoreView { [weak self] donated in
-            guard donated else { return }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self?.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
-                self?.application.donationsManager.dismissDonationsRequests()
-                self?.refresh()
-            }
-        }
+        let learnMoreView = DonationLearnMoreView()
             .environmentObject(donationModel)
             .environmentObject(AnalyticsModel(application.analytics))
 
         present(UIHostingController(rootView: learnMoreView), animated: true)
-#endif
     }
 
     private func showDonationDismissUI() {

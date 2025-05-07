@@ -15,9 +15,6 @@ import OBAKitCore
 import SafariServices
 import MapKit
 import SwiftUI
-#if canImport(Stripe)
-import StripeApplePay
-#endif
 
 // MARK: - Protocols
 
@@ -293,12 +290,10 @@ public class Application: CoreApplication, PushServiceDelegate {
     }
 
     private func presentDonationUI(_ presentingController: UIViewController, id: String?) {
-#if canImport(Stripe)
         analytics?.reportEvent(pageURL: "app://localhost/donations", label: AnalyticsLabels.donationPushNotificationTapped, value: id)
 
         let learnMoreView = donationsManager.buildLearnMoreView(presentingController: presentingController, donationPushNotificationID: id)
         presentingController.present(UIHostingController(rootView: learnMoreView), animated: true)
-#endif
     }
 
     // MARK: - Alerts Store
@@ -436,12 +431,6 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     @MainActor
     @objc public func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-#if canImport(Stripe)
-        if StripeAPI.handleURLCallback(with: url) {
-            return true
-        }
-#endif
-
         guard let scheme = Bundle.main.extensionURLScheme else {
             return false
         }
@@ -495,11 +484,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     override public func apiServicesRefreshed() {
         super.apiServicesRefreshed()
-
-#if canImport(Stripe)
         donationsManager.obacoService = obacoService
-        donationsManager.refreshStripePublishableKey()
-#endif
     }
 
     // MARK: - Appearance and Themes

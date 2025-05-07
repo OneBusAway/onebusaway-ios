@@ -46,7 +46,6 @@ targets:
                 NSExceptionAllowsInsecureHTTPLoads: true
             }
           }
-        NSCameraUsageDescription: This app uses Stripe to process credit cards. You can use Stripe to scan your credit card number with your camera.
         NSHumanReadableCopyright: © Open Transit Software Foundation
         NSUserActivityTypes:
           - org.onebusaway.iphone.user_activity.stop
@@ -57,11 +56,7 @@ targets:
           BundledRegionsFileName: regions.json
           Donations:
             Enabled: true
-            ApplePayMerchantID: merchant.org.onebusaway.iphone
             DonationManagementPortal: "https://onebusaway.co/manage-donations"
-            StripePublishableKeys:
-              test: pk_test_51O20R8BsTfxG3EeliQswtDI6etwUu6cdYX7AIT2HkyI7iMbI2Ltqz0R06EkM7SmRTYJfOPwum1iTJgrJpoLoB8ii00eUXFwHjT
-              production: pk_live_51O20R8BsTfxG3EelVtkEOa5zmx9MPoAXi2Jrcx8PvBUwYvKlXEJdL3nYHF7Vmd1UZ6tKyrZrKUx89bwMmSaN5HIr0096SVUJts
           ExtensionURLScheme: onebusaway
           PrivacyPolicyURL: https://onebusaway.org/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
@@ -116,7 +111,6 @@ include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml
-  - path: Apps/Shared/donations_config.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml

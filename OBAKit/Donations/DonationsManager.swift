@@ -9,13 +9,6 @@ import Foundation
 import OBAKitCore
 import SwiftUI
 
-public enum DonationsUserDefaultsKeys: String, RawRepresentable {
-    case forceStripeTestModeDefaultsKey = "forceStripeTestMode"
-}
-
-#if canImport(Stripe)
-import StripeApplePay
-
 /// Manages the visibility of donation requests.
 public class DonationsManager {
 
@@ -33,10 +26,6 @@ public class DonationsManager {
         self.bundle = bundle
         self.userDefaults = userDefaults
         self.analytics = analytics
-
-        self.userDefaults.register(
-            defaults: [DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue: false]
-        )
     }
 
     // MARK: - Data
@@ -102,40 +91,7 @@ public class DonationsManager {
         return donationRequestDismissedDate == nil
     }
 
-    // MARK: - Stripe Mode and Key
-
-    public var stripeTestMode: Bool {
-#if DEBUG
-        return true
-#else
-        return userDefaults.bool(forKey: DonationsUserDefaultsKeys.forceStripeTestModeDefaultsKey.rawValue)
-#endif
-    }
-
-    public var stripePublishableKey: String? {
-        if stripeTestMode {
-            bundle.stripePublishableTestKey
-        }
-        else {
-            bundle.stripePublishableProductionKey
-        }
-    }
-
-    public func refreshStripePublishableKey() {
-        StripeAPI.defaultPublishableKey = stripePublishableKey
-    }
-
     // MARK: - UI
-
-    public static func buildDonationThankYouAlert() -> UIAlertController {
-        let alert = UIAlertController(
-            title: Strings.donationThankYouTitle,
-            message: Strings.donationThankYouBody,
-            preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.dismiss, style: .default))
-
-        return alert
-    }
 
     func buildObservableDonationModel(donationPushNotificationID: String? = nil) -> DonationModel? {
         guard donationsEnabled, let obacoService else {
@@ -155,38 +111,8 @@ public class DonationsManager {
             fatalError()
         }
 
-        return DonationLearnMoreView { donated in
-            guard donated else { return }
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                presentingController.present(DonationsManager.buildDonationThankYouAlert(), animated: true)
-            }
-        }
-        .environmentObject(donationModel)
-        .environmentObject(AnalyticsModel(analytics))
+        return DonationLearnMoreView()
+            .environmentObject(donationModel)
+            .environmentObject(AnalyticsModel(analytics))
     }
 }
-#else
-public class DonationsManager {
-    public init(
-        bundle: Bundle,
-        userDefaults: UserDefaults,
-        obacoService: ObacoAPIService?,
-        analytics: Analytics?
-    ) {}
-
-    public var donationsEnabled: Bool {
-        false
-    }
-
-    public var shouldRequestDonations: Bool {
-        false
-    }
-
-    public func dismissDonationsRequests() {}
-
-    public func remindUserLater() {}
-
-    public func refreshStripePublishableKey() {}
-}
-#endif
