@@ -44,39 +44,6 @@ public extension Bundle {
         return val
     }
 
-    /// A helper method for accessing the bundle's `Donations.ApplePayMerchantID` setting.
-    var applePayMerchantID: String? {
-        guard let dict = donationsConfig else {
-            return nil
-        }
-
-        return dict["ApplePayMerchantID"] as? String
-    }
-
-    /// A helper method for accessing the bundle's `Donations.StripePublishableKey.production` value, if defined.
-    var stripePublishableProductionKey: String? {
-        guard
-            let dict = donationsConfig,
-            let keys = dict["StripePublishableKeys"] as? [String: String]
-        else {
-            return nil
-        }
-
-        return keys["production"]
-    }
-
-    /// A helper method for accessing the bundle's `Donations.StripePublishableKeys.test` value, if defined.
-    var stripePublishableTestKey: String? {
-        guard
-            let dict = donationsConfig,
-            let keys = dict["StripePublishableKeys"] as? [String: String]
-        else {
-            return nil
-        }
-
-        return keys["test"]
-    }
-
     var donationManagementPortal: URL? {
         guard
             let dict = donationsConfig,
