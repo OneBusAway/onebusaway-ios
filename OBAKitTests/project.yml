@@ -13,4 +13,4 @@ targets:
 packages:
   Nimble:
     url: https://github.com/Quick/Nimble.git
-    from: 9.0.0
+    from: 13.7.0
