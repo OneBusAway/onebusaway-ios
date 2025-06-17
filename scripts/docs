@@ -1,18 +1,64 @@
 #!/bin/bash
 
+set -e  # Exit on any error
+
 if ! which jazzy >/dev/null; then
-  echo "Jazzy not detected. Consult the README for more information. (tl; dr: run the command `bundle install`)"
-  exit
+  echo "Jazzy not detected. Consult the README for more information. (tl; dr: run the command \`bundle install\`)"
+  exit 1
 fi
 
 if ! which sourcekitten >/dev/null; then
-  echo "Sourcekitten not detected. Consult the README for more information. (tl; dr: run the command `brew install sourcekitten`)"
-  exit
+  echo "Sourcekitten not detected. Consult the README for more information. (tl; dr: run the command \`brew install sourcekitten\`)"
+  exit 1
 fi
 
+# Check if project exists, if not generate it
+if [ ! -f "OBAKit.xcodeproj/project.pbxproj" ]; then
+  echo "Xcode project not found. Generating project..."
+  scripts/generate_project OneBusAway
+fi
+
+echo "Building project for documentation generation..."
+xcodebuild clean build \
+  -project OBAKit.xcodeproj \
+  -scheme App \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -quiet
+
+echo "Generating documentation with SourceKitten..."
 mkdir -p docs
 
-kitCoreDocs=$(sourcekitten doc --module-name OBAKitCore)
-kitDocs=$(sourcekitten doc --module-name OBAKit)
-echo ${kitCoreDocs%?}', '${kitDocs:1} > docs/kitty.json
+# Generate documentation for OBAKitCore
+echo "Extracting documentation for OBAKitCore..."
+kitCoreDocs=$(sourcekitten doc \
+  --module-name OBAKitCore \
+  -- -project OBAKit.xcodeproj \
+  -scheme App \
+  -destination 'platform=iOS Simulator,name=iPhone 16')
+
+# Generate documentation for OBAKit
+echo "Extracting documentation for OBAKit..."
+kitDocs=$(sourcekitten doc \
+  --module-name OBAKit \
+  -- -project OBAKit.xcodeproj \
+  -scheme App \
+  -destination 'platform=iOS Simulator,name=iPhone 16')
+
+# Combine the JSON files properly
+echo "Combining documentation JSON..."
+if [ -n "$kitCoreDocs" ] && [ -n "$kitDocs" ]; then
+  # Remove the closing bracket from kitCoreDocs and opening bracket from kitDocs, then combine
+  echo "${kitCoreDocs%?}, ${kitDocs:1}" > docs/kitty.json
+elif [ -n "$kitCoreDocs" ]; then
+  echo "$kitCoreDocs" > docs/kitty.json
+elif [ -n "$kitDocs" ]; then
+  echo "$kitDocs" > docs/kitty.json
+else
+  echo "Error: No documentation could be generated from either module"
+  exit 1
+fi
+
+echo "Generating final documentation with Jazzy..."
 jazzy --sourcekitten-sourcefile docs/kitty.json --config .jazzy.json
+
+echo "Documentation generation complete! Check the docs/ directory."
