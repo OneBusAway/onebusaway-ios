@@ -112,7 +112,7 @@ public class URLSchemeRouter: NSObject {
             let obaURL = validateAndCreateURL(from: obaUrlString) else {
             return .addRegion(nil)
         }
-        
+
         var otpURL: URL?
         if let otpUrlString = components.queryItem(named: "otp-url")?.value {
             otpURL = validateAndCreateURL(from: otpUrlString)
