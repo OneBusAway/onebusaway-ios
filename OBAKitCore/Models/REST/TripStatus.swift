@@ -191,7 +191,7 @@ public class TripStatus: NSObject, Identifiable, Decodable, HasReferences {
         statusModifier = StatusModifier.decode(status)
 
         totalDistanceAlongTrip = try container.decode(Double.self, forKey: .totalDistanceAlongTrip)
-        vehicleID = try container.decodeIfPresent(String.self, forKey: .vehicleID)
+        vehicleID = String.nilifyBlankValue(try container.decodeIfPresent(String.self, forKey: .vehicleID))
     }
 
     public func loadReferences(_ references: References, regionIdentifier: Int?) {

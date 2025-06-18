@@ -109,11 +109,36 @@ public class URLSchemeRouter: NSObject {
         guard
             let name = components.queryItem(named: "name")?.value,
             let obaUrlString = components.queryItem(named: "oba-url")?.value,
-            let obaURL = URL(string: obaUrlString) else {
+            let obaURL = validateAndCreateURL(from: obaUrlString) else {
             return .addRegion(nil)
         }
-        let otpUrlString = components.queryItem(named: "otp-url")?.value
-        let otpURL = otpUrlString != nil ? URL(string: otpUrlString!) : nil
+
+        var otpURL: URL?
+        if let otpUrlString = components.queryItem(named: "otp-url")?.value {
+            otpURL = validateAndCreateURL(from: otpUrlString)
+        }
+
         return .addRegion(AddRegionURLData(name: name, obaURL: obaURL, otpURL: otpURL))
+    }
+
+    /// Validates that a URL string represents a proper URL with a scheme or is a valid path
+    private func validateAndCreateURL(from urlString: String) -> URL? {
+        // First check if the string is blank (empty or whitespace only)
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        // Try to create URL
+        guard let url = URL(string: urlString) else {
+            return nil
+        }
+
+        // Validate the URL has either a scheme or is a path
+        if url.scheme != nil || urlString.hasPrefix("/") {
+            return url
+        }
+
+        return nil
     }
 }

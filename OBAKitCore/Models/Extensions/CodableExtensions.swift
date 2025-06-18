@@ -25,16 +25,30 @@ extension KeyedDecodingContainer {
     /// - throws: `DecodingError.typeMismatch` if the encountered encoded value
     ///   is not convertible to `String`.
     func decodeGarbageURL(forKey key: Self.Key) throws -> URL? {
-        var rawStr: String?
-        do {
-            rawStr = try decodeIfPresent(String.self, forKey: key)
-        } catch let err {
-            print("Error: \(err)")
-            throw err
-        }
-        guard let urlString = String.nilifyBlankValue(rawStr) else {
+        let rawStr = try decodeIfPresent(String.self, forKey: key)
+
+        // First check if the string is nil
+        guard let str = rawStr else {
             return nil
         }
-        return URL(string: urlString)
+
+        // Check if string is blank (empty or whitespace only)
+        let trimmed = str.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            return nil
+        }
+
+        // Try to create URL from the original string
+        guard let url = URL(string: str) else {
+            return nil
+        }
+
+        // Validate the URL has either a scheme or is a path
+        if url.scheme != nil || str.hasPrefix("/") {
+            return url
+        }
+
+        // If we get here, it's a garbage URL like "not a url" or whitespace
+        return nil
     }
 }
