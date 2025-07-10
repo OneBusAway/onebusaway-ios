@@ -19,6 +19,12 @@ public enum APIError: Error, LocalizedError {
     /// A `404` error.
     case requestNotFound(HTTPURLResponse)
 
+    /// Survey service is not configured or survey base URL is missing.
+      case surveyServiceNotConfigured
+
+    /// No region has been selected.
+      case noRegionSelected
+
     public var errorDescription: String? {
         switch self {
         case .captivePortal:
@@ -51,6 +57,10 @@ public enum APIError: Error, LocalizedError {
         case .requestNotFound(let response):
             let fmt = OBALoc("api_error.request_not_found", value: "404 Not found (%@)", comment: "An error that is produced in response to HTTP status code 404")
             return String(format: fmt, response.url?.absoluteString ?? "(nil)")
+        case .surveyServiceNotConfigured:
+            return OBALoc("api_error.survey_service_not_configured", value: "Survey service is not available in this region.", comment: "An error message that tells the user that surveys are not available.")
+        case .noRegionSelected:
+            return OBALoc("api_error.no_region_selected", value: "No region has been selected. Please select a region to continue.", comment: "An error message that tells the user that no region has been selected.")
         }
     }
 }

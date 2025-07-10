@@ -25,15 +25,20 @@ public struct APIServiceConfiguration {
     let appVersion: String
     let regionIdentifier: Int?
 
+    /// Survey API base URL - different from regular OBA API base URL
+      let surveyBaseURL: URL?
+
     /// Generated query items from the initializer. Include this set of query items with every request you make.
     let defaultQueryItems: [URLQueryItem]
 
     /// - parameter baseURL: Any queries included in the `baseURL` will be moved to the `defaultQueryItems`.
-    init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionIdentifier: Int?) {
+    /// - parameter surveyBaseURL: Optional survey API base URL. If nil, surveys will be disabled.
+    init(baseURL: URL, apiKey: String, uuid: String, appVersion: String, regionIdentifier: Int?, surveyBaseURL: URL? = nil) {
         self.apiKey = apiKey
         self.uuid = uuid
         self.appVersion = appVersion
         self.regionIdentifier = regionIdentifier
+        self.surveyBaseURL = surveyBaseURL
 
         // Add default query items, including the component query of the baseURL.
         var queryItems: [URLQueryItem] = [
