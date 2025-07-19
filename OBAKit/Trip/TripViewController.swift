@@ -25,6 +25,18 @@ class TripViewController: UIViewController,
 
     private lazy var dataLoadFeedbackGenerator = DataLoadFeedbackGenerator(application: application)
 
+    // MARK: - Reload Timer
+    private var reloadTimer: Timer!
+    private static let defaultTimerReloadInterval: TimeInterval = 30.0
+    private var lastUpdated: Date?
+    private var timeIntervalSinceLastUpdate: TimeInterval {
+        if let lastUpdated = lastUpdated {
+            return abs(lastUpdated.timeIntervalSinceNow)
+        } else {
+            return .greatestFiniteMagnitude
+        }
+    }
+
     init(application: Application, tripConvertible: TripConvertible) {
         self.application = application
         self.tripConvertible = tripConvertible
@@ -32,6 +44,9 @@ class TripViewController: UIViewController,
         super.init(nibName: nil, bundle: nil)
 
         registerTraitChangeCallback()
+        reloadTimer = Timer.scheduledTimer(withTimeInterval: Self.defaultTimerReloadInterval / 2.0, repeats: true) { [weak self] _ in
+            self?.timerFired()
+        }
     }
 
     init(application: Application, arrivalDeparture: ArrivalDeparture) {
@@ -41,6 +56,9 @@ class TripViewController: UIViewController,
         super.init(nibName: nil, bundle: nil)
 
         registerTraitChangeCallback()
+        reloadTimer = Timer.scheduledTimer(withTimeInterval: Self.defaultTimerReloadInterval / 2.0, repeats: true) { [weak self] _ in
+            self?.timerFired()
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -48,6 +66,7 @@ class TripViewController: UIViewController,
     }
 
     deinit {
+        reloadTimer.invalidate()
         enableIdleTimer()
     }
 
@@ -393,20 +412,35 @@ class TripViewController: UIViewController,
                         try await self.loadMapPolyline(isProgrammatic: isProgrammatic)
                     }
 
-                    try await group.waitForAll()
-                }
+                try await group.waitForAll()
+            }
 
-                await MainActor.run {
-                    self.dataLoadFeedbackGenerator.dataLoad(.success)
-                }
-            } catch {
-                await self.application.displayError(error)
-                await MainActor.run {
+            await MainActor.run {
+                self.lastUpdated = Date()
+                self.tripDetailsController.refreshArrivalCountdown()
+                self.dataLoadFeedbackGenerator.dataLoad(.success)
+            }
+        } catch {
+            await self.application.displayError(error)
+            await MainActor.run {
                     self.dataLoadFeedbackGenerator.dataLoad(.failed)
                 }
             }
 
             self.navigationItem.rightBarButtonItem = self.reloadButton
+        }
+    }
+
+    private func refreshRelativeTimes() {
+        guard isLoadedAndOnScreen else { return }
+        tripDetailsController.refreshArrivalCountdown()
+    }
+
+    @objc private func timerFired() {
+        refreshRelativeTimes()
+
+        if timeIntervalSinceLastUpdate > Self.defaultTimerReloadInterval {
+            loadData(isProgrammatic: true)
         }
     }
 

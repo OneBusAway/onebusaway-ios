@@ -358,4 +358,10 @@ class TripFloatingPanelController: UIViewController,
 
         return OBAListViewMenuActions(previewProvider: previewProvider, performPreviewAction: commitPreviewAction, contextMenuProvider: menu)
     }
+
+    // MARK: - Time Refresh
+    func refreshArrivalCountdown() {
+        guard isLoadedAndOnScreen, let arrDep = tripConvertible?.arrivalDeparture else { return }
+        stopArrivalView.arrivalDeparture = arrDep
+    }
 }
