@@ -11,6 +11,7 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
+import FloatingPanel
 
 // swiftlint:disable file_length
 
@@ -405,7 +406,10 @@ public class StopViewController: UIViewController,
             self.showReportProblem()
         }
 
-        return UIMenu(title: "Help", options: .displayInline, children: [reportButton])
+        let surveyButton = UIAction(title: "Take Survey", image: UIImage(systemName: "checklist")) { [unowned self] _ in
+            self.showSurvey()
+        }
+        return UIMenu(title: "Help", options: .displayInline, children: [reportButton, surveyButton])
     }
 
     // MARK: - NSUserActivity
@@ -1143,6 +1147,13 @@ public class StopViewController: UIViewController,
         let reportProblemController = ReportProblemViewController(application: application, stop: stop)
         let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
         application.viewRouter.present(navigation, from: self, isModal: true)
+    }
+
+    @objc private func showSurvey() {
+        let survey = SurveyViewController()
+        let panel = OBAFloatingPanelController(application, delegate: nil)
+        panel.set(contentViewController: survey)
+        panel.addPanel(toParent: self)
     }
 
     // MARK: - Modal Delegate
