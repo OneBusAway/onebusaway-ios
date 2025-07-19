@@ -43,6 +43,9 @@ class MapViewController: UIViewController,
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
+        hover.stackView.addArrangedSubview(HoverBarSeparator())
+        hover.stackView.addArrangedSubview(surveyButton)
+
         return hover
     }()
 
@@ -277,6 +280,20 @@ class MapViewController: UIViewController,
                 Logger.error(error.localizedDescription)
             }
         }
+    }
+
+    // MARK: - Survey
+    private lazy var surveyButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "checklist"), for: .normal)
+        button.addTarget(self, action: #selector(showSurvey), for: .touchUpInside)
+        button.accessibilityLabel = "Take Survey"
+        return button
+    }()
+
+    @objc private func showSurvey() {
+        let survey = SurveyViewController()
+        showSemiModalPanel(childController: survey)
     }
 
     // MARK: - Map Type
