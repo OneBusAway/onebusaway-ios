@@ -103,3 +103,5 @@ packages:
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.28.1
+    OTPKit:
+        path: /Users/manu/Desktop/otpkit

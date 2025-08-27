@@ -10,6 +10,7 @@ targets:
       - package: Eureka
       - package: FloatingPanel
       - package: MarqueeLabel
+      - package: OTPKit
     postBuildScripts:
       - path: "../scripts/swiftlint.sh"
         name: Swiftlint

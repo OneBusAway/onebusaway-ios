@@ -11,15 +11,25 @@ import OBAKitCore
 /// Under-the-hood, this class implements RegionsServiceDelegate, which subsequently publishes new values.
 public class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsServiceDelegate {
     var regionsService: RegionsService
+    var userDataStore: UserDataStore
 
-    public init(regionsService: RegionsService) {
+    public init(regionsService: RegionsService, userDataStore: UserDataStore) {
         self.regionsService = regionsService
+        self.userDataStore = userDataStore
 
         self.allRegions = regionsService.allRegions
         self.currentRegion = regionsService.currentRegion
         self.automaticallySelectRegion = regionsService.automaticallySelectRegion
 
         regionsService.addDelegate(self)
+    }
+
+    /// Convenience initializer for backward compatibility
+    public convenience init(regionsService: RegionsService) {
+        // Get userDataStore from the regionsService's parent application
+        // This is a temporary solution - in practice, pass userDataStore explicitly
+        let userDataStore = UserDefaultsStore(userDefaults: UserDefaults.standard)
+        self.init(regionsService: regionsService, userDataStore: userDataStore)
     }
 
     deinit {
@@ -91,5 +101,15 @@ public class RegionPickerCoordinator: ObservableObject, RegionProvider, RegionsS
             // Unable to automatically select a region.
             self.automaticallySelectRegion = false
         }
+    }
+
+    // MARK: - Trip Planning
+
+    public func isTripPlanningEnabled(for region: Region) -> Bool {
+        return userDataStore.isTripPlanningEnabled(for: region)
+    }
+
+    public func setTripPlanningEnabled(_ enabled: Bool, for region: Region) {
+        userDataStore.setTripPlanningEnabled(enabled, for: region)
     }
 }

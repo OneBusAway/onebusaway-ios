@@ -391,6 +391,11 @@ public class Region: NSObject, Identifiable, Codable {
         return hasher.finalize()
     }
 
+    /// Returns true if this region supports OpenTripPlanner (OTP) trip planning.
+    public var supportsOTP: Bool {
+        return openTripPlannerURL != nil
+    }
+
     // MARK: - Location Helpers
 
     /// Internal type for constructing regional boundaries from the server's JSON output.
