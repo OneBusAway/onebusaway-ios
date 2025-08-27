@@ -8,9 +8,12 @@
 //
 
 import UIKit
+import SwiftUI
 import CoreLocation
 import OBAKitCore
 import WidgetKit
+import OTPKit
+import MapKit
 
 /// The view controller that powers the Bookmarks tab of the app.
 @objc(OBABookmarksViewController)
@@ -155,8 +158,13 @@ public class BookmarksViewController: UIViewController,
             distanceSortAction.state = .on
         }
 
+        let otpAction = UIAction(title: "Trip Planner", image: UIImage(systemName: "map.fill")) { _ in
+            self.openOTPView()
+        }
+        
         let sortMenu = UIMenu(title: Strings.sort, options: .displayInline, children: [groupSortAction, distanceSortAction])
-        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "arrow.up.arrow.down.circle"), menu: sortMenu)
+        let mainMenu = UIMenu(children: [otpAction, sortMenu])
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: mainMenu)
     }
 
     // MARK: Refresh Widget
@@ -291,6 +299,58 @@ public class BookmarksViewController: UIViewController,
                     id: "distance_sorted_group",
                     title: OBALoc("bookmarks_controller.sorted_by_distance_header", value: "Sorted by Distance", comment: "The table section header on the bookmarks controller for when bookmarks are sorted by distance.")
             )].compactMap({$0})
+    }
+
+    // MARK: - OTP Actions
+    @objc private func openOTPView() {
+        // Create OTP configuration with a demo server URL and region based on current region
+        let serverURL = URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default")!
+        let region: MapCameraPosition
+
+        if let currentRegion = application.regionsService.currentRegion {
+            let center = CLLocationCoordinate2D(
+                latitude: currentRegion.centerCoordinate.latitude,
+                longitude: currentRegion.centerCoordinate.longitude
+            )
+            region = .region(MKCoordinateRegion(
+                center: center,
+                span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+            ))
+        } else {
+            // Default to Seattle region
+            region = .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321),
+                span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+            ))
+        }
+
+        let config = OTPConfiguration(
+            otpServerURL: serverURL,
+            themeConfiguration: .init(
+                primaryColor: Color(uiColor: ThemeColors().brand)
+            ),
+            region: region
+        )
+
+        let apiService = RestAPIService(baseURL: serverURL)
+
+        // Get current location for origin
+        var origin: Location?
+        if let currentLocation = application.locationService.currentLocation {
+            origin = Location(
+                title: "OBA Current Location",
+                subTitle: "Your current location",
+                latitude: currentLocation.coordinate.latitude,
+                longitude: currentLocation.coordinate.longitude
+            )
+        }
+
+        let otpView = OTPView(otpConfig: config, apiService: apiService, origin: origin)
+
+        let hostingController = UIHostingController(rootView: otpView)
+        hostingController.modalPresentationStyle = .overFullScreen
+
+        present(hostingController, animated: true)
     }
 
     // MARK: - Bookmark Actions

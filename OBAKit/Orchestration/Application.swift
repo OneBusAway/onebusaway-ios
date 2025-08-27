@@ -465,7 +465,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                     adjustedRegionCoordinate.span.longitudeDelta = 2
 
                     // Create region provider
-                    let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService)
+                    let regionProvider = RegionPickerCoordinator(regionsService: self.regionsService, userDataStore: self.userDataStore)
 
                     // Construct Region from URL data
                     let currentRegion = Region(name: regionData.name, OBABaseURL: regionData.obaURL, coordinateRegion: adjustedRegionCoordinate, contactEmail: "example@example.com", openTripPlannerURL: regionData.otpURL)

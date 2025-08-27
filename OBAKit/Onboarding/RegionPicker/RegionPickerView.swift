@@ -58,12 +58,31 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     @State var editingRegion: Region?
     @State var isShowingCustomRegionSheet: Bool = false
 
+    /// Whether trip planning is enabled for the selected region.
+    @State var isTripPlanningEnabled: Bool = false
+
     public var body: some View {
         NavigationStack {
             List {
                 Toggle(
                     "Automatically select region",
                     isOn: $regionProvider.automaticallySelectRegion)
+
+                // Trip planning toggle - only shown for regions that support OTP
+                if let selectedRegion = selectedRegion, selectedRegion.supportsOTP {
+                    Toggle(
+                        OBALoc(
+                            "region_picker.trip_planning_toggle",
+                            value: "Enable trip planning",
+                            comment: "Title of the trip planning toggle in the region picker."
+                        ),
+                        isOn: $isTripPlanningEnabled
+                    )
+                    .onChange(of: isTripPlanningEnabled) { _, newValue in
+                        regionProvider.setTripPlanningEnabled(newValue, for: selectedRegion)
+                    }
+                }
+
                 Picker("", selection: $selectedRegion) {
                     ForEach(filteredRegions, id: \.self) { region in
                         cell(for: region)
@@ -93,6 +112,14 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                 // selectedRegion with the new current region.
                 if regionProvider.automaticallySelectRegion {
                     self.selectedRegion = newRegion
+                }
+            }
+            .onChange(of: selectedRegion) { _, newRegion in
+                // Update trip planning toggle state when region changes
+                if let region = newRegion, region.supportsOTP {
+                    isTripPlanningEnabled = regionProvider.isTripPlanningEnabled(for: region)
+                } else {
+                    isTripPlanningEnabled = false
                 }
             }
 
@@ -221,6 +248,11 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
     func setCurrentRegionIfPresent() {
         if let currentRegion = regionProvider.currentRegion, currentRegion != self.selectedRegion {
             self.selectedRegion = currentRegion
+        }
+
+        // Initialize trip planning state for the current region
+        if let region = self.selectedRegion, region.supportsOTP {
+            isTripPlanningEnabled = regionProvider.isTripPlanningEnabled(for: region)
         }
     }
 

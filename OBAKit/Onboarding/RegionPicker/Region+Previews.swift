@@ -17,22 +17,23 @@ extension Region {
         latitude: CLLocationDegrees,
         longitude: CLLocationDegrees,
         latitudeSpan: CLLocationDegrees,
-        longitudeSpan: CLLocationDegrees
+        longitudeSpan: CLLocationDegrees,
+        openTripPlannerURL: URL? = nil
     ) -> Region {
 
         let origin = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         let span = MKCoordinateSpan(latitudeDelta: latitudeSpan, longitudeDelta: longitudeSpan)
         let region = MKCoordinateRegion(center: origin, span: span)
 
-        return self.init(name: name, OBABaseURL: URL(string: "www.example.com")!, coordinateRegion: region, contactEmail: "example@example.com", regionIdentifier: id)
+        return self.init(name: name, OBABaseURL: URL(string: "www.example.com")!, coordinateRegion: region, contactEmail: "example@example.com", regionIdentifier: id, openTripPlannerURL: openTripPlannerURL)
     }
 }
 
 /// A region provider for Xcode Previews.
 final class Previews_SampleRegionProvider: RegionProvider {
     @Published var allRegions: [Region] = [
-        .regionForPreview(id: 0, name: "Tampa Bay", latitude: 27.9769105, longitude: -82.445851, latitudeSpan: 0.5424609, longitudeSpan: 0.5763579),
-        .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483),
+        .regionForPreview(id: 0, name: "Tampa Bay", latitude: 27.9769105, longitude: -82.445851, latitudeSpan: 0.5424609, longitudeSpan: 0.5763579, openTripPlannerURL: URL(string: "https://otp.prod.obahart.org/otp/")),
+        .regionForPreview(id: 1, name: "Puget Sound", latitude: 47.59820, longitude: -122.32165, latitudeSpan: 0.33704, longitudeSpan: 0.440483, openTripPlannerURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")),
         .regionForPreview(id: 2, name: "MTA New York", latitude: 40.707678, longitude: -74.017681, latitudeSpan: 0.40939, longitudeSpan: 0.468666),
         .regionForPreview(id: 3, name: "Atlanta", latitude: 33.74819, longitude: -84.39086, latitudeSpan: 0.066268, longitudeSpan: 0.051677),
         .regionForPreview(id: 15, name: "Adelaide Metro", latitude: -34.833098, longitude: 138.621111, latitudeSpan: 0.52411, longitudeSpan: 0.285071)
@@ -83,6 +84,15 @@ final class Previews_SampleRegionProvider: RegionProvider {
         }
 
         allRegions.remove(at: index)
+    }
+
+    func isTripPlanningEnabled(for region: Region) -> Bool {
+        // For previews, return true for regions that support OTP
+        return region.supportsOTP
+    }
+
+    func setTripPlanningEnabled(_ enabled: Bool, for region: Region) {
+        // No-op for previews
     }
 }
 

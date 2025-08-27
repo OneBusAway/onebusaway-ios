@@ -464,6 +464,9 @@
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Choose Region";
 
+/* Title of the trip planning toggle in the region picker. */
+"region_picker.trip_planning_toggle" = "Enable trip planning";
+
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";
 
