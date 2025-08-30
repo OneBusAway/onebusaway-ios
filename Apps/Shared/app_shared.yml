@@ -103,3 +103,6 @@ packages:
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.28.1
+    OTPKit:
+        url: https://github.com/OneBusAway/otpkit
+        branch: main

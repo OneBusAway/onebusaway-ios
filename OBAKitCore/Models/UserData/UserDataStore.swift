@@ -196,6 +196,18 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Lets you mark a service alert as having been read.
     /// - Parameter serviceAlert: The service alert to mark read.
     func markRead(serviceAlert: ServiceAlert)
+
+    // MARK: - Trip Planning
+
+    /// Returns whether trip planning is enabled for the specified region.
+    /// - Parameter region: The region to check trip planning status for.
+    func isTripPlanningEnabled(for region: Region) -> Bool
+
+    /// Sets trip planning enabled/disabled for the specified region.
+    /// - Parameters:
+    ///   - enabled: Whether trip planning should be enabled.
+    ///   - region: The region to set trip planning status for.
+    func setTripPlanningEnabled(_ enabled: Bool, for region: Region)
 }
 
 // MARK: - Survey Tracking Data Models
@@ -260,9 +272,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let recentStops = "UserDataStore.recentStops"
         static let stopPreferences = "UserDataStore.stopPreferences"
         static let completedSurveys = "UserDataStore.completedSurveys"
-          static let surveysForLater = "UserDataStore.surveysForLater"
-          static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
-          static let appLaunchCount = "UserDataStore.appLaunchCount"
+        static let surveysForLater = "UserDataStore.surveysForLater"
+        static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
+        static let appLaunchCount = "UserDataStore.appLaunchCount"
+        static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -721,6 +734,31 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.readServiceAlerts) // swiftlint:disable:this force_try
+        }
+    }
+
+    // MARK: - Trip Planning
+
+    public func isTripPlanningEnabled(for region: Region) -> Bool {
+        let key = tripPlanningKey(for: region)
+        return tripPlanningSettings[key] ?? true  // Default to enabled for OTP-supported regions
+    }
+
+    public func setTripPlanningEnabled(_ enabled: Bool, for region: Region) {
+        let key = tripPlanningKey(for: region)
+        tripPlanningSettings[key] = enabled
+    }
+
+    private func tripPlanningKey(for region: Region) -> String {
+        return "\(region.regionIdentifier)_trip_planning"
+    }
+
+    private var tripPlanningSettings: [String: Bool] {
+        get {
+            return decodeUserDefaultsObjects(type: [String: Bool].self, key: UserDefaultsKeys.tripPlanningEnabled) ?? [:]
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.tripPlanningEnabled) // swiftlint:disable:this force_try
         }
     }
 

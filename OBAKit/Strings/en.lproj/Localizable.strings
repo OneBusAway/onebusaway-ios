@@ -263,6 +263,9 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Show Weather Forecast";
 
+/* Accessibility label for button that opens the trip planner */
+"map_controller.open_trip_planner_button" = "Open Trip Planner";
+
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.";
 
@@ -463,6 +466,9 @@
 
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Choose Region";
+
+/* Title of the trip planning toggle in the region picker. */
+"region_picker.trip_planning_toggle" = "Enable trip planning";
 
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";

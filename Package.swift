@@ -20,7 +20,8 @@ let package = Package(
         .package(url: "https://github.com/SCENEE/FloatingPanel.git", .exact("1.7.6")),
         .package(url: "https://github.com/rwbutler/Hyperconnectivity.git", .exact("1.1.0")),
         .package(url: "https://github.com/cbpowell/MarqueeLabel.git", .exact("4.0.5")),
-        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0")
+        .package(name: "SwiftProtobuf", url: "https://github.com/apple/swift-protobuf.git", from: "1.17.0"),
+        .package(url: "https://github.com/OneBusAway/otpkit", branch: "main")
     ],
     targets: [
         .target(
@@ -31,7 +32,8 @@ let package = Package(
                 "FloatingPanel",
                 "Hyperconnectivity",
                 "MarqueeLabel",
-                "OBAKitCore"
+                "OBAKitCore",
+                .product(name: "OTPKit", package: "otpkit")
             ],
             path: "OBAKit",
             exclude: ["Info.plist", "project.yml"],
