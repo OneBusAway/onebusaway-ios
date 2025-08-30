@@ -20,8 +20,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
-    - name: Switch Xcode 15
-      run: sudo xcode-select -switch /Applications/Xcode_16.1.app
+    - name: Switch Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_16.4.app
 
     - name: Install xcodegen
       run: brew install xcodegen
