@@ -19,11 +19,19 @@ import MapKit
 class RESTAPIURLBuilder: NSObject {
     private let baseURL: URL
     private let defaultQueryItems: [URLQueryItem]
+    private let surveyBaseURL: URL?
 
     init(baseURL: URL, defaultQueryItems: [URLQueryItem]) {
         self.baseURL = baseURL
         self.defaultQueryItems = defaultQueryItems
+        self.surveyBaseURL = nil
     }
+
+    init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL?) {
+          self.baseURL = baseURL
+          self.defaultQueryItems = defaultQueryItems
+          self.surveyBaseURL = surveyBaseURL
+      }
 
     public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
         let urlString = joinBaseURLToPath(path)
@@ -383,5 +391,49 @@ extension RESTAPIURLBuilder {
         }
 
         return generateURL(path: apiPath, params: args)
+    }
+
+    // MARK: - Survey API URL Builders
+
+    /// Creates a full URL for the `getSurveys` API call, including query params.
+    ///
+    /// - API Endpoint: `/api/v1/regions/{region_id}/surveys.json`
+    ///
+    /// - Parameter userID: The user's unique identifier
+    /// - Parameter regionID: The region identifier
+    /// - Returns: An URL suitable for making a request to retrieve surveys.
+    public func getSurveys(userID: String, regionID: Int) -> URL? {
+        guard let surveyBaseURL = surveyBaseURL else { return nil }
+
+        let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(
+            path: "/api/v1/regions/\(regionID)/surveys.json",
+            params: ["user_id": userID]
+        )
+    }
+
+    /// Creates a full URL for the `submitSurveyResponse` API call.
+    ///
+    /// - API Endpoint: `/api/v1/survey_responses/`
+    ///
+    /// - Returns: An URL suitable for making a POST request to submit survey responses.
+    public func submitSurveyResponse() -> URL? {
+        guard let surveyBaseURL = surveyBaseURL else { return nil }
+
+        let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: "/api/v1/survey_responses/")
+    }
+
+    /// Creates a full URL for the `updateSurveyResponse` API call.
+    ///
+    /// - API Endpoint: `/api/v1/survey_responses/{response_id}`
+    ///
+    /// - Parameter responseID: The ID of the existing survey response
+    /// - Returns: An URL suitable for making a PUT request to update survey responses.
+    public func updateSurveyResponse(responseID: String) -> URL? {
+        guard let surveyBaseURL = surveyBaseURL else { return nil }
+
+        let builder = RESTAPIURLBuilder(baseURL: surveyBaseURL, defaultQueryItems: defaultQueryItems)
+        return builder.generateURL(path: "/api/v1/survey_responses/\(NetworkHelpers.escapePathVariable(responseID))")
     }
 }

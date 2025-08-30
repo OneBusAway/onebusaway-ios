@@ -64,6 +64,10 @@ struct EmptyDataSetItem: OBAListViewItem {
                 icon = UIImage(systemName: "bolt.horizontal.circle")
             case .requestNotFound:
                 icon = UIImage(systemName: "questionmark.square.dashed")
+            case .surveyServiceNotConfigured:
+                icon = UIImage(systemName: "doc.text.magnifyingglass")
+            case .noRegionSelected:
+                icon = UIImage(systemName: "location.slash")
             }
         default:
             break
