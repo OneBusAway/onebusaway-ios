@@ -15,14 +15,14 @@ import WidgetKit
 /// The view controller that powers the Bookmarks tab of the app.
 @objc(OBABookmarksViewController)
 public class BookmarksViewController: UIViewController,
-    AppContext,
-    BookmarkEditorDelegate,
-    BookmarkDataDelegate,
-    ManageBookmarksDelegate,
-    ModalDelegate,
-    OBAListViewDataSource,
-    OBAListViewCollapsibleSectionsDelegate,
-    OBAListViewContextMenuDelegate {
+                                      AppContext,
+                                      BookmarkEditorDelegate,
+                                      BookmarkDataDelegate,
+                                      ManageBookmarksDelegate,
+                                      ModalDelegate,
+                                      OBAListViewDataSource,
+                                      OBAListViewCollapsibleSectionsDelegate,
+                                      OBAListViewContextMenuDelegate {
 
     let application: Application
 
@@ -230,17 +230,17 @@ public class BookmarksViewController: UIViewController,
         let body: String
 
         if application.hasDataToMigrate {
-                title = Strings.emptyBookmarkTitle
-                body = Strings.emptyBookmarkBodyWithPendingMigration
-            }
-            else if application.userDataStore.bookmarks.isEmpty {
-                title = Strings.emptyBookmarkTitle
-                body = Strings.emptyBookmarkBody
-            }
-            else {
-                // Don't show empty state if we have bookmarks
-                return nil
-            }
+            title = Strings.emptyBookmarkTitle
+            body = Strings.emptyBookmarkBodyWithPendingMigration
+        }
+        else if application.userDataStore.bookmarks.isEmpty {
+            title = Strings.emptyBookmarkTitle
+            body = Strings.emptyBookmarkBody
+        }
+        else {
+            // Don't show empty state if we have bookmarks
+            return nil
+        }
 
         return .standard(.init(title: title, body: body))
     }
@@ -287,10 +287,10 @@ public class BookmarksViewController: UIViewController,
         })
 
         return [buildListSection(
-                    bookmarks: bookmarks,
-                    id: "distance_sorted_group",
-                    title: OBALoc("bookmarks_controller.sorted_by_distance_header", value: "Sorted by Distance", comment: "The table section header on the bookmarks controller for when bookmarks are sorted by distance.")
-            )].compactMap({$0})
+            bookmarks: bookmarks,
+            id: "distance_sorted_group",
+            title: OBALoc("bookmarks_controller.sorted_by_distance_header", value: "Sorted by Distance", comment: "The table section header on the bookmarks controller for when bookmarks are sorted by distance.")
+        )].compactMap({$0})
     }
 
     // MARK: - Bookmark Actions
@@ -352,8 +352,8 @@ public class BookmarksViewController: UIViewController,
         }
 
         return OBAListViewMenuActions(previewProvider: previewProvider,
-                               performPreviewAction: commitPreviewAction,
-                               contextMenuProvider: menu)
+                                      performPreviewAction: commitPreviewAction,
+                                      contextMenuProvider: menu)
     }
 
     // MARK: - Arrival departure highlight updates

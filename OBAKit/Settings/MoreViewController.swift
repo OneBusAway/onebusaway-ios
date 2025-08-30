@@ -156,7 +156,7 @@ public class MoreViewController: UIViewController,
 
             let regionPicker = UIHostingController(
                 rootView: NavigationView {
-                    RegionPickerView(regionProvider: RegionPickerCoordinator(regionsService: self.application.regionsService))
+                    RegionPickerView(regionProvider: RegionPickerCoordinator(regionsService: self.application.regionsService, userDataStore: self.application.userDataStore))
                         .interactiveDismissDisabled()
                 }.navigationViewStyle(.stack)
             )

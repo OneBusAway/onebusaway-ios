@@ -24,4 +24,10 @@ public protocol RegionProvider: ObservableObject {
 
     /// Deletes the provided custom region.
     func delete(customRegion region: Region) async throws
+
+    /// Returns whether trip planning is enabled for the specified region.
+    func isTripPlanningEnabled(for region: Region) -> Bool
+
+    /// Sets trip planning enabled/disabled for the specified region.
+    func setTripPlanningEnabled(_ enabled: Bool, for region: Region)
 }
