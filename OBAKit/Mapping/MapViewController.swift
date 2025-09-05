@@ -129,15 +129,6 @@ class MapViewController: UIViewController,
             tripPlannerButton.widthAnchor.constraint(equalToConstant: 50),
             tripPlannerButton.heightAnchor.constraint(equalToConstant: 50)
         ])
-
-        mapRegionManager.statusOverlay = statusOverlay
-        view.addSubview(statusOverlay)
-
-        NSLayoutConstraint.activate([
-            statusOverlay.bottomAnchor.constraint(equalTo: floatingPanel.surfaceView.topAnchor, constant: -ThemeMetrics.padding),
-            statusOverlay.leadingAnchor.constraint(equalTo: floatingPanel.surfaceView.leadingAnchor, constant: ThemeMetrics.padding),
-            statusOverlay.trailingAnchor.constraint(equalTo: floatingPanel.surfaceView.trailingAnchor, constant: -ThemeMetrics.padding)
-        ])
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -430,7 +421,6 @@ class MapViewController: UIViewController,
 
     // MARK: - Overlays
 
-    private let statusOverlay = StatusOverlayView.autolayoutNew()
     private let mapStatusView = MapStatusView.autolayoutNew()
 
     /// Sets the margins for the map view to keep the scale and legal info within the viewable area.
@@ -505,7 +495,6 @@ class MapViewController: UIViewController,
         // Don't allow the status overlay to be shown when the
         // Floating Panel is fully open because it looks weird.
         let floatingPanelPositionIsCollapsed = vc.state == .tip || vc.state == .hidden
-        statusOverlay.isHidden = vc.state == .full
         mapPanelController.currentScrollView?.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
 
         if let controller = vc.contentViewController as? MapFloatingPanelController {
@@ -538,10 +527,6 @@ class MapViewController: UIViewController,
 
     public func dismissModalController(_ controller: UIViewController) {
         if controller == semiModalPanel?.contentViewController {
-            if statusOverlay.isHidden {
-                statusOverlay.isHidden = floatingPanel.state != .full
-            }
-
             mapRegionManager.cancelSearch()
             semiModalPanel?.removePanelFromParent(animated: true)
         }
@@ -642,8 +627,6 @@ class MapViewController: UIViewController,
         Task { @MainActor [weak self] in
             guard let self, let result = response.results.first else { return }
 
-            statusOverlay.isHidden = true
-
             switch result {
             case let result as MKMapItem:
                 let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
@@ -666,6 +649,13 @@ class MapViewController: UIViewController,
                 fatalError()
             }
         }
+    }
+
+    @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
+        mapStatusView.configure(
+            for: mapStatusView.state(for: application.locationService),
+            zoomInStatus: showStatus
+        )
     }
 
     // MARK: Loading Indicator

@@ -26,6 +26,8 @@ public protocol MapRegionDelegate {
 
     @objc optional func mapRegionManagerDataLoadingStarted(_ manager: MapRegionManager)
     @objc optional func mapRegionManagerDataLoadingFinished(_ manager: MapRegionManager)
+
+    @objc optional func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool)
 }
 
 protocol MapRegionMapViewDelegate: NSObjectProtocol {
@@ -331,6 +333,12 @@ public class MapRegionManager: NSObject,
         }
     }
 
+    private func notifyDelegatesZoomInStatus(status: Bool) {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManagerShowZoomInStatus?(self, showStatus: status)
+        }
+    }
+
     // MARK: - Setters
 
     public var bookmarks = [Bookmark]() {
@@ -365,24 +373,16 @@ public class MapRegionManager: NSObject,
         notifyDelegatesStopsChanged()
     }
 
-    // MARK: - Map Status Overlay
-
-    weak var statusOverlay: StatusOverlayView?
+    // MARK: - Zoom In Warning
 
     private static let requiredHeightToShowStops = 40000.0
 
+    public var zoomInStatus: Bool {
+        mapView.visibleMapRect.height > MapRegionManager.requiredHeightToShowStops
+    }
+
     private func updateZoomWarningOverlay(mapHeight: Double) {
-        guard let statusOverlay = statusOverlay else { return }
-
-        let animated = statusOverlay.superview != nil
-
-        if mapHeight > MapRegionManager.requiredHeightToShowStops {
-            let message = OBALoc("map_region_manager.status_overlay.zoom_to_see_stops", value: "Zoom in to look for stops", comment: "Map region manager message to the user when they need to zoom in more to view stops")
-            statusOverlay.showOverlay(message: message, animated: animated)
-        }
-        else {
-            statusOverlay.hideOverlay(animated: animated)
-        }
+        notifyDelegatesZoomInStatus(status: zoomInStatus)
     }
 
     // MARK: - Search
