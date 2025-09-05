@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# GitHub macOS Runner images are documented at:
+# https://github.com/actions/runner-images?tab=readme-ov-file
+# Installed versions of Xcode on macOS 15 are documented at:
+# https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+
 jobs:
   build:
     runs-on: macos-15
@@ -21,7 +26,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_16.4.app
+      run: sudo xcode-select -switch /Applications/Xcode_26_beta_7.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -46,17 +51,6 @@ jobs:
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
-    # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
-    # UI Test
-    #- name: OBAKit UI Test
-    #  run: xcodebuild test-without-building
-    #    -only-testing:OBAKitUITests
-    #    -project 'OBAKit.xcodeproj'
-    #    -scheme 'App'
-    #    -destination 'platform=iOS Simulator,OS=16.2,name=iPhone 14'
-    #    -resultBundlePath OBAKitUITests.xcresult
-    #    -quiet
-
     # Upload results
     - uses: kishikawakatsumi/xcresulttool@v1.7.0
       continue-on-error: true
@@ -64,5 +58,4 @@ jobs:
         show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
         path: |
           OBAKitTests.xcresult
-    #      OBAKitUITests.xcresult # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
       if: success() || failure()

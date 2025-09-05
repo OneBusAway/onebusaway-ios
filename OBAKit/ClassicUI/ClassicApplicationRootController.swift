@@ -31,7 +31,11 @@ public class ClassicApplicationRootController: UITabBarController {
 
         super.init(nibName: nil, bundle: nil)
 
-        self.tabBar.isTranslucent = false
+        if #available(iOS 26.0, *) {
+            self.tabBar.isTranslucent = true
+        } else {
+            self.tabBar.isTranslucent = false
+        }
 
         self.application.viewRouter.rootController = self
 

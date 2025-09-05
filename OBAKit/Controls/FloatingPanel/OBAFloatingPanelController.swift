@@ -108,11 +108,4 @@ class OBAFloatingPanelController: FloatingPanelController {
 
         return true
     }
-
-    // Unable to override because this version of FloatingPanel is non-open (`open` keyword).
-    // Newer versions of FloatingPanel have `open` implementions of FloatingPanelController.
-//    override func move(to: FloatingPanelPosition, animated: Bool, completion: (() -> Void)? = nil) {
-//        super.move(to: to, animated: animated, completion: completion)
-//        self.updateAccessibilityValue()
-//    }
 }

@@ -8,7 +8,7 @@ settings:
   base:
     CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
     CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
-    MARKETING_VERSION: 25.2.0
+    MARKETING_VERSION: 25.3.0
 
 options:
   minimumXcodeGenVersion: 2.42
@@ -65,9 +65,6 @@ targets:
         - name: OBAKitTests
           parallelizable: false
           randomExecutionOrder: true
-        - name: OBAKitUITests
-          parallelizable: false
-          randomExecutionOrder: true
     settings:
       base:
         OTHER_LDFLAGS: -ObjC
@@ -93,7 +90,7 @@ packages:
         exactVersion: 5.5.0
     FloatingPanel:
         url: https://github.com/SCENEE/FloatingPanel.git
-        exactVersion: 2.8.6
+        exactVersion: 3.0.1
     Hyperconnectivity:
         url: https://github.com/rwbutler/Hyperconnectivity.git
         exactVersion: 1.2.0
