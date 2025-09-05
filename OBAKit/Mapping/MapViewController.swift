@@ -501,12 +501,16 @@ class MapViewController: UIViewController,
         }
     }
 
-    public func floatingPanelDidChangePosition(_ vc: FloatingPanel.FloatingPanelController) {
+    public func floatingPanelDidChangeState(_ vc: FloatingPanel.FloatingPanelController) {
         // Don't allow the status overlay to be shown when the
         // Floating Panel is fully open because it looks weird.
         let floatingPanelPositionIsCollapsed = vc.state == .tip || vc.state == .hidden
         statusOverlay.isHidden = vc.state == .full
         mapPanelController.currentScrollView?.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
+
+        if let controller = vc.contentViewController as? MapFloatingPanelController {
+            controller.didCollapse(floatingPanelPositionIsCollapsed)
+        }
 
         // Disables voiceover interacting with map elements (such as streets and POIs).
         // See #431.

@@ -76,6 +76,13 @@ class MapFloatingPanelController: VisualEffectViewController,
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - UI
+
+    /// Used to hide or show content when the floating panel disappears behind the tab bar on iOS 26.
+    func didCollapse(_ collapsed: Bool) {
+        childContentContainerView.isHidden = collapsed
+        nearbyStopsListViewController.view.isHidden = collapsed
+    }
+
     private var childContentContainerView: UIView!
 
     func toggleSearch(showingSearch: Bool) {
