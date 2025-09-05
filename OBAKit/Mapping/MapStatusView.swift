@@ -16,7 +16,7 @@ import OBAKitCore
 /// the system status bar and displays location authorization, as needed.
 /// On iOS 13+, this will also show icons applicable to the situation.
 class MapStatusView: UIView {
-    enum State {
+    enum LocationState {
         /// The user hasn't picked location services yet.
         case notDetermined
 
@@ -122,7 +122,7 @@ class MapStatusView: UIView {
     }
 
     // MARK: - State changes
-    func state(for service: LocationService) -> State {
+    func state(for service: LocationService) -> LocationState {
         return .init(
             service.authorizationStatus,
             isImprecise: service.accuracyAuthorization == .reducedAccuracy
@@ -130,10 +130,10 @@ class MapStatusView: UIView {
     }
 
     func configure(with service: LocationService) {
-        self.configure(for: state(for: service))
+        self.configure(for: state(for: service), zoomInStatus: false)
     }
 
-    func configure(for state: State) {
+    func configure(for state: LocationState, zoomInStatus: Bool) {
         var setHidden: Bool
         var setImage: UIImage?
         var setLargeImage: UIImage?
@@ -154,6 +154,13 @@ class MapStatusView: UIView {
             setHidden = true
         }
 
+        if zoomInStatus {
+            setHidden = false
+            setImage = UIImage(systemName: "plus.magnifyingglass")!
+            setLargeImage = UIImage(systemName: "plus.magnifyingglass")!
+            setLabel = OBALoc("map_status_view.zoom_in_for_stops", value: "Zoom in for stops", comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map")
+        }
+
         UIView.animate(withDuration: 0.25) {
             self.stackView.isHidden = setHidden
             self.iconView.image = setImage
@@ -168,7 +175,7 @@ class MapStatusView: UIView {
     /// - important: This only returns the title and message (body) of the alert. You have to manually add applicable actions.
     /// - returns: In situations where the user can't modify their location services or location services is
     /// already enabled, this will return `nil`, meaning the user doesn't need to do anything.
-    static func alert(for state: State) -> UIAlertController? {
+    static func alert(for state: LocationState) -> UIAlertController? {
         let title: String
         let message: String
 
@@ -191,19 +198,19 @@ class MapStatusView: UIView {
 
 #if DEBUG
 
-extension MapStatusView.State: Identifiable, CaseIterable {
+extension MapStatusView.LocationState: Identifiable, CaseIterable {
     var id: String { return "\(self)"}
 }
 
 struct MapStatusView_Previews: PreviewProvider {
-    static func makeStatusView(for state: MapStatusView.State) -> MapStatusView {
+    static func makeStatusView(for state: MapStatusView.LocationState) -> MapStatusView {
         let v = MapStatusView()
-        v.configure(for: state)
+        v.configure(for: state, zoomInStatus: false)
         return v
     }
 
     static var previews: some View {
-        ForEach(MapStatusView.State.allCases) { state in
+        ForEach(MapStatusView.LocationState.allCases) { state in
             UIViewPreview {
                 makeStatusView(for: state)
             }
