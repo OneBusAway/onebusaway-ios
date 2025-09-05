@@ -92,7 +92,6 @@ scripts/tx_pull                       # Pull translations from Transifex
 
 ### Testing
 - `OBAKitTests/`: Unit tests for all frameworks
-- `OBAKitUITests/`: UI tests (currently minimal)
 
 ## Third-Party Dependencies
 

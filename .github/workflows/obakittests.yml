@@ -51,17 +51,6 @@ jobs:
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
-    # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
-    # UI Test
-    #- name: OBAKit UI Test
-    #  run: xcodebuild test-without-building
-    #    -only-testing:OBAKitUITests
-    #    -project 'OBAKit.xcodeproj'
-    #    -scheme 'App'
-    #    -destination 'platform=iOS Simulator,OS=16.2,name=iPhone 14'
-    #    -resultBundlePath OBAKitUITests.xcresult
-    #    -quiet
-
     # Upload results
     - uses: kishikawakatsumi/xcresulttool@v1.7.0
       continue-on-error: true
@@ -69,5 +58,4 @@ jobs:
         show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
         path: |
           OBAKitTests.xcresult
-    #      OBAKitUITests.xcresult # note 2021-10-22 (@ualch9): disabled for now, since there are no UI tests.
       if: success() || failure()
