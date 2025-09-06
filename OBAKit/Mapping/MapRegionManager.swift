@@ -671,7 +671,7 @@ public class MapRegionManager: NSObject,
         let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         setUserAnnotation(coordinate: coordinate, title: nil, subtitle: nil)
     }
-    
+
     /// Entrypoint for displaying a user-driven search result on the map
     /// - Parameters:
     ///   - coordinate: The coordinate of the search result
