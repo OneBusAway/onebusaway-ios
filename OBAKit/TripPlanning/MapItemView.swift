@@ -83,7 +83,7 @@ public struct MapItemView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Button {
-                dismiss()
+                viewModel.dismissView()
             } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title)

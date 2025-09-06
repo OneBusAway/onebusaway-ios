@@ -147,4 +147,12 @@ public class MapItemViewModel: ObservableObject {
         )
         application.viewRouter.navigate(to: nearbyStops, from: presenter)
     }
+
+    /// Dismisses the view by calling the delegate's dismissModalController method.
+    ///
+    /// This properly dismisses the FloatingPanel that contains the MapItemViewController.
+    func dismissView() {
+        guard let presenter = presentingViewController else { return }
+        delegate?.dismissModalController(presenter)
+    }
 }
