@@ -73,7 +73,9 @@ public extension MKMapRect {
 
 // MARK: - MKMapRect/Codable
 
-extension MKMapRect: Codable {
+extension MKMapRect: @retroactive Decodable {}
+extension MKMapRect: @retroactive Encodable {}
+extension MKMapRect {
     public init(from decoder: Decoder) throws {
         self.init()
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -95,7 +97,9 @@ extension MKMapRect: Codable {
 
 // MARK: - MKMapPoint
 
-extension MKMapPoint: Codable {
+extension MKMapPoint: @retroactive Decodable {}
+extension MKMapPoint: @retroactive Encodable {}
+extension MKMapPoint {
     public init(from decoder: Decoder) throws {
         self.init()
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -117,7 +121,9 @@ extension MKMapPoint: Codable {
 
 // MARK: - MKMapSize
 
-extension MKMapSize: Codable {
+extension MKMapSize: @retroactive Decodable {}
+extension MKMapSize: @retroactive Encodable {}
+extension MKMapSize {
     public init(from decoder: Decoder) throws {
         self.init()
         let container = try decoder.container(keyedBy: CodingKeys.self)
