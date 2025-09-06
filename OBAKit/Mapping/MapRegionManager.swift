@@ -77,6 +77,7 @@ public class MapRegionManager: NSObject,
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
         mapView.isRotateEnabled = false
+        mapView.selectableMapFeatures = [.physicalFeatures, .pointsOfInterest]
 
         return mapView
     }()
@@ -564,6 +565,12 @@ public class MapRegionManager: NSObject,
         reloadStopAnnotations()
     }
 
+    public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
+        if let feature = annotation as? MKMapFeatureAnnotation {
+            setUserAnnotation(coordinate: feature.coordinate, title: feature.title, subtitle: feature.subtitle)
+        }
+    }
+
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         mapViewDelegate?.mapView(mapView, didSelect: view)
     }
@@ -662,19 +669,23 @@ public class MapRegionManager: NSObject,
 
         let touchPoint = gesture.location(in: mapView)
         let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
-        let annotation = createUserAnnotation(coordinate: coordinate)
+        setUserAnnotation(coordinate: coordinate, title: nil, subtitle: nil)
+    }
+    
+    /// Entrypoint for displaying a user-driven search result on the map
+    /// - Parameters:
+    ///   - coordinate: The coordinate of the search result
+    ///   - title: Optional title; it will be overwritten
+    ///   - subtitle: Optional subtitle; it will be overwritten
+    private func setUserAnnotation(coordinate: CLLocationCoordinate2D, title: String?, subtitle: String?) {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = title ?? "Dropped Pin"
+        annotation.subtitle = subtitle ?? "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
         self.userAnnotation = annotation
         mapView.addAnnotation(annotation)
 
         reverseGeocodeLocation(coordinate: coordinate, annotation: annotation)
-    }
-
-    private func createUserAnnotation(coordinate: CLLocationCoordinate2D) -> MKPointAnnotation {
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = coordinate
-        annotation.title = "Dropped Pin"
-        annotation.subtitle = "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
-        return annotation
     }
 
     private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: MKPointAnnotation) {
