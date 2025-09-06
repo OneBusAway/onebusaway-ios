@@ -118,17 +118,8 @@ class MapViewController: UIViewController,
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
 
-        // Add trip planner button as floating button
-        view.addSubview(tripPlannerButton)
-        tripPlannerButton.translatesAutoresizingMaskIntoConstraints = false
         // Long press gesture to add a pin to the map
 
-        NSLayoutConstraint.activate([
-            tripPlannerButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            tripPlannerButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -ThemeMetrics.controllerMargin - 60), // 60pts above bottom to avoid tab bar
-            tripPlannerButton.widthAnchor.constraint(equalToConstant: 50),
-            tripPlannerButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
         longPressGesture.minimumPressDuration = 0.5
         mapView.addGestureRecognizer(longPressGesture)
@@ -286,23 +277,15 @@ class MapViewController: UIViewController,
         }
     }
 
-    // MARK: - Trip Planner
+    // MARK: - Long Press Gesture
 
-    private func updateTripPlannerButtonVisibility() {
-        guard let currentRegion = application.currentRegion else {
-            tripPlannerButton.isHidden = true
-            return
-        }
-
-        let supportsOTP = currentRegion.supportsOTP
-        let isEnabled = application.userDataStore.isTripPlanningEnabled(for: currentRegion)
-
-        tripPlannerButton.isHidden = !(supportsOTP && isEnabled)
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         // Only handle the began state to avoid multiple pins
         guard gesture.state == .began else { return }
         mapRegionManager.userPressedMap(gesture)
     }
+
+    // MARK: - Trip Planner
 
     @objc private func openTripPlanner() {
         guard let currentRegion = application.regionsService.currentRegion,
