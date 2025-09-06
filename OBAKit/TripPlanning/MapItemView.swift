@@ -28,6 +28,9 @@ public struct MapItemView: View {
     /// Environment value for dismissing the view
     @Environment(\.dismiss) private var dismiss
 
+    /// State for controlling the Look Around viewer presentation
+    @State private var showLookAroundViewer = false
+
     /// Initializes a new map item view.
     ///
     /// - Parameter viewModel: The view model containing the map item data and handling user actions
@@ -48,6 +51,10 @@ public struct MapItemView: View {
                     .padding(.bottom, ThemeMetrics.padding)
 
                 List {
+                    if viewModel.lookAroundScene != nil {
+                        lookAroundSection
+                    }
+
                     if viewModel.hasAboutContent {
                         aboutSection
                     }
@@ -59,6 +66,10 @@ public struct MapItemView: View {
                 .background(Color.clear)
             }
         }
+        .lookAroundViewer(
+            isPresented: $showLookAroundViewer,
+            initialScene: viewModel.lookAroundScene
+        )
     }
 
     /// The header view containing the title and close button.
@@ -130,6 +141,31 @@ public struct MapItemView: View {
                 .buttonStyle(.plain)
             }
         }
+    }
+
+    /// The Look Around preview section
+    private var lookAroundSection: some View {
+        Section {
+            if let scene = viewModel.lookAroundScene {
+                LookAroundPreview(initialScene: scene)
+                    .frame(height: 150)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .onTapGesture {
+                        showLookAroundViewer = true
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "binoculars.fill")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(8)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Circle())
+                            .padding(8)
+                    }
+            }
+        }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
     }
 
     /// The "More" section containing additional actions such as viewing nearby stops.
