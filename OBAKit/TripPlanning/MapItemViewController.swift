@@ -66,9 +66,6 @@ class MapItemViewController: UIViewController, AppContext {
 
         let mapItemView = MapItemView(viewModel: viewModel)
             .environment(\.coreApplication, application)
-            .onDisappear { [weak self] in
-                self?.delegate?.dismissModalController(self!)
-            }
 
         let hostingController = UIHostingController(rootView: AnyView(mapItemView))
         hostingController.view.backgroundColor = .clear
