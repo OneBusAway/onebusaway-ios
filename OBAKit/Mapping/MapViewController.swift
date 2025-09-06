@@ -122,6 +122,7 @@ class MapViewController: UIViewController,
         // Add trip planner button as floating button
         view.addSubview(tripPlannerButton)
         tripPlannerButton.translatesAutoresizingMaskIntoConstraints = false
+        // Long press gesture to add a pin to the map
 
         NSLayoutConstraint.activate([
             tripPlannerButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
@@ -129,6 +130,9 @@ class MapViewController: UIViewController,
             tripPlannerButton.widthAnchor.constraint(equalToConstant: 50),
             tripPlannerButton.heightAnchor.constraint(equalToConstant: 50)
         ])
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        mapView.addGestureRecognizer(longPressGesture)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -312,6 +316,10 @@ class MapViewController: UIViewController,
         let isEnabled = application.userDataStore.isTripPlanningEnabled(for: currentRegion)
 
         tripPlannerButton.isHidden = !(supportsOTP && isEnabled)
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        // Only handle the began state to avoid multiple pins
+        guard gesture.state == .began else { return }
+        mapRegionManager.userPressedMap(gesture)
     }
 
     @objc private func openTripPlanner() {
