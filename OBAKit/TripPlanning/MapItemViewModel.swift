@@ -51,6 +51,12 @@ public class MapItemViewModel: ObservableObject {
         formattedAddress != nil || phoneNumber != nil || url != nil
     }
 
+    /// The Look Around scene for the location, if available
+    @Published var lookAroundScene: MKLookAroundScene?
+
+    /// Indicates whether Look Around is loading
+    @Published var isLoadingLookAround: Bool = false
+
     /// Initializes a new map item view model.
     ///
     /// - Parameters:
@@ -70,6 +76,26 @@ public class MapItemViewModel: ObservableObject {
 
         self.phoneNumber = mapItem.phoneNumber
         self.url = mapItem.url
+
+        Task {
+            await fetchLookAroundScene()
+        }
+    }
+
+    /// Fetches the Look Around scene for the map item's location
+    private func fetchLookAroundScene() async {
+        isLoadingLookAround = true
+        defer { isLoadingLookAround = false }
+
+        let request = MKLookAroundSceneRequest(mapItem: mapItem)
+        do {
+            if let scene = try await request.scene {
+                self.lookAroundScene = scene
+            }
+        } catch {
+            // Look Around not available for this location
+            self.lookAroundScene = nil
+        }
     }
 
     /// Sets the presenting view controller for navigation actions.
