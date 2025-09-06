@@ -45,7 +45,7 @@ public class MapItemViewModel: ObservableObject {
 
     /// The website URL of the location, if available
     @Published var url: URL?
-    
+
     /// Controls whether the "Plan a trip" button is visible
     @Published var showPlanTripButton: Bool = false
 
@@ -77,6 +77,7 @@ public class MapItemViewModel: ObservableObject {
             self.formattedAddress = CNPostalAddressFormatter.string(from: address, style: .mailingAddress)
         }
 
+        self.showPlanTripButton = application.features.tripPlanning == .running
         self.phoneNumber = mapItem.phoneNumber
         self.url = mapItem.url
 
@@ -150,7 +151,7 @@ public class MapItemViewModel: ObservableObject {
         )
         application.viewRouter.navigate(to: nearbyStops, from: presenter)
     }
-    
+
     /// Plans a trip from/to this location.
     ///
     /// This will be handled by the hosting view controller.
