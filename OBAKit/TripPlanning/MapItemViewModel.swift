@@ -45,6 +45,9 @@ public class MapItemViewModel: ObservableObject {
 
     /// The website URL of the location, if available
     @Published var url: URL?
+    
+    /// Controls whether the "Plan a trip" button is visible
+    @Published var showPlanTripButton: Bool = false
 
     /// Indicates whether there is any content to display in the "About" section.
     var hasAboutContent: Bool {
@@ -146,6 +149,17 @@ public class MapItemViewModel: ObservableObject {
             application: application
         )
         application.viewRouter.navigate(to: nearbyStops, from: presenter)
+    }
+    
+    /// Plans a trip from/to this location.
+    ///
+    /// This will be handled by the hosting view controller.
+    /// Does nothing if the presenting view controller hasn't been set.
+    func planTrip() {
+        // This will be implemented by the hosting view controller
+        // For now, it's a placeholder that can be extended
+        guard let _ = presentingViewController else { return }
+        // TODO: Implement trip planning logic
     }
 
     /// Dismisses the view by calling the delegate's dismissModalController method.

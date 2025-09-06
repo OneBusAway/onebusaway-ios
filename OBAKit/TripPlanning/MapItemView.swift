@@ -48,9 +48,10 @@ public struct MapItemView: View {
                 headerView
                     .padding(.horizontal, ThemeMetrics.controllerMargin)
                     .padding(.top, ThemeMetrics.floatingPanelTopInset)
-                    .padding(.bottom, ThemeMetrics.padding)
 
                 List {
+                    actionButtonsSection
+
                     if viewModel.lookAroundScene != nil {
                         lookAroundSection
                     }
@@ -58,8 +59,6 @@ public struct MapItemView: View {
                     if viewModel.hasAboutContent {
                         aboutSection
                     }
-
-                    moreSection
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
@@ -76,7 +75,7 @@ public struct MapItemView: View {
     private var headerView: some View {
         HStack(alignment: .top) {
             Text(viewModel.title)
-                .font(.largeTitle)
+                .font(.title)
                 .fontWeight(.bold)
                 .lineLimit(nil)
                 .multilineTextAlignment(.leading)
@@ -168,24 +167,31 @@ public struct MapItemView: View {
         .listRowBackground(Color.clear)
     }
 
-    /// The "More" section containing additional actions such as viewing nearby stops.
-    private var moreSection: some View {
-        Section(header: Text(OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"))) {
-            Button {
-                viewModel.showNearbyStops()
-            } label: {
-                HStack {
-                    Text(OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."))
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.footnote)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color(.tertiaryLabel))
+    /// The action buttons section containing Plan a Trip and Nearby Stops buttons.
+    private var actionButtonsSection: some View {
+        Section {
+            HStack(spacing: 8) {
+                if viewModel.showPlanTripButton {
+                    Button {
+                        viewModel.planTrip()
+                    } label: {
+                        Text(OBALoc("map_item_controller.plan_trip", value: "Plan a trip", comment: "Button to plan a trip from this location"))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
+
+                Button {
+                    viewModel.showNearbyStops()
+                } label: {
+                    Text(OBALoc("map_item_controller.nearby_stops_row", value: "Nearby Stops", comment: "A table row that shows stops nearby."))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.plain)
         }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
     }
 }
 
