@@ -704,6 +704,11 @@ public class MapRegionManager: NSObject,
 
             // Update annotation with location details
             self.updateAnnotation(annotation, with: placemark)
+
+            let request = SearchRequest(query: "fake", type: .address)
+            let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
+            let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
+            self.searchResponse = response
         }
     }
 
