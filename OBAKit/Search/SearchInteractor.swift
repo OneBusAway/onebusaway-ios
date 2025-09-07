@@ -9,10 +9,12 @@
 
 import Foundation
 import OBAKitCore
+import MapKit
 
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
+    func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
 }
 
@@ -27,16 +29,19 @@ class SearchInteractor: NSObject {
         case recentStops
         case bookmarks
         case quickSearch
+        case placemarks
     }
 
+    private let application: Application
     private let userDataStore: UserDataStore
     public weak var delegate: SearchDelegate?
 
     /// Creates a new `SearchInteractor`
-    /// - Parameter userDataStore: A concrete object that conforms to the `UserDataStore` protocol
+    /// - Parameter application: The global Application object
     /// - Parameter delegate: A delegate that will receive callbacks when events occur
-    init(userDataStore: UserDataStore, delegate: SearchDelegate) {
-        self.userDataStore = userDataStore
+    init(application: Application, delegate: SearchDelegate) {
+        self.application = application
+        self.userDataStore = application.userDataStore
         self.delegate = delegate
     }
 
@@ -44,13 +49,20 @@ class SearchInteractor: NSObject {
         guard
             let searchText = text?.trimmingCharacters(in: .whitespacesAndNewlines),
             searchText.count > 0
-        else { return [] }
+        else {
+            return []
+        }
 
         var sections: [OBAListViewSection?] = []
 
         sections.append(quickSearchSection(searchText: searchText))
         sections.append(buildRecentStopsSection(searchText: searchText))
         sections.append(buildBookmarksSection(searchText: searchText))
+
+        if let mapRect = application.mapRegionManager.lastVisibleMapRect {
+            placemarkSearch(searchText: searchText, mapRect: mapRect)
+            sections.append(buildPlacemarksSection())
+        }
 
         return sections.compactMap { $0 }
     }
@@ -88,6 +100,77 @@ class SearchInteractor: NSObject {
         return listSection(for: .bookmarks, title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), contents: bookmarks)
     }
 
+    // MARK: - Placemarks Section
+
+    private var placemarkSearchTask: Task<Void, Never>?
+    private var cachedPlacemarks: [MKMapItem] = [] {
+        didSet {
+            delegate?.searchInteractorNewResultsAvailable(self)
+        }
+    }
+    private var lastSearchText: String = ""
+    private let placemarkSearchDebounceInterval: TimeInterval = 0.35 // 350ms
+    private var localSearch: MKLocalSearch?
+    private var debounceTimer: Timer?
+
+    private func placemarkSearch(searchText: String, mapRect: MKMapRect) {
+        guard
+            searchText != lastSearchText,
+            searchText.count >= 2
+        else {
+            return
+        }
+
+        lastSearchText = searchText
+
+        debounceTimer?.invalidate()
+        debounceTimer = nil
+
+        debounceTimer = Timer.scheduledTimer(
+            withTimeInterval: placemarkSearchDebounceInterval,
+            repeats: false
+        ) { [weak self] _ in
+            guard let self = self else { return }
+
+            if let localSearch = self.localSearch {
+                localSearch.cancel()
+            }
+
+            let searchRequest = MKLocalSearch.Request()
+            searchRequest.naturalLanguageQuery = searchText
+            searchRequest.region = MKCoordinateRegion(mapRect)
+            let search = MKLocalSearch(request: searchRequest)
+            search.start { response, error in
+                if let error {
+                    print("Unable to complete local search: \(error)")
+                    return
+                }
+
+                guard let response else {
+                    print("Local search response is nil. Bailing.")
+                    return
+                }
+
+                self.cachedPlacemarks = response.mapItems
+            }
+
+            self.localSearch = search
+        }
+    }
+
+    private func buildPlacemarksSection() -> OBAListViewSection? {
+        var items: [SearchPlacemarkViewModel] = []
+
+        for p in cachedPlacemarks {
+            let item = SearchPlacemarkViewModel(mapItem: p) { viewModel in
+                print("Selected! \(viewModel)")
+            }
+            items.append(item)
+        }
+
+        return listSection(for: .placemarks, title: OBALoc("search_controller.placemarks.header", value: "Results", comment: "Placemark search header"), contents: items)
+    }
+
     // MARK: - Private/Quick Search
 
     private func quickSearchLabel(prefix: String, searchText: String) -> NSAttributedString {
@@ -99,8 +182,6 @@ class SearchInteractor: NSObject {
         return string
     }
 
-    /// Creates a Quick Search section
-    /// - Parameter searchText: The text that the user is searching for
     private func quickSearchSection(searchText: String) -> OBAListViewSection {
 
         // swiftlint:disable large_tuple
@@ -130,7 +211,6 @@ class SearchInteractor: NSObject {
 
             item.image = badgeRenderer.drawImageOnRoundedRect(image)
 
-//            row.imageSize = badgeRenderer.badgeSize
             items.append(item)
         }
 

@@ -30,6 +30,8 @@ class SearchListViewController: UIViewController, Scrollable, OBAListViewDataSou
         listView.backgroundColor = .clear
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
+
+        listView.register(listViewItem: SearchPlacemarkViewModel.self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
