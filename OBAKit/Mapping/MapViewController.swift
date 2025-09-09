@@ -288,7 +288,7 @@ class MapViewController: UIViewController,
 
     // MARK: - Trip Planner
 
-    @objc private func openTripPlanner() {
+    func showTripPlanner(destination: MKMapItem) {
         guard let currentRegion = application.regionsService.currentRegion,
               let otpURL = currentRegion.openTripPlannerURL else {
             return
@@ -298,8 +298,7 @@ class MapViewController: UIViewController,
             otpServerURL: otpURL,
             themeConfiguration: .init(
                 primaryColor: Color(uiColor: ThemeColors().brand)
-            ),
-            region: .automatic
+            )
         )
 
         let apiService = RestAPIService(baseURL: otpURL)
@@ -315,26 +314,12 @@ class MapViewController: UIViewController,
             )
         }
 
-        let otpView = OTPView(otpConfig: config, apiService: apiService, origin: origin)
+        let mapViewProvider = MKMapViewAdapter(mapView: mapRegionManager.mapView)
+        let otpView = OTPView(otpConfig: config, apiService: apiService, mapProvider: mapViewProvider, origin: origin)
 
         let hostingController = UIHostingController(rootView: otpView)
-        hostingController.modalPresentationStyle = .overFullScreen
 
-        // Add navigation bar with dismiss button
-        let navController = UINavigationController(rootViewController: hostingController)
-        hostingController.navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(dismissOTPView)
-        )
-        hostingController.navigationItem.title = "Trip Planner"
-        navController.modalPresentationStyle = .overFullScreen
-
-        present(navController, animated: true)
-    }
-
-    @objc private func dismissOTPView() {
-        dismiss(animated: true)
+        showSemiModalPanel(childController: hostingController)
     }
 
     // MARK: - Map Type
@@ -603,7 +588,10 @@ class MapViewController: UIViewController,
 
             switch result {
             case let result as MKMapItem:
-                let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
+                let viewModel = MapItemViewModel(mapItem: result, application: application, delegate: self) { [weak self] in
+                    self?.showTripPlanner(destination: result)
+                }
+                let mapItemController = MapItemViewController(viewModel)
                 showSemiModalPanel(childController: mapItemController)
             case let result as StopsForRoute:
                 let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
