@@ -23,13 +23,15 @@ import OBAKitCore
 @MainActor
 public class MapItemViewModel: ObservableObject {
     /// The map item containing the location data
-    private let mapItem: MKMapItem
+    let mapItem: MKMapItem
 
     /// The OBA application instance for accessing services and navigation
-    private let application: Application
+    let application: Application
+
+    let planTripHandler: () -> Void
 
     /// Delegate for handling modal dismissal
-    private weak var delegate: ModalDelegate?
+    weak var delegate: ModalDelegate?
 
     /// The presenting view controller for navigation actions
     private weak var presentingViewController: UIViewController?
@@ -66,10 +68,11 @@ public class MapItemViewModel: ObservableObject {
     ///   - mapItem: The map item containing location information
     ///   - application: The OBA application instance
     ///   - delegate: Optional delegate for handling modal dismissal
-    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?) {
+    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?, planTripHandler: @escaping () -> Void) {
         self.mapItem = mapItem
         self.application = application
         self.delegate = delegate
+        self.planTripHandler = planTripHandler
 
         self.title = mapItem.name ?? ""
 
@@ -154,13 +157,8 @@ public class MapItemViewModel: ObservableObject {
 
     /// Plans a trip from/to this location.
     ///
-    /// This will be handled by the hosting view controller.
-    /// Does nothing if the presenting view controller hasn't been set.
     func planTrip() {
-        // This will be implemented by the hosting view controller
-        // For now, it's a placeholder that can be extended
-        guard let _ = presentingViewController else { return }
-        // TODO: Implement trip planning logic
+        planTripHandler()
     }
 
     /// Dismisses the view by calling the delegate's dismissModalController method.

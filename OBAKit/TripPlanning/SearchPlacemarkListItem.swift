@@ -8,9 +8,37 @@
 import MapKit
 import OBAKitCore
 
+final private class SearchPlacemarkView: UIView {
+    let titleLabel = UILabel.autolayoutNew()
+    let addressLabel = UILabel.autolayoutNew()
+    var stackView: UIStackView
+
+    override init(frame: CGRect) {
+        stackView = UIStackView.verticalStack(arrangedSubviews: [titleLabel, addressLabel])
+        super.init(frame: frame)
+        addSubview(stackView)
+        stackView.pinToSuperview(.edges)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+#Preview {
+    let view = SearchPlacemarkView(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
+    view.titleLabel.text = "title label"
+    view.addressLabel.text = "address label"
+    return view
+}
+
 final class SearchPlacemarkTableCell: OBAListViewCell {
+    fileprivate let innerView = SearchPlacemarkView(frame: .zero)
+
     override init(frame: CGRect) {
         super.init(frame: frame)
+        contentView.addSubview(innerView)
+        innerView.pinToSuperview(.edges)
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -19,11 +47,18 @@ final class SearchPlacemarkTableCell: OBAListViewCell {
 
     override func apply(_ config: OBAContentConfiguration) {
         guard let config = config as? SearchPlacemarkContentConfiguration else { return }
+        let mapItem = config.viewModel.mapItem
 
-        // TODO: create UI for this cell.
-        // TODO: fill in the UI from the viewModel and its MKMapItem.
+        innerView.titleLabel.text = mapItem.name
+
+        if #available(iOS 26.0, *) {
+            innerView.addressLabel.text = mapItem.address?.shortAddress
+        } else {
+            let pm = mapItem.placemark
+            let parts = [pm.subThoroughfare, pm.thoroughfare, pm.locality, pm.subAdministrativeArea, pm.administrativeArea, pm.postalCode]
+            innerView.addressLabel.text = parts.compactMap { $0 }.joined(separator: " ")
+        }
     }
-
 }
 
 struct SearchPlacemarkContentConfiguration: OBAContentConfiguration {

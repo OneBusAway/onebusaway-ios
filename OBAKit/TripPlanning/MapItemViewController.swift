@@ -19,33 +19,18 @@ import OBAKitCore
 /// and provides a link to view nearby transit stops.
 ///
 class MapItemViewController: UIViewController, AppContext {
-
-    /// The OBA application object
-    let application: Application
-
-    /// The map item containing location information to display
-    private let mapItem: MKMapItem
-
-    /// Delegate for handling modal dismissal
-    public weak var delegate: ModalDelegate?
+    var application: Application {
+        viewModel.application
+    }
 
     /// The hosting controller that embeds the SwiftUI view
     private var hostingController: UIHostingController<AnyView>?
 
     /// The view model that manages the business logic
-    private var viewModel: MapItemViewModel?
+    private let viewModel: MapItemViewModel
 
-    /// Initializes a new map item view controller.
-    ///
-    /// - Parameters:
-    ///   - application: The OBA application instance
-    ///   - mapItem: The map item to display information for
-    ///   - delegate: Optional delegate for handling modal dismissal
-    init(application: Application, mapItem: MKMapItem, delegate: ModalDelegate?) {
-        self.application = application
-        self.mapItem = mapItem
-        self.delegate = delegate
-
+    init(_ viewModel: MapItemViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -56,16 +41,10 @@ class MapItemViewController: UIViewController, AppContext {
 
         view.backgroundColor = .clear
 
-        let viewModel = MapItemViewModel(
-            mapItem: mapItem,
-            application: application,
-            delegate: delegate
-        )
         viewModel.setPresentingViewController(self)
-        self.viewModel = viewModel
 
         let mapItemView = MapItemView(viewModel: viewModel)
-            .environment(\.coreApplication, application)
+            .environment(\.coreApplication, viewModel.application)
 
         let hostingController = UIHostingController(rootView: AnyView(mapItemView))
         hostingController.view.backgroundColor = .clear
