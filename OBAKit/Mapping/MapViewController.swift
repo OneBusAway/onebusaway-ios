@@ -11,7 +11,6 @@ import UIKit
 import MapKit
 import FloatingPanel
 import OBAKitCore
-import OTPKit
 import SwiftUI
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
@@ -118,17 +117,6 @@ class MapViewController: UIViewController,
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
-
-        // Add trip planner button as floating button
-        view.addSubview(tripPlannerButton)
-        tripPlannerButton.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            tripPlannerButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            tripPlannerButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -ThemeMetrics.controllerMargin - 60), // 60pts above bottom to avoid tab bar
-            tripPlannerButton.widthAnchor.constraint(equalToConstant: 50),
-            tripPlannerButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -145,7 +133,6 @@ class MapViewController: UIViewController,
 
         updateVisibleMapRect()
         layoutMapMargins()
-        updateTripPlannerButtonVisibility()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -247,22 +234,6 @@ class MapViewController: UIViewController,
         return button
     }()
 
-    private lazy var tripPlannerButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "point.topleft.down.curvedto.point.bottomright.up"), for: .normal)
-        button.backgroundColor = ThemeColors.shared.brand
-        button.tintColor = .white
-        button.layer.cornerRadius = 25
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowOpacity = 0.25
-        button.layer.shadowRadius = 4
-        button.addTarget(self, action: #selector(openTripPlanner), for: .touchUpInside)
-        button.accessibilityLabel = OBALoc("map_controller.open_trip_planner_button", value: "Open Trip Planner", comment: "Accessibility label for button that opens the trip planner")
-        button.isHidden = true  // Initially hidden, will be shown based on region support
-        return button
-    }()
-
     @objc private func showWeather() {
         guard let forecast = forecast else { return }
 
@@ -298,69 +269,6 @@ class MapViewController: UIViewController,
                 Logger.error(error.localizedDescription)
             }
         }
-    }
-
-    // MARK: - Trip Planner
-
-    private func updateTripPlannerButtonVisibility() {
-        guard let currentRegion = application.currentRegion else {
-            tripPlannerButton.isHidden = true
-            return
-        }
-
-        let supportsOTP = currentRegion.supportsOTP
-        let isEnabled = application.userDataStore.isTripPlanningEnabled(for: currentRegion)
-
-        tripPlannerButton.isHidden = !(supportsOTP && isEnabled)
-    }
-
-    @objc private func openTripPlanner() {
-        guard let currentRegion = application.regionsService.currentRegion,
-              let otpURL = currentRegion.openTripPlannerURL else {
-            return
-        }
-
-        let config = OTPConfiguration(
-            otpServerURL: otpURL,
-            themeConfiguration: .init(
-                primaryColor: Color(uiColor: ThemeColors().brand)
-            ),
-            region: .automatic
-        )
-
-        let apiService = RestAPIService(baseURL: otpURL)
-
-        // Get current location for origin
-        var origin: Location?
-        if let currentLocation = application.locationService.currentLocation {
-            origin = Location(
-                title: "Current Location",
-                subTitle: "Your current location",
-                latitude: currentLocation.coordinate.latitude,
-                longitude: currentLocation.coordinate.longitude
-            )
-        }
-
-        let otpView = OTPView(otpConfig: config, apiService: apiService, origin: origin)
-
-        let hostingController = UIHostingController(rootView: otpView)
-        hostingController.modalPresentationStyle = .overFullScreen
-
-        // Add navigation bar with dismiss button
-        let navController = UINavigationController(rootViewController: hostingController)
-        hostingController.navigationItem.leftBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .close,
-            target: self,
-            action: #selector(dismissOTPView)
-        )
-        hostingController.navigationItem.title = "Trip Planner"
-        navController.modalPresentationStyle = .overFullScreen
-
-        present(navController, animated: true)
-    }
-
-    @objc private func dismissOTPView() {
-        dismiss(animated: true)
     }
 
     // MARK: - Map Type
