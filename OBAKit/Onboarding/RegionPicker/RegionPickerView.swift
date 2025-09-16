@@ -68,21 +68,6 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                     "Automatically select region",
                     isOn: $regionProvider.automaticallySelectRegion)
 
-                // Trip planning toggle - only shown for regions that support OTP
-                if let selectedRegion = selectedRegion, selectedRegion.supportsOTP {
-                    Toggle(
-                        OBALoc(
-                            "region_picker.trip_planning_toggle",
-                            value: "Enable trip planning",
-                            comment: "Title of the trip planning toggle in the region picker."
-                        ),
-                        isOn: $isTripPlanningEnabled
-                    )
-                    .onChange(of: isTripPlanningEnabled) { _, newValue in
-                        regionProvider.setTripPlanningEnabled(newValue, for: selectedRegion)
-                    }
-                }
-
                 Picker("", selection: $selectedRegion) {
                     ForEach(filteredRegions, id: \.self) { region in
                         cell(for: region)

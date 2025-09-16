@@ -4,7 +4,7 @@ packages:
     majorVersion: 1.0.0
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk.git
-    majorVersion: 11.7.0
+    majorVersion: 12.2.0
 
 targets:
   App:
