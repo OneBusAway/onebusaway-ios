@@ -43,6 +43,18 @@ class MapItemViewController: VisualEffectViewController,
         delegate?.dismissModalController(self)
     }
 
+    // MARK: - Actions
+    @objc private func planTripTapped() {
+    let originCoordinate = mapItem.placemark.coordinate
+    let tripPlanner = application.viewRouter.tripPlanViewController
+
+    tripPlanner.setOrigin(coordinate: originCoordinate, name: mapItem.name ?? "Origin")
+ 
+    delegate?.dismissModalController(self) {
+        self.application.viewRouter.navigate(to: tripPlanner, from: self)
+       }
+    }   
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -101,11 +113,22 @@ class MapItemViewController: VisualEffectViewController,
         return OBAListViewSection(id: "more", title: OBALoc("map_item_controller.more_header", value: "More", comment: "More options header"), contents: [row])
     }
 
-    func items(for listView: OBAListView) -> [OBAListViewSection] {
-        var sections = [aboutSection, moreSection]
-        for idx in sections.indices {
-            sections[idx].configuration.backgroundColor = .clear
-        }
-        return sections
+    private var actionsSection: OBAListViewSection {
+    let planTripRow = OBAListRowView.DefaultViewModel(
+        title: "Plan a Trip",
+        accessoryType: .none
+    ) { _ in
+        self.planTripTapped()
+    }
+    
+    return OBAListViewSection(id: "actions", title: "Actions", contents: [planTripRow.typeErased])
+}
+
+     func items(for listView: OBAListView) -> [OBAListViewSection] {
+     var sections = [aboutSection, actionsSection, moreSection]  
+     for idx in sections.indices {
+        sections[idx].configuration.backgroundColor = .clear
+     }
+       return sections
     }
 }
