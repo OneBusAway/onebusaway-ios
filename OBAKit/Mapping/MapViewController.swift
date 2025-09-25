@@ -336,10 +336,10 @@ class MapViewController: UIViewController,
             apiService: apiService,
             mapProvider: mapViewProvider
         )
-        
+
         otpBottomSheet?.delegate = self
         otpBottomSheet?.present(origin: origin, destination: destinationLocation, on: self)
-        
+
     }
 
     // MARK: - Map Type
