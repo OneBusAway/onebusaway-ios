@@ -12,6 +12,7 @@ import MapKit
 import FloatingPanel
 import OBAKitCore
 import SwiftUI
+import OTPKit
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
@@ -24,7 +25,8 @@ class MapViewController: UIViewController,
     ModalDelegate,
     MapPanelDelegate,
     UIContextMenuInteractionDelegate,
-    UILargeContentViewerInteractionDelegate {
+    UILargeContentViewerInteractionDelegate,
+    OTPBottomSheetDelegate {
 
     // MARK: - Hoverbar
 
@@ -117,6 +119,12 @@ class MapViewController: UIViewController,
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
+
+        // Long press gesture to add a pin to the map
+
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        mapView.addGestureRecognizer(longPressGesture)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -271,6 +279,69 @@ class MapViewController: UIViewController,
         }
     }
 
+    // MARK: - Long Press Gesture
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        // Only handle the began state to avoid multiple pins
+        guard gesture.state == .began else { return }
+        mapRegionManager.userPressedMap(gesture)
+    }
+
+    // MARK: - Trip Planner
+
+    private var otpBottomSheet: OTPBottomSheet?
+
+    func showTripPlanner(destination: MKMapItem? = nil) {
+        guard let currentRegion = application.regionsService.currentRegion,
+              let otpURL = currentRegion.openTripPlannerURL else {
+            return
+        }
+
+        let config = OTPConfiguration(
+            otpServerURL: otpURL,
+            themeConfiguration: .init(
+                primaryColor: Color(uiColor: ThemeColors().brand)
+            )
+        )
+
+        let apiService = RestAPIService(baseURL: otpURL)
+
+        // Get current location for origin
+        var origin: Location?
+        if let currentLocation = application.locationService.currentLocation {
+            origin = Location(
+                title: "Current Location",
+                subTitle: "Your current location",
+                latitude: currentLocation.coordinate.latitude,
+                longitude: currentLocation.coordinate.longitude
+            )
+        }
+
+        // Convert MKMapItem destination to Location if provided
+        var destinationLocation: Location?
+        if let destination = destination {
+            destinationLocation = Location(
+                title: destination.name ?? "Destination",
+                subTitle: destination.placemark.title ?? "",
+                latitude: destination.placemark.coordinate.latitude,
+                longitude: destination.placemark.coordinate.longitude
+            )
+        }
+
+        let mapViewProvider = MKMapViewAdapter(mapView: mapRegionManager.mapView)
+
+        // Create and present the new OTPBottomSheet
+        otpBottomSheet = OTPBottomSheet(
+            otpConfig: config,
+            apiService: apiService,
+            mapProvider: mapViewProvider
+        )
+
+        otpBottomSheet?.delegate = self
+        otpBottomSheet?.present(origin: origin, destination: destinationLocation, on: self)
+
+    }
+
     // MARK: - Map Type
     public lazy var toggleMapTypeButton: UIButton = {
         let button = UIButton(type: .system)
@@ -324,6 +395,8 @@ class MapViewController: UIViewController,
     ///
     /// - Parameter stop: The stop to display.
     func show(stop: Stop) {
+        // Dismiss OTPKit bottom sheet if present when navigating to stop details
+        dismissOTPKitIfPresented()
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
@@ -353,6 +426,9 @@ class MapViewController: UIViewController,
     }()
 
     private func showSemiModalPanel(childController: UIViewController) {
+        // Dismiss OTPKit bottom sheet if present
+        dismissOTPKitIfPresented()
+
         semiModalPanel?.removePanelFromParent(animated: false)
 
         let panel = FloatingPanelController()
@@ -404,6 +480,11 @@ class MapViewController: UIViewController,
         // Floating Panel is fully open because it looks weird.
         let floatingPanelPositionIsCollapsed = vc.state == .tip || vc.state == .hidden
         mapPanelController.currentScrollView?.accessibilityElementsHidden = floatingPanelPositionIsCollapsed
+
+        // Dismiss OTPKit when floating panel becomes visible (not collapsed)
+        if !floatingPanelPositionIsCollapsed {
+            dismissOTPKitIfPresented()
+        }
 
         if let controller = vc.contentViewController as? MapFloatingPanelController {
             controller.didCollapse(floatingPanelPositionIsCollapsed)
@@ -537,7 +618,10 @@ class MapViewController: UIViewController,
 
             switch result {
             case let result as MKMapItem:
-                let mapItemController = MapItemViewController(application: application, mapItem: result, delegate: self)
+                let viewModel = MapItemViewModel(mapItem: result, application: application, delegate: self) { [weak self] in
+                    self?.showTripPlanner(destination: result)
+                }
+                let mapItemController = MapItemViewController(viewModel)
                 showSemiModalPanel(childController: mapItemController)
             case let result as StopsForRoute:
                 let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
@@ -692,6 +776,63 @@ class MapViewController: UIViewController,
     public func largeContentViewerInteraction(_ interaction: UILargeContentViewerInteraction, didEndOn item: UILargeContentViewerItem?, at point: CGPoint) {
         if mapStatusView.frame.contains(point) {
             didTapMapStatus(interaction)
+        }
+    }
+
+    // MARK: - OTPBottomSheetDelegate
+
+    public func bottomSheetWillPresent(_ bottomSheet: OTPBottomSheet) {
+        // Hide other panels when OTPKit bottom sheet is about to be presented
+        hideOtherPanelsForOTPKit()
+    }
+
+    public func bottomSheetDidPresent(_ bottomSheet: OTPBottomSheet) {
+        // Optional: Handle did present if needed
+    }
+
+    public func bottomSheetWillDismiss(_ bottomSheet: OTPBottomSheet) {
+        // Optional: Handle will dismiss if needed
+    }
+
+    public func bottomSheetDidDismiss(_ bottomSheet: OTPBottomSheet) {
+        // Clean up the reference when bottom sheet is dismissed
+        otpBottomSheet = nil
+        // Restore other panels when OTPKit bottom sheet is dismissed
+        restoreOtherPanelsAfterOTPKit()
+    }
+
+    public func bottomSheetDidChangePosition(_ position: BottomSheetPosition) {
+        // Optional: Handle position changes if needed
+        // Could be used to adjust map margins or other UI elements
+    }
+
+    // MARK: - Panel Coordination
+
+    private var previousFloatingPanelState: FloatingPanelState?
+
+    private func hideOtherPanelsForOTPKit() {
+        // Store current floating panel state before hiding
+        previousFloatingPanelState = floatingPanel.state
+
+        // Hide floating panel
+        floatingPanel.move(to: .hidden, animated: true)
+
+        // Hide semi-modal panel
+        semiModalPanel?.removePanelFromParent(animated: true)
+        semiModalPanel = nil
+    }
+
+    private func restoreOtherPanelsAfterOTPKit() {
+        // Restore floating panel to its previous state, or tip if no previous state
+        let targetState = previousFloatingPanelState ?? .tip
+        floatingPanel.move(to: targetState, animated: true)
+        previousFloatingPanelState = nil
+    }
+
+    private func dismissOTPKitIfPresented() {
+        if let otpBottomSheet = otpBottomSheet {
+            otpBottomSheet.dismiss()
+            self.otpBottomSheet = nil
         }
     }
 }

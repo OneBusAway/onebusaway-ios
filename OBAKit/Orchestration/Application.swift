@@ -622,6 +622,18 @@ public class Application: CoreApplication, PushServiceDelegate {
             default: return .running
             }
         }
+
+        /// Feature status of OTP trip planning.
+        public var tripPlanning: FeatureStatus {
+            guard
+                let region = application?.regionsService.currentRegion,
+                region.supportsOTP
+            else {
+                return .off
+            }
+
+            return .running
+        }
     }
 
     /// Documents availability of features in whitelabel clients, so that features like alarms, weather, and trip status can be hidden or shown.

@@ -77,6 +77,7 @@ public class MapRegionManager: NSObject,
         mapView.mapType = .mutedStandard
         mapView.showsUserLocation = true
         mapView.isRotateEnabled = false
+        mapView.selectableMapFeatures = [.physicalFeatures, .pointsOfInterest]
 
         return mapView
     }()
@@ -564,6 +565,12 @@ public class MapRegionManager: NSObject,
         reloadStopAnnotations()
     }
 
+    public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
+        if let feature = annotation as? MKMapFeatureAnnotation {
+            setUserAnnotation(coordinate: feature.coordinate, title: feature.title, subtitle: feature.subtitle)
+        }
+    }
+
     public func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
         mapViewDelegate?.mapView(mapView, didSelect: view)
     }
@@ -646,6 +653,104 @@ public class MapRegionManager: NSObject,
     @MainActor
     private func renderRegionsOnMap() async {
         mapView.updateAnnotations(with: application.regionsService.regions)
+    }
+
+    // MARK: - User-dropped pin
+
+    private var userAnnotation: MKPointAnnotation?
+    private var userGeocoder: CLGeocoder?
+
+    public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
+        if let userAnnotation {
+            print("Removing old annotation")
+            mapView.removeAnnotation(userAnnotation)
+            self.userAnnotation = nil
+        }
+
+        let touchPoint = gesture.location(in: mapView)
+        let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+        setUserAnnotation(coordinate: coordinate, title: nil, subtitle: nil)
+    }
+
+    /// Entrypoint for displaying a user-driven search result on the map
+    /// - Parameters:
+    ///   - coordinate: The coordinate of the search result
+    ///   - title: Optional title; it will be overwritten
+    ///   - subtitle: Optional subtitle; it will be overwritten
+    private func setUserAnnotation(coordinate: CLLocationCoordinate2D, title: String?, subtitle: String?) {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = title ?? "Dropped Pin"
+        annotation.subtitle = subtitle ?? "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
+        self.userAnnotation = annotation
+        mapView.addAnnotation(annotation)
+
+        reverseGeocodeLocation(coordinate: coordinate, annotation: annotation)
+    }
+
+    private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: MKPointAnnotation) {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+
+        let geocoder = CLGeocoder()
+        userGeocoder?.cancelGeocode()
+        userGeocoder = geocoder
+
+        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+            guard
+                let self = self,
+                annotation === userAnnotation
+            else { return }
+
+            if let error = error {
+                print("Geocoding error: \(error.localizedDescription)")
+                annotation.title = "Unknown Location"
+                annotation.subtitle = "Could not retrieve location details"
+                return
+            }
+
+            guard let placemark = placemarks?.first else {
+                annotation.title = "Unknown Location"
+                return
+            }
+
+            // Update annotation with location details
+            self.updateAnnotation(annotation, with: placemark)
+
+            let request = SearchRequest(query: "fake", type: .address)
+            let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
+            let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
+            self.searchResponse = response
+        }
+    }
+
+    private func updateAnnotation(_ annotation: MKPointAnnotation, with placemark: CLPlacemark) {
+        // Build the title from available components
+        var titleComponents: [String] = []
+
+        if let name = placemark.name {
+            titleComponents.append(name)
+        } else if let thoroughfare = placemark.thoroughfare {
+            titleComponents.append(thoroughfare)
+        } else if let locality = placemark.locality {
+            titleComponents.append(locality)
+        }
+
+        // Build the subtitle
+        var subtitleComponents: [String] = []
+
+        if let locality = placemark.locality {
+            subtitleComponents.append(locality)
+        }
+        if let administrativeArea = placemark.administrativeArea {
+            subtitleComponents.append(administrativeArea)
+        }
+        if let country = placemark.country {
+            subtitleComponents.append(country)
+        }
+
+        // Set the annotation text
+        annotation.title = titleComponents.isEmpty ? "Unknown Location" : titleComponents.joined(separator: ", ")
+        annotation.subtitle = subtitleComponents.joined(separator: ", ")
     }
 }
 

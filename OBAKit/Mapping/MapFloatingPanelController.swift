@@ -200,7 +200,15 @@ class MapFloatingPanelController: VisualEffectViewController,
     // MARK: - Search UI and Data
 
     private func updateSearchBarPlaceholderText() {
-        if let region = application.regionsService.currentRegion {
+        guard let region = application.regionsService.currentRegion else {
+            searchBar.placeholder = nil
+            return
+        }
+
+        if application.features.tripPlanning == .running {
+            searchBar.placeholder = OBALoc("map_floating_panel.where_are_you_going", value: "Where are you going?", comment: "Search bar placeholder on the map floating panel when the trip planner is enabled.")
+        }
+        else {
             searchBar.placeholder = Formatters.searchPlaceholderText(region: region)
         }
     }
@@ -220,6 +228,10 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
         mapPanelDelegate?.mapPanelController(self, didSelectStop: stop.id)
+    }
+
+    func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor) {
+        searchListViewController.updateSearch()
     }
 
     var isVehicleSearchAvailable: Bool {
@@ -252,7 +264,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         inSearchMode = false
     }
 
-    lazy var searchInteractor = SearchInteractor(userDataStore: application.userDataStore, delegate: self)
+    lazy var searchInteractor = SearchInteractor(application: application, delegate: self)
 
     fileprivate var currentPreviewingViewController: UIViewController?
     func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
