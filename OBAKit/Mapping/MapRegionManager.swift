@@ -647,6 +647,95 @@ public class MapRegionManager: NSObject,
     private func renderRegionsOnMap() async {
         mapView.updateAnnotations(with: application.regionsService.regions)
     }
+
+    // MARK: - User-dropped pin
+
+    private var userAnnotation: MKPointAnnotation?
+    private var userGeocoder: CLGeocoder?
+
+    public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
+        if let userAnnotation {
+            print("Removing old annotation")
+            mapView.removeAnnotation(userAnnotation)
+            self.userAnnotation = nil
+        }
+
+        let touchPoint = gesture.location(in: mapView)
+        let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+        let annotation = createUserAnnotation(coordinate: coordinate)
+        self.userAnnotation = annotation
+        mapView.addAnnotation(annotation)
+
+        reverseGeocodeLocation(coordinate: coordinate, annotation: annotation)
+    }
+
+    private func createUserAnnotation(coordinate: CLLocationCoordinate2D) -> MKPointAnnotation {
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = coordinate
+        annotation.title = "Dropped Pin"
+        annotation.subtitle = "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
+        return annotation
+    }
+
+    private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: MKPointAnnotation) {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+
+        let geocoder = CLGeocoder()
+        userGeocoder?.cancelGeocode()
+        userGeocoder = geocoder
+
+        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+            guard
+                let self = self,
+                annotation === userAnnotation
+            else { return }
+
+            if let error = error {
+                print("Geocoding error: \(error.localizedDescription)")
+                annotation.title = "Unknown Location"
+                annotation.subtitle = "Could not retrieve location details"
+                return
+            }
+
+            guard let placemark = placemarks?.first else {
+                annotation.title = "Unknown Location"
+                return
+            }
+
+            // Update annotation with location details
+            self.updateAnnotation(annotation, with: placemark)
+        }
+    }
+
+    private func updateAnnotation(_ annotation: MKPointAnnotation, with placemark: CLPlacemark) {
+        // Build the title from available components
+        var titleComponents: [String] = []
+
+        if let name = placemark.name {
+            titleComponents.append(name)
+        } else if let thoroughfare = placemark.thoroughfare {
+            titleComponents.append(thoroughfare)
+        } else if let locality = placemark.locality {
+            titleComponents.append(locality)
+        }
+
+        // Build the subtitle
+        var subtitleComponents: [String] = []
+
+        if let locality = placemark.locality {
+            subtitleComponents.append(locality)
+        }
+        if let administrativeArea = placemark.administrativeArea {
+            subtitleComponents.append(administrativeArea)
+        }
+        if let country = placemark.country {
+            subtitleComponents.append(country)
+        }
+
+        // Set the annotation text
+        annotation.title = titleComponents.isEmpty ? "Unknown Location" : titleComponents.joined(separator: ", ")
+        annotation.subtitle = subtitleComponents.joined(separator: ", ")
+    }
 }
 
 // MARK: - Location Service Delegate

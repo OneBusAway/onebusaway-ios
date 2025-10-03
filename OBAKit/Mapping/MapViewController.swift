@@ -117,6 +117,21 @@ class MapViewController: UIViewController,
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
+
+        // Add trip planner button as floating button
+        view.addSubview(tripPlannerButton)
+        tripPlannerButton.translatesAutoresizingMaskIntoConstraints = false
+        // Long press gesture to add a pin to the map
+
+        NSLayoutConstraint.activate([
+            tripPlannerButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
+            tripPlannerButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -ThemeMetrics.controllerMargin - 60), // 60pts above bottom to avoid tab bar
+            tripPlannerButton.widthAnchor.constraint(equalToConstant: 50),
+            tripPlannerButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        longPressGesture.minimumPressDuration = 0.5
+        mapView.addGestureRecognizer(longPressGesture)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -269,6 +284,73 @@ class MapViewController: UIViewController,
                 Logger.error(error.localizedDescription)
             }
         }
+    }
+
+    // MARK: - Trip Planner
+
+    private func updateTripPlannerButtonVisibility() {
+        guard let currentRegion = application.currentRegion else {
+            tripPlannerButton.isHidden = true
+            return
+        }
+
+        let supportsOTP = currentRegion.supportsOTP
+        let isEnabled = application.userDataStore.isTripPlanningEnabled(for: currentRegion)
+
+        tripPlannerButton.isHidden = !(supportsOTP && isEnabled)
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        // Only handle the began state to avoid multiple pins
+        guard gesture.state == .began else { return }
+        mapRegionManager.userPressedMap(gesture)
+    }
+
+    @objc private func openTripPlanner() {
+        guard let currentRegion = application.regionsService.currentRegion,
+              let otpURL = currentRegion.openTripPlannerURL else {
+            return
+        }
+
+        let config = OTPConfiguration(
+            otpServerURL: otpURL,
+            themeConfiguration: .init(
+                primaryColor: Color(uiColor: ThemeColors().brand)
+            ),
+            region: .automatic
+        )
+
+        let apiService = RestAPIService(baseURL: otpURL)
+
+        // Get current location for origin
+        var origin: Location?
+        if let currentLocation = application.locationService.currentLocation {
+            origin = Location(
+                title: "Current Location",
+                subTitle: "Your current location",
+                latitude: currentLocation.coordinate.latitude,
+                longitude: currentLocation.coordinate.longitude
+            )
+        }
+
+        let otpView = OTPView(otpConfig: config, apiService: apiService, origin: origin)
+
+        let hostingController = UIHostingController(rootView: otpView)
+        hostingController.modalPresentationStyle = .overFullScreen
+
+        // Add navigation bar with dismiss button
+        let navController = UINavigationController(rootViewController: hostingController)
+        hostingController.navigationItem.leftBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .close,
+            target: self,
+            action: #selector(dismissOTPView)
+        )
+        hostingController.navigationItem.title = "Trip Planner"
+        navController.modalPresentationStyle = .overFullScreen
+
+        present(navController, animated: true)
+    }
+
+    @objc private func dismissOTPView() {
+        dismiss(animated: true)
     }
 
     // MARK: - Map Type
