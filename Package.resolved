@@ -33,8 +33,8 @@
         "repositoryURL": "https://github.com/SCENEE/FloatingPanel.git",
         "state": {
           "branch": null,
-          "revision": "ca7596e1cae161415f54059a8c44b82c95724160",
-          "version": "1.7.6"
+          "revision": "a2646dd2704656fa5a679af68953249a70c77f40",
+          "version": "3.0.1"
         }
       },
       {
@@ -71,6 +71,15 @@
           "branch": null,
           "revision": "1f62db409f2c9b0223a3f68567b4a01333aae778",
           "version": "1.17.0"
+        }
+      },
+      {
+        "package": "Flow",
+        "repositoryURL": "https://github.com/tevelee/SwiftUI-Flow.git",
+        "state": {
+          "branch": null,
+          "revision": "d227f999b2894ab737ef5786d9b14d02d3e5362e",
+          "version": "3.1.1"
         }
       }
     ]
