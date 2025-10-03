@@ -97,6 +97,9 @@ packages:
     MarqueeLabel:
         url: https://github.com/cbpowell/MarqueeLabel.git
         exactVersion: 4.5.0
+    OTPKit:
+        url: https://github.com/OneBusAway/otpkit.git
+        exactVersion: 0.1.0
     SwiftProtobuf:
         url: https://github.com/apple/swift-protobuf.git
         minorVersion: 1.31.0

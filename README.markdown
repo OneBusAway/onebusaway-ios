@@ -104,6 +104,14 @@ In Xcode: File Menu -> Packages -> Reset Package Caches
 
 Run the script `scripts/update_package_resolved`
 
+### Figure out why SPM dependencies aren't loading correctly
+
+Run this command from the terminal:
+
+```
+xcodebuild -resolvePackageDependencies
+```
+
 # Third Party Libraries
 
 These are third party libraries directly included inside of this project.
