@@ -213,8 +213,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OneBusAway/otpkit.git",
       "state" : {
-        "revision" : "28257247e2cc83bc57fe0e847ec4d4f198db9293",
-        "version" : "0.1.0"
+        "revision" : "38e542b5c797be6b564db62bb1d327f21918ffbb",
+        "version" : "0.2.0"
       }
     },
     {
