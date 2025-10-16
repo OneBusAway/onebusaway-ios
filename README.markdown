@@ -42,13 +42,13 @@ Breaking it down:
 
 _Note: There's a lot more to be written on this topic. Don't hesitate to ask questions if something is wrong or confusing._
 
-We are using Transifex to localize OneBusAway. You can help out by visiting [the OBA page on Transifex](https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/).
+We are using Transifex to localize OneBusAway. You can help out by visiting [the OBA page on Transifex](https://explore.transifex.com/open-transit-software-foundation/onebusaway-ios/).
 
-Install the Transifex command line client (`tx`) by following the instructions here: https://docs.transifex.com/client/installing-the-client
+Install the Transifex command line client (`tx`) by following the instructions here: https://developers.transifex.com/docs/cli#transifex-client
 
-Use `tx` by following the instructions here: https://docs.transifex.com/client/introduction
+Use `tx` by following the instructions here: https://developers.transifex.com/docs/using-the-client
 
-Get an API token to use with `tx` by following the instructions here: https://docs.transifex.com/account/authentication
+Get an API token to use with `tx` by following the instructions here: https://developers.transifex.com/reference/api-authentication
 
 Fetch updated strings from Transifex by running the command `scripts/tx_pull`.
 
