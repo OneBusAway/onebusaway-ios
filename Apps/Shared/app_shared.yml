@@ -15,7 +15,7 @@ options:
   generateEmptyDirectories: true
   groupSortPosition: top
   deploymentTarget:
-    iOS: "17.0"
+    iOS: "18.0"
 
 ############
 # App
