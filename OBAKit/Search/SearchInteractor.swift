@@ -13,6 +13,7 @@ import MapKit
 
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
+    func showMapItem(_ mapItem: MKMapItem)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
     func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
@@ -162,8 +163,10 @@ class SearchInteractor: NSObject {
         var items: [SearchPlacemarkViewModel] = []
 
         for p in cachedPlacemarks {
-            let item = SearchPlacemarkViewModel(mapItem: p) { viewModel in
-                print("Selected! \(viewModel)")
+            let item = SearchPlacemarkViewModel(mapItem: p) { [weak self] viewModel in
+                guard let self = self else { return }
+                // abxoxo - do something about hiding the search results view?
+                self.delegate?.showMapItem(viewModel.mapItem)
             }
             items.append(item)
         }

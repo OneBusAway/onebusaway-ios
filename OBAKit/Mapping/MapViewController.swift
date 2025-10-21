@@ -524,12 +524,30 @@ class MapViewController: UIViewController,
         }
     }
 
+    // MARK: - Map Item Controller
+
+    /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
+    /// - Parameter mapItem: The map item to display
+    private func displayMapItemController(_ mapItem: MKMapItem) {
+        let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self) { [weak self] in
+            self?.showTripPlanner(destination: mapItem)
+        }
+        let mapItemController = MapItemViewController(viewModel)
+        showSemiModalPanel(childController: mapItemController)
+    }
+
     // MARK: - Map Panel Controller
 
     private lazy var mapPanelController = MapFloatingPanelController(application: application, mapRegionManager: application.mapRegionManager, delegate: self)
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID) {
         application.viewRouter.navigateTo(stopID: stopID, from: self)
+    }
+
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
+        floatingPanel.move(to: .half, animated: false)
+        mapRegionManager.mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+        displayMapItemController(mapItem)
     }
 
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController) {
@@ -618,11 +636,7 @@ class MapViewController: UIViewController,
 
             switch result {
             case let result as MKMapItem:
-                let viewModel = MapItemViewModel(mapItem: result, application: application, delegate: self) { [weak self] in
-                    self?.showTripPlanner(destination: result)
-                }
-                let mapItemController = MapItemViewController(viewModel)
-                showSemiModalPanel(childController: mapItemController)
+                displayMapItemController(result)
             case let result as StopsForRoute:
                 let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
                 showSemiModalPanel(childController: routeStopController)

@@ -10,9 +10,11 @@
 import UIKit
 import FloatingPanel
 import OBAKitCore
+import MapKit
 
 protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
+    func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem)
     func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController)
     func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool)
@@ -224,6 +226,10 @@ class MapFloatingPanelController: VisualEffectViewController,
         Task {
             await application.searchManager.search(request: request)
         }
+    }
+
+    func showMapItem(_ mapItem: MKMapItem) {
+        mapPanelDelegate?.mapPanelController(self, didSelectMapItem: mapItem)
     }
 
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop) {
