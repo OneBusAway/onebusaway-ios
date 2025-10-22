@@ -91,7 +91,7 @@ public struct OBAListRowConfiguration: OBAContentConfiguration, Equatable {
         case .default:  config = .cell()
         case .subtitle: config = .subtitleCell()
         case .value:    config = .valueCell()
-        case .header:   config = .plainHeader()
+        case .header:   config = .header()
         }
 
         config.image = self.image
