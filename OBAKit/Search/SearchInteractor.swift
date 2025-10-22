@@ -165,7 +165,6 @@ class SearchInteractor: NSObject {
         for p in cachedPlacemarks {
             let item = SearchPlacemarkViewModel(mapItem: p) { [weak self] viewModel in
                 guard let self = self else { return }
-                // abxoxo - do something about hiding the search results view?
                 self.delegate?.showMapItem(viewModel.mapItem)
             }
             items.append(item)
