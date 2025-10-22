@@ -1,10 +1,10 @@
 packages:
   AviaryInsights:
     url: https://github.com/brightdigit/AviaryInsights.git
-    majorVersion: 1.0.0
+    majorVersion: 1.0.1
   Firebase:
     url: https://github.com/firebase/firebase-ios-sdk.git
-    majorVersion: 12.2.0
+    majorVersion: 12.4.0
 
 targets:
   App:
