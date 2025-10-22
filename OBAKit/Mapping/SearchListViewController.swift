@@ -37,7 +37,16 @@ class SearchListViewController: UIViewController, Scrollable, OBAListViewDataSou
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
+        NotificationCenter.default.addObserver(self, selector: #selector(willShowKeyboard(note:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(willHideKeyboard(note:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+
         listView.applyData()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
 
     func updateSearch() {
@@ -66,5 +75,30 @@ class SearchListViewController: UIViewController, Scrollable, OBAListViewDataSou
         let body = OBALoc("search_controller.empty_set.body", value: "Type in an address, route name, stop number, or vehicle here to search.", comment: "Body for the empty set indicator on the Search controller.")
 
         return .standard(.init(alignment: .top, title: title, body: body, image: image))
+    }
+
+    // MARK: - Keyboard
+
+    @objc private func willShowKeyboard(note: Notification) {
+        guard
+            let userInfo = note.userInfo,
+            let frame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue
+        else {
+            return
+        }
+
+        var insets = listView.contentInset
+        insets.bottom = frame.cgRectValue.height - view.safeAreaInsets.bottom
+
+        listView.contentInset = insets
+        listView.scrollIndicatorInsets = insets
+    }
+
+    @objc private func willHideKeyboard(note: Notification) {
+        var insets = listView.contentInset
+        insets.bottom = .zero
+
+        listView.contentInset = insets
+        listView.scrollIndicatorInsets = insets
     }
 }
