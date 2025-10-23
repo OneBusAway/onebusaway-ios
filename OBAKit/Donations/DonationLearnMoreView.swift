@@ -104,8 +104,3 @@ struct DonationLearnMoreView: View {
         .listRowSeparator(.hidden)
     }
 }
-
-//  #Preview {
-//    abxoxo - needs environment object added.
-//    DonationLearnMoreView()
-//  }

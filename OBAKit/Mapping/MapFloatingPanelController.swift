@@ -229,6 +229,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     func showMapItem(_ mapItem: MKMapItem) {
+        searchBar.resignFirstResponder()
         mapPanelDelegate?.mapPanelController(self, didSelectMapItem: mapItem)
     }
 
