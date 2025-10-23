@@ -163,7 +163,11 @@ class SearchInteractor: NSObject {
         var items: [SearchPlacemarkViewModel] = []
 
         for p in cachedPlacemarks {
-            let item = SearchPlacemarkViewModel(mapItem: p) { [weak self] viewModel in
+            let item = SearchPlacemarkViewModel(
+                mapItem: p,
+                currentLocation: application.locationService.currentLocation,
+                distanceFormatter: application.formatters.distanceFormatter
+            ) { [weak self] viewModel in
                 guard let self = self else { return }
                 self.delegate?.showMapItem(viewModel.mapItem)
             }

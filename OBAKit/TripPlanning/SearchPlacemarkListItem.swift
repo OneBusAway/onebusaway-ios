@@ -85,13 +85,25 @@ final class SearchPlacemarkTableCell: OBAListViewCell {
 
         innerView.titleLabel.text = mapItem.name
 
+        var addressParts = [String?]()
+
+        let currentLocation = config.viewModel.currentLocation
+        let destination = config.viewModel.mapItem.placemark.location
+
+        if let currentLocation, let destination {
+            let distance = currentLocation.distance(from: destination)
+            addressParts.append(config.viewModel.distanceFormatter.string(fromDistance: distance))
+        }
+
         if #available(iOS 26.0, *) {
-            innerView.addressLabel.text = mapItem.address?.shortAddress
+            addressParts.append(mapItem.address?.shortAddress)
         } else {
             let pm = mapItem.placemark
             let parts = [pm.subThoroughfare, pm.thoroughfare, pm.locality, pm.subAdministrativeArea, pm.administrativeArea, pm.postalCode]
-            innerView.addressLabel.text = parts.compactMap { $0 }.joined(separator: " ")
+            addressParts.append(parts.compactMap { $0 }.joined(separator: " "))
         }
+
+        innerView.addressLabel.text = addressParts.compactMap { $0 }.joined(separator: " • ")
 
         if let poi = mapItem.pointOfInterestCategory, let symbol = UIImage(systemName: poi.symbolName) {
             innerView.poiCategoryImageView.image = badgeRenderer.drawImageOnRoundedRect(symbol)
@@ -113,9 +125,10 @@ struct SearchPlacemarkContentConfiguration: OBAContentConfiguration {
 }
 
 struct SearchPlacemarkViewModel: OBAListViewItem {
-    // MARK: - View model properties
     let id = UUID()
     let mapItem: MKMapItem
+    let currentLocation: CLLocation?
+    let distanceFormatter: MKDistanceFormatter
 
     static var customCellType: OBAListViewCell.Type? {
         return SearchPlacemarkTableCell.self
@@ -128,17 +141,30 @@ struct SearchPlacemarkViewModel: OBAListViewItem {
     var onSelectAction: OBAListViewAction<SearchPlacemarkViewModel>?
 
     init(mapItem: MKMapItem,
-         onSelect: OBAListViewAction<SearchPlacemarkViewModel>?) {
+         currentLocation: CLLocation?,
+         distanceFormatter: MKDistanceFormatter,
+         onSelect: OBAListViewAction<SearchPlacemarkViewModel>?
+    ) {
         self.mapItem = mapItem
+        self.currentLocation = currentLocation
+        self.distanceFormatter = distanceFormatter
         self.onSelectAction = onSelect
     }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(mapItem)
+        hasher.combine(distanceFormatter)
+        hasher.combine(currentLocation)
     }
 
-    static func == (lhs: SearchPlacemarkViewModel, rhs: SearchPlacemarkViewModel) -> Bool {
-        return lhs.id == rhs.id && lhs.mapItem == rhs.mapItem
+    static func == (
+        lhs: SearchPlacemarkViewModel,
+        rhs: SearchPlacemarkViewModel
+    ) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.mapItem == rhs.mapItem &&
+               lhs.distanceFormatter == rhs.distanceFormatter &&
+               lhs.currentLocation == rhs.currentLocation
     }
 }
