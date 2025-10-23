@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import SwiftUI
 import OBAKitCore
 import SafariServices
 
@@ -82,14 +83,24 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
 
     public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
-        let stopController = StopViewController(application: application, stop: stop)
-        stopController.bookmarkContext = bookmark
+
+        let stopController = UIHostingController(
+            rootView: StopArrivalsView(application, stopID: stop.id)
+//                .environment(\.coreApplication, application)
+        )
+//        let stopController = StopViewController(application: application, stop: stop)
+//        stopController.bookmarkContext = bookmark
         navigate(to: stopController, from: fromController)
     }
 
     public func navigateTo(stopID: StopID, from fromController: UIViewController) {
         guard shouldNavigate(from: fromController, to: .stopID(stopID)) else { return }
-        let stopController = StopViewController(application: application, stopID: stopID)
+
+        let stopController = UIHostingController(
+            rootView: StopArrivalsView(application, stopID: stopID)
+//                .environment(\.coreApplication, application)
+        )
+//        let stopController = StopViewController(application: application, stopID: stopID)
         navigate(to: stopController, from: fromController)
     }
 
