@@ -289,7 +289,7 @@ class MapViewController: UIViewController,
 
     // MARK: - Trip Planner
 
-    private var otpBottomSheet: OTPBottomSheet?
+    private var tripPlanner: TripPlanner?
 
     func showTripPlanner(destination: MKMapItem? = nil) {
         guard let currentRegion = application.regionsService.currentRegion,
@@ -330,15 +330,15 @@ class MapViewController: UIViewController,
 
         let mapViewProvider = MKMapViewAdapter(mapView: mapRegionManager.mapView)
 
-        // Create and present the new OTPBottomSheet
-        otpBottomSheet = OTPBottomSheet(
+        // Create and present the TripPlanner
+        tripPlanner = TripPlanner(
             otpConfig: config,
             apiService: apiService,
             mapProvider: mapViewProvider
         )
 
-        otpBottomSheet?.delegate = self
-        otpBottomSheet?.present(origin: origin, destination: destinationLocation, on: self)
+        tripPlanner?.delegate = self
+        tripPlanner?.present(origin: origin, destination: destinationLocation, on: self)
 
     }
 
@@ -396,7 +396,7 @@ class MapViewController: UIViewController,
     /// - Parameter stop: The stop to display.
     func show(stop: Stop) {
         // Dismiss OTPKit bottom sheet if present when navigating to stop details
-        dismissOTPKitIfPresented()
+        dismissTripPlanner()
         application.viewRouter.navigateTo(stop: stop, from: self)
     }
 
@@ -427,7 +427,7 @@ class MapViewController: UIViewController,
 
     private func showSemiModalPanel(childController: UIViewController) {
         // Dismiss OTPKit bottom sheet if present
-        dismissOTPKitIfPresented()
+        dismissTripPlanner()
 
         semiModalPanel?.removePanelFromParent(animated: false)
 
@@ -483,7 +483,7 @@ class MapViewController: UIViewController,
 
         // Dismiss OTPKit when floating panel becomes visible (not collapsed)
         if !floatingPanelPositionIsCollapsed {
-            dismissOTPKitIfPresented()
+            dismissTripPlanner()
         }
 
         if let controller = vc.contentViewController as? MapFloatingPanelController {
@@ -795,36 +795,7 @@ class MapViewController: UIViewController,
 
     // MARK: - OTPBottomSheetDelegate
 
-    public func bottomSheetWillPresent(_ bottomSheet: OTPBottomSheet) {
-        // Hide other panels when OTPKit bottom sheet is about to be presented
-        hideOtherPanelsForOTPKit()
-    }
-
-    public func bottomSheetDidPresent(_ bottomSheet: OTPBottomSheet) {
-        // Optional: Handle did present if needed
-    }
-
-    public func bottomSheetWillDismiss(_ bottomSheet: OTPBottomSheet) {
-        // Optional: Handle will dismiss if needed
-    }
-
-    public func bottomSheetDidDismiss(_ bottomSheet: OTPBottomSheet) {
-        // Clean up the reference when bottom sheet is dismissed
-        otpBottomSheet = nil
-        // Restore other panels when OTPKit bottom sheet is dismissed
-        restoreOtherPanelsAfterOTPKit()
-    }
-
-    public func bottomSheetDidChangePosition(_ position: BottomSheetPosition) {
-        // Optional: Handle position changes if needed
-        // Could be used to adjust map margins or other UI elements
-    }
-
-    // MARK: - Panel Coordination
-
-    private var previousFloatingPanelState: FloatingPanelState?
-
-    private func hideOtherPanelsForOTPKit() {
+    public func bottomSheetWillPresent(_ bottomSheet: TripPlanner) {
         // Store current floating panel state before hiding
         previousFloatingPanelState = floatingPanel.state
 
@@ -836,17 +807,24 @@ class MapViewController: UIViewController,
         semiModalPanel = nil
     }
 
-    private func restoreOtherPanelsAfterOTPKit() {
-        // Restore floating panel to its previous state, or tip if no previous state
+    public func bottomSheetDidDismiss(_ bottomSheet: TripPlanner) {
+        tripPlanner = nil
+
         let targetState = previousFloatingPanelState ?? .tip
-        floatingPanel.move(to: targetState, animated: true)
+        floatingPanel.move(to: targetState, animated: false)
         previousFloatingPanelState = nil
+
+        // TODO: figure out why MapFloatingPanelController isn't reappearing.
+        // I *think* it's actually being dismissed when the MapItem controller
+        // is displayed, but I need to do some more investigation.
     }
 
-    private func dismissOTPKitIfPresented() {
-        if let otpBottomSheet = otpBottomSheet {
-            otpBottomSheet.dismiss()
-            self.otpBottomSheet = nil
-        }
+    // MARK: - Panel Coordination
+
+    private var previousFloatingPanelState: FloatingPanelState?
+
+    private func dismissTripPlanner() {
+        tripPlanner?.dismiss()
+        self.tripPlanner = nil
     }
 }
