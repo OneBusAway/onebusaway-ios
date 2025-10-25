@@ -330,11 +330,14 @@ class MapViewController: UIViewController,
 
         let mapViewProvider = MKMapViewAdapter(mapView: mapRegionManager.mapView)
 
+        subscribeToTripPlannerNotifications()
+
         // Create and present the TripPlanner
         let tripPlanner = TripPlanner(
             otpConfig: config,
             apiService: apiService,
-            mapProvider: mapViewProvider
+            mapProvider: mapViewProvider,
+            notificationCenter: application.notificationCenter
         )
 
         let tripPlannerView = tripPlanner.createTripPlannerView(origin: origin, destination: destinationLocation) { [weak self] in
@@ -356,6 +359,32 @@ class MapViewController: UIViewController,
 
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
+
+        unsubscribeFromTripPlannerNotifications()
+    }
+
+    private func subscribeToTripPlannerNotifications() {
+        application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewStarted), name: Notifications.itineraryPreviewStarted, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewEnded), name: Notifications.itineraryPreviewEnded, object: nil)
+    }
+
+    private func unsubscribeFromTripPlannerNotifications() {
+        application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
+        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewStarted, object: nil)
+        application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewEnded, object: nil)
+    }
+
+    @objc private func itinerariesUpdated(_ note: NSNotification) {
+        semiModalPanel?.move(to: .full, animated: true)
+    }
+
+    @objc private func itineraryPreviewStarted(_ note: NSNotification) {
+        //
+    }
+
+    @objc private func itineraryPreviewEnded(_ note: NSNotification) {
+        //
     }
 
     // MARK: - Map Type
