@@ -290,13 +290,43 @@ class MapViewController: UIViewController,
 
     private var tripPlanner: TripPlanner?
     private var tripPlannerHostingController: UIViewController?
+    private lazy var tripPlannerMapView: MKMapView = {
+        let mapView = MKMapView.autolayoutNew()
+        mapView.alpha = 0
+        view.insertSubview(mapView, belowSubview: mapRegionManager.mapView)
+        mapView.pinToSuperview(.edges)
+        return mapView
+    }()
 
-    func showTripPlanner(destination: MKMapItem? = nil) {
-        guard let currentRegion = application.regionsService.currentRegion,
-              let otpURL = currentRegion.openTripPlannerURL else {
-            return
+    private func showTripPlannerMapView() {
+        tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
+        tripPlannerMapView.region = mapRegionManager.mapView.region
+
+        tripPlannerMapView.isHidden = false
+
+        UIView.animate(withDuration: 0.3) {
+            self.mapRegionManager.mapView.alpha = 0
+            self.tripPlannerMapView.alpha = 1
+        } completion: { _ in
+            self.mapRegionManager.mapView.isHidden = true
         }
+    }
 
+    private func hideTripPlannerMapView() {
+        mapRegionManager.mapView.mapType = tripPlannerMapView.mapType
+        mapRegionManager.mapView.region = tripPlannerMapView.region
+
+        mapRegionManager.mapView.isHidden = false
+
+        UIView.animate(withDuration: 0.3) {
+            self.mapRegionManager.mapView.alpha = 1
+            self.tripPlannerMapView.alpha = 0
+        } completion: { _ in
+            self.tripPlannerMapView.isHidden = true
+        }
+    }
+
+    private func buildTripPlanner(otpURL: URL) -> TripPlanner {
         let config = OTPConfiguration(
             otpServerURL: otpURL,
             themeConfiguration: .init(
@@ -305,6 +335,23 @@ class MapViewController: UIViewController,
         )
 
         let apiService = RestAPIService(baseURL: otpURL)
+        let mapViewProvider = MKMapViewAdapter(mapView: tripPlannerMapView)
+
+        let tripPlanner = TripPlanner(
+            otpConfig: config,
+            apiService: apiService,
+            mapProvider: mapViewProvider,
+            notificationCenter: application.notificationCenter
+        )
+
+        return tripPlanner
+    }
+
+    func showTripPlanner(destination: MKMapItem? = nil) {
+        guard let currentRegion = application.regionsService.currentRegion,
+              let otpURL = currentRegion.openTripPlannerURL else {
+            return
+        }
 
         // Get current location for origin
         var origin: Location?
@@ -319,7 +366,7 @@ class MapViewController: UIViewController,
 
         // Convert MKMapItem destination to Location if provided
         var destinationLocation: Location?
-        if let destination = destination {
+        if let destination {
             destinationLocation = Location(
                 title: destination.name ?? "Destination",
                 subTitle: destination.placemark.title ?? "",
@@ -328,16 +375,9 @@ class MapViewController: UIViewController,
             )
         }
 
-        let mapViewProvider = MKMapViewAdapter(mapView: mapRegionManager.mapView)
-
         subscribeToTripPlannerNotifications()
 
-        let tripPlanner = TripPlanner(
-            otpConfig: config,
-            apiService: apiService,
-            mapProvider: mapViewProvider,
-            notificationCenter: application.notificationCenter
-        )
+        let tripPlanner = buildTripPlanner(otpURL: otpURL)
 
         let tripPlannerView = tripPlanner.createTripPlannerView(origin: origin, destination: destinationLocation) { [weak self] in
             guard let self else { return }
@@ -358,6 +398,7 @@ class MapViewController: UIViewController,
 
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
+        hideTripPlannerMapView()
 
         unsubscribeFromTripPlannerNotifications()
     }
@@ -389,6 +430,8 @@ class MapViewController: UIViewController,
     }
 
     @objc private func tripStarted(_ note: NSNotification) {
+        showTripPlannerMapView()
+
         tripPlannerHostingController?.animateToDetentIdentifier(.tip)
     }
 
@@ -462,22 +505,20 @@ class MapViewController: UIViewController,
         }
     }
 
-    // MARK: - Floating Panel Controller
+    // MARK: - Semi Modals
 
     private var semiModalPanel: FloatingPanelController?
 
-    private lazy var floatingPanelSurfaceAppearance: SurfaceAppearance = {
+    private func createFloatingPanelSurfaceAppearance() -> SurfaceAppearance {
         let appearance = SurfaceAppearance()
         appearance.cornerRadius = ThemeMetrics.cornerRadius
         appearance.backgroundColor = .clear
         return appearance
-    }()
+    }
 
-    private func showSemiModalPanel(childController: UIViewController) {
-        semiModalPanel?.removePanelFromParent(animated: false)
-
+    private func createSemiModalPanel(childController: UIViewController) -> FloatingPanelController {
         let panel = FloatingPanelController()
-        panel.surfaceView.appearance = floatingPanelSurfaceAppearance
+        panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
 
         // Set a content view controller.
         panel.set(contentViewController: childController)
@@ -488,16 +529,34 @@ class MapViewController: UIViewController,
             panel.track(scrollView: scrollableChildController.scrollView)
         }
 
+        return panel
+    }
+
+    private func removeSemiModalPanel(_ panel: FloatingPanelController, animated: Bool = true) {
+        panel.willMove(toParent: nil)
+
+        panel.hide(animated: animated) {
+            panel.view.removeFromSuperview()
+            panel.removeFromParent()
+        }
+    }
+
+    private func showSemiModalPanel(childController: UIViewController) {
+        semiModalPanel?.removePanelFromParent(animated: false)
+
+        let panel = createSemiModalPanel(childController: childController)
         panel.addPanel(toParent: self)
 
         semiModalPanel = panel
     }
 
+    // MARK: - Floating Panel Controller
+
     /// The floating panel controller, which displays a drawer at the bottom of the map.
     private lazy var floatingPanel: OBAFloatingPanelController = {
         let panel = OBAFloatingPanelController(application, delegate: self)
         panel.isRemovalInteractionEnabled = false
-        panel.surfaceView.appearance = floatingPanelSurfaceAppearance
+        panel.surfaceView.appearance = createFloatingPanelSurfaceAppearance()
 
         // Set a content view controller.
         panel.set(contentViewController: mapPanelController)
@@ -555,6 +614,7 @@ class MapViewController: UIViewController,
     // MARK: - Modal Delegate
 
     public func dismissModalController(_ controller: UIViewController) {
+        // TODO: this is clearly buggy. Fix it.
         if controller == semiModalPanel?.contentViewController {
             mapRegionManager.cancelSearch()
             semiModalPanel?.removePanelFromParent(animated: true)
@@ -566,18 +626,28 @@ class MapViewController: UIViewController,
 
     // MARK: - Map Item Controller
 
+    private var semiModalMapItemController: FloatingPanelController?
+
     /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
     /// - Parameter mapItem: The map item to display
     private func displayMapItemController(_ mapItem: MKMapItem) {
         let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self) { [weak self] in
             guard let self else { return }
+
+            if let semiModalMapItemController = self.semiModalMapItemController {
+                self.removeSemiModalPanel(semiModalMapItemController, animated: true)
+            }
+
             self.showTripPlanner(destination: mapItem)
             self.semiModalPanel?.move(to: .tip, animated: false)
         }
 
-        let mapItemController = MapItemViewController(viewModel)
         self.floatingPanel.move(to: .tip, animated: true)
-        showSemiModalPanel(childController: mapItemController)
+
+        let mapItemController = MapItemViewController(viewModel)
+        let semiModal = createSemiModalPanel(childController: mapItemController)
+        semiModal.addPanel(toParent: self)
+        self.semiModalMapItemController = semiModal
     }
 
     // MARK: - Map Panel Controller
