@@ -366,24 +366,30 @@ class MapViewController: UIViewController,
         application.notificationCenter.addObserver(self, selector: #selector(itinerariesUpdated), name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewStarted), name: Notifications.itineraryPreviewStarted, object: nil)
         application.notificationCenter.addObserver(self, selector: #selector(itineraryPreviewEnded), name: Notifications.itineraryPreviewEnded, object: nil)
+        application.notificationCenter.addObserver(self, selector: #selector(tripStarted), name: Notifications.tripStarted, object: nil)
     }
 
     private func unsubscribeFromTripPlannerNotifications() {
         application.notificationCenter.removeObserver(self, name: Notifications.itinerariesUpdated, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewStarted, object: nil)
         application.notificationCenter.removeObserver(self, name: Notifications.itineraryPreviewEnded, object: nil)
+        application.notificationCenter.removeObserver(self, name: Notifications.tripStarted, object: nil)
     }
 
     @objc private func itinerariesUpdated(_ note: NSNotification) {
-        semiModalPanel?.move(to: .full, animated: true)
+        tripPlannerHostingController?.animateToDetentIdentifier(.large)
     }
 
     @objc private func itineraryPreviewStarted(_ note: NSNotification) {
-        //
+        // nop
     }
 
     @objc private func itineraryPreviewEnded(_ note: NSNotification) {
         //
+    }
+
+    @objc private func tripStarted(_ note: NSNotification) {
+        tripPlannerHostingController?.animateToDetentIdentifier(.tip)
     }
 
     // MARK: - Map Type
@@ -564,9 +570,13 @@ class MapViewController: UIViewController,
     /// - Parameter mapItem: The map item to display
     private func displayMapItemController(_ mapItem: MKMapItem) {
         let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self) { [weak self] in
-            self?.showTripPlanner(destination: mapItem)
+            guard let self else { return }
+            self.showTripPlanner(destination: mapItem)
+            self.semiModalPanel?.move(to: .tip, animated: false)
         }
+
         let mapItemController = MapItemViewController(viewModel)
+        self.floatingPanel.move(to: .tip, animated: true)
         showSemiModalPanel(childController: mapItemController)
     }
 
