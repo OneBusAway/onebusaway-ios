@@ -13,7 +13,7 @@ struct OBAListViewHeader: OBAListViewItem {
     let isCollapsible: Bool
 
     var configuration: OBAListViewItemConfiguration {
-        var config = UIListContentConfiguration.groupedHeader()
+        var config = UIListContentConfiguration.header()
         config.text = title
         config.textProperties.font = .preferredFont(forTextStyle: .headline)
 

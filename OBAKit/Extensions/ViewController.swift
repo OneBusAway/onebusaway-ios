@@ -9,11 +9,13 @@
 
 import UIKit
 
+@MainActor
 protocol AppContext where Self: UIViewController {
     var application: Application { get }
 }
 
 /// Describes a class that can disable and reenable the UIApplication idle timer.
+@MainActor
 public protocol Idleable: NSObjectProtocol {
     /// The timer that turns the UIApplication idle timer back on after a 10 minute time period.
     var idleTimerFailsafe: Timer? { get set }
@@ -29,6 +31,7 @@ public protocol Idleable: NSObjectProtocol {
 }
 
 /// A view controller that can disable and reenable the UIApplication idle timer.
+@MainActor
 public extension Idleable where Self: UIViewController {
     func disableIdleTimer() {
         application.isIdleTimerDisabled = true
@@ -37,13 +40,17 @@ public extension Idleable where Self: UIViewController {
         let idleTimerFailsafeInterval: TimeInterval = 600 // 10 minutes.
         self.idleTimerFailsafe = Timer.scheduledTimer(withTimeInterval: idleTimerFailsafeInterval, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-            self.application.isIdleTimerDisabled = false
+            Task { @MainActor in
+                self.application.isIdleTimerDisabled = false
+            }
         }
     }
 
-    func enableIdleTimer() {
-        application.isIdleTimerDisabled = false
-        idleTimerFailsafe?.invalidate()
-        idleTimerFailsafe = nil
+    nonisolated func enableIdleTimer() {
+        Task { @MainActor in
+            application.isIdleTimerDisabled = false
+            idleTimerFailsafe?.invalidate()
+            idleTimerFailsafe = nil
+        }
     }
 }

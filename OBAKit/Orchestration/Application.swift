@@ -108,7 +108,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                 return
             }
 
-            Task(priority: .userInitiated) {
+            Task(priority: .userInitiated) { @MainActor in
                 ProgressHUD.show()
 
                 do {
