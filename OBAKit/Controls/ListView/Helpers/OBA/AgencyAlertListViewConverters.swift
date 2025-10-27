@@ -12,6 +12,7 @@ import OBAKitCore
 import SafariServices
 
 /// Describes methods capable of converting REST API models into `OBAListView` view models.
+@MainActor
 protocol AgencyAlertListViewConverters {
     var application: Application { get }
     func listSections(agencyAlerts: [AgencyAlert]) -> [OBAListViewSection]

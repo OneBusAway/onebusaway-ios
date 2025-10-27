@@ -48,10 +48,6 @@ public protocol LocationManager {
 extension CLLocationManager: LocationManager {
     // nop. CLLocationManager already implements all of the protocol methods.
 
-    public var authorizationStatus: CLAuthorizationStatus {
-        return CLLocationManager.authorizationStatus()
-    }
-
     public var isLocationServicesEnabled: Bool {
         return CLLocationManager.locationServicesEnabled()
     }

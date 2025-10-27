@@ -2426,10 +2426,7 @@ fileprivate let _protobuf_package = "transit_realtime"
 
 extension TransitRealtime_FeedMessage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".FeedMessage"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "header"),
-    2: .same(proto: "entity"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}header\0\u{1}entity\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -2480,12 +2477,7 @@ extension TransitRealtime_FeedMessage: SwiftProtobuf.Message, SwiftProtobuf._Mes
 
 extension TransitRealtime_FeedHeader: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".FeedHeader"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "gtfs_realtime_version"),
-    2: .same(proto: "incrementality"),
-    3: .same(proto: "timestamp"),
-    4: .standard(proto: "feed_version"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}gtfs_realtime_version\0\u{1}incrementality\0\u{1}timestamp\0\u{3}feed_version\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -2543,24 +2535,12 @@ extension TransitRealtime_FeedHeader: SwiftProtobuf.Message, SwiftProtobuf._Mess
 }
 
 extension TransitRealtime_FeedHeader.Incrementality: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "FULL_DATASET"),
-    1: .same(proto: "DIFFERENTIAL"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0FULL_DATASET\0\u{1}DIFFERENTIAL\0")
 }
 
 extension TransitRealtime_FeedEntity: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".FeedEntity"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "id"),
-    2: .standard(proto: "is_deleted"),
-    3: .standard(proto: "trip_update"),
-    4: .same(proto: "vehicle"),
-    5: .same(proto: "alert"),
-    6: .same(proto: "shape"),
-    7: .same(proto: "stop"),
-    8: .standard(proto: "trip_modifications"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{3}is_deleted\0\u{3}trip_update\0\u{1}vehicle\0\u{1}alert\0\u{1}shape\0\u{1}stop\0\u{3}trip_modifications\0")
 
   fileprivate class _StorageClass {
     var _id: String? = nil
@@ -2697,14 +2677,7 @@ extension TransitRealtime_FeedEntity: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 extension TransitRealtime_TripUpdate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TripUpdate"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "trip"),
-    3: .same(proto: "vehicle"),
-    2: .standard(proto: "stop_time_update"),
-    4: .same(proto: "timestamp"),
-    5: .same(proto: "delay"),
-    6: .standard(proto: "trip_properties"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}trip\0\u{3}stop_time_update\0\u{1}vehicle\0\u{1}timestamp\0\u{1}delay\0\u{3}trip_properties\0")
 
   fileprivate class _StorageClass {
     var _trip: TransitRealtime_TripDescriptor? = nil
@@ -2825,12 +2798,7 @@ extension TransitRealtime_TripUpdate: SwiftProtobuf.Message, SwiftProtobuf._Mess
 
 extension TransitRealtime_TripUpdate.StopTimeEvent: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripUpdate.protoMessageName + ".StopTimeEvent"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "delay"),
-    2: .same(proto: "time"),
-    3: .same(proto: "uncertainty"),
-    4: .standard(proto: "scheduled_time"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}delay\0\u{1}time\0\u{1}uncertainty\0\u{3}scheduled_time\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -2888,15 +2856,7 @@ extension TransitRealtime_TripUpdate.StopTimeEvent: SwiftProtobuf.Message, Swift
 
 extension TransitRealtime_TripUpdate.StopTimeUpdate: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripUpdate.protoMessageName + ".StopTimeUpdate"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "stop_sequence"),
-    4: .standard(proto: "stop_id"),
-    2: .same(proto: "arrival"),
-    3: .same(proto: "departure"),
-    7: .standard(proto: "departure_occupancy_status"),
-    5: .standard(proto: "schedule_relationship"),
-    6: .standard(proto: "stop_time_properties"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}stop_sequence\0\u{1}arrival\0\u{1}departure\0\u{3}stop_id\0\u{3}schedule_relationship\0\u{3}stop_time_properties\0\u{3}departure_occupancy_status\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -2971,22 +2931,12 @@ extension TransitRealtime_TripUpdate.StopTimeUpdate: SwiftProtobuf.Message, Swif
 }
 
 extension TransitRealtime_TripUpdate.StopTimeUpdate.ScheduleRelationship: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "SCHEDULED"),
-    1: .same(proto: "SKIPPED"),
-    2: .same(proto: "NO_DATA"),
-    3: .same(proto: "UNSCHEDULED"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SCHEDULED\0\u{1}SKIPPED\0\u{1}NO_DATA\0\u{1}UNSCHEDULED\0")
 }
 
 extension TransitRealtime_TripUpdate.StopTimeUpdate.StopTimeProperties: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripUpdate.StopTimeUpdate.protoMessageName + ".StopTimeProperties"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "assigned_stop_id"),
-    2: .standard(proto: "stop_headsign"),
-    3: .standard(proto: "pickup_type"),
-    4: .standard(proto: "drop_off_type"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}assigned_stop_id\0\u{3}stop_headsign\0\u{3}pickup_type\0\u{3}drop_off_type\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3043,24 +2993,12 @@ extension TransitRealtime_TripUpdate.StopTimeUpdate.StopTimeProperties: SwiftPro
 }
 
 extension TransitRealtime_TripUpdate.StopTimeUpdate.StopTimeProperties.DropOffPickupType: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "REGULAR"),
-    1: .same(proto: "NONE"),
-    2: .same(proto: "PHONE_AGENCY"),
-    3: .same(proto: "COORDINATE_WITH_DRIVER"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0REGULAR\0\u{1}NONE\0\u{1}PHONE_AGENCY\0\u{1}COORDINATE_WITH_DRIVER\0")
 }
 
 extension TransitRealtime_TripUpdate.TripProperties: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripUpdate.protoMessageName + ".TripProperties"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "trip_id"),
-    2: .standard(proto: "start_date"),
-    3: .standard(proto: "start_time"),
-    4: .standard(proto: "shape_id"),
-    5: .standard(proto: "trip_headsign"),
-    6: .standard(proto: "trip_short_name"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}trip_id\0\u{3}start_date\0\u{3}start_time\0\u{3}shape_id\0\u{3}trip_headsign\0\u{3}trip_short_name\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3128,19 +3066,7 @@ extension TransitRealtime_TripUpdate.TripProperties: SwiftProtobuf.Message, Swif
 
 extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".VehiclePosition"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "trip"),
-    8: .same(proto: "vehicle"),
-    2: .same(proto: "position"),
-    3: .standard(proto: "current_stop_sequence"),
-    7: .standard(proto: "stop_id"),
-    4: .standard(proto: "current_status"),
-    5: .same(proto: "timestamp"),
-    6: .standard(proto: "congestion_level"),
-    9: .standard(proto: "occupancy_status"),
-    10: .standard(proto: "occupancy_percentage"),
-    11: .standard(proto: "multi_carriage_details"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}trip\0\u{1}position\0\u{3}current_stop_sequence\0\u{3}current_status\0\u{1}timestamp\0\u{3}congestion_level\0\u{3}stop_id\0\u{1}vehicle\0\u{3}occupancy_status\0\u{3}occupancy_percentage\0\u{3}multi_carriage_details\0")
 
   fileprivate class _StorageClass {
     var _trip: TransitRealtime_TripDescriptor? = nil
@@ -3294,46 +3220,20 @@ extension TransitRealtime_VehiclePosition: SwiftProtobuf.Message, SwiftProtobuf.
 }
 
 extension TransitRealtime_VehiclePosition.VehicleStopStatus: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "INCOMING_AT"),
-    1: .same(proto: "STOPPED_AT"),
-    2: .same(proto: "IN_TRANSIT_TO"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0INCOMING_AT\0\u{1}STOPPED_AT\0\u{1}IN_TRANSIT_TO\0")
 }
 
 extension TransitRealtime_VehiclePosition.CongestionLevel: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "UNKNOWN_CONGESTION_LEVEL"),
-    1: .same(proto: "RUNNING_SMOOTHLY"),
-    2: .same(proto: "STOP_AND_GO"),
-    3: .same(proto: "CONGESTION"),
-    4: .same(proto: "SEVERE_CONGESTION"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN_CONGESTION_LEVEL\0\u{1}RUNNING_SMOOTHLY\0\u{1}STOP_AND_GO\0\u{1}CONGESTION\0\u{1}SEVERE_CONGESTION\0")
 }
 
 extension TransitRealtime_VehiclePosition.OccupancyStatus: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "EMPTY"),
-    1: .same(proto: "MANY_SEATS_AVAILABLE"),
-    2: .same(proto: "FEW_SEATS_AVAILABLE"),
-    3: .same(proto: "STANDING_ROOM_ONLY"),
-    4: .same(proto: "CRUSHED_STANDING_ROOM_ONLY"),
-    5: .same(proto: "FULL"),
-    6: .same(proto: "NOT_ACCEPTING_PASSENGERS"),
-    7: .same(proto: "NO_DATA_AVAILABLE"),
-    8: .same(proto: "NOT_BOARDABLE"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0EMPTY\0\u{1}MANY_SEATS_AVAILABLE\0\u{1}FEW_SEATS_AVAILABLE\0\u{1}STANDING_ROOM_ONLY\0\u{1}CRUSHED_STANDING_ROOM_ONLY\0\u{1}FULL\0\u{1}NOT_ACCEPTING_PASSENGERS\0\u{1}NO_DATA_AVAILABLE\0\u{1}NOT_BOARDABLE\0")
 }
 
 extension TransitRealtime_VehiclePosition.CarriageDetails: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_VehiclePosition.protoMessageName + ".CarriageDetails"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "id"),
-    2: .same(proto: "label"),
-    3: .standard(proto: "occupancy_status"),
-    4: .standard(proto: "occupancy_percentage"),
-    5: .standard(proto: "carriage_sequence"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}label\0\u{3}occupancy_status\0\u{3}occupancy_percentage\0\u{3}carriage_sequence\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3396,22 +3296,7 @@ extension TransitRealtime_VehiclePosition.CarriageDetails: SwiftProtobuf.Message
 
 extension TransitRealtime_Alert: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Alert"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "active_period"),
-    5: .standard(proto: "informed_entity"),
-    6: .same(proto: "cause"),
-    7: .same(proto: "effect"),
-    8: .same(proto: "url"),
-    10: .standard(proto: "header_text"),
-    11: .standard(proto: "description_text"),
-    12: .standard(proto: "tts_header_text"),
-    13: .standard(proto: "tts_description_text"),
-    14: .standard(proto: "severity_level"),
-    15: .same(proto: "image"),
-    16: .standard(proto: "image_alternative_text"),
-    17: .standard(proto: "cause_detail"),
-    18: .standard(proto: "effect_detail"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}active_period\0\u{4}\u{4}informed_entity\0\u{1}cause\0\u{1}effect\0\u{1}url\0\u{4}\u{2}header_text\0\u{3}description_text\0\u{3}tts_header_text\0\u{3}tts_description_text\0\u{3}severity_level\0\u{1}image\0\u{3}image_alternative_text\0\u{3}cause_detail\0\u{3}effect_detail\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3529,53 +3414,20 @@ extension TransitRealtime_Alert: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 }
 
 extension TransitRealtime_Alert.Cause: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "UNKNOWN_CAUSE"),
-    2: .same(proto: "OTHER_CAUSE"),
-    3: .same(proto: "TECHNICAL_PROBLEM"),
-    4: .same(proto: "STRIKE"),
-    5: .same(proto: "DEMONSTRATION"),
-    6: .same(proto: "ACCIDENT"),
-    7: .same(proto: "HOLIDAY"),
-    8: .same(proto: "WEATHER"),
-    9: .same(proto: "MAINTENANCE"),
-    10: .same(proto: "CONSTRUCTION"),
-    11: .same(proto: "POLICE_ACTIVITY"),
-    12: .same(proto: "MEDICAL_EMERGENCY"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}UNKNOWN_CAUSE\0\u{1}OTHER_CAUSE\0\u{1}TECHNICAL_PROBLEM\0\u{1}STRIKE\0\u{1}DEMONSTRATION\0\u{1}ACCIDENT\0\u{1}HOLIDAY\0\u{1}WEATHER\0\u{1}MAINTENANCE\0\u{1}CONSTRUCTION\0\u{1}POLICE_ACTIVITY\0\u{1}MEDICAL_EMERGENCY\0")
 }
 
 extension TransitRealtime_Alert.Effect: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "NO_SERVICE"),
-    2: .same(proto: "REDUCED_SERVICE"),
-    3: .same(proto: "SIGNIFICANT_DELAYS"),
-    4: .same(proto: "DETOUR"),
-    5: .same(proto: "ADDITIONAL_SERVICE"),
-    6: .same(proto: "MODIFIED_SERVICE"),
-    7: .same(proto: "OTHER_EFFECT"),
-    8: .same(proto: "UNKNOWN_EFFECT"),
-    9: .same(proto: "STOP_MOVED"),
-    10: .same(proto: "NO_EFFECT"),
-    11: .same(proto: "ACCESSIBILITY_ISSUE"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}NO_SERVICE\0\u{1}REDUCED_SERVICE\0\u{1}SIGNIFICANT_DELAYS\0\u{1}DETOUR\0\u{1}ADDITIONAL_SERVICE\0\u{1}MODIFIED_SERVICE\0\u{1}OTHER_EFFECT\0\u{1}UNKNOWN_EFFECT\0\u{1}STOP_MOVED\0\u{1}NO_EFFECT\0\u{1}ACCESSIBILITY_ISSUE\0")
 }
 
 extension TransitRealtime_Alert.SeverityLevel: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "UNKNOWN_SEVERITY"),
-    2: .same(proto: "INFO"),
-    3: .same(proto: "WARNING"),
-    4: .same(proto: "SEVERE"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}UNKNOWN_SEVERITY\0\u{1}INFO\0\u{1}WARNING\0\u{1}SEVERE\0")
 }
 
 extension TransitRealtime_TimeRange: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TimeRange"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "start"),
-    2: .same(proto: "end"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}start\0\u{1}end\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3623,13 +3475,7 @@ extension TransitRealtime_TimeRange: SwiftProtobuf.Message, SwiftProtobuf._Messa
 
 extension TransitRealtime_Position: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Position"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "latitude"),
-    2: .same(proto: "longitude"),
-    3: .same(proto: "bearing"),
-    4: .same(proto: "odometer"),
-    5: .same(proto: "speed"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}latitude\0\u{1}longitude\0\u{1}bearing\0\u{1}odometer\0\u{1}speed\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3694,15 +3540,7 @@ extension TransitRealtime_Position: SwiftProtobuf.Message, SwiftProtobuf._Messag
 
 extension TransitRealtime_TripDescriptor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TripDescriptor"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "trip_id"),
-    5: .standard(proto: "route_id"),
-    6: .standard(proto: "direction_id"),
-    2: .standard(proto: "start_time"),
-    3: .standard(proto: "start_date"),
-    4: .standard(proto: "schedule_relationship"),
-    7: .standard(proto: "modified_trip"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}trip_id\0\u{3}start_time\0\u{3}start_date\0\u{3}schedule_relationship\0\u{3}route_id\0\u{3}direction_id\0\u{3}modified_trip\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3775,26 +3613,12 @@ extension TransitRealtime_TripDescriptor: SwiftProtobuf.Message, SwiftProtobuf._
 }
 
 extension TransitRealtime_TripDescriptor.ScheduleRelationship: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "SCHEDULED"),
-    1: .same(proto: "ADDED"),
-    2: .same(proto: "UNSCHEDULED"),
-    3: .same(proto: "CANCELED"),
-    5: .same(proto: "REPLACEMENT"),
-    6: .same(proto: "DUPLICATED"),
-    7: .same(proto: "DELETED"),
-    8: .same(proto: "NEW"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0SCHEDULED\0\u{1}ADDED\0\u{1}UNSCHEDULED\0\u{1}CANCELED\0\u{2}\u{2}REPLACEMENT\0\u{1}DUPLICATED\0\u{1}DELETED\0\u{1}NEW\0")
 }
 
 extension TransitRealtime_TripDescriptor.ModifiedTripSelector: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripDescriptor.protoMessageName + ".ModifiedTripSelector"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "modifications_id"),
-    2: .standard(proto: "affected_trip_id"),
-    3: .standard(proto: "start_time"),
-    4: .standard(proto: "start_date"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}modifications_id\0\u{3}affected_trip_id\0\u{3}start_time\0\u{3}start_date\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3852,12 +3676,7 @@ extension TransitRealtime_TripDescriptor.ModifiedTripSelector: SwiftProtobuf.Mes
 
 extension TransitRealtime_VehicleDescriptor: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".VehicleDescriptor"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "id"),
-    2: .same(proto: "label"),
-    3: .standard(proto: "license_plate"),
-    4: .standard(proto: "wheelchair_accessible"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}id\0\u{1}label\0\u{3}license_plate\0\u{3}wheelchair_accessible\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -3914,24 +3733,12 @@ extension TransitRealtime_VehicleDescriptor: SwiftProtobuf.Message, SwiftProtobu
 }
 
 extension TransitRealtime_VehicleDescriptor.WheelchairAccessible: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "NO_VALUE"),
-    1: .same(proto: "UNKNOWN"),
-    2: .same(proto: "WHEELCHAIR_ACCESSIBLE"),
-    3: .same(proto: "WHEELCHAIR_INACCESSIBLE"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0NO_VALUE\0\u{1}UNKNOWN\0\u{1}WHEELCHAIR_ACCESSIBLE\0\u{1}WHEELCHAIR_INACCESSIBLE\0")
 }
 
 extension TransitRealtime_EntitySelector: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".EntitySelector"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "agency_id"),
-    2: .standard(proto: "route_id"),
-    3: .standard(proto: "route_type"),
-    4: .same(proto: "trip"),
-    5: .standard(proto: "stop_id"),
-    6: .standard(proto: "direction_id"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}agency_id\0\u{3}route_id\0\u{3}route_type\0\u{1}trip\0\u{3}stop_id\0\u{3}direction_id\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4000,9 +3807,7 @@ extension TransitRealtime_EntitySelector: SwiftProtobuf.Message, SwiftProtobuf._
 
 extension TransitRealtime_TranslatedString: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TranslatedString"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "translation"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}translation\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4042,10 +3847,7 @@ extension TransitRealtime_TranslatedString: SwiftProtobuf.Message, SwiftProtobuf
 
 extension TransitRealtime_TranslatedString.Translation: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TranslatedString.protoMessageName + ".Translation"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "text"),
-    2: .same(proto: "language"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}text\0\u{1}language\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4094,9 +3896,7 @@ extension TransitRealtime_TranslatedString.Translation: SwiftProtobuf.Message, S
 
 extension TransitRealtime_TranslatedImage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TranslatedImage"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "localized_image"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}localized_image\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4136,11 +3936,7 @@ extension TransitRealtime_TranslatedImage: SwiftProtobuf.Message, SwiftProtobuf.
 
 extension TransitRealtime_TranslatedImage.LocalizedImage: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TranslatedImage.protoMessageName + ".LocalizedImage"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "url"),
-    2: .standard(proto: "media_type"),
-    3: .same(proto: "language"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{1}url\0\u{3}media_type\0\u{1}language\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4195,10 +3991,7 @@ extension TransitRealtime_TranslatedImage.LocalizedImage: SwiftProtobuf.Message,
 
 extension TransitRealtime_Shape: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Shape"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "shape_id"),
-    2: .standard(proto: "encoded_polyline"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}shape_id\0\u{3}encoded_polyline\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4246,22 +4039,7 @@ extension TransitRealtime_Shape: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
 
 extension TransitRealtime_Stop: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".Stop"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "stop_id"),
-    2: .standard(proto: "stop_code"),
-    3: .standard(proto: "stop_name"),
-    4: .standard(proto: "tts_stop_name"),
-    5: .standard(proto: "stop_desc"),
-    6: .standard(proto: "stop_lat"),
-    7: .standard(proto: "stop_lon"),
-    8: .standard(proto: "zone_id"),
-    9: .standard(proto: "stop_url"),
-    11: .standard(proto: "parent_station"),
-    12: .standard(proto: "stop_timezone"),
-    13: .standard(proto: "wheelchair_boarding"),
-    14: .standard(proto: "level_id"),
-    15: .standard(proto: "platform_code"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}stop_id\0\u{3}stop_code\0\u{3}stop_name\0\u{3}tts_stop_name\0\u{3}stop_desc\0\u{3}stop_lat\0\u{3}stop_lon\0\u{3}zone_id\0\u{3}stop_url\0\u{4}\u{2}parent_station\0\u{3}stop_timezone\0\u{3}wheelchair_boarding\0\u{3}level_id\0\u{3}platform_code\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4374,21 +4152,12 @@ extension TransitRealtime_Stop: SwiftProtobuf.Message, SwiftProtobuf._MessageImp
 }
 
 extension TransitRealtime_Stop.WheelchairBoarding: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    0: .same(proto: "UNKNOWN"),
-    1: .same(proto: "AVAILABLE"),
-    2: .same(proto: "NOT_AVAILABLE"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0UNKNOWN\0\u{1}AVAILABLE\0\u{1}NOT_AVAILABLE\0")
 }
 
 extension TransitRealtime_TripModifications: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".TripModifications"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "selected_trips"),
-    2: .standard(proto: "start_times"),
-    3: .standard(proto: "service_dates"),
-    4: .same(proto: "modifications"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}selected_trips\0\u{3}start_times\0\u{3}service_dates\0\u{1}modifications\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4444,14 +4213,7 @@ extension TransitRealtime_TripModifications: SwiftProtobuf.Message, SwiftProtobu
 
 extension TransitRealtime_TripModifications.Modification: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripModifications.protoMessageName + ".Modification"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "start_stop_selector"),
-    2: .standard(proto: "end_stop_selector"),
-    3: .standard(proto: "propagated_modification_delay"),
-    4: .standard(proto: "replacement_stops"),
-    5: .standard(proto: "service_alert_id"),
-    6: .standard(proto: "last_modified_time"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}start_stop_selector\0\u{3}end_stop_selector\0\u{3}propagated_modification_delay\0\u{3}replacement_stops\0\u{3}service_alert_id\0\u{3}last_modified_time\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4522,10 +4284,7 @@ extension TransitRealtime_TripModifications.Modification: SwiftProtobuf.Message,
 
 extension TransitRealtime_TripModifications.SelectedTrips: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = TransitRealtime_TripModifications.protoMessageName + ".SelectedTrips"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "trip_ids"),
-    2: .standard(proto: "shape_id"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}trip_ids\0\u{3}shape_id\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4573,10 +4332,7 @@ extension TransitRealtime_TripModifications.SelectedTrips: SwiftProtobuf.Message
 
 extension TransitRealtime_StopSelector: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".StopSelector"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "stop_sequence"),
-    2: .standard(proto: "stop_id"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}stop_sequence\0\u{3}stop_id\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
@@ -4624,10 +4380,7 @@ extension TransitRealtime_StopSelector: SwiftProtobuf.Message, SwiftProtobuf._Me
 
 extension TransitRealtime_ReplacementStop: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".ReplacementStop"
-  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .standard(proto: "travel_time_to_stop"),
-    2: .standard(proto: "stop_id"),
-  ]
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{3}travel_time_to_stop\0\u{3}stop_id\0")
 
   public var isInitialized: Bool {
     if !_protobuf_extensionFieldValues.isInitialized {return false}
