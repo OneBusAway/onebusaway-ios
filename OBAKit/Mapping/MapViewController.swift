@@ -332,7 +332,6 @@ class MapViewController: UIViewController,
 
         subscribeToTripPlannerNotifications()
 
-        // Create and present the TripPlanner
         let tripPlanner = TripPlanner(
             otpConfig: config,
             apiService: apiService,
@@ -345,9 +344,9 @@ class MapViewController: UIViewController,
             self.dismissTripPlannerController()
         }
 
-        let hostingController = UIHostingController(rootView: tripPlannerView)
+        let hostingController = PanelHostingController(rootView: tripPlannerView)
         hostingController.view.backgroundColor = .clear
-        showSemiModalPanel(childController: hostingController)
+        present(hostingController, animated: true)
 
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
