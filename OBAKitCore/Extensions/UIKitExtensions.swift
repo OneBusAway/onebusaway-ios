@@ -212,6 +212,26 @@ public extension UIColor {
         return luminance > 0.5
     }
 
+    /// Lightens the receiver by the specified percent.'
+    /// - Parameter percentage: The percent by which to lighten the receiver. Defaults to 25%.
+    /// - Returns: The lightened color.
+    func lighten(by percentage: CGFloat = 0.25) -> UIColor {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        guard getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return self
+        }
+
+        return UIColor(
+            red: min(red + percentage, 1.0),
+            green: min(green + percentage, 1.0),
+            blue: min(blue + percentage, 1.0),
+            alpha: alpha
+        )
+    }
 }
 
 // MARK: - UICollectionView
@@ -277,11 +297,6 @@ public extension UIFont {
     /// Returns an italic version of `self`.
     var italic: UIFont {
         return withTraits(traits: .traitItalic)
-    }
-
-    class var mapAnnotationFont: UIFont {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle.footnote)
-        return UIFont.systemFont(ofSize: descriptor.pointSize - 2.0, weight: .black)
     }
 }
 

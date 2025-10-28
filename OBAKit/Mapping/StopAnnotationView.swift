@@ -28,15 +28,12 @@ class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Subviews
 
-    private let titleLabel = StopAnnotationView.buildLabel()
-
-    private class func buildLabel() -> UILabel {
-        let label = UILabel.autolayoutNew()
+    private let titleLabel: UILabel = {
+        let label = StrokedLabel.autolayoutNew()
         label.textAlignment = .center
-        label.font = UIFont.mapAnnotationFont
         label.numberOfLines = 2
         return label
-    }
+    }()
 
     private lazy var labelStack: UIStackView = {
         return UIStackView.verticalStack(arrangedSubviews: [titleLabel])
@@ -113,17 +110,41 @@ class StopAnnotationView: MKAnnotationView {
 
     // MARK: - Annotation Rendering
 
+    private func strokedText(_ text: String) -> NSAttributedString {
+        var attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize, weight: .bold),
+            .foregroundColor: UIColor.darkText
+        ]
+
+        attributes[.strokeColor] = UIColor.white
+        attributes[.strokeWidth] = -4.0
+
+        let shadow = NSShadow()
+        shadow.shadowColor = UIColor.white
+        shadow.shadowOffset = .zero
+        shadow.shadowBlurRadius = 1
+        attributes[.shadow] = shadow
+
+        return NSAttributedString(string: text, attributes: attributes)
+    }
+
     private func prepareForDisplay(bookmark: Bookmark, delegate: StopAnnotationDelegate) {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: bookmark.stop, isBookmarked: true, traits: traitCollection)
-        titleLabel.text = bookmark.name
+        titleLabel.attributedText = strokedText(bookmark.name)
         detailCalloutAccessoryView = buildDetailLabel(text: bookmark.stop.subtitle)
     }
 
     private func prepareForDisplay(stop: Stop, delegate: StopAnnotationDelegate) {
         labelStack.isHidden = delegate.shouldHideExtraStopAnnotationData
         image = delegate.iconFactory.buildIcon(for: stop, isBookmarked: delegate.isStopBookmarked(stop), traits: traitCollection)
-        titleLabel.text = stop.mapTitle
+        if let mapTitle = stop.mapTitle {
+            titleLabel.attributedText = strokedText(mapTitle)
+        }
+        else {
+            titleLabel.text = ""
+        }
+
         detailCalloutAccessoryView = buildDetailLabel(text: stop.subtitle)
     }
 
@@ -145,9 +166,6 @@ class StopAnnotationView: MKAnnotationView {
             frame = frame.integral
         }
     }
-
-    /// Foreground color for text written directly onto the map as part of this annotation view.
-    public var mapTextColor: UIColor = ThemeColors.shared.mapText
 
     // MARK: - Accessibility
 

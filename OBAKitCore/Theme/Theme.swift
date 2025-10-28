@@ -32,6 +32,10 @@ public class ThemeMetrics: NSObject {
     public static let floatingPanelTopInset: CGFloat = 7.0
 
     public static let collectionViewLayoutMargins = NSDirectionalEdgeInsets(top: 0, leading: padding, bottom: 0, trailing: padding)
+
+    public static let stopAnnotationIconInset: CGFloat = 6.0
+
+    public static let stopAnnotationCornerRadius: CGFloat = 4.0
 }
 
 public class ThemeColors: NSObject {
@@ -44,9 +48,6 @@ public class ThemeColors: NSObject {
 
     /// A gray text color, used on light backgrounds for de-emphasized text.
     public let secondaryLabel: UIColor
-
-    /// A dark gray text color, used on maps.
-    public let mapText: UIColor
 
     /// The overlay color drawn on top of a `MapSnapshotter` image.
     public let mapSnapshotOverlayColor: UIColor
@@ -155,7 +156,6 @@ public class ThemeColors: NSObject {
         groupedTableBackground = .systemGroupedBackground
         groupedTableRowBackground = .white
         systemBackground = .systemBackground
-        mapText = .label
         label = .label
         secondaryLabel = .secondaryLabel
         separator = .separator
@@ -163,8 +163,8 @@ public class ThemeColors: NSObject {
         secondaryBackgroundColor = .secondarySystemBackground
         propertyChanged = .systemYellow
 
-        stopAnnotationFillColor = .systemBackground
-        stopAnnotationStrokeColor = .label
+        stopAnnotationFillColor = .systemGray6
+        stopAnnotationStrokeColor = .darkGray
         stopArrowFillColor = .systemRed
         systemFill = .systemFill
         lightText = .white
