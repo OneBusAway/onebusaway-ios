@@ -660,7 +660,19 @@ class MapViewController: UIViewController,
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
         floatingPanel.move(to: .half, animated: false)
-        mapRegionManager.mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+
+        let mapDestination = mapItem.placemark.coordinate
+
+        let animated: Bool
+        if let currentLocation = application.locationService.currentLocation {
+            let distance = mapDestination.distance(from: currentLocation.coordinate)
+            animated = distance <= 1609 // roughly 1 mile
+        }
+        else {
+            animated = false
+        }
+
+        mapRegionManager.mapView.setCenter(mapDestination, animated: animated)
         displayMapItemController(mapItem)
     }
 
