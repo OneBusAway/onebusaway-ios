@@ -85,17 +85,11 @@ class StopIconFactory: NSObject {
     /// The line width of the arrow's border.
     private let arrowStroke: CGFloat = 1.0
 
-    /// The corner radius of the icon.
-    private let cornerRadius: CGFloat = 4.0
-
     /// The stroke width.
     private let borderWidth: CGFloat = 2.0
 
     /// The opacity of the icon's background.
     private let backgroundAlpha: CGFloat = 0.9
-
-    /// The drawing inset of the transport glyph.
-    private let transportGlyphInset: CGFloat = 6.0
 
     // MARK: - Rendering Steps
 
@@ -145,9 +139,27 @@ class StopIconFactory: NSObject {
         context.pushPop {
             // we inset the rect the 1/2 px in order ensure that it doesn't 'bleed' past
             // the edge of the rounded rect border that we'll draw in drawBorder()
-            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: cornerRadius)
-            context.setFillColor(color.cgColor)
-            bezierPath.fill(with: .normal, alpha: backgroundAlpha)
+            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: 0.5, dy: 0.5), cornerRadius: ThemeMetrics.stopAnnotationCornerRadius)
+
+            // Clip to the rounded rect path
+            bezierPath.addClip()
+
+            // Create lightened color (25% lighter)
+            let lightenedColor = color.lighten(by: 0.25)
+
+            // Create gradient from lightened to original color
+            let colors = [lightenedColor.cgColor, color.cgColor]
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let gradient = CGGradient(colorsSpace: colorSpace, colors: colors as CFArray, locations: [0.0, 1.0]) else {
+                return
+            }
+
+            // Draw gradient from top to bottom
+            let startPoint = CGPoint(x: rect.midX, y: rect.minY)
+            let endPoint = CGPoint(x: rect.midX, y: rect.maxY)
+
+            context.setAlpha(backgroundAlpha)
+            context.drawLinearGradient(gradient, start: startPoint, end: endPoint, options: [])
         }
     }
 
@@ -158,7 +170,7 @@ class StopIconFactory: NSObject {
     private func drawBorder(color: UIColor, rect: CGRect, context: CGContext) {
         context.pushPop {
             let inset = borderWidth / 2.0
-            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: cornerRadius)
+            let bezierPath = UIBezierPath(roundedRect: rect.insetBy(dx: inset, dy: inset), cornerRadius: ThemeMetrics.stopAnnotationCornerRadius)
             bezierPath.lineWidth = borderWidth
             context.setStrokeColor(color.cgColor)
             bezierPath.stroke()
@@ -166,7 +178,7 @@ class StopIconFactory: NSObject {
     }
 
     /// Draws the transport glyph onto the icon.
-    /// - Note: Drawing is inset from `rect` by `transportGlyphInset` points.
+    /// - Note: Drawing is inset from `rect` by `ThemeMetrics.stopAnnotationIconInset` points.
     ///
     /// - Parameter routeType: The transport glyph type that will be drawn.
     /// - Parameter rect: The rectangle in which to draw.
@@ -175,7 +187,7 @@ class StopIconFactory: NSObject {
     private func drawIcon(routeType: Route.RouteType, rect: CGRect, context: CGContext, color: UIColor? = nil) {
         context.pushPop {
             let image = Icons.transportIcon(from: routeType).tinted(color: color ?? transportIconColor)
-            image.draw(in: rect.insetBy(dx: transportGlyphInset, dy: transportGlyphInset))
+            image.draw(in: rect.insetBy(dx: ThemeMetrics.stopAnnotationIconInset, dy: ThemeMetrics.stopAnnotationIconInset))
         }
     }
 
