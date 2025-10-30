@@ -33,6 +33,14 @@ class SearchInteractor: NSObject {
         case placemarks
     }
 
+    enum PlacemarkSearchState {
+        case idle
+        case loading
+        case success
+        case error(Error)
+        case noResults
+    }
+
     private let application: Application
     private let userDataStore: UserDataStore
     public weak var delegate: SearchDelegate?
@@ -109,6 +117,11 @@ class SearchInteractor: NSObject {
             delegate?.searchInteractorNewResultsAvailable(self)
         }
     }
+    private var placemarkSearchState: PlacemarkSearchState = .idle {
+        didSet {
+            delegate?.searchInteractorNewResultsAvailable(self)
+        }
+    }
     private var lastSearchText: String = ""
     private let placemarkSearchDebounceInterval: TimeInterval = 0.35 // 350ms
     private var localSearch: MKLocalSearch?
@@ -137,22 +150,31 @@ class SearchInteractor: NSObject {
                 localSearch.cancel()
             }
 
+            // Set loading state when search starts
+            self.placemarkSearchState = .loading
+
             let searchRequest = MKLocalSearch.Request()
             searchRequest.naturalLanguageQuery = searchText
             searchRequest.region = MKCoordinateRegion(mapRect)
             let search = MKLocalSearch(request: searchRequest)
             search.start { response, error in
                 if let error {
-                    print("Unable to complete local search: \(error)")
+                    self.placemarkSearchState = .error(error)
                     return
                 }
 
                 guard let response else {
-                    print("Local search response is nil. Bailing.")
+                    let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
+                    self.placemarkSearchState = .error(unknownError)
                     return
                 }
 
-                self.cachedPlacemarks = response.mapItems
+                if response.mapItems.isEmpty {
+                    self.placemarkSearchState = .noResults
+                } else {
+                    self.placemarkSearchState = .success
+                    self.cachedPlacemarks = response.mapItems
+                }
             }
 
             self.localSearch = search
@@ -160,21 +182,58 @@ class SearchInteractor: NSObject {
     }
 
     private func buildPlacemarksSection() -> OBAListViewSection? {
-        var items: [SearchPlacemarkViewModel] = []
+        let sectionTitle = OBALoc("search_controller.placemarks.header", value: "Results", comment: "Placemark search header")
 
-        for p in cachedPlacemarks {
-            let item = SearchPlacemarkViewModel(
-                mapItem: p,
-                currentLocation: application.locationService.currentLocation,
-                distanceFormatter: application.formatters.distanceFormatter
-            ) { [weak self] viewModel in
-                guard let self = self else { return }
-                self.delegate?.showMapItem(viewModel.mapItem)
+        switch placemarkSearchState {
+        case .idle:
+            return nil
+
+        case .loading:
+            let loadingMessage = OBALoc("search_controller.placemarks.loading", value: "Searching for places...", comment: "Loading message for placemark search")
+            var item = OBAListRowView.DefaultViewModel(title: loadingMessage, accessoryType: .none)
+            item.image = UIImage(systemName: "magnifyingglass")
+            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
+
+        case .error(let error):
+            var item = OBAListRowView.DefaultViewModel(title: error.localizedDescription, accessoryType: .none)
+            // Set appropriate error icon based on error type
+            if let apiError = error as? APIError {
+                switch apiError {
+                case .networkFailure:
+                    item.image = UIImage(systemName: "wifi.slash")
+                case .captivePortal:
+                    item.image = UIImage(systemName: "wifi.exclamationmark")
+                default:
+                    item.image = UIImage(systemName: "exclamationmark.triangle")
+                }
+            } else {
+                item.image = UIImage(systemName: "exclamationmark.triangle")
             }
-            items.append(item)
-        }
+            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
 
-        return listSection(for: .placemarks, title: OBALoc("search_controller.placemarks.header", value: "Results", comment: "Placemark search header"), contents: items)
+        case .noResults:
+            let noResultsMessage = OBALoc("search_controller.placemarks.no_results", value: "No results found", comment: "No results message for placemark search")
+            var item = OBAListRowView.DefaultViewModel(title: noResultsMessage, accessoryType: .none)
+            item.image = UIImage(systemName: "magnifyingglass")
+            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
+
+        case .success:
+            var items: [SearchPlacemarkViewModel] = []
+
+            for p in cachedPlacemarks {
+                let item = SearchPlacemarkViewModel(
+                    mapItem: p,
+                    currentLocation: application.locationService.currentLocation,
+                    distanceFormatter: application.formatters.distanceFormatter
+                ) { [weak self] viewModel in
+                    guard let self = self else { return }
+                    self.delegate?.showMapItem(viewModel.mapItem)
+                }
+                items.append(item)
+            }
+
+            return listSection(for: .placemarks, title: sectionTitle, contents: items)
+        }
     }
 
     // MARK: - Private/Quick Search
