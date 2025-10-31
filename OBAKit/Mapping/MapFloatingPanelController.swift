@@ -229,6 +229,9 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     func showMapItem(_ mapItem: MKMapItem) {
+        // Save to recent map items
+        application.userDataStore.addRecentMapItem(mapItem)
+
         searchBar.resignFirstResponder()
         mapPanelDelegate?.mapPanelController(self, didSelectMapItem: mapItem)
     }

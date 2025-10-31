@@ -67,6 +67,8 @@ public class Strings: NSObject {
 
     public static let recentStops = OBALoc("common.recent_stops", value: "Recent Stops", comment: "i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station.")
 
+    public static let recentSearches = OBALoc("common.recent_searches", value: "Recent Searches", comment: "i.e. recently selected search results for map locations from the trip planner.")
+
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 
     public static let save = OBALoc("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")
