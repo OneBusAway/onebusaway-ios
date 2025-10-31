@@ -462,6 +462,12 @@ public class MapRegionManager: NSObject,
         mapView.addAnnotation(stop)
         mapView.setCenterCoordinate(centerCoordinate: stop.coordinate, zoomLevel: 18, animated: true)
         mapView.selectAnnotation(stop, animated: false)
+
+        // Clear searchResponse on next run loop to allow normal stop loading when panning
+        // The annotation and callout remain visible even after searchResponse is cleared
+        DispatchQueue.main.async { [weak self] in
+            self?.searchResponse = nil
+        }
     }
 
     // MARK: - Search/Route

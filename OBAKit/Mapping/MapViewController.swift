@@ -300,7 +300,6 @@ class MapViewController: UIViewController,
 
     private func showTripPlannerMapView() {
         tripPlannerMapView.mapType = mapRegionManager.mapView.mapType
-        tripPlannerMapView.region = mapRegionManager.mapView.region
 
         tripPlannerMapView.isHidden = false
 
