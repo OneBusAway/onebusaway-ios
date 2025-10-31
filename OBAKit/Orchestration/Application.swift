@@ -15,6 +15,7 @@ import OBAKitCore
 import SafariServices
 import MapKit
 import SwiftUI
+import TipKit
 
 // MARK: - Protocols
 
@@ -145,6 +146,21 @@ public class Application: CoreApplication, PushServiceDelegate {
         super.init(config: config)
 
         configureAppearanceProxies()
+    }
+
+    private func configureTipKit() {
+        do {
+            try Tips.configure([
+                .displayFrequency(.hourly),
+                .datastoreLocation(.applicationDefault)
+            ])
+        } catch {
+            Logger.error("Failed to configure TipKit: \(error)")
+        }
+
+        // Enable this to show all tips all the time.
+        // https://developer.apple.com/documentation/tipkit/tips/showalltipsfortesting()
+        // Tips.showAllTipsForTesting()
     }
 
     // MARK: - Onboarding/Data Migration
@@ -345,6 +361,8 @@ public class Application: CoreApplication, PushServiceDelegate {
         reloadRootUserInterface()
 
         reportAnalyticsUserProperties()
+
+        configureTipKit()
     }
 
     @objc public func applicationDidBecomeActive(_ application: UIApplication) {

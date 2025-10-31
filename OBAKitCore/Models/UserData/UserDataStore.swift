@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import MapKit
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, settings
@@ -129,6 +130,22 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The maximum number of recent stops that will be stored.
     var maximumRecentStopsCount: Int { get }
 
+    // MARK: - Recent Map Items
+
+    /// A list of recently-selected map items from search
+    var recentMapItems: [MKMapItem] { get }
+
+    /// Add a `MKMapItem` to the list of recently-selected map items
+    ///
+    /// - Parameter mapItem: The map item to add to the list
+    func addRecentMapItem(_ mapItem: MKMapItem)
+
+    /// Deletes all recent map items.
+    func deleteAllRecentMapItems()
+
+    /// The maximum number of recent map items that will be stored.
+    var maximumRecentMapItemsCount: Int { get }
+
     // MARK: - Alarms
 
     /// Deletes (but does not deregister) all `Alarm`s that have arrived/departed.
@@ -207,6 +224,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
         static let recentStops = "UserDataStore.recentStops"
+        static let recentMapItems = "UserDataStore.recentMapItems"
         static let stopPreferences = "UserDataStore.stopPreferences"
         static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
     }
@@ -479,6 +497,66 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public func findRecentStops(matching searchText: String) -> [Stop] {
         let cleanedText = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return recentStops.filter { $0.matchesQuery(cleanedText) }
+    }
+
+    // MARK: - Recent Map Items
+
+    public var recentMapItems: [MKMapItem] {
+        get {
+            guard let data = userDefaults.data(forKey: UserDefaultsKeys.recentMapItems) else {
+                return []
+            }
+
+            do {
+                let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
+                unarchiver.requiresSecureCoding = true
+                guard let items = unarchiver.decodeObject(of: [NSArray.self, MKMapItem.self], forKey: NSKeyedArchiveRootObjectKey) as? [MKMapItem] else {
+                    return []
+                }
+                return items
+            } catch {
+                Logger.error("Unable to decode recent map items: \(error)")
+                return []
+            }
+        }
+        set {
+            let archiver = NSKeyedArchiver(requiringSecureCoding: true)
+            archiver.encode(newValue, forKey: NSKeyedArchiveRootObjectKey)
+            let data = archiver.encodedData
+            userDefaults.set(data, forKey: UserDefaultsKeys.recentMapItems)
+        }
+    }
+
+    public func addRecentMapItem(_ mapItem: MKMapItem) {
+        var items = self.recentMapItems
+
+        // Remove duplicate if it exists (same location)
+        items.removeAll { existingItem in
+            guard let existingLocation = existingItem.placemark.location,
+                  let newLocation = mapItem.placemark.location else {
+                return false
+            }
+            // Consider items within 10 meters as duplicates
+            return existingLocation.distance(from: newLocation) < 10
+        }
+
+        // Insert at the beginning
+        items.insert(mapItem, at: 0)
+
+        // Trim to maximum count
+        if items.count > maximumRecentMapItemsCount {
+            items = Array(items.prefix(maximumRecentMapItemsCount))
+        }
+
+        self.recentMapItems = items
+    }
+
+    public func deleteAllRecentMapItems() {
+        userDefaults.removeObject(forKey: UserDefaultsKeys.recentMapItems)
+    }
+
+    public var maximumRecentMapItemsCount: Int {
+        return 10
     }
 
     // MARK: - Alarms

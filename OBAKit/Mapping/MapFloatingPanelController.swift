@@ -11,6 +11,8 @@ import UIKit
 import FloatingPanel
 import OBAKitCore
 import MapKit
+import TipKit
+import SwiftUI
 
 protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
@@ -31,7 +33,8 @@ class MapFloatingPanelController: VisualEffectViewController,
     NearbyStopsListDataSource,
     NearbyStopsListDelegate,
     SearchListViewControllerDelegate,
-    UISearchBarDelegate {
+    UISearchBarDelegate,
+    UIPopoverPresentationControllerDelegate {
 
     let mapRegionManager: MapRegionManager
 
@@ -176,6 +179,49 @@ class MapFloatingPanelController: VisualEffectViewController,
         updateSearchBarPlaceholderText()
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        showTripPlannerTipIfNeeded(animated: animated)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tipObservationTask?.cancel()
+        tipObservationTask = nil
+    }
+
+    // MARK: - Trip planner tip
+
+    private let tripPlannerTip = TripPlannerTip()
+    private var tipObservationTask: Task<Void, Never>?
+    private var tipPopoverController: TipUIPopoverViewController?
+
+    private func showTripPlannerTipIfNeeded(animated: Bool) {
+        tipObservationTask = tipObservationTask ?? Task { @MainActor in
+            for await shouldDisplay in tripPlannerTip.shouldDisplayUpdates {
+                if shouldDisplay {
+                    let popoverController = TipUIPopoverViewController(tripPlannerTip, sourceItem: searchBar)
+                    present(popoverController, animated: animated)
+                    tipPopoverController = popoverController
+                }
+                else {
+                    if let presentedViewController, presentedViewController is TipUIPopoverViewController {
+                        presentedViewController.dismiss(animated: animated)
+                        tipPopoverController = nil
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - UIPopoverPresentationControllerDelegate
+
+    func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle {
+        // Return .none to prevent the popover from adapting to a sheet on iPhone
+        return .none
+    }
+
     // MARK: - Agency Alerts
 
     public func agencyAlertsUpdated() {
@@ -229,6 +275,9 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     func showMapItem(_ mapItem: MKMapItem) {
+        // Save to recent map items
+        application.userDataStore.addRecentMapItem(mapItem)
+
         searchBar.resignFirstResponder()
         mapPanelDelegate?.mapPanelController(self, didSelectMapItem: mapItem)
     }
@@ -239,6 +288,16 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor) {
         searchListViewController.updateSearch()
+    }
+
+    func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor) {
+        let alertController = UIAlertController.deletionAlert(title: Strings.clearRecentSearchesConfirmation) { [weak self] _ in
+            guard let self = self else { return }
+            self.application.userDataStore.deleteAllRecentMapItems()
+            self.searchListViewController.updateSearch()
+        }
+
+        present(alertController, animated: true, completion: nil)
     }
 
     var isVehicleSearchAvailable: Bool {

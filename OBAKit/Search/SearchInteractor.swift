@@ -16,6 +16,7 @@ protocol SearchDelegate: NSObjectProtocol {
     func showMapItem(_ mapItem: MKMapItem)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
     func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
+    func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
 }
 
@@ -28,6 +29,7 @@ protocol SearchDelegate: NSObjectProtocol {
 class SearchInteractor: NSObject {
     enum ListSection: String {
         case recentStops
+        case recentMapItems
         case bookmarks
         case quickSearch
         case placemarks
@@ -55,21 +57,23 @@ class SearchInteractor: NSObject {
     }
 
     func searchModeObjects(text: String?) -> [OBAListViewSection] {
-        guard
-            let searchText = text?.trimmingCharacters(in: .whitespacesAndNewlines),
-            searchText.count > 0
-        else {
-            return []
+        let cleanedSearchText = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        // Show recent map items when search is empty
+        if cleanedSearchText.isEmpty {
+            var sections: [OBAListViewSection?] = []
+            sections.append(buildRecentMapItemsSection())
+            return sections.compactMap { $0 }
         }
 
         var sections: [OBAListViewSection?] = []
 
-        sections.append(quickSearchSection(searchText: searchText))
-        sections.append(buildRecentStopsSection(searchText: searchText))
-        sections.append(buildBookmarksSection(searchText: searchText))
+        sections.append(quickSearchSection(searchText: cleanedSearchText))
+        sections.append(buildRecentStopsSection(searchText: cleanedSearchText))
+        sections.append(buildBookmarksSection(searchText: cleanedSearchText))
 
         if let mapRect = application.mapRegionManager.lastVisibleMapRect {
-            placemarkSearch(searchText: searchText, mapRect: mapRect)
+            placemarkSearch(searchText: cleanedSearchText, mapRect: mapRect)
             sections.append(buildPlacemarksSection())
         }
 
@@ -107,6 +111,40 @@ class SearchInteractor: NSObject {
         }
 
         return listSection(for: .bookmarks, title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), contents: bookmarks)
+    }
+
+    private func buildRecentMapItemsSection() -> OBAListViewSection? {
+        let recentItems = userDataStore.recentMapItems
+
+        guard !recentItems.isEmpty else {
+            return nil
+        }
+
+        var items: [AnyOBAListViewItem] = recentItems.map { mapItem in
+            SearchPlacemarkViewModel(
+                mapItem: mapItem,
+                currentLocation: application.locationService.currentLocation,
+                distanceFormatter: application.formatters.distanceFormatter
+            ) { [weak self] viewModel in
+                guard let self = self else { return }
+                self.delegate?.showMapItem(viewModel.mapItem)
+            }.typeErased
+        }
+
+        // Add clear button at the end
+        let clearTitle = NSAttributedString(
+            string: Strings.clearRecentSearches,
+            attributes: [.foregroundColor: UIColor.systemRed]
+        )
+        var clearButton = OBAListRowView.DefaultViewModel(title: clearTitle, accessoryType: .none) { [weak self] _ in
+            guard let self = self else { return }
+            self.delegate?.searchInteractorClearRecentSearches(self)
+        }
+        clearButton.image = UIImage(systemName: "trash")
+
+        items.append(clearButton.typeErased)
+
+        return listSection(for: .recentMapItems, title: Strings.recentSearches, contents: items)
     }
 
     // MARK: - Placemarks Section
