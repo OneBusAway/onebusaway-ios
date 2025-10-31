@@ -244,6 +244,16 @@ class MapFloatingPanelController: VisualEffectViewController,
         searchListViewController.updateSearch()
     }
 
+    func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor) {
+        let alertController = UIAlertController.deletionAlert(title: Strings.clearRecentSearchesConfirmation) { [weak self] _ in
+            guard let self = self else { return }
+            self.application.userDataStore.deleteAllRecentMapItems()
+            self.searchListViewController.updateSearch()
+        }
+
+        present(alertController, animated: true, completion: nil)
+    }
+
     var isVehicleSearchAvailable: Bool {
         application.features.obaco == .running
     }

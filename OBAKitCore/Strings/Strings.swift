@@ -69,6 +69,10 @@ public class Strings: NSObject {
 
     public static let recentSearches = OBALoc("common.recent_searches", value: "Recent Searches", comment: "i.e. recently selected search results for map locations from the trip planner.")
 
+    public static let clearRecentSearches = OBALoc("common.clear_recent_searches", value: "Clear Recent Searches", comment: "Button to clear recent search results")
+
+    public static let clearRecentSearchesConfirmation = OBALoc("common.clear_recent_searches.confirmation", value: "Are you sure you want to clear your recent searches?", comment: "Confirmation message before clearing recent search results")
+
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 
     public static let save = OBALoc("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")

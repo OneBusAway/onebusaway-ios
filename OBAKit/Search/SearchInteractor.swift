@@ -16,6 +16,7 @@ protocol SearchDelegate: NSObjectProtocol {
     func showMapItem(_ mapItem: MKMapItem)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
     func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
+    func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
 }
 
@@ -119,7 +120,7 @@ class SearchInteractor: NSObject {
             return nil
         }
 
-        let items = recentItems.map { mapItem in
+        var items: [AnyOBAListViewItem] = recentItems.map { mapItem in
             SearchPlacemarkViewModel(
                 mapItem: mapItem,
                 currentLocation: application.locationService.currentLocation,
@@ -127,8 +128,21 @@ class SearchInteractor: NSObject {
             ) { [weak self] viewModel in
                 guard let self = self else { return }
                 self.delegate?.showMapItem(viewModel.mapItem)
-            }
+            }.typeErased
         }
+
+        // Add clear button at the end
+        let clearTitle = NSAttributedString(
+            string: Strings.clearRecentSearches,
+            attributes: [.foregroundColor: UIColor.systemRed]
+        )
+        var clearButton = OBAListRowView.DefaultViewModel(title: clearTitle, accessoryType: .none) { [weak self] _ in
+            guard let self = self else { return }
+            self.delegate?.searchInteractorClearRecentSearches(self)
+        }
+        clearButton.image = UIImage(systemName: "trash")
+
+        items.append(clearButton.typeErased)
 
         return listSection(for: .recentMapItems, title: Strings.recentSearches, contents: items)
     }
