@@ -288,6 +288,8 @@ class MapViewController: UIViewController,
 
     // MARK: - Trip Planner
 
+    private var semiModalTripPlannerController: FloatingPanelController?
+
     private var tripPlanner: TripPlanner?
     private var tripPlannerHostingController: UIViewController?
     private lazy var tripPlannerMapView: MKMapView = {
@@ -383,10 +385,14 @@ class MapViewController: UIViewController,
             self.dismissTripPlannerController()
         }
 
-        let hostingController = PanelHostingController(rootView: tripPlannerView)
-        hostingController.view.backgroundColor = .clear
-        present(hostingController, animated: true)
+        self.floatingPanel.move(to: .tip, animated: true)
 
+        let hostingController = UIHostingController(rootView: tripPlannerView)
+        hostingController.view.backgroundColor = .clear
+
+        let semiModal = createSemiModalPanel(childController: hostingController)
+        semiModal.addPanel(toParent: self)
+        self.semiModalTripPlannerController = semiModal
         self.tripPlanner = tripPlanner
         self.tripPlannerHostingController = hostingController
     }
@@ -395,6 +401,7 @@ class MapViewController: UIViewController,
         guard let tripPlannerHostingController else { return }
         dismissModalController(tripPlannerHostingController)
 
+        self.semiModalTripPlannerController = nil
         self.tripPlannerHostingController = nil
         self.tripPlanner = nil
         hideTripPlannerMapView()
@@ -417,7 +424,7 @@ class MapViewController: UIViewController,
     }
 
     @objc private func itinerariesUpdated(_ note: NSNotification) {
-        tripPlannerHostingController?.animateToDetentIdentifier(.large)
+        semiModalTripPlannerController?.move(to: .full, animated: true)
     }
 
     @objc private func itineraryPreviewStarted(_ note: NSNotification) {
@@ -431,7 +438,7 @@ class MapViewController: UIViewController,
     @objc private func tripStarted(_ note: NSNotification) {
         showTripPlannerMapView()
 
-        tripPlannerHostingController?.animateToDetentIdentifier(.tip)
+        semiModalTripPlannerController?.move(to: .tip, animated: true)
     }
 
     // MARK: - Map Type
