@@ -202,6 +202,15 @@ class MapFloatingPanelController: VisualEffectViewController,
             for await shouldDisplay in tripPlannerTip.shouldDisplayUpdates {
                 if shouldDisplay {
                     let popoverController = TipUIPopoverViewController(tripPlannerTip, sourceItem: searchBar)
+                    popoverController.modalPresentationStyle = .popover
+
+                    // Configure popover presentation controller
+                    if let popover = popoverController.popoverPresentationController {
+                        popover.sourceView = searchBar
+                        popover.sourceRect = searchBar.bounds
+                        popover.delegate = self
+                    }
+
                     present(popoverController, animated: animated)
                     tipPopoverController = popoverController
                 }
