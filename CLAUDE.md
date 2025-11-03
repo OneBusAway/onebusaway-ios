@@ -15,7 +15,7 @@ scripts/generate_project OneBusAway     # Generate default OneBusAway app
 scripts/generate_project                # Defaults to OneBusAway if no app specified
 ```
 
-**Available Apps**: OneBusAway, MTA, KiedyBus, CatalystTest
+**Available Apps**: OneBusAway, KiedyBus
 
 ### Building & Testing
 ```bash
