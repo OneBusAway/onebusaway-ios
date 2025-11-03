@@ -62,30 +62,9 @@ targets:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: info.mta.bustime
-  TodayView:
-    sources: ["Apps/MTA/Assets.xcassets"]
-    entitlements:
-      properties:
-        com.apple.security.application-groups:
-          - group.info.mta.bustime
-    info:
-      properties:
-        CFBundleDisplayName: MTA Bus Time
-        OBAKitConfig:
-          AppGroup: group.info.mta.bustime
-          BundledRegionsFileName: regions.json
-          ExtensionURLScheme: bustime
-          RESTServerAPIKey: test
-          RegionsServerBaseAddress: https://regions.onebusaway.org
-          RegionsServerAPIPath: /regions-v3.json
-    settings:
-      base:
-        DEVELOPMENT_TEAM: 4ZQCMA634J
-        PRODUCT_BUNDLE_IDENTIFIER: info.mta.bustime.TodayView
 
 include:
   - path: Apps/Shared/app_shared.yml
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
-  - path: TodayView/project.yml

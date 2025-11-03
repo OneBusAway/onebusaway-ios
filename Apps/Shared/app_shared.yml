@@ -28,7 +28,6 @@ targets:
     dependencies:
       - target: OBAKitCore
       - target: OBAKit
-      - target: TodayView
       - target: OBAWidget
     info:
       properties:
@@ -69,11 +68,6 @@ targets:
       base:
         OTHER_LDFLAGS: -ObjC
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "AccentColor"
-  TodayView:
-    info:
-      properties:
-        CFBundleShortVersionString: "$(MARKETING_VERSION)"
-
 
 packages:
     BLTNBoard:
