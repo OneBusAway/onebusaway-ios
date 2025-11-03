@@ -55,26 +55,6 @@ targets:
       base:
         DEVELOPMENT_TEAM: 85APG5FQFE
         PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone
-  TodayView:
-    sources: ["Apps/KiedyBus/Assets.xcassets"]
-    entitlements:
-      properties:
-        com.apple.security.application-groups:
-          - group.pl.kiedybus.iphone
-    info:
-      properties:
-        CFBundleDisplayName: KiedyBus
-        OBAKitConfig:
-          AppGroup: group.pl.kiedybus.iphone
-          BundledRegionsFileName: regions.json
-          ExtensionURLScheme: kiedybus
-          RESTServerAPIKey: web
-          RegionsServerBaseAddress: https://kiedybus.pl
-          RegionsServerAPIPath: /regions-v4.json
-    settings:
-      base:
-        DEVELOPMENT_TEAM: 85APG5FQFE
-        PRODUCT_BUNDLE_IDENTIFIER: pl.kiedybus.iphone.TodayView
   OBAWidget:
     sources: ["Apps/KiedyBus/Assets.xcassets"]
     entitlements:
@@ -100,5 +80,4 @@ include:
   - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
-  - path: TodayView/project.yml
   - path: OBAWidget/project.yml
