@@ -6,8 +6,6 @@ name: OBAKit
 
 settings:
   base:
-    CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
-    CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
     MARKETING_VERSION: 25.4.0
 
 options:
@@ -66,8 +64,15 @@ targets:
           randomExecutionOrder: true
     settings:
       base:
+        CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED: true
+        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER: false
         OTHER_LDFLAGS: -ObjC
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: "AccentColor"
+      configs:
+        Debug:
+          DEBUG_INFORMATION_FORMAT: dwarf
+        Release:
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
 
 packages:
     BLTNBoard:
