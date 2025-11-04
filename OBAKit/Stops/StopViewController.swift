@@ -159,7 +159,6 @@ public class StopViewController: UIViewController,
 
     deinit {
         reloadTimer.invalidate()
-        enableIdleTimer()
     }
 
     // MARK: - UIViewController Overrides

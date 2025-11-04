@@ -47,10 +47,11 @@ public extension Idleable where Self: UIViewController {
     }
 
     nonisolated func enableIdleTimer() {
-        Task { @MainActor in
-            application.isIdleTimerDisabled = false
-            idleTimerFailsafe?.invalidate()
-            idleTimerFailsafe = nil
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            self.application.isIdleTimerDisabled = false
+            self.idleTimerFailsafe?.invalidate()
+            self.idleTimerFailsafe = nil
         }
     }
 }

@@ -47,10 +47,6 @@ class TripViewController: UIViewController,
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        enableIdleTimer()
-    }
-
     private func registerTraitChangeCallback() {
         let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self, UITraitPreferredContentSizeCategory.self]
         registerForTraitChanges(sizeTraits) { (self: Self, _) in
