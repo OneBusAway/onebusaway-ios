@@ -88,7 +88,7 @@ class WidgetDataProvider: NSObject, ObservableObject {
             }
         } catch {
             Logger.error("""
-            Error fetching data for bookmark: '\(bookmark.name)' 
+            Error fetching data for bookmark: '\(bookmark.name)'
             (ID: \(bookmark.id)). Error: \(error.localizedDescription)
             """)
         }

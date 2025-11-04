@@ -17,17 +17,16 @@ private enum Constants {
     static let fontSize: CGFloat = 13
 }
 
-
 // MARK: - WidgetRowView
 struct WidgetRowView: View {
     let bookmark: Bookmark?
     let formatters: Formatters
     let departures: [ArrivalDeparture]?
-    
+
     private var bookmarkTitle: String {
         bookmark?.name ?? " "
     }
-    
+
     private var nextDepartureLabel: String {
         if departures != nil {
             return updateNextDepartureLabel()
@@ -35,7 +34,7 @@ struct WidgetRowView: View {
             return LocalizationKeys.tapForMoreInformation
         }
     }
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
@@ -43,7 +42,7 @@ struct WidgetRowView: View {
                     .font(.system(size: Constants.fontSize, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.tail)
-                
+
                 Text(nextDepartureLabel)
                     .font(.system(size: Constants.fontSize))
                     .foregroundStyle(.secondary)
@@ -52,17 +51,17 @@ struct WidgetRowView: View {
             }
             // if the badge is hidden take up the full width otherwise use constant
             .frame(maxWidth: departures?.isEmpty == false ? Constants.rowWidth : .infinity, alignment: .leading)
-            
+
             Spacer()
-            
+
             if departures?.isEmpty == false {
                 departureTimeBadges
             }
         }
     }
-    
+
     // MARK: - Departure Time Badges
-    
+
     private var departureTimeBadges: some View {
         HStack(spacing: 5) {
             ForEach(departures?.prefix(Constants.maxDeparturesToShow) ?? [], id: \.self) { departure in
@@ -73,14 +72,14 @@ struct WidgetRowView: View {
             }
         }
     }
-    
+
     // MARK: - Helper Functions
-    
+
     private func updateNextDepartureLabel() -> String {
         guard let departures = departures else {
             return LocalizationKeys.tapForMoreInformation
         }
-        
+
         if let firstDeparture = departures.first {
             return formatters.formattedScheduleDeviation(for: firstDeparture)
         } else {

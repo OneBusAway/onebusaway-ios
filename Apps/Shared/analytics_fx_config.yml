@@ -19,3 +19,33 @@ targets:
       - path: ./Analytics
         name: Analytics
         group: Features
+    postBuildScripts:
+      - name: Upload dSYMs to Crashlytics
+        basedOnDependencyAnalysis: false
+        script: |
+          # Only upload dSYMs for Release builds
+          if [ "${CONFIGURATION}" = "Release" ]; then
+            echo "Uploading dSYMs to Crashlytics for Release build..."
+
+            # Path to the upload-symbols script in the Firebase iOS SDK package
+            UPLOAD_SYMBOLS="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"
+
+            # Check if the script exists
+            if [ ! -f "$UPLOAD_SYMBOLS" ]; then
+              echo "Warning: Firebase upload-symbols script not found at $UPLOAD_SYMBOLS"
+              exit 0
+            fi
+
+            # Check if dSYM file exists
+            if [ ! -d "$DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME" ]; then
+              echo "Warning: dSYM file not found at $DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME"
+              exit 0
+            fi
+
+            # Upload the dSYMs
+            "$UPLOAD_SYMBOLS" -gsp "${PROJECT_DIR}/Apps/OneBusAway/Resources/GoogleService-Info.plist" -p ios "$DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME"
+
+            echo "dSYM upload completed"
+          else
+            echo "Skipping dSYM upload for ${CONFIGURATION} build"
+          fi

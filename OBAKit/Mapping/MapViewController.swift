@@ -7,6 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+// swiftlint:disable file_length
+
 import UIKit
 import MapKit
 import FloatingPanel
@@ -925,3 +927,5 @@ class MapViewController: UIViewController,
         }
     }
 }
+
+// swiftlint:enable file_length

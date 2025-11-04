@@ -12,16 +12,15 @@ import WidgetKit
 ///
 /// for displaying bookmarks in the widget context.
 struct BookmarkEntry: TimelineEntry {
-    
+
     let date: Date
-    
+
     /// bookmarks associated with this `BookmarkEntry`.
     let bookmarks: [Bookmark]
-    
+
     /// Returns a formatted string representing the last updated time.
     public func lastUpdatedAt(with formatters: Formatters) -> String {
         bookmarks.isEmpty ? "--" : formatters.timeFormatter.string(from: date)
     }
-    
-}
 
+}
