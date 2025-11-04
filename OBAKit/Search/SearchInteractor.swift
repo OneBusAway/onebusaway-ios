@@ -219,6 +219,8 @@ class SearchInteractor: NSObject {
         }
     }
 
+    // swiftlint:disable cyclomatic_complexity
+
     private func buildPlacemarksSection() -> OBAListViewSection? {
         let sectionTitle = OBALoc("search_controller.placemarks.header", value: "Results", comment: "Placemark search header")
 
@@ -273,6 +275,8 @@ class SearchInteractor: NSObject {
             return listSection(for: .placemarks, title: sectionTitle, contents: items)
         }
     }
+
+    // swiftlint:enable cyclomatic_complexity
 
     // MARK: - Private/Quick Search
 
