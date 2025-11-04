@@ -12,7 +12,7 @@ import SwiftUI
 struct OBAWidget: Widget {
     let kind: String = "OBAWidget"
     let dataProvider = WidgetDataProvider.shared
-    
+
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
             kind: kind,
@@ -22,7 +22,7 @@ struct OBAWidget: Widget {
                 .containerBackground(.fill.quaternary, for: .widget)
         }
         .supportedFamilies([.systemMedium, .systemLarge])
-        
+
     }
 }
 

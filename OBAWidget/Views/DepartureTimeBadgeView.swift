@@ -9,21 +9,18 @@ import SwiftUI
 import WidgetKit
 import OBAKitCore
 
-
 struct DepartureTimeBadgeView: View {
-    
+
     let arrivalDeparture: ArrivalDeparture
     let formatters: Formatters
-    
-    
+
     private var displayText: String {
         formatters.shortFormattedTime(
             untilMinutes: arrivalDeparture.arrivalDepartureMinutes,
             temporalState: arrivalDeparture.temporalState
         )
     }
-    
-    
+
     private var accessibilityLabel: String {
         formatters.explanationForArrivalDeparture(
             tempuraState: arrivalDeparture.temporalState,
@@ -31,22 +28,21 @@ struct DepartureTimeBadgeView: View {
             arrivalDepartureMinutes: arrivalDeparture.arrivalDepartureMinutes
         )
     }
-    
+
     private var backgroundColor: Color {
         Color(formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus))
-        
+
     }
-    
-    
+
     var body: some View {
-        VStack{
+        VStack {
             Text("\(displayText)")
                 .badgeStyle(
                     backgroundColor: backgroundColor,
                     accessibilityLabel: accessibilityLabel
                 )
         }
-       
+
     }
 }
 
