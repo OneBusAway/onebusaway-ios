@@ -29,9 +29,16 @@ struct DepartureTimeBadgeView: View {
         )
     }
 
-    private var backgroundColor: Color {
-        Color(formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus))
+    private var scheduleColor: UIColor {
+        formatters.backgroundColorForScheduleStatus(arrivalDeparture.scheduleStatus)
+    }
 
+    private var backgroundColor: Color {
+        Color(scheduleColor)
+    }
+
+    private var foregroundColor: Color {
+        Color(scheduleColor.contrastingTextColor)
     }
 
     var body: some View {
@@ -39,6 +46,7 @@ struct DepartureTimeBadgeView: View {
             Text("\(displayText)")
                 .badgeStyle(
                     backgroundColor: backgroundColor,
+                    textColor: foregroundColor,
                     accessibilityLabel: accessibilityLabel
                 )
         }
@@ -47,25 +55,44 @@ struct DepartureTimeBadgeView: View {
 }
 
 extension View {
-    func badgeStyle(backgroundColor: Color, accessibilityLabel: String) -> some View {
-        self.modifier(BadgeStyle(backgroundColor: backgroundColor, accessibilityLabel: accessibilityLabel))
+    func badgeStyle(backgroundColor: Color, textColor: Color, accessibilityLabel: String) -> some View {
+        self.modifier(BadgeStyle(backgroundColor: backgroundColor, textColor: textColor, accessibilityLabel: accessibilityLabel))
     }
 }
 
 struct BadgeStyle: ViewModifier {
     let backgroundColor: Color
+    let textColor: Color
     let accessibilityLabel: String
+
+    @Environment(\.widgetRenderingMode) private var widgetRenderingMode
+
+    private var rendersFullColor: Bool {
+        widgetRenderingMode == .fullColor
+    }
+
     func body(content: Content) -> some View {
-        content
+        let base = content
             .font(.system(size: 13))
             .padding(.horizontal, 3)
             .padding(.vertical, 4)
             .frame(width: 40, height: 25)
-            .background(backgroundColor)
-            .foregroundColor(.white)
-            .cornerRadius(8)
             .accessibilityLabel(accessibilityLabel)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
+
+        if rendersFullColor {
+            base
+                .foregroundStyle(textColor)
+                .background(backgroundColor)
+                .cornerRadius(8)
+        } else {
+            base
+                .foregroundStyle(.primary)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(.primary.opacity(0.35), lineWidth: 1)
+                )
+        }
     }
 }
