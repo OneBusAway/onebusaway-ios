@@ -446,6 +446,11 @@ public class MapRegionManager: NSObject,
     private func displaySearchResult(mapItem: MKMapItem) {
         mapView.setCenter(mapItem.placemark.coordinate, animated: true)
         mapView.addAnnotation(mapItem.placemark)
+
+        // Clear searchResponse on next run loop to allow normal stop loading when panning
+        DispatchQueue.main.async { [weak self] in
+            self?.searchResponse = nil
+        }
     }
 
     private func displaySearchResult(stopsForRoute: StopsForRoute) {
@@ -726,6 +731,11 @@ public class MapRegionManager: NSObject,
             let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
             let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
             self.searchResponse = response
+
+            // Clear searchResponse on next run loop to allow normal stop loading when panning
+            DispatchQueue.main.async { [weak self] in
+                self?.searchResponse = nil
+            }
         }
     }
 
