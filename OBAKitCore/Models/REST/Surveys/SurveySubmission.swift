@@ -20,7 +20,16 @@ public struct SurveySubmission: Codable {
     
     public let stopLatitude: Double?
     
-    public let response: [QuestionAnswerSubmission]
+    public let responses: [QuestionAnswerSubmission]
+    
+    enum CodingKeys: String, CodingKey {
+        case userIdentifier = "user_identifier"
+        case surveyId = "survey_id"
+        case stopIdentifier = "stop_identifier"
+        case stopLongitude = "stop_longitude"
+        case stopLatitude = "stop_latitude"
+        case responses
+    }
     
 }
 
