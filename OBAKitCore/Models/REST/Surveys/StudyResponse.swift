@@ -8,7 +8,7 @@
 import Foundation
 
 /// Represents a Study surveys response containing the survey data  with associated information
-public struct StudyResponse: Codable {
+public struct StudyResponse: Codable, Hashable {
 
     public let surveys: [Survey]
 
@@ -16,7 +16,7 @@ public struct StudyResponse: Codable {
 
 }
 
-public struct Survey: Codable {
+public struct Survey: Codable, Hashable {
 
     public let id: Int
 
@@ -86,7 +86,7 @@ extension Survey {
 
 }
 
-public struct Study: Codable {
+public struct Study: Codable, Hashable {
 
     public let id: Int
 
@@ -97,7 +97,7 @@ public struct Study: Codable {
 }
 
 // MARK: - Survey Question
-public struct SurveyQuestion: Codable {
+public struct SurveyQuestion: Codable, Hashable {
 
     public let id: Int
 
@@ -110,7 +110,7 @@ public struct SurveyQuestion: Codable {
 }
 
 // MARK: - Question Content
-public struct QuestionContent: Codable {
+public struct QuestionContent: Codable, Hashable {
 
     public let labelText: String
 
@@ -165,7 +165,7 @@ extension QuestionContent {
 }
 
 // MARK: - Question Content Type
-public enum QuestionType: String, Codable {
+public enum QuestionType: String, Codable, Hashable {
 
     case text = "text"
 
@@ -180,16 +180,16 @@ public enum QuestionType: String, Codable {
 }
 
 // MARK: - Question Content Models
-struct TextContent {
+struct TextContent: Codable, Hashable {
     let labelText: String
 }
 
-struct SelectableContent {
+struct SelectableContent: Codable, Hashable {
     let labelText: String
     let options: [String]?
 }
 
-struct ExternalSurveyContent {
+struct ExternalSurveyContent: Codable, Hashable {
     let labelText: String
     let url: String?
     let provider: String?
