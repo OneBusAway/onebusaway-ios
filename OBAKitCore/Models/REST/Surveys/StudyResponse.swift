@@ -7,47 +7,45 @@
 
 import Foundation
 
-
 /// Represents a Study surveys response containing the survey data  with associated information
 public struct StudyResponse: Codable {
-    
+
     public let surveys: [Survey]
-    
+
     public let region: Region
-    
+
 }
 
 public struct Survey: Codable {
 
     public let id: Int
-    
+
     public let name: String
 
     public let createdAt: Date
-   
+
     public let updatedAt: Date
 
     public let showOnMap: Bool
-   
+
     public let showOnStops: Bool
 
     public let startDate: Date?
-    
+
     public let endDate: Date?
 
     public let visibleStopsList: [String]?
-   
+
     public let visibleRoutesList: [String]?
 
     public let allowsMultipleResponses: Bool
-    
+
     public let allowsVisible: Bool
-    
+
     public let study: Study
 
     public let questions: [SurveyQuestion]
 
-    
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -64,14 +62,14 @@ public struct Survey: Codable {
         case study
         case questions
     }
-    
+
 }
 
 extension Survey {
-    
+
     /// Returns an array of survey questions whose content is valid (non-nil) based on their type.
     public func getQuestions() -> [SurveyQuestion] {
-        
+
         return questions.filter {
             switch $0.content.type {
             case .text:
@@ -85,7 +83,7 @@ extension Survey {
             }
         }
     }
-    
+
 }
 
 public struct Study: Codable {
@@ -113,19 +111,19 @@ public struct SurveyQuestion: Codable {
 
 // MARK: - Question Content
 public struct QuestionContent: Codable {
-    
+
     public let labelText: String
-    
+
     public let type: QuestionType
-    
+
     public let options: [String]?
-    
+
     public let url: String?
-    
+
     public let surveyProvider: String?
-    
+
     public let embeddedDataFields: [String]?
-    
+
     enum CodingKeys: String, CodingKey {
         case labelText = "label_text"
         case type
@@ -134,26 +132,26 @@ public struct QuestionContent: Codable {
         case surveyProvider = "survey_provider"
         case embeddedDataFields = "embedded_data_fields"
     }
-    
+
 }
 
 extension QuestionContent {
-    
+
     var asTextContent: String? {
         guard type == .text else { return nil }
         return labelText
     }
-    
+
     var asSelectableContent: SelectableContent? {
         guard type == .checkbox || type == .radio else { return nil }
         return SelectableContent(labelText: labelText, options: options)
     }
-    
+
     var asLabelContent: TextContent? {
         guard type == .label else { return nil }
         return TextContent(labelText: labelText)
     }
-    
+
     var asExternalSurveyContent: ExternalSurveyContent? {
         guard type == .externalSurvey else { return nil }
         return ExternalSurveyContent(
@@ -163,22 +161,22 @@ extension QuestionContent {
             embeddedDataFields: embeddedDataFields
         )
     }
-    
+
 }
 
 // MARK: - Question Content Type
 public enum QuestionType: String, Codable {
-    
+
     case text = "text"
-    
+
     case radio = "radio"
-    
+
     case checkbox = "checkbox"
-    
+
     case label = "label"
-    
+
     case externalSurvey = "external_survey"
-    
+
 }
 
 // MARK: - Question Content Models
