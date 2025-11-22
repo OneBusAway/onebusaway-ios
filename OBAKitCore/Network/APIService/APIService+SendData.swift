@@ -1,8 +1,66 @@
 //
-//  APIService+PostPutData.swift
+//  APIService+SendData.swift
 //  OBAKitCore
 //
 //  Created by Mohamed Sliem on 23/11/2025.
 //
 
 import Foundation
+
+extension APIService {
+
+    /// Sends a POST request to the given URL with the provided Encodable body.
+    /// - Parameters:
+    ///   - url: The endpoint URL.
+    ///   - data: The Encodable body to send.
+    /// - Returns: A decoded response of type `Response`.
+    /// - Throws: `APIError` if the network request fails or decoding fails.
+    nonisolated public func postData<Data: Encodable, Response: Decodable>(url: URL, data: Data) async throws -> Response {
+        try await sendData(url: url, method: .post, body: data)
+    }
+
+    /// Sends a PUT request to the given URL with the provided Encodable body.
+    /// - Parameters:
+    ///   - url: The endpoint URL.
+    ///   - data: The Encodable body to update.
+    /// - Returns: A decoded response of type `Response`.
+    /// - Throws: `APIError` if the network request fails or decoding fails.
+    nonisolated public func updateData<Data: Encodable, Response: Decodable>(url: URL, data: Data) async throws -> Response {
+        try await sendData(url: url, method: .put, body: data)
+    }
+
+    /// Sends an encoded request body using the specified HTTP method and decodes the response.
+    /// - Parameters:
+    ///   - url: The endpoint URL.
+    ///   - method: The HTTP method to use (e.g., POST, PUT).
+    ///   - body: The `Encodable` payload to send.
+    /// - Returns: The decoded response of type `Response`.
+    /// - Throws: `APIError` for network or decoding failures.
+    nonisolated private func sendData<Data: Encodable, Response: Decodable>(url: URL, method: HTTPMethod, body: Data) async throws -> Response {
+
+        let encoder = JSONEncoder()
+        let requestData = try encoder.encode(body)
+
+        var request = URLRequest(url: url)
+        request.httpMethod = method.value
+        request.httpBody = requestData
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let (data, response) = try await dataLoader.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            logger.error("Network error: missing response for \(method.value) \(url, privacy: .public)")
+            throw APIError.networkFailure(nil)
+        }
+
+        guard 200...299 ~= httpResponse.statusCode else {
+            if httpResponse.statusCode == 404 {
+                throw APIError.requestNotFound(httpResponse)
+            }
+            throw APIError.requestFailure(httpResponse)
+        }
+
+        return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+}
