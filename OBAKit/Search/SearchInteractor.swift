@@ -166,59 +166,47 @@ class SearchInteractor: NSObject {
     private var debounceTimer: Timer?
 
     private func placemarkSearch(searchText: String, mapRect: MKMapRect) {
-        guard
-            searchText != lastSearchText,
-            searchText.count >= 2
-        else {
-            return
-        }
-
+        guard searchText != lastSearchText, searchText.count >= 2 else { return }
         lastSearchText = searchText
-
         debounceTimer?.invalidate()
-        debounceTimer = nil
-
-        debounceTimer = Timer.scheduledTimer(
-            withTimeInterval: placemarkSearchDebounceInterval,
-            repeats: false
-        ) { [weak self] _ in
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.35, repeats: false) { [weak self] _ in
             guard let self = self else { return }
-
-            if let localSearch = self.localSearch {
-                localSearch.cancel()
-            }
-
-            // Set loading state when search starts
+            self.localSearch?.cancel()
             self.placemarkSearchState = .loading
-
-            let searchRequest = MKLocalSearch.Request()
-            searchRequest.naturalLanguageQuery = searchText
-            searchRequest.region = MKCoordinateRegion(mapRect)
-            let search = MKLocalSearch(request: searchRequest)
-            search.start { response, error in
-                if let error {
+            let request = MKLocalSearch.Request()
+            request.naturalLanguageQuery = searchText
+            // 1. Tell Apple to search only inside the selected OBA region
+            if let serviceRect = self.application.currentRegion?.serviceRect {
+                request.region = MKCoordinateRegion(serviceRect)
+            }
+            let search = MKLocalSearch(request: request)
+            self.localSearch = search
+            search.start { [weak self] response, error in
+                guard let self = self else { return }
+                if let error = error {
                     self.placemarkSearchState = .error(error)
                     return
                 }
-
-                guard let response else {
-                    let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
-                    self.placemarkSearchState = .error(unknownError)
+                guard let response = response else {
+                    self.placemarkSearchState = .noResults
                     return
                 }
-
-                if response.mapItems.isEmpty {
-                    self.placemarkSearchState = .noResults
-                } else {
-                    self.placemarkSearchState = .success
+                // 2. FINAL FILTER: 100% strict – must be inside the OBA region boundary
+                guard let serviceRect = self.application.currentRegion?.serviceRect else {
                     self.cachedPlacemarks = response.mapItems
+                    self.placemarkSearchState = .success
+                    return
                 }
+                let filtered = response.mapItems.filter { item in
+                    guard let coordinate = item.placemark.location?.coordinate else { return false }
+                    let point = MKMapPoint(coordinate)
+                    return serviceRect.contains(point)
+                }
+                self.cachedPlacemarks = filtered
+                self.placemarkSearchState = filtered.isEmpty ? .noResults : .success
             }
-
-            self.localSearch = search
         }
     }
-
     // swiftlint:disable cyclomatic_complexity
 
     private func buildPlacemarksSection() -> OBAListViewSection? {
