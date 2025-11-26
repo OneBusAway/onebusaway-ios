@@ -8,12 +8,26 @@
 //
 
 import SwiftUI
+import OBAKitCore
 
 /// A sheet that displays detailed information about a selected vehicle
 struct VehicleDetailSheet: View {
     let vehicle: RealtimeVehicle
+    let application: Application
+    var onNavigateToTrip: ((TripConvertible) -> Void)?
+
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+
+    @State private var tripDetails: TripDetails?
+    @State private var isLoadingTrip = false
+    @State private var tripLoadError: Error?
+
+    /// Constructs the prefixed trip ID in OBA format: `{agencyID}_{tripID}`
+    private var prefixedTripID: String? {
+        guard let tripID = vehicle.tripID else { return nil }
+        return "\(vehicle.agencyID)_\(tripID)"
+    }
 
     var body: some View {
         NavigationStack {
@@ -21,7 +35,7 @@ struct VehicleDetailSheet: View {
                 vehicleInfoSection
                 agencyInfoSection
             }
-            .navigationTitle("Vehicle Details")
+            .navigationTitle(tripDetails?.trip.routeHeadsign ?? "Vehicle Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -31,6 +45,62 @@ struct VehicleDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .task {
+            await loadTripDetails()
+        }
+    }
+
+    // MARK: - Trip Loading
+
+    private func loadTripDetails() async {
+        guard let prefixedTripID = prefixedTripID,
+              let apiService = application.apiService else { return }
+
+        isLoadingTrip = true
+        do {
+            let response = try await apiService.getTrip(
+                tripID: prefixedTripID,
+                vehicleID: nil,
+                serviceDate: nil
+            )
+            tripDetails = response.entry
+        } catch {
+            tripLoadError = error
+        }
+        isLoadingTrip = false
+    }
+
+    /// Route row that becomes tappable when trip details are loaded
+    @ViewBuilder
+    private var routeRow: some View {
+        if let tripDetails = tripDetails {
+            Button {
+                let tripConvertible = TripConvertible(tripDetails: tripDetails)
+                dismiss()
+                onNavigateToTrip?(tripConvertible)
+            } label: {
+                HStack {
+                    Text("Route")
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(tripDetails.trip.routeHeadsign)
+                        .foregroundStyle(.blue)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } else if isLoadingTrip {
+            HStack {
+                Text("Route")
+                    .foregroundStyle(.secondary)
+                Spacer()
+                ProgressView()
+                    .scaleEffect(0.8)
+            }
+        } else if let routeID = vehicle.routeID {
+            DetailRow(label: "Route", value: routeID)
+        }
     }
 
     // MARK: - Vehicle Info Section
@@ -43,8 +113,8 @@ struct VehicleDetailSheet: View {
                 DetailRow(label: "Vehicle ID", value: vehicleID)
             }
 
-            if let routeID = vehicle.routeID {
-                DetailRow(label: "Route", value: routeID)
+            if vehicle.routeID != nil {
+                routeRow
             }
 
             if let tripID = vehicle.tripID {

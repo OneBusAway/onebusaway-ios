@@ -9,6 +9,7 @@
 
 import SwiftUI
 import MapKit
+import UIKit
 import OBAKitCore
 
 /// A SwiftUI view that displays vehicle positions on a map
@@ -58,7 +59,34 @@ struct VehiclesMapView: View {
             MapScaleView()
         }
         .sheet(item: $selectedVehicle) { vehicle in
-            VehicleDetailSheet(vehicle: vehicle)
+            VehicleDetailSheet(
+                vehicle: vehicle,
+                application: viewModel.application,
+                onNavigateToTrip: { tripConvertible in
+                    navigateToTrip(tripConvertible)
+                }
+            )
+        }
+    }
+
+    // MARK: - Navigation
+
+    private func navigateToTrip(_ tripConvertible: TripConvertible) {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootVC = window.rootViewController else { return }
+
+        let tripVC = TripViewController(
+            application: viewModel.application,
+            tripConvertible: tripConvertible
+        )
+
+        // Find the navigation controller and push
+        if let tabBarController = rootVC as? UITabBarController,
+           let navController = tabBarController.selectedViewController as? UINavigationController {
+            navController.pushViewController(tripVC, animated: true)
+        } else if let navController = rootVC.navigationController {
+            navController.pushViewController(tripVC, animated: true)
         }
     }
 

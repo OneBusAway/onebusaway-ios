@@ -43,9 +43,12 @@ class VehiclesViewModel: ObservableObject {
         application.userDataStore.disabledVehicleFeedAgencyIDs.isEmpty
     }
 
+    // MARK: - Internal Properties
+
+    let application: Application
+
     // MARK: - Private Properties
 
-    private let application: Application
     private var refreshTask: Task<Void, Never>?
     private var allAgencyIDs: [String] = []
 
