@@ -22,7 +22,15 @@ struct RealtimeVehicle: Identifiable, Hashable {
     let vehicleLabel: String?
     let timestamp: Date?
 
-    init(from entity: TransitRealtime_FeedEntity) {
+    // Agency information
+    let agencyID: String
+    let agencyName: String
+    let agencyPhone: String?
+    let agencyEmail: String?
+    let agencyURL: URL?
+    let fareURL: URL?
+
+    init(from entity: TransitRealtime_FeedEntity, agency: Agency?) {
         self.id = entity.id
         let vehicle = entity.vehicle
         let position = vehicle.position
@@ -37,6 +45,23 @@ struct RealtimeVehicle: Identifiable, Hashable {
         self.vehicleID = vehicle.hasVehicle ? vehicle.vehicle.id : nil
         self.vehicleLabel = vehicle.hasVehicle ? vehicle.vehicle.label : nil
         self.timestamp = vehicle.hasTimestamp ? Date(timeIntervalSince1970: TimeInterval(vehicle.timestamp)) : nil
+
+        // Agency information
+        self.agencyID = agency?.id ?? "unknown"
+        self.agencyName = agency?.name ?? "Unknown Agency"
+        self.agencyPhone = agency?.phone.isEmpty == false ? agency?.phone : nil
+        self.agencyEmail = agency?.email
+        self.agencyURL = agency?.agencyURL
+        self.fareURL = agency?.fareURL
+    }
+
+    /// Returns the bearing formatted as a compass direction (e.g., "Northeast (45°)")
+    var bearingDescription: String? {
+        guard let bearing = bearing else { return nil }
+        let directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+        let index = Int((bearing + 22.5).truncatingRemainder(dividingBy: 360) / 45)
+        let direction = directions[index]
+        return "\(direction) (\(Int(bearing))°)"
     }
 
     func hash(into hasher: inout Hasher) {

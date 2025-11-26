@@ -15,6 +15,7 @@ import OBAKitCore
 struct VehiclesMapView: View {
     @StateObject private var viewModel: VehiclesViewModel
     @State private var showingFeedStatus = false
+    @State private var selectedVehicle: RealtimeVehicle?
 
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: VehiclesViewModel(application: application))
@@ -44,6 +45,9 @@ struct VehiclesMapView: View {
                     coordinate: vehicle.coordinate
                 ) {
                     RealtimeVehicleAnnotationView(vehicle: vehicle)
+                        .onTapGesture {
+                            selectedVehicle = vehicle
+                        }
                 }
             }
         }
@@ -52,6 +56,9 @@ struct VehiclesMapView: View {
             MapUserLocationButton()
             MapCompass()
             MapScaleView()
+        }
+        .sheet(item: $selectedVehicle) { vehicle in
+            VehicleDetailSheet(vehicle: vehicle)
         }
     }
 

@@ -70,9 +70,13 @@ class VehiclesViewModel: ObservableObject {
             // 2. Fetch vehicles for all agencies concurrently
             typealias FetchResult = (vehicles: [RealtimeVehicle], status: AgencyFeedStatus)
             let results = await withTaskGroup(of: FetchResult.self) { group -> [FetchResult] in
-                for agency in agencies {
+                for agencyWithCoverage in agencies {
                     group.addTask {
-                        await self.fetchVehiclesForAgency(agency.agencyID, agencyName: agency.agency?.name ?? "Unknown")
+                        await self.fetchVehiclesForAgency(
+                            agencyWithCoverage.agencyID,
+                            agencyName: agencyWithCoverage.agency?.name ?? "Unknown",
+                            agency: agencyWithCoverage.agency
+                        )
                     }
                 }
 
@@ -129,7 +133,7 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Private Methods
 
-    private nonisolated func fetchVehiclesForAgency(_ agencyID: String, agencyName: String) async -> (vehicles: [RealtimeVehicle], status: AgencyFeedStatus) {
+    private nonisolated func fetchVehiclesForAgency(_ agencyID: String, agencyName: String, agency: Agency?) async -> (vehicles: [RealtimeVehicle], status: AgencyFeedStatus) {
         var status = AgencyFeedStatus(id: agencyID, agencyName: agencyName)
 
         let urlString = "https://api.pugetsound.onebusaway.org/api/gtfs_realtime/vehicle-positions-for-agency/\(agencyID).pb?key=org.onebusaway.iphone"
@@ -176,7 +180,7 @@ class VehiclesViewModel: ObservableObject {
             print("[VehiclesVM] \(agencyID): \(totalEntities) entities, \(vehicleEntities.count) vehicles, \(withPosition.count) with position")
             print("[VehiclesVM] \(agencyID): \(withPosition.count) vehicles")
 
-            let vehicles = withPosition.map { RealtimeVehicle(from: $0) }
+            let vehicles = withPosition.map { RealtimeVehicle(from: $0, agency: agency) }
             status.vehicleCount = vehicles.count
             return (vehicles, status)
         } catch {
