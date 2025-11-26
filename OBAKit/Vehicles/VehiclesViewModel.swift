@@ -26,10 +26,28 @@ class VehiclesViewModel: ObservableObject {
     @Published var lastUpdated: Date?
     @Published var cameraPosition: MapCameraPosition = .automatic
 
+    // MARK: - Agency Filter Properties
+
+    /// Total number of agencies available
+    var totalAgencyCount: Int {
+        feedStatuses.count
+    }
+
+    /// Number of enabled agencies
+    var enabledAgencyCount: Int {
+        feedStatuses.filter { isAgencyEnabled($0.id) }.count
+    }
+
+    /// Whether all agencies are currently enabled
+    var allAgenciesEnabled: Bool {
+        application.userDataStore.disabledVehicleFeedAgencyIDs.isEmpty
+    }
+
     // MARK: - Private Properties
 
     private let application: Application
     private var refreshTask: Task<Void, Never>?
+    private var allAgencyIDs: [String] = []
 
     /// Auto-refresh interval in seconds
     private let refreshInterval: TimeInterval = 30
@@ -67,28 +85,50 @@ class VehiclesViewModel: ObservableObject {
             let agencies = try await apiService.getAgenciesWithCoverage().list
             print("[VehiclesVM] Fetched \(agencies.count) agencies")
 
-            // 2. Fetch vehicles for all agencies concurrently
+            // Store all agency IDs for toggle all functionality
+            self.allAgencyIDs = agencies.map { $0.agencyID }
+
+            // 2. Fetch vehicles for enabled agencies, create status for all
             typealias FetchResult = (vehicles: [RealtimeVehicle], status: AgencyFeedStatus)
-            let results = await withTaskGroup(of: FetchResult.self) { group -> [FetchResult] in
+            var allStatuses: [AgencyFeedStatus] = []
+            var allVehicles: [RealtimeVehicle] = []
+
+            let results = await withTaskGroup(of: FetchResult?.self) { group -> [FetchResult] in
                 for agencyWithCoverage in agencies {
-                    group.addTask {
-                        await self.fetchVehiclesForAgency(
-                            agencyWithCoverage.agencyID,
-                            agencyName: agencyWithCoverage.agency?.name ?? "Unknown",
-                            agency: agencyWithCoverage.agency
-                        )
+                    let agencyID = agencyWithCoverage.agencyID
+                    let agencyName = agencyWithCoverage.agency?.name ?? "Unknown"
+
+                    if isAgencyEnabled(agencyID) {
+                        // Fetch vehicles for enabled agencies
+                        group.addTask {
+                            await self.fetchVehiclesForAgency(
+                                agencyID,
+                                agencyName: agencyName,
+                                agency: agencyWithCoverage.agency
+                            )
+                        }
+                    } else {
+                        // Create a skipped status for disabled agencies (no network call)
+                        var status = AgencyFeedStatus(id: agencyID, agencyName: agencyName)
+                        status.isSkipped = true
+                        allStatuses.append(status)
                     }
                 }
 
                 var results: [FetchResult] = []
                 for await result in group {
-                    results.append(result)
+                    if let result = result {
+                        results.append(result)
+                    }
                 }
                 return results
             }
 
-            self.vehicles = results.flatMap { $0.vehicles }
-            self.feedStatuses = results.map { $0.status }.sorted { $0.agencyName < $1.agencyName }
+            allVehicles = results.flatMap { $0.vehicles }
+            allStatuses.append(contentsOf: results.map { $0.status })
+
+            self.vehicles = allVehicles
+            self.feedStatuses = allStatuses.sorted { $0.agencyName < $1.agencyName }
             self.lastUpdated = Date()
             print("[VehiclesVM] ========== Fetch complete: \(self.vehicles.count) total vehicles ==========")
         } catch {
@@ -128,6 +168,34 @@ class VehiclesViewModel: ObservableObject {
     func centerOnCurrentRegion() {
         if let region = application.regionsService.currentRegion {
             cameraPosition = .region(MKCoordinateRegion(region.serviceRect))
+        }
+    }
+
+    // MARK: - Agency Filter Methods
+
+    /// Returns whether the specified agency is enabled for vehicle display
+    func isAgencyEnabled(_ agencyID: String) -> Bool {
+        application.userDataStore.isAgencyEnabledForVehicleFeed(agencyID: agencyID)
+    }
+
+    /// Sets whether the specified agency is enabled for vehicle display
+    func setAgencyEnabled(_ enabled: Bool, agencyID: String) {
+        application.userDataStore.setAgencyEnabledForVehicleFeed(enabled, agencyID: agencyID)
+        objectWillChange.send()
+        // Trigger refresh to update vehicle display
+        Task {
+            await fetchVehicles()
+        }
+    }
+
+    /// Toggles all agencies on or off
+    func toggleAllAgencies() {
+        let newState = !allAgenciesEnabled
+        application.userDataStore.setAllAgenciesEnabledForVehicleFeed(newState, agencyIDs: allAgencyIDs)
+        objectWillChange.send()
+        // Trigger refresh to update vehicle display
+        Task {
+            await fetchVehicles()
         }
     }
 

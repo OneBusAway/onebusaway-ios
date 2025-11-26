@@ -18,6 +18,7 @@ struct AgencyFeedStatus: Identifiable {
     var error: FeedError?
     var httpStatusCode: Int?
     var dataSize: Int?
+    var isSkipped: Bool = false  // True if agency was disabled and not fetched
 
     /// Errors that can occur when fetching a vehicle feed
     enum FeedError {

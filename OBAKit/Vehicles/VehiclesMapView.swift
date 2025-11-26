@@ -88,7 +88,7 @@ struct VehiclesMapView: View {
                 .background(.ultraThinMaterial, in: Circle())
         }
         .sheet(isPresented: $showingFeedStatus) {
-            FeedStatusSheet(feedStatuses: viewModel.feedStatuses)
+            FeedStatusSheet(viewModel: viewModel)
         }
     }
 
@@ -114,6 +114,12 @@ struct VehiclesMapView: View {
 
                 if let lastUpdated = viewModel.lastUpdated {
                     Text("Updated \(lastUpdated, style: .relative) ago")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                if viewModel.totalAgencyCount > 0 {
+                    Text("Agencies: \(viewModel.enabledAgencyCount) of \(viewModel.totalAgencyCount)")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
