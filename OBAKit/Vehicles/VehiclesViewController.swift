@@ -33,7 +33,7 @@ class VehiclesViewController: UIViewController, AppContext {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let vehiclesMapView = VehiclesMapView()
+        let vehiclesMapView = VehiclesMapView(application: application)
         let hostingController = UIHostingController(rootView: vehiclesMapView)
 
         addChild(hostingController)

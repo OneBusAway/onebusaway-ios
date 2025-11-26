@@ -20,6 +20,7 @@ class VehiclesViewModel: ObservableObject {
     // MARK: - Published Properties
 
     @Published var vehicles: [RealtimeVehicle] = []
+    @Published var feedStatuses: [AgencyFeedStatus] = []
     @Published var isLoading: Bool = false
     @Published var error: Error?
     @Published var lastUpdated: Date?
@@ -27,7 +28,7 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Private Properties
 
-    private let feedURL: URL
+    private let application: Application
     private var refreshTask: Task<Void, Never>?
 
     /// Auto-refresh interval in seconds
@@ -35,8 +36,8 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(feedURL: URL = URL(string: "https://api.pugetsound.onebusaway.org/api/gtfs_realtime/vehicle-positions-for-agency/40.pb?key=org.onebusaway.iphone")!) {
-        self.feedURL = feedURL
+    init(application: Application) {
+        self.application = application
     }
 
     deinit {
@@ -45,23 +46,50 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Public Methods
 
-    /// Fetches vehicle positions from the feed
+    /// Fetches vehicle positions for all agencies in the current region
     func fetchVehicles() async {
-        guard !isLoading else { return }
+        guard let apiService = application.apiService else {
+            print("[VehiclesVM] ERROR: No apiService available")
+            return
+        }
+        guard !isLoading else {
+            print("[VehiclesVM] Skipping fetch - already loading")
+            return
+        }
 
         isLoading = true
         error = nil
 
-        do {
-            let (data, _) = try await URLSession.shared.data(from: feedURL)
-            let message = try TransitRealtime_FeedMessage(serializedBytes: data)
+        print("[VehiclesVM] ========== Starting vehicle fetch ==========")
 
-            self.vehicles = message.entity
-                .filter { $0.hasVehicle && $0.vehicle.hasPosition }
-                .map { RealtimeVehicle(from: $0) }
+        do {
+            // 1. Fetch agencies
+            let agencies = try await apiService.getAgenciesWithCoverage().list
+            print("[VehiclesVM] Fetched \(agencies.count) agencies")
+
+            // 2. Fetch vehicles for all agencies concurrently
+            typealias FetchResult = (vehicles: [RealtimeVehicle], status: AgencyFeedStatus)
+            let results = await withTaskGroup(of: FetchResult.self) { group -> [FetchResult] in
+                for agency in agencies {
+                    group.addTask {
+                        await self.fetchVehiclesForAgency(agency.agencyID, agencyName: agency.agency?.name ?? "Unknown")
+                    }
+                }
+
+                var results: [FetchResult] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results
+            }
+
+            self.vehicles = results.flatMap { $0.vehicles }
+            self.feedStatuses = results.map { $0.status }.sorted { $0.agencyName < $1.agencyName }
             self.lastUpdated = Date()
+            print("[VehiclesVM] ========== Fetch complete: \(self.vehicles.count) total vehicles ==========")
         } catch {
             self.error = error
+            print("[VehiclesVM] ERROR fetching agencies: \(error)")
         }
 
         isLoading = false
@@ -92,12 +120,71 @@ class VehiclesViewModel: ObservableObject {
         await fetchVehicles()
     }
 
-    /// Centers the map on the Puget Sound region (default region for this feed)
-    func centerOnDefaultRegion() {
-        let pugetSoundCenter = CLLocationCoordinate2D(latitude: 47.6062, longitude: -122.3321)
-        cameraPosition = .region(MKCoordinateRegion(
-            center: pugetSoundCenter,
-            span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-        ))
+    /// Centers the map on the current region
+    func centerOnCurrentRegion() {
+        if let region = application.regionsService.currentRegion {
+            cameraPosition = .region(MKCoordinateRegion(region.serviceRect))
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private nonisolated func fetchVehiclesForAgency(_ agencyID: String, agencyName: String) async -> (vehicles: [RealtimeVehicle], status: AgencyFeedStatus) {
+        var status = AgencyFeedStatus(id: agencyID, agencyName: agencyName)
+
+        let urlString = "https://api.pugetsound.onebusaway.org/api/gtfs_realtime/vehicle-positions-for-agency/\(agencyID).pb?key=org.onebusaway.iphone"
+        guard let url = URL(string: urlString) else {
+            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
+            print("[VehiclesVM] \(agencyID): ERROR - Invalid URL")
+            status.error = .invalidURL
+            status.lastFetchedAt = Date()
+            return ([], status)
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+
+            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
+
+            status.dataSize = data.count
+            status.lastFetchedAt = Date()
+
+            // Log HTTP response details
+            if let httpResponse = response as? HTTPURLResponse {
+                status.httpStatusCode = httpResponse.statusCode
+                print("[VehiclesVM] \(agencyID): HTTP \(httpResponse.statusCode), \(data.count) bytes")
+
+                if httpResponse.statusCode != 200 {
+                    status.error = .httpError(httpResponse.statusCode)
+                    return ([], status)
+                }
+            }
+
+            let message: TransitRealtime_FeedMessage
+            do {
+                message = try TransitRealtime_FeedMessage(serializedBytes: data)
+            } catch {
+                print("[VehiclesVM] \(agencyID): ERROR - Decoding failed: \(error.localizedDescription)")
+                status.error = .decodingError(error)
+                return ([], status)
+            }
+
+            let totalEntities = message.entity.count
+            let vehicleEntities = message.entity.filter { $0.hasVehicle }
+            let withPosition = message.entity.filter { $0.hasVehicle && $0.vehicle.hasPosition }
+
+            print("[VehiclesVM] \(agencyID): \(totalEntities) entities, \(vehicleEntities.count) vehicles, \(withPosition.count) with position")
+            print("[VehiclesVM] \(agencyID): \(withPosition.count) vehicles")
+
+            let vehicles = withPosition.map { RealtimeVehicle(from: $0) }
+            status.vehicleCount = vehicles.count
+            return (vehicles, status)
+        } catch {
+            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
+            print("[VehiclesVM] \(agencyID): ERROR - Network: \(error.localizedDescription)")
+            status.lastFetchedAt = Date()
+            status.error = .networkError(error)
+            return ([], status)
+        }
     }
 }

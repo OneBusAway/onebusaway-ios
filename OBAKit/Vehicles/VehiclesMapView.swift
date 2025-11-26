@@ -13,7 +13,12 @@ import OBAKitCore
 
 /// A SwiftUI view that displays vehicle positions on a map
 struct VehiclesMapView: View {
-    @StateObject private var viewModel = VehiclesViewModel()
+    @StateObject private var viewModel: VehiclesViewModel
+    @State private var showingFeedStatus = false
+
+    init(application: Application) {
+        _viewModel = StateObject(wrappedValue: VehiclesViewModel(application: application))
+    }
 
     var body: some View {
         ZStack {
@@ -21,7 +26,7 @@ struct VehiclesMapView: View {
             overlayContent
         }
         .task {
-            viewModel.centerOnDefaultRegion()
+            viewModel.centerOnCurrentRegion()
             viewModel.startAutoRefresh()
         }
         .onDisappear {
@@ -59,9 +64,24 @@ struct VehiclesMapView: View {
             HStack {
                 statusView
                 Spacer()
+                infoButton
                 refreshButton
             }
             .padding()
+        }
+    }
+
+    private var infoButton: some View {
+        Button {
+            showingFeedStatus = true
+        } label: {
+            Image(systemName: "info.circle")
+                .font(.title3)
+                .padding(12)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .sheet(isPresented: $showingFeedStatus) {
+            FeedStatusSheet(feedStatuses: viewModel.feedStatuses)
         }
     }
 
@@ -128,8 +148,4 @@ struct RealtimeVehicleAnnotationView: View {
         }
         .shadow(radius: 2)
     }
-}
-
-#Preview {
-    VehiclesMapView()
 }
