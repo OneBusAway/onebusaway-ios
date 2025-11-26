@@ -11,7 +11,7 @@ import Foundation
 import MapKit
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
-    case map, recentStops, bookmarks, settings
+    case map, recentStops, bookmarks, vehicles, settings
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
