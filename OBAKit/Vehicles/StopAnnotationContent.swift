@@ -10,35 +10,20 @@
 import SwiftUI
 import OBAKitCore
 
-/// A SwiftUI view representing a stop annotation on the map
+/// A SwiftUI view representing a stop annotation on the map, using the same icon rendering as the UIKit map
 struct StopAnnotationContent: View {
     let stop: Stop
+    let iconFactory: StopIconFactory
+
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(.white)
-                .frame(width: 24, height: 24)
-            Circle()
-                .stroke(Color.accentColor, lineWidth: 2)
-                .frame(width: 24, height: 24)
-            Image(systemName: iconName)
-                .font(.system(size: 12))
-                .foregroundColor(.accentColor)
-        }
-        .shadow(color: .black.opacity(0.15), radius: 2)
+        Image(uiImage: stopIcon)
     }
 
-    private var iconName: String {
-        switch stop.prioritizedRouteTypeForDisplay {
-        case .lightRail, .subway, .rail:
-            return "tram.fill"
-        case .ferry:
-            return "ferry.fill"
-        case .bus:
-            return "bus.fill"
-        default:
-            return "bus.fill"
-        }
+    private var stopIcon: UIImage {
+        // Create a UITraitCollection to pass to the icon factory for dark mode support
+        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
+        return iconFactory.buildIcon(for: stop, isBookmarked: false, traits: traits)
     }
 }
