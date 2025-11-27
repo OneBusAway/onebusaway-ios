@@ -52,6 +52,8 @@ struct VehicleDetailSheet: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .presentationBackgroundInteraction(.enabled)
+        .interactiveDismissDisabled(true)
         .task {
             await loadTripDetails()
         }
