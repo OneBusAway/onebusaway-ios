@@ -16,15 +16,45 @@ import SwiftUI
 public struct StopViewControllerWrapper: UIViewControllerRepresentable {
     let application: Application
     let stop: Stop
+    @Environment(\.dismiss) private var dismiss
+
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss)
+    }
 
     public func makeUIViewController(context: Context) -> UINavigationController {
         let stopVC = StopViewController(application: application, stop: stop)
+
+        // Configure large title to always be visible
+        stopVC.navigationItem.largeTitleDisplayMode = .always
+
+        // Add close button on trailing side
+        stopVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .close,
+            target: context.coordinator,
+            action: #selector(Coordinator.close)
+        )
+
         let navController = UINavigationController(rootViewController: stopVC)
+        navController.navigationBar.prefersLargeTitles = true
+
         return navController
     }
 
     public func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
         // No updates needed
+    }
+
+    public class Coordinator {
+        let dismiss: DismissAction
+
+        init(dismiss: DismissAction) {
+            self.dismiss = dismiss
+        }
+
+        @objc func close() {
+            dismiss()
+        }
     }
 }
 
@@ -80,7 +110,14 @@ public class StopViewController: UIViewController,
     static let defaultMinutesAfter: UInt = 35
     var minutesAfter: UInt = StopViewController.defaultMinutesAfter
 
-    private var lastUpdated: Date?
+    private var lastUpdated: Date? {
+        didSet {
+            headerViewModel?.lastUpdated = lastUpdated
+        }
+    }
+
+    /// View model for the SwiftUI header
+    private var headerViewModel: StopHeaderViewModel?
 
     /// The number of seconds since this view controller was last updated.
     private var timeIntervalSinceLastUpdate: TimeInterval {
@@ -115,6 +152,15 @@ public class StopViewController: UIViewController,
             application.userDataStore.addRecentStop(stop, region: region)
         }
         application.analytics?.reportStopViewed(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
+
+        // Set up the header view model
+        if headerViewModel == nil {
+            headerViewModel = StopHeaderViewModel(stop: stop, formatters: application.formatters)
+        }
+
+        // Update navigation title to stop name
+        title = stop.name
+        navigationItem.largeTitleDisplayMode = .always
     }
 
     /// Arrival/Departure data for this stop.
@@ -184,6 +230,10 @@ public class StopViewController: UIViewController,
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 
+        // Enable large titles
+        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .always
+
         listView.obaDelegate = self
         listView.obaDataSource = self
         listView.contextMenuDelegate = self
@@ -195,7 +245,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: EmptyDataSetItem.self)
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
-        listView.register(listViewItem: StopHeaderItem.self)
+        listView.register(listViewItem: StopSwiftUIHeaderItem.self)
 
         view.addSubview(listView)
         listView.pinToSuperview(.edges)
@@ -515,11 +565,14 @@ public class StopViewController: UIViewController,
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
     private func updateTitle() {
-        guard let lastUpdated = lastUpdated else {
-            return
+        // Restore navigation title to stop name (it gets set to "Updating..." during data fetch)
+        if let stop = stop {
+            title = stop.name
         }
 
-        title = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+        // The SwiftUI header displays the "Updated: X" text
+        // Trigger a list refresh to update the header's display
+        headerViewModel?.objectWillChange.send()
     }
 
     // MARK: - Broken Bookmarks
@@ -625,8 +678,64 @@ public class StopViewController: UIViewController,
     // MARK: - Data/Stop Header
 
     private var stopHeaderSection: OBAListViewSection? {
-        guard let stop = stop else { return nil }
-        let item = StopHeaderItem(stop: stop, application: application)
+        guard let stop = stop, let headerViewModel = headerViewModel else { return nil }
+
+        let actions = StopHeaderActions(
+            onShowAllRoutes: { [weak self] in
+                guard let self else { return }
+                if self.isListFiltered {
+                    self.isListFiltered = false
+                }
+            },
+            onShowFilteredRoutes: { [weak self] in
+                guard let self else { return }
+                self.isListFiltered = true
+                self.filter()
+            },
+            onAddBookmark: { [weak self] in
+                self?.addBookmark(sender: nil)
+            },
+            onShowServiceAlerts: { [weak self] in
+                guard let self else { return }
+                let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.stopArrivals?.serviceAlerts ?? [])
+                self.application.viewRouter.navigate(to: controller, from: self)
+            },
+            onShowNearbyStops: { [weak self] in
+                guard let self, let stop = self.stop else { return }
+                let nearbyController = NearbyStopsViewController(coordinate: stop.coordinate, application: self.application)
+                self.application.viewRouter.navigate(to: nearbyController, from: self)
+            },
+            onWalkingDirectionsApple: { [weak self] in
+                guard let self, let stop = self.stop,
+                      let url = AppInterop.appleMapsWalkingDirectionsURL(coordinate: stop.coordinate) else { return }
+                self.application.open(url, options: [:], completionHandler: nil)
+            },
+            onWalkingDirectionsGoogle: { [weak self] in
+                guard let self, let stop = self.stop,
+                      let url = AppInterop.googleMapsWalkingDirectionsURL(coordinate: stop.coordinate),
+                      self.application.canOpenURL(url) else { return }
+                self.application.open(url, options: [:], completionHandler: nil)
+            },
+            onSortByTime: { [weak self] in
+                guard let self, let stop = self.stop, let region = self.application.currentRegion else { return }
+                var preferences = self.stopPreferences
+                preferences.sortType = .time
+                self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: stop, region: region)
+                self.stopPreferences = preferences
+            },
+            onSortByRoute: { [weak self] in
+                guard let self, let stop = self.stop, let region = self.application.currentRegion else { return }
+                var preferences = self.stopPreferences
+                preferences.sortType = .route
+                self.application.stopPreferencesDataStore.set(stopPreferences: preferences, stop: stop, region: region)
+                self.stopPreferences = preferences
+            },
+            onReportProblem: { [weak self] in
+                self?.showReportProblem()
+            }
+        )
+
+        let item = StopSwiftUIHeaderItem(viewModel: headerViewModel, actions: actions)
         return listViewSection(for: .stopHeader, title: nil, items: [item])
     }
 
@@ -934,8 +1043,13 @@ public class StopViewController: UIViewController,
 
     /// Call this method after data has been reloaded in this controller
     private func dataDidReload() {
+        // Update the header view model state
+        headerViewModel?.isFiltered = isListFiltered
+        headerViewModel?.hasHiddenRoutes = stopPreferences.hasHiddenRoutes
+        headerViewModel?.sortType = stopPreferences.sortType
+        headerViewModel?.serviceAlertsCount = stopArrivals?.serviceAlerts.count ?? 0
+
         listView.applyData(animated: false)
-        self.configureTabBarButtons()
     }
 
     var operationError: Error? {
