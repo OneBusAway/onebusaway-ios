@@ -1,6 +1,6 @@
 # OBAKit
 
-<img src="WebResources/OBAKit-Logo-Web.png" alt="OBAKit">
+<img src="WebResources/obakit-web-logo.jpg" alt="OBAKit">
 
 OBAKit is a total rewrite of OneBusAway for iOS in the Swift programming language.
 
