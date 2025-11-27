@@ -201,7 +201,7 @@ struct VehiclesMapView: View {
             Spacer()
 
             HStack(alignment: .bottom) {
-                statusView
+                VehiclesMapView.StatusView().environmentObject(viewModel)
                 Spacer()
                 mapButtonBar
             }
@@ -242,43 +242,6 @@ struct VehiclesMapView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 8)
         .frame(maxWidth: 44)
-    }
-
-    private var statusView: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if viewModel.isLoading {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .scaleEffect(0.8)
-                    Text("Loading...")
-                        .font(.caption)
-                }
-            } else if let error = viewModel.error {
-                Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .lineLimit(2)
-            } else {
-                Text("\(viewModel.vehicles.count) vehicles")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-
-                if let lastUpdated = viewModel.lastUpdated {
-                    Text("Updated \(lastUpdated, style: .relative) ago")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-
-                if viewModel.totalAgencyCount > 0 {
-                    Text("Agencies: \(viewModel.enabledAgencyCount) of \(viewModel.totalAgencyCount)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 }
 
