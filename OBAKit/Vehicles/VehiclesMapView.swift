@@ -20,6 +20,7 @@ extension PresentationDetent {
 /// A SwiftUI view that displays vehicle positions on a map
 struct VehiclesMapView: View {
     @StateObject private var viewModel: VehiclesViewModel
+    @StateObject private var stopsViewModel: StopsViewModel
     @State private var showingFeedStatus = false
     @State private var selectedVehicle: RealtimeVehicle?
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
@@ -27,6 +28,7 @@ struct VehiclesMapView: View {
 
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: VehiclesViewModel(application: application))
+        _stopsViewModel = StateObject(wrappedValue: StopsViewModel(application: application))
     }
 
     var body: some View {
@@ -58,6 +60,13 @@ struct VehiclesMapView: View {
                     .stroke(routePolylineColor.opacity(0.75), lineWidth: 5)
             }
 
+            // Stop annotations
+            ForEach(stopsViewModel.stops) { stop in
+                MapKit.Annotation(stop.name, coordinate: stop.coordinate) {
+                    StopAnnotationContent(stop: stop)
+                }
+            }
+
             // Vehicle annotations
             ForEach(viewModel.vehicles) { vehicle in
                 let label = vehicle.vehicleLabel ?? vehicle.vehicleID ?? "Bus"
@@ -65,6 +74,9 @@ struct VehiclesMapView: View {
                     buildAnnotation(vehicle: vehicle)
                 }
             }
+        }
+        .onMapCameraChange(frequency: .onEnd) { context in
+            stopsViewModel.regionDidChange(context.region)
         }
         .mapStyle(.standard(emphasis: .muted))
         .mapControls {
