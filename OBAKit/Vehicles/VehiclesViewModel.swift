@@ -73,6 +73,10 @@ class VehiclesViewModel: ObservableObject {
             print("[VehiclesVM] ERROR: No apiService available")
             return
         }
+        guard let baseURL = application.currentRegion?.OBABaseURL else {
+            print("[VehiclesVM] ERROR: No current region available")
+            return
+        }
         guard !isLoading else {
             print("[VehiclesVM] Skipping fetch - already loading")
             return
@@ -107,7 +111,8 @@ class VehiclesViewModel: ObservableObject {
                             await self.fetchVehiclesForAgency(
                                 agencyID,
                                 agencyName: agencyName,
-                                agency: agencyWithCoverage.agency
+                                agency: agencyWithCoverage.agency,
+                                baseURL: baseURL
                             )
                         }
                     } else {
@@ -202,11 +207,14 @@ class VehiclesViewModel: ObservableObject {
 
     // MARK: - Private Methods
 
-    private nonisolated func fetchVehiclesForAgency(_ agencyID: String, agencyName: String, agency: Agency?) async -> (vehicles: [RealtimeVehicle], status: AgencyFeedStatus) {
+    private nonisolated func fetchVehiclesForAgency(_ agencyID: String, agencyName: String, agency: Agency?, baseURL: URL) async -> (vehicles: [RealtimeVehicle], status: AgencyFeedStatus) {
         var status = AgencyFeedStatus(id: agencyID, agencyName: agencyName)
 
-        let urlString = "https://api.pugetsound.onebusaway.org/api/gtfs_realtime/vehicle-positions-for-agency/\(agencyID).pb?key=org.onebusaway.iphone"
-        guard let url = URL(string: urlString) else {
+        let apiKey = Bundle.main.restServerAPIKey ?? "org.onebusaway.iphone"
+        var urlComponents = URLComponents(url: baseURL.appendingPathComponent("api/gtfs_realtime/vehicle-positions-for-agency/\(agencyID).pb"), resolvingAgainstBaseURL: false)
+        urlComponents?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+
+        guard let url = urlComponents?.url else {
             print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
             print("[VehiclesVM] \(agencyID): ERROR - Invalid URL")
             status.error = .invalidURL
