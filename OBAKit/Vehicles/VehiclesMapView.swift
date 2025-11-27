@@ -10,13 +10,20 @@
 import SwiftUI
 import MapKit
 import UIKit
+import CoreLocation
 import OBAKitCore
+
+extension PresentationDetent {
+    static let tip: PresentationDetent = .fraction(0.25)
+}
 
 /// A SwiftUI view that displays vehicle positions on a map
 struct VehiclesMapView: View {
     @StateObject private var viewModel: VehiclesViewModel
     @State private var showingFeedStatus = false
     @State private var selectedVehicle: RealtimeVehicle?
+    @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
+    @State private var tripDetails: TripDetails?
 
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: VehiclesViewModel(application: application))
@@ -45,15 +52,17 @@ struct VehiclesMapView: View {
 
     private var mapContent: some View {
         Map(position: $viewModel.cameraPosition) {
+            // Route polyline (rendered behind vehicle annotations)
+            if let routePolylineCoordinates {
+                MapPolyline(coordinates: routePolylineCoordinates)
+                    .stroke(routePolylineColor.opacity(0.75), lineWidth: 5)
+            }
+
+            // Vehicle annotations
             ForEach(viewModel.vehicles) { vehicle in
-                Annotation(
-                    vehicle.vehicleLabel ?? vehicle.vehicleID ?? "Bus",
-                    coordinate: vehicle.coordinate
-                ) {
-                    RealtimeVehicleAnnotationView(vehicle: vehicle)
-                        .onTapGesture {
-                            selectedVehicle = vehicle
-                        }
+                let label = vehicle.vehicleLabel ?? vehicle.vehicleID ?? "Bus"
+                MapKit.Annotation(label, coordinate: vehicle.coordinate) {
+                    buildAnnotation(vehicle: vehicle)
                 }
             }
         }
@@ -62,14 +71,51 @@ struct VehiclesMapView: View {
             MapCompass()
             MapScaleView()
         }
-        .sheet(item: $selectedVehicle) { vehicle in
-            VehicleDetailSheet(
-                vehicle: vehicle,
-                application: viewModel.application,
-                onNavigateToTrip: { tripConvertible in
-                    navigateToTrip(tripConvertible)
-                }
-            )
+        .sheet(
+            item: $selectedVehicle,
+            onDismiss: {
+                routePolylineCoordinates = nil
+                tripDetails = nil
+            },
+            content: { vehicle in
+                VehicleDetailSheet(
+                    vehicle: vehicle,
+                    application: viewModel.application,
+                    onNavigateToTrip: { tripConvertible in
+                        navigateToTrip(tripConvertible)
+                    }
+                )
+                .presentationDetents([.tip, .medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+        )
+    }
+
+    private var routePolylineColor: Color {
+        if let uiColor = tripDetails?.trip.route?.color {
+            return Color(uiColor)
+        }
+        return Color.accentColor
+    }
+
+    @ViewBuilder
+    private func buildAnnotation(vehicle: RealtimeVehicle) -> some View {
+        RealtimeVehicleAnnotationView(
+            vehicle: vehicle,
+            isSelected: selectedVehicle?.id == vehicle.id
+        )
+        .onTapGesture {
+            // Clear previous polyline
+            routePolylineCoordinates = nil
+            tripDetails = nil
+            selectedVehicle = vehicle
+            withAnimation {
+                centerOnVehicle(vehicle)
+            }
+            // Load new polyline
+            Task {
+                await loadRoutePolyline(for: vehicle)
+            }
         }
     }
 
@@ -91,6 +137,60 @@ struct VehiclesMapView: View {
             navController.pushViewController(tripVC, animated: true)
         } else if let navController = rootVC.navigationController {
             navController.pushViewController(tripVC, animated: true)
+        }
+    }
+
+    /// Centers the map on the selected vehicle, positioning it in the upper third of the screen
+    /// so it remains visible above the detail sheet.
+    private func centerOnVehicle(_ vehicle: RealtimeVehicle) {
+        // Offset the center point so the vehicle appears in the upper 1/3 of the screen.
+        // The sheet covers roughly the bottom half, so we shift the map center down (south).
+        let latitudeOffset = -0.003
+
+        let offsetCoordinate = CLLocationCoordinate2D(
+            latitude: vehicle.coordinate.latitude + latitudeOffset,
+            longitude: vehicle.coordinate.longitude
+        )
+
+        viewModel.cameraPosition = .camera(
+            MapCamera(centerCoordinate: offsetCoordinate, distance: 2000)
+        )
+    }
+
+    /// Loads and displays the route polyline for the selected vehicle's trip.
+    private func loadRoutePolyline(for vehicle: RealtimeVehicle) async {
+        guard let apiService = viewModel.application.apiService else { return }
+
+        // Build prefixed trip ID: {agencyID}_{tripID}
+        guard let tripID = vehicle.tripID else { return }
+        let prefixedTripID = "\(vehicle.agencyID)_\(tripID)"
+
+        do {
+            // 1. Get trip details to obtain shapeID
+            let tripResponse = try await apiService.getTrip(
+                tripID: prefixedTripID,
+                vehicleID: nil,
+                serviceDate: nil
+            )
+            guard let trip = tripResponse.entry.trip else { return }
+
+            // 2. Fetch the shape using shapeID
+            let shapeResponse = try await apiService.getShape(id: trip.shapeID)
+
+            // 3. Decode the polyline
+            guard let mkPolyline = shapeResponse.entry.polyline else { return }
+
+            // 4. Extract coordinates from MKPolyline
+            let pointCount = mkPolyline.pointCount
+            var coordinates = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: pointCount)
+            mkPolyline.getCoordinates(&coordinates, range: NSRange(location: 0, length: pointCount))
+
+            await MainActor.run {
+                self.routePolylineCoordinates = coordinates
+                self.tripDetails = tripResponse.entry
+            }
+        } catch {
+            print("Failed to load route polyline: \(error)")
         }
     }
 
@@ -185,6 +285,7 @@ struct VehiclesMapView: View {
 /// A view representing a single vehicle annotation on the map
 struct RealtimeVehicleAnnotationView: View {
     let vehicle: RealtimeVehicle
+    var isSelected: Bool = false
 
     var body: some View {
         ZStack {
@@ -197,6 +298,8 @@ struct RealtimeVehicleAnnotationView: View {
                 .foregroundColor(.white)
                 .rotationEffect(.degrees(Double(vehicle.bearing ?? 0)))
         }
-        .shadow(radius: 2)
+        .scaleEffect(isSelected ? 1.4 : 1.0)
+        .shadow(color: .black.opacity(isSelected ? 0.4 : 0.15), radius: isSelected ? 8 : 2)
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
