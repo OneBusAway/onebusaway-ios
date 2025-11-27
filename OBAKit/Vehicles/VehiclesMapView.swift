@@ -27,9 +27,14 @@ struct VehiclesMapView: View {
             mapContent
             overlayContent
         }
+        .sheet(isPresented: $showingFeedStatus) {
+            FeedStatusSheet(viewModel: viewModel)
+        }
         .task {
-            viewModel.centerOnCurrentRegion()
             viewModel.startAutoRefresh()
+        }
+        .onFirstAppear {
+            viewModel.centerOnUserLocation()
         }
         .onDisappear {
             viewModel.stopAutoRefresh()
@@ -52,9 +57,8 @@ struct VehiclesMapView: View {
                 }
             }
         }
-        .mapStyle(.standard)
+        .mapStyle(.standard(emphasis: .muted))
         .mapControls {
-            MapUserLocationButton()
             MapCompass()
             MapScaleView()
         }
@@ -96,28 +100,48 @@ struct VehiclesMapView: View {
         VStack {
             Spacer()
 
-            HStack {
+            HStack(alignment: .bottom) {
                 statusView
                 Spacer()
-                infoButton
-                refreshButton
+                mapButtonBar
             }
             .padding()
         }
     }
 
-    private var infoButton: some View {
-        Button {
-            showingFeedStatus = true
-        } label: {
-            Image(systemName: "info.circle")
-                .font(.title3)
-                .padding(12)
-                .background(.ultraThinMaterial, in: Circle())
+    private var mapButtonBar: some View {
+        VStack(spacing: 0) {
+            Button {
+                showingFeedStatus = true
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease.circle")
+                    .frame(width: 44, height: 44)
+            }
+
+            Divider()
+
+            Button {
+                viewModel.centerOnUserLocation()
+            } label: {
+                Image(systemName: "location.fill")
+                    .frame(width: 44, height: 44)
+            }
+
+            Divider()
+
+            Button {
+                Task {
+                    await viewModel.refresh()
+                }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .frame(width: 44, height: 44)
+            }
+            .disabled(viewModel.isLoading)
         }
-        .sheet(isPresented: $showingFeedStatus) {
-            FeedStatusSheet(viewModel: viewModel)
-        }
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .shadow(radius: 8)
+        .frame(maxWidth: 44)
     }
 
     private var statusView: some View {
@@ -156,20 +180,6 @@ struct VehiclesMapView: View {
         .padding(8)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
-
-    private var refreshButton: some View {
-        Button {
-            Task {
-                await viewModel.refresh()
-            }
-        } label: {
-            Image(systemName: "arrow.clockwise")
-                .font(.title3)
-                .padding(12)
-                .background(.ultraThinMaterial, in: Circle())
-        }
-        .disabled(viewModel.isLoading)
-    }
 }
 
 /// A view representing a single vehicle annotation on the map
@@ -179,7 +189,7 @@ struct RealtimeVehicleAnnotationView: View {
     var body: some View {
         ZStack {
             Circle()
-                .fill(Color.blue)
+                .fill(Color.accentColor)
                 .frame(width: 28, height: 28)
 
             Image(systemName: "bus.fill")

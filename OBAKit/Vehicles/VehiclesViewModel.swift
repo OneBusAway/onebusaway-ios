@@ -167,11 +167,9 @@ class VehiclesViewModel: ObservableObject {
         await fetchVehicles()
     }
 
-    /// Centers the map on the current region
-    func centerOnCurrentRegion() {
-        if let region = application.regionsService.currentRegion {
-            cameraPosition = .region(MKCoordinateRegion(region.serviceRect))
-        }
+    /// Centers the map on the user's current location
+    func centerOnUserLocation() {
+        cameraPosition = .userLocation(fallback: .automatic)
     }
 
     // MARK: - Agency Filter Methods

@@ -31,9 +31,16 @@ struct VehicleDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                vehicleInfoSection
-                agencyInfoSection
+            VStack(spacing: 0) {
+                List {
+                    vehicleInfoSection
+                    agencyInfoSection
+                }
+
+                if tripDetails != nil || isLoadingTrip || vehicle.routeID != nil {
+                    routeButton
+                        .padding()
+                }
             }
             .navigationTitle(tripDetails?.trip.routeHeadsign ?? "Vehicle Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -70,37 +77,28 @@ struct VehicleDetailSheet: View {
         isLoadingTrip = false
     }
 
-    /// Route row that becomes tappable when trip details are loaded
-    @ViewBuilder
-    private var routeRow: some View {
-        if let tripDetails = tripDetails {
-            Button {
+    /// Prominent route button that navigates to trip details
+    private var routeButton: some View {
+        Button {
+            if let tripDetails = tripDetails {
                 let tripConvertible = TripConvertible(tripDetails: tripDetails)
                 dismiss()
                 onNavigateToTrip?(tripConvertible)
-            } label: {
-                HStack {
-                    Text("Route")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text(tripDetails.trip.routeHeadsign)
-                        .foregroundStyle(.blue)
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
-        } else if isLoadingTrip {
+        } label: {
             HStack {
-                Text("Route")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                ProgressView()
-                    .scaleEffect(0.8)
+                if isLoadingTrip {
+                    ProgressView()
+                        .padding(.trailing, 4)
+                }
+                Text(tripDetails?.trip.routeHeadsign ?? vehicle.routeID ?? "Route")
+                Image(systemName: "chevron.right")
             }
-        } else if let routeID = vehicle.routeID {
-            DetailRow(label: "Route", value: routeID)
+            .frame(maxWidth: .infinity)
         }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+        .disabled(tripDetails == nil && !isLoadingTrip)
     }
 
     // MARK: - Vehicle Info Section
@@ -111,14 +109,6 @@ struct VehicleDetailSheet: View {
                 DetailRow(label: "Vehicle", value: label)
             } else if let vehicleID = vehicle.vehicleID {
                 DetailRow(label: "Vehicle ID", value: vehicleID)
-            }
-
-            if vehicle.routeID != nil {
-                routeRow
-            }
-
-            if let tripID = vehicle.tripID {
-                DetailRow(label: "Trip", value: tripID)
             }
 
             if let bearingDesc = vehicle.bearingDescription {
