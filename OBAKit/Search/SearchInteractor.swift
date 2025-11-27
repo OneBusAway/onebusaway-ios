@@ -193,7 +193,16 @@ class SearchInteractor: NSObject {
 
             let searchRequest = MKLocalSearch.Request()
             searchRequest.naturalLanguageQuery = searchText
-            searchRequest.region = MKCoordinateRegion(mapRect)
+            // Use the current OBA region's service bounds instead of the visible map area
+            // to constrain search results to the transit agency's coverage area
+            let searchRegion: MKCoordinateRegion
+            if let currentRegion = application.currentRegion {
+                searchRegion = MKCoordinateRegion(currentRegion.serviceRect)
+            } else {
+                // Fallback to visible map area if no region is set
+                searchRegion = MKCoordinateRegion(mapRect)
+            }
+            searchRequest.region = searchRegion
             let search = MKLocalSearch(request: searchRequest)
             search.start { response, error in
                 if let error {
@@ -207,11 +216,20 @@ class SearchInteractor: NSObject {
                     return
                 }
 
-                if response.mapItems.isEmpty {
+                // Filter results to only include items within the current region's bounds
+                var filteredItems = response.mapItems
+                if let currentRegion = self.application.currentRegion {
+                    filteredItems = response.mapItems.filter { mapItem in
+                        guard let location = mapItem.placemark.location else { return false }
+                        return currentRegion.contains(location: location)
+                    }
+                }
+
+                if filteredItems.isEmpty {
                     self.placemarkSearchState = .noResults
                 } else {
                     self.placemarkSearchState = .success
-                    self.cachedPlacemarks = response.mapItems
+                    self.cachedPlacemarks = filteredItems
                 }
             }
 
