@@ -12,6 +12,22 @@ import OBAKitCore
 import CoreLocation
 import SwiftUI
 
+/// A SwiftUI wrapper for StopViewController to display stop details in a sheet
+public struct StopViewControllerWrapper: UIViewControllerRepresentable {
+    let application: Application
+    let stop: Stop
+
+    public func makeUIViewController(context: Context) -> UINavigationController {
+        let stopVC = StopViewController(application: application, stop: stop)
+        let navController = UINavigationController(rootViewController: stopVC)
+        return navController
+    }
+
+    public func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
+        // No updates needed
+    }
+}
+
 // swiftlint:disable file_length
 
 /// This is the core view controller for displaying information about a transit stop.
