@@ -23,6 +23,7 @@ struct VehiclesMapView: View {
     @StateObject private var stopsViewModel: StopsViewModel
     @State private var showingFeedStatus = false
     @State private var selectedVehicle: RealtimeVehicle?
+    @State private var selectedStop: Stop?
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
     @State private var tripDetails: TripDetails?
 
@@ -64,6 +65,9 @@ struct VehiclesMapView: View {
             ForEach(stopsViewModel.stops) { stop in
                 MapKit.Annotation(stop.name, coordinate: stop.coordinate) {
                     StopAnnotationContent(stop: stop, iconFactory: viewModel.application.stopIconFactory)
+                        .onTapGesture {
+                            selectedStop = stop
+                        }
                 }
             }
 
@@ -101,6 +105,11 @@ struct VehiclesMapView: View {
                 .presentationDragIndicator(.visible)
             }
         )
+        .sheet(item: $selectedStop) { stop in
+            StopViewControllerWrapper(application: viewModel.application, stop: stop)
+                .presentationDetents([.tip, .medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private var routePolylineColor: Color {
