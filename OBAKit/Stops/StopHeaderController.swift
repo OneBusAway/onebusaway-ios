@@ -184,6 +184,8 @@ class StopHeaderView: UIView {
         accessibilityTraits = [.summaryElement, .header, .staticText]
         accessibilityLabel = config.viewModel.stopName
         accessibilityValue = [stopNumberLabel.text, routesLabel.text].compactMap {$0}.joined(separator: " ")
+
+        layoutIfNeeded()
     }
 
     override func layoutSubviews() {
