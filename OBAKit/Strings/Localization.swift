@@ -9,10 +9,16 @@
 
 import Foundation
 
+#if !SWIFT_PACKAGE
 fileprivate class Localization: NSObject {}
+#endif
 
 internal func OBALoc(_ key: String, value: String, comment: String) -> String {
+    #if SWIFT_PACKAGE
+    return NSLocalizedString(key, tableName: nil, bundle: Bundle.module, value: value, comment: comment)
+    #else
     return NSLocalizedString(key, tableName: nil, bundle: Bundle(for: Localization.self), value: value, comment: comment)
+    #endif
 }
 
 internal func OBALoc(_ key: String, format: String, comment: String, _ arguments: CVarArg...) -> String {
