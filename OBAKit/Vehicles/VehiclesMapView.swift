@@ -12,10 +12,7 @@ import MapKit
 import UIKit
 import CoreLocation
 import OBAKitCore
-
-extension PresentationDetent {
-    static let tip: PresentationDetent = .fraction(0.25)
-}
+import FloatingPanel
 
 /// A SwiftUI view that displays vehicle positions on a map
 struct VehiclesMapView: View {
@@ -28,6 +25,8 @@ struct VehiclesMapView: View {
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
     @State private var tripDetails: TripDetails?
 
+    @State private var state: FloatingPanelState? = .hidden
+
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: MapViewModel(application: application))
         _stopsViewModel = StateObject(wrappedValue: StopsViewModel(application: application))
@@ -39,22 +38,13 @@ struct VehiclesMapView: View {
             mapContent
             overlayContent
         }
-        .sheet(isPresented: $tripCoordinator.isTripViewPresented) {
-            VehicleTripView(
-                coordinator: tripCoordinator,
-                onNavigateToStop: { stop in
-                    // Navigate to this stop (replace current stop sheet)
-                    selectedStop = stop
-                    stopSheetDetent = .medium
-                }
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-            .presentationBackgroundInteraction(.enabled(upThrough: .large))
-        }
         .onFirstAppear {
             viewModel.centerOnUserLocation()
         }
+        .fixedFloatingPanel { _ in
+            // Panel content goes here
+        }
+        .fixedFloatingPanelState($state)
     }
 
     // MARK: - Map Content
@@ -95,22 +85,6 @@ struct VehiclesMapView: View {
         .mapControls {
             MapCompass()
             MapScaleView()
-        }
-        .sheet(item: $selectedStop) { stop in
-            StopViewControllerWrapper(
-                application: viewModel.application,
-                stop: stop,
-                onArrivalDepartureTapped: { arrivalDeparture in
-                    // Minimize the stop sheet and show trip view
-                    stopSheetDetent = .tip
-                    Task {
-                        await tripCoordinator.selectArrivalDeparture(arrivalDeparture)
-                    }
-                }
-            )
-            .presentationDetents([.tip, .medium, .large], selection: $stopSheetDetent)
-            .presentationDragIndicator(.visible)
-            .presentationBackgroundInteraction(.enabled(upThrough: .large))
         }
     }
 
