@@ -1,5 +1,5 @@
 //
-//  MapContainerView.swift
+//  MapOverlayView.swift
 //  OBAKit
 //
 //  Created by Aaron Brethorst on 11/26/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct MapContainerView<Content: View>: View {
+struct MapOverlayView<Content: View>: View {
     let content: Content
 
     init(@ViewBuilder content: () -> Content) {
