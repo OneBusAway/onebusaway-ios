@@ -7,18 +7,16 @@
 
 import Foundation
 
-protocol SurveyPreferencesStore: NSObjectProtocol {
+public protocol SurveyPreferencesStore: NSObjectProtocol {
 
     var appLaunch: Int { get }
-    
-    func increaseAppLaunchCount()
 
     var completedSurveys: [Int] { get }
 
     var skippedSurveys: [Int] { get }
-        
+
     func setSurveyPreferences(_ preferences: SurveyPreferences)
 
-    func surveyPreferences() -> SurveyPreferences?
+    func surveyPreferences() -> SurveyPreferences
 
 }

@@ -88,6 +88,9 @@ open class CoreApplication: NSObject,
             await regionsService.updateRegionsList()
         }
         refreshServices()
+        
+        /// Updates the app launch count
+        userDataStore.increaseAppLaunchCount()
     }
 
     /// This function reloads the REST API and Obaco Services.
