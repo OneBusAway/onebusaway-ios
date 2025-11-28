@@ -10,20 +10,17 @@
 import SwiftUI
 import OBAKitCore
 
-/// A SwiftUI view representing a stop annotation on the map, using the same icon rendering as the UIKit map
+/// A SwiftUI view representing a stop annotation on the map using pure SwiftUI rendering.
 struct StopAnnotationContent: View {
     let stop: Stop
-    let iconFactory: StopIconFactory
+    let isBookmarked: Bool
 
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        Image(uiImage: stopIcon)
+    init(stop: Stop, isBookmarked: Bool = false) {
+        self.stop = stop
+        self.isBookmarked = isBookmarked
     }
 
-    private var stopIcon: UIImage {
-        // Create a UITraitCollection to pass to the icon factory for dark mode support
-        let traits = UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light)
-        return iconFactory.buildIcon(for: stop, isBookmarked: false, traits: traits)
+    var body: some View {
+        StopAnnotationIconView(stop: stop, isBookmarked: isBookmarked)
     }
 }

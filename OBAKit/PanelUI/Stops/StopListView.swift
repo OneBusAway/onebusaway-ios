@@ -11,7 +11,6 @@ import OBAKitCore
 struct StopListView: View {
     let title: String
     let stops: [Stop]
-    let iconFactory: StopIconFactory
     let onStopSelected: (Stop) -> Void
 
     var body: some View {
@@ -37,7 +36,7 @@ struct StopListView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(stops.prefix(5)) { stop in
-                        StopRowView(stop: stop, iconFactory: iconFactory) {
+                        StopRowView(stop: stop) {
                             onStopSelected(stop)
                         }
                         Divider()

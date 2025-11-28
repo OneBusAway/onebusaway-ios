@@ -10,15 +10,28 @@
 import SwiftUI
 import OBAKitCore
 
-/// A stop icon matching the map annotation style (rounded square with directional triangle)
+/// A stop icon view for use in list rows, matching the map annotation style.
+/// Renders a rounded square with transport icon, gradient background, and directional triangle.
 struct StopIconView: View {
     let stop: Stop
-    let iconFactory: StopIconFactory
+    let size: CGFloat
+    let isBookmarked: Bool
+
+    /// Default icon size for list rows (smaller than map annotations)
+    private static let defaultSize: CGFloat = 32
+
+    /// Base size of StopAnnotationIconView (must match the constant in that view)
+    private static let baseIconSize: CGFloat = 48
+
+    init(stop: Stop, size: CGFloat = defaultSize, isBookmarked: Bool = false) {
+        self.stop = stop
+        self.size = size
+        self.isBookmarked = isBookmarked
+    }
 
     var body: some View {
-        Image(uiImage: iconFactory.buildIcon(for: stop, isBookmarked: false, traits: UITraitCollection.current))
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: 32, height: 32)
+        StopAnnotationIconView(stop: stop, isBookmarked: isBookmarked)
+            .scaleEffect(size / Self.baseIconSize)
+            .frame(width: size, height: size)
     }
 }

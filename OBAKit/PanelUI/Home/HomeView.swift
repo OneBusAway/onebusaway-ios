@@ -24,7 +24,6 @@ struct HomeView: View {
                 StopListView(
                     title: "Nearby Stops",
                     stops: nearbyStops,
-                    iconFactory: application.stopIconFactory,
                     onStopSelected: onStopSelected
                 )
 
