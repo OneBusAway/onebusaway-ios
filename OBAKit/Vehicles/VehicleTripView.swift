@@ -17,13 +17,6 @@ struct VehicleTripView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Drag indicator
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(Color.secondary.opacity(0.5))
-                .frame(width: 36, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-
             // Header with trip info and close button
             tripHeader
 
@@ -40,11 +33,6 @@ struct VehicleTripView: View {
                 emptyView
             }
         }
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: -2)
-        .padding(.horizontal, 8)
-        .frame(maxHeight: UIScreen.main.bounds.height * 0.55)
     }
 
     // MARK: - Header
