@@ -16,6 +16,11 @@ import SwiftUI
 public struct StopViewControllerWrapper: UIViewControllerRepresentable {
     let application: Application
     let stop: Stop
+
+    /// Optional callback for when an arrival/departure is tapped.
+    /// If set, this callback is invoked instead of navigating to TripViewController.
+    var onArrivalDepartureTapped: ((ArrivalDeparture) -> Void)?
+
     @Environment(\.dismiss) private var dismiss
 
     public func makeCoordinator() -> Coordinator {
@@ -24,6 +29,9 @@ public struct StopViewControllerWrapper: UIViewControllerRepresentable {
 
     public func makeUIViewController(context: Context) -> UINavigationController {
         let stopVC = StopViewController(application: application, stop: stop)
+
+        // Wire up the arrival/departure callback
+        stopVC.onArrivalDepartureTapped = onArrivalDepartureTapped
 
         // Configure large title to always be visible
         stopVC.navigationItem.largeTitleDisplayMode = .always
@@ -118,6 +126,11 @@ public class StopViewController: UIViewController,
 
     /// View model for the SwiftUI header
     private var headerViewModel: StopHeaderViewModel?
+
+    /// Optional callback for when an arrival/departure is tapped.
+    /// If set, this callback is invoked instead of navigating to TripViewController.
+    /// Used by VehiclesMapView to intercept navigation and show trip in the map context.
+    public var onArrivalDepartureTapped: ((ArrivalDeparture) -> Void)?
 
     /// The number of seconds since this view controller was last updated.
     private var timeIntervalSinceLastUpdate: TimeInterval {
@@ -901,7 +914,13 @@ public class StopViewController: UIViewController,
         guard let selectedArrivalDeparture = arrivalDeparture(forViewModel: selectedItem) else {
             return
         }
-        self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
+
+        // If a callback is set, use it instead of default navigation
+        if let callback = onArrivalDepartureTapped {
+            callback(selectedArrivalDeparture)
+        } else {
+            self.application.viewRouter.navigateTo(arrivalDeparture: selectedArrivalDeparture, from: self)
+        }
     }
 
     private func stopArrivalContextMenu(_ viewModel: ArrivalDepartureItem) -> OBAListViewMenuActions {
