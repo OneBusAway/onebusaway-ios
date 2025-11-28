@@ -15,6 +15,14 @@ struct BookmarksView: View {
     let application: Application
     let onStopSelected: (Stop) -> Void
 
+    @StateObject private var viewModel: BookmarksArrivalsViewModel
+
+    init(application: Application, onStopSelected: @escaping (Stop) -> Void) {
+        self.application = application
+        self.onStopSelected = onStopSelected
+        _viewModel = StateObject(wrappedValue: BookmarksArrivalsViewModel(application: application))
+    }
+
     /// Bookmarks filtered by the current region
     private var bookmarks: [Bookmark] {
         guard let region = application.currentRegion else { return [] }
@@ -28,7 +36,10 @@ struct BookmarksView: View {
                 Text("Bookmarks")
                     .font(.headline)
                 Spacer()
-                if !bookmarks.isEmpty {
+                if viewModel.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                } else if !bookmarks.isEmpty {
                     Text("\(bookmarks.count)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -45,7 +56,11 @@ struct BookmarksView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(bookmarks.prefix(5)) { bookmark in
-                        BookmarkRowView(bookmark: bookmark) {
+                        BookmarkRowView(
+                            bookmark: bookmark,
+                            arrivals: viewModel.arrivals(for: bookmark),
+                            formatters: application.formatters
+                        ) {
                             onStopSelected(bookmark.stop)
                         }
                         Divider()
@@ -53,6 +68,12 @@ struct BookmarksView: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            viewModel.startRefreshing()
+        }
+        .onDisappear {
+            viewModel.stopRefreshing()
         }
     }
 
@@ -73,9 +94,11 @@ struct BookmarksView: View {
     }
 }
 
-/// A row displaying a single bookmark with transport icon, name, and optional trip info
+/// A row displaying a single bookmark with transport icon, name, and arrival times
 struct BookmarkRowView: View {
     let bookmark: Bookmark
+    let arrivals: [ArrivalDeparture]
+    let formatters: Formatters
     let onTap: () -> Void
 
     var body: some View {
@@ -110,9 +133,14 @@ struct BookmarkRowView: View {
 
                 Spacer()
 
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                // Arrival times for trip bookmarks, chevron for stop bookmarks
+                if bookmark.isTripBookmark && !arrivals.isEmpty {
+                    ArrivalBadgesView(arrivals: arrivals, formatters: formatters)
+                } else {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

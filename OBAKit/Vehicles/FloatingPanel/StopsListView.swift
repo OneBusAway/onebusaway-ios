@@ -13,6 +13,7 @@ import OBAKitCore
 /// A list view displaying stops, typically shown in the FloatingPanel default state
 struct StopsListView: View {
     let stops: [Stop]
+    let iconFactory: StopIconFactory
     let onStopSelected: (Stop) -> Void
 
     var body: some View {
@@ -38,7 +39,7 @@ struct StopsListView: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(stops) { stop in
-                            StopRowView(stop: stop) {
+                            StopRowView(stop: stop, iconFactory: iconFactory) {
                                 onStopSelected(stop)
                             }
                             Divider()
@@ -67,19 +68,17 @@ struct StopsListView: View {
     }
 }
 
-/// A row displaying a single stop with transport icon and name
+/// A row displaying a single stop with map-style icon and name
 struct StopRowView: View {
     let stop: Stop
+    let iconFactory: StopIconFactory
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                // Transport icon based on route type
-                Image(systemName: iconName(for: stop.prioritizedRouteTypeForDisplay))
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 32)
+                // Map-style stop icon with direction indicator
+                StopIconView(stop: stop, iconFactory: iconFactory)
 
                 // Stop name with direction (e.g., "15th Ave E & E Galer St (W)")
                 Text(stop.nameWithLocalizedDirectionAbbreviation)
@@ -99,16 +98,5 @@ struct StopRowView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private func iconName(for routeType: Route.RouteType) -> String {
-        switch routeType {
-        case .lightRail: return "tram.fill"
-        case .subway: return "tram.fill.tunnel"
-        case .rail: return "train.side.front.car"
-        case .ferry: return "ferry.fill"
-        case .cableCar, .gondola: return "cablecar.fill"
-        default: return "bus.fill"
-        }
     }
 }

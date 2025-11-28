@@ -21,7 +21,11 @@ struct HomeView: View {
         ScrollView {
             VStack(spacing: 0) {
                 // Nearby Stops section
-                NearbyStopsSection(stops: nearbyStops, onStopSelected: onStopSelected)
+                NearbyStopsSection(
+                    stops: nearbyStops,
+                    iconFactory: application.stopIconFactory,
+                    onStopSelected: onStopSelected
+                )
 
                 // Recent Stops section
                 RecentStopsView(application: application, onStopSelected: onStopSelected)
@@ -36,6 +40,7 @@ struct HomeView: View {
 /// A section displaying nearby stops on the map
 struct NearbyStopsSection: View {
     let stops: [Stop]
+    let iconFactory: StopIconFactory
     let onStopSelected: (Stop) -> Void
 
     var body: some View {
@@ -62,7 +67,7 @@ struct NearbyStopsSection: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(stops.prefix(5)) { stop in
-                        StopRowView(stop: stop) {
+                        StopRowView(stop: stop, iconFactory: iconFactory) {
                             onStopSelected(stop)
                         }
                         Divider()
