@@ -71,18 +71,22 @@ struct VehiclesMapView: View {
                     }
                 )
             } else {
-                // Default: show list of visible stops
-                StopsListView(stops: stopsViewModel.stops) { stop in
-                    // Center map on stop and select it
-                    withAnimation {
-                        viewModel.cameraPosition = .region(MKCoordinateRegion(
-                            center: stop.coordinate,
-                            latitudinalMeters: 500,
-                            longitudinalMeters: 500
-                        ))
+                // Default: show HomeView with nearby stops, recent stops, and bookmarks
+                HomeView(
+                    application: viewModel.application,
+                    nearbyStops: stopsViewModel.stops,
+                    onStopSelected: { stop in
+                        // Center map on stop and select it
+                        withAnimation {
+                            viewModel.cameraPosition = .region(MKCoordinateRegion(
+                                center: stop.coordinate,
+                                latitudinalMeters: 500,
+                                longitudinalMeters: 500
+                            ))
+                        }
+                        selectedStop = stop
                     }
-                    selectedStop = stop
-                }
+                )
             }
         }
         .fixedFloatingPanelState($state)
