@@ -46,7 +46,7 @@ struct RecentStopsView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(recentStops.prefix(5)) { stop in
-                        StopRowView(stop: stop, iconFactory: application.stopIconFactory) {
+                        StopRowView(stop: stop) {
                             onStopSelected(stop)
                         }
                         Divider()

@@ -13,7 +13,6 @@ import OBAKitCore
 /// A list view displaying stops, typically shown in the FloatingPanel default state
 struct StopsListView: View {
     let stops: [Stop]
-    let iconFactory: StopIconFactory
     let onStopSelected: (Stop) -> Void
 
     var body: some View {
@@ -39,7 +38,7 @@ struct StopsListView: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(stops) { stop in
-                            StopRowView(stop: stop, iconFactory: iconFactory) {
+                            StopRowView(stop: stop) {
                                 onStopSelected(stop)
                             }
                             Divider()
@@ -71,14 +70,13 @@ struct StopsListView: View {
 /// A row displaying a single stop with map-style icon and name
 struct StopRowView: View {
     let stop: Stop
-    let iconFactory: StopIconFactory
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
                 // Map-style stop icon with direction indicator
-                StopIconView(stop: stop, iconFactory: iconFactory)
+                StopIconView(stop: stop)
 
                 // Stop name with direction (e.g., "15th Ave E & E Galer St (W)")
                 Text(stop.nameWithLocalizedDirectionAbbreviation)
