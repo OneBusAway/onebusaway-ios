@@ -25,7 +25,7 @@ struct VehiclesMapView: View {
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
     @State private var tripDetails: TripDetails?
 
-    @State private var state: FloatingPanelState? = .hidden
+    @State private var state: FloatingPanelState? = .tip
 
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: MapViewModel(application: application))
@@ -42,9 +42,34 @@ struct VehiclesMapView: View {
             viewModel.centerOnUserLocation()
         }
         .fixedFloatingPanel { _ in
-            // Panel content goes here
+            if let stop = selectedStop {
+                StopViewControllerWrapper(
+                    application: viewModel.application,
+                    stop: stop,
+                    onArrivalDepartureTapped: { arrivalDeparture in
+                        Task {
+                            await tripCoordinator.selectArrivalDeparture(arrivalDeparture)
+                        }
+                    },
+                    onClose: {
+                        selectedStop = nil
+                    }
+                )
+            } else {
+                // Default panel content (placeholder for now)
+                Text("Panel Content")
+            }
         }
         .fixedFloatingPanelState($state)
+        .onChange(of: selectedStop) { _, newValue in
+            withAnimation {
+                if newValue != nil {
+                    state = .half
+                } else {
+                    state = .tip
+                }
+            }
+        }
     }
 
     // MARK: - Map Content
