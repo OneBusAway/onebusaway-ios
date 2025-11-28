@@ -23,7 +23,6 @@ struct VehiclesMapView: View {
     @StateObject private var stopsViewModel: StopsViewModel
     @StateObject private var tripCoordinator: TripDisplayCoordinator
     @State private var showingFeedStatus = false
-    @State private var selectedVehicle: RealtimeVehicle?
     @State private var selectedStop: Stop?
     @State private var stopSheetDetent: PresentationDetent = .medium
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
@@ -88,14 +87,6 @@ struct VehiclesMapView: View {
                         }
                 }
             }
-
-            // Vehicle annotations
-            ForEach(viewModel.vehicles) { vehicle in
-                let label = vehicle.vehicleLabel ?? vehicle.vehicleID ?? "Bus"
-                MapKit.Annotation(label, coordinate: vehicle.coordinate) {
-                    buildAnnotation(vehicle: vehicle)
-                }
-            }
         }
         .onMapCameraChange(frequency: .onEnd) { context in
             stopsViewModel.regionDidChange(context.region)
@@ -105,24 +96,6 @@ struct VehiclesMapView: View {
             MapCompass()
             MapScaleView()
         }
-        .sheet(
-            item: $selectedVehicle,
-            onDismiss: {
-                routePolylineCoordinates = nil
-                tripDetails = nil
-            },
-            content: { vehicle in
-                VehicleDetailSheet(
-                    vehicle: vehicle,
-                    application: viewModel.application,
-                    onNavigateToTrip: { tripConvertible in
-                        navigateToTrip(tripConvertible)
-                    }
-                )
-                .presentationDetents([.tip, .medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-        )
         .sheet(item: $selectedStop) { stop in
             StopViewControllerWrapper(
                 application: viewModel.application,
@@ -148,27 +121,6 @@ struct VehiclesMapView: View {
         return Color.accentColor
     }
 
-    @ViewBuilder
-    private func buildAnnotation(vehicle: RealtimeVehicle) -> some View {
-        RealtimeVehicleAnnotationView(
-            vehicle: vehicle,
-            isSelected: selectedVehicle?.id == vehicle.id
-        )
-        .onTapGesture {
-            // Clear previous polyline
-            routePolylineCoordinates = nil
-            tripDetails = nil
-            selectedVehicle = vehicle
-            withAnimation {
-                centerOnVehicle(vehicle)
-            }
-            // Load new polyline
-            Task {
-                await loadRoutePolyline(for: vehicle)
-            }
-        }
-    }
-
     // MARK: - Navigation
 
     private func navigateToTrip(_ tripConvertible: TripConvertible) {
@@ -187,60 +139,6 @@ struct VehiclesMapView: View {
             navController.pushViewController(tripVC, animated: true)
         } else if let navController = rootVC.navigationController {
             navController.pushViewController(tripVC, animated: true)
-        }
-    }
-
-    /// Centers the map on the selected vehicle, positioning it in the upper third of the screen
-    /// so it remains visible above the detail sheet.
-    private func centerOnVehicle(_ vehicle: RealtimeVehicle) {
-        // Offset the center point so the vehicle appears in the upper 1/3 of the screen.
-        // The sheet covers roughly the bottom half, so we shift the map center down (south).
-        let latitudeOffset = -0.003
-
-        let offsetCoordinate = CLLocationCoordinate2D(
-            latitude: vehicle.coordinate.latitude + latitudeOffset,
-            longitude: vehicle.coordinate.longitude
-        )
-
-        viewModel.cameraPosition = .camera(
-            MapCamera(centerCoordinate: offsetCoordinate, distance: 2000)
-        )
-    }
-
-    /// Loads and displays the route polyline for the selected vehicle's trip.
-    private func loadRoutePolyline(for vehicle: RealtimeVehicle) async {
-        guard let apiService = viewModel.application.apiService else { return }
-
-        // Build prefixed trip ID: {agencyID}_{tripID}
-        guard let tripID = vehicle.tripID else { return }
-        let prefixedTripID = "\(vehicle.agencyID)_\(tripID)"
-
-        do {
-            // 1. Get trip details to obtain shapeID
-            let tripResponse = try await apiService.getTrip(
-                tripID: prefixedTripID,
-                vehicleID: nil,
-                serviceDate: nil
-            )
-            guard let trip = tripResponse.entry.trip else { return }
-
-            // 2. Fetch the shape using shapeID
-            let shapeResponse = try await apiService.getShape(id: trip.shapeID)
-
-            // 3. Decode the polyline
-            guard let mkPolyline = shapeResponse.entry.polyline else { return }
-
-            // 4. Extract coordinates from MKPolyline
-            let pointCount = mkPolyline.pointCount
-            var coordinates = [CLLocationCoordinate2D](repeating: kCLLocationCoordinate2DInvalid, count: pointCount)
-            mkPolyline.getCoordinates(&coordinates, range: NSRange(location: 0, length: pointCount))
-
-            await MainActor.run {
-                self.routePolylineCoordinates = coordinates
-                self.tripDetails = tripResponse.entry
-            }
-        } catch {
-            print("Failed to load route polyline: \(error)")
         }
     }
 
@@ -279,28 +177,6 @@ struct VehiclesMapView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 8)
         .frame(maxWidth: 44)
-    }
-}
-
-/// A view representing a single vehicle annotation on the map
-struct RealtimeVehicleAnnotationView: View {
-    let vehicle: RealtimeVehicle
-    var isSelected: Bool = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.accentColor)
-                .frame(width: 28, height: 28)
-
-            Image(systemName: "bus.fill")
-                .font(.system(size: 14))
-                .foregroundColor(.white)
-                .rotationEffect(.degrees(Double(vehicle.bearing ?? 0)))
-        }
-        .scaleEffect(isSelected ? 1.4 : 1.0)
-        .shadow(color: .black.opacity(isSelected ? 0.4 : 0.15), radius: isSelected ? 8 : 2)
-        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
 
