@@ -42,7 +42,22 @@ struct VehiclesMapView: View {
             viewModel.centerOnUserLocation()
         }
         .fixedFloatingPanel { _ in
-            if let stop = selectedStop {
+            if tripCoordinator.isTripViewPresented {
+                // Trip details view (highest priority)
+                VehicleTripView(
+                    coordinator: tripCoordinator,
+                    onNavigateToStop: { stop in
+                        // Center map on the tapped stop
+                        withAnimation {
+                            viewModel.cameraPosition = .region(MKCoordinateRegion(
+                                center: stop.coordinate,
+                                latitudinalMeters: 500,
+                                longitudinalMeters: 500
+                            ))
+                        }
+                    }
+                )
+            } else if let stop = selectedStop {
                 StopViewControllerWrapper(
                     application: viewModel.application,
                     stop: stop,
@@ -56,14 +71,35 @@ struct VehiclesMapView: View {
                     }
                 )
             } else {
-                // Default panel content (placeholder for now)
-                Text("Panel Content")
+                // Default: show list of visible stops
+                StopsListView(stops: stopsViewModel.stops) { stop in
+                    // Center map on stop and select it
+                    withAnimation {
+                        viewModel.cameraPosition = .region(MKCoordinateRegion(
+                            center: stop.coordinate,
+                            latitudinalMeters: 500,
+                            longitudinalMeters: 500
+                        ))
+                    }
+                    selectedStop = stop
+                }
             }
         }
         .fixedFloatingPanelState($state)
         .onChange(of: selectedStop) { _, newValue in
             withAnimation {
                 if newValue != nil {
+                    state = .half
+                } else if !tripCoordinator.isTripViewPresented {
+                    state = .tip
+                }
+            }
+        }
+        .onChange(of: tripCoordinator.isTripViewPresented) { _, isPresented in
+            withAnimation {
+                if isPresented {
+                    state = .half
+                } else if selectedStop != nil {
                     state = .half
                 } else {
                     state = .tip
