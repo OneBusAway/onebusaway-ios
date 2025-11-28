@@ -21,21 +21,37 @@ extension PresentationDetent {
 struct VehiclesMapView: View {
     @StateObject private var viewModel: MapViewModel
     @StateObject private var stopsViewModel: StopsViewModel
+    @StateObject private var tripCoordinator: TripDisplayCoordinator
     @State private var showingFeedStatus = false
     @State private var selectedVehicle: RealtimeVehicle?
     @State private var selectedStop: Stop?
+    @State private var stopSheetDetent: PresentationDetent = .medium
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
     @State private var tripDetails: TripDetails?
 
     init(application: Application) {
         _viewModel = StateObject(wrappedValue: MapViewModel(application: application))
         _stopsViewModel = StateObject(wrappedValue: StopsViewModel(application: application))
+        _tripCoordinator = StateObject(wrappedValue: TripDisplayCoordinator(application: application))
     }
 
     var body: some View {
         ZStack {
             mapContent
             overlayContent
+        }
+        .sheet(isPresented: $tripCoordinator.isTripViewPresented) {
+            VehicleTripView(
+                coordinator: tripCoordinator,
+                onNavigateToStop: { stop in
+                    // Navigate to this stop (replace current stop sheet)
+                    selectedStop = stop
+                    stopSheetDetent = .medium
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .large))
         }
         .onFirstAppear {
             viewModel.centerOnUserLocation()
@@ -47,9 +63,20 @@ struct VehiclesMapView: View {
     private var mapContent: some View {
         Map(position: $viewModel.cameraPosition) {
             // Route polyline (rendered behind vehicle annotations)
-            if let routePolylineCoordinates {
+            // Use tripCoordinator's polyline when trip view is presented, otherwise use local state
+            if tripCoordinator.isTripViewPresented, let tripPolyline = tripCoordinator.routePolylineCoordinates {
+                MapPolyline(coordinates: tripPolyline)
+                    .stroke(tripCoordinator.routeColor.opacity(0.75), lineWidth: 5)
+            } else if let routePolylineCoordinates {
                 MapPolyline(coordinates: routePolylineCoordinates)
                     .stroke(routePolylineColor.opacity(0.75), lineWidth: 5)
+            }
+
+            // Vehicle location marker (for trip from stop sheet)
+            if tripCoordinator.isTripViewPresented, let vehicleLocation = tripCoordinator.vehicleLocation {
+                MapKit.Annotation("Vehicle", coordinate: vehicleLocation) {
+                    VehicleLocationMarker(routeType: tripCoordinator.tripDetails?.trip?.route?.routeType ?? .bus)
+                }
             }
 
             // Stop annotations
@@ -97,9 +124,20 @@ struct VehiclesMapView: View {
             }
         )
         .sheet(item: $selectedStop) { stop in
-            StopViewControllerWrapper(application: viewModel.application, stop: stop)
-                .presentationDetents([.tip, .medium, .large])
-                .presentationDragIndicator(.visible)
+            StopViewControllerWrapper(
+                application: viewModel.application,
+                stop: stop,
+                onArrivalDepartureTapped: { arrivalDeparture in
+                    // Minimize the stop sheet and show trip view
+                    stopSheetDetent = .tip
+                    Task {
+                        await tripCoordinator.selectArrivalDeparture(arrivalDeparture)
+                    }
+                }
+            )
+            .presentationDetents([.tip, .medium, .large], selection: $stopSheetDetent)
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .large))
         }
     }
 
@@ -263,5 +301,34 @@ struct RealtimeVehicleAnnotationView: View {
         .scaleEffect(isSelected ? 1.4 : 1.0)
         .shadow(color: .black.opacity(isSelected ? 0.4 : 0.15), radius: isSelected ? 8 : 2)
         .animation(.easeInOut(duration: 0.2), value: isSelected)
+    }
+}
+
+/// A marker showing the vehicle location on the map (for trip from stop sheet)
+struct VehicleLocationMarker: View {
+    let routeType: Route.RouteType
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: 32, height: 32)
+
+            Image(systemName: iconName)
+                .font(.system(size: 16))
+                .foregroundColor(.white)
+        }
+        .shadow(color: .black.opacity(0.3), radius: 4)
+    }
+
+    private var iconName: String {
+        switch routeType {
+        case .lightRail: return "tram.fill"
+        case .subway: return "tram.fill.tunnel"
+        case .rail: return "train.side.front.car"
+        case .ferry: return "ferry.fill"
+        case .cableCar, .gondola: return "cablecar.fill"
+        default: return "bus.fill"
+        }
     }
 }
