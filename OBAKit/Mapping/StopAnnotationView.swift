@@ -32,6 +32,8 @@ class StopAnnotationView: MKAnnotationView {
         let label = StrokedLabel.autolayoutNew()
         label.textAlignment = .center
         label.numberOfLines = 2
+        label.lineBreakMode = .byTruncatingTail
+        label.adjustsFontSizeToFitWidth = false
         return label
     }()
 
@@ -57,7 +59,7 @@ class StopAnnotationView: MKAnnotationView {
 
         NSLayoutConstraint.activate([
             labelStack.topAnchor.constraint(equalTo: self.bottomAnchor),
-            labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 2.0),
+            labelStack.widthAnchor.constraint(lessThanOrEqualTo: self.widthAnchor, multiplier: 3.5),
             labelStack.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor),
             labelStack.centerXAnchor.constraint(equalTo: self.centerXAnchor)
         ])
