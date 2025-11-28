@@ -19,7 +19,7 @@ extension PresentationDetent {
 
 /// A SwiftUI view that displays vehicle positions on a map
 struct VehiclesMapView: View {
-    @StateObject private var viewModel: VehiclesViewModel
+    @StateObject private var viewModel: MapViewModel
     @StateObject private var stopsViewModel: StopsViewModel
     @State private var showingFeedStatus = false
     @State private var selectedVehicle: RealtimeVehicle?
@@ -28,7 +28,7 @@ struct VehiclesMapView: View {
     @State private var tripDetails: TripDetails?
 
     init(application: Application) {
-        _viewModel = StateObject(wrappedValue: VehiclesViewModel(application: application))
+        _viewModel = StateObject(wrappedValue: MapViewModel(application: application))
         _stopsViewModel = StateObject(wrappedValue: StopsViewModel(application: application))
     }
 
@@ -37,17 +37,8 @@ struct VehiclesMapView: View {
             mapContent
             overlayContent
         }
-        .sheet(isPresented: $showingFeedStatus) {
-            FeedStatusSheet(viewModel: viewModel)
-        }
-        .task {
-            viewModel.startAutoRefresh()
-        }
         .onFirstAppear {
             viewModel.centerOnUserLocation()
-        }
-        .onDisappear {
-            viewModel.stopAutoRefresh()
         }
     }
 
@@ -222,7 +213,6 @@ struct VehiclesMapView: View {
             Spacer()
 
             HStack(alignment: .bottom) {
-                VehiclesMapView.StatusView().environmentObject(viewModel)
                 Spacer()
                 mapButtonBar
             }
@@ -247,18 +237,6 @@ struct VehiclesMapView: View {
                 Image(systemName: "location.fill")
                     .frame(width: 44, height: 44)
             }
-
-            Divider()
-
-            Button {
-                Task {
-                    await viewModel.refresh()
-                }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-                    .frame(width: 44, height: 44)
-            }
-            .disabled(viewModel.isLoading)
         }
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
         .shadow(radius: 8)
