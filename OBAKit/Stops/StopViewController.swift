@@ -21,10 +21,15 @@ public struct StopViewControllerWrapper: UIViewControllerRepresentable {
     /// If set, this callback is invoked instead of navigating to TripViewController.
     var onArrivalDepartureTapped: ((ArrivalDeparture) -> Void)?
 
+    /// Optional callback for when the close button is tapped.
+    /// If set, this callback is invoked instead of using SwiftUI's dismiss action.
+    /// Useful when embedding in a FloatingPanel instead of a sheet.
+    var onClose: (() -> Void)?
+
     @Environment(\.dismiss) private var dismiss
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(dismiss: dismiss)
+        Coordinator(dismiss: dismiss, onClose: onClose)
     }
 
     public func makeUIViewController(context: Context) -> UINavigationController {
@@ -55,13 +60,19 @@ public struct StopViewControllerWrapper: UIViewControllerRepresentable {
 
     public class Coordinator {
         let dismiss: DismissAction
+        let onClose: (() -> Void)?
 
-        init(dismiss: DismissAction) {
+        init(dismiss: DismissAction, onClose: (() -> Void)?) {
             self.dismiss = dismiss
+            self.onClose = onClose
         }
 
         @objc func close() {
-            dismiss()
+            if let onClose = onClose {
+                onClose()
+            } else {
+                dismiss()
+            }
         }
     }
 }
