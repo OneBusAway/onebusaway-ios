@@ -227,6 +227,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let recentMapItems = "UserDataStore.recentMapItems"
         static let stopPreferences = "UserDataStore.stopPreferences"
         static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
+        static let surveyPreferencesKey = "UserDataStore.surveyPreferences"
+        static let appLaunchCounter = "UserDataStore.appLaunchCounter"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -712,4 +714,52 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     private func encodeUserDefaultsObjects<T>(_ object: T, key: String) throws where T: Encodable {
         try userDefaults.encodeUserDefaultsObjects(object, key: key)
     }
+}
+
+// MARK: - Survey Preferences Store
+extension UserDefaultsStore: SurveyPreferencesStore {
+
+    /// Returns the number of times the app has been launched,
+    /// used to determine when to show surveys based on launch count logic.
+    var appLaunch: Int {
+        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCounter)
+    }
+
+    /// Increments the stored app launch counter by one.
+    /// - Note: This value is used to decide whether a survey should be shown
+    func increaseAppLaunchCount() {
+        let newValue = appLaunch + 1
+        userDefaults.set(newValue, forKey: UserDefaultsKeys.appLaunchCounter)
+    }
+
+    /// Returns the list of completed survey IDs stored in user preferences.
+    /// - Note: If no preferences exist yet, an empty array is returned.
+    var completedSurveys: [Int] {
+        guard let preferences = surveyPreferences() else {
+            return []
+        }
+        return preferences.completedSurveyIDs
+    }
+
+    /// Returns the list of survey IDs the user has skipped.
+    /// - Note: If no preferences exist yet, an empty array is returned.
+    var skippedSurveys: [Int] {
+        guard let preferences = surveyPreferences() else {
+            return []
+        }
+        return preferences.skippedSurveyIDs
+    }
+
+    /// Saves the provided `SurveyPreferences` to UserDefaults.
+    /// - Parameter preferences: The preferences object containing all survey-related user settings.
+    func setSurveyPreferences(_ preferences: SurveyPreferences) {
+        userDefaults.set(preferences, forKey: UserDefaultsKeys.surveyPreferencesKey)
+    }
+
+    /// Retrieves the saved `SurveyPreferences` from UserDefaults.
+    /// - Returns: A `SurveyPreferences` object if it exists, otherwise `nil`.
+    func surveyPreferences() -> SurveyPreferences? {
+        return userDefaults.object(forKey: UserDefaultsKeys.surveyPreferencesKey) as? SurveyPreferences
+    }
+
 }
