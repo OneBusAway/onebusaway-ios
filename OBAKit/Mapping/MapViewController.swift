@@ -245,10 +245,30 @@ class MapViewController: UIViewController,
 
     @objc private func showWeather() {
         guard let forecast = forecast else { return }
+        let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
+        let formattedFeelsLikeTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperatureFeelsLike, unit: .fahrenheit, to: application.locale)
+        
+        let measurementSystem = Locale.current.measurementSystem
+        let windSpeed: String
+        switch measurementSystem {
+        case .us, .uk:
+            let mph = forecast.currentForecast.windSpeed / 1.60934
+            windSpeed = "\(Int(mph)) mph"
+        default:
+            windSpeed = "\(Int(forecast.currentForecast.windSpeed)) km/h"
+        }
 
-        let alert = UIAlertController(title: forecast.todaySummary, message: nil, preferredStyle: .alert)
-        alert.addAction(UIAlertAction.dismissAction)
-        present(alert, animated: true, completion: nil)
+        let alert = UIAlertController(
+            title: forecast.todaySummary,
+            message: """
+                Temp: \(formattedTemp) (Feels like \(formattedFeelsLikeTemp))
+                Wind: \(windSpeed)
+                Precipitation: \(Int(forecast.currentForecast.precipProbability * 100))% chance
+                """,
+            preferredStyle: .alert
+        )
+        alert.addAction(.dismissAction)
+        present(alert, animated: true)
     }
 
     private var forecast: WeatherForecast? {
