@@ -19,7 +19,6 @@ class MapViewModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    @Published var vehicles: [RealtimeVehicle] = []
     @Published var isLoading: Bool = false
     @Published var error: Error?
     @Published var lastUpdated: Date?
