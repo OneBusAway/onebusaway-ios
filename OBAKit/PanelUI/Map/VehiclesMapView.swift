@@ -136,7 +136,7 @@ struct VehiclesMapView: View {
             // Stop annotations
             ForEach(stopsViewModel.stops) { stop in
                 MapKit.Annotation(stop.name, coordinate: stop.coordinate) {
-                    StopAnnotationContent(stop: stop, iconFactory: viewModel.application.stopIconFactory)
+                    StopAnnotationContent(stop: stop)
                         .onTapGesture {
                             selectedStop = stop
                         }
