@@ -67,6 +67,7 @@ public actor SurveyAPIService: @preconcurrency APIService {
     ///   - surveyResponses: The updated survey response data.
     /// - Returns: The server response containing the updated survey info.
     /// - Throws: An `APIError` if the network request or decoding fails.
+    @discardableResult
     public nonisolated func updateSurveyResponse(
         surveyResponseId: String,
         surveyResponses: SurveySubmission

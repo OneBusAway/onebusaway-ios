@@ -67,4 +67,8 @@ public struct SurveySubmissionResponse: Codable {
         case userIdentifier = "user_identifier"
     }
 
+    public func surveyPathId() -> String {
+        return updatePath.split(separator: "/").last.map(String.init) ?? ""
+    }
+    
 }
