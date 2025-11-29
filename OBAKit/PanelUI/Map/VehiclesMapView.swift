@@ -19,11 +19,17 @@ struct VehiclesMapView: View {
     @StateObject private var viewModel: MapViewModel
     @StateObject private var stopsViewModel: StopsViewModel
     @StateObject private var tripCoordinator: TripDisplayCoordinator
+    @StateObject private var searchViewModel: SearchViewModel
     @State private var showingFeedStatus = false
     @State private var selectedStop: Stop?
     @State private var stopSheetDetent: PresentationDetent = .medium
     @State private var routePolylineCoordinates: [CLLocationCoordinate2D]?
     @State private var tripDetails: TripDetails?
+
+    // Search state
+    @State private var searchText: String = ""
+    @FocusState private var isSearchFocused: Bool
+    @State private var showClearRecentSearchesAlert = false
 
     @State private var state: FloatingPanelState? = .tip
 
@@ -31,6 +37,7 @@ struct VehiclesMapView: View {
         _viewModel = StateObject(wrappedValue: MapViewModel(application: application))
         _stopsViewModel = StateObject(wrappedValue: StopsViewModel(application: application))
         _tripCoordinator = StateObject(wrappedValue: TripDisplayCoordinator(application: application))
+        _searchViewModel = StateObject(wrappedValue: SearchViewModel(application: application))
     }
 
     var body: some View {
@@ -76,6 +83,7 @@ struct VehiclesMapView: View {
                     application: viewModel.application,
                     nearbyStops: stopsViewModel.stops,
                     onStopSelected: { stop in
+                        exitSearchMode()
                         // Center map on stop and select it
                         withAnimation {
                             viewModel.cameraPosition = .region(MKCoordinateRegion(
@@ -85,6 +93,41 @@ struct VehiclesMapView: View {
                             ))
                         }
                         selectedStop = stop
+                    },
+                    searchText: $searchText,
+                    isSearchFocused: $isSearchFocused,
+                    searchViewModel: searchViewModel,
+                    onSearchFocused: {
+                        withAnimation {
+                            state = .full
+                        }
+                    },
+                    onSearchCancelled: {
+                        exitSearchMode()
+                    },
+                    onMapItemSelected: { mapItem in
+                        exitSearchMode()
+                        // Center map on the selected place
+                        if let location = mapItem.placemark.location {
+                            withAnimation {
+                                viewModel.cameraPosition = .region(MKCoordinateRegion(
+                                    center: location.coordinate,
+                                    latitudinalMeters: 500,
+                                    longitudinalMeters: 500
+                                ))
+                            }
+                        }
+                    },
+                    onRouteSelected: { route in
+                        exitSearchMode()
+                        // TODO: Navigate to route details
+                    },
+                    onVehicleSelected: { vehicle in
+                        exitSearchMode()
+                        // TODO: Navigate to vehicle details
+                    },
+                    onClearRecentSearches: {
+                        showClearRecentSearchesAlert = true
                     }
                 )
             }
@@ -109,6 +152,25 @@ struct VehiclesMapView: View {
                     state = .tip
                 }
             }
+        }
+        .alert("Clear Recent Searches?", isPresented: $showClearRecentSearchesAlert) {
+            Button("Clear", role: .destructive) {
+                viewModel.application.userDataStore.deleteAllRecentMapItems()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove all your recent address searches.")
+        }
+    }
+
+    // MARK: - Search Helpers
+
+    private func exitSearchMode() {
+        searchText = ""
+        isSearchFocused = false
+        searchViewModel.clearResults()
+        withAnimation {
+            state = .tip
         }
     }
 
