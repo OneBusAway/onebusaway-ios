@@ -12,11 +12,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     /// Holds the last error emitted by survey operations.
     @Published public var error: Error?
 
-    /// List of surveys eligible to be shown to the user based on visibility logic.
-    public var visibleSurveys: [Survey] = []
-
     /// All surveys fetched from the backend.
-    private var surveys: [Survey] = []
+    public var surveys: [Survey] = []
 
     /// Networking layer responsible for API operations related to surveys.
     private let apiService: SurveyAPIService
@@ -42,7 +39,6 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
         do {
             let studyResponse = try await apiService.getSurveys()
             self.surveys = studyResponse.surveys
-            self.refreshVisibleSurveys()
         } catch {
             self.error = error
         }
@@ -126,11 +122,6 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
         } catch {
             self.error = error
         }
-    }
-
-    /// Refreshes the current `visibleSurveys` list using the survey visibility rules.
-    private func refreshVisibleSurveys() {
-        visibleSurveys = surveys.filter { $0.allowsVisible }
     }
 
 }

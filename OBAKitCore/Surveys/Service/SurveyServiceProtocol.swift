@@ -9,7 +9,7 @@ import Foundation
 
 public protocol SurveyServiceProtocol {
 
-    var visibleSurveys: [Survey] { get }
+    var surveys: [Survey] { get }
 
     func fetchSurveys() async
 
