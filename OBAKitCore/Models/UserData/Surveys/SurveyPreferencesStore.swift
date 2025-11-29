@@ -15,8 +15,14 @@ public protocol SurveyPreferencesStore: NSObjectProtocol {
 
     var skippedSurveys: [Int] { get }
 
+    var userSurveyId: String { get }
+
     func setSurveyPreferences(_ preferences: SurveyPreferences)
 
     func surveyPreferences() -> SurveyPreferences
+
+    func getSurveyResponse() -> SurveySubmissionResponse?
+
+    func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse)
 
 }

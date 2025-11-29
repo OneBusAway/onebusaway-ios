@@ -9,6 +9,8 @@ import Foundation
 
 public struct SurveyPreferences: Codable {
 
+    var userSurveyId: String?
+
     /// Whether the user has enabled the surveys feature.
     var isSurveyEnabled: Bool = true
 

@@ -234,6 +234,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
         static let surveyPreferencesKey = "UserDataStore.surveyPreferences"
         static let appLaunchCounter = "UserDataStore.appLaunchCounter"
+        static let surveyResponse = "UserDataStore.surveyResponse"
+        static let userSurveyId = "UserDataStore.userSurveyIdentifier"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -733,6 +735,23 @@ extension UserDefaultsStore {
 // MARK: - Survey Preferences Store
 extension UserDefaultsStore: SurveyPreferencesStore {
 
+    /// A persistent unique identifier used to associate all survey submissions
+    /// from this user/device.
+    ///
+    /// The value is:
+    /// - Retrieved from `UserDefaults` if it already exists.
+    /// - Automatically generated and stored if it does not exist.
+    /// - Returns: A UUID string representing the user's survey identity.
+    public var userSurveyId: String {
+        if let uuid = userDefaults.string(forKey: UserDefaultsKeys.userSurveyId) {
+            return uuid
+        } else {
+            let uuid = UUID().uuidString
+            userDefaults.set(uuid, forKey: UserDefaultsKeys.userSurveyId)
+            return uuid
+        }
+    }
+
     /// Returns the number of times the app has been launched,
     /// used to determine when to show surveys based on launch count logic.
     public var appLaunch: Int {
@@ -763,6 +782,31 @@ extension UserDefaultsStore: SurveyPreferencesStore {
     /// - Returns: A `SurveyPreferences` object if it exists, otherwise `nil`.
     public func surveyPreferences() -> SurveyPreferences {
         return userDefaults.object(forKey: UserDefaultsKeys.surveyPreferencesKey) as? SurveyPreferences ?? .init()
+    }
+
+}
+
+extension UserDefaultsStore {
+
+    /// Retrieves the last saved survey response from `UserDefaults`.
+    ///
+    /// This is typically used to:
+    /// - Check if the user already submitted a survey
+    /// - Retrieve the `surveyPathId` needed for updating an existing response
+    ///
+    /// - Returns: A `SurveySubmissionResponse` if stored, otherwise `nil`.
+    public func getSurveyResponse() -> SurveySubmissionResponse? {
+        userDefaults.object(forKey: UserDefaultsKeys.surveyResponse) as? SurveySubmissionResponse
+    }
+
+    /// Persists a survey submission response in `UserDefaults`.
+    ///
+    /// This stored response is used for follow-up update operations (PATCH),
+    /// since the server returns a path identifier that must be reused.
+    ///
+    /// - Parameter submissionResponse: The survey submission response returned by the backend.
+    public func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse) {
+        userDefaults.set(submissionResponse, forKey: UserDefaultsKeys.surveyResponse)
     }
 
 }

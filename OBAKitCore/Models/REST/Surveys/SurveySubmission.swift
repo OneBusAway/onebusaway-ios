@@ -70,5 +70,5 @@ public struct SurveySubmissionResponse: Codable {
     public func surveyPathId() -> String {
         return updatePath.split(separator: "/").last.map(String.init) ?? ""
     }
-    
+
 }

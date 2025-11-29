@@ -88,7 +88,7 @@ open class CoreApplication: NSObject,
             await regionsService.updateRegionsList()
         }
         refreshServices()
-        
+
         /// Updates the app launch count
         userDataStore.increaseAppLaunchCount()
     }
