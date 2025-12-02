@@ -77,10 +77,20 @@ class StopAnnotationView: MKAnnotationView {
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, previousTraitCollection: UITraitCollection) in
             if self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle {
                 self.rebuildIcon()
+                self.refreshLabels()
             }
         }
     }
-
+    private func refreshLabels() {
+        if let bookmark = annotation as? Bookmark {
+            titleLabel.attributedText = strokedText(bookmark.name)
+        }
+        else if let stop = annotation as? Stop {
+            if let mapTitle = stop.mapTitle {
+                titleLabel.attributedText = strokedText(mapTitle)
+            }
+        }
+    }
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     // MARK: - Annotation View Overrides
