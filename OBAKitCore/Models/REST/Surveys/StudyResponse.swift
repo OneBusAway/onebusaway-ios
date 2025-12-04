@@ -14,8 +14,13 @@ public struct StudyResponse: Codable, Hashable {
 
     public let surveys: [Survey]
 
-    public let region: Region
+    public let region: SurveyRegion
 
+}
+
+public struct SurveyRegion: Codable, Hashable {
+    public let id: Int
+    public let name: String
 }
 
 public struct Survey: Codable, Hashable {
@@ -60,7 +65,7 @@ public struct Survey: Codable, Hashable {
         case visibleStopsList = "visible_stop_list"
         case visibleRoutesList = "visible_route_list"
         case allowsMultipleResponses = "allows_multiple_responses"
-        case allowsVisible = "allows_visible"
+        case allowsVisible = "always_visible"
         case study
         case questions
     }

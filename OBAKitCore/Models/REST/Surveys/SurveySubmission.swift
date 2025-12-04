@@ -23,6 +23,22 @@ public struct SurveySubmission: Codable {
 
     public let responses: [QuestionAnswerSubmission]
 
+    public init(
+        userIdentifier: String,
+        surveyId: Int,
+        stopIdentifier: String? = nil,
+        stopLongitude: Double? = nil,
+        stopLatitude: Double? = nil,
+        responses: [QuestionAnswerSubmission]
+    ) {
+        self.userIdentifier = userIdentifier
+        self.surveyId = surveyId
+        self.stopIdentifier = stopIdentifier
+        self.stopLongitude = stopLongitude
+        self.stopLatitude = stopLatitude
+        self.responses = responses
+    }
+
     enum CodingKeys: String, CodingKey {
         case userIdentifier = "user_identifier"
         case surveyId = "survey_id"
@@ -36,13 +52,20 @@ public struct SurveySubmission: Codable {
 
 public struct QuestionAnswerSubmission: Codable {
 
-    public let questionId: String
+    public let questionId: Int
 
     public let questionType: String
 
     public let questionLabel: String
 
     public let answer: String
+
+    public init(questionId: Int, questionType: String, questionLabel: String, answer: String) {
+        self.questionId = questionId
+        self.questionType = questionType
+        self.questionLabel = questionLabel
+        self.answer = answer
+    }
 
     enum CodingKeys: String, CodingKey {
         case questionId = "question_id"
