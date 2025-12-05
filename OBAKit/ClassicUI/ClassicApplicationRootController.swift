@@ -16,7 +16,6 @@ public class ClassicApplicationRootController: UITabBarController {
         case map = 0
         case recentStops
         case bookmarks
-        case vehicles
         case more
     }
 
@@ -28,7 +27,6 @@ public class ClassicApplicationRootController: UITabBarController {
         self.mapController = MapViewController(application: application)
         self.recentStopsController = RecentStopsViewController(application: application)
         self.bookmarksController = BookmarksViewController(application: application)
-        self.vehiclesController = VehiclesViewController(application: application)
         self.moreController = MoreViewController(application: application)
 
         super.init(nibName: nil, bundle: nil)
@@ -44,10 +42,9 @@ public class ClassicApplicationRootController: UITabBarController {
         let mapNav = application.viewRouter.buildNavigation(controller: self.mapController, prefersLargeTitles: false)
         let recentStopsNav = application.viewRouter.buildNavigation(controller: self.recentStopsController)
         let bookmarksNav = application.viewRouter.buildNavigation(controller: self.bookmarksController)
-        let vehiclesNav = application.viewRouter.buildNavigation(controller: self.vehiclesController, prefersLargeTitles: false)
         let moreNav = application.viewRouter.buildNavigation(controller: self.moreController)
 
-        viewControllers = [mapNav, recentStopsNav, bookmarksNav, vehiclesNav, moreNav]
+        viewControllers = [mapNav, recentStopsNav, bookmarksNav, moreNav]
 
         selectedIndex = application.userDataStore.lastSelectedView.rawValue
     }
@@ -55,7 +52,6 @@ public class ClassicApplicationRootController: UITabBarController {
     let mapController: MapViewController
     let recentStopsController: RecentStopsViewController
     let bookmarksController: BookmarksViewController
-    let vehiclesController: VehiclesViewController
     let moreController: MoreViewController
 
     required init?(coder aDecoder: NSCoder) {
