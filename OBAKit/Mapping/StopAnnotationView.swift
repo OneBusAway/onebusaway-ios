@@ -29,7 +29,7 @@ class StopAnnotationView: MKAnnotationView {
     // MARK: - Subviews
 
     private let titleLabel: UILabel = {
-        let label = StrokedLabel.autolayoutNew()
+        let label = UILabel.autolayoutNew()
         label.textAlignment = .center
         label.numberOfLines = 2
         return label
@@ -112,18 +112,12 @@ class StopAnnotationView: MKAnnotationView {
 
     private func strokedText(_ text: String) -> NSAttributedString {
         var attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize, weight: .bold),
-            .foregroundColor: UIColor.darkText
+            .font: UIFont(name: "HelveticaNeue-Bold", size: 14) as Any,
+            .foregroundColor: UIColor.label
         ]
 
-        attributes[.strokeColor] = UIColor.white
+        attributes[.strokeColor] = UIColor.systemBackground
         attributes[.strokeWidth] = -4.0
-
-        let shadow = NSShadow()
-        shadow.shadowColor = UIColor.white
-        shadow.shadowOffset = .zero
-        shadow.shadowBlurRadius = 1
-        attributes[.shadow] = shadow
 
         return NSAttributedString(string: text, attributes: attributes)
     }
