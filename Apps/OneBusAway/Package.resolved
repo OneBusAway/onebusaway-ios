@@ -213,8 +213,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OneBusAway/otpkit.git",
       "state" : {
-        "revision" : "1502759d3c8e87811529c60183358d347a27242e",
-        "version" : "0.12.0"
+        "revision" : "f691dfcff9d9050784db42c0c1f42e4374724417",
+        "version" : "0.13.0"
       }
     },
     {
@@ -249,8 +249,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log",
       "state" : {
-        "revision" : "ce592ae52f982c847a4efc0dd881cc9eb32d29f2",
-        "version" : "1.6.4"
+        "revision" : "b1fa4ef41fe21b13120c034854042d12c43f66b2",
+        "version" : "1.7.1"
       }
     },
     {
