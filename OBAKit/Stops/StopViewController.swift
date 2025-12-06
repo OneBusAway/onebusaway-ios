@@ -99,6 +99,15 @@ public class StopViewController: UIViewController,
             application.userDataStore.addRecentStop(stop, region: region)
         }
         application.analytics?.reportStopViewed(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
+
+        // Disable filtering if all routes are hidden to ensure data visibility
+        if isListFiltered {
+            let allRoutesHidden = stop.routes.allSatisfy { stopPreferences.hiddenRoutes.contains($0.id) }
+            if allRoutesHidden {
+                isListFiltered = false
+                dataDidReload() // Refresh UI to reflect the change
+            }
+        }
     }
 
     /// Arrival/Departure data for this stop.
@@ -288,7 +297,6 @@ public class StopViewController: UIViewController,
 
         let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
             if self.isListFiltered {
-                // Only change value if it's different to avoid unnecessary data loading.
                 self.isListFiltered = false
             }
         }
@@ -298,13 +306,23 @@ public class StopViewController: UIViewController,
             self.filter()
         }
 
-        if isListFiltered && stopPreferences.hasHiddenRoutes {
-            showFiltered.image = UIImage(systemName: "checkmark")
-        } else {
-            showAll.image = UIImage(systemName: "checkmark")
+        guard let stop = stop else {
+            return UIMenu(children: [showAll, showFiltered])
         }
 
-        return UIMenu(children: [showAll, showFiltered])
+        var children = [showAll]
+
+        if stop.routes.count > 1 {
+            if isListFiltered && stopPreferences.hasHiddenRoutes {
+                showFiltered.image = UIImage(systemName: "checkmark")
+            } else {
+                showAll.image = UIImage(systemName: "checkmark")
+            }
+
+            children.append(showFiltered)
+        }
+
+        return UIMenu(children: children)
     }
 
     fileprivate func fileMenu() -> UIMenu {
@@ -1156,6 +1174,9 @@ public class StopViewController: UIViewController,
     private var stopPreferences: StopPreferences {
         didSet {
             dataDidReload()
+            if let stop = stop, isListFiltered {
+                stopUpdated(stop)
+            }
         }
     }
 
