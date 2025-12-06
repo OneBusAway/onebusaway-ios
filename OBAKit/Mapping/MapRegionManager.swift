@@ -361,15 +361,19 @@ public class MapRegionManager: NSObject,
         }
 
         let existingAnnotations = mapView.annotations
-
         let existingBookmarkIDs = Set(existingAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
 
         let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
-            if let stop = annotation as? Stop {
-                return bookmarksHash[stop.id] == nil && !stops.contains(where: { $0.id == stop.id }) ? stop : nil
+            guard
+                let stop = annotation as? Stop,
+                bookmarksHash[stop.id] != nil,
+                stops.contains(where: { $0.id == stop.id })
+            else {
+                return nil
             }
-            return nil
+
+            return stop
         }
         mapView.removeAnnotations(stopAnnotationsToRemove)
 
