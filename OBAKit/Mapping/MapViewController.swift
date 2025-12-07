@@ -247,7 +247,7 @@ class MapViewController: UIViewController,
         guard let forecast = forecast else { return }
         let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
         let formattedFeelsLikeTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperatureFeelsLike, unit: .fahrenheit, to: application.locale)
-        
+
         let measurementSystem = Locale.current.measurementSystem
         let windSpeed: String
         switch measurementSystem {

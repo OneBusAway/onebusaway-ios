@@ -106,7 +106,7 @@ class ReportProblemViewController: TaskController<StopArrivals>,
             return nil
         }
 
-        let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, isDeepLinkingAvailable: false, onSelectAction: onSelectArrivalDeparture) }
+        let rows = arrivalsAndDepartures.map { ArrivalDepartureItem(arrivalDeparture: $0, isAlarmAvailable: false, onSelectAction: onSelectArrivalDeparture) }
 
         return OBAListViewSection(id: "vehicle_problem_section", title: OBALoc("report_problem_controller.vehicle_problem.header", value: "Problem with a Vehicle at the Stop", comment: "A table header in the 'Report Problem' view controller."), contents: rows)
     }

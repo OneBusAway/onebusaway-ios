@@ -340,7 +340,11 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+        let schedulesAction = UIAction(title: Strings.schedules, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+            self.showScheduleForStop()
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction, schedulesAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -731,23 +735,21 @@ public class StopViewController: UIViewController,
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        let deepLinkingAvailable = application.features.deepLinking == .running
         let highlightTimeOnDisplay = shouldHighlight(arrivalDeparture: arrivalDeparture)
 
         let onSelectAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.didSelectArrivalDepartureItem(item) }
         let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
         let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
-        let shareAction: OBAListViewAction<ArrivalDepartureItem>    = { [unowned self] item in self.shareTripStatus(viewModel: item) }
+        let scheduleAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
 
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
-            isDeepLinkingAvailable: deepLinkingAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
             onSelectAction: onSelectAction,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
-            shareAction: shareAction)
+            scheduleAction: scheduleAction)
     }
 
     /// - parameter groupRoute: If `groupRoute` is `nil`, this section will also include a "Load More" button at the end of its contents.
@@ -821,10 +823,10 @@ public class StopViewController: UIViewController,
             }
             actions.append(addBookmark)
 
-            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { [unowned self] _ in
-                self.shareTripStatus(viewModel: viewModel)
+            let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+                self.showScheduleForRoute(viewModel: viewModel)
             }
-            actions.append(shareTrip)
+            actions.append(schedule)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
@@ -1105,6 +1107,18 @@ public class StopViewController: UIViewController,
         // Use self.presnt because when using application.viewRouter.present(:_),
         // it disables UIActivityViewController's "tap anywhere to dismiss".
         self.present(activityController, animated: true)
+    }
+
+    // MARK: - Schedules
+
+    func showScheduleForRoute(viewModel: ArrivalDepartureItem) {
+        let scheduleVC = ScheduleForRouteViewController(routeID: viewModel.routeID, application: application)
+        present(scheduleVC, animated: true)
+    }
+
+    func showScheduleForStop() {
+        let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
+        present(scheduleVC, animated: true)
     }
 
     // MARK: - Actions
