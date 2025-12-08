@@ -28,9 +28,13 @@ class RESTAPIURLBuilder: NSObject {
     public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
         let urlString = joinBaseURLToPath(path)
         let queryParamString = buildQueryParams(params)
-        let fullURLString = String(format: "%@?%@", urlString, queryParamString)
 
-        return URL(string: fullURLString)!
+        if !queryParamString.isEmpty {
+            let fullURLString = String(format: "%@?%@", urlString, queryParamString)
+            return URL(string: fullURLString)!
+        }
+
+        return URL(string: urlString)!
     }
 
     private func joinBaseURLToPath(_ path: String) -> String {
@@ -436,4 +440,35 @@ extension RESTAPIURLBuilder {
 
         return generateURL(path: apiPath, params: args)
     }
+}
+
+// MARK: - Surveys API URL Builder
+// Endpoints: GET surveys, POST survey response (hero question), PUT remaining responses
+extension RESTAPIURLBuilder {
+
+    /// Create  full URL for `getSurvey` API endpoint
+    /// - Parameters:
+    ///   - regionId: The region identifier
+    ///   - userIdentifier: The user unique identifier
+    /// - Returns: An URL suitable for making a `GET` request to retrieve information.
+    public func getSurveys(regionId: RegionIdentifier, userIdentifier: String) -> URL {
+        let path = "/api/v1/regions/\(regionId)/surveys.json"
+        return generateURL(path: path, params: ["user_id": userIdentifier])
+    }
+
+    /// Create full URL for `submitSurveyResponse` API endpoint
+    /// - Returns: An URL suitable for making a `POST` request to submit survey responses.
+    public func submitSurveyResponse() -> URL {
+        let path = "/api/v1/survey_responses/"
+        return generateURL(path: path)
+    }
+
+    /// Create full URL for `updateSurveyResponse` API endpoint
+    /// - Parameter surveyResponseId: The survey response id of the existing survey
+    /// - Returns: An URL suitable for making a `PUT` request to update the survey responses.
+    public func updateSurveyResponse(surveyResponseId: String) -> URL {
+        let path = "/api/v1/survey_responses/\(surveyResponseId)"
+        return generateURL(path: path)
+    }
+
 }

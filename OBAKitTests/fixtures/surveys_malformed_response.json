@@ -1,0 +1,36 @@
+{
+  "surveys": [
+    {
+      "id": 1,
+      "name": "Always Visible Multiple",
+      "show_on_map": true
+      "show_on_stops": true,  // missing comma above (invalid)
+      "always_visible": true,
+      "allows_multiple_responses": true,
+      "visible_stop_list": ["STOP_20", "STOP_21"],
+      "visible_route_list": ["ROUTE_11"],
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text,
+            "label_text": "Do you like OBA IOS App ?"   // unclosed string for type
+          }
+        },
+        {
+          "id": 16,
+          "position": 2,
+          "required": false,
+          "content": {
+            "type": "multiple_choice",
+            "label_text": "How did you hear about us?",
+            "options": [
+              "Friend",
+              "Social Media",
+              "App Store"
+              // missing closing bracket for "options"
+        }  // missing closing brace for question object
+      ]  // questions array never closed properly
+    }  // survey object ends here but it's missing many closings

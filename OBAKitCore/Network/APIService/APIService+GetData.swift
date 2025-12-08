@@ -90,7 +90,7 @@ extension APIService {
         return try await getData(for: url, decodeAs: RESTAPIResponse<T>.self, using: decoder)
     }
 
-    private nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
+    nonisolated func errorLooksLikeCaptivePortal(_ error: NSError) -> Bool {
         if error.domain == NSCocoaErrorDomain && error.code == 3840 {
             return true
         }

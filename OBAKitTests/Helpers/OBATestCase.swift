@@ -26,6 +26,8 @@ open class OBATestCase: XCTestCase {
         obacoService = buildObacoService()
 
         restService = buildRESTService()
+
+        surveyAPIService = buildSurveyService()
     }
 
     open override func tearDown() {
@@ -156,4 +158,21 @@ open class OBATestCase: XCTestCase {
     var regionsAPIPath: String {
         "/regions-v3.json"
     }
+
+    // MARK: - Surveys
+
+    var surveyAPIService: SurveyAPIService!
+
+    func buildSurveyService() -> SurveyAPIService {
+        let url = URL(string: "https://onebusaway.co")!
+        let config = APIServiceConfiguration(
+            baseURL: url,
+            uuid: uuid,
+            regionIdentifier: pugetSoundRegionIdentifier
+        )
+        
+        let surveyAPIService = SurveyAPIService(config, dataLoader: MockDataLoader(testName: name))
+        return surveyAPIService
+    }
+
 }
