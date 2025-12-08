@@ -28,9 +28,13 @@ class RESTAPIURLBuilder: NSObject {
     public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
         let urlString = joinBaseURLToPath(path)
         let queryParamString = buildQueryParams(params)
-        let fullURLString = String(format: "%@?%@", urlString, queryParamString)
 
-        return URL(string: fullURLString)!
+        if !queryParamString.isEmpty {
+            let fullURLString = String(format: "%@?%@", urlString, queryParamString)
+            return URL(string: fullURLString)!
+        }
+
+        return URL(string: urlString)!
     }
 
     private func joinBaseURLToPath(_ path: String) -> String {
@@ -387,8 +391,7 @@ extension RESTAPIURLBuilder {
 }
 
 // MARK: - Surveys API URL Builder
-
-// Get - Submit hero - update the rest
+// Endpoints: GET surveys, POST survey response (hero question), PUT remaining responses
 extension RESTAPIURLBuilder {
 
     /// Create  full URL for `getSurvey` API endpoint
