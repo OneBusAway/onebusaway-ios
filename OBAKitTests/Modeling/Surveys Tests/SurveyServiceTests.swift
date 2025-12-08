@@ -8,6 +8,7 @@
 import OBAKitCore
 import XCTest
 import Nimble
+@testable import OBAKitCore
 
 final class SurveyServiceTests: OBATestCase {
 
@@ -15,7 +16,7 @@ final class SurveyServiceTests: OBATestCase {
     private func loadSurveys() async throws -> StudyResponse {
         let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
         let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
-        print(data.count)
+
         dataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345",
             with: data
@@ -50,7 +51,7 @@ final class SurveyServiceTests: OBATestCase {
 
         expect(survey?.visibleStopsList?.count).to(equal(2))
         expect(survey?.visibleRoutesList?.count).to(equal(2))
-        expect(survey?.questions.count).to(equal(4))
+        expect(survey?.questions.count).to(equal(5))
     }
 
     // Test question decoding and types
@@ -59,7 +60,7 @@ final class SurveyServiceTests: OBATestCase {
         let survey = surveys.surveys.first!
 
         let questions = survey.questions
-        expect(questions.count).to(equal(4))
+        expect(questions.count).to(equal(5))
 
         // Q1: text
         let q1 = questions[0]
@@ -90,9 +91,9 @@ final class SurveyServiceTests: OBATestCase {
 
         let filtered = survey.getQuestions()
 
-        expect(filtered.count).to(equal(4)) // all valid
+        expect(filtered.count).to(equal(5)) // all valid
         expect(filtered.map(\.content.type)).to(equal([
-            .text, .radio, .checkbox, .externalSurvey
+            .text, .radio, .checkbox, .externalSurvey, .label
         ]))
     }
 
@@ -112,11 +113,11 @@ final class SurveyServiceTests: OBATestCase {
     }
 
 
-    private func setupMockSubmissionSuccess() {
+    private func setupMockSubmissionSuccess(_ surveyId: String = "") {
         let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
         let data = Fixtures.loadData(file: "survey_submission_response.json")
         dataLoader.mock(
-            URLString: "https://onebusaway.co/api/v1/survey_responses/",
+            URLString: "https://onebusaway.co/api/v1/survey_responses/\(surveyId)",
             with: data
         )
     }
@@ -140,11 +141,14 @@ final class SurveyServiceTests: OBATestCase {
 
     func test_submitSurvey_additional_questions() async throws {
 
-        setupMockSubmissionSuccess()
+        setupMockSubmissionSuccess("surveyResponseId")
 
         let submissionModel = makeAdditionalQuestionSubmissionModel()
 
-        let submissionResponse = try await surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        let submissionResponse = try await surveyAPIService.updateSurveyResponse(
+            surveyResponseId: "surveyResponseId",
+            surveyResponses: submissionModel
+        )
 
         expect(submissionResponse.id).to(equal("808d3a515daa39f4c15a"))
         expect(submissionResponse.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
@@ -181,5 +185,285 @@ final class SurveyServiceTests: OBATestCase {
             ]
         )
     }
-    
+
+    // MARK: - Error Scenarios
+
+    // MARK: - Get Surveys Failures
+    func test_get_surveys_captive_portal() async throws {
+        let data = Fixtures.loadData(file: "captive_portal.html")
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
+        let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
+
+        makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
+
+        await expect {
+            try await self.surveyAPIService.getSurveys()
+        }
+        .to(throwError { error in
+            if case APIError.captivePortal = error {
+                return
+            }
+
+            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
+        })
+
+    }
+
+    func test_get_surveys_malformed_response_data() async throws {
+        let malformedJsonResponse = Fixtures.loadData(file: "surveys_malformed_response.json")
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
+
+        makeResponseFailureMock(malformedJsonResponse, url: url, statusCode: 200)
+
+        await expect {
+            try await self.surveyAPIService.getSurveys()
+        }
+        .to(throwError { error in
+            if case let DecodingError.dataCorrupted(context) = error {
+                let underlying = context.underlyingError as NSError?
+                expect(underlying?.domain) == NSCocoaErrorDomain
+                expect(underlying?.code) == 3840
+            } else {
+                fail("Expected DecodingError.dataCorrupted but got \(error)")
+            }
+        })
+    }
+
+    func test_get_surveys_internal_server_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 500)
+
+        await expect {
+            try await self.surveyAPIService.getSurveys()
+        }
+        .to(throwError { error in
+
+            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
+                return
+            }
+
+            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
+        })
+    }
+
+    func test_get_surveys_not_found_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 404)
+
+        await expect {
+            try await self.surveyAPIService.getSurveys()
+        }
+        .to(throwError { error in
+
+            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
+                return
+            }
+
+            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
+        })
+    }
+
+    //MARK: -  Submit First Question Failures
+    func test_submit_first_question_malformed_response_data() async throws {
+        let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 200)
+
+        await expect {
+            let submissionModel = self.makeFirstQuestionSubmissionModel()
+            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        }
+        .to(throwError { error in
+            if case let DecodingError.dataCorrupted(context) = error {
+                let underlying = context.underlyingError as NSError?
+                expect(underlying?.domain) == NSCocoaErrorDomain
+                expect(underlying?.code) == 3840
+            } else {
+                fail("Expected DecodingError.dataCorrupted but got \(error)")
+            }
+        })
+
+    }
+
+    func test_submit_first_question_captive_portal() async throws {
+        let data = Fixtures.loadData(file: "captive_portal.html")
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
+        let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
+
+        makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
+
+        await expect {
+            let submissionModel = self.makeFirstQuestionSubmissionModel()
+            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        }
+        .to(throwError { error in
+            if case APIError.captivePortal = error {
+                return
+            }
+
+            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
+        })
+
+    }
+
+    func test_submit_first_question_internal_server_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 500)
+
+        await expect {
+            let submissionModel = self.makeFirstQuestionSubmissionModel()
+            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        }
+        .to(throwError { error in
+
+            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
+                return
+            }
+
+            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
+        })
+    }
+
+    func test_submit_first_question_not_found_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 404)
+
+        await expect {
+            let submissionModel = self.makeFirstQuestionSubmissionModel()
+            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        }
+        .to(throwError { error in
+
+            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
+                return
+            }
+
+            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
+        })
+    }
+
+    // MARK: - Submit Additional Question Failures
+    func test_submit_additional_question_malformed_response_data() async throws {
+        let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 200)
+
+        await expect {
+            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
+            try await self.surveyAPIService.updateSurveyResponse(
+                surveyResponseId: "surveyResponseId",
+                surveyResponses: submissionModel
+            )
+        }
+        .to(throwError { error in
+            if case let DecodingError.dataCorrupted(context) = error {
+                let underlying = context.underlyingError as NSError?
+                expect(underlying?.domain) == NSCocoaErrorDomain
+                expect(underlying?.code) == 3840
+            } else {
+                fail("Expected DecodingError.dataCorrupted but got \(error)")
+            }
+        })
+
+    }
+
+    func test_submit_additional_question_captive_portal() async throws {
+        let data = Fixtures.loadData(file: "captive_portal.html")
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
+        let error = NSError(domain: NSCocoaErrorDomain, code: 3840, userInfo: nil)
+
+        makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
+
+        await expect {
+            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
+            try await self.surveyAPIService.updateSurveyResponse(
+                surveyResponseId: "surveyResponseId",
+                surveyResponses: submissionModel
+            )
+        }
+        .to(throwError { error in
+            if case APIError.captivePortal = error {
+                return
+            }
+
+            fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
+        })
+
+    }
+
+    func test_submit_additional_question_internal_server_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 500)
+
+        await expect {
+            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
+            try await self.surveyAPIService.updateSurveyResponse(
+                surveyResponseId: "surveyResponseId",
+                surveyResponses: submissionModel
+            )
+        }
+        .to(throwError { error in
+
+            if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
+                return
+            }
+
+            fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
+        })
+    }
+
+    func test_submit_additional_question_not_found_error() async throws {
+        let response = Data()
+        let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
+
+        makeResponseFailureMock(response, url: url, statusCode: 404)
+
+        await expect {
+            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
+            try await self.surveyAPIService.updateSurveyResponse(
+                surveyResponseId: "surveyResponseId",
+                surveyResponses: submissionModel
+            )
+        }
+        .to(throwError { error in
+
+            if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
+                return
+            }
+
+            fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
+        })
+    }
+
+    private func makeResponseFailureMock(_ data: Data, url: URL, statusCode: Int, error: Error? = nil) {
+        let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
+        let urlResponse = dataLoader.buildURLResponse(URL: url, statusCode: statusCode)
+        let response = MockDataResponse(data: data, urlResponse: urlResponse, error: error) { request in
+            request.url == url
+        }
+        dataLoader.mock(response: response)
+    }
+
+    // MARK: - Missed Region Identifier
+
+    func test_missing_region_identifier() async throws {
+        let apiConfig = APIServiceConfiguration(baseURL: URL(string: "https://onebusaway.co/api/v1/")!, uuid: "userIdentifier", regionIdentifier: nil)
+        expect {
+            SurveyAPIService(apiConfig, dataLoader: MockDataLoader(testName: self.name))
+        }
+        .to(throwAssertion())
+    }
+
 }
