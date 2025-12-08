@@ -34,6 +34,12 @@
 /* The verb 'to cancel', i.e. to stop an action. */
 "common.cancel" = "Cancel";
 
+/* Button to clear recent search results */
+"common.clear_recent_searches" = "Clear Recent Searches";
+
+/* Confirmation message before clearing recent search results */
+"common.clear_recent_searches.confirmation" = "Are you sure you want to clear your recent searches?";
+
 /* The verb 'to close'. */
 "common.close" = "Close";
 
@@ -48,6 +54,15 @@
 
 /* The verb 'to dismiss', as in to hide or get rid of something. Used as a button title on alerts. */
 "common.dismiss" = "Dismiss";
+
+/* The verb 'to donate', as in to give money to a charitable cause. */
+"common.donate" = "Donate";
+
+/* The body of the message to display to the user after they donate to OTSF */
+"common.donation_thank_you.body" = "Your support will help us continue to improve OneBusAway.";
+
+/* Title of an alert to display to the user after they donate to OTSF */
+"common.donation_thank_you.title" = "Thank you for your support!";
 
 /* Past participle of 'do'. As in 'I am done' or 'I am finished.' */
 "common.done" = "Done";
@@ -100,17 +115,29 @@
 /* OK */
 "common.ok" = "OK";
 
+/* i.e. recently selected search results for map locations from the trip planner. */
+"common.recent_searches" = "Recent Searches";
+
 /* i.e. recently viewed or visited stops for transit vehicles, like a bus stop, ferry terminal, or train station. */
 "common.recent_stops" = "Recent Stops";
 
 /* The verb 'refresh', as in 'reload'. */
 "common.refresh" = "Refresh";
 
+/* The verb 'retry'. */
+"common.retry" = "Retry";
+
 /* The verb 'save', as in 'save data'. */
 "common.save" = "Save";
 
+/* A noun referring to a bus/train schedule or timetable. */
+"common.schedule" = "Schedule";
+
 /* Explains that this is departure comes from schedule data, not from a real-time vehicle location. */
 "common.scheduled_not_real_time" = "Scheduled/not real-time";
+
+/* Plural form of schedule, referring to bus/train schedules or timetables. */
+"common.schedules" = "Schedules";
 
 /* A noun referring to an alert about service interruptions, reroutes, or other disruptions or changes. */
 "common.service_alert" = "Service Alert";
@@ -141,6 +168,9 @@
 
 /* Used to tell the user that the UI they are looking at is actively being updated with new data from the server. */
 "common.updating" = "Updating…";
+
+/* The title of the Vehicles tab showing real-time vehicle positions on a map. */
+"common.vehicles" = "Vehicles";
 
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
@@ -342,6 +372,12 @@
 
 /* User-facing string that means our data is wrong about a route or a scheduled trip */
 "stop_problem_code.user_description.route_or_trip_missing" = "Route or scheduled trip is missing";
+
+/* Message for the trip planner tip */
+"trip_planner_tip.message" = "Tap here to search for places and plan your journey with transit directions.";
+
+/* Title for the trip planner tip */
+"trip_planner_tip.title" = "Plan Your Trip";
 
 /* User-facing string that means the vehicle came early. */
 "trip_problem_code.user_description.came_early" = "Came early";
