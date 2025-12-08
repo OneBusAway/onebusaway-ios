@@ -59,6 +59,15 @@
             "embedded_data_fields": [],
             "survey_provider": "google_forms"
           }
+        },
+        {
+          "id": 19,
+          "position": 1,
+          "required": false,
+          "content": {
+            "type": "label",
+            "label_text": "Just a label"
+          }
         }
       ]
     },
