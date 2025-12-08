@@ -9,7 +9,7 @@
 
 import Foundation
 
-public struct SurveySubmission: Codable {
+public struct SurveySubmission: Codable, Hashable {
 
     public let userIdentifier: String
 
@@ -50,7 +50,7 @@ public struct SurveySubmission: Codable {
 
 }
 
-public struct QuestionAnswerSubmission: Codable {
+public struct QuestionAnswerSubmission: Codable, Hashable {
 
     public let questionId: Int
 
@@ -76,7 +76,7 @@ public struct QuestionAnswerSubmission: Codable {
 
 }
 
-public struct SurveySubmissionResponse: Codable {
+public struct SurveySubmissionResponse: Codable, Hashable {
 
     public let id: String
 
@@ -93,5 +93,5 @@ public struct SurveySubmissionResponse: Codable {
     public func surveyPathId() -> String {
         return updatePath.split(separator: "/").last.map(String.init) ?? ""
     }
-    
+
 }
