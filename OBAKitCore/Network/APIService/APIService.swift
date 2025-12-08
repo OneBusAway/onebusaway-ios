@@ -58,7 +58,7 @@ public struct APIServiceConfiguration {
         self.baseURL = components.url!
     }
 
-    /// For Services which need only `baseUR` , `uuid` and `regionIdentifier`.
+    /// For Services which need only `baseURL` , `uuid` and `regionIdentifier`.
     init(baseURL: URL, uuid: String, regionIdentifier: Int?) {
         self.baseURL = baseURL
         self.apiKey = ""
