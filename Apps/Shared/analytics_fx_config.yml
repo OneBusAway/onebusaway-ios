@@ -25,27 +25,61 @@ targets:
         script: |
           # Only upload dSYMs for Release builds
           if [ "${CONFIGURATION}" = "Release" ]; then
-            echo "Uploading dSYMs to Crashlytics for Release build..."
+            echo "=== Crashlytics dSYM Upload ==="
+            echo "Configuration: ${CONFIGURATION}"
+            echo "Project Dir: ${PROJECT_DIR}"
+            echo "Build Dir: ${BUILD_DIR}"
 
             # Path to the upload-symbols script in the Firebase iOS SDK package
             UPLOAD_SYMBOLS="${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols"
+            echo "Upload symbols path: ${UPLOAD_SYMBOLS}"
 
             # Check if the script exists
             if [ ! -f "$UPLOAD_SYMBOLS" ]; then
-              echo "Warning: Firebase upload-symbols script not found at $UPLOAD_SYMBOLS"
+              echo "ERROR: Firebase upload-symbols script not found at $UPLOAD_SYMBOLS"
               exit 0
             fi
+            echo "✓ Upload symbols script found"
+
+            DSYM_PATH="$DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME"
+            echo "dSYM folder: ${DWARF_DSYM_FOLDER_PATH}"
+            echo "dSYM file: ${DWARF_DSYM_FILE_NAME}"
+            echo "Full dSYM path: ${DSYM_PATH}"
 
             # Check if dSYM file exists
-            if [ ! -d "$DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME" ]; then
-              echo "Warning: dSYM file not found at $DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME"
+            if [ ! -d "$DSYM_PATH" ]; then
+              echo "ERROR: dSYM file not found at $DSYM_PATH"
               exit 0
             fi
+            echo "✓ dSYM file found"
 
-            # Upload the dSYMs
-            "$UPLOAD_SYMBOLS" -gsp "${PROJECT_DIR}/Apps/OneBusAway/Resources/GoogleService-Info.plist" -p ios "$DWARF_DSYM_FOLDER_PATH/$DWARF_DSYM_FILE_NAME"
+            # Show dSYM size
+            echo "dSYM size: $(du -sh "$DSYM_PATH" | cut -f1)"
 
-            echo "dSYM upload completed"
+            GSP_PATH="${PROJECT_DIR}/Apps/OneBusAway/Resources/GoogleService-Info.plist"
+            echo "GoogleService-Info.plist: ${GSP_PATH}"
+
+            if [ ! -f "$GSP_PATH" ]; then
+              echo "ERROR: GoogleService-Info.plist not found"
+              exit 0
+            fi
+            echo "✓ GoogleService-Info.plist found"
+
+            # Upload the dSYMs with debug flag
+            echo ""
+            echo "Starting upload..."
+            echo "Command: $UPLOAD_SYMBOLS -d -gsp $GSP_PATH -p ios $DSYM_PATH"
+            echo ""
+            "$UPLOAD_SYMBOLS" -d -gsp "$GSP_PATH" -p ios "$DSYM_PATH"
+            UPLOAD_EXIT_CODE=$?
+
+            echo ""
+            echo "Upload exit code: $UPLOAD_EXIT_CODE"
+            if [ $UPLOAD_EXIT_CODE -eq 0 ]; then
+              echo "✓ dSYM upload completed successfully"
+            else
+              echo "✗ dSYM upload failed with exit code $UPLOAD_EXIT_CODE"
+            fi
           else
             echo "Skipping dSYM upload for ${CONFIGURATION} build"
           fi
