@@ -355,21 +355,35 @@ public class MapRegionManager: NSObject,
     }
 
     private func displayUniqueStopAnnotations() {
-        mapView.removeAnnotations(type: Bookmark.self)
         var bookmarksHash = [StopID: Bookmark]()
-
         for bm in bookmarks {
             bookmarksHash[bm.stopID] = bm
         }
 
-        mapView.addAnnotations(Array(bookmarksHash.values))
+        let existingAnnotations = mapView.annotations
+        let existingBookmarkIDs = Set(existingAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
+        let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
 
-        let bookmarkStopIDs = Set(bookmarksHash.keys)
-        let rejectedStops = stops.filter { bookmarkStopIDs.contains($0.id) }
-        let acceptedStops = stops.filter { !rejectedStops.contains($0) }
+        let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
+            guard
+                let stop = annotation as? Stop,
+                bookmarksHash[stop.id] != nil,
+                stops.contains(where: { $0.id == stop.id })
+            else {
+                return nil
+            }
 
-        mapView.removeAnnotations(rejectedStops)
-        mapView.addAnnotations(acceptedStops)
+            return stop
+        }
+        mapView.removeAnnotations(stopAnnotationsToRemove)
+
+        let bookmarksToAdd = bookmarks.filter { !existingBookmarkIDs.contains($0.stopID) }
+        mapView.addAnnotations(bookmarksToAdd)
+
+        let stopsToAdd = stops.filter {
+            !bookmarksHash.keys.contains($0.id) && !existingStopIDs.contains($0.id)
+        }
+        mapView.addAnnotations(stopsToAdd)
 
         notifyDelegatesStopsChanged()
     }

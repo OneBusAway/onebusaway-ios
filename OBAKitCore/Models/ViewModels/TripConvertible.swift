@@ -9,11 +9,12 @@
 
 import Foundation
 
-/// Wraps `ArrivalDeparture` and `VehicleStatus` to provide a uniform way to populate
+/// Wraps `ArrivalDeparture`, `VehicleStatus`, and `TripDetails` to provide a uniform way to populate
 /// user interfaces that display trip information, like the `TripViewController` in `OBAKit`.
 public class TripConvertible: NSObject {
     public var arrivalDeparture: ArrivalDeparture?
     public var vehicleStatus: VehicleStatus?
+    public var tripDetails: TripDetails?
 
     public init(arrivalDeparture: ArrivalDeparture) {
         self.arrivalDeparture = arrivalDeparture
@@ -26,19 +27,23 @@ public class TripConvertible: NSObject {
         self.vehicleStatus = vehicleStatus
     }
 
+    public init(tripDetails: TripDetails) {
+        self.tripDetails = tripDetails
+    }
+
     public var vehicleID: String? {
-        arrivalDeparture?.vehicleID ?? vehicleStatus?.vehicleID
+        arrivalDeparture?.vehicleID ?? vehicleStatus?.vehicleID ?? tripDetails?.status?.vehicleID
     }
 
     public var tripStatus: TripStatus? {
-        return arrivalDeparture?.tripStatus ?? vehicleStatus?.tripStatus
+        return arrivalDeparture?.tripStatus ?? vehicleStatus?.tripStatus ?? tripDetails?.status
     }
 
     public var trip: Trip {
-        return arrivalDeparture?.trip ?? vehicleStatus!.trip!
+        return arrivalDeparture?.trip ?? vehicleStatus?.trip ?? tripDetails!.trip
     }
 
     public var serviceDate: Date {
-        return arrivalDeparture?.serviceDate ?? vehicleStatus!.tripStatus.serviceDate
+        return arrivalDeparture?.serviceDate ?? vehicleStatus?.tripStatus.serviceDate ?? tripDetails!.serviceDate
     }
 }

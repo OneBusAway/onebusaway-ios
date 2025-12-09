@@ -20,7 +20,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     var alarmAction: OBAListViewAction<ArrivalDepartureItem>?
     var bookmarkAction: OBAListViewAction<ArrivalDepartureItem>?
-    var shareAction: OBAListViewAction<ArrivalDepartureItem>?
+    var scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
 
     let id: UUID = UUID()
     let arrivalDepartureID: String
@@ -38,7 +38,6 @@ struct ArrivalDepartureItem: OBAListViewItem {
     let arrivalDepartureMinutes: Int
 
     let isAlarmAvailable: Bool
-    let isDeepLinkingAvailable: Bool
 
     /// Real-time occupancy status information.
     let occupancyStatus: ArrivalDeparture.OccupancyStatus?
@@ -78,17 +77,17 @@ struct ArrivalDepartureItem: OBAListViewItem {
             actions.append(alarmAction)
         }
 
-        if isDeepLinkingAvailable, let shareAction = self.shareAction {
-            let shareAction = OBAListViewContextualAction(
+        if let scheduleAction = self.scheduleAction {
+            let scheduleAction = OBAListViewContextualAction(
                 style: .normal,
-                title: Strings.share,
-                image: Icons.shareFill,
-                backgroundColor: UIColor.purple,
+                title: Strings.schedule,
+                image: UIImage(systemName: "calendar"),
+                backgroundColor: UIColor.systemTeal,
                 hidesWhenSelected: true,
                 item: self,
-                handler: shareAction)
+                handler: scheduleAction)
 
-            actions.append(shareAction)
+            actions.append(scheduleAction)
         }
 
         return actions
@@ -96,12 +95,11 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     init(arrivalDeparture: ArrivalDeparture,
          isAlarmAvailable: Bool,
-         isDeepLinkingAvailable: Bool,
          highlightTimeOnDisplay: Bool = false,
          onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          alarmAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
-         shareAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
+         scheduleAction: OBAListViewAction<ArrivalDepartureItem>? = nil) {
 
         self.arrivalDepartureID = arrivalDeparture.id
         self.routeID = arrivalDeparture.routeID
@@ -121,13 +119,12 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.historicalOccupancyStatus = arrivalDeparture.historicalOccupancyStatus
 
         self.isAlarmAvailable = isAlarmAvailable
-        self.isDeepLinkingAvailable = isDeepLinkingAvailable
         self.highlightTimeOnDisplay = highlightTimeOnDisplay
 
         self.onSelectAction = onSelectAction
         self.alarmAction = alarmAction
         self.bookmarkAction = bookmarkAction
-        self.shareAction = shareAction
+        self.scheduleAction = scheduleAction
     }
 
     func hash(into hasher: inout Hasher) {

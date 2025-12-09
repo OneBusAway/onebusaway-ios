@@ -276,6 +276,42 @@ extension RESTAPIService {
         )
     }
 
+    // MARK: - Schedules
+
+    /// Retrieves a full schedule for a route for a particular day.
+    ///
+    /// - API Endpoint: `/api/where/schedule-for-route/{id}.json`
+    /// - [View REST API documentation](https://developer.onebusaway.org/api/where/methods/schedule-for-route)
+    ///
+    /// - Parameters:
+    ///   - routeID: The route ID.
+    ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``ScheduleForRoute``.
+    public nonisolated func getScheduleForRoute(routeID: RouteID, date: Date? = nil) async throws -> RESTAPIResponse<ScheduleForRoute> {
+        return try await getData(
+            for: urlBuilder.getScheduleForRoute(id: routeID, date: date),
+            decodeRESTAPIResponseAs: ScheduleForRoute.self
+        )
+    }
+
+    /// Retrieves a schedule for a stop for a particular day.
+    ///
+    /// - API Endpoint: `/api/where/schedule-for-stop/{id}.json`
+    /// - [View REST API documentation](https://developer.onebusaway.org/api/where/methods/schedule-for-stop)
+    ///
+    /// - Parameters:
+    ///   - stopID: The stop ID.
+    ///   - date: Optional date for which to retrieve the schedule. Defaults to current date.
+    /// - throws: ``APIError`` or other errors.
+    /// - returns: The ``RESTAPIResponse`` for ``ScheduleForStop``.
+    public nonisolated func getScheduleForStop(stopID: StopID, date: Date? = nil) async throws -> RESTAPIResponse<ScheduleForStop> {
+        return try await getData(
+            for: urlBuilder.getScheduleForStop(id: stopID, date: date),
+            decodeRESTAPIResponseAs: ScheduleForStop.self
+        )
+    }
+
     // MARK: - Helpers
     nonisolated func getData<T: Decodable>(for url: URL, decodeAs decodeType: T.Type) async throws -> T {
         return try await getData(for: url, decodeAs: decodeType, using: self.decoder)

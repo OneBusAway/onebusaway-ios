@@ -79,6 +79,8 @@ public class Strings: NSObject {
 
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 
+    public static let retry = OBALoc("common.retry", value: "Retry", comment: "The verb 'retry'.")
+
     public static let save = OBALoc("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")
 
     public static let scheduledNotRealTime = OBALoc("common.scheduled_not_real_time", value: "Scheduled/not real-time", comment: "Explains that this is departure comes from schedule data, not from a real-time vehicle location.")
@@ -89,6 +91,10 @@ public class Strings: NSObject {
 
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
 
+    public static let schedule = OBALoc("common.schedule", value: "Schedule", comment: "A noun referring to a bus/train schedule or timetable.")
+
+    public static let schedules = OBALoc("common.schedules", value: "Schedules", comment: "Plural form of schedule, referring to bus/train schedules or timetables.")
+
     public static let share = OBALoc("common.share", value: "Share", comment: "A verb referring to sharing something generic.")
 
     public static let shareTrip = OBALoc("common.share_trip", value: "Share Trip", comment: "Button title for sharing the status of your trip (i.e. location, arrival time, etc.)")
@@ -98,6 +104,8 @@ public class Strings: NSObject {
     public static let sort = OBALoc("common.sort", value: "Sort", comment: "The verb 'to sort' as in to arrange things in an order.")
 
     public static let stops = OBALoc("common.stops", value: "Stops", comment: "Noun. Plural form of a transit stop.")
+
+    public static let vehicles = OBALoc("common.vehicles", value: "Vehicles", comment: "The title of the Vehicles tab showing real-time vehicle positions on a map.")
 
     public static let updatedAtFormat = OBALoc("common.updated_at_fmt", value: "Updated: %@", comment: "A format string used to tell the user when the UI they are looking at was last updated. e.g. Updated: 9:41 AM. The time is calculated at runtime.")
 

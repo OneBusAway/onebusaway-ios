@@ -54,6 +54,16 @@ class Icons: NSObject {
         configureForTabIcon(systemImage(named: "ellipsis.circle.fill"))
     }
 
+    /// The Vehicles tab icon, for apps using a tab bar UI metaphor.
+    public class var vehiclesTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "bus"))
+    }
+
+    /// The Vehicles tab selected icon, for apps using a tab bar UI metaphor.
+    public class var vehiclesSelectedTabIcon: UIImage {
+        configureForTabIcon(systemImage(named: "bus.fill"))
+    }
+
     // MARK: - Table Accessories
 
     /// Provides `UIImage`s, where possible, for `UITableViewCell` accessories.

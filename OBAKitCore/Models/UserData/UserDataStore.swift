@@ -11,7 +11,7 @@ import Foundation
 import MapKit
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
-    case map, recentStops, bookmarks, settings
+    case map, recentStops, bookmarks, vehicles, settings
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -197,6 +197,27 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Note: This value is used to decide whether a survey should be shown
     func increaseAppLaunchCount()
 
+    // MARK: - Vehicle Feed Agency Filters
+
+    /// Returns whether the agency is enabled for vehicle feed display.
+    /// - Parameter agencyID: The agency ID to check.
+    func isAgencyEnabledForVehicleFeed(agencyID: String) -> Bool
+
+    /// Sets whether the agency is enabled for vehicle feed display.
+    /// - Parameters:
+    ///   - enabled: Whether the agency should be enabled.
+    ///   - agencyID: The agency ID to set.
+    func setAgencyEnabledForVehicleFeed(_ enabled: Bool, agencyID: String)
+
+    /// Returns the set of disabled agency IDs for vehicle feed.
+    var disabledVehicleFeedAgencyIDs: Set<String> { get }
+
+    /// Sets all agencies to enabled or disabled for vehicle feed.
+    /// - Parameters:
+    ///   - enabled: Whether all agencies should be enabled.
+    ///   - agencyIDs: All agency IDs to update.
+    func setAllAgenciesEnabledForVehicleFeed(_ enabled: Bool, agencyIDs: [String])
+
 }
 
 // MARK: - Stop Preferences
@@ -226,6 +247,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarks = "UserDataStore.bookmarks"
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
+        static let disabledVehicleFeedAgencies = "UserDataStore.disabledVehicleFeedAgencies"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
         static let recentStops = "UserDataStore.recentStops"
@@ -682,6 +704,40 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.tripPlanningEnabled) // swiftlint:disable:this force_try
+        }
+    }
+
+    // MARK: - Vehicle Feed Agency Filters
+
+    public func isAgencyEnabledForVehicleFeed(agencyID: String) -> Bool {
+        return !disabledVehicleFeedAgencyIDs.contains(agencyID)
+    }
+
+    public func setAgencyEnabledForVehicleFeed(_ enabled: Bool, agencyID: String) {
+        var disabled = disabledVehicleFeedAgencyIDs
+        if enabled {
+            disabled.remove(agencyID)
+        } else {
+            disabled.insert(agencyID)
+        }
+        disabledVehicleFeedAgencyIDs = disabled
+    }
+
+    public var disabledVehicleFeedAgencyIDs: Set<String> {
+        get {
+            let array = userDefaults.stringArray(forKey: UserDefaultsKeys.disabledVehicleFeedAgencies) ?? []
+            return Set(array)
+        }
+        set {
+            userDefaults.set(Array(newValue), forKey: UserDefaultsKeys.disabledVehicleFeedAgencies)
+        }
+    }
+
+    public func setAllAgenciesEnabledForVehicleFeed(_ enabled: Bool, agencyIDs: [String]) {
+        if enabled {
+            disabledVehicleFeedAgencyIDs = []
+        } else {
+            disabledVehicleFeedAgencyIDs = Set(agencyIDs)
         }
     }
 

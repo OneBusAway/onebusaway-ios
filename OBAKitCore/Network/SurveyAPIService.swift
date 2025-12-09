@@ -16,17 +16,12 @@ public actor SurveyAPIService: @preconcurrency APIService {
 
     public nonisolated let dataLoader: any URLDataLoader
 
-    public let logger =  os.Logger(subsystem: "org.onebusaway.iphone", category: "SurveyAPIService")
+    public nonisolated let logger =  os.Logger(subsystem: "org.onebusaway.iphone", category: "SurveyAPIService")
 
     nonisolated let urlBuilder: RESTAPIURLBuilder
     nonisolated let decoder: JSONDecoder
 
-    private nonisolated var regionIdentifier: Int {
-        guard let regionID = configuration.regionIdentifier else {
-            preconditionFailure("Configuration must have a region identifier.")
-        }
-        return regionID
-    }
+    private nonisolated let regionIdentifier: Int
 
     public init(_ configuration: APIServiceConfiguration, dataLoader: URLDataLoader = URLSession.shared) {
         self.configuration = configuration
@@ -37,6 +32,12 @@ public actor SurveyAPIService: @preconcurrency APIService {
 
         // contains logic of decoding the date format correctly in survey response
         self.decoder = JSONDecoder.obacoServiceDecoder
+
+        guard let regionID = configuration.regionIdentifier else {
+            preconditionFailure("Configuration must have a region identifier.")
+        }
+
+        self.regionIdentifier = regionID
     }
 
     /// Fetches all surveys for the configured region and user.

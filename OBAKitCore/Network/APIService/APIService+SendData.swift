@@ -48,10 +48,28 @@ extension APIService {
         request.httpBody = requestData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let (data, response) = try await dataLoader.data(for: request)
+        let (data, response): (Foundation.Data, URLResponse)
 
+        do {
+            (data, response) = try await dataLoader.data(for: request)
+        } catch let error as NSError {
+            logger.error("Failed network request for \(request.description, privacy: .public): \(error, privacy: .public)")
+
+            if errorLooksLikeCaptivePortal(error) {
+                throw APIError.captivePortal
+            } else {
+                throw error
+            }
+        }
+
+        try handleSendDateHttpResponse(response, url, method)
+
+        return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+    private func handleSendDateHttpResponse(_ response: URLResponse, _ url: URL, _ method: HTTPMethod) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            logger.error("Network error: missing response for \(method.value) \(url, privacy: .public)")
+            logger.error("Network error: missing response for \(method.value) \(response.url ?? URL(string: "")!, privacy: .public)")
             throw APIError.networkFailure(nil)
         }
 
@@ -62,7 +80,5 @@ extension APIService {
             throw APIError.requestFailure(httpResponse)
         }
 
-        return try JSONDecoder().decode(Response.self, from: data)
     }
-
 }
