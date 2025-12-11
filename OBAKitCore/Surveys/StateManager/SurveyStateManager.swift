@@ -25,10 +25,11 @@ final class SurveyStateManager: SurveysStateProtocol {
         let preferences = surveyStore.surveyPreferences()
 
         // Survey feature must be enabled and current launch count must satisfy the modulo condition.
-        guard preferences.isSurveyEnabled && surveyStore.appLaunch % 3 == 0 else { return false }
+        guard preferences.isSurveyEnabled && surveyStore.appLaunch > 0 && surveyStore.appLaunch % 3 == 0 else {
+            return false
+        }
 
-        // Only show survey if a reminder date exists and has passed.
-        guard let reminderDate = preferences.nextReminderDate, reminderDate <= Date.now else {
+        if let reminderDate = preferences.nextReminderDate, reminderDate > Date.now {
             return false
         }
 
