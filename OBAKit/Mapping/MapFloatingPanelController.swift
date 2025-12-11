@@ -182,54 +182,26 @@ class MapFloatingPanelController: VisualEffectViewController,
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        showTripPlannerTipIfNeeded(animated: animated)
+        tripPlannerTipPresenter.showIfNeeded(sourceItem: searchBar, sourceRect: searchBar.bounds) { [weak self] vc in
+            guard let self else { return }
+            self.present(vc, animated: animated)
+        } presentedController: { [weak self] in
+            guard let self else { return nil }
+            return self.presentedViewController
+        } dismiss: { vc in
+            vc.dismiss(animated: animated)
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        tipObservationTask?.cancel()
-        tipObservationTask = nil
+
+        tripPlannerTipPresenter.stop()
     }
 
-    // MARK: - Trip planner tip
+    // MARK: - Tips
 
-    private let tripPlannerTip = TripPlannerTip()
-    private var tipObservationTask: Task<Void, Never>?
-    private var tipPopoverController: TipUIPopoverViewController?
-
-    private func showTripPlannerTipIfNeeded(animated: Bool) {
-        tipObservationTask = tipObservationTask ?? Task { @MainActor in
-            for await shouldDisplay in tripPlannerTip.shouldDisplayUpdates {
-                if shouldDisplay {
-                    let popoverController = TipUIPopoverViewController(tripPlannerTip, sourceItem: searchBar)
-                    popoverController.modalPresentationStyle = .popover
-
-                    // Configure popover presentation controller
-                    if let popover = popoverController.popoverPresentationController {
-                        popover.sourceView = searchBar
-                        popover.sourceRect = searchBar.bounds
-                        popover.delegate = self
-                    }
-
-                    present(popoverController, animated: animated)
-                    tipPopoverController = popoverController
-                }
-                else {
-                    if let presentedViewController, presentedViewController is TipUIPopoverViewController {
-                        presentedViewController.dismiss(animated: animated)
-                        tipPopoverController = nil
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - UIPopoverPresentationControllerDelegate
-
-    func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle {
-        // Return .none to prevent the popover from adapting to a sheet on iPhone
-        return .none
-    }
+    private let tripPlannerTipPresenter = TipPresenter(tip: TripPlannerTip())
 
     // MARK: - Agency Alerts
 

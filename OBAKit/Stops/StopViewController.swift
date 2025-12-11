@@ -213,11 +213,31 @@ public class StopViewController: UIViewController,
         }
     }
 
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        if let moreMenuButton {
+            scheduleTipPresenter.showIfNeeded(sourceItem: moreMenuButton) { [weak self] vc in
+                guard let self else { return }
+                present(vc, animated: animated)
+            } presentedController: { [weak self] in
+                guard let self else { return nil }
+                return self.presentedViewController
+            } dismiss: { vc in
+                vc.dismiss(animated: animated)
+            }
+        }
+    }
+
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         enableIdleTimer()
     }
+
+    // MARK: - Tips
+
+    private let scheduleTipPresenter = TipPresenter(tip: ScheduleTip())
 
     // MARK: - Idle Timer
 
@@ -268,12 +288,13 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Dropdown Menus
+
+    private var moreMenuButton: UIBarButtonItem?
+
     fileprivate func configureTabBarButtons() {
         let filterButtonImage: UIImage?
         let filterButtonTitle: String
 
-        // On iOS 15+ (SFSymbols 3.0), the symbol name is `line.3.horizontal.decrease.circle`.
-        // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
             filterButtonTitle = "FILTER (ON)"
             filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
@@ -285,6 +306,8 @@ public class StopViewController: UIViewController,
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
         navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+
+        self.moreMenuButton = moreMenuButton
     }
 
     fileprivate func pulldownMenu() -> UIMenu {
