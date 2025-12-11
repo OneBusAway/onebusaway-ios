@@ -97,18 +97,28 @@ class ScheduleForRouteViewModel: ObservableObject {
     }
 
     /// Returns a sorted list of departure times for display
-    /// Each row represents a trip, sorted by the first stop's departure time
+    /// Each row represents a trip, sorted by the earliest non-nil departure time
     var sortedDepartureTimes: [[Date?]] {
         let times = departureTimes
         return times.sorted { row1, row2 in
-            guard let first1 = row1.first, let first2 = row2.first else { return false }
-            guard let date1 = first1, let date2 = first2 else { return first1 != nil }
-            return date1 < date2
+            // Find the first non-nil departure time for each row
+            let date1 = row1.first { $0 != nil } ?? nil
+            let date2 = row2.first { $0 != nil } ?? nil
+
+            // If both have dates, sort by date
+            switch (date1, date2) {
+            case (let d1?, let d2?):
+                return d1 < d2
+            case (nil, _):
+                return false
+            case (_, nil):
+                return true
+            }
         }
     }
 
     /// Returns departure times grouped by time period (AM/PM)
-    /// Each group contains trips where the first stop's departure is in that period
+    /// Each group contains trips where the earliest departure is in that period
     var departureTimesByPeriod: [TimePeriodGroup] {
         let sorted = sortedDepartureTimes
         let calendar = Calendar.current
@@ -117,8 +127,9 @@ class ScheduleForRouteViewModel: ObservableObject {
         var pmTrips: [[Date?]] = []
 
         for row in sorted {
-            guard let firstTime = row.first, let date = firstTime else {
-                // If no first stop time, default to PM
+            // Find the earliest non-nil departure time for this row
+            guard let earliestTime = row.first(where: { $0 != nil }), let date = earliestTime else {
+                // If no departure times at all, default to PM
                 pmTrips.append(row)
                 continue
             }
