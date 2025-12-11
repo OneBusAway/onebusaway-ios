@@ -89,19 +89,35 @@ public class MapItemViewModel: ObservableObject {
         }
     }
 
-    /// Fetches the Look Around scene for the map item's location
+    /// Fetches the Look Around scene for the map item's location,
+    /// falling back to a coordinate-based request if needed.
     private func fetchLookAroundScene() async {
         isLoadingLookAround = true
         defer { isLoadingLookAround = false }
 
-        let request = MKLookAroundSceneRequest(mapItem: mapItem)
+        // LookAround using the mapItem anchor
+        if let scene = await fetchScene(using: MKLookAroundSceneRequest(mapItem: mapItem)) {
+            self.lookAroundScene = scene
+            return
+        }
+
+        // Fallback: LookAround using raw coordinates
+        let coord = mapItem.placemark.coordinate
+        if let scene = await fetchScene(using: MKLookAroundSceneRequest(coordinate: coord)) {
+            self.lookAroundScene = scene
+            return
+        }
+
+        // Nothing available anywhere near this location
+        self.lookAroundScene = nil
+    }
+
+    /// Helper: attempts to load a scene, returns nil on failure
+    private func fetchScene(using request: MKLookAroundSceneRequest) async -> MKLookAroundScene? {
         do {
-            if let scene = try await request.scene {
-                self.lookAroundScene = scene
-            }
+            return try await request.scene
         } catch {
-            // Look Around not available for this location
-            self.lookAroundScene = nil
+            return nil
         }
     }
 
