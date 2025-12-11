@@ -48,6 +48,9 @@ public class MapItemViewModel: ObservableObject {
     /// The website URL of the location, if available
     @Published var url: URL?
 
+    /// The point of interest category, if available
+    @Published var pointOfInterestCategory: String?
+
     /// Controls whether the "Plan a trip" button is visible
     @Published var showPlanTripButton: Bool = false
 
@@ -83,6 +86,10 @@ public class MapItemViewModel: ObservableObject {
         self.showPlanTripButton = application.features.tripPlanning == .running
         self.phoneNumber = mapItem.phoneNumber
         self.url = mapItem.url
+
+        if let category = mapItem.pointOfInterestCategory {
+            self.pointOfInterestCategory = category.rawValue.replacingOccurrences(of: "MKPOICategory", with: "")
+        }
 
         Task {
             await fetchLookAroundScene()
