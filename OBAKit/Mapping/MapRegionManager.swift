@@ -577,8 +577,55 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
-        if let feature = annotation as? MKMapFeatureAnnotation {
-            setUserAnnotation(coordinate: feature.coordinate, title: feature.title, subtitle: feature.subtitle)
+        guard let feature = annotation as? MKMapFeatureAnnotation else { return }
+
+        Task { [weak self] in
+            await self?.handleMapFeatureSelection(feature)
+        }
+    }
+
+    @MainActor
+    private func handleMapFeatureSelection(_ feature: MKMapFeatureAnnotation) async {
+        let request = MKMapItemRequest(mapFeatureAnnotation: feature)
+
+        do {
+            let mapItem = try await request.mapItem
+
+            let searchRequest = SearchRequest(
+                query: mapItem.name ?? "Dropped Pin",
+                type: .address
+            )
+            let response = SearchResponse(
+                request: searchRequest,
+                results: [mapItem],
+                boundingRegion: nil,
+                error: nil
+            )
+
+            mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+            notifyDelegatesShowSearchResult(response: response)
+
+        } catch {
+            print("Failed to fetch map item: \(error)")
+
+            // Fallback: create basic MKMapItem
+            let placemark = MKPlacemark(coordinate: feature.coordinate)
+            let mapItem = MKMapItem(placemark: placemark)
+            mapItem.name = feature.title ?? "Dropped Pin"
+
+            let searchRequest = SearchRequest(
+                query: feature.title ?? "Dropped Pin",
+                type: .address
+            )
+            let response = SearchResponse(
+                request: searchRequest,
+                results: [mapItem],
+                boundingRegion: nil,
+                error: nil
+            )
+
+            mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+            notifyDelegatesShowSearchResult(response: response)
         }
     }
 
