@@ -19,6 +19,6 @@ struct ScheduleTip: Tip {
     }
 
     var image: Image? {
-        Image(systemName: "calendar.day.timeline.leading")
+        Image(systemName: "calendar")
     }
 }
