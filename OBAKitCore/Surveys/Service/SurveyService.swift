@@ -10,10 +10,10 @@ import Foundation
 public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
     /// Holds the last error emitted by survey operations.
-    @Published public var error: Error?
+    @Published public private(set) var error: Error?
 
     /// All surveys fetched from the backend.
-    public var surveys: [Survey] = []
+    public private(set) var surveys: [Survey] = []
 
     /// Networking layer responsible for API operations related to surveys.
     private let apiService: SurveyAPIService
