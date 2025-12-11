@@ -10,10 +10,12 @@ import Foundation
 /// Responsible for selecting/prioritizing which survey to show to the user based on visibility, completion, and survey type.
 public class SurveyPrioritizer: SurveyPrioritizing {
 
-    private var surveyStore: SurveyPreferencesStore
+    public var surveyStore: SurveyPreferencesStore
 
-    /// Cached list of completed survey IDs.
-    private var completedSurveys: [Int] = []
+    /// Cached lists of completed and skipped survey IDs.
+    private var handledSurveyIDs: Set<Int> {
+        Set(surveyStore.completedSurveys + surveyStore.skippedSurveys)
+    }
 
     // MARK: - Initialization
 
@@ -21,7 +23,6 @@ public class SurveyPrioritizer: SurveyPrioritizing {
     /// - Parameter surveyStore: Store containing survey preferences and completed surveys.
     public init(surveyStore: SurveyPreferencesStore) {
         self.surveyStore = surveyStore
-        self.completedSurveys = surveyStore.completedSurveys
     }
 
     // MARK: - Public Methods
@@ -64,7 +65,7 @@ public class SurveyPrioritizer: SurveyPrioritizing {
                 return index
             }
 
-            // Track the best survey found so far
+            // Track the best survey found
             if classification < selectedSurveyClassification {
                 selectedSurveyIndex = index
                 selectedSurveyClassification = classification
@@ -133,23 +134,21 @@ public class SurveyPrioritizer: SurveyPrioritizing {
     /// - Parameter survey: Survey to classify.
     /// - Returns: `SurveyClassification` indicating the survey's priority.
     private func surveyClassification(for survey: Survey) -> SurveyClassification {
-
-        // Completed surveys are lowest priority
-        guard !completedSurveys.contains(survey.id) else {
-            return .completed
-        }
+        let completedOrSkipped = handledSurveyIDs.contains(survey.id)
 
         // If survey is not always visible → one-time incomplete
-        if !survey.allowsVisible {
+        if !survey.allowsVisible && !completedOrSkipped {
             return .oneTimeIncomplete
         }
 
         // Always visible surveys
-        if survey.allowsMultipleResponses {
+        if survey.allowsVisible && survey.allowsMultipleResponses {
             return .alwaysVisibleMultiple
-        } else {
+        } else if survey.allowsVisible && !completedOrSkipped {
             return .alwaysVisibleOneTime
         }
+
+        return .completed
     }
 
 }

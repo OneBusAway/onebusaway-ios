@@ -9,6 +9,8 @@ import Foundation
 
 public protocol SurveyPrioritizing {
 
+    var surveyStore: SurveyPreferencesStore { get set }
+
     func nextSurveyIndex(_ surveys: [Survey], visibleOnStop: Bool, stop: Stop?) -> Int
 
 }
