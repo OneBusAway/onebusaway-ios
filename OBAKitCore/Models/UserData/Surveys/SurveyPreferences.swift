@@ -9,21 +9,36 @@ import Foundation
 
 public struct SurveyPreferences: Codable {
 
-    var userSurveyId: String?
+    public var userSurveyId: String?
 
     /// Whether the user has enabled the surveys feature.
-    var isSurveyEnabled: Bool = true
+    public var isSurveyEnabled: Bool = true
 
     /// IDs of surveys that the user has completed.
-    var completedSurveyIDs: [Int] = []
+    public var completedSurveyIDs: [Int] = []
 
     /// IDs of surveys the user intentionally skipped.
-    var skippedSurveyIDs: [Int] = []
+    public var skippedSurveyIDs: [Int] = []
 
     /// The next date at which the user should be reminded to take a survey.
-    var nextReminderDate: Date?
+    public var nextReminderDate: Date?
 
     /// The ID of a survey that was in progress but not completed due to an unexpected interruption.
-    var pendingSurveyID: Int?
+    public var pendingSurveyID: Int?
 
+    public init(
+        userSurveyId: String? = nil,
+        isSurveyEnabled: Bool = true,
+        completedSurveyIDs: [Int] = [],
+        skippedSurveyIDs: [Int] = [],
+        nextReminderDate: Date? = nil,
+        pendingSurveyID: Int? = nil
+    ) {
+        self.userSurveyId = userSurveyId
+        self.isSurveyEnabled = isSurveyEnabled
+        self.completedSurveyIDs = completedSurveyIDs
+        self.skippedSurveyIDs = skippedSurveyIDs
+        self.nextReminderDate = nextReminderDate
+        self.pendingSurveyID = pendingSurveyID
+    }
 }

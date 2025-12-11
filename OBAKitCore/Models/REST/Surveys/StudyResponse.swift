@@ -70,6 +70,22 @@ public struct Survey: Codable, Hashable {
         case questions
     }
 
+    public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, allowsVisible: Bool, study: Study, questions: [SurveyQuestion]) {
+        self.id = id
+        self.name = name
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.showOnMap = showOnMap
+        self.showOnStops = showOnStops
+        self.startDate = startDate
+        self.endDate = endDate
+        self.visibleStopsList = visibleStopsList
+        self.visibleRoutesList = visibleRoutesList
+        self.allowsMultipleResponses = allowsMultipleResponses
+        self.allowsVisible = allowsVisible
+        self.study = study
+        self.questions = questions
+    }
 }
 
 extension Survey {
@@ -101,6 +117,12 @@ public struct Study: Codable, Hashable {
 
     public let description: String?
 
+    public init(id: Int, name: String, description: String?) {
+        self.id = id
+        self.name = name
+        self.description = description
+    }
+
 }
 
 // MARK: - Survey Question
@@ -113,6 +135,13 @@ public struct SurveyQuestion: Codable, Hashable {
     public let required: Bool
 
     public let content: QuestionContent
+
+    public init(id: Int, position: Int, required: Bool, content: QuestionContent) {
+        self.id = id
+        self.position = position
+        self.required = required
+        self.content = content
+    }
 
 }
 
@@ -140,6 +169,14 @@ public struct QuestionContent: Codable, Hashable {
         case embeddedDataFields = "embedded_data_fields"
     }
 
+    public init(labelText: String, type: QuestionType, options: [String]? = nil, url: String? = nil, surveyProvider: String? = nil, embeddedDataFields: [String]? = nil) {
+        self.labelText = labelText
+        self.type = type
+        self.options = options
+        self.url = url
+        self.surveyProvider = surveyProvider
+        self.embeddedDataFields = embeddedDataFields
+    }
 }
 
 extension QuestionContent {
