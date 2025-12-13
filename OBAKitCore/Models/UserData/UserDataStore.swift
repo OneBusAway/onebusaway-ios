@@ -799,7 +799,7 @@ extension UserDefaultsStore: SurveyPreferencesStore {
     /// - Automatically generated and stored if it does not exist.
     /// - Returns: A UUID string representing the user's survey identity.
     public var userSurveyId: String {
-        if let uuid = userDefaults.string(forKey: UserDefaultsKeys.userSurveyId) {
+        if let uuid = userDefaults.string(forKey: UserDefaultsKeys.userSurveyId), !uuid.isEmpty {
             return uuid
         } else {
             let uuid = UUID().uuidString
@@ -831,13 +831,17 @@ extension UserDefaultsStore: SurveyPreferencesStore {
     /// Saves the provided `SurveyPreferences` to UserDefaults.
     /// - Parameter preferences: The preferences object containing all survey-related user settings.
     public func setSurveyPreferences(_ preferences: SurveyPreferences) {
-        userDefaults.set(preferences, forKey: UserDefaultsKeys.surveyPreferencesKey)
+        do {
+            try encodeUserDefaultsObjects(preferences, key: UserDefaultsKeys.surveyPreferencesKey)
+        } catch {
+            Logger.error("Unable to encode SurveyPreferences to UserDefaults")
+        }
     }
 
     /// Retrieves the saved `SurveyPreferences` from UserDefaults.
     /// - Returns: A `SurveyPreferences` object if it exists, otherwise `nil`.
     public func surveyPreferences() -> SurveyPreferences {
-        return userDefaults.object(forKey: UserDefaultsKeys.surveyPreferencesKey) as? SurveyPreferences ?? .init()
+        return decodeUserDefaultsObjects(type: SurveyPreferences.self, key: UserDefaultsKeys.surveyPreferencesKey) ?? .init()
     }
 
 }
@@ -852,7 +856,7 @@ extension UserDefaultsStore {
     ///
     /// - Returns: A `SurveySubmissionResponse` if stored, otherwise `nil`.
     public func getSurveyResponse() -> SurveySubmissionResponse? {
-        userDefaults.object(forKey: UserDefaultsKeys.surveyResponse) as? SurveySubmissionResponse
+        return decodeUserDefaultsObjects(type: SurveySubmissionResponse.self, key: UserDefaultsKeys.surveyResponse)
     }
 
     /// Persists a survey submission response in `UserDefaults`.
@@ -862,7 +866,11 @@ extension UserDefaultsStore {
     ///
     /// - Parameter submissionResponse: The survey submission response returned by the backend.
     public func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse) {
-        userDefaults.set(submissionResponse, forKey: UserDefaultsKeys.surveyResponse)
+        do {
+           try encodeUserDefaultsObjects(submissionResponse, key: UserDefaultsKeys.surveyResponse)
+        } catch {
+            Logger.error("Unable to encode SurveySubmissionResponse to UserDefaults")
+        }
     }
 
 }

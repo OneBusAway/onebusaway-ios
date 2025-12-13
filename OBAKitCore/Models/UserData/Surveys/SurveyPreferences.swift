@@ -9,7 +9,7 @@ import Foundation
 
 public struct SurveyPreferences: Codable {
 
-    public var userSurveyId: String?
+    public var userSurveyId: String
 
     /// Whether the user has enabled the surveys feature.
     public var isSurveyEnabled: Bool = true
@@ -24,7 +24,7 @@ public struct SurveyPreferences: Codable {
     public var nextReminderDate: Date?
 
     public init(
-        userSurveyId: String? = nil,
+        userSurveyId: String = "",
         isSurveyEnabled: Bool = true,
         completedSurveyIDs: Set<Int> = [],
         skippedSurveyIDs: Set<Int> = [],
