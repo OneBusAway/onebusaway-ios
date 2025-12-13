@@ -7,7 +7,9 @@
 
 import Foundation
 
-protocol SurveysStateProtocol {
+public protocol SurveysStateProtocol {
+
+    var surveyStore: SurveyPreferencesStore { get set }
 
     func shouldShowSurvey() -> Bool
 

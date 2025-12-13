@@ -11,9 +11,9 @@ public protocol SurveyPreferencesStore: NSObjectProtocol {
 
     var appLaunch: Int { get }
 
-    var completedSurveys: [Int] { get }
+    var completedSurveys: Set<Int> { get }
 
-    var skippedSurveys: [Int] { get }
+    var skippedSurveys: Set<Int> { get }
 
     var userSurveyId: String { get }
 

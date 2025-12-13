@@ -14,7 +14,8 @@ public class SurveyPrioritizer: SurveyPrioritizing {
 
     /// Cached lists of completed and skipped survey IDs.
     private var handledSurveyIDs: Set<Int> {
-        Set(surveyStore.completedSurveys + surveyStore.skippedSurveys)
+        let preferences = surveyStore.surveyPreferences()
+        return preferences.skippedSurveyIDs.union(preferences.completedSurveyIDs)
     }
 
     // MARK: - Initialization

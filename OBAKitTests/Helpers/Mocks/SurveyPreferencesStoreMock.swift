@@ -12,11 +12,11 @@ class SurveyPreferencesStoreMock: NSObject, SurveyPreferencesStore {
 
     var appLaunch: Int = 0
 
-    var completedSurveys: [Int] {
+    var completedSurveys: Set<Int> {
         return preferences.completedSurveyIDs
     }
 
-    var skippedSurveys: [Int] {
+    var skippedSurveys: Set<Int> {
         return preferences.skippedSurveyIDs
     }
 
@@ -40,6 +40,10 @@ class SurveyPreferencesStoreMock: NSObject, SurveyPreferencesStore {
 
     func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse) {
         self.response = submissionResponse
+    }
+
+    func setAppLaunchCount(_ count: Int) {
+        self.appLaunch = count
     }
 
 }

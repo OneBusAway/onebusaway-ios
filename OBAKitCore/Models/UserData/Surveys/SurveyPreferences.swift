@@ -15,10 +15,10 @@ public struct SurveyPreferences: Codable {
     public var isSurveyEnabled: Bool = true
 
     /// IDs of surveys that the user has completed.
-    public var completedSurveyIDs: [Int] = []
+    public var completedSurveyIDs: Set<Int> = []
 
     /// IDs of surveys the user intentionally skipped.
-    public var skippedSurveyIDs: [Int] = []
+    public var skippedSurveyIDs: Set<Int> = []
 
     /// The next date at which the user should be reminded to take a survey.
     public var nextReminderDate: Date?
@@ -26,8 +26,8 @@ public struct SurveyPreferences: Codable {
     public init(
         userSurveyId: String? = nil,
         isSurveyEnabled: Bool = true,
-        completedSurveyIDs: [Int] = [],
-        skippedSurveyIDs: [Int] = [],
+        completedSurveyIDs: Set<Int> = [],
+        skippedSurveyIDs: Set<Int> = [],
         nextReminderDate: Date? = nil,
     ) {
         self.userSurveyId = userSurveyId

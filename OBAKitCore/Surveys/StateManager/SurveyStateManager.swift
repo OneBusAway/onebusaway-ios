@@ -10,7 +10,7 @@ import Foundation
 final class SurveyStateManager: SurveysStateProtocol {
 
     /// Store responsible for persisting survey preferences.
-    private var surveyStore: SurveyPreferencesStore
+    public var surveyStore: SurveyPreferencesStore
 
     /// Initializes the manager with a survey preferences store.
     /// - Parameter surveyStore: The store used to read and update survey preferences.
@@ -21,7 +21,7 @@ final class SurveyStateManager: SurveysStateProtocol {
     /// Determines whether a survey should be shown to the user.
     /// Returns`true` if the survey feature is enabled, the app launch count meets the trigger (every 3rd launch),
     /// and the next reminder date exists and has passed; otherwise `false`.
-    func shouldShowSurvey() -> Bool {
+    public func shouldShowSurvey() -> Bool {
         let preferences = surveyStore.surveyPreferences()
 
         // Survey feature must be enabled and current launch count must satisfy the modulo condition.
@@ -40,7 +40,7 @@ final class SurveyStateManager: SurveysStateProtocol {
     /// - Notes:
     ///   - Uses calendar-aware addition of 3 days to account for daylight saving time.
     ///   - Falls back to adding 72 hours if calendar calculation fails.
-    func setNextReminderDate() {
+    public func setNextReminderDate() {
         let fallback = Date().addingTimeInterval(86400 * 3)
         let nextReminderDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? fallback
 
@@ -51,17 +51,17 @@ final class SurveyStateManager: SurveysStateProtocol {
 
     /// Marks a survey as completed by the user.
     /// - Parameter surveyID: The ID of the completed survey.
-    func setSurveyCompleted(_ surveyID: Int) {
+    public func setSurveyCompleted(_ surveyID: Int) {
         var preferences = surveyStore.surveyPreferences()
-        preferences.completedSurveyIDs.append(surveyID)
+        preferences.completedSurveyIDs.insert(surveyID)
         surveyStore.setSurveyPreferences(preferences)
     }
 
     /// Marks a survey as skipped by the user.
     /// - Parameter surveyID: The ID of the skipped survey.
-    func setSurveySkipped(_ surveyID: Int) {
+    public func setSurveySkipped(_ surveyID: Int) {
         var preferences = surveyStore.surveyPreferences()
-        preferences.skippedSurveyIDs.append(surveyID)
+        preferences.skippedSurveyIDs.insert(surveyID)
         surveyStore.setSurveyPreferences(preferences)
     }
 
