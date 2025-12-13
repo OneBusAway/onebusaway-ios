@@ -17,6 +17,4 @@ protocol SurveysStateProtocol {
 
     func setSurveySkipped(_ surveyID: Int)
 
-    func setPendingSurvey(_ surveyID: Int)
-
 }

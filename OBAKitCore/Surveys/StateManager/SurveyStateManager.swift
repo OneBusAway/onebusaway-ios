@@ -65,12 +65,4 @@ final class SurveyStateManager: SurveysStateProtocol {
         surveyStore.setSurveyPreferences(preferences)
     }
 
-    /// Sets a survey as pending, indicating it was started but not completed.
-    /// - Parameter surveyID: The ID of the pending survey.
-    func setPendingSurvey(_ surveyID: Int) {
-        var preferences = surveyStore.surveyPreferences()
-        preferences.pendingSurveyID = surveyID
-        surveyStore.setSurveyPreferences(preferences)
-    }
-
 }
