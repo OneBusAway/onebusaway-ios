@@ -11,6 +11,8 @@ public protocol SurveyServiceProtocol {
 
     var surveys: [Survey] { get }
 
+    var error: Error? { get }
+
     func fetchSurveys() async
 
     func submitSurveyResponse(

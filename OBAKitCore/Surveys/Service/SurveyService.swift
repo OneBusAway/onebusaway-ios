@@ -10,13 +10,13 @@ import Foundation
 public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
     /// Holds the last error emitted by survey operations.
-    @Published public private(set) var error: Error?
+    @Published public var error: Error?
 
     /// All surveys fetched from the backend.
     public private(set) var surveys: [Survey] = []
 
     /// Networking layer responsible for API operations related to surveys.
-    private let apiService: SurveyAPIService
+    private let apiService: SurveyAPIService?
 
     /// Local storage for survey preferences and persisted metadata.
     private let surveyStore: SurveyPreferencesStore
@@ -26,7 +26,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     /// - Parameters:
     ///   - apiService: API layer used to fetch and submit surveys.
     ///   - surveyStore: Storage object used for saving user-specific survey metadata.
-    init(apiService: SurveyAPIService, surveyStore: SurveyPreferencesStore) {
+    init(apiService: SurveyAPIService?, surveyStore: SurveyPreferencesStore) {
         self.apiService = apiService
         self.surveyStore = surveyStore
     }
@@ -36,6 +36,11 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     ///
     /// Any error during fetch is published through `error`.
     public func fetchSurveys() async {
+        guard let apiService else {
+            Logger.error("Survey API service is nil.")
+            return
+        }
+
         do {
             let studyResponse = try await apiService.getSurveys()
             self.surveys = studyResponse.surveys
@@ -73,6 +78,11 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             stopLatitude: stopLatitude,
             responses: [response]
         )
+
+        guard let apiService else {
+            Logger.error("Survey API service is nil.")
+            return
+        }
 
         do {
             let submissionResponse = try await apiService.submitSurveyResponse(surveyResponse: responseModel)
@@ -113,6 +123,11 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             stopLatitude: stopLatitude,
             responses: responses
         )
+
+        guard let apiService else {
+            Logger.error("Survey API service is nil.")
+            return
+        }
 
         do {
             try await apiService.updateSurveyResponse(

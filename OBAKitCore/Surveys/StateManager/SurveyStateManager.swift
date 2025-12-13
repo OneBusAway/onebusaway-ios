@@ -7,7 +7,7 @@
 
 import Foundation
 
-final class SurveyStateManager: SurveysStateProtocol {
+final class SurveyStateManager: SurveyStateProtocol {
 
     /// Store responsible for persisting survey preferences.
     public var surveyStore: SurveyPreferencesStore

@@ -93,10 +93,11 @@ open class CoreApplication: NSObject,
         userDataStore.increaseAppLaunchCount()
     }
 
-    /// This function reloads the REST API and Obaco Services.
+    /// This function reloads the REST API, Obaco Services, and Survey Services.
     public func refreshServices() {
         refreshRESTAPIService()
         refreshObacoService()
+        refreshSurveysService()
         apiServicesRefreshed()
     }
 
@@ -226,5 +227,34 @@ open class CoreApplication: NSObject,
     @MainActor
     open func displayError(_ error: Error) async {
         Logger.error("Error: \(error.localizedDescription)")
+    }
+
+    // MARK: - Surveys
+
+    private var surveyServiceAPI: SurveyAPIService?
+
+    public lazy var surveyService: SurveyServiceProtocol = SurveyService(apiService: surveyServiceAPI, surveyStore: userDefaultsStore)
+
+    public lazy var surveyStateManager: SurveyStateProtocol = SurveyStateManager(surveyStore: userDefaultsStore)
+
+    /// Recreates the Survey API service based on the current region and user survey UUID.
+    /// This should be called when the region refresh/changes.
+    private func refreshSurveysService() {
+        guard let region = regionsService.currentRegion, let sidecarBaseURL = region.sidecarBaseURL else {
+            surveyServiceAPI = nil
+            return
+        }
+
+        let surveyUUID = userDefaultsStore.surveyPreferences().userSurveyId
+
+        let configuration = APIServiceConfiguration(
+            baseURL: sidecarBaseURL,
+            uuid: surveyUUID,
+            regionIdentifier: region.regionIdentifier
+        )
+
+        surveyServiceAPI = SurveyAPIService(configuration)
+
+        surveyService = SurveyService(apiService: surveyServiceAPI, surveyStore: userDefaultsStore)
     }
 }

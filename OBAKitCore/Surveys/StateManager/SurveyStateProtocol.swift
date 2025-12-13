@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol SurveysStateProtocol {
+public protocol SurveyStateProtocol {
 
     var surveyStore: SurveyPreferencesStore { get set }
 
