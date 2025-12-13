@@ -190,7 +190,7 @@ open class OBATestCase: XCTestCase {
 
     // MARK: - Survey State Manager
 
-    var surveyStateManager: SurveysStateProtocol!
+    var surveyStateManager: SurveyStateProtocol!
 
     func buildSurveyStateManager() -> SurveyStateManager {
         let surveyStore = SurveyPreferencesStoreMock()
