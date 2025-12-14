@@ -26,7 +26,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     /// - Parameters:
     ///   - apiService: API layer used to fetch and submit surveys.
     ///   - surveyStore: Storage object used for saving user-specific survey metadata.
-    init(apiService: SurveyAPIService?, surveyStore: SurveyPreferencesStore) {
+    public init(apiService: SurveyAPIService?, surveyStore: SurveyPreferencesStore) {
         self.apiService = apiService
         self.surveyStore = surveyStore
     }
@@ -35,7 +35,10 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     /// stores them locally, and refreshes the visible surveys list.
     ///
     /// Any error during fetch is published through `error`.
+    @MainActor
     public func fetchSurveys() async {
+        error = nil
+
         guard let apiService else {
             Logger.error("Survey API service is nil.")
             return
@@ -58,7 +61,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     ///   - stopLatitude: Optional latitude of the stop.
     ///   - response: A single question-answer submission model.
     ///
-    /// Upon successful submission, the server response is saved in `UserDeaults`.
+    /// Upon successful submission, the server response is saved in `UserDefaults`.
+    @MainActor
     public func submitSurveyResponse(
         surveyId: Int,
         stopIdentifier: String? = nil,
@@ -78,6 +82,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             stopLatitude: stopLatitude,
             responses: [response]
         )
+
+        error = nil
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
@@ -102,6 +108,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     ///   - responses: List of updated survey question responses.
     ///
     /// Uses the previously stored response path ID.
+    @MainActor
     public func updateSurveyResponses(
         surveyId: Int,
         stopIdentifier: String? = nil,
@@ -123,6 +130,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             stopLatitude: stopLatitude,
             responses: responses
         )
+
+        error = nil
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
