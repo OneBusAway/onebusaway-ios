@@ -28,7 +28,7 @@ public struct SurveyPreferences: Codable {
         isSurveyEnabled: Bool = true,
         completedSurveyIDs: Set<Int> = [],
         skippedSurveyIDs: Set<Int> = [],
-        nextReminderDate: Date? = nil,
+        nextReminderDate: Date? = nil
     ) {
         self.userSurveyId = userSurveyId
         self.isSurveyEnabled = isSurveyEnabled

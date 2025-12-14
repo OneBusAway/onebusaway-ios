@@ -7,14 +7,16 @@
 
 import Foundation
 
-final class SurveyStateManager: SurveyStateProtocol {
+public final class SurveyStateManager: SurveyStateProtocol {
 
     /// Store responsible for persisting survey preferences.
     public var surveyStore: SurveyPreferencesStore
 
+    private let surveyLaunchDuration = 3
+
     /// Initializes the manager with a survey preferences store.
     /// - Parameter surveyStore: The store used to read and update survey preferences.
-    init(surveyStore: SurveyPreferencesStore) {
+    public init(surveyStore: SurveyPreferencesStore) {
         self.surveyStore = surveyStore
     }
 
@@ -25,7 +27,7 @@ final class SurveyStateManager: SurveyStateProtocol {
         let preferences = surveyStore.surveyPreferences()
 
         // Survey feature must be enabled and current launch count must satisfy the modulo condition.
-        guard preferences.isSurveyEnabled && surveyStore.appLaunch > 0 && surveyStore.appLaunch % 3 == 0 else {
+        guard preferences.isSurveyEnabled && surveyStore.appLaunch > 0 && surveyStore.appLaunch % surveyLaunchDuration == 0 else {
             return false
         }
 

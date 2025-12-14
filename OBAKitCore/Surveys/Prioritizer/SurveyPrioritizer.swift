@@ -124,7 +124,7 @@ public class SurveyPrioritizer: SurveyPrioritizing {
         // Check if any of the stop's routes are listed
         if let routesList = survey.visibleRoutesList {
             routeListExistence = routesList.contains { routeId in
-                return stop.routes.contains(where: { $0.id == routeId })
+                stop.routes.contains(where: { $0.id == routeId })
             }
         }
 

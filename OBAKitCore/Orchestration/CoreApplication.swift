@@ -245,7 +245,7 @@ open class CoreApplication: NSObject,
             return
         }
 
-        let surveyUUID = userDefaultsStore.surveyPreferences().userSurveyId
+        let surveyUUID = userDefaultsStore.userSurveyId
 
         let configuration = APIServiceConfiguration(
             baseURL: sidecarBaseURL,
