@@ -17,11 +17,12 @@ import OBAKitCore
 ///
 /// This view model extracts and formats data from an `MKMapItem` and handles user interactions
 /// such as opening the location in Maps, making phone calls, opening URLs, and navigating to
-/// nearby stops. It's designed to work with SwiftUI views using the `ObservableObject` protocol.
+/// nearby stops. It's designed to work with SwiftUI views using the `@Observable` macro.
 ///
 /// - Note: This class is marked with `@MainActor` to ensure all UI-related operations run on the main thread.
 @MainActor
-public class MapItemViewModel: ObservableObject {
+@Observable
+public class MapItemViewModel {
     /// The map item containing the location data
     let mapItem: MKMapItem
 
@@ -37,22 +38,22 @@ public class MapItemViewModel: ObservableObject {
     private weak var presentingViewController: UIViewController?
 
     /// The name/title of the location
-    @Published var title: String
+    var title: String
 
     /// The formatted postal address of the location, if available
-    @Published var formattedAddress: String?
+    var formattedAddress: String?
 
     /// The phone number of the location, if available
-    @Published var phoneNumber: String?
+    var phoneNumber: String?
 
     /// The website URL of the location, if available
-    @Published var url: URL?
+    var url: URL?
 
     /// The point of interest category, if available
-    @Published var pointOfInterestCategory: String?
+    var pointOfInterestCategory: String?
 
     /// Controls whether the "Plan a trip" button is visible
-    @Published var showPlanTripButton: Bool = false
+    var showPlanTripButton: Bool = false
 
     /// Indicates whether there is any content to display in the "About" section.
     var hasAboutContent: Bool {
@@ -60,10 +61,10 @@ public class MapItemViewModel: ObservableObject {
     }
 
     /// The Look Around scene for the location, if available
-    @Published var lookAroundScene: MKLookAroundScene?
+    var lookAroundScene: MKLookAroundScene?
 
     /// Indicates whether Look Around is loading
-    @Published var isLoadingLookAround: Bool = false
+    var isLoadingLookAround: Bool = false
 
     /// Initializes a new map item view model.
     ///
@@ -88,7 +89,7 @@ public class MapItemViewModel: ObservableObject {
         self.url = mapItem.url
 
         if let category = mapItem.pointOfInterestCategory {
-            self.pointOfInterestCategory = category.rawValue.replacingOccurrences(of: "MKPOICategory", with: "")
+            self.pointOfInterestCategory = category.rawValue.replacing("MKPOICategory", with: "")
         }
 
         Task {
@@ -190,5 +191,49 @@ public class MapItemViewModel: ObservableObject {
     func dismissView() {
         guard let presenter = presentingViewController else { return }
         delegate?.dismissModalController(presenter)
+    }
+
+    /// Uses the MapKit Place ID when available to generate a stable "Place Link" URL,
+    /// falling back to query + coordinates when the place identity is not available.
+    func shareLocation() {
+        guard let presenter = presentingViewController else { return }
+        guard let url = appleMapsShareURL(for: mapItem) else { return }
+
+        let activityItems: [Any] = [url]
+        let activityController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+
+        // iPad support
+        if let popover = activityController.popoverPresentationController {
+            popover.sourceView = presenter.view
+            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+        }
+
+        presenter.present(activityController, animated: true)
+    }
+
+    /// Generates an Apple Maps share URL using the Place ID when available,
+    /// otherwise falls back to a query + coordinates URL.
+    private func appleMapsShareURL(for item: MKMapItem) -> URL? {
+        // Best case: stable place identity via MapKit Place ID
+        if let rawID = item.identifier?.rawValue {
+            var components = URLComponents(string: "https://maps.apple.com/place")
+            // Newer Place IDs typically start with "I", legacy AUIDs are numeric
+            if rawID.hasPrefix("I") {
+                components?.queryItems = [URLQueryItem(name: "place-id", value: rawID)]
+            } else {
+                components?.queryItems = [URLQueryItem(name: "auid", value: rawID)]
+            }
+            return components?.url
+        }
+
+        // Fallback: query + coordinates
+        let coordinate = item.placemark.coordinate
+        var components = URLComponents(string: "https://maps.apple.com/")
+        components?.queryItems = [
+            URLQueryItem(name: "q", value: item.name ?? "Place"),
+            URLQueryItem(name: "ll", value: "\(coordinate.latitude),\(coordinate.longitude)")
+        ]
+        return components?.url
     }
 }
