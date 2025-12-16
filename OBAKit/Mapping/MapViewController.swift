@@ -724,6 +724,26 @@ class MapViewController: UIViewController,
             // and just go directly to pushing the stop onto the navigation stack.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
+        } else if let userPin = view.annotation as? UserDroppedPin {
+
+            // 1. Try to get the stored full MKMapItem (with address/phone/url data)
+            if let storedMapItem = mapRegionManager.mapItem(for: userPin) {
+                displayMapItemController(storedMapItem)
+            }
+            // 2. Fallback: Create a basic one if geocoding hasn't finished yet
+            else {
+                let placemark = MKPlacemark(coordinate: userPin.coordinate)
+                let mapItem = MKMapItem(placemark: placemark)
+                mapItem.name = userPin.title ?? "Dropped Pin"
+                displayMapItemController(mapItem)
+            }
+
+            // Deselect immediately so the user can tap it again if they want
+            mapView.deselectAnnotation(view.annotation, animated: true)
+        } else if let placemark = view.annotation as? MKPlacemark {
+            let mapItem = MKMapItem(placemark: placemark)
+            displayMapItemController(mapItem)
+            mapView.deselectAnnotation(view.annotation, animated: true)
         }
     }
 
