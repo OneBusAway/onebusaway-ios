@@ -72,7 +72,7 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
             title: OBALoc("agencies_controller.open_website", value: "Open Website", comment: "Action to open agency website"),
             style: .default
         ) { [weak self] _ in
-            self?.onSelectAgency(agency)
+            self?.openAgencyWebsite(agency)
         })
 
         if !agency.agency.phone.isEmpty {
@@ -93,7 +93,7 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
         )
     }
 
-    func onSelectAgency(_ agency: AgencyWithCoverage) {
+    func openAgencyWebsite(_ agency: AgencyWithCoverage) {
         let safari = SFSafariViewController(url: agency.agency.agencyURL)
         self.application.viewRouter.present(safari, from: self)
     }
