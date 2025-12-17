@@ -55,6 +55,14 @@ class ManageBookmarksViewController: FormViewController {
         let destinationGroup = groupForBookmarkIndexPath(destinationIndexPath)
 
         application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    guard let self = self else { return }
+                    self.resetBookmarksSections()
+                    self.form.removeAll()
+                    for s in self.bookmarksSections {
+                        self.form +++ s
+                    }
+                }
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
