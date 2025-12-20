@@ -70,4 +70,15 @@ public class Agency: NSObject, Identifiable, Codable {
         descriptionBuilder.add(key: "id", value: id)
         return descriptionBuilder.description
     }
+
+    public func cleanedPhoneNumber() -> String? {
+        let cleaned = phone.trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: "[^0-9+]", with: "", options: .regularExpression)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    public var callURL: URL? {
+        guard let cleaned = cleanedPhoneNumber() else { return nil }
+        return URL(string: "tel://\(cleaned)")
+    }
 }

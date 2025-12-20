@@ -77,7 +77,13 @@ public class Strings: NSObject {
 
     public static let tripPlannerTipMessage = OBALoc("trip_planner_tip.message", value: "Tap here to search for places and plan your journey with transit directions.", comment: "Message for the trip planner tip")
 
+    public static let scheduleTipTitle = OBALoc("schedule_tip.title", value: "View Your Route's Schedule", comment: "Title for the schedule/timetable feature tip")
+
+    public static let scheduleTipMessage = OBALoc("schedule_tip.message", value: "Tap here and then tap 'Schedules' to view the schedule or timetable for your buses and trains.", comment: "The body of the schedule/timetable feature tip")
+
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
+
+    public static let retry = OBALoc("common.retry", value: "Retry", comment: "The verb 'retry'.")
 
     public static let save = OBALoc("common.save", value: "Save", comment: "The verb 'save', as in 'save data'.")
 
@@ -88,6 +94,10 @@ public class Strings: NSObject {
     public static let serviceAlerts = OBALoc("common.service_alerts", value: "Service Alerts", comment: "Plural form of a noun referring to an alert about service interruptions, reroutes, or other disruptions or changes.")
 
     public static let settings = OBALoc("common.settings", value: "Settings", comment: "A noun referring to a collection of options for adjusting app behavior.")
+
+    public static let schedule = OBALoc("common.schedule", value: "Schedule", comment: "A noun referring to a bus/train schedule or timetable.")
+
+    public static let schedules = OBALoc("common.schedules", value: "Schedules", comment: "Plural form of schedule, referring to bus/train schedules or timetables.")
 
     public static let share = OBALoc("common.share", value: "Share", comment: "A verb referring to sharing something generic.")
 

@@ -99,6 +99,15 @@ public class StopViewController: UIViewController,
             application.userDataStore.addRecentStop(stop, region: region)
         }
         application.analytics?.reportStopViewed(name: stop.name, id: stop.id, stopDistance: analyticsDistanceToStop)
+
+        // Disable filtering if all routes are hidden to ensure data visibility
+        if isListFiltered {
+            let allRoutesHidden = stop.routes.allSatisfy { stopPreferences.hiddenRoutes.contains($0.id) }
+            if allRoutesHidden {
+                isListFiltered = false
+                dataDidReload() // Refresh UI to reflect the change
+            }
+        }
     }
 
     /// Arrival/Departure data for this stop.
@@ -204,11 +213,31 @@ public class StopViewController: UIViewController,
         }
     }
 
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        if let moreMenuButton {
+            scheduleTipPresenter.showIfNeeded(sourceItem: moreMenuButton) { [weak self] vc in
+                guard let self else { return }
+                present(vc, animated: animated)
+            } presentedController: { [weak self] in
+                guard let self else { return nil }
+                return self.presentedViewController
+            } dismiss: { vc in
+                vc.dismiss(animated: animated)
+            }
+        }
+    }
+
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         enableIdleTimer()
     }
+
+    // MARK: - Tips
+
+    private let scheduleTipPresenter = TipPresenter(tip: ScheduleTip())
 
     // MARK: - Idle Timer
 
@@ -259,12 +288,13 @@ public class StopViewController: UIViewController,
     }
 
     // MARK: - Dropdown Menus
+
+    private var moreMenuButton: UIBarButtonItem?
+
     fileprivate func configureTabBarButtons() {
         let filterButtonImage: UIImage?
         let filterButtonTitle: String
 
-        // On iOS 15+ (SFSymbols 3.0), the symbol name is `line.3.horizontal.decrease.circle`.
-        // On iOS 13+ (SFSymbols 1.0), the symbol name is `line.horizontal.3.decrease.circle`.
         if stopPreferences.hasHiddenRoutes && isListFiltered {
             filterButtonTitle = "FILTER (ON)"
             filterButtonImage = UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
@@ -276,6 +306,8 @@ public class StopViewController: UIViewController,
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
         navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+
+        self.moreMenuButton = moreMenuButton
     }
 
     fileprivate func pulldownMenu() -> UIMenu {
@@ -288,7 +320,6 @@ public class StopViewController: UIViewController,
 
         let showAll = UIAction(title: allRoutesTitle) { [unowned self] _ in
             if self.isListFiltered {
-                // Only change value if it's different to avoid unnecessary data loading.
                 self.isListFiltered = false
             }
         }
@@ -298,13 +329,23 @@ public class StopViewController: UIViewController,
             self.filter()
         }
 
-        if isListFiltered && stopPreferences.hasHiddenRoutes {
-            showFiltered.image = UIImage(systemName: "checkmark")
-        } else {
-            showAll.image = UIImage(systemName: "checkmark")
+        guard let stop = stop else {
+            return UIMenu(children: [showAll, showFiltered])
         }
 
-        return UIMenu(children: [showAll, showFiltered])
+        var children = [showAll]
+
+        if stop.routes.count > 1 {
+            if isListFiltered && stopPreferences.hasHiddenRoutes {
+                showFiltered.image = UIImage(systemName: "checkmark")
+            } else {
+                showAll.image = UIImage(systemName: "checkmark")
+            }
+
+            children.append(showFiltered)
+        }
+
+        return UIMenu(children: children)
     }
 
     fileprivate func fileMenu() -> UIMenu {
@@ -322,7 +363,11 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
+        let schedulesAction = UIAction(title: Strings.schedules, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+            self.showScheduleForStop()
+        }
+
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction, schedulesAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -713,23 +758,21 @@ public class StopViewController: UIViewController,
 
     private func arrivalDepartureItem(for arrivalDeparture: ArrivalDeparture) -> ArrivalDepartureItem {
         let alarmAvailable = canCreateAlarm(for: arrivalDeparture)
-        let deepLinkingAvailable = application.features.deepLinking == .running
         let highlightTimeOnDisplay = shouldHighlight(arrivalDeparture: arrivalDeparture)
 
         let onSelectAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.didSelectArrivalDepartureItem(item) }
         let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
         let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
-        let shareAction: OBAListViewAction<ArrivalDepartureItem>    = { [unowned self] item in self.shareTripStatus(viewModel: item) }
+        let scheduleAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
 
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
-            isDeepLinkingAvailable: deepLinkingAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
             onSelectAction: onSelectAction,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
-            shareAction: shareAction)
+            scheduleAction: scheduleAction)
     }
 
     /// - parameter groupRoute: If `groupRoute` is `nil`, this section will also include a "Load More" button at the end of its contents.
@@ -803,10 +846,10 @@ public class StopViewController: UIViewController,
             }
             actions.append(addBookmark)
 
-            let shareTrip = UIAction(title: Strings.shareTrip, image: UIImage(systemName: "square.and.arrow.up")) { [unowned self] _ in
-                self.shareTripStatus(viewModel: viewModel)
+            let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+                self.showScheduleForRoute(viewModel: viewModel)
             }
-            actions.append(shareTrip)
+            actions.append(schedule)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)
@@ -1089,6 +1132,18 @@ public class StopViewController: UIViewController,
         self.present(activityController, animated: true)
     }
 
+    // MARK: - Schedules
+
+    func showScheduleForRoute(viewModel: ArrivalDepartureItem) {
+        let scheduleVC = ScheduleForRouteViewController(routeID: viewModel.routeID, application: application)
+        present(scheduleVC, animated: true)
+    }
+
+    func showScheduleForStop() {
+        let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
+        present(scheduleVC, animated: true)
+    }
+
     // MARK: - Actions
 
     /// Reloads data.
@@ -1156,6 +1211,9 @@ public class StopViewController: UIViewController,
     private var stopPreferences: StopPreferences {
         didSet {
             dataDidReload()
+            if let stop = stop, isListFiltered {
+                stopUpdated(stop)
+            }
         }
     }
 

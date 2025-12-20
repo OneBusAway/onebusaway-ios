@@ -57,16 +57,61 @@ class AgenciesViewController: TaskController<[AgencyWithCoverage]>, OBAListViewD
                 OBAListRowView.DefaultViewModel(
                     title: agency.agency.name,
                     accessoryType: .disclosureIndicator,
-                    onSelectAction: { _ in
-                        self.onSelectAgency(agency)
+                    onSelectAction: { [weak self] _ in
+                        self?.showAgencyOptions(agency)
                     })
             }
 
         return [OBAListViewSection(id: "agencies", title: nil, contents: rows)]
     }
 
-    func onSelectAgency(_ agency: AgencyWithCoverage) {
+    func showAgencyOptions(_ agency: AgencyWithCoverage) {
+        let alert = UIAlertController(title: agency.agency.name, message: nil, preferredStyle: .actionSheet)
+
+        alert.addAction(UIAlertAction(
+            title: OBALoc("agencies_controller.open_website", value: "Open Website", comment: "Action to open agency website"),
+            style: .default
+        ) { [weak self] _ in
+            self?.openAgencyWebsite(agency)
+        })
+
+        if !agency.agency.phone.isEmpty {
+            alert.addAction(UIAlertAction(
+                title: OBALoc("agencies_controller.call_agency", value: "Call Agency", comment: "Action to call agency"),
+                style: .default
+            ) { [weak self] _ in
+                self?.callAgency(agency.agency)
+            })
+        }
+
+        alert.addAction(UIAlertAction.cancelAction)
+        application.viewRouter.present(
+            alert,
+            from: self,
+            isPopover: traitCollection.userInterfaceIdiom == .pad,
+            popoverBarButtonItem: nil
+        )
+    }
+
+    func openAgencyWebsite(_ agency: AgencyWithCoverage) {
         let safari = SFSafariViewController(url: agency.agency.agencyURL)
         self.application.viewRouter.present(safari, from: self)
+    }
+
+    func callAgency(_ agency: Agency) {
+        guard let phoneURL = agency.callURL else {
+            showAlert(
+                title: OBALoc("agencies_controller.error_title", value: "Error", comment: "Error dialog title"),
+                message: OBALoc("agencies_controller.invalid_phone", value: "Invalid phone number.", comment: "Error message for invalid phone")
+            )
+            return
+        }
+        application.open(phoneURL, options: [:], completionHandler: nil)
+    }
+
+    func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }

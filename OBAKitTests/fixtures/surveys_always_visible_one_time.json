@@ -1,0 +1,203 @@
+{
+  "surveys": [
+    {
+      "id": 1,
+      "name": "Always Visible — One-Time",
+      "start_date": "2025-11-20T01:01:00.000Z",
+      "end_date": "2025-11-30T01:01:00.000Z",
+      "created_at": "2025-11-21T09:32:38.934Z",
+      "updated_at": "2025-11-21T09:32:38.934Z",
+      "show_on_map": true,
+      "show_on_stops": true,
+      "always_visible": true,
+      "allows_multiple_responses": false,
+      "visible_stop_list": ["STOP_1", "STOP_2"],
+      "visible_route_list": ["ROUTE_1", "ROUTE_2"],
+      "study": {
+        "id": 1,
+        "name": "OBA 2025",
+        "description": "TEST"
+      },
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text",
+            "label_text": "Do you like OBA IOS App ?"
+          }
+        },
+        {
+          "id": 16,
+          "position": 2,
+          "required": true,
+          "content": {
+            "type": "radio",
+            "label_text": "Do you ?",
+            "options": ["Yes", "No"]
+          }
+        },
+        {
+          "id": 17,
+          "position": 3,
+          "required": true,
+          "content": {
+            "type": "checkbox",
+            "label_text": "Choose",
+            "options": ["1", "2", "3", "4", "5"]
+          }
+        },
+        {
+          "id": 18,
+          "position": 4,
+          "required": false,
+          "content": {
+            "type": "external_survey",
+            "label_text": "Take the complete survey on google forms",
+            "url": "http://127.0.0.1:3000",
+            "embedded_data_fields": [],
+            "survey_provider": "google_forms"
+          }
+        },
+        {
+          "id": 19,
+          "position": 1,
+          "required": false,
+          "content": {
+            "type": "label",
+            "label_text": "Just a label"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": 2,
+      "name": "Always Visible — Multiple Responses",
+      "start_date": "2025-11-20T02:00:00.000Z",
+      "end_date": "2025-11-30T02:00:00.000Z",
+      "created_at": "2025-11-22T09:32:38.934Z",
+      "updated_at": "2025-11-22T09:32:38.934Z",
+      "show_on_map": true,
+      "show_on_stops": true,
+      "always_visible": true,
+      "allows_multiple_responses": true,
+      "visible_stop_list": ["STOP_3"],
+      "visible_route_list": ["ROUTE_10"],
+      "study": {
+        "id": 1,
+        "name": "OBA 2025",
+        "description": "TEST"
+      },
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text",
+            "label_text": "Do you like OBA IOS App ?"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": 3,
+      "name": "One-Time Incomplete",
+      "start_date": "2025-11-21T03:00:00.000Z",
+      "end_date": "2025-11-26T03:00:00.000Z",
+      "created_at": "2025-11-23T09:32:38.934Z",
+      "updated_at": "2025-11-23T09:32:38.934Z",
+      "show_on_map": true,
+      "show_on_stops": true,
+      "always_visible": false,
+      "allows_multiple_responses": false,
+      "visible_stop_list": ["STOP_5", "STOP_6"],
+      "visible_route_list": ["ROUTE_20"],
+      "study": {
+        "id": 1,
+        "name": "OBA 2025",
+        "description": "TEST"
+      },
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text",
+            "label_text": "Do you like OBA IOS App ?"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": 4,
+      "name": "Completed Survey A",
+      "start_date": "2025-11-15T04:00:00.000Z",
+      "end_date": "2025-11-22T04:00:00.000Z",
+      "created_at": "2025-11-24T09:32:38.934Z",
+      "updated_at": "2025-11-24T09:32:38.934Z",
+      "show_on_map": true,
+      "show_on_stops": true,
+      "always_visible": false,
+      "allows_multiple_responses": false,
+      "visible_stop_list": ["STOP_7"],
+      "visible_route_list": ["ROUTE_30"],
+      "study": {
+        "id": 1,
+        "name": "OBA 2025",
+        "description": "TEST"
+      },
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text",
+            "label_text": "Do you like OBA IOS App ?"
+          }
+        }
+      ]
+    },
+
+    {
+      "id": 5,
+      "name": "Completed Survey B — Always Visible Multiple",
+      "start_date": "2025-11-10T05:00:00.000Z",
+      "end_date": "2025-11-28T05:00:00.000Z",
+      "created_at": "2025-11-25T09:32:38.934Z",
+      "updated_at": "2025-11-25T09:32:38.934Z",
+      "show_on_map": true,
+      "show_on_stops": true,
+      "always_visible": true,
+      "allows_multiple_responses": true,
+      "visible_stop_list": ["STOP_8", "STOP_9"],
+      "visible_route_list": ["ROUTE_40"],
+      "study": {
+        "id": 1,
+        "name": "OBA 2025",
+        "description": "TEST"
+      },
+      "questions": [
+        {
+          "id": 15,
+          "position": 1,
+          "required": true,
+          "content": {
+            "type": "text",
+            "label_text": "Do you like OBA IOS App ?"
+          }
+        }
+      ]
+    }
+  ],
+  "region": {
+    "id": 1,
+    "name": "Puget Sound"
+  }
+}

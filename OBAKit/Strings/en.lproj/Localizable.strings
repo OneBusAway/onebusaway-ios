@@ -46,13 +46,10 @@
 /* Title of the Bookmarks tab */
 "bookmarks_controller.title" = "Bookmarks";
 
-/* An error message displayed on the bookmarks tab when the user has Sort By Distance enabled and their location isn't available. */
-"bookmarks_controller.unable_to_sort_by_distance_error" = "We can't sort your bookmarks by distance because your location is not available.";
-
 /* The title for the bookmarks controller section that shows bookmarks that aren't in a group. */
 "bookmarks_controller.ungrouped_bookmarks_section.title" = "Bookmarks";
 
-/* Text that appears when you copy something to your clipboard */
+/* This is displayed to confirm that something has been copied to clipboard. */
 "clipboard.copied_text_confirmation" = "Copied to clipboard";
 
 /* Body of the the alert that appears when you try sending an email without Mail.app set up */
@@ -121,12 +118,41 @@
 /* This comment is displayed after the user's data is upgraded in the DataMigrationBulletinPage. */
 "data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
 
+/* Data migration report label for showing the number of failed migration tasks. */
+"data_migration_bulletin.report_summary_number_of_failures" = "data_migration_bulletin.report_summary_number_of_failures";
+
+/* Data migration report label for showing the number of successful migration tasks. */
+"data_migration_bulletin.report_summary_number_of_successes" = "data_migration_bulletin.report_summary_number_of_successes";
 
 /* Title for the Summary section of a data migration report */
 "data_migration_bulletin.report_summary_title" = "Summary";
 
 /* Button title to let the user view a data migration report. */
 "data_migration_bulletin.view_report_button" = "View Report";
+
+/* Body of the donation widget that appears on the stop view controller */
+"donation_cell.body" = "This app is currently built with 100% volunteer labor, and we need you to help us fund future development.";
+
+/* Title of the button that shows the donation UI. */
+"donation_cell.donate_button_title" = "Donate Now";
+
+/* Title of the button that shows the donation explanation UI. */
+"donation_cell.learn_more_button_title" = "Learn More";
+
+/* Title of the donation widget that appears on the stop view controller. */
+"donation_cell.title" = "🚨 OneBusAway needs your help";
+
+/* Dismiss button on the alert */
+"donations.donations_dismiss_alert.button_dismiss" = "I Don't Want to Help Right Now";
+
+/* A button that prompts the system to remind them to donate later. */
+"donations.donations_dismiss_alert.button_remind_later" = "Remind Me Later";
+
+/* Body of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.message" = "OneBusAway is a volunteer-run organization with almost no funding. We need your help to keep this app running.";
+
+/* Title of the alert that appears when the user chooses to dismiss the donations request UI on a stop page */
+"donations.donations_dismiss_alert.title" = "Please don't dismiss this request";
 
 /* Indicates that the user wants to create a duplicate bookmark. */
 "edit_book_controller.duplicate_alert.affirmative_button" = "Create Duplicate";
@@ -184,9 +210,6 @@
 
 /* Description of why we need location services */
 "location_permission_bulletin.description_text" = "Please allow the app to access your location to make it easier to find your transit stops.";
-
-/* Button the user can tap on to disallow access to their location. */
-"location_permission_bulletin.do_not_use_location_button_text" = "Don't use my location";
 
 /* Title of the alert that appears to request your location. */
 "location_permission_bulletin.title" = "Welcome!";
@@ -263,29 +286,29 @@
 /* Accessibility label for a button that provides the current forecast */
 "map_controller.show_weather_button" = "Show Weather Forecast";
 
-/* Accessibility label for button that opens the trip planner */
-"map_controller.open_trip_planner_button" = "Open Trip Planner";
-
 /* This message appears when a searched-for vehicle doesn't have an assigned trip. */
 "map_controller.vehicle_not_on_trip_error" = "The vehicle you chose doesn't appear to be on a trip right now, which means we don't know how to show it to you.";
+
+/* Search bar placeholder on the map floating panel when the trip planner is enabled. */
+"map_floating_panel.where_are_you_going" = "Where are you going?";
 
 /* about section header */
 "map_item_controller.about_header" = "About";
 
-/* More options header */
-"map_item_controller.more_header" = "More";
-
 /* A table row that shows stops nearby. */
 "map_item_controller.nearby_stops_row" = "Nearby Stops";
 
-/* Map region manager message to the user when they need to zoom in more to view stops */
-"map_region_manager.status_overlay.zoom_to_see_stops" = "Zoom in to look for stops";
+/* Button to plan a trip from this location */
+"map_item_controller.plan_trip" = "Plan a trip";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "Location services unavailable";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location */
 "map_status_view.precise_location_unavailable" = "Precise location unavailable";
+
+/* Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map */
+"map_status_view.zoom_in_for_stops" = "Zoom in for stops";
 
 /* Header for a section that shows the user information about this app. */
 "more_controller.about_app" = "About this App";
@@ -309,10 +332,7 @@
 "more_controller.credits_row_title" = "Credits";
 
 /* Title for a button that will crash the app. */
-"more_controller.debug_section.crash_row" = "Crash the App";
-
-/* Section title for debugging helpers */
-"more_controller.debug_section.header" = "Debug";
+"more_controller.debug_section.crash_row" = "Crash the app";
 
 /* This is displayed instead of the user's push ID if the value is not available. */
 "more_controller.debug_section.push_id.not_available" = "Not available";
@@ -323,8 +343,17 @@
 /* Request to help develop the app */
 "more_controller.develop_the_app" = "Help Fix Bugs & Build New Features";
 
+/* Header for the donate section. */
+"more_controller.donate" = "Be a Supporter";
+
+/* The call to action for the More controller's donate buton */
+"more_controller.donate_description" = "Donate to OneBusAway";
+
 /* Header for the volunteer section. */
 "more_controller.help_out" = "Help make the app better";
+
+/* A button that will open a web based donation portal. */
+"more_controller.manage_donations" = "Manage Donations";
 
 /* Title of the Agencies row in the My Location section */
 "more_controller.my_location.agencies" = "Agencies";
@@ -349,12 +378,6 @@
 
 /* Updates and Alerts header text */
 "more_controller.updates_and_alerts.header" = "Updates and Alerts";
-
-/* Title of the alert that tells the user they've disabled debug mode. */
-"more_header.debug_disabled.title" = "Debug Mode Disabled";
-
-/* Title of the alert that tells the user they've enabled debug mode. */
-"more_header.debug_enabled.title" = "Debug Mode Enabled";
 
 /* Explanation about how this app is built and maintained by volunteers. */
 "more_header.support_us_label_text" = "This app is made and supported by volunteers.";
@@ -467,8 +490,8 @@
 /* Title of the Region Picker Item, which lets the user choose a new region from the map. */
 "region_picker.title" = "Choose Region";
 
-/* Title of the trip planning toggle in the region picker. */
-"region_picker.trip_planning_toggle" = "Enable trip planning";
+/* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
+"region_url.error_messsage" = "The provided region URL is invalid or does not point to a functional OBA server.";
 
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";
@@ -482,6 +505,36 @@
 /* A table header in the 'Report Problem' view controller. */
 "report_problem_controller.vehicle_problem.header" = "Problem with a Vehicle at the Stop";
 
+/* Morning time period label */
+"schedule_view.am_period" = "AM";
+
+/* Label for date picker in schedule view */
+"schedule_view.date" = "Date";
+
+/* Label for direction picker in schedule view */
+"schedule_view.direction" = "Direction";
+
+/* Default direction label when no headsign is available */
+"schedule_view.direction_number_fmt" = "Direction %d";
+
+/* Accessibility text when there is no departure time */
+"schedule_view.no_departure" = "No departure";
+
+/* Message shown when schedule data is not available */
+"schedule_view.no_schedule_data" = "No schedule data available";
+
+/* Message when no stops are available for the selected direction */
+"schedule_view.no_stops_found" = "No stops found for this direction";
+
+/* Afternoon/evening time period label */
+"schedule_view.pm_period" = "PM";
+
+/* Headsign label showing destination */
+"schedule_view.to_headsign_fmt" = "To: %@";
+
+/* Error message when schedule fails to load */
+"schedule_view.unable_to_load" = "Unable to load schedule";
+
 /* Title of the Bookmarks search header */
 "search_controller.bookmarks.header" = "Bookmarks";
 
@@ -490,6 +543,15 @@
 
 /* Title for the empty set indicator on the Search controller. */
 "search_controller.empty_set.title" = "Search";
+
+/* Placemark search header */
+"search_controller.placemarks.header" = "Results";
+
+/* Loading message for placemark search */
+"search_controller.placemarks.loading" = "Searching for places...";
+
+/* No results message for placemark search */
+"search_controller.placemarks.no_results" = "No results found";
 
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Quick Search";
@@ -506,6 +568,9 @@
 /* Quick search prefix for Vehicle. */
 "search_interactor.quick_search.vehicle_prefix" = "Vehicle:";
 
+/* Error message shown when a vehicle has no trips available. */
+"search_results_controller.no_trips_available" = "This vehicle is not currently on any trips.";
+
 /* A format string for address searches. In English, this is just the address itself without any adornment. */
 "search_results_controller.subtitle.address_fmt" = "%@";
 
@@ -520,9 +585,6 @@
 
 /* The title of the Search Results controller. */
 "search_results_controller.title" = "Search Results";
-
-/* Error message shown when a vehicle has no trips available. */
-"search_results_controller.no_trips_available" = "This vehicle is not currently on any trips.";
 
 /* The transit agencies affected by this service alert. */
 "service_alert_controller.affected_agencies" = "Affected Agencies";
@@ -560,11 +622,11 @@
 /* Settings > Alerts section title */
 "settings_controller.alerts_section.title" = "Agency Alerts";
 
-/* Settings > Debug section > Debug mode */
-"settings_controller.debug_section.debug_mode" = "Debug mode";
-
 /* Settings > Debug section > Refresh regions on every launch */
 "settings_controller.debug_section.always_refresh_regions" = "Refresh regions on every launch";
+
+/* Settings > Debug section > Debug mode */
+"settings_controller.debug_section.debug_mode" = "Debug Mode";
 
 /* Settings > Debug section title */
 "settings_controller.debug_section.title" = "Debug";
@@ -643,6 +705,21 @@
 
 /* Title for the Report Stop Problem controller */
 "stop_problem_controller.title" = "Report a Problem";
+
+/* Label for date picker in schedule view */
+"stop_schedule_view.date" = "Date";
+
+/* Message when no departures are scheduled */
+"stop_schedule_view.no_departures" = "No departures scheduled for this date";
+
+/* Message shown when schedule data is not available */
+"stop_schedule_view.no_schedule_data" = "No schedule data available";
+
+/* Label for route picker in schedule view */
+"stop_schedule_view.route" = "Route";
+
+/* Error message when schedule fails to load */
+"stop_schedule_view.unable_to_load" = "Unable to load schedule";
 
 /* Message displayed when a new bookmark is created. */
 "stops_controller.created_new_bookmark" = "Added Bookmark";
@@ -776,5 +853,3 @@
 /* Format string with placeholders for distance from stop, walking time to stop, and predicted arrival time. e.g. 1.2 miles, 17m: arriving at 09:41 A.M. */
 "walk_time_view.distance_time_fmt" = "%1$@, %2$@: arriving at %3$@";
 
-/* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
-"region_url.error_messsage" = "The provided region URL is invalid or does not point to a functional OBA server.";

@@ -94,6 +94,7 @@ struct BookmarkArrivalViewModel: OBAListViewItem {
 
     static func == (lhs: BookmarkArrivalViewModel, rhs: BookmarkArrivalViewModel) -> Bool {
         return
+            lhs.bookmarkID == rhs.bookmarkID &&
             lhs.name == rhs.name &&
             lhs.isFavorite == rhs.isFavorite &&
             lhs.sortOrder == rhs.sortOrder &&

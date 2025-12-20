@@ -35,7 +35,17 @@ public class StopArrivals: NSObject, Identifiable, Decodable, HasReferences {
             return _serviceAlerts
         }
         else {
-            return arrivalsAndDepartures.flatMap { $0.serviceAlerts }
+            let allAlerts = arrivalsAndDepartures.flatMap { $0.serviceAlerts }
+            var uniqueAlerts: [ServiceAlert] = []
+            var seenIDs = Set<String>()
+
+            for alert in allAlerts {
+                if !seenIDs.contains(alert.id) {
+                    uniqueAlerts.append(alert)
+                    seenIDs.insert(alert.id)
+                }
+            }
+            return uniqueAlerts
         }
     }
 
