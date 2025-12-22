@@ -224,18 +224,18 @@ public enum QuestionType: String, Codable, Hashable {
 }
 
 // MARK: - Question Content Models
-struct TextContent: Codable, Hashable {
-    let labelText: String
+public struct TextContent: Codable, Hashable {
+    public let labelText: String
 }
 
-struct SelectableContent: Codable, Hashable {
-    let labelText: String
-    let options: [String]?
+public struct SelectableContent: Codable, Hashable {
+    public let labelText: String
+    public let options: [String]?
 }
 
-struct ExternalSurveyContent: Codable, Hashable {
-    let labelText: String
-    let url: String?
-    let provider: String?
-    let embeddedDataFields: [String]?
+public struct ExternalSurveyContent: Codable, Hashable {
+    public let labelText: String
+    public let url: String?
+    public let provider: String?
+    public let embeddedDataFields: [String]?
 }
