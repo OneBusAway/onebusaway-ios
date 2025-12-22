@@ -806,7 +806,8 @@ public class MapRegionManager: NSObject,
 
             // Trigger the initial "Open Sheet" behavior via SearchResponse
             // This mimics the "search" behavior to open the sheet immediately upon drop
-            let request = SearchRequest(query: "fake", type: .address)
+            let query = annotation.title ?? "User Dropped Pin"
+            let request = SearchRequest(query: query, type: .address)
             let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
             self.searchResponse = response
 
