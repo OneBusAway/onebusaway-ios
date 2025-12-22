@@ -159,7 +159,7 @@ public struct MapItemView: View {
         var locationParts: [String] = []
 
         if let category = viewModel.pointOfInterestCategory {
-            let formattedCategory = category.replacingOccurrences(of: "([A-Z])", with: " $1", options: .regularExpression, range: nil).trimmingCharacters(in: .whitespaces)
+            let formattedCategory = category.replacingOccurrences(of: "(?<!^))", with: " $1", options: .regularExpression, range: nil)
             categoryPart = formattedCategory
         }
 
