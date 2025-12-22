@@ -17,7 +17,7 @@ import OBAKitCore
 /// This view presents location information in a modal-style interface, styled similarly to Apple Maps.
 ///  It includes sections for:
 ///  A header with Name, Item Category, Short Address
-///  An apple maps styled buttons row for Plan A Trip, Call, Website (if available),
+///  An Apple Maps styled buttons row for Plan A Trip, Call, Website (if available),
 ///  also including a Nearby Stops button which adjusts dynamically according to the availability of previous buttons
 /// The view uses a `MapItemViewModel` to handle all business logic and user interactions.
 public struct MapItemView: View {
