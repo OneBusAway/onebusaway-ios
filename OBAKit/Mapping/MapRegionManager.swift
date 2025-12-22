@@ -773,11 +773,8 @@ public class MapRegionManager: NSObject,
     private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: UserDroppedPin) {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
 
-        // Note: We create a local geocoder or manage an array of them if you want concurrent geocoding,
-        // but reusing userGeocoder is fine if user drops pins slowly.
+        // Use a local geocoder so multiple dropped pins can be reverse geocoded concurrently.
         let geocoder = CLGeocoder()
-        userGeocoder?.cancelGeocode()
-        userGeocoder = geocoder
 
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self else { return }
