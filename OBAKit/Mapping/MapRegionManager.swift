@@ -738,7 +738,7 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - User-dropped pin
-    // Made this both public so can be accessed in MapViewController
+    // Made this public so can be accessed in MapViewController
     public private(set) var userAnnotations: [UserDroppedPin] = []
     // Dictionary mapping pin -> data
     private var userMapItems: [UserDroppedPin: MKMapItem] = [:]
