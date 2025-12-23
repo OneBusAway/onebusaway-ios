@@ -1,0 +1,90 @@
+{
+    "currentTime": 1234567890,
+    "text": "OK",
+    "data": {
+        "outOfRange": false,
+        "limitExceeded": false,
+        "references": {
+            "stops": [],
+            "situations": [],
+            "trips": [],
+            "routes": [
+                { "id": "1_70", "shortName": "70", "description": "Common route", "type": 3, "agencyId": "1", "url": "" },
+                { "id": "1_71", "shortName": "71", "description": "Common route", "type": 3, "agencyId": "1", "url": "" },
+                { "id": "1_309", "shortName": "309", "description": "Rare route", "type": 3, "agencyId": "1", "url": "" },
+                { "id": "1_355", "shortName": "355", "description": "Rare route", "type": 3, "agencyId": "1", "url": "" },
+                { "id": "40_590", "shortName": "590", "description": "Other agency route", "type": 3, "agencyId": "40", "url": "" }
+            ],
+            "agencies": [
+                {
+                    "id": "1",
+                    "privateService": false,
+                    "phone": "206-553-3000",
+                    "timezone": "America/Los_Angeles",
+                    "disclaimer": "Transit scheduling data.",
+                    "name": "Metro Transit",
+                    "lang": "en",
+                    "url": "https://metro.example.com"
+                },
+                {
+                    "id": "40",
+                    "privateService": false,
+                    "phone": "206-553-3000",
+                    "timezone": "America/Los_Angeles",
+                    "disclaimer": "Transit scheduling data.",
+                    "name": "Sound Transit",
+                    "lang": "en",
+                    "url": "https://soundtransit.example.com"
+                }
+            ]
+        },
+        "list": [
+            {
+                "id": "STOP_A",
+                "name": "Stop with multiple common routes",
+                "code": "A",
+                "lat": 47.61,
+                "lon": -122.33,
+                "locationType": 0,
+                "direction": null,
+                "wheelchairBoarding": null,
+                "routeIds": ["1_70", "1_71"]
+            },
+            {
+                "id": "STOP_B",
+                "name": "Stop with one route",
+                "code": "B",
+                "lat": 47.62,
+                "lon": -122.34,
+                "locationType": 0,
+                "direction": null,
+                "wheelchairBoarding": null,
+                "routeIds": ["1_70"]
+            },
+            {
+                "id": "STOP_C",
+                "name": "Stop with high variety unique routes",
+                "code": "D",
+                "lat": 47.64,
+                "lon": -122.36,
+                "locationType": 0,
+                "direction": null,
+                "wheelchairBoarding": null,
+                "routeIds": ["1_309", "1_355", "40_590"]
+            },
+            {
+                "id": "STOP_D",
+                "name": "Stop with duplicate route entries",
+                "code": "E",
+                "lat": 47.65,
+                "lon": -122.37,
+                "locationType": 0,
+                "direction": null,
+                "wheelchairBoarding": null,
+                "routeIds": ["1_309", "1_310"]
+            }
+        ]
+    },
+    "code": 200,
+    "version": 2
+}

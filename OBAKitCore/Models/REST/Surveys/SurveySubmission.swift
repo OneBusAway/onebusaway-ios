@@ -84,6 +84,12 @@ public struct SurveySubmissionResponse: Codable, Hashable {
 
     public let userIdentifier: String
 
+    public init(id: String, updatePath: String, userIdentifier: String) {
+        self.id = id
+        self.updatePath = updatePath
+        self.userIdentifier = userIdentifier
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case updatePath = "update_path"
