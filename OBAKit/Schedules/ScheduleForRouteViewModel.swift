@@ -87,8 +87,11 @@ class ScheduleForRouteViewModel: ObservableObject {
 
         return direction.tripsWithStopTimes.map { tripWithStopTimes in
             // Pre-compute dictionary for O(1) lookups instead of O(k) first(where:)
+            // Use uniquingKeysWith to handle routes that visit the same stop multiple times
+            // (e.g., circular routes). Keep the first occurrence.
             let stopTimesDict = Dictionary(
-                uniqueKeysWithValues: tripWithStopTimes.stopTimes.map { ($0.stopID, $0) }
+                tripWithStopTimes.stopTimes.map { ($0.stopID, $0) },
+                uniquingKeysWith: { first, _ in first }
             )
             return direction.stopIDs.map { stopID in
                 stopTimesDict[stopID]?.departureDate(for: scheduleDate)
