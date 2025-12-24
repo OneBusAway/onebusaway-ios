@@ -148,7 +148,11 @@ class AgencyAlertsViewController: UIViewController,
     // MARK: - List data
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return listSections(agencyAlerts: alertsStore.agencyAlerts)
+        var seenIDs = Set<String>()
+        let uniqueAlerts = alertsStore.agencyAlerts.filter { alert in
+            seenIDs.insert(alert.id).inserted
+        }
+        return listSections(agencyAlerts: uniqueAlerts)
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
