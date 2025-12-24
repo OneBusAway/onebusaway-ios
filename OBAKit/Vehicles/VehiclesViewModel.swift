@@ -69,33 +69,21 @@ class VehiclesViewModel: ObservableObject {
 
     /// Fetches vehicle positions for all agencies in the current region
     func fetchVehicles() async {
-        guard let apiService = application.apiService else {
-            print("[VehiclesVM] ERROR: No apiService available")
-            return
-        }
-        guard let baseURL = application.currentRegion?.OBABaseURL else {
-            print("[VehiclesVM] ERROR: No current region available")
-            return
-        }
-        guard !isLoading else {
-            print("[VehiclesVM] Skipping fetch - already loading")
+        guard
+            let apiService = application.apiService,
+            let baseURL = application.currentRegion?.OBABaseURL,
+            !isLoading
+        else {
             return
         }
 
         isLoading = true
         error = nil
 
-        print("[VehiclesVM] ========== Starting vehicle fetch ==========")
-
         do {
-            // 1. Fetch agencies
             let agencies = try await apiService.getAgenciesWithCoverage().list
-            print("[VehiclesVM] Fetched \(agencies.count) agencies")
-
-            // Store all agency IDs for toggle all functionality
             self.allAgencyIDs = agencies.map { $0.agencyID }
 
-            // 2. Fetch vehicles for enabled agencies, create status for all
             typealias FetchResult = (vehicles: [RealtimeVehicle], status: AgencyFeedStatus)
             var allStatuses: [AgencyFeedStatus] = []
             var allVehicles: [RealtimeVehicle] = []
@@ -138,10 +126,8 @@ class VehiclesViewModel: ObservableObject {
             self.vehicles = allVehicles
             self.feedStatuses = allStatuses.sorted { $0.agencyName < $1.agencyName }
             self.lastUpdated = Date()
-            print("[VehiclesVM] ========== Fetch complete: \(self.vehicles.count) total vehicles ==========")
         } catch {
             self.error = error
-            print("[VehiclesVM] ERROR fetching agencies: \(error)")
         }
 
         isLoading = false
