@@ -9,6 +9,7 @@ import Foundation
 import OBAKit
 import FirebaseCore
 import FirebaseAnalytics
+import FirebaseCrashlytics
 
 class FirebaseAnalytics: NSObject {
     init(userID: String) {
@@ -57,5 +58,11 @@ class FirebaseAnalytics: NSObject {
     
     public func setUserProperty(key: String, value: String?) {
         Analytics.setUserProperty(value ?? "", forName: key)
+    }
+
+    // MARK: - Report Errors
+
+    public func reportError(_ error: Error) {
+        Crashlytics.crashlytics().record(error: error)
     }
 }

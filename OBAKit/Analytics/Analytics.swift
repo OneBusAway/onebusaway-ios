@@ -94,4 +94,6 @@ public protocol Analytics: NSObjectProtocol {
     @objc func reportingEnabled() -> Bool
 
     @objc func setUserProperty(key: String, value: String?)
+
+    @objc optional func reportError(_ error: Error)
 }

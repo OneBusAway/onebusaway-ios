@@ -35,6 +35,12 @@ import OBAKit
         }
     }
 
+    @objc public func reportError(_ error: any Error) {
+        firebaseAnalytics?.reportError(error)
+
+        // TODO: figure out how to report errors to a plausible-compatible destination.
+    }
+
     @objc public func reportEvent(pageURL: String, label: String, value: Any?) {
         firebaseAnalytics?.reportEvent(label: label, value: value)
         Task {
