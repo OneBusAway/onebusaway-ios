@@ -134,8 +134,10 @@ final class TripStopCell: OBAListViewCell {
 
     let titleLabel: UILabel = {
         let label = UILabel.obaLabel(textColor: ThemeColors.shared.label)
+        label.numberOfLines = 0
+        label.lineBreakMode = .byTruncatingTail
         label.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        label.setContentCompressionResistancePriority(.required, for: .horizontal)
+        label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return label
     }()
 
