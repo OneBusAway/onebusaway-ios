@@ -687,7 +687,7 @@ public class MapRegionManager: NSObject,
 
     public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
         if let userAnnotation {
-            print("Removing old annotation")
+            Logger.info("Removing old annotation")
             mapView.removeAnnotation(userAnnotation)
             self.userAnnotation = nil
         }
@@ -727,7 +727,7 @@ public class MapRegionManager: NSObject,
             else { return }
 
             if let error = error {
-                print("Geocoding error: \(error.localizedDescription)")
+                Logger.error("Geocoding error: \(error.localizedDescription)")
                 annotation.title = "Unknown Location"
                 annotation.subtitle = "Could not retrieve location details"
                 return

@@ -201,8 +201,6 @@ class VehiclesViewModel: ObservableObject {
         urlComponents?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
 
         guard let url = urlComponents?.url else {
-            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
-            print("[VehiclesVM] \(agencyID): ERROR - Invalid URL")
             status.error = .invalidURL
             status.lastFetchedAt = Date()
             return ([], status)
@@ -211,15 +209,12 @@ class VehiclesViewModel: ObservableObject {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
 
-            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
-
             status.dataSize = data.count
             status.lastFetchedAt = Date()
 
             // Log HTTP response details
             if let httpResponse = response as? HTTPURLResponse {
                 status.httpStatusCode = httpResponse.statusCode
-                print("[VehiclesVM] \(agencyID): HTTP \(httpResponse.statusCode), \(data.count) bytes")
 
                 if httpResponse.statusCode != 200 {
                     status.error = .httpError(httpResponse.statusCode)
@@ -231,7 +226,6 @@ class VehiclesViewModel: ObservableObject {
             do {
                 message = try TransitRealtime_FeedMessage(serializedBytes: data)
             } catch {
-                print("[VehiclesVM] \(agencyID): ERROR - Decoding failed: \(error.localizedDescription)")
                 status.error = .decodingError(error)
                 return ([], status)
             }
@@ -240,15 +234,10 @@ class VehiclesViewModel: ObservableObject {
             let vehicleEntities = message.entity.filter { $0.hasVehicle }
             let withPosition = message.entity.filter { $0.hasVehicle && $0.vehicle.hasPosition }
 
-            print("[VehiclesVM] \(agencyID): \(totalEntities) entities, \(vehicleEntities.count) vehicles, \(withPosition.count) with position")
-            print("[VehiclesVM] \(agencyID): \(withPosition.count) vehicles")
-
             let vehicles = withPosition.map { RealtimeVehicle(from: $0, agency: agency) }
             status.vehicleCount = vehicles.count
             return (vehicles, status)
         } catch {
-            print("[VehiclesVM] \(agencyName) (Agency ID \(agencyID))")
-            print("[VehiclesVM] \(agencyID): ERROR - Network: \(error.localizedDescription)")
             status.lastFetchedAt = Date()
             status.error = .networkError(error)
             return ([], status)
