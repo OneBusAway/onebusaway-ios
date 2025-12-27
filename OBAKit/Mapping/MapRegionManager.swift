@@ -783,7 +783,7 @@ public class MapRegionManager: NSObject,
             guard self.userAnnotations.contains(annotation) else { return }
 
             if let error = error {
-                print("Geocoding error: \(error.localizedDescription)")
+                Logger.error("Geocoding error: \(error.localizedDescription)")
                 annotation.title = "Unknown Location"
                 annotation.subtitle = "Could not retrieve location details"
                 return

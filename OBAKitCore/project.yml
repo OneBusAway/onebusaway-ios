@@ -4,8 +4,6 @@ targets:
     platform: iOS
     sources: ["."]
     dependencies:
-      - package: CocoaLumberjack
-      - package: CocoaLumberjackSwift
       - package: SwiftProtobuf
     scheme:
       gatherCoverageData: true
