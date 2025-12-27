@@ -39,6 +39,8 @@ protocol MapRegionMapViewDelegate: NSObjectProtocol {
 
 // MARK: - MapRegionManager
 
+public class UserDroppedPin: MKPointAnnotation {}
+
 public class MapRegionManager: NSObject,
     MKMapViewDelegate,
     RegionsServiceDelegate,
@@ -228,6 +230,7 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
+        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
     }
 
     // MARK: - Data Loading
@@ -591,8 +594,55 @@ public class MapRegionManager: NSObject,
     }
 
     public func mapView(_ mapView: MKMapView, didSelect annotation: any MKAnnotation) {
-        if let feature = annotation as? MKMapFeatureAnnotation {
-            setUserAnnotation(coordinate: feature.coordinate, title: feature.title, subtitle: feature.subtitle)
+        guard let feature = annotation as? MKMapFeatureAnnotation else { return }
+
+        Task { [weak self] in
+            await self?.handleMapFeatureSelection(feature)
+        }
+    }
+
+    @MainActor
+    private func handleMapFeatureSelection(_ feature: MKMapFeatureAnnotation) async {
+        let request = MKMapItemRequest(mapFeatureAnnotation: feature)
+
+        do {
+            let mapItem = try await request.mapItem
+
+            let searchRequest = SearchRequest(
+                query: mapItem.name ?? "Dropped Pin",
+                type: .address
+            )
+            let response = SearchResponse(
+                request: searchRequest,
+                results: [mapItem],
+                boundingRegion: nil,
+                error: nil
+            )
+
+            mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+            notifyDelegatesShowSearchResult(response: response)
+
+        } catch {
+            print("Failed to fetch map item: \(error)")
+
+            // Fallback: create basic MKMapItem
+            let placemark = MKPlacemark(coordinate: feature.coordinate)
+            let mapItem = MKMapItem(placemark: placemark)
+            mapItem.name = feature.title ?? "Dropped Pin"
+
+            let searchRequest = SearchRequest(
+                query: feature.title ?? "Dropped Pin",
+                type: .address
+            )
+            let response = SearchResponse(
+                request: searchRequest,
+                results: [mapItem],
+                boundingRegion: nil,
+                error: nil
+            )
+
+            mapView.setCenter(mapItem.placemark.coordinate, animated: true)
+            notifyDelegatesShowSearchResult(response: response)
         }
     }
 
@@ -626,6 +676,12 @@ public class MapRegionManager: NSObject,
             mapViewDelegate?.mapRegionManager(self, customize: stopAnnotation)
         }
 
+        if reuseIdentifier == "UserDroppedPin", let markerView = annotationView as? MKMarkerAnnotationView {
+            markerView.animatesWhenAdded = true
+            markerView.canShowCallout = false
+            markerView.markerTintColor = ThemeColors.shared.brand
+        }
+
         return annotationView
     }
 
@@ -635,6 +691,7 @@ public class MapRegionManager: NSObject,
         case is MKUserLocation: return self.userLocationAnnotationReuseIdentifier
         case is Region: return MKMapView.reuseIdentifier(for: MKMarkerAnnotationView.self)
         case is Stop: return MKMapView.reuseIdentifier(for: StopAnnotationView.self)
+        case is UserDroppedPin: return "UserDroppedPin"
         default: return nil
         }
     }
@@ -681,19 +738,17 @@ public class MapRegionManager: NSObject,
     }
 
     // MARK: - User-dropped pin
-
-    private var userAnnotation: MKPointAnnotation?
+    // Made this public so can be accessed in MapViewController
+    public private(set) var userAnnotations: [UserDroppedPin] = []
+    // Dictionary mapping pin -> data
+    private var userMapItems: [UserDroppedPin: MKMapItem] = [:]
     private var userGeocoder: CLGeocoder?
 
     public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
-        if let userAnnotation {
-            Logger.info("Removing old annotation")
-            mapView.removeAnnotation(userAnnotation)
-            self.userAnnotation = nil
-        }
-
         let touchPoint = gesture.location(in: mapView)
         let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+
+        // Create new pin
         setUserAnnotation(coordinate: coordinate, title: nil, subtitle: nil)
     }
 
@@ -703,28 +758,29 @@ public class MapRegionManager: NSObject,
     ///   - title: Optional title; it will be overwritten
     ///   - subtitle: Optional subtitle; it will be overwritten
     private func setUserAnnotation(coordinate: CLLocationCoordinate2D, title: String?, subtitle: String?) {
-        let annotation = MKPointAnnotation()
+        let annotation = UserDroppedPin()
         annotation.coordinate = coordinate
         annotation.title = title ?? "Dropped Pin"
         annotation.subtitle = subtitle ?? "Lat: \(coordinate.latitude), Lon: \(coordinate.longitude)"
-        self.userAnnotation = annotation
+
+        // Add to array
+        self.userAnnotations.append(annotation)
         mapView.addAnnotation(annotation)
 
         reverseGeocodeLocation(coordinate: coordinate, annotation: annotation)
     }
 
-    private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: MKPointAnnotation) {
+    private func reverseGeocodeLocation(coordinate: CLLocationCoordinate2D, annotation: UserDroppedPin) {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
 
+        // Use a local geocoder so multiple dropped pins can be reverse geocoded concurrently.
         let geocoder = CLGeocoder()
-        userGeocoder?.cancelGeocode()
-        userGeocoder = geocoder
 
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard
-                let self = self,
-                annotation === userAnnotation
-            else { return }
+            guard let self = self else { return }
+
+            // Verify this annotation still exists in our array
+            guard self.userAnnotations.contains(annotation) else { return }
 
             if let error = error {
                 Logger.error("Geocoding error: \(error.localizedDescription)")
@@ -741,8 +797,17 @@ public class MapRegionManager: NSObject,
             // Update annotation with location details
             self.updateAnnotation(annotation, with: placemark)
 
-            let request = SearchRequest(query: "fake", type: .address)
+            // Create and Store MapItem
             let mapItem = MKMapItem(placemark: MKPlacemark(placemark: placemark))
+            mapItem.name = annotation.title // Ensure the MapItem has the name we just generated
+
+            // Store in Dictionary
+            self.userMapItems[annotation] = mapItem
+
+            // Trigger the initial "Open Sheet" behavior via SearchResponse
+            // This mimics the "search" behavior to open the sheet immediately upon drop
+            let query = annotation.title ?? "User Dropped Pin"
+            let request = SearchRequest(query: query, type: .address)
             let response = SearchResponse(request: request, results: [mapItem], boundingRegion: nil, error: nil)
             self.searchResponse = response
 
@@ -753,7 +818,12 @@ public class MapRegionManager: NSObject,
         }
     }
 
-    private func updateAnnotation(_ annotation: MKPointAnnotation, with placemark: CLPlacemark) {
+    // Helper to retrieve item
+    public func mapItem(for annotation: UserDroppedPin) -> MKMapItem? {
+        return userMapItems[annotation]
+    }
+
+    private func updateAnnotation(_ annotation: UserDroppedPin, with placemark: CLPlacemark) {
         // Build the title from available components
         var titleComponents: [String] = []
 
