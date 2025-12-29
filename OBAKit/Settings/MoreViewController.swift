@@ -205,6 +205,16 @@ public class MoreViewController: UIViewController,
                     guard let url = Bundle.main.privacyPolicyURL else { return }
                     let safari = SFSafariViewController(url: url)
                     self.application.viewRouter.present(safari, from: self)
+                }),
+
+            OBAListRowView.DefaultViewModel(
+                title: OBALoc(
+                    "more_controller.view_logs_row_title",
+                    value: "View Logs",
+                    comment: "A link to view application logs"),
+                onSelectAction: { _ in
+                    let logViewer = LogViewerViewController(application: self.application)
+                    self.application.viewRouter.navigate(to: logViewer, from: self)
                 })
         ])
     }
