@@ -25,37 +25,29 @@ private enum StopScheduleStrings {
 struct ScheduleForStopView: View {
     @StateObject private var stopViewModel: ScheduleForStopViewModel
     @State private var routeViewModel: ScheduleForRouteViewModel?
+    @State private var isShowingFullRouteSchedule = false
     @Environment(\.dismiss) private var dismiss
 
     private let application: Application
 
     init(stopID: StopID, application: Application) {
         self.application = application
-        _stopViewModel = StateObject(wrappedValue: ScheduleForStopViewModel(stopID: stopID, application: application))
+        _stopViewModel = StateObject(
+            wrappedValue: ScheduleForStopViewModel(stopID: stopID, application: application)
+        )
     }
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(Strings.schedules)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(Strings.close) {
-                            dismiss()
-                        }
-                    }
-                }
-                .task {
-                    await stopViewModel.fetchSchedule()
-                }
-                .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
-                    updateRouteViewModel(for: newRouteID)
-                }
-                .onChange(of: stopViewModel.selectedDate) { _, newDate in
-                    routeViewModel?.selectedDate = newDate
-                }
-        }
+        content
+            .task {
+                await stopViewModel.fetchSchedule()
+            }
+            .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
+                updateRouteViewModel(for: newRouteID)
+            }
+            .onChange(of: stopViewModel.selectedDate) { _, newDate in
+                routeViewModel?.selectedDate = newDate
+            }
     }
 
     // MARK: - Content
@@ -82,7 +74,12 @@ struct ScheduleForStopView: View {
         VStack(spacing: 0) {
             headerSection
             Divider()
-            routeScheduleSection
+
+            if isShowingFullRouteSchedule {
+                fullRouteScheduleSection
+            } else {
+                stopFocusedScheduleSection
+            }
         }
     }
 
@@ -143,14 +140,58 @@ struct ScheduleForStopView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
             }
+
+            // Segmented control: Stop vs Full Route
+            if stopViewModel.selectedRouteID != nil {
+                Picker("", selection: $isShowingFullRouteSchedule) {
+                    Text("Stop Schedule").tag(false)
+                    Text("Full Route Schedule").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+            }
         }
         .background(Color(.systemGroupedBackground))
+    }
+
+    // MARK: - Stop-Focused Schedule Section
+
+    @ViewBuilder
+    private var stopFocusedScheduleSection: some View {
+        let departures = stopViewModel.departuresForSelectedRoute
+
+        if stopViewModel.isLoading && departures.isEmpty {
+            ProgressView()
+                .padding()
+        } else if departures.isEmpty {
+            Text(StopScheduleStrings.noDepartures)
+                .foregroundStyle(.secondary)
+                .padding()
+        } else {
+            List(departures) { departure in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(departure.time.formatted(date: .omitted, time: .shortened))
+                            .font(.headline)
+                        Spacer()
+                    }
+
+                    Text("To: \(departure.headsign)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.vertical, 4)
+            }
+            .listStyle(.plain)
+        }
     }
 
     // MARK: - Route Schedule Section (embedded timetable)
 
     @ViewBuilder
-    private var routeScheduleSection: some View {
+    private var fullRouteScheduleSection: some View {
         if let routeVM = routeViewModel {
             RouteScheduleContentView(viewModel: routeVM, showDatePicker: false)
                 .id(routeVM.routeID)
