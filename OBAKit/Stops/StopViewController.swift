@@ -81,6 +81,45 @@ public class StopViewController: UIViewController,
     /// - Note: Calls  `timerFired()`  when its interval has elapsed.
     private var reloadTimer: Timer!
 
+    // MARK: - Schedule Toggle
+
+    private var isShowingSchedules = false
+
+    /// Container for schedule view controller
+    private weak var scheduleViewController: ScheduleForStopViewController?
+
+    // MARK: - Live Departures / Schedules toggle
+
+    private lazy var scheduleToggleView: UISegmentedControl = {
+        let control = UISegmentedControl(items: [
+            OBALoc("stop_controller.tab_live_departures",
+                   value: "Live Departures",
+                   comment: "Tab for live arrivals/departures"),
+            OBALoc("stop_controller.tab_schedules",
+                   value: "Schedules",
+                   comment: "Tab for static schedules")
+        ])
+
+        control.selectedSegmentIndex = 0
+
+        let normalAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .semibold),
+            .foregroundColor: UIColor.secondaryLabel
+        ]
+        let selectedAttributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: 14, weight: .semibold),
+            .foregroundColor: UIColor.label
+        ]
+
+        control.setTitleTextAttributes(normalAttributes, for: .normal)
+        control.setTitleTextAttributes(selectedAttributes, for: .selected)
+
+        control.addTarget(self,
+                          action: #selector(scheduleToggleChanged(_:)),
+                          for: .valueChanged)
+        return control
+    }()
+
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
@@ -176,6 +215,8 @@ public class StopViewController: UIViewController,
         super.viewDidLoad()
 
         view.backgroundColor = ThemeColors.shared.systemBackground
+
+        configureScheduleToggle()
 
         listView.obaDelegate = self
         listView.obaDataSource = self
@@ -363,11 +404,7 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        let schedulesAction = UIAction(title: Strings.schedules, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-            self.showScheduleForStop()
-        }
-
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction, schedulesAction])
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -475,8 +512,6 @@ public class StopViewController: UIViewController,
     func updateData() async {
         guard let apiService = application.apiService else { return }
 
-        title = Strings.updating
-
         do {
             let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter).entry
 
@@ -485,7 +520,6 @@ public class StopViewController: UIViewController,
                 self.lastUpdated = Date()
                 self.stopArrivals = stopArrivals
                 self.refreshControl.endRefreshing()
-                self.updateTitle()
                 if stopArrivals.arrivalsAndDepartures.count == 0 {
                     self.extendLoadMoreWindow()
                 }
@@ -533,7 +567,6 @@ public class StopViewController: UIViewController,
     ///
     /// - Note: Driven by the private `reloadTimer` variable in this class.
     @objc private func timerFired() {
-        updateTitle()
 
         if timeIntervalSinceLastUpdate > StopViewController.defaultTimerReloadInterval {
             Task {
@@ -542,13 +575,12 @@ public class StopViewController: UIViewController,
         }
     }
 
-    /// Refreshes the view controller's title with the last time its data was reloaded.
-    private func updateTitle() {
-        guard let lastUpdated = lastUpdated else {
-            return
-        }
-
-        title = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+    private func currentUpdateStatusText() -> String? {
+        guard let lastUpdated = lastUpdated else { return nil }
+        return String(
+            format: Strings.updatedAtFormat,
+            application.formatters.timeAgoInWords(date: lastUpdated)
+        )
     }
 
     // MARK: - Broken Bookmarks
@@ -784,7 +816,20 @@ public class StopViewController: UIViewController,
             sectionName = groupRoute.longName ?? groupRoute.shortName
         } else {
             sectionID = "all"
-            sectionName = OBALoc("stop_controller.arrival_departure_header", value: "Arrivals and Departures", comment: "A header for the arrivals and departures section of the stop controller.")
+
+            let baseTitle = OBALoc(
+                "stop_controller.arrival_departure_header",
+                value: "Arrivals and Departures",
+                comment: "A header for the arrivals and departures section of the stop controller."
+            )
+
+            if lastUpdated == nil {
+                sectionName = "\(baseTitle)\n\(Strings.updating)"
+            } else if let status = currentUpdateStatusText() {
+                sectionName = "\(baseTitle)\n\(status)"
+            } else {
+                sectionName = baseTitle
+            }
         }
 
         let arrDepItems = arrDeps.map { arrivalDepartureItem(for: $0) }
@@ -1139,11 +1184,6 @@ public class StopViewController: UIViewController,
         present(scheduleVC, animated: true)
     }
 
-    func showScheduleForStop() {
-        let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
-        present(scheduleVC, animated: true)
-    }
-
     // MARK: - Actions
 
     /// Reloads data.
@@ -1197,6 +1237,52 @@ public class StopViewController: UIViewController,
         let reportProblemController = ReportProblemViewController(application: application, stop: stop)
         let navigation = application.viewRouter.buildNavigation(controller: reportProblemController)
         application.viewRouter.present(navigation, from: self, isModal: true)
+    }
+
+    // MARK: - Schedule Toggle Configuration
+
+    private func configureScheduleToggle() {
+        navigationItem.titleView = scheduleToggleView
+    }
+
+    @objc private func scheduleToggleChanged(_ sender: UISegmentedControl) {
+        isShowingSchedules = sender.selectedSegmentIndex == 1 // 0 = Live, 1 = Schedules
+        if isShowingSchedules {
+            showScheduleView()
+        } else {
+            hideScheduleView()
+        }
+    }
+
+    private func showScheduleView() {
+        guard let stop = stop else { return }
+
+        let scheduleVC = ScheduleForStopViewController(stopID: stop.id, application: application)
+
+        addChild(scheduleVC)
+        scheduleVC.view.frame = listView.frame
+        view.insertSubview(scheduleVC.view, belowSubview: scheduleToggleView)
+        scheduleVC.didMove(toParent: self)
+
+        self.scheduleViewController = scheduleVC
+
+        listView.isHidden = true
+
+        UIView.transition(with: view, duration: 0.3, options: .transitionCrossDissolve, animations: {})
+    }
+
+    private func hideScheduleView() {
+        guard let scheduleVC = scheduleViewController else { return }
+
+        UIView.transition(with: view, duration: 0.3, options: .transitionCrossDissolve, animations: {
+            self.listView.isHidden = false
+        })
+
+        scheduleVC.willMove(toParent: nil)
+        scheduleVC.view.removeFromSuperview()
+        scheduleVC.removeFromParent()
+
+        self.scheduleViewController = nil
     }
 
     // MARK: - Modal Delegate
