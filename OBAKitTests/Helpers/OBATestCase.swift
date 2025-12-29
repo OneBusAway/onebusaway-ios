@@ -28,6 +28,10 @@ open class OBATestCase: XCTestCase {
         restService = buildRESTService()
 
         surveyAPIService = buildSurveyService()
+
+        surveyPrioritizer = buildSurveyPrioritizer()
+
+        surveyStateManager = buildSurveyStateManager()
     }
 
     open override func tearDown() {
@@ -173,6 +177,24 @@ open class OBATestCase: XCTestCase {
         
         let surveyAPIService = SurveyAPIService(config, dataLoader: MockDataLoader(testName: name))
         return surveyAPIService
+    }
+
+    // MARK: - Survey Prioritizer
+
+    var surveyPrioritizer: SurveyPrioritizing!
+
+    func buildSurveyPrioritizer() -> SurveyPrioritizing {
+        let surveyStore = SurveyPreferencesStoreMock()
+        return SurveyPrioritizer(surveyStore: surveyStore)
+    }
+
+    // MARK: - Survey State Manager
+
+    var surveyStateManager: SurveyStateProtocol!
+
+    func buildSurveyStateManager() -> SurveyStateManager {
+        let surveyStore = SurveyPreferencesStoreMock()
+        return SurveyStateManager(surveyStore: surveyStore)
     }
 
 }

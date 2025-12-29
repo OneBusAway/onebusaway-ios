@@ -15,16 +15,16 @@ import UIKit
 /// Displays a modal card UI that presents an error.
 class ErrorBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
+    private let error: Error
     private let page: ThemedBulletinPage
     private let application: Application
 
-    init(application: Application, message: String, image: UIImage? = nil, title: String? = nil) {
+    init(application: Application, message: String, error: Error, image: UIImage? = nil, title: String? = nil) {
         self.application = application
+        self.error = error
 
         page = ThemedBulletinPage(title: title ?? Strings.error)
-
         page.descriptionText = message
-
         page.isDismissable = false
 
         let squircleRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.errorColor)

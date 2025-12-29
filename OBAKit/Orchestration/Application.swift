@@ -573,8 +573,11 @@ public class Application: CoreApplication, PushServiceDelegate {
     @MainActor
     public override func displayError(_ error: Error) async {
         await super.displayError(error)
+
+        analytics?.reportError?(error)
+
         guard let uiApp = delegate?.uiApplication else { return }
-        let bulletin = ErrorBulletin(application: self, message: error.localizedDescription)
+        let bulletin = ErrorBulletin(application: self, message: error.localizedDescription, error: error)
         bulletin.show(in: uiApp)
         self.errorBulletin = bulletin
     }
