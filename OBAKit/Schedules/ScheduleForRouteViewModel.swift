@@ -107,49 +107,10 @@ class ScheduleForRouteViewModel: ObservableObject {
         }
     }
 
-    /// Returns departure times grouped by time period (AM/PM)
-    /// Each group contains trips where the first stop's departure is in that period
-    var departureTimesByPeriod: [TimePeriodGroup] {
-        let sorted = sortedDepartureTimes
-        let calendar = Calendar.current
-
-        var amTrips: [[Date?]] = []
-        var pmTrips: [[Date?]] = []
-
-        for row in sorted {
-            guard let firstTime = row.first, let date = firstTime else {
-                // If no first stop time, default to PM
-                pmTrips.append(row)
-                continue
-            }
-
-            let hour = calendar.component(.hour, from: date)
-            if hour < 12 {
-                amTrips.append(row)
-            } else {
-                pmTrips.append(row)
-            }
-        }
-
-        var groups: [TimePeriodGroup] = []
-
-        if !amTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "AM",
-                label: OBALoc("schedule_view.am_period", value: "AM", comment: "Morning time period label"),
-                times: amTrips
-            ))
-        }
-
-        if !pmTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "PM",
-                label: OBALoc("schedule_view.pm_period", value: "PM", comment: "Afternoon/evening time period label"),
-                times: pmTrips
-            ))
-        }
-
-        return groups
+    /// Returns departure times for display (sorted list without AM/PM grouping)
+    /// Uses 24-hour format, so AM/PM grouping is unnecessary
+    var departureTimesDisplay: [[Date?]] {
+        return sortedDepartureTimes
     }
 
     // MARK: - Private Properties
@@ -160,13 +121,13 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
+        formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
     private static let timeFormatterWithAMPM: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
