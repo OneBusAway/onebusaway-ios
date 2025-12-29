@@ -13,12 +13,14 @@ struct AccessibilityTimetable: View {
 
     var body: some View {
         List {
-            ForEach(viewModel.departureTimesByPeriod) { period in
-                Section(period.label) {
-                    ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
-                        accessibilityTripRow(times: tripTimes)
-                    }
+            Section {
+                // All departure times in one section (24-hour format, no AM/PM grouping)
+                ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
+                    accessibilityTripRow(times: tripTimes)
                 }
+            } header: {
+                Text("Schedule")
+                    .font(.headline)
             }
         }
         .listStyle(.plain)

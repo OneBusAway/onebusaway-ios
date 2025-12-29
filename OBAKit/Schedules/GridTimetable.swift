@@ -20,9 +20,10 @@ struct GridTimetable: View {
         ScrollView([.horizontal, .vertical], showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    // AM/PM periods and rows
-                    ForEach(viewModel.departureTimesByPeriod) { period in
-                        periodSection(period)
+                    // All departure times in one list (24-hour format, no AM/PM grouping)
+                    ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { index, row in
+                        departureRow(times: row, isAlternate: index % 2 == 1)
+                        Divider()
                     }
                 } header: {
                     // Stop names header - pinned during vertical scroll
@@ -31,28 +32,6 @@ struct GridTimetable: View {
             }
         }
         .frame(maxHeight: .infinity)
-    }
-
-    // MARK: - Period Sections (AM/PM)
-
-    private func periodSection(_ period: TimePeriodGroup) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Period header (AM/PM)
-            Text(period.label)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.systemGray5))
-
-            // Rows for this period
-            ForEach(Array(period.times.enumerated()), id: \.offset) { index, row in
-                departureRow(times: row, isAlternate: index % 2 == 1)
-                Divider()
-            }
-        }
     }
 
     private func departureRow(times: [Date?], isAlternate: Bool) -> some View {
