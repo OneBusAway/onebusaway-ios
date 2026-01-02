@@ -20,9 +20,17 @@ struct GridTimetable: View {
         ScrollView([.horizontal, .vertical], showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    // AM/PM periods and rows
-                    ForEach(viewModel.departureTimesByPeriod) { period in
-                        periodSection(period)
+                    if Locale.current.hourCycle == .oneToTwelve {
+                        // AM/PM periods and rows
+                        ForEach(viewModel.departureTimesByPeriod) { period in
+                            periodSection(period)
+                        }
+                    } else {
+                        // All departure times in one list (24-hour format, no AM/PM grouping)
+                        ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { index, row in
+                            departureRow(times: row, isAlternate: index % 2 == 1)
+                            Divider()
+                        }
                     }
                 } header: {
                     // Stop names header - pinned during vertical scroll
