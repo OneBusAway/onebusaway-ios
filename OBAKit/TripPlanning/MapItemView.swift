@@ -63,7 +63,7 @@ public struct MapItemView: View {
                                     },
                                     label: {
                                         HStack {
-                                            Text(OBALoc("map_item_controller.nearby_stops_row", value: "View Nearby Transit Stops", comment: "Button to view nearby stops"))
+                                            Text(OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Button to view nearby stops"))
                                                 .bold()
                                             Spacer()
                                             Image(systemName: "chevron.right")
@@ -77,6 +77,7 @@ public struct MapItemView: View {
                                 )
                                 .padding(.horizontal)
                                 .foregroundStyle(.primary)
+                                .accessibilityLabel(OBALoc("map_item_controller.nearby_stops_accessibility", value: "View nearby transit stops", comment: "Accessibility label for nearby stops button"))
                             }
                         }
 
@@ -136,6 +137,7 @@ public struct MapItemView: View {
                 .contentShape(.circle)
                 .background(.regularMaterial)
                 .clipShape(.circle)
+                .accessibilityLabel(OBALoc("map_item_controller.share_button", value: "Share Location", comment: "Accessibility label for share button"))
 
                 Spacer()
 
@@ -150,6 +152,7 @@ public struct MapItemView: View {
                 .frame(width: 44, height: 44)
                 .background(.regularMaterial)
                 .clipShape(.circle)
+                .accessibilityLabel(OBALoc("map_item_controller.close_button", value: "Close", comment: "Accessibility label for close button"))
             }
         }
     }
@@ -159,7 +162,7 @@ public struct MapItemView: View {
         var locationParts: [String] = []
 
         if let category = viewModel.pointOfInterestCategory {
-            let formattedCategory = category.replacingOccurrences(of: "(?<!^))", with: " $1", options: .regularExpression, range: nil)
+            let formattedCategory = category.replacingOccurrences(of: "(?<!^)([A-Z])", with: " $1", options: .regularExpression, range: nil)
             categoryPart = formattedCategory
         }
 
@@ -195,7 +198,8 @@ public struct MapItemView: View {
                     title: OBALoc("map_item_controller.plan_trip", value: "Plan Trip", comment: "Plan trip button"),
                     icon: "arrow.triangle.turn.up.right.circle.fill",
                     backgroundColor: Color(uiColor: ThemeColors.shared.brand),
-                    foregroundColor: .white
+                    foregroundColor: .white,
+                    accessibilityLabel: OBALoc("map_item_controller.plan_trip_accessibility", value: "Plan trip to this location", comment: "Accessibility label for plan trip button")
                 ) {
                     viewModel.planTrip()
                 }
@@ -207,7 +211,8 @@ public struct MapItemView: View {
                     title: OBALoc("map_item_controller.nearby_stops", value: "Nearby Stops", comment: "Nearby stops button"),
                     icon: "mappin.and.ellipse",
                     backgroundColor: Color(uiColor: .secondarySystemBackground),
-                    foregroundColor: Color(uiColor: ThemeColors.shared.brand)
+                    foregroundColor: Color(uiColor: ThemeColors.shared.brand),
+                    accessibilityLabel: OBALoc("map_item_controller.nearby_stops_accessibility", value: "View nearby transit stops", comment: "Accessibility label for nearby stops button")
                 ) {
                     viewModel.showNearbyStops()
                 }
@@ -218,7 +223,8 @@ public struct MapItemView: View {
                     title: OBALoc("map_item_controller.call", value: "Call", comment: "Call button"),
                     icon: "phone.fill",
                     backgroundColor: Color(uiColor: .secondarySystemBackground),
-                    foregroundColor: Color(uiColor: ThemeColors.shared.brand)
+                    foregroundColor: Color(uiColor: ThemeColors.shared.brand),
+                    accessibilityLabel: OBALoc("map_item_controller.call_accessibility", value: "Call phone number", comment: "Accessibility label for call button")
                 ) {
                     viewModel.callPhoneNumber()
                 }
@@ -229,7 +235,8 @@ public struct MapItemView: View {
                     title: OBALoc("map_item_controller.website", value: "Website", comment: "Website button"),
                     icon: "safari.fill",
                     backgroundColor: Color(uiColor: .secondarySystemBackground),
-                    foregroundColor: Color(uiColor: ThemeColors.shared.brand)
+                    foregroundColor: Color(uiColor: ThemeColors.shared.brand),
+                    accessibilityLabel: OBALoc("map_item_controller.website_accessibility", value: "Open website", comment: "Accessibility label for website button")
                 ) {
                     viewModel.openURL()
                 }
@@ -237,7 +244,7 @@ public struct MapItemView: View {
         }
     }
 
-    private func actionButton(title: String, icon: String, backgroundColor: Color, foregroundColor: Color, action: @escaping () -> Void) -> some View {
+    private func actionButton(title: String, icon: String, backgroundColor: Color, foregroundColor: Color, accessibilityLabel: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: icon)
@@ -251,6 +258,7 @@ public struct MapItemView: View {
             .foregroundStyle(foregroundColor)
             .clipShape(.rect(cornerRadius: 12))
         }
+        .accessibilityLabel(accessibilityLabel ?? title)
     }
 
     /// The lookAroundView section.
@@ -262,6 +270,8 @@ public struct MapItemView: View {
             .onTapGesture {
                 showLookAroundViewer = true
             }
+            .accessibilityLabel(OBALoc("map_item_controller.look_around", value: "Look Around preview. Tap to open full screen viewer", comment: "Accessibility label for Look Around preview"))
+            .accessibilityAddTraits(.isButton)
     }
 
     /// The "About" section displaying location details such as address, phone, and URL.

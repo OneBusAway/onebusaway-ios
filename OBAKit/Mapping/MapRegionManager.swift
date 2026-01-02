@@ -623,8 +623,8 @@ public class MapRegionManager: NSObject,
             notifyDelegatesShowSearchResult(response: response)
 
         } catch {
-            print("Failed to fetch map item: \(error)")
-
+            Logger.error("Failed to fetch map item: \(error)")
+            
             // Fallback: create basic MKMapItem
             let placemark = MKPlacemark(coordinate: feature.coordinate)
             let mapItem = MKMapItem(placemark: placemark)
@@ -742,7 +742,6 @@ public class MapRegionManager: NSObject,
     public private(set) var userAnnotations: [UserDroppedPin] = []
     // Dictionary mapping pin -> data
     private var userMapItems: [UserDroppedPin: MKMapItem] = [:]
-    private var userGeocoder: CLGeocoder?
 
     public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
         let touchPoint = gesture.location(in: mapView)
