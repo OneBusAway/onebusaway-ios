@@ -13,15 +13,21 @@ struct AccessibilityTimetable: View {
 
     var body: some View {
         List {
-            ForEach(viewModel.departureTimesByPeriod) { period in
-                Section(period.label) {
-                    ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
-                        accessibilityTripRow(times: tripTimes)
+                    if Locale.current.hourCycle == .oneToTwelve {
+                        ForEach(viewModel.departureTimesByPeriod) { period in
+                            Section(period.label) {
+                                ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
+                                    accessibilityTripRow(times: tripTimes)
+                                }
+                            }
+                        }
+                    } else {
+                        ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
+                            accessibilityTripRow(times: tripTimes)
+                        }
                     }
                 }
-            }
-        }
-        .listStyle(.plain)
+                .listStyle(.plain)
     }
 
     private func accessibilityTripRow(times: [Date?]) -> some View {
