@@ -106,15 +106,9 @@ class ScheduleForRouteViewModel: ObservableObject {
               let scheduleDate = scheduleData?.scheduleDate else {
             return []
         }
-        let indexedTrips: [(index: Int, times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
+        let indexedTrips: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
             let trip = direction.tripsWithStopTimes[index]
-            let minDepartureSeconds = trip.stopTimes.map { $0.departureTime }.min()
-            let actualStartTime = minDepartureSeconds.map { seconds in
-                let calendar = Calendar.current
-                let startOfDay = calendar.startOfDay(for: scheduleDate)
-                return startOfDay.addingTimeInterval(TimeInterval(seconds))
-            }
-            return (index, times, actualStartTime)
+            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
         }
         let sorted = indexedTrips.sorted { trip1, trip2 in
             switch (trip1.startTime, trip2.startTime) {
@@ -140,17 +134,12 @@ class ScheduleForRouteViewModel: ObservableObject {
         var amTrips: [[Date?]] = []
         var pmTrips: [[Date?]] = []
 
-        let tripsWithStartTimes: [([Date?], Date?)] = departureTimes.enumerated().map { index, times in
+        let tripsWithStartTimes: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
             let trip = direction.tripsWithStopTimes[index]
-            let minDepartureSeconds = trip.stopTimes.map { $0.departureTime }.min()
-            let actualStartTime = minDepartureSeconds.map { seconds in
-                let startOfDay = calendar.startOfDay(for: scheduleDate)
-                return startOfDay.addingTimeInterval(TimeInterval(seconds))
-            }
-            return (times, actualStartTime)
+            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
         }
         let sorted = tripsWithStartTimes.sorted { trip1, trip2 in
-            switch (trip1.1, trip2.1) {
+            switch (trip1.startTime, trip2.startTime) {
             case (let t1?, let t2?):
                 return t1 < t2
             case (nil, _):
@@ -197,6 +186,16 @@ class ScheduleForRouteViewModel: ObservableObject {
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// Calculates the actual start time for a trip by finding the earliest departure across all stops.
+    /// This is used for sorting trips chronologically, since some trips may not serve the first stop.
+    private func actualStartTime(for trip: ScheduleForRoute.TripWithStopTimes, scheduleDate: Date) -> Date? {
+        guard let minDepartureSeconds = trip.stopTimes.map({ $0.departureTime }).min() else {
+            return nil
+        }
+        let startOfDay = Calendar.current.startOfDay(for: scheduleDate)
+        return startOfDay.addingTimeInterval(TimeInterval(minDepartureSeconds))
+    }
 
     // MARK: - Static Formatters (for performance)
 
