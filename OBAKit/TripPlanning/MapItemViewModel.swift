@@ -31,6 +31,9 @@ public class MapItemViewModel {
 
     let planTripHandler: () -> Void
 
+    /// Optional handler for removing a user-dropped pin
+    let removePinHandler: (() -> Void)?
+
     /// Delegate for handling modal dismissal
     weak var delegate: ModalDelegate?
 
@@ -60,6 +63,11 @@ public class MapItemViewModel {
         formattedAddress != nil || phoneNumber != nil || url != nil
     }
 
+    /// Indicates whether the remove pin button should be shown
+    var canRemovePin: Bool {
+        removePinHandler != nil
+    }
+
     /// The Look Around scene for the location, if available
     var lookAroundScene: MKLookAroundScene?
 
@@ -72,10 +80,13 @@ public class MapItemViewModel {
     ///   - mapItem: The map item containing location information
     ///   - application: The OBA application instance
     ///   - delegate: Optional delegate for handling modal dismissal
-    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?, planTripHandler: @escaping () -> Void) {
+    ///   - removePinHandler: Optional handler called when user wants to remove a dropped pin
+    ///   - planTripHandler: Handler called when user wants to plan a trip
+    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?, removePinHandler: (() -> Void)? = nil, planTripHandler: @escaping () -> Void) {
         self.mapItem = mapItem
         self.application = application
         self.delegate = delegate
+        self.removePinHandler = removePinHandler
         self.planTripHandler = planTripHandler
 
         self.title = mapItem.name ?? ""
@@ -183,6 +194,13 @@ public class MapItemViewModel {
     ///
     func planTrip() {
         planTripHandler()
+    }
+
+    /// Removes the user-dropped pin and dismisses the view.
+    ///
+    /// This is only available when the view model was initialized with a removePinHandler.
+    func removePin() {
+        removePinHandler?()
     }
 
     /// Dismisses the view by calling the delegate's dismissModalController method.

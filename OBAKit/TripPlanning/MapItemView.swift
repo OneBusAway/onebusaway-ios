@@ -24,9 +24,6 @@ public struct MapItemView: View {
     /// The view model that manages the data and business logic
     private var viewModel: MapItemViewModel
 
-    /// Environment value for dismissing the view
-    @Environment(\.dismiss) private var dismiss
-
     /// State for controlling the Look Around viewer presentation
     @State private var showLookAroundViewer = false
 
@@ -87,6 +84,12 @@ public struct MapItemView: View {
 
                         if viewModel.hasAboutContent {
                             aboutSection
+                                .padding(.horizontal)
+                        }
+
+                        // Remove Pin button for user-dropped pins
+                        if viewModel.canRemovePin {
+                            removePinSection
                                 .padding(.horizontal)
                         }
 
@@ -319,6 +322,27 @@ public struct MapItemView: View {
             .padding()
         }
         .foregroundStyle(.primary)
+    }
+
+    /// The "Remove Pin" section for user-dropped pins.
+    private var removePinSection: some View {
+        Button(
+            action: {
+                viewModel.removePin()
+            },
+            label: {
+                HStack {
+                    Image(systemName: "trash")
+                    Text(OBALoc("map_item_controller.remove_pin", value: "Remove Pin", comment: "Button to remove a dropped pin from the map"))
+                    Spacer()
+                }
+                .padding()
+                .foregroundStyle(.red)
+                .background(Color(uiColor: .secondarySystemBackground))
+                .clipShape(.rect(cornerRadius: 12))
+            }
+        )
+        .accessibilityLabel(OBALoc("map_item_controller.remove_pin_accessibility", value: "Remove this pin from the map", comment: "Accessibility label for remove pin button"))
     }
 }
 

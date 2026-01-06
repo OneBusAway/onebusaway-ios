@@ -6,6 +6,7 @@
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
+// swiftlint:disable file_length
 
 import UIKit
 import CoreLocation
@@ -21,6 +22,8 @@ public protocol MapRegionDelegate {
     @objc optional func mapRegionManager(_ manager: MapRegionManager, noSearchResults response: SearchResponse)
     @objc optional func mapRegionManager(_ manager: MapRegionManager, disambiguateSearch response: SearchResponse)
     @objc optional func mapRegionManager(_ manager: MapRegionManager, showSearchResult response: SearchResponse)
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, didRemoveUserAnnotation annotation: UserDroppedPin)
+    @objc optional func mapRegionManager(_ manager: MapRegionManager, didSelectUserAnnotation annotation: UserDroppedPin)
 
     @objc optional func mapRegionManagerDismissSearch(_ manager: MapRegionManager)
 
@@ -220,6 +223,16 @@ public class MapRegionManager: NSObject,
         application.locationService.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         regionChangeRequestTimer?.invalidate()
+
+        // Cancel all ongoing geocoding operations
+        for geocoder in activeGeocoders.values {
+            geocoder.cancelGeocode()
+        }
+        activeGeocoders.removeAll()
+
+        // Clean up user pins
+        userAnnotations.removeAll()
+        userMapItems.removeAll()
     }
 
     // MARK: - Global Map Helpers
@@ -230,7 +243,7 @@ public class MapRegionManager: NSObject,
         mapView.registerAnnotationView(StopAnnotationView.self)
         mapView.registerAnnotationView(PulsingAnnotationView.self)
         mapView.registerAnnotationView(PulsingVehicleAnnotationView.self)
-        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
+        mapView.register(UserPinAnnotationView.self, forAnnotationViewWithReuseIdentifier: "UserDroppedPin")
     }
 
     // MARK: - Data Loading
@@ -340,6 +353,18 @@ public class MapRegionManager: NSObject,
     private func notifyDelegatesZoomInStatus(status: Bool) {
         for delegate in delegates.allObjects {
             delegate.mapRegionManagerShowZoomInStatus?(self, showStatus: status)
+        }
+    }
+
+    private func notifyDelegatesUserAnnotationRemoved(_ annotation: UserDroppedPin) {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, didRemoveUserAnnotation: annotation)
+        }
+    }
+
+    private func notifyDelegatesUserAnnotationSelected(_ annotation: UserDroppedPin) {
+        for delegate in delegates.allObjects {
+            delegate.mapRegionManager?(self, didSelectUserAnnotation: annotation)
         }
     }
 
@@ -462,7 +487,11 @@ public class MapRegionManager: NSObject,
 
     private func displaySearchResult(mapItem: MKMapItem) {
         mapView.setCenter(mapItem.placemark.coordinate, animated: true)
-        mapView.addAnnotation(mapItem.placemark)
+
+        // Only add the annotation if it's not a user-dropped pin (to avoid duplicates)
+        if findUserPin(for: mapItem) == nil {
+            mapView.addAnnotation(mapItem.placemark)
+        }
 
         // Clear searchResponse on next run loop to allow normal stop loading when panning
         DispatchQueue.main.async { [weak self] in
@@ -624,7 +653,7 @@ public class MapRegionManager: NSObject,
 
         } catch {
             Logger.error("Failed to fetch map item: \(error)")
-            
+
             // Fallback: create basic MKMapItem
             let placemark = MKPlacemark(coordinate: feature.coordinate)
             let mapItem = MKMapItem(placemark: placemark)
@@ -676,10 +705,16 @@ public class MapRegionManager: NSObject,
             mapViewDelegate?.mapRegionManager(self, customize: stopAnnotation)
         }
 
-        if reuseIdentifier == "UserDroppedPin", let markerView = annotationView as? MKMarkerAnnotationView {
+        if reuseIdentifier == "UserDroppedPin", let markerView = annotationView as? UserPinAnnotationView {
             markerView.animatesWhenAdded = true
             markerView.canShowCallout = false
             markerView.markerTintColor = ThemeColors.shared.brand
+
+            if let userPin = annotation as? UserDroppedPin {
+                markerView.onTap = { [weak self] in
+                    self?.notifyDelegatesUserAnnotationSelected(userPin)
+                }
+            }
         }
 
         return annotationView
@@ -742,13 +777,93 @@ public class MapRegionManager: NSObject,
     public private(set) var userAnnotations: [UserDroppedPin] = []
     // Dictionary mapping pin -> data
     private var userMapItems: [UserDroppedPin: MKMapItem] = [:]
+    // Dictionary to track ongoing geocoding operations
+    private var activeGeocoders: [UserDroppedPin: CLGeocoder] = [:]
 
     public func userPressedMap(_ gesture: UILongPressGestureRecognizer) {
         let touchPoint = gesture.location(in: mapView)
         let coordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
 
+        // Check if long-press is near an existing pin - if so, remove it.
+        // This 44pt radius provides a larger touch target than the pin marker itself,
+        // making it easier for users to remove pins without precise tapping.
+        for pin in userAnnotations {
+            let pinPoint = mapView.convert(pin.coordinate, toPointTo: mapView)
+            let distance = hypot(touchPoint.x - pinPoint.x, touchPoint.y - pinPoint.y)
+
+            if distance <= 44.0 {
+                removeUserAnnotation(pin)
+                return
+            }
+        }
+
         // Create new pin
         setUserAnnotation(coordinate: coordinate, title: nil, subtitle: nil)
+
+        // Limit stored pins to prevent unbounded growth
+        limitStoredPins(maxPins: 10)
+    }
+
+    // MARK: - User-dropped pin management
+
+    /// Removes a specific user-dropped pin from the map and cleans up associated data
+    public func removeUserAnnotation(_ annotation: UserDroppedPin) {
+        // Notify delegates first (so UI can dismiss while data is still vaguely valid, though irrelevant)
+        notifyDelegatesUserAnnotationRemoved(annotation)
+
+        // Cancel any ongoing geocoding for this annotation
+        if let geocoder = activeGeocoders[annotation] {
+            geocoder.cancelGeocode()
+            activeGeocoders.removeValue(forKey: annotation)
+        }
+
+        // Remove from data structures first
+        userAnnotations.removeAll { $0 === annotation }
+        userMapItems.removeValue(forKey: annotation)
+
+        // Remove from map view last (visual removal)
+        mapView.removeAnnotation(annotation)
+    }
+
+    /// Limits the number of stored pins to prevent unbounded growth
+    /// - Parameter maxPins: Maximum number of pins to keep (default: 10)
+    private func limitStoredPins(maxPins: Int = 10) {
+        guard userAnnotations.count > maxPins else { return }
+
+        // Remove oldest pins (first in array)
+        let pinsToRemove = userAnnotations.prefix(userAnnotations.count - maxPins)
+
+        for pin in pinsToRemove {
+            // Cancel any ongoing geocoding
+            if let geocoder = activeGeocoders[pin] {
+                geocoder.cancelGeocode()
+                activeGeocoders.removeValue(forKey: pin)
+            }
+
+            // Clean up data
+            userMapItems.removeValue(forKey: pin)
+            mapView.removeAnnotation(pin)
+        }
+
+        userAnnotations.removeFirst(userAnnotations.count - maxPins)
+    }
+
+    /// Finds a user-dropped pin for a given MKMapItem
+    /// - Parameter mapItem: The map item to find the associated pin for
+    /// - Returns: The pin associated with this map item, or nil
+    public func findUserPin(for mapItem: MKMapItem) -> UserDroppedPin? {
+        // First try to find by object identity
+        if let pin = userMapItems.first(where: { $0.value === mapItem })?.key {
+            return pin
+        }
+
+        // Fallback: find by coordinate matching
+        let coord = mapItem.placemark.coordinate
+        return userMapItems.first { (_, item) in
+            let itemCoord = item.placemark.coordinate
+            return abs(itemCoord.latitude - coord.latitude) < 0.0001 &&
+                   abs(itemCoord.longitude - coord.longitude) < 0.0001
+        }?.key
     }
 
     /// Entrypoint for displaying a user-driven search result on the map
@@ -775,13 +890,25 @@ public class MapRegionManager: NSObject,
         // Use a local geocoder so multiple dropped pins can be reverse geocoded concurrently.
         let geocoder = CLGeocoder()
 
+        // Track this geocoder so we can cancel it if needed
+        activeGeocoders[annotation] = geocoder
+
         geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
             guard let self = self else { return }
 
-            // Verify this annotation still exists in our array
-            guard self.userAnnotations.contains(annotation) else { return }
+            // Remove from active geocoders
+            self.activeGeocoders.removeValue(forKey: annotation)
+
+            // Verify this annotation still exists in our array (not removed)
+            guard self.userAnnotations.contains(where: { $0 === annotation }) else {
+                return
+            }
 
             if let error = error {
+                // Check if it was cancelled
+                if (error as NSError).code == CLError.geocodeCanceled.rawValue {
+                    return
+                }
                 Logger.error("Geocoding error: \(error.localizedDescription)")
                 annotation.title = "Unknown Location"
                 annotation.subtitle = "Could not retrieve location details"
@@ -886,3 +1013,31 @@ extension MapRegionManager: LocationServiceDelegate {
         annotationView.headingImageView.transform = heading.trueHeading.affineTransform(rotatedBy: -0.5 * .pi)
     }
 }
+
+final class UserPinAnnotationView: MKMarkerAnnotationView {
+    var onTap: (() -> Void)?
+
+    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
+        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
+        setupGestures()
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupGestures()
+    }
+
+    private func setupGestures() {
+        isUserInteractionEnabled = true
+
+        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        addGestureRecognizer(tap)
+    }
+
+    @objc private func handleTap(_ gr: UITapGestureRecognizer) {
+        guard gr.state == .ended else { return }
+        onTap?()
+    }
+}
+
+// swiftlint:enable file_length
