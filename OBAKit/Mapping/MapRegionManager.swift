@@ -363,7 +363,7 @@ public class MapRegionManager: NSObject,
         let existingAnnotations = mapView.annotations
         let existingBookmarkIDs = Set(existingAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
-
+        var affectedStopIDs: Set<StopID> = []
         let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
             guard
                 let stop = annotation as? Stop,
@@ -373,9 +373,24 @@ public class MapRegionManager: NSObject,
                 return nil
             }
 
+            affectedStopIDs.insert(stop.id)
             return stop
         }
-        mapView.removeAnnotations(stopAnnotationsToRemove)
+        let bookmarkAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
+            guard
+                let bookmark = annotation as? Bookmark,
+                bookmarksHash[bookmark.stopID] == nil
+            else {
+                return nil
+            }
+            affectedStopIDs.insert(bookmark.stopID)
+            return bookmark
+        }
+        let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
+        for annotation in allAnnotationsToRemove where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
+            mapView.deselectAnnotation(annotation, animated: false)
+        }
+        mapView.removeAnnotations(allAnnotationsToRemove)
 
         let bookmarksToAdd = bookmarks.filter { !existingBookmarkIDs.contains($0.stopID) }
         mapView.addAnnotations(bookmarksToAdd)
@@ -384,10 +399,31 @@ public class MapRegionManager: NSObject,
             !bookmarksHash.keys.contains($0.id) && !existingStopIDs.contains($0.id)
         }
         mapView.addAnnotations(stopsToAdd)
-
+        refreshAnnotationViews(for: Array(affectedStopIDs))
         notifyDelegatesStopsChanged()
     }
 
+    private func refreshAnnotationViews(for affectedStopIDs: [StopID]) {
+        assert(Thread.isMainThread, "refreshAnnotationViews must be called on the main thread")
+        for stopID in affectedStopIDs {
+            let newAnnotation = mapView.annotations.first { annotation in
+                if let bookmark = annotation as? Bookmark {
+                    return bookmark.stopID == stopID
+                } else if let stop = annotation as? Stop {
+                    return stop.id == stopID
+                }
+                return false
+            }
+            guard let annotation = newAnnotation,
+                  let view = mapView.view(for: annotation) as? StopAnnotationView else {
+                continue
+            }
+            view.prepareForReuse()
+            view.annotation = annotation
+            view.delegate = self
+            mapViewDelegate?.mapRegionManager(self, customize: view)
+        }
+    }
     // MARK: - Zoom In Warning
 
     private static let requiredHeightToShowStops = 40000.0
