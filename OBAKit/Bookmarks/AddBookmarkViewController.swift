@@ -54,7 +54,7 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
     let listView = OBAListView()
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-            return [wholeStopBookmarkSection, tripBookmarkSection]
+        return [wholeStopBookmarkSection, tripBookmarkSection]
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
