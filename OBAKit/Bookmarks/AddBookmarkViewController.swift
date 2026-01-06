@@ -54,7 +54,7 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
     let listView = OBAListView()
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
-        return [wholeStopBookmarkSection, tripBookmarkSection].compactMap { $0 }
+            return [wholeStopBookmarkSection, tripBookmarkSection]
     }
 
     func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
@@ -73,32 +73,34 @@ class AddBookmarkViewController: TaskController<[ArrivalDeparture]>, OBAListView
 
         return OBAListViewSection(id: "stop", title: OBALoc("add_bookmark_controller.bookmark_stop_header", value: "Bookmark the Stop", comment: "Text for the table header for bookmarking an entire stop."), contents: [row])
     }
-    var tripBookmarkSection: OBAListViewSection? {
-            let sectionTitle = OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip.")
-            if let groupedElts = data?.tripKeyGroupedElements,
-               let tripKeys = data?.uniqueTripKeys,
-               tripKeys.count > 0 {
-                var rows = [OBAListRowView.DefaultViewModel]()
 
-                for key in tripKeys {
-                    let arrDep = groupedElts[key]?.first
-                    let row = OBAListRowView.DefaultViewModel(title: key.routeAndHeadsign, accessoryType: .disclosureIndicator) { _ in
-                        let editController = EditBookmarkViewController(application: self.application, arrivalDeparture: arrDep!, bookmark: nil, delegate: self.delegate)
-                        self.navigationController?.pushViewController(editController, animated: true)
-                    }
-                    rows.append(row)
+    var tripBookmarkSection: OBAListViewSection {
+        let sectionTitle = OBALoc("add_bookmark_controller.bookmark_trip_header", value: "Bookmark a Trip", comment: "Text for the table header for bookmarking an individual trip.")
+        if let groupedElts = data?.tripKeyGroupedElements,
+           let tripKeys = data?.uniqueTripKeys,
+           !tripKeys.isEmpty {
+            var rows = [OBAListRowView.DefaultViewModel]()
+            for key in tripKeys {
+                let arrDep = groupedElts[key]?.first
+                let row = OBAListRowView.DefaultViewModel(title: key.routeAndHeadsign, accessoryType: .disclosureIndicator) { _ in
+                    let editController = EditBookmarkViewController(application: self.application, arrivalDeparture: arrDep!, bookmark: nil, delegate: self.delegate)
+                    self.navigationController?.pushViewController(editController, animated: true)
                 }
-
-                return OBAListViewSection(id: "trips", title: sectionTitle, contents: rows)
-                
-            } else {
-                let explanationText = "Route bookmarks are only available when there are upcoming departures for this stop."
-                let infoRow = OBAListRowView.DefaultViewModel(title: explanationText, accessoryType: .none) { _ in
-                }
-                
-                return OBAListViewSection(id: "trips", title: sectionTitle, contents: [infoRow])
+                rows.append(row)
             }
+            return OBAListViewSection(id: "trips", title: sectionTitle, contents: rows)
+        } else {
+            let explanationText = OBALoc(
+                "add_bookmark_controller.trip_bookmark_unavailable",
+                value: "Route bookmarks are only available when there are upcoming departures for this stop.",
+                comment: "Explanatory text shown when route bookmarking is unavailable due to no upcoming departures."
+            )
+            var infoRow = OBAListRowView.DefaultViewModel(title: explanationText, accessoryType: .none)
+            infoRow.image = UIImage(systemName: "info.circle")
+            return OBAListViewSection(id: "trips", title: sectionTitle, contents: [infoRow])
         }
+    }
+
     // MARK: - Data and UI
     override func loadData() async throws -> [ArrivalDeparture] {
         guard let apiService = application.apiService else {
