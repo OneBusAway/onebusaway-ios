@@ -58,5 +58,5 @@ docs
 
 OBAKitTests.xcresult
 .DS_Store
-.claude
+.claude/settings.local.json
 .env
