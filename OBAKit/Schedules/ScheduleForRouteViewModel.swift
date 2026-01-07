@@ -87,8 +87,11 @@ class ScheduleForRouteViewModel: ObservableObject {
 
         return direction.tripsWithStopTimes.map { tripWithStopTimes in
             // Pre-compute dictionary for O(1) lookups instead of O(k) first(where:)
+            // Use uniquingKeysWith to handle routes that visit the same stop multiple times
+            // (e.g., circular routes). Keep the first occurrence.
             let stopTimesDict = Dictionary(
-                uniqueKeysWithValues: tripWithStopTimes.stopTimes.map { ($0.stopID, $0) }
+                tripWithStopTimes.stopTimes.map { ($0.stopID, $0) },
+                uniquingKeysWith: { first, _ in first }
             )
             return direction.stopIDs.map { stopID in
                 stopTimesDict[stopID]?.departureDate(for: scheduleDate)
@@ -97,37 +100,65 @@ class ScheduleForRouteViewModel: ObservableObject {
     }
 
     /// Returns a sorted list of departure times for display
-    /// Each row represents a trip, sorted by the first stop's departure time
+    /// Each row represents a trip, sorted by the trip's actual start time (earliest departure across all stops)
     var sortedDepartureTimes: [[Date?]] {
-        let times = departureTimes
-        return times.sorted { row1, row2 in
-            guard let first1 = row1.first, let first2 = row2.first else { return false }
-            guard let date1 = first1, let date2 = first2 else { return first1 != nil }
-            return date1 < date2
+        guard let direction = currentDirection,
+              let scheduleDate = scheduleData?.scheduleDate else {
+            return []
         }
+        let indexedTrips: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
+            let trip = direction.tripsWithStopTimes[index]
+            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
+        }
+        let sorted = indexedTrips.sorted { trip1, trip2 in
+            switch (trip1.startTime, trip2.startTime) {
+            case (let t1?, let t2?):
+                return t1 < t2
+            case (nil, _):
+                return false
+            case (_, nil):
+                return true
+            }
+        }
+        return sorted.map { $0.times }
     }
 
     /// Returns departure times grouped by time period (AM/PM)
-    /// Each group contains trips where the first stop's departure is in that period
+    /// Each group contains trips where the actual trip start time is in that period
     var departureTimesByPeriod: [TimePeriodGroup] {
-        let sorted = sortedDepartureTimes
+        guard let direction = currentDirection,
+              let scheduleDate = scheduleData?.scheduleDate else {
+            return []
+        }
         let calendar = Calendar.current
-
         var amTrips: [[Date?]] = []
         var pmTrips: [[Date?]] = []
 
-        for row in sorted {
-            guard let firstTime = row.first, let date = firstTime else {
-                // If no first stop time, default to PM
-                pmTrips.append(row)
+        let tripsWithStartTimes: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
+            let trip = direction.tripsWithStopTimes[index]
+            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
+        }
+        let sorted = tripsWithStartTimes.sorted { trip1, trip2 in
+            switch (trip1.startTime, trip2.startTime) {
+            case (let t1?, let t2?):
+                return t1 < t2
+            case (nil, _):
+                return false
+            case (_, nil):
+                return true
+            }
+        }
+        for (times, startTime) in sorted {
+            guard let startTime = startTime else {
+                pmTrips.append(times)
                 continue
             }
 
-            let hour = calendar.component(.hour, from: date)
+            let hour = calendar.component(.hour, from: startTime)
             if hour < 12 {
-                amTrips.append(row)
+                amTrips.append(times)
             } else {
-                pmTrips.append(row)
+                pmTrips.append(times)
             }
         }
 
@@ -165,6 +196,16 @@ class ScheduleForRouteViewModel: ObservableObject {
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
+
+    /// Calculates the actual start time for a trip by finding the earliest departure across all stops.
+    /// This is used for sorting trips chronologically, since some trips may not serve the first stop.
+    private func actualStartTime(for trip: ScheduleForRoute.TripWithStopTimes, scheduleDate: Date) -> Date? {
+        guard let minDepartureSeconds = trip.stopTimes.map({ $0.departureTime }).min() else {
+            return nil
+        }
+        let startOfDay = Calendar.current.startOfDay(for: scheduleDate)
+        return startOfDay.addingTimeInterval(TimeInterval(minDepartureSeconds))
+    }
 
     // MARK: - Time Formatters
 
