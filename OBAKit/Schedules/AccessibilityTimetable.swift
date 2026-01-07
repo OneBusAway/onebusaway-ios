@@ -24,10 +24,10 @@ struct AccessibilityTimetable: View {
                     } else {
                         ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
                             accessibilityTripRow(times: tripTimes)
-                        }
                     }
                 }
-                .listStyle(.plain)
+            }
+            .listStyle(.plain)
     }
 
     private func accessibilityTripRow(times: [Date?]) -> some View {
