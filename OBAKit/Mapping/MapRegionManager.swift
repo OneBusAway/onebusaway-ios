@@ -1050,30 +1050,4 @@ extension MapRegionManager: LocationServiceDelegate {
     }
 }
 
-final class UserPinAnnotationView: MKMarkerAnnotationView {
-    var onTap: (() -> Void)?
-
-    override init(annotation: MKAnnotation?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        setupGestures()
-    }
-
-    required init?(coder: NSCoder) {
-        super.init(coder: coder)
-        setupGestures()
-    }
-
-    private func setupGestures() {
-        isUserInteractionEnabled = true
-
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        addGestureRecognizer(tap)
-    }
-
-    @objc private func handleTap(_ gr: UITapGestureRecognizer) {
-        guard gr.state == .ended else { return }
-        onTap?()
-    }
-}
-
 // swiftlint:enable file_length
