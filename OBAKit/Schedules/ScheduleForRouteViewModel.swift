@@ -183,6 +183,16 @@ class ScheduleForRouteViewModel: ObservableObject {
         return groups
     }
 
+    /// 24h format: Same data structure as 12h (without AM/PM grouping)
+    var departureTimesDisplay: [[Date?]] {
+        return sortedDepartureTimes
+    }
+
+    var uses12HourClock: Bool {
+        Locale.current.hourCycle == .oneToTwelve ||
+        Locale.current.hourCycle == .zeroToEleven
+    }
+
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
@@ -197,17 +207,23 @@ class ScheduleForRouteViewModel: ObservableObject {
         return startOfDay.addingTimeInterval(TimeInterval(minDepartureSeconds))
     }
 
-    // MARK: - Static Formatters (for performance)
+    // MARK: - Time Formatters
 
-    private static let timeFormatter: DateFormatter = {
+    private lazy var timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        formatter.locale = .current
+        formatter.timeZone = TimeZone.current
         return formatter
     }()
 
-    private static let timeFormatterWithAMPM: DateFormatter = {
+    private lazy var accessibilityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        formatter.locale = .current
+        formatter.timeZone = TimeZone.current
         return formatter
     }()
 
@@ -254,7 +270,7 @@ class ScheduleForRouteViewModel: ObservableObject {
     /// Formats a time for display in the timetable
     func formatTime(_ date: Date?) -> String {
         guard let date = date else { return "-" }
-        return Self.timeFormatter.string(from: date)
+        return timeFormatter.string(from: date)
     }
 
     /// Formats a time with AM/PM for accessibility
@@ -262,6 +278,6 @@ class ScheduleForRouteViewModel: ObservableObject {
         guard let date = date else {
             return OBALoc("schedule_view.no_departure", value: "No departure", comment: "Accessibility text when there is no departure time")
         }
-        return Self.timeFormatterWithAMPM.string(from: date)
+        return accessibilityTimeFormatter.string(from: date)
     }
 }
