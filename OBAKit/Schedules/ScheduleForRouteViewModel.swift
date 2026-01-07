@@ -172,7 +172,7 @@ class ScheduleForRouteViewModel: ObservableObject {
         return formatter
     }()
 
-    private lazy var timeFormatterWithAMPM: DateFormatter = {
+    private lazy var accessibilityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
@@ -232,6 +232,6 @@ class ScheduleForRouteViewModel: ObservableObject {
         guard let date = date else {
             return OBALoc("schedule_view.no_departure", value: "No departure", comment: "Accessibility text when there is no departure time")
         }
-        return timeFormatterWithAMPM.string(from: date)
+        return accessibilityTimeFormatter.string(from: date)
     }
 }
