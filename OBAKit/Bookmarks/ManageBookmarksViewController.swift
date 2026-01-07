@@ -10,6 +10,7 @@
 import UIKit
 import Eureka
 import OBAKitCore
+import QuartzCore
 
 class ManageBookmarksViewController: FormViewController {
     private let application: Application
@@ -47,22 +48,28 @@ class ManageBookmarksViewController: FormViewController {
 
     // MARK: - TableView Delegate Overrides
 
+    private var pendingReloadWork: DispatchWorkItem?
+
     override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         guard let bookmark = bookmarkForBookmarkIndexPath(sourceIndexPath) else {
             return
         }
 
         let destinationGroup = groupForBookmarkIndexPath(destinationIndexPath)
-
         application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                    guard let self = self else { return }
-                    self.resetBookmarksSections()
-                    self.form.removeAll()
-                    for s in self.bookmarksSections {
-                        self.form +++ s
-                    }
-                }
+
+        // Cancel any pending reload to handle rapid reordering
+        pendingReloadWork?.cancel()
+
+        // Refreshing immediately causes index-out-of-bounds in Eureka.
+        // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
+        // Use CATransaction to properly wait for the move animation to complete.
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { [weak self] in
+            self?.loadForm()
+        }
+        CATransaction.commit()
+
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
