@@ -157,6 +157,11 @@ class ScheduleForRouteViewModel: ObservableObject {
         return sortedDepartureTimes
     }
 
+    var uses12HourClock: Bool {
+        Locale.current.hourCycle == .oneToTwelve ||
+        Locale.current.hourCycle == .zeroToEleven
+    }
+
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
