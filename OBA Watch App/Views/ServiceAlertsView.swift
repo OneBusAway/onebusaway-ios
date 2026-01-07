@@ -6,11 +6,14 @@ struct ServiceAlertsView: View {
         List {
             if alerts.isEmpty {
                 VStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle")
+                    Image(systemName: "bell.slash")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("No Service Alerts")
+                    Text("No Notifications")
                         .font(.headline)
+                    Text("No active notifications")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 .padding()
             } else {
@@ -42,7 +45,7 @@ struct ServiceAlertsView: View {
                 }
             }
         }
-        .navigationTitle("Service Alerts")
+        .navigationTitle("Notifications")
         .onReceive(NotificationCenter.default.publisher(for: ServiceAlertsSyncManager.alertsUpdatedNotification)) { _ in
             alerts = ServiceAlertsSyncManager.shared.currentAlerts()
         }

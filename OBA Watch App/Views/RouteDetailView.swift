@@ -19,7 +19,11 @@ struct RouteDetailView: View {
         List {
             if !viewModel.shapeCoordinates.isEmpty {
                 RouteShapeMapView(coordinates: viewModel.shapeCoordinates)
-                    .frame(height: 120)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
             }
 
             Section {
@@ -27,21 +31,27 @@ struct RouteDetailView: View {
                     if let short = route.shortName, !short.isEmpty {
                         Text(short)
                             .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.white)
                     }
                     if let long = route.longName, !long.isEmpty {
                         Text(long)
-                            .font(.headline)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
                             .multilineTextAlignment(.leading)
                     }
                     if let agency = route.agencyName, !agency.isEmpty {
                         Text(agency)
-                            .font(.caption2)
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
             }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.1))
+            )
 
             if viewModel.isLoading {
                 Section {
@@ -51,6 +61,7 @@ struct RouteDetailView: View {
                         Spacer()
                     }
                 }
+                .listRowBackground(Color.clear)
             } else if let error = viewModel.errorMessage {
                 Section {
                     Text(error)
@@ -64,17 +75,33 @@ struct RouteDetailView: View {
                             NavigationLink {
                                 StopArrivalsView(stopID: stop.id, stopName: stop.name)
                             } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(stop.name)
-                                        .font(.subheadline)
-                                        .lineLimit(2)
-                                    if let code = stop.code, !code.isEmpty {
-                                        Text("Stop \(code)")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
+                                HStack(spacing: 12) {
+                                    Image(systemName: "signpost.right.fill")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 30, height: 30)
+                                        .background(Color.green.gradient)
+                                        .clipShape(Circle())
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(stop.name)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                            .lineLimit(1)
+                                        
+                                        if let code = stop.code, !code.isEmpty {
+                                            Text("Stop \(code)")
+                                                .font(.system(size: 12))
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                        }
                                     }
                                 }
                             }
+                            .listRowBackground(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.1))
+                            )
                         }
                     }
                 }
@@ -92,7 +119,7 @@ struct RouteShapeMapView: View {
     let coordinates: [CLLocationCoordinate2D]
     let mapStyle: MapStyle
 
-    @State private var region: MKCoordinateRegion
+    @State private var mapPosition: MapCameraPosition
 
     init(coordinates: [CLLocationCoordinate2D], mapStyle: MapStyle = .standard) {
         self.coordinates = coordinates
@@ -105,20 +132,40 @@ struct RouteShapeMapView: View {
             center = CLLocationCoordinate2D(latitude: 0, longitude: 0)
         }
 
-        _region = State(initialValue: MKCoordinateRegion(
+        _mapPosition = State(initialValue: .region(MKCoordinateRegion(
             center: center,
             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        ))
+        )))
     }
 
     var body: some View {
-        // Approximate the shape by placing small markers along the polyline.
-        let sampleCoordinates = stride(from: 0, to: coordinates.count, by: max(1, coordinates.count / 20)).map { coordinates[$0] }
-        let points = sampleCoordinates.map { RouteShapePoint(coordinate: $0) }
-
-        Map(coordinateRegion: $region, annotationItems: points) { point in
-            MapMarker(coordinate: point.coordinate, tint: .green)
+        Map(position: $mapPosition) {
+            if !coordinates.isEmpty {
+                MapPolyline(coordinates: coordinates)
+                    .stroke(.green, lineWidth: 3)
+            }
+            
+            // Show a few icons along the route to indicate vehicle type
+            let sampleCount = 3
+            let step = max(1, coordinates.count / (sampleCount + 1))
+            let sampleIndices = (1...sampleCount).map { $0 * step }.filter { $0 < coordinates.count }
+            
+            ForEach(sampleIndices, id: \.self) { index in
+                Annotation("", coordinate: coordinates[index]) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 20, height: 20)
+                            .shadow(radius: 2)
+                        
+                        Image(systemName: "bus.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
         }
+        .mapStyle(mapStyle)
     }
 }
 

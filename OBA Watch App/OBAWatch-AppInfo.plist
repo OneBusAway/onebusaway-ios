@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>OBAWatch</string>
+	<string>OneBusAway</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,15 +15,11 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
-	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
+	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>CLKComplicationPrincipalClass</key>
-	<string>$(PRODUCT_MODULE_NAME).ComplicationController</string>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
@@ -39,6 +35,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>See where you are in relation to transit, and help you navigate more easily.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
 		<key>MapStatusView</key>
@@ -46,13 +44,6 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>See where you are in relation to transit, and help you navigate more easily.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>See where you are in relation to transit, and help you navigate more easily.</string>
-	<key>NSUserActivityTypes</key>
-	<array>
-		<string>org.onebusaway.iphone.user_activity.stop</string>
-		<string>org.onebusaway.iphone.user_activity.trip</string>
-	</array>
 	<key>OBAKitConfig</key>
 	<dict>
 		<key>AppDevelopersEmailAddress</key>
@@ -61,8 +52,19 @@
 		<string>group.org.onebusaway.iphone</string>
 		<key>BundledRegionsFileName</key>
 		<string>regions.json</string>
+		<key>Donations</key>
+		<dict>
+			<key>DonationManagementPortal</key>
+			<string>https://onebusaway.co/manage-donations</string>
+			<key>Enabled</key>
+			<true/>
+		</dict>
 		<key>ExtensionURLScheme</key>
 		<string>onebusaway</string>
+		<key>PrivacyPolicyURL</key>
+		<string>https://onebusaway.org/privacy/</string>
+		<key>PushNotificationAPIKey</key>
+		<string>d5d0d28a-6091-46cd-9627-0ce01ffa9f9e</string>
 		<key>RESTServerAPIKey</key>
 		<string>org.onebusaway.iphone</string>
 		<key>RegionsServerAPIPath</key>
@@ -72,7 +74,7 @@
 	</dict>
 	<key>WKApplication</key>
 	<true/>
-	<key>WKRunsIndependentlyOfCompanionApp</key>
-	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>org.onebusaway.iphone</string>
 </dict>
 </plist>

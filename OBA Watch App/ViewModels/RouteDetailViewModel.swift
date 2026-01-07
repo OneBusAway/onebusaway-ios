@@ -23,15 +23,32 @@ final class RouteDetailViewModel: ObservableObject {
         errorMessage = nil
 
         do {
+            // 1. Fetch stops for route
             let result = try await apiClient.fetchStopsForRoute(routeID: routeID)
             directions = result
 
-            if let shapeID = try await apiClient.fetchShapeIDForRoute(routeID: routeID) {
-                let encoded = try await apiClient.fetchShape(shapeID: shapeID)
-                shapeCoordinates = PolylineDecoder.decode(encodedPolyline: encoded)
+            // 2. Fetch shape ID and path (optional, don't fail if this fails)
+            do {
+                if let shapeID = try await apiClient.fetchShapeIDForRoute(routeID: routeID) {
+                    let encoded = try await apiClient.fetchShape(shapeID: shapeID)
+                    shapeCoordinates = PolylineDecoder.decode(encodedPolyline: encoded)
+                }
+            } catch {
+                print("Note: Could not load route shape: \(error)")
+                // We don't set errorMessage here because stops are more important
             }
+        } catch let apiError as OBAAPIError {
+            print("API Error loading route stops: \(apiError)")
+            errorMessage = apiError.errorDescription ?? "API Error"
         } catch {
-            errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unable to load route stops."
+            print("Error loading route stops: \(error)")
+            if let urlError = error as? URLError {
+                errorMessage = "Network error: \(urlError.localizedDescription)"
+            } else if error is DecodingError {
+                errorMessage = "Data format error from server."
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false

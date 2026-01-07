@@ -13,7 +13,7 @@ struct SearchView: View {
     
     init() {
         _viewModel = StateObject(wrappedValue: SearchViewModel(
-            apiClient: WatchAppState.shared.apiClient,
+            apiClientProvider: { WatchAppState.shared.apiClient },
             locationProvider: { WatchAppState.shared.currentLocation }
         ))
     }
@@ -42,17 +42,23 @@ struct SearchView: View {
     }
     
     private var recentOrEmptyState: some View {
-        if viewModel.recentStops.isEmpty {
-            return AnyView(emptySearchState)
-        } else {
-            return AnyView(recentStopsList)
+        VStack(spacing: 0) {
+            if viewModel.recentStops.isEmpty && viewModel.recentSearchTerms.isEmpty {
+                emptySearchState
+            } else {
+                recentStopsList
+            }
         }
     }
 
     private var emptySearchState: some View {
         List {
             Section {
-                TextField("Search routes, stops, addresses, vehicles", text: $viewModel.searchText)
+                TextField("Search routes, stops...", text: $viewModel.searchText)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        viewModel.performSearch()
+                    }
             }
 
             Section {
@@ -65,16 +71,9 @@ struct SearchView: View {
                     Text("Enter a stop name or code")
                         .font(.caption)
                         .foregroundColor(.secondary)
-
-                    HStack(spacing: 6) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                        Text("Type to search routes, stops, addresses, vehicles")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical)
             }
         }
     }
@@ -97,18 +96,52 @@ struct SearchView: View {
     private var recentStopsList: some View {
         List {
             Section {
-                TextField("Search routes, stops, addresses, vehicles", text: $viewModel.searchText)
+                TextField("Search routes, stops...", text: $viewModel.searchText)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        viewModel.performSearch()
+                    }
             }
 
-            Section("Recent Stops") {
-                ForEach(viewModel.recentStops) { stop in
-                    NavigationLink {
-                        StopArrivalsView(stopID: stop.id, stopName: stop.name)
-                            .onAppear {
-                                viewModel.recordRecent(stop: stop)
+            if !viewModel.recentSearchTerms.isEmpty {
+                Section(header: Text("Recent Searches")) {
+                    ForEach(viewModel.recentSearchTerms, id: \.self) { term in
+                        Button {
+                            viewModel.selectRecentSearchTerm(term)
+                        } label: {
+                            HStack {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 14))
+                                Text(term)
+                                    .font(.subheadline)
+                                Spacer()
+                                Image(systemName: "arrow.up.left")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 10))
                             }
+                        }
+                    }
+                    
+                    Button {
+                        viewModel.clearRecentSearchTerms()
                     } label: {
-                        SearchResultRow(stop: stop)
+                        Text("Clear Recent")
+                            .font(.caption2)
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                }
+            }
+
+            if !viewModel.recentStops.isEmpty {
+                Section(header: Text("Recent Stops")) {
+                    ForEach(viewModel.recentStops) { stop in
+                        NavigationLink {
+                            StopArrivalsView(stopID: stop.id, stopName: stop.name)
+                        } label: {
+                            SearchResultRow(stop: stop)
+                        }
                     }
                 }
             }
@@ -118,7 +151,11 @@ struct SearchView: View {
     private var searchResultsList: some View {
         List {
             Section {
-                TextField("Search routes, stops, addresses, vehicles", text: $viewModel.searchText)
+                TextField("Search routes, stops...", text: $viewModel.searchText)
+                    .submitLabel(.search)
+                    .onSubmit {
+                        viewModel.performSearch()
+                    }
             }
 
             let trimmed = viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -164,7 +201,7 @@ struct SearchView: View {
                         VehicleSearchView(initialQuery: viewModel.searchText)
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: "bus")
+                            Image(systemName: "car.fill")
                                 .foregroundColor(.purple)
                             Text("Vehicle: ")
                             Text(viewModel.searchText)
@@ -172,22 +209,24 @@ struct SearchView: View {
                         }
                     }
                 }
+            }
 
-                if viewModel.isLoading {
-                    Section {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
-                        }
+            if viewModel.isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
                     }
-                } else if let error = viewModel.errorMessage {
-                    Section {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                    }
-                } else if !viewModel.bookmarkResults.isEmpty {
+                }
+            } else if let error = viewModel.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption2)
+                }
+            } else if !viewModel.bookmarkResults.isEmpty || !viewModel.searchResults.isEmpty {
+                if !viewModel.bookmarkResults.isEmpty {
                     Section("Bookmarks") {
                         ForEach(viewModel.bookmarkResults) { bm in
                             NavigationLink {
@@ -213,14 +252,10 @@ struct SearchView: View {
                             }
                         }
                     }
-                } else if viewModel.searchResults.isEmpty {
-                    Section("Results") {
-                        Text("No results found")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                } else {
-                    Section("Results") {
+                }
+                
+                if !viewModel.searchResults.isEmpty {
+                    Section("Stops") {
                         ForEach(viewModel.searchResults) { stop in
                             NavigationLink {
                                 StopArrivalsView(stopID: stop.id, stopName: stop.name)
@@ -233,6 +268,10 @@ struct SearchView: View {
                         }
                     }
                 }
+            } else if !trimmed.isEmpty {
+                Section {
+                    noResultsState
+                }
             }
         }
     }
@@ -242,15 +281,24 @@ struct SearchResultRow: View {
     let stop: OBAStop
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(stop.name)
-                .font(.headline)
-                .lineLimit(2)
-            
-            if let code = stop.code {
-                Text("Stop \(code)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        HStack(spacing: 10) {
+            Image(systemName: "mappin.circle.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 24, height: 24)
+                .background(Color.red.gradient)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stop.name)
+                    .font(.headline)
+                    .lineLimit(2)
+                
+                if let code = stop.code {
+                    Text("Stop \(code)")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
         }
     }

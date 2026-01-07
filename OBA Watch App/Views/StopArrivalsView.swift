@@ -26,94 +26,139 @@ struct StopArrivalsView: View {
         self.stopID = stopID
         self.stopName = stopName
         _viewModel = StateObject(wrappedValue: StopArrivalsViewModel(
-            apiClient: WatchAppState.shared.apiClient,
+            apiClientProvider: { WatchAppState.shared.apiClient },
             stopID: stopID
         ))
     }
     
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if let stopName = stopName {
-                    StopHeaderView(title: stopName, subtitle: "Stop \(stopID)")
-                }
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 12) {
+                    if let stopName = viewModel.stopName ?? stopName {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(stopName)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                                .lineLimit(2)
+                            Text("Stop \(stopID)")
+                                .font(.system(size: 12))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
 
-                if let updated = viewModel.lastUpdated {
-                    Text("Updated: \(relativeUpdateString(from: updated))")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                
-                // Data provided by date range (matching iOS app)
-                if !viewModel.upcomingArrivals.isEmpty {
-                    let minutesBefore = 5
-                    let minutesAfter = 125
-                    let dataDateRangeBeforeTime = Date().addingTimeInterval(Double(minutesBefore) * -60.0)
-                    let dataDateRangeAfterTime = Date().addingTimeInterval(Double(minutesAfter) * 60.0)
-                    let dataDateRangeText = DateFormatterHelper.formattedDateRange(from: dataDateRangeBeforeTime, to: dataDateRangeAfterTime)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Data provided by")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        Text(dataDateRangeText)
-                            .font(.caption2)
+                    if let updated = viewModel.lastUpdated {
+                        Text("Updated: \(relativeUpdateString(from: updated))")
+                            .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
-                    .padding(.top, 4)
                 }
+                .padding(.vertical, 4)
+            }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.1))
+            )
 
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                } else if let error = viewModel.errorMessage {
+            if viewModel.isLoading {
+                Section {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                }
+                .listRowBackground(Color.clear)
+            } else if let error = viewModel.errorMessage {
+                Section {
                     ErrorView(message: error)
-                } else if viewModel.upcomingArrivals.isEmpty {
+                }
+                .listRowBackground(Color.clear)
+            } else if viewModel.upcomingArrivals.isEmpty {
+                Section {
                     EmptyArrivalsView()
-                } else {
-                    ArrivalsListView(
-                        arrivals: Array(displayedArrivals.prefix(20))
-                    )
+                }
+                .listRowBackground(Color.clear)
+            } else {
+                Section {
+                    ForEach(displayedArrivals) { arrival in
+                        NavigationLink {
+                            ArrivalDetailView(arrival: arrival)
+                        } label: {
+                            ArrivalRowView(arrival: arrival)
+                        }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.1))
+                        )
+                    }
+                    
                     if viewModel.upcomingArrivals.count > 5 {
                         Button(showAllArrivals ? "Show Fewer" : "Load More") {
                             showAllArrivals.toggle()
                         }
-                        .font(.caption)
-                        .padding(.top, 4)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.blue)
+                        .listRowBackground(Color.clear)
                     }
-                }
-
-                if !viewModel.routes.isEmpty {
-                    Section(header: Text("Routes").font(.headline)) {
-                        RoutesListView(routes: viewModel.routes)
-                    }
-                }
-
-                NavigationLink(isActive: $showNearbyStops) {
-                    NearbyStopsView()
-                } label: {
-                    EmptyView()
-                }
-                NavigationLink(isActive: $showStopDetails) {
-                    StopDetailView(stopID: stopID)
-                } label: {
-                    EmptyView()
-                }
-                NavigationLink(isActive: $showStopSchedule) {
-                    StopScheduleView(stopID: stopID)
-                } label: {
-                    EmptyView()
-                }
-                NavigationLink(isActive: $showStopProblem) {
-                    ProblemReportView(mode: .stop(stopID: stopID))
-                } label: {
-                    EmptyView()
                 }
             }
-            .padding()
+
+            if !viewModel.routes.isEmpty {
+                Section("Routes") {
+                    ForEach(viewModel.routes) { route in
+                        HStack(spacing: 12) {
+                            Text(route.shortName ?? "??")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .frame(width: 34, height: 34)
+                                .background(Color.blue.gradient)
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(route.longName ?? "Unknown Route")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                
+                                if let agency = route.agencyName {
+                                    Text(agency)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.1))
+                        )
+                    }
+                }
+            }
+            
+            // Hidden navigation links for sheet actions
+            Group {
+                NavigationLink(isActive: $showNearbyStops) {
+                    NearbyStopsView()
+                } label: { EmptyView() }
+                NavigationLink(isActive: $showStopDetails) {
+                    StopDetailView(stopID: stopID)
+                } label: { EmptyView() }
+                NavigationLink(isActive: $showStopSchedule) {
+                    StopScheduleView(stopID: stopID)
+                } label: { EmptyView() }
+                NavigationLink(isActive: $showStopProblem) {
+                    ProblemReportView(mode: .stop(stopID: stopID))
+                } label: { EmptyView() }
+            }
+            .frame(height: 0)
+            .opacity(0)
+            .listRowBackground(Color.clear)
         }
-        .navigationTitle(stopName ?? "Stop")
+        .navigationTitle("Arrivals")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadArrivals()
@@ -137,11 +182,6 @@ struct StopArrivalsView: View {
                     Button("Add Bookmark") {
                         infoMessage = "Use the iPhone app to add bookmarks for this stop."
                         showActions = false
-                    }
-                    NavigationLink {
-                        ServiceAlertsView()
-                    } label: {
-                        Text("Service Alerts")
                     }
                     Button("Stop Details") {
                         showStopDetails = true
@@ -270,16 +310,16 @@ struct ArrivalRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             // Route badge
-            VStack {
-                Text(arrival.routeShortName ?? "?")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(minWidth: 40)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(routeColor)
-                    .cornerRadius(6)
-            }
+            Text(arrival.routeShortName ?? "?")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .frame(minWidth: 38)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(routeColor)
+                )
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(arrival.headsign ?? "Unknown")

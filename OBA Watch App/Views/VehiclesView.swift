@@ -9,7 +9,7 @@ struct VehiclesView: View {
     @State private var useStandardMapStyle = true
     init() {
         _viewModel = StateObject(wrappedValue: VehiclesViewModel(
-            apiClient: WatchAppState.shared.apiClient,
+            apiClientProvider: { WatchAppState.shared.apiClient },
             locationProvider: { WatchAppState.shared.currentLocation }
         ))
     }
@@ -28,6 +28,9 @@ struct VehiclesView: View {
                             .foregroundColor(.secondary)
                         Text("No Vehicles Found")
                             .font(.headline)
+                        Text("No vehicles currently in service")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                     .padding()
                 } else {
@@ -62,6 +65,9 @@ struct VehiclesView: View {
                     mapStyle: useStandardMapStyle ? .standard : .imagery
                 )
                 .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .listRowInsets(EdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
+                .listRowBackground(Color.clear)
             }
             Section("Nearby Vehicles") {
                 ForEach(limited) { trip in
@@ -94,30 +100,17 @@ struct VehiclesMapView: View {
     let trips: [OBATripForLocation]
     let currentLocation: CLLocation?
     var mapStyle: MapStyle = .standard
-    @State private var region: MKCoordinateRegion
-    init(trips: [OBATripForLocation], currentLocation: CLLocation?, mapStyle: MapStyle = .standard) {
-        self.trips = trips
-        self.currentLocation = currentLocation
-        self.mapStyle = mapStyle
-        let center: CLLocationCoordinate2D
-        if let loc = currentLocation?.coordinate {
-            center = loc
-        } else if let first = trips.first {
-            center = CLLocationCoordinate2D(latitude: first.latitude ?? 0, longitude: first.longitude ?? 0)
-        } else {
-            center = CLLocationCoordinate2D(latitude: 0, longitude: 0)
-        }
-        _region = State(initialValue: MKCoordinateRegion(
-            center: center,
-            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-        ))
-    }
+
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: trips.compactMap { trip -> VehiclePin? in
-            guard let lat = trip.latitude, let lon = trip.longitude else { return nil }
-            return VehiclePin(id: trip.id, coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
-        }) { pin in
-            MapMarker(coordinate: pin.coordinate, tint: .blue)
+        Map {
+            UserAnnotation()
+            
+            ForEach(trips) { trip in
+                if let lat = trip.latitude, let lon = trip.longitude {
+                    Marker(trip.routeShortName ?? "Bus", systemImage: "bus", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                        .tint(.blue)
+                }
+            }
         }
         .mapStyle(mapStyle)
     }
@@ -126,4 +119,6 @@ struct VehiclesMapView: View {
 struct VehiclePin: Identifiable {
     let id: String
     let coordinate: CLLocationCoordinate2D
+    let orientation: Double?
+    let routeShortName: String?
 }

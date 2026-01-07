@@ -33,9 +33,7 @@ final class VehicleSearchViewModel: ObservableObject {
         nearbyVehicles = []
 
         defer {
-            Task { @MainActor in
-                self.isLoading = false
-            }
+            isLoading = false
         }
 
         var searchLocation = location
@@ -49,32 +47,30 @@ final class VehicleSearchViewModel: ObservableObject {
                 if let first = agencies.first {
                     searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                 } else {
-                    await MainActor.run { self.errorMessage = "Location unavailable" }
+                    errorMessage = "Location unavailable"
                     return
                 }
             } catch {
-                await MainActor.run { self.errorMessage = "Location unavailable" }
+                errorMessage = "Location unavailable"
                 return
             }
         }
 
         do {
-            let vehicles = try await apiClient.fetchTripsForLocation(
+            let span = 0.05
+            let vehicles = try await apiClient.fetchVehiclesReliably(
                 latitude: searchLocation!.coordinate.latitude,
                 longitude: searchLocation!.coordinate.longitude,
-                latSpan: 0.02,
-                lonSpan: 0.02
+                latSpan: span,
+                lonSpan: span
             )
-            await MainActor.run {
-                self.nearbyVehicles = vehicles
-                if vehicles.isEmpty {
-                    self.errorMessage = "No active vehicles found nearby."
-                }
+            
+            self.nearbyVehicles = vehicles
+            if vehicles.isEmpty {
+                self.errorMessage = "No active vehicles found nearby."
             }
         } catch {
-            await MainActor.run {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unable to load nearby vehicles."
-            }
+            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unable to load nearby vehicles."
         }
     }
 

@@ -4,7 +4,7 @@ targets:
     platform: iOS
     sources: ["."]
     dependencies:
-      - target: OBAKitCore
+      - target: OBAKitCore_iOS
       - package: BLTNBoard
       - package: Hyperconnectivity
       - package: Eureka

@@ -38,6 +38,7 @@ class BookmarksViewModel: ObservableObject {
 
         // Listen for external updates from the sync manager (iPhone → watch).
         NotificationCenter.default.publisher(for: BookmarksSyncManager.bookmarksUpdatedNotification)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.loadBookmarks()
             }
@@ -51,9 +52,16 @@ class BookmarksViewModel: ObservableObject {
         }
 
         do {
-            let decoded = try JSONDecoder().decode([Bookmark].self, from: data)
+            let decoder = JSONDecoder()
+            let decoded = try decoder.decode([Bookmark].self, from: data)
+            print("Successfully decoded \(decoded.count) bookmarks.")
             bookmarks = decoded.sorted { $0.name < $1.name }
         } catch {
+            print("Failed to decode bookmarks: \(error)")
+            // Try to see if we can decode anything from the data to help debugging
+            if let json = try? JSONSerialization.jsonObject(with: data, options: []) {
+                print("Raw JSON that failed to decode: \(json)")
+            }
             bookmarks = []
             errorMessage = "Failed to load bookmarks."
         }

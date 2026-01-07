@@ -25,6 +25,14 @@ public typealias OBATripID = String
 // MARK: - Core Models
 
 /// A transit stop in a region.
+public struct OBAArrivalsResult: Sendable {
+    public let arrivals: [OBAArrival]
+    public let routes: [OBARoute]
+    public let stopName: String?
+    public let stopCode: String?
+    public let stopDirection: String?
+}
+
 public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
     public let id: OBAStopID
     public let name: String
@@ -32,6 +40,7 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
     public let longitude: Double
     public let code: String?
     public let direction: String?
+    public let routeNames: String?
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -40,6 +49,7 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
         case longitude = "lon"
         case code
         case direction
+        case routeNames
     }
 
     public init(
@@ -48,7 +58,8 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
         latitude: Double,
         longitude: Double,
         code: String? = nil,
-        direction: String? = nil
+        direction: String? = nil,
+        routeNames: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -56,6 +67,7 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
         self.longitude = longitude
         self.code = code
         self.direction = direction
+        self.routeNames = routeNames
     }
 
     public init(from decoder: Decoder) throws {
@@ -74,6 +86,7 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
             self.code = nil
         }
         self.direction = try? container.decodeIfPresent(String.self, forKey: .direction)
+        self.routeNames = try? container.decodeIfPresent(String.self, forKey: .routeNames)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -84,6 +97,7 @@ public struct OBAStop: Identifiable, Codable, Equatable, Sendable {
         try container.encode(longitude, forKey: .longitude)
         try container.encodeIfPresent(code, forKey: .code)
         try container.encodeIfPresent(direction, forKey: .direction)
+        try container.encodeIfPresent(routeNames, forKey: .routeNames)
     }
 }
 
@@ -108,23 +122,24 @@ private struct OBARawShapeResponse: Decodable, Sendable {
 /// schedule model into the shared core.
 private struct OBARawScheduleForRouteResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
-        let entry: Entry
+        let entry: Entry?
+        let trips: [Trip]?
     }
 
     struct Entry: Decodable, Sendable {
-        let trips: [Trip]
+        let trips: [Trip]?
     }
 
     struct Trip: Decodable, Sendable {
-        let id: OBATripID
-        let routeId: OBARouteID
+        let id: OBATripID?
+        let routeId: OBARouteID?
         let shapeId: String?
     }
 
     let data: Data
 
     func firstShapeID() -> String? {
-        data.entry.trips.compactMap { $0.shapeId }.first
+        (data.entry?.trips ?? data.trips ?? []).compactMap { $0.shapeId }.first
     }
 }
 
@@ -163,19 +178,19 @@ public struct OBAVehicle: Identifiable, Codable, Equatable, Sendable {
 /// Thin DTO that mirrors the server's `ArrivalDeparture` JSON for just the
 /// fields we care about in the shared core, and maps into ``OBAArrival``.
 private struct OBARawArrival: Decodable, Sendable {
-    let stopID: OBAStopID
-    let routeID: OBARouteID
-    let tripID: OBATripID
+    let stopID: OBAStopID?
+    let routeID: OBARouteID?
+    let tripID: OBATripID?
 
     let routeShortName: String?
     let tripHeadsign: String?
     let vehicleID: String?
 
-    let predicted: Bool
+    let predicted: Bool?
     let predictedArrivalTime: Date?
     let predictedDepartureTime: Date?
-    let scheduledArrivalTime: Date
-    let scheduledDepartureTime: Date
+    let scheduledArrivalTime: Date?
+    let scheduledDepartureTime: Date?
 
     private enum CodingKeys: String, CodingKey {
         case stopID = "stopId"
@@ -198,15 +213,18 @@ private struct OBARawArrival: Decodable, Sendable {
         let bestDate = predictedArrivalTime
             ?? predictedDepartureTime
             ?? scheduledArrivalTime
+            ?? scheduledDepartureTime
+            ?? now
 
         let minutesFromNow = Int(bestDate.timeIntervalSince(now) / 60.0)
 
         // Use scheduledDepartureTime as the reference scheduled time, similar to
         // how ArrivalDeparture compares against the scheduled departure.
-        let deviationMinutes: Double = (bestDate.timeIntervalSince1970 - scheduledDepartureTime.timeIntervalSince1970) / 60.0
+        let refSchedTime = scheduledDepartureTime ?? scheduledArrivalTime ?? now
+        let deviationMinutes: Double = (bestDate.timeIntervalSince1970 - refSchedTime.timeIntervalSince1970) / 60.0
 
         let status: OBAScheduleStatus
-        if !predicted {
+        if !(predicted ?? false) {
             status = .unknown
         } else if deviationMinutes < -1.5 {
             status = .early
@@ -216,6 +234,9 @@ private struct OBARawArrival: Decodable, Sendable {
             status = .delayed
         }
 
+        let stopID = self.stopID ?? ""
+        let tripID = self.tripID ?? ""
+        let routeID = self.routeID ?? ""
         let id = "stop=\(stopID),trip=\(tripID),route=\(routeID)"
 
         return OBAArrival(
@@ -227,7 +248,7 @@ private struct OBARawArrival: Decodable, Sendable {
             routeShortName: routeShortName,
             headsign: tripHeadsign,
             minutesFromNow: minutesFromNow,
-            isPredicted: predicted,
+            isPredicted: predicted ?? false,
             scheduleStatus: status
         )
     }
@@ -334,26 +355,28 @@ public struct OBATripExtendedDetails: Codable, Equatable, Sendable {
     public struct StopTime: Codable, Equatable, Sendable {
         public let arrivalTime: Int?
         public let departureTime: Int?
-        public let stopId: String
+        public let stopId: String?
         public let stopHeadsign: String?
         public let distanceAlongTrip: Double?
         public let historicalOccupancy: String?
+        public let latitude: Double?
+        public let longitude: Double?
     }
 }
 
 /// Extended status details for a vehicle on a trip.
 public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
-    public let tripID: OBATripID
-    public let serviceDate: Date
-    public let status: Status
+    public let tripID: OBATripID?
+    public let serviceDate: Date?
+    public let status: Status?
     public let schedule: OBATripExtendedDetails.Schedule?
 
     public struct Status: Codable, Equatable, Sendable {
-        public let activeTripID: OBATripID
+        public let activeTripID: OBATripID?
         public let blockTripSequence: Int?
-        public let serviceDate: Date
+        public let serviceDate: Date?
         public let scheduleDeviation: Int?
-        public let vehicleID: String
+        public let vehicleID: String?
         public let closestStop: OBAStopID?
         public let nextStop: OBAStopID?
         
@@ -430,13 +453,20 @@ public struct OBATripForLocation: Identifiable, Codable, Equatable, Sendable {
 /// Raw envelope for the `routes-for-stop` API.
 private struct OBARawRoutesForStopResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
-        let list: [OBARoute]
+        let list: [OBARawRoutesForLocationResponse.RawRoute]?
+        let routes: [OBARawRoutesForLocationResponse.RawRoute]?
     }
 
     let data: Data
 
     func toDomainRoutes() -> [OBARoute] {
-        data.list
+        (data.list ?? data.routes ?? []).map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
     }
 }
 
@@ -524,9 +554,17 @@ private struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sen
     private struct DataContainer: Decodable, Sendable {
         let list: Element?
         let entry: Element?
+        let stops: Element?
+        let routes: Element?
+        let trips: Element?
+        let arrivalsAndDepartures: Element?
+        let stop: OBARawStopResponse.StopEntry?
+        let references: OBARawStopResponse.References?
     }
 
     let list: Element
+    let stop: OBARawStopResponse.StopEntry?
+    let references: OBARawStopResponse.References?
 
     private enum CodingKeys: String, CodingKey {
         case code, currentTime, text, version, data
@@ -537,6 +575,8 @@ private struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sen
         if let container = try? decoder.container(keyedBy: CodingKeys.self),
            container.contains(.data) {
             let dataContainer = try container.decode(DataContainer.self, forKey: .data)
+            self.stop = dataContainer.stop
+            self.references = dataContainer.references
 
             if let entry = dataContainer.entry {
                 self.list = entry
@@ -544,10 +584,22 @@ private struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sen
             } else if let list = dataContainer.list {
                 self.list = list
                 return
+            } else if let stops = dataContainer.stops {
+                self.list = stops
+                return
+            } else if let routes = dataContainer.routes {
+                self.list = routes
+                return
+            } else if let trips = dataContainer.trips {
+                self.list = trips
+                return
+            } else if let arrivalsAndDepartures = dataContainer.arrivalsAndDepartures {
+                self.list = arrivalsAndDepartures
+                return
             } else {
                 throw DecodingError.dataCorrupted(
                     .init(codingPath: [CodingKeys.data],
-                          debugDescription: "Expected either 'entry' or 'list' in data container.")
+                          debugDescription: "Expected a known data key (entry, list, stops, routes, trips, arrivalsAndDepartures) in data container.")
                 )
             }
         }
@@ -556,6 +608,8 @@ private struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sen
         // without the usual envelope. In that case, decode Element directly
         // from the top level.
         self.list = try Element(from: decoder)
+        self.stop = nil
+        self.references = nil
     }
 }
 
@@ -576,7 +630,7 @@ struct OBARawRegionPayload: Decodable, Sendable {
 /// Thin DTO that mirrors the server's `VehicleStatus` JSON for just the
 /// fields we care about in the shared core, and maps into ``OBAVehicle``.
 private struct OBARawVehicleStatus: Decodable, Sendable {
-    let vehicleID: String
+    let vehicleID: String?
     let lastUpdateTime: Date?
     let lastLocationUpdateTime: Date?
     let latitude: Double?
@@ -603,7 +657,7 @@ private struct OBARawVehicleStatus: Decodable, Sendable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        vehicleID = try container.decode(String.self, forKey: .vehicleID)
+        vehicleID = try? container.decode(String.self, forKey: .vehicleID)
         lastUpdateTime = try? container.decode(Date.self, forKey: .lastUpdateTime)
         lastLocationUpdateTime = try? container.decode(Date.self, forKey: .lastLocationUpdateTime)
         phase = try? container.decode(String.self, forKey: .phase)
@@ -621,7 +675,7 @@ private struct OBARawVehicleStatus: Decodable, Sendable {
 
     func toDomainVehicle() -> OBAVehicle {
         OBAVehicle(
-            id: vehicleID,
+            id: vehicleID ?? "unknown",
             lastUpdateTime: lastUpdateTime,
             lastLocationUpdateTime: lastLocationUpdateTime,
             latitude: latitude,
@@ -639,17 +693,42 @@ private struct OBARawVehicleStatus: Decodable, Sendable {
 private struct OBARawStopsForLocationResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let list: [RawStop]?
+        let stops: [RawStop]?
         let references: References?
     }
 
     struct RawStop: Decodable, Sendable {
         let id: OBAStopID
-        let name: String
-        let lat: Double
-        let lon: Double
+        let name: String?
+        let lat: Double?
+        let lon: Double?
         let code: String?
         let routeIds: [OBARouteID]?
         let direction: String?
+        let routes: [OBARawRoutesForLocationResponse.RawRoute]?
+
+        private enum CodingKeys: String, CodingKey {
+            case id, name, lat, lon, code, routeIds, direction, routes
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(OBAStopID.self, forKey: .id)
+            name = try container.decodeIfPresent(String.self, forKey: .name)
+            lat = try container.decodeIfPresent(Double.self, forKey: .lat)
+            lon = try container.decodeIfPresent(Double.self, forKey: .lon)
+            routeIds = try container.decodeIfPresent([OBARouteID].self, forKey: .routeIds)
+            direction = try container.decodeIfPresent(String.self, forKey: .direction)
+            routes = try container.decodeIfPresent([OBARawRoutesForLocationResponse.RawRoute].self, forKey: .routes)
+
+            if let s = try? container.decodeIfPresent(String.self, forKey: .code) {
+                code = s
+            } else if let i = try? container.decodeIfPresent(Int.self, forKey: .code) {
+                code = String(i)
+            } else {
+                code = nil
+            }
+        }
     }
 
     struct References: Decodable, Sendable {
@@ -665,12 +744,12 @@ private struct OBARawStopsForLocationResponse: Decodable, Sendable {
     let data: Data
 
     func toDomainStops() -> [OBAStop] {
-        (data.list ?? []).map { raw in
+        (data.list ?? data.stops ?? []).map { raw in
             OBAStop(
                 id: raw.id,
-                name: raw.name,
-                latitude: raw.lat,
-                longitude: raw.lon,
+                name: raw.name ?? "",
+                latitude: raw.lat ?? 0,
+                longitude: raw.lon ?? 0,
                 code: raw.code,
                 direction: raw.direction
             )
@@ -680,19 +759,37 @@ private struct OBARawStopsForLocationResponse: Decodable, Sendable {
     /// Builds a lookup from stop ID to a comma-separated list of route
     /// short names serving that stop, if present in the references block.
     func stopIDToRouteNames() -> [OBAStopID: String] {
-        guard let routes = data.references?.routes else { return [:] }
-
-        let routeShortNameByID: [OBARouteID: String] = Dictionary(uniqueKeysWithValues: routes.compactMap { route in
-            guard let short = route.shortName, !short.isEmpty else { return nil }
-            return (route.id, short)
-        })
-
         var result: [OBAStopID: String] = [:]
-        for stop in (data.list ?? []) {
-            guard let ids = stop.routeIds, !ids.isEmpty else { continue }
-            let names = ids.compactMap { routeShortNameByID[$0] }
-            guard !names.isEmpty else { continue }
-            result[stop.id] = names.joined(separator: ", ")
+        
+        // 1. Build route lookup from references
+        var routeShortNameByID: [OBARouteID: String] = [:]
+        if let routes = data.references?.routes {
+            for route in routes {
+                if let short = route.shortName, !short.isEmpty {
+                    routeShortNameByID[route.id] = short
+                }
+            }
+        }
+
+        // 2. Process stops from list or references
+        let allStops = (data.list ?? data.stops ?? []) + (data.references?.stops ?? [])
+        
+        for stop in allStops {
+            var names: [String] = []
+            
+            // Try nested routes first (common in MTA)
+            if let nestedRoutes = stop.routes {
+                names = nestedRoutes.compactMap { $0.shortName }
+            }
+            
+            // Fallback to routeIds + references
+            if names.isEmpty, let ids = stop.routeIds {
+                names = ids.compactMap { routeShortNameByID[$0] }
+            }
+            
+            if !names.isEmpty {
+                result[stop.id] = names.joined(separator: ", ")
+            }
         }
 
         return result
@@ -704,6 +801,7 @@ private struct OBARawStopsForLocationResponse: Decodable, Sendable {
 private struct OBARawRoutesForLocationResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let list: [RawRoute]?
+        let routes: [RawRoute]?
         let references: References?
     }
 
@@ -712,7 +810,7 @@ private struct OBARawRoutesForLocationResponse: Decodable, Sendable {
         let shortName: String?
         let longName: String?
         let description: String?
-        let agencyId: String
+        let agencyId: String?
 
         private enum CodingKeys: String, CodingKey {
             case id
@@ -739,12 +837,12 @@ private struct OBARawRoutesForLocationResponse: Decodable, Sendable {
             (agency.id, agency.name)
         })
 
-        return (data.list ?? []).map { raw in
+        return (data.list ?? data.routes ?? []).map { raw in
             OBARoute(
                 id: raw.id,
                 shortName: raw.shortName,
                 longName: raw.longName?.isEmpty == false ? raw.longName : raw.description,
-                agencyName: agencyByID[raw.agencyId]
+                agencyName: raw.agencyId.flatMap { agencyByID[$0] }
             )
         }
     }
@@ -754,15 +852,31 @@ private struct OBARawRoutesForLocationResponse: Decodable, Sendable {
 private struct OBARawTripsForLocationResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let list: [RawTrip]?
+        let trips: [RawTrip]?
         let references: References?
     }
 
     struct RawTrip: Decodable, Sendable {
-        let tripId: String
-        let vehicleId: String
+        let tripId: String?
+        let vehicleId: String?
         let lastUpdateTime: Date?
         let location: Location?
         let tripStatus: TripStatus?
+        
+        private enum CodingKeys: String, CodingKey {
+            case tripId, vehicleId, lastUpdateTime, location, tripStatus
+            case tripID = "tripID"
+            case vehicleID = "vehicleID"
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            tripId = try container.decodeIfPresent(String.self, forKey: .tripId) ?? container.decodeIfPresent(String.self, forKey: .tripID)
+            vehicleId = try container.decodeIfPresent(String.self, forKey: .vehicleId) ?? container.decodeIfPresent(String.self, forKey: .vehicleID)
+            lastUpdateTime = try container.decodeIfPresent(Date.self, forKey: .lastUpdateTime)
+            location = try container.decodeIfPresent(Location.self, forKey: .location)
+            tripStatus = try container.decodeIfPresent(TripStatus.self, forKey: .tripStatus)
+        }
         
         struct Location: Decodable, Sendable {
             let lat: Double
@@ -770,10 +884,23 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
         }
         
         struct TripStatus: Decodable, Sendable {
-            let activeTripId: String
+            let activeTripId: String?
             let orientation: Double?
             let position: Location?
             let lastKnownLocation: Location?
+            
+            private enum CodingKeys: String, CodingKey {
+                case activeTripId, orientation, position, lastKnownLocation
+                case activeTripID = "activeTripID"
+            }
+            
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                activeTripId = try container.decodeIfPresent(String.self, forKey: .activeTripId) ?? container.decodeIfPresent(String.self, forKey: .activeTripID)
+                orientation = try container.decodeIfPresent(Double.self, forKey: .orientation)
+                position = try container.decodeIfPresent(Location.self, forKey: .position)
+                lastKnownLocation = try container.decodeIfPresent(Location.self, forKey: .lastKnownLocation)
+            }
         }
     }
     
@@ -796,7 +923,7 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
     let data: Data
     
     func toDomain() -> [OBATripForLocation] {
-        guard let list = data.list else { return [] }
+        guard let list = data.list ?? data.trips else { return [] }
         
         // Build lookups
         var routeShortNameByID: [String: String] = [:]
@@ -813,9 +940,10 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
             }
         }
         
-        return list.map { item in
+        return list.compactMap { item in
             // Determine effective trip ID (item.tripId might be empty, check status)
-            let effectiveTripID = !item.tripId.isEmpty ? item.tripId : (item.tripStatus?.activeTripId ?? "")
+            let itemTripID = item.tripId ?? ""
+            let effectiveTripID = !itemTripID.isEmpty ? itemTripID : (item.tripStatus?.activeTripId ?? "")
             
             // Determine location
             let lat = item.location?.lat
@@ -825,6 +953,9 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
                 ?? item.tripStatus?.position?.lon
                 ?? item.tripStatus?.lastKnownLocation?.lon
                 
+            // If we don't have a location, we can't really show this on a map/list as a "vehicle"
+            guard let lat = lat, let lon = lon else { return nil }
+
             let orientation = item.tripStatus?.orientation
             
             // Resolve route and headsign
@@ -840,7 +971,7 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
             
             return OBATripForLocation(
                 id: effectiveTripID,
-                vehicleID: item.vehicleId,
+                vehicleID: item.vehicleId ?? "",
                 latitude: lat,
                 longitude: lon,
                 orientation: orientation,
@@ -856,42 +987,104 @@ private struct OBARawTripsForLocationResponse: Decodable, Sendable {
 /// Thin DTOs for the `stops-for-route` API that provide route directions
 /// and their associated stops.
 private struct OBARawStopsForRouteResponse: Decodable, Sendable {
+    private struct DataContainer: Decodable, Sendable {
+        let entry: OBARawStopsForRoute.Entry?
+        let references: OBARawStopsForRoute.References?
+        let stopGroupings: [OBARawStopsForRoute.StopGrouping]?
+        let stops: [OBARawStopsForRoute.RawStop]?
+        let polylines: [OBARawStopsForRoute.Polyline]?
+    }
+
     let data: OBARawStopsForRoute
+
+    private enum CodingKeys: String, CodingKey {
+        case data
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle cases where 'data' might be null or missing
+        if let dataContainer = try? container.decode(DataContainer.self, forKey: .data) {
+            let stopGroupings = dataContainer.stopGroupings ?? dataContainer.entry?.stopGroupings
+            
+            // MTA sometimes puts 'stops' directly in 'data' instead of 'data.references.stops'
+            let references = dataContainer.references ?? (dataContainer.stops != nil ? OBARawStopsForRoute.References(stops: dataContainer.stops) : nil)
+            
+            self.data = OBARawStopsForRoute(
+                references: references,
+                entry: dataContainer.entry,
+                polylines: dataContainer.polylines,
+                stopGroupings: stopGroupings
+            )
+        } else {
+            // Fallback for missing/null data
+            self.data = OBARawStopsForRoute(references: nil, entry: nil, polylines: nil, stopGroupings: nil)
+        }
+    }
 }
 
 private struct OBARawStopsForRoute: Decodable, Sendable {
     let references: References?
-    let entry: Entry
+    let entry: Entry?
+    let polylines: [Polyline]?
+    let stopGroupings: [StopGrouping]?
+
+    struct Polyline: Decodable, Sendable {
+        let points: String?
+    }
 
     struct References: Decodable, Sendable {
-        let stops: [RawStop]
+        let stops: [RawStop]?
     }
 
     struct RawStop: Decodable, Sendable {
-        let id: OBAStopID
-        let name: String
-        let lat: Double
-        let lon: Double
+        let id: OBAStopID?
+        let name: String?
+        let lat: Double?
+        let lon: Double?
         let code: String?
     }
 
     struct Entry: Decodable, Sendable {
-        let stopGroupings: [StopGrouping]
+        let stopGroupings: [StopGrouping]?
     }
 
     struct StopGrouping: Decodable, Sendable {
-        let ordered: [OrderedStops]
+        let stopGroups: [StopGroup]?
+        
+        private enum CodingKeys: String, CodingKey {
+            case stopGroups
+            case ordered
+        }
+        
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.stopGroups = try container.decodeIfPresent([StopGroup].self, forKey: .stopGroups)
+        }
     }
 
-    struct OrderedStops: Decodable, Sendable {
-        let id: String
+    struct StopGroup: Decodable, Sendable {
+        let id: String?
         let name: Name?
-        let stopIDs: [OBAStopID]
+        let stopIDs: [OBAStopID]?
+        let polylines: [Polyline]?
 
         private enum CodingKeys: String, CodingKey {
             case id
             case name
-            case stopIDs = "stopIds"
+            case stopIds
+            case stopIDs
+            case polylines
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.id = try container.decodeIfPresent(String.self, forKey: .id)
+            self.name = try container.decodeIfPresent(Name.self, forKey: .name)
+            self.stopIDs = (try? container.decodeIfPresent([OBAStopID].self, forKey: .stopIds))
+                ?? (try? container.decodeIfPresent([OBAStopID].self, forKey: .stopIDs))
+            self.polylines = try container.decodeIfPresent([Polyline].self, forKey: .polylines)
         }
     }
 
@@ -900,38 +1093,122 @@ private struct OBARawStopsForRoute: Decodable, Sendable {
     }
 
     func toDomainDirections() -> [OBARouteDirection] {
-        // Index stops by ID for quick lookup
-        let stopByID: [OBAStopID: OBAStop] = Dictionary(uniqueKeysWithValues: (references?.stops ?? []).map { raw in
-            let stop = OBAStop(
-                id: raw.id,
-                name: raw.name,
-                latitude: raw.lat,
-                longitude: raw.lon,
+        // Index stops by ID for quick lookup, handling potential duplicates safely.
+        var stopByID: [OBAStopID: OBAStop] = [:]
+        for raw in (references?.stops ?? []) {
+            guard let id = raw.id else { continue }
+            stopByID[id] = OBAStop(
+                id: id,
+                name: raw.name ?? "Unknown",
+                latitude: raw.lat ?? 0.0,
+                longitude: raw.lon ?? 0.0,
                 code: raw.code
             )
-            return (raw.id, stop)
-        })
+        }
 
-        // The first stopGrouping typically contains directions-by-stop
-        guard let grouping = entry.stopGroupings.first else { return [] }
-
-        return grouping.ordered.map { ordered in
-            let stops = ordered.stopIDs.compactMap { stopByID[$0] }
-            return OBARouteDirection(
-                id: ordered.id,
-                name: ordered.name?.name,
-                stops: stops
-            )
+        let groupings = stopGroupings ?? entry?.stopGroupings ?? []
+        return groupings.flatMap { grouping in
+            (grouping.stopGroups ?? []).compactMap { group -> OBARouteDirection? in
+                guard let stops = group.stopIDs?.compactMap({ stopByID[$0] }) else { return nil }
+                return OBARouteDirection(
+                    id: group.id ?? UUID().uuidString,
+                    name: group.name?.name ?? "Unknown",
+                    stops: stops
+                )
+            }
         }.filter { !$0.stops.isEmpty }
+    }
+}
+
+/// Thin DTO for the `stop` API.
+private struct OBARawStopResponse: Decodable, Sendable {
+    struct Data: Decodable, Sendable {
+        let id: OBAStopID?
+        let name: String?
+        let lat: Double?
+        let lon: Double?
+        let code: String?
+        let direction: String?
+        let routes: [OBARawRoutesForLocationResponse.RawRoute]?
+        let entry: StopEntry?
+        let stop: StopEntry?
+        let references: References?
+    }
+    
+    struct StopEntry: Decodable, Sendable {
+        let id: OBAStopID?
+        let name: String?
+        let lat: Double?
+        let lon: Double?
+        let code: String?
+        let direction: String?
+        let routes: [OBARawRoutesForLocationResponse.RawRoute]?
+
+        private enum CodingKeys: String, CodingKey {
+            case id, name, lat, lon, code, direction, routes
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decodeIfPresent(OBAStopID.self, forKey: .id)
+            name = try container.decodeIfPresent(String.self, forKey: .name)
+            lat = try container.decodeIfPresent(Double.self, forKey: .lat)
+            lon = try container.decodeIfPresent(Double.self, forKey: .lon)
+            direction = try container.decodeIfPresent(String.self, forKey: .direction)
+            routes = try container.decodeIfPresent([OBARawRoutesForLocationResponse.RawRoute].self, forKey: .routes)
+
+            if let s = try? container.decodeIfPresent(String.self, forKey: .code) {
+                code = s
+            } else if let i = try? container.decodeIfPresent(Int.self, forKey: .code) {
+                code = String(i)
+            } else {
+                code = nil
+            }
+        }
+    }
+
+    struct References: Decodable, Sendable {
+        let routes: [OBARawRoutesForLocationResponse.RawRoute]?
+    }
+    
+    let data: Data
+
+    func toDomainStop() -> OBAStop {
+        let stopID = data.entry?.id ?? data.stop?.id ?? data.id ?? "unknown"
+        let name = data.entry?.name ?? data.stop?.name ?? data.name ?? "Unknown"
+        let lat = data.entry?.lat ?? data.stop?.lat ?? data.lat ?? 0.0
+        let lon = data.entry?.lon ?? data.stop?.lon ?? data.lon ?? 0.0
+        let code = data.entry?.code ?? data.stop?.code ?? data.code
+        let direction = data.entry?.direction ?? data.stop?.direction ?? data.direction
+        
+        return OBAStop(
+            id: stopID,
+            name: name,
+            latitude: lat,
+            longitude: lon,
+            code: code,
+            direction: direction
+        )
+    }
+
+    func toDomainRoutes() -> [OBARoute] {
+        let routes = data.entry?.routes ?? data.stop?.routes ?? data.routes ?? data.references?.routes ?? []
+        return routes.map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
     }
 }
 
 /// Thin DTO for the `trip` API.
 private struct OBARawTripDetails: Decodable, Sendable {
-    let id: OBATripID
-    let routeID: OBARouteID
+    let id: OBATripID?
+    let routeID: OBARouteID?
     let tripHeadsign: String?
-    let serviceID: String
+    let serviceID: String?
     let shapeID: String?
     let directionID: String?
     let blockID: String?
@@ -948,10 +1225,10 @@ private struct OBARawTripDetails: Decodable, Sendable {
 
     func toDomain() -> OBATripDetails {
         OBATripDetails(
-            id: id,
-            routeID: routeID,
+            id: id ?? "unknown",
+            routeID: routeID ?? "unknown",
             headsign: tripHeadsign,
-            serviceID: serviceID,
+            serviceID: serviceID ?? "unknown",
             shapeID: shapeID,
             directionID: directionID,
             blockID: blockID
@@ -962,7 +1239,8 @@ private struct OBARawTripDetails: Decodable, Sendable {
 /// Raw envelope for the `trip-details` API.
 private struct OBARawTripDetailsResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
-        let entry: OBATripExtendedDetails
+        let entry: OBATripExtendedDetails?
+        let tripDetails: OBATripExtendedDetails?
         let references: References?
     }
 
@@ -971,8 +1249,10 @@ private struct OBARawTripDetailsResponse: Decodable, Sendable {
     }
 
     struct RawStop: Decodable, Sendable {
-        let id: String
-        let name: String
+        let id: String?
+        let name: String?
+        let lat: Double?
+        let lon: Double?
     }
 
     let data: Data
@@ -1044,7 +1324,7 @@ public protocol OBAAPIClient: Sendable {
 
     /// Fetches upcoming arrivals for a stop.
     /// - Parameter stopID: The stop identifier.
-    func fetchArrivals(for stopID: OBAStopID) async throws -> [OBAArrival]
+    func fetchArrivals(for stopID: OBAStopID) async throws -> OBAArrivalsResult
 
     /// Fetches active trips (vehicles) near a location.
     /// - Parameters:
@@ -1058,6 +1338,10 @@ public protocol OBAAPIClient: Sendable {
         latSpan: Double,
         lonSpan: Double
     ) async throws -> [OBATripForLocation]
+
+    /// Fetches active trips (vehicles) for a specific route.
+    /// - Parameter routeID: The route identifier.
+    func fetchTripsForRoute(routeID: OBARouteID) async throws -> [OBATripForLocation]
 
     /// Searches for routes whose name or shortName matches the given query,
     /// biased around a coordinate. This mirrors the iOS
@@ -1111,6 +1395,113 @@ public protocol OBAAPIClient: Sendable {
 
     /// Retrieves the current system time from the OneBusAway server.
     func fetchCurrentTime() async throws -> Date
+
+    /// Fetches all active vehicles for a specific agency.
+    func fetchVehiclesForAgency(agencyID: String) async throws -> [OBATripForLocation]
+}
+
+public extension OBAAPIClient {
+    /// Fetches vehicles near a location with fallback to route-based search if location-based search returns no results.
+    /// This is useful for servers that don't support `trips-for-location` or have strict limits.
+    func fetchVehiclesReliably(
+        latitude: Double,
+        longitude: Double,
+        latSpan: Double,
+        lonSpan: Double
+    ) async throws -> [OBATripForLocation] {
+        var allVehicles: [OBATripForLocation] = []
+        var seenIDs = Set<String>()
+        
+        func addUnique(_ trips: [OBATripForLocation]) {
+            for trip in trips {
+                let id = trip.vehicleID.isEmpty ? trip.id : trip.vehicleID
+                if !id.isEmpty && !seenIDs.contains(id) {
+                    seenIDs.insert(id)
+                    allVehicles.append(trip)
+                }
+            }
+        }
+
+        // 1. Try trips-for-location first
+        let result = try await fetchTripsForLocation(
+            latitude: latitude,
+            longitude: longitude,
+            latSpan: latSpan,
+            lonSpan: lonSpan
+        )
+        addUnique(result)
+        
+        if !allVehicles.isEmpty {
+            return allVehicles
+        }
+        
+        // 2. Fallback: Search for nearby routes and fetch vehicles for each
+        let radius = max(latSpan, lonSpan) * 111000.0 // Convert degrees to meters roughly
+        let nearbyRoutes = try await searchRoutes(
+            query: "",
+            latitude: latitude,
+            longitude: longitude,
+            radius: max(radius, 5000.0) // At least 5km
+        )
+        
+        for route in nearbyRoutes {
+            do {
+                let routeTrips = try await fetchTripsForRoute(routeID: route.id)
+                addUnique(routeTrips)
+            } catch {
+                // Ignore errors for individual routes
+            }
+        }
+        
+        if !allVehicles.isEmpty {
+            return allVehicles
+        }
+        
+        // 3. Last resort: Fetch all vehicles for agencies that have coverage near this location
+        let agencies = try await fetchAgenciesWithCoverage()
+        let nearbyAgencies = agencies.filter { agency in
+            let latDiff = abs(agency.centerLatitude - latitude)
+            let lonDiff = abs(agency.centerLongitude - longitude)
+            // Within ~50km (roughly 0.5 degrees)
+            return latDiff < 0.5 && lonDiff < 0.5
+        }
+        
+        for agency in nearbyAgencies {
+            do {
+                let vehicles = try await fetchVehiclesForAgency(agencyID: agency.agencyID)
+                addUnique(vehicles)
+            } catch {
+                // Ignore errors for individual agencies
+            }
+        }
+        
+        return allVehicles
+    }
+}
+
+// MARK: - API Errors
+
+public enum OBAAPIError: LocalizedError, Sendable {
+    case badServerResponse(statusCode: Int, url: URL)
+    case notFound(url: URL)
+    case decodingError(Error, url: URL)
+    case invalidURL
+    case other(Error)
+
+    public var errorDescription: String? {
+        switch self {
+        case .badServerResponse(let statusCode, let url):
+            return "Server returned error \(statusCode) for \(url.lastPathComponent)."
+        case .notFound(let url):
+            return "Resource not found: \(url.lastPathComponent)."
+        case .decodingError(let error, let url):
+            return "Unable to parse response from \(url.lastPathComponent): \(error.localizedDescription)"
+        case .invalidURL:
+            return "Invalid request URL."
+        case .other(let error):
+            return error.localizedDescription
+        }
+    }
 }
 
 // MARK: - URLSession-based API Client
@@ -1135,7 +1526,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             baseURL: URL,
             apiKey: String? = nil,
             minutesBeforeArrivals: UInt = 5,
-            minutesAfterArrivals: UInt = 35
+            minutesAfterArrivals: UInt = 125
         ) {
             self.baseURL = baseURL
             self.apiKey = apiKey
@@ -1177,7 +1568,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         }
         components?.queryItems = params
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        guard let url = components?.url else { throw OBAAPIError.invalidURL }
         let response: OBARawListResponse<OBARawArrival> = try await get(url: url)
         return response.list.toDomainArrival()
     }
@@ -1186,7 +1577,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/stop/\(id).json"
         components?.queryItems = apiKeyQueryItem
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        guard let url = components?.url else { throw OBAAPIError.invalidURL }
         let response: OBARawStopResponse = try await get(url: url)
         return response.toDomainStop()
     }
@@ -1204,7 +1595,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             items.append(URLQueryItem(name: "date", value: formatter.string(from: date)))
         }
         components?.queryItems = items
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        guard let url = components?.url else { throw OBAAPIError.invalidURL }
         let response: OBARawScheduleForStopResponse = try await get(url: url)
         return response.toDomainSchedule()
     }
@@ -1213,7 +1604,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/agencies-with-coverage.json"
         components?.queryItems = apiKeyQueryItem
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        guard let url = components?.url else { throw OBAAPIError.invalidURL }
         let response: OBARawAgenciesWithCoverageResponse = try await get(url: url)
         return response.toDomainAgencies()
     }
@@ -1238,7 +1629,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         let url = try components?.url ?? { throw URLError(.badURL) }()
         let (_, response) = try await urlSession.data(from: url)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
+            throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
     }
 
@@ -1268,10 +1659,10 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             ])
         }
         components?.queryItems = items
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let (_, response) = try await urlSession.data(from: url)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
+            throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
     }
 
@@ -1282,13 +1673,19 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     ) async throws -> OBANearbyStopsResult {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/stops-for-location.json"
+        
+        // Use a larger radius for MTA or if zero results, or use latSpan/lonSpan
+        let finalRadius = radius > 0 ? radius : 1000.0
+        
         components?.queryItems = [
             URLQueryItem(name: "lat", value: String(latitude)),
             URLQueryItem(name: "lon", value: String(longitude)),
-            URLQueryItem(name: "radius", value: String(radius))
+            URLQueryItem(name: "latSpan", value: "0.05"), // ~5km span
+            URLQueryItem(name: "lonSpan", value: "0.05"),
+            URLQueryItem(name: "radius", value: String(finalRadius))
         ] + apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawStopsForLocationResponse = try await get(url: url)
         return OBANearbyStopsResult(
             stops: response.toDomainStops(),
@@ -1311,7 +1708,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             URLQueryItem(name: "query", value: query)
         ] + apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawStopsForLocationResponse = try await get(url: url)
         return OBANearbyStopsResult(
             stops: response.toDomainStops(),
@@ -1319,18 +1716,102 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         )
     }
 
-    public func fetchArrivals(for stopID: OBAStopID) async throws -> [OBAArrival] {
+    public func fetchArrivals(for stopID: OBAStopID) async throws -> OBAArrivalsResult {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+        // URLComponents.path should not be pre-encoded; it will handle encoding.
         components?.path = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
         components?.queryItems = apiKeyQueryItem + [
             URLQueryItem(name: "minutesBefore", value: String(configuration.minutesBeforeArrivals)),
             URLQueryItem(name: "minutesAfter", value: String(configuration.minutesAfterArrivals))
         ]
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
-        let response: OBARawListResponse<[OBARawArrival]> = try await get(url: url)
-        let now = Date()
-        return response.list.map { $0.toDomainArrival(referenceDate: now) }
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        
+        var arrivals: [OBAArrival] = []
+        var routes: [OBARoute] = []
+        var stopName: String? = nil
+        var stopCode: String? = nil
+        var stopDirection: String? = nil
+        
+        do {
+            let response: OBARawListResponse<[OBARawArrival]> = try await get(url: url)
+            let now = Date()
+            arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
+            
+            if let rawStop = response.stop {
+                stopName = rawStop.name
+                stopCode = rawStop.code
+                stopDirection = rawStop.direction
+                let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
+                routes = rawRoutes.map { raw in
+                    OBARoute(
+                        id: raw.id,
+                        shortName: raw.shortName,
+                        longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+                    )
+                }
+            }
+            
+            return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
+        } catch {
+            // Fallback 1: try as query parameter
+            var fallbackComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            fallbackComponents?.path = "/api/where/arrivals-and-departures-for-stop.json"
+            fallbackComponents?.queryItems = apiKeyQueryItem + [
+                URLQueryItem(name: "stopId", value: stopID),
+                URLQueryItem(name: "minutesBefore", value: String(configuration.minutesBeforeArrivals)),
+                URLQueryItem(name: "minutesAfter", value: String(configuration.minutesAfterArrivals))
+            ]
+            
+            if let fallbackURL = fallbackComponents?.url {
+                do {
+                    let response: OBARawListResponse<[OBARawArrival]> = try await get(url: fallbackURL)
+                    let now = Date()
+                    arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
+                    
+                    if let rawStop = response.stop {
+                        stopName = rawStop.name
+                        stopCode = rawStop.code
+                        stopDirection = rawStop.direction
+                        let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
+                        routes = rawRoutes.map { raw in
+                            OBARoute(
+                                id: raw.id,
+                                shortName: raw.shortName,
+                                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+                            )
+                        }
+                    }
+                    
+                    return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
+                } catch {
+                    print("Fallback 1 (query param) for arrivals-and-departures-for-stop failed: \(error)")
+                }
+            }
+
+            // Fallback 2: try stop/[ID].json to at least get routes and stop name if arrivals fail
+            var stopComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            stopComponents?.path = "/api/where/stop/\(stopID).json"
+            stopComponents?.queryItems = apiKeyQueryItem
+            
+            if let stopURL = stopComponents?.url {
+                do {
+                    let response: OBARawStopResponse = try await get(url: stopURL)
+                    let domainStop = response.toDomainStop()
+                    stopName = domainStop.name
+                    stopCode = domainStop.code
+                    stopDirection = domainStop.direction
+                    routes = response.toDomainRoutes()
+                    
+                    // If we reach here, we have routes and stop name, but no arrivals (since we only called stop API)
+                    return OBAArrivalsResult(arrivals: [], routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
+                } catch {
+                    print("Fallback 2 (stop API) for arrivals-and-departures-for-stop failed: \(error)")
+                }
+            }
+            
+            throw error
+        }
     }
 
     public func fetchTripsForLocation(
@@ -1341,14 +1822,32 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     ) async throws -> [OBATripForLocation] {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/trips-for-location.json"
+        
+        // Use provided spans or default to ~1km if zero
+        let finalLatSpan = latSpan > 0 ? latSpan : 0.01
+        let finalLonSpan = lonSpan > 0 ? lonSpan : 0.01
+        
         components?.queryItems = [
             URLQueryItem(name: "lat", value: String(latitude)),
             URLQueryItem(name: "lon", value: String(longitude)),
-            URLQueryItem(name: "latSpan", value: String(latSpan)),
-            URLQueryItem(name: "lonSpan", value: String(lonSpan))
+            URLQueryItem(name: "latSpan", value: String(finalLatSpan)),
+            URLQueryItem(name: "lonSpan", value: String(finalLonSpan)),
+            URLQueryItem(name: "includeStatus", value: "true")
         ] + apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        let response: OBARawTripsForLocationResponse = try await get(url: url)
+        return response.toDomain()
+    }
+
+    public func fetchTripsForRoute(routeID: OBARouteID) async throws -> [OBATripForLocation] {
+        var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+        components?.path = "/api/where/trips-for-route/\(routeID).json"
+        components?.queryItems = [
+            URLQueryItem(name: "includeStatus", value: "true")
+        ] + apiKeyQueryItem
+
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawTripsForLocationResponse = try await get(url: url)
         return response.toDomain()
     }
@@ -1358,9 +1857,65 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/routes-for-stop/\(stopID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
-        let response: OBARawRoutesForStopResponse = try await get(url: url)
-        return response.toDomainRoutes()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        
+        do {
+            let response: OBARawRoutesForStopResponse = try await get(url: url)
+            return response.toDomainRoutes()
+        } catch {
+            // Fallback 1: try as query parameter
+            var fallbackComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            fallbackComponents?.path = "/api/where/routes-for-stop.json"
+            fallbackComponents?.queryItems = apiKeyQueryItem + [URLQueryItem(name: "stopId", value: stopID)]
+            
+            if let fallbackURL = fallbackComponents?.url {
+                do {
+                    let response: OBARawRoutesForStopResponse = try await get(url: fallbackURL)
+                    return response.toDomainRoutes()
+                } catch {
+                    print("Fallback 1 (query param) for routes-for-stop failed: \(error)")
+                }
+            }
+
+            // Fallback 2: try stop/[ID].json (common in MTA)
+            var stopComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            stopComponents?.path = "/api/where/stop/\(stopID).json"
+            stopComponents?.queryItems = apiKeyQueryItem
+            
+            if let stopURL = stopComponents?.url {
+                do {
+                    let response: OBARawStopResponse = try await get(url: stopURL)
+                    return response.toDomainRoutes()
+                } catch {
+                    print("Fallback 2 (stop API) for routes-for-stop failed: \(error)")
+                }
+            }
+
+            // Fallback 3: try arrivals-and-departures-for-stop (often contains stop details in MTA)
+            var arrivalsComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            arrivalsComponents?.path = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
+            arrivalsComponents?.queryItems = apiKeyQueryItem
+            
+            if let arrivalsURL = arrivalsComponents?.url {
+                do {
+                    let response: OBARawListResponse<[OBARawArrival]> = try await get(url: arrivalsURL)
+                    if let rawStop = response.stop {
+                        let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
+                        return rawRoutes.map { raw in
+                            OBARoute(
+                                id: raw.id,
+                                shortName: raw.shortName,
+                                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+                            )
+                        }
+                    }
+                } catch {
+                    print("Fallback 3 (arrivals API) for routes-for-stop failed: \(error)")
+                }
+            }
+            
+            throw error
+        }
     }
 
     public func searchRoutes(
@@ -1381,7 +1936,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         }
         components?.queryItems = items + apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawRoutesForLocationResponse = try await get(url: url)
         return response.toDomainRoutes()
     }
@@ -1389,11 +1944,35 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     public func fetchStopsForRoute(routeID: OBARouteID) async throws -> [OBARouteDirection] {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/stops-for-route/\(routeID).json"
-        components?.queryItems = apiKeyQueryItem
+        
+        var queryItems = apiKeyQueryItem
+        queryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
+        components?.queryItems = queryItems
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
-        let response: OBARawStopsForRouteResponse = try await get(url: url)
-        return response.data.toDomainDirections()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        
+        do {
+            let response: OBARawStopsForRouteResponse = try await get(url: url)
+            return response.data.toDomainDirections()
+        } catch {
+            // Fallback: some servers might prefer routeId as a query parameter
+            var fallbackComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            fallbackComponents?.path = "/api/where/stops-for-route.json"
+            var fallbackQueryItems = apiKeyQueryItem
+            fallbackQueryItems.append(URLQueryItem(name: "routeId", value: routeID))
+            fallbackQueryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
+            fallbackComponents?.queryItems = fallbackQueryItems
+            
+            if let fallbackURL = fallbackComponents?.url {
+                do {
+                    let response: OBARawStopsForRouteResponse = try await get(url: fallbackURL)
+                    return response.data.toDomainDirections()
+                } catch {
+                    print("Fallback for stops-for-route failed: \(error)")
+                }
+            }
+            throw error
+        }
     }
 
     public func fetchShapeIDForRoute(routeID: OBARouteID) async throws -> String? {
@@ -1401,9 +1980,17 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/schedule-for-route/\(routeID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
-        let response: OBARawScheduleForRouteResponse = try await get(url: url)
-        return response.firstShapeID()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        
+        do {
+            let response: OBARawScheduleForRouteResponse = try await get(url: url)
+            return response.firstShapeID()
+        } catch {
+            // MTA doesn't always support schedule-for-route. 
+            // Return the routeID as a 'pseudo' shapeID so fetchShape can fall back to stops-for-route
+            print("schedule-for-route failed for \(routeID), using routeID as pseudo-shapeID: \(error)")
+            return routeID
+        }
     }
 
     public func fetchShape(shapeID: String) async throws -> String {
@@ -1411,9 +1998,45 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/shape/\(shapeID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
-        let response: OBARawShapeResponse = try await get(url: url)
-        return response.data.entry.points
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        
+        do {
+            let response: OBARawShapeResponse = try await get(url: url)
+            return response.data.entry.points
+        } catch {
+            // Fallback: If shape API fails (common if we used routeID as pseudo-shapeID),
+            // try stops-for-route API which contains polylines in the MTA version.
+            var fallbackComponents = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+            fallbackComponents?.path = "/api/where/stops-for-route/\(shapeID).json"
+            
+            var queryItems = apiKeyQueryItem
+            queryItems.append(URLQueryItem(name: "includePolylines", value: "true"))
+            fallbackComponents?.queryItems = queryItems
+            
+            if let fallbackURL = fallbackComponents?.url {
+                do {
+                    let response: OBARawStopsForRouteResponse = try await get(url: fallbackURL)
+                    // Merge all polylines into one points string if available
+                    var points = (response.data.polylines ?? []).compactMap { $0.points }.joined()
+                    
+                    // If top-level polylines are missing, check stopGroupings (common in MTA)
+                    if points.isEmpty {
+                        let groupings = response.data.stopGroupings ?? response.data.entry?.stopGroupings ?? []
+                        points = groupings.flatMap { $0.stopGroups ?? [] }
+                                         .flatMap { $0.polylines ?? [] }
+                                         .compactMap { $0.points }
+                                         .joined()
+                    }
+                    
+                    if !points.isEmpty {
+                        return points
+                    }
+                } catch {
+                    print("Fallback for shape (\(shapeID)) using stops-for-route failed: \(error)")
+                }
+            }
+            throw error
+        }
     }
 
     public func fetchVehicle(vehicleID: String) async throws -> OBAVehicle {
@@ -1421,8 +2044,10 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/vehicle/\(vehicleID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawListResponse<OBARawVehicleStatus> = try await get(url: url)
+        
+        // Handle potentially missing vehicle status in MTA response
         return response.list.toDomainVehicle()
     }
 
@@ -1431,7 +2056,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/trip/\(tripID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawListResponse<OBARawTripDetails> = try await get(url: url)
         return response.list.toDomain()
     }
@@ -1441,7 +2066,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/trip-for-vehicle/\(vehicleID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         let response: OBARawListResponse<OBAVehicleTripStatus> = try await get(url: url)
         return response.list
     }
@@ -1451,18 +2076,38 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         components?.path = "/api/where/trip-details/\(tripID).json"
         components?.queryItems = apiKeyQueryItem
 
-        let url = try components?.url ?? { throw URLError(.badURL) }()
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
         
         let response: OBARawTripDetailsResponse = try await get(url: url)
-        var details = response.data.entry
+        
+        // Handle potentially missing entry/schedule in MTA response
+        guard let entry = response.data.entry ?? response.data.tripDetails else {
+            throw URLError(.badServerResponse)
+        }
+        
+        var details = entry
         
         // Enhance stop times with names from references if needed
         if let stops = response.data.references?.stops, let schedule = details.schedule {
-            let stopNameByID = Dictionary(uniqueKeysWithValues: stops.map { ($0.id, $0.name) })
+            let stopMapByID = Dictionary(uniqueKeysWithValues: stops.compactMap { stop -> (String, OBARawTripDetailsResponse.RawStop)? in
+                guard let id = stop.id else { return nil }
+                return (id, stop)
+            })
             
             let enhancedStopTimes = schedule.stopTimes.map { stopTime -> OBATripExtendedDetails.StopTime in
-                if stopTime.stopHeadsign != nil { return stopTime }
-                let name = stopNameByID[stopTime.stopId]
+                let rawStop = stopTime.stopId.flatMap { stopMapByID[$0] }
+                
+                // Prioritize headsign, but only if it's not nil or empty
+                var name = (stopTime.stopHeadsign != nil && !stopTime.stopHeadsign!.isEmpty) ? stopTime.stopHeadsign : nil
+                
+                // Fallback to raw stop name from references
+                if name == nil || name!.isEmpty {
+                    name = rawStop?.name
+                }
+                
+                if name == nil || name!.isEmpty {
+                    print("DEBUG: Missing name for stop \(stopTime.stopId ?? "unknown")")
+                }
                 
                 return OBATripExtendedDetails.StopTime(
                     arrivalTime: stopTime.arrivalTime,
@@ -1470,7 +2115,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     stopId: stopTime.stopId,
                     stopHeadsign: name,
                     distanceAlongTrip: stopTime.distanceAlongTrip,
-                    historicalOccupancy: stopTime.historicalOccupancy
+                    historicalOccupancy: stopTime.historicalOccupancy,
+                    latitude: rawStop?.lat,
+                    longitude: rawStop?.lon
                 )
             }
             
@@ -1494,6 +2141,36 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         return details
     }
 
+    /// Decodes an encoded polyline string into an array of coordinates.
+    public static func decodePolyline(_ encodedPolyline: String) -> [CLLocationCoordinate2D] {
+        var coords = [CLLocationCoordinate2D]()
+        var index = encodedPolyline.startIndex
+        var lat = 0
+        var lon = 0
+        
+        while index < encodedPolyline.endIndex {
+            func decodeNext() -> Int? {
+                var result = 0
+                var shift = 0
+                var byte: Int
+                repeat {
+                    guard index < encodedPolyline.endIndex else { return nil }
+                    byte = Int(encodedPolyline[index].asciiValue! - 63)
+                    encodedPolyline.formIndex(after: &index)
+                    result |= (byte & 0x1F) << shift
+                    shift += 5
+                } while byte >= 0x20
+                return (result & 1) != 0 ? ~(result >> 1) : (result >> 1)
+            }
+            
+            guard let dLat = decodeNext(), let dLon = decodeNext() else { break }
+            lat += dLat
+            lon += dLon
+            coords.append(CLLocationCoordinate2D(latitude: Double(lat) * 1e-5, longitude: Double(lon) * 1e-5))
+        }
+        return coords
+    }
+
     public func fetchCurrentTime() async throws -> Date {
         var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
         components?.path = "/api/where/current-time.json"
@@ -1509,13 +2186,27 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         
         let (data, response) = try await urlSession.data(from: url)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
-             throw URLError(.badServerResponse)
+             throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
         }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
-        let result = try decoder.decode(CurrentTimeResponse.self, from: data)
-        return result.currentTime
+        do {
+            let result = try decoder.decode(CurrentTimeResponse.self, from: data)
+            return result.currentTime
+        } catch {
+            throw OBAAPIError.decodingError(error, url: url)
+        }
+    }
+
+    public func fetchVehiclesForAgency(agencyID: String) async throws -> [OBATripForLocation] {
+        var components = URLComponents(url: configuration.baseURL, resolvingAgainstBaseURL: false)
+        components?.path = "/api/where/vehicles-for-agency/\(agencyID).json"
+        components?.queryItems = apiKeyQueryItem
+
+        let url = try components?.url ?? { throw OBAAPIError.invalidURL }()
+        let response: OBARawTripsForLocationResponse = try await get(url: url)
+        return response.toDomain()
     }
 
     // MARK: - Helpers
@@ -1537,13 +2228,14 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 // Success - proceed with decoding
                 break
             case 404:
-                throw URLError(.badServerResponse) // Will be caught and handled as "not found"
-            case 400...499:
-                throw URLError(.badServerResponse) // Client error
-            case 500...599:
-                throw URLError(.badServerResponse) // Server error
+                print("OBA API 404 Not Found: \(url)")
+                throw OBAAPIError.notFound(url: url)
+            case 400...499, 500...599:
+                print("OBA API Error \(httpResponse.statusCode): \(url)")
+                throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
             default:
-                throw URLError(.badServerResponse)
+                print("OBA API Unexpected Status \(httpResponse.statusCode): \(url)")
+                throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
             }
         }
         
@@ -1551,13 +2243,18 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         if data.count <= 6 {
             let s = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
             if s == "null" || s == "" {
-                throw URLError(.badServerResponse)
+                throw OBAAPIError.notFound(url: url)
             }
         }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
-        return try decoder.decode(Response.self, from: data)
+        do {
+            return try decoder.decode(Response.self, from: data)
+        } catch {
+            print("OBA API Decoding Error: \(error) for \(url)")
+            throw OBAAPIError.decodingError(error, url: url)
+        }
     }
 }
 
@@ -1642,31 +2339,14 @@ public struct OBATripProblemReport: Sendable {
 
 // MARK: - New raw decoders
 
-private struct OBARawStopResponse: Decodable, Sendable {
-    private struct Data: Decodable, Sendable {
-        let entry: OBARawStopsForLocationResponse.RawStop
-    }
-    private let data: Data
-    func toDomainStop() -> OBAStop {
-        OBAStop(
-            id: data.entry.id,
-            name: data.entry.name,
-            latitude: data.entry.lat,
-            longitude: data.entry.lon,
-            code: data.entry.code,
-            direction: data.entry.direction
-        )
-    }
-}
-
 private struct OBARawScheduleForStopResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let entry: Entry
     }
     struct Entry: Decodable, Sendable {
-        let stopId: String
-        let date: Double
-        let stopRouteSchedules: [StopRouteSchedule]
+        let stopId: String?
+        let date: Double?
+        let stopRouteSchedules: [StopRouteSchedule]?
     }
     struct StopRouteSchedule: Decodable, Sendable {
         let stopRouteDirectionSchedules: [StopRouteDirectionSchedule]
@@ -1675,28 +2355,38 @@ private struct OBARawScheduleForStopResponse: Decodable, Sendable {
         let scheduleStopTimes: [StopScheduleStopTime]
     }
     struct StopScheduleStopTime: Decodable, Sendable {
-        let tripId: String
-        let arrivalTime: Int64
-        let departureTime: Int64
+        let tripId: String?
+        let arrivalTime: Int64?
+        let departureTime: Int64?
         let stopHeadsign: String?
     }
     private let data: Data
     func toDomainSchedule() -> OBAStopSchedule {
-        let times: [OBAStopScheduleStopTime] = data.entry.stopRouteSchedules
-            .flatMap { $0.stopRouteDirectionSchedules }
-            .flatMap { $0.scheduleStopTimes }
-            .map {
-                OBAStopScheduleStopTime(
-                    tripID: $0.tripId,
-                    arrivalTime: Date(timeIntervalSince1970: Double($0.arrivalTime) / 1000.0),
-                    departureTime: Date(timeIntervalSince1970: Double($0.departureTime) / 1000.0),
-                    stopHeadsign: ($0.stopHeadsign?.isEmpty == true) ? nil : $0.stopHeadsign
-                )
-            }
+        let schedules = data.entry.stopRouteSchedules ?? []
+        let directionSchedules = schedules.flatMap { $0.stopRouteDirectionSchedules }
+        let stopTimes = directionSchedules.flatMap { $0.scheduleStopTimes }
+
+        let domainTimes = stopTimes.map { raw -> OBAStopScheduleStopTime in
+            let tripID = raw.tripId ?? "unknown"
+            let arrivalDate = Date(timeIntervalSince1970: Double(raw.arrivalTime ?? 0) / 1000.0)
+            let departureDate = Date(timeIntervalSince1970: Double(raw.departureTime ?? 0) / 1000.0)
+            let headsign = (raw.stopHeadsign?.isEmpty == true) ? nil : raw.stopHeadsign
+
+            return OBAStopScheduleStopTime(
+                tripID: tripID,
+                arrivalTime: arrivalDate,
+                departureTime: departureDate,
+                stopHeadsign: headsign
+            )
+        }
+
+        let stopID = data.entry.stopId ?? "unknown"
+        let scheduleDate = Date(timeIntervalSince1970: (data.entry.date ?? 0) / 1000.0)
+
         return OBAStopSchedule(
-            stopID: data.entry.stopId,
-            date: Date(timeIntervalSince1970: data.entry.date / 1000.0),
-            stopTimes: times
+            stopID: stopID,
+            date: scheduleDate,
+            stopTimes: domainTimes
         )
     }
 }
@@ -1706,19 +2396,46 @@ private struct OBARawAgenciesWithCoverageResponse: Decodable, Sendable {
         let list: [AgencyRaw]
     }
     struct AgencyRaw: Decodable, Sendable {
-        let agencyId: String
-        let lat: Double
-        let lon: Double
+        let agencyId: String?
+        let agency: AgencyInfo?
+        let lat: Double?
+        let lon: Double?
         let latSpan: Double?
         let lonSpan: Double?
+
+        struct AgencyInfo: Decodable, Sendable {
+            let id: String?
+        }
     }
-    private let data: DataContainer
+    
+    private let list: [AgencyRaw]
+    
+    private enum CodingKeys: String, CodingKey {
+        case data
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // 1. Try to decode 'data' as a dictionary containing 'list'
+        if let dataContainer = try? container.decode(DataContainer.self, forKey: .data) {
+            self.list = dataContainer.list
+        } 
+        // 2. Try to decode 'data' as a direct array (common for MTA and some other servers)
+        else if let list = try? container.decode([AgencyRaw].self, forKey: .data) {
+            self.list = list
+        } 
+        else {
+            self.list = []
+        }
+    }
+
     func toDomainAgencies() -> [OBAAgencyCoverage] {
-        data.list.map {
+        list.map {
             OBAAgencyCoverage(
-                agencyID: $0.agencyId,
-                centerLatitude: $0.lat,
-                centerLongitude: $0.lon
+                agencyID: $0.agencyId ?? $0.agency?.id ?? "unknown",
+                centerLatitude: $0.lat ?? 0.0,
+                centerLongitude: $0.lon ?? 0.0
             )
         }
     }

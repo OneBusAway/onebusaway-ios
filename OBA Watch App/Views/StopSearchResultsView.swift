@@ -16,16 +16,27 @@ struct StopSearchResultsView: View {
     var body: some View {
         List {
             Section {
-                TextField("Search stops", text: $viewModel.query)
-                    .onSubmit { viewModel.performSearch() }
-                    .onChange(of: viewModel.query) { _, newValue in
-                        if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            viewModel.performSearch()
-                        } else {
-                            viewModel.stops = []
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                    TextField("Search stops", text: $viewModel.query)
+                        .font(.system(size: 16))
+                        .padding(.vertical, 8)
+                        .onSubmit { viewModel.performSearch() }
+                        .onChange(of: viewModel.query) { _, newValue in
+                            if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                viewModel.performSearch()
+                            } else {
+                                viewModel.stops = []
+                            }
                         }
-                    }
+                }
             }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.15))
+            )
 
             if viewModel.isLoading {
                 Section {
@@ -35,6 +46,7 @@ struct StopSearchResultsView: View {
                         Spacer()
                     }
                 }
+                .listRowBackground(Color.clear)
             } else if let error = viewModel.errorMessage {
                 Section {
                     Text(error)
@@ -42,29 +54,56 @@ struct StopSearchResultsView: View {
                         .foregroundColor(.red)
                 }
             } else if !viewModel.stops.isEmpty {
-                Section("Stops") {
+                Section {
                     ForEach(viewModel.stops) { stop in
                         NavigationLink {
                             StopArrivalsView(stopID: stop.id, stopName: stop.name)
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(stop.name)
-                                    .font(.headline)
-                                    .lineLimit(2)
-                                
-                                if let code = stop.code {
-                                    Text("Stop \(code)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                            HStack(spacing: 12) {
+                                Image(systemName: "signpost.right.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 30, height: 30)
+                                    .background(Color.orange.gradient)
+                                    .clipShape(Circle())
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(stop.name)
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .lineLimit(1)
+                                    
+                                    if let code = stop.code {
+                                        Text("Stop \(code)")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                    }
                                 }
                             }
                         }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.1))
+                        )
                     }
                 }
             } else if viewModel.stops.isEmpty && !viewModel.isLoading {
                 Section {
-                    Text("No stops found.")
-                        .foregroundColor(.secondary)
+                    VStack(spacing: 12) {
+                        Spacer(minLength: 20)
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 30))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text("No Stops Found")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Try a different search term.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                        Spacer(minLength: 20)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
                 }
             }
         }

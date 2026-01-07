@@ -20,21 +20,6 @@ struct ExploreView: View {
                     .cornerRadius(12)
                 }
                 NavigationLink {
-                    ServiceAlertsView()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundColor(.orange)
-                        Text("Service Alerts")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.orange.opacity(0.15))
-                    .cornerRadius(12)
-                }
-                NavigationLink {
                     TripPlanningEntryView()
                 } label: {
                     HStack(spacing: 6) {

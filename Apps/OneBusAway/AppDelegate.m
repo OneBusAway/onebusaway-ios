@@ -13,6 +13,7 @@
 @import OneSignal;
 #import <FirebaseCrashlytics/FirebaseCrashlytics.h>
 #import "App-Swift.h"
+@import OBASharedCore;
 
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
@@ -34,6 +35,9 @@
         assert(appGroup);
 
         _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:appGroup];
+
+        // Initialize WatchConnectivity sync service
+        [WatchConnectivityService shared];
 
         [_userDefaults registerDefaults:@{
             OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)

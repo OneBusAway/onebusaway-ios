@@ -44,16 +44,19 @@ struct AddressSearchView: View {
     
     private var searchFieldSection: some View {
         Section {
-            HStack {
+            HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundColor(.gray)
-                TextField("Search for an address or place", text: $viewModel.query)
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 16))
+                
+                TextField("Search places", text: $viewModel.query)
                     .onSubmit {
                         viewModel.performSearch()
                     }
                     .submitLabel(.search)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
+                    .font(.system(size: 16))
                     .onChange(of: viewModel.query) { _, newValue in
                         if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             viewModel.performSearch()
@@ -68,12 +71,20 @@ struct AddressSearchView: View {
                         viewModel.results = []
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 16))
                     }
-                    .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(.plain)
                 }
             }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
         }
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.15))
+        )
+        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 8))
     }
     
     private var loadingSection: some View {
@@ -114,30 +125,26 @@ struct AddressSearchView: View {
     
     private var emptyStateSection: some View {
         Section {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
+                Spacer(minLength: 20)
+                
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 40))
-                    .foregroundColor(.blue)
+                    .font(.system(size: 30))
+                    .foregroundColor(.secondary.opacity(0.5))
                 
                 Text("No Results Found")
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .semibold))
                 
                 Text("Try a different search term or check your spelling.")
-                    .font(.caption)
+                    .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 10)
                 
-                #if DEBUG
-                Button("Test with 'Seattle'") {
-                    viewModel.query = "Seattle"
-                    viewModel.performSearch()
-                }
-                .buttonStyle(.bordered)
-                #endif
+                Spacer(minLength: 20)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
+            .listRowBackground(Color.clear)
         }
     }
     
@@ -150,29 +157,45 @@ struct AddressSearchView: View {
                         coordinate: item.placemark.coordinate
                     )
                 } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if let name = item.name, !name.isEmpty {
-                            Text(name)
-                                .font(.headline)
-                                .lineLimit(2)
-                        }
+                    HStack(spacing: 12) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 30, height: 30)
+                            .background(Color.blue.gradient)
+                            .clipShape(Circle())
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            if let name = item.name, !name.isEmpty {
+                                Text(name)
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                            }
 
-                        if let title = item.placemark.title, title != item.name {
-                            Text(title)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
-                        }
-
-                        if let address = item.placemark.formattedAddress, !address.isEmpty {
-                            Text(address)
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
+                            let title = item.placemark.title ?? ""
+                            let name = item.name ?? ""
+                            
+                            // Only show subtitle if it adds new information
+                            if !title.isEmpty && title != name {
+                                Text(title)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            } else if let address = item.placemark.formattedAddress, !address.isEmpty {
+                                Text(address)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
                 }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.1))
+                )
             }
         }
     }

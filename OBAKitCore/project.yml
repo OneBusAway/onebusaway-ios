@@ -1,7 +1,9 @@
 targets:
   OBAKitCore:
     type: framework
-    platform: iOS
+    platform: [iOS, watchOS]
+    deploymentTarget:
+      watchOS: "11.0"
     sources: ["."]
     dependencies:
       - package: SwiftProtobuf
@@ -14,3 +16,4 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+        BUILD_LIBRARY_FOR_DISTRIBUTION: YES

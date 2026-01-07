@@ -16,7 +16,7 @@ struct NearbyStopsAtLocationView: View {
         self.title = title
         self.coordinate = coordinate
         _viewModel = StateObject(wrappedValue: NearbyStopsViewModel(
-            apiClient: WatchAppState.shared.apiClient,
+            apiClientProvider: { WatchAppState.shared.apiClient },
             locationProvider: {
                 CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
             }
@@ -88,8 +88,19 @@ struct NearbyStopsAtLocationView: View {
 
         return List {
             Section {
-                TextField("Search nearby stops", text: $searchText)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                    TextField("Search nearby stops", text: $searchText)
+                        .font(.system(size: 16))
+                        .padding(.vertical, 8)
+                }
             }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.15))
+            )
 
             if !limitedStops.isEmpty {
                 NearbyMapView(
@@ -98,6 +109,9 @@ struct NearbyStopsAtLocationView: View {
                     mapStyle: mapStyle
                 )
                 .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
 
             ForEach(sortedKeys, id: \.self) { key in
@@ -114,6 +128,10 @@ struct NearbyStopsAtLocationView: View {
                                     routesSummary: nil
                                 )
                             }
+                            .listRowBackground(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.1))
+                            )
                         }
                     }
                 }

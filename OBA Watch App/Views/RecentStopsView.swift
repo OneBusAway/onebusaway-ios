@@ -51,7 +51,11 @@ struct RecentStopsView: View {
                     RecentStopRow(stop: stop)
                 }
             }
+            .onDelete { indexSet in
+                viewModel.removeRecentStop(at: indexSet)
+            }
         }
+        .listStyle(.carousel)
     }
 }
 
@@ -59,17 +63,35 @@ struct RecentStopRow: View {
     let stop: OBAStop
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(stop.name)
-                .font(.headline)
-                .lineLimit(2)
-            
-            if let code = stop.code {
-                Text("Stop \(code)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.blue.gradient)
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: "bus.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stop.name)
+                    .font(.system(size: 15, weight: .semibold))
+                    .lineLimit(2)
+                
+                if let routes = stop.routeNames {
+                    Text(routes)
+                        .font(.system(size: 12))
+                        .foregroundColor(.blue)
+                        .lineLimit(1)
+                } else if let code = stop.code {
+                    Text("Stop \(code)")
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                }
             }
         }
+        .padding(.vertical, 4)
     }
 }
 

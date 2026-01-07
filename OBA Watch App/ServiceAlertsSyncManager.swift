@@ -1,50 +1,28 @@
 import Foundation
 import WatchConnectivity
+import OBASharedCore
 
-final class ServiceAlertsSyncManager: NSObject, WCSessionDelegate {
+final class ServiceAlertsSyncManager {
     static let shared = ServiceAlertsSyncManager()
     static let alertsUpdatedNotification = Notification.Name("ServiceAlertsUpdated")
     private let storageKey = "watch.service_alerts"
-    private var didActivateSession = false
 
-    private override init() {
-        super.init()
-        activateSessionIfNeeded()
+    private init() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAlertsUpdated(_:)),
+            name: WatchConnectivityService.serviceAlertsUpdatedNotification,
+            object: nil
+        )
     }
 
-    private func activateSessionIfNeeded() {
-        guard WCSession.isSupported() else { return }
-        let session = WCSession.default
-        if session.delegate == nil {
-            session.delegate = self
-        }
-        if session.activationState == .notActivated {
-            session.activate()
-        }
+    @objc private func handleAlertsUpdated(_ notification: Notification) {
+        NotificationCenter.default.post(name: Self.alertsUpdatedNotification, object: nil)
     }
 
-    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        if activationState == .activated {
-            didActivateSession = true
-            print("ServiceAlertsSyncManager WCSession activated successfully.")
-        } else {
-            didActivateSession = false
-            print("ServiceAlertsSyncManager WCSession activation failed with state: \(activationState.rawValue), error: \(error?.localizedDescription ?? "unknown error")")
-        }
-    }
-
-    func sessionReachabilityDidChange(_ session: WCSession) {
-        print("ServiceAlertsSyncManager WCSession reachability changed: \(session.isReachable ? "reachable" : "not reachable")")
-    }
     func currentAlerts() -> [ServiceAlert] {
         guard let data = UserDefaults.standard.data(forKey: storageKey) else { return [] }
         return (try? JSONDecoder().decode([ServiceAlert].self, from: data)) ?? []
-    }
-    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
-        if let data = applicationContext["service_alerts"] as? Data {
-            UserDefaults.standard.set(data, forKey: storageKey)
-            NotificationCenter.default.post(name: Self.alertsUpdatedNotification, object: nil)
-        }
     }
 }
 

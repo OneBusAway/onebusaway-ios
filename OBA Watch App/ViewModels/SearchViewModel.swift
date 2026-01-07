@@ -18,11 +18,13 @@ class SearchViewModel: ObservableObject {
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
     @Published var recentStops: [OBAStop] = []
+    @Published var recentSearchTerms: [String] = []
     
-    private let apiClient: OBAAPIClient
+    private let apiClientProvider: () -> OBAAPIClient
     private let locationProvider: () -> CLLocation?
     private var searchTask: Task<Void, Never>?
     private let recentStopsKey = "watch_recent_search_stops"
+    private let recentSearchTermsKey = "watch_recent_search_terms"
     private let bookmarksKey = "watch.bookmarks"
 
     enum QuickSearchType {
@@ -32,26 +34,52 @@ class SearchViewModel: ObservableObject {
         case vehicle
     }
     
-    init(apiClient: OBAAPIClient, locationProvider: @escaping () -> CLLocation?) {
-        self.apiClient = apiClient
+    init(apiClientProvider: @escaping () -> OBAAPIClient, locationProvider: @escaping () -> CLLocation?) {
+        self.apiClientProvider = apiClientProvider
         self.locationProvider = locationProvider
         self.recentStops = Self.loadRecentStops(from: recentStopsKey)
+        self.recentSearchTerms = UserDefaults.standard.stringArray(forKey: recentSearchTermsKey) ?? []
         self.bookmarkResults = Self.loadBookmarks(from: bookmarksKey)
     }
     
     func performSearch() {
         searchTask?.cancel()
         
-        guard !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
             searchResults = []
             bookmarkResults = []
             return
         }
         
+        // Save to recent search terms if not already there or move to top
+        updateRecentSearchTerms(term: trimmed)
+        
         searchTask = Task {
-            await searchStops(query: searchText)
-            filterBookmarks(matching: searchText)
+            await searchStops(query: trimmed)
+            filterBookmarks(matching: trimmed)
         }
+    }
+
+    private func updateRecentSearchTerms(term: String) {
+        var terms = recentSearchTerms
+        terms.removeAll { $0.lowercased() == term.lowercased() }
+        terms.insert(term, at: 0)
+        if terms.count > 5 {
+            terms = Array(terms.prefix(5))
+        }
+        recentSearchTerms = terms
+        UserDefaults.standard.set(terms, forKey: recentSearchTermsKey)
+    }
+
+    func selectRecentSearchTerm(_ term: String) {
+        searchText = term
+        performSearch()
+    }
+
+    func clearRecentSearchTerms() {
+        recentSearchTerms = []
+        UserDefaults.standard.removeObject(forKey: recentSearchTermsKey)
     }
 
     func quickSearch(_ type: QuickSearchType) {
@@ -88,6 +116,7 @@ class SearchViewModel: ObservableObject {
     }
     
     private func searchStops(query: String) async {
+        let apiClient = apiClientProvider()
         isLoading = true
         errorMessage = nil
         

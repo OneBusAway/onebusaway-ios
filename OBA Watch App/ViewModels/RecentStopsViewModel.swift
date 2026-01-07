@@ -46,7 +46,15 @@ class RecentStopsViewModel: ObservableObject {
         }
         current.insert(stop, at: 0)
         recentStops = Array(current.prefix(20))
+        save()
+    }
 
+    func removeRecentStop(at offsets: IndexSet) {
+        recentStops.remove(atOffsets: offsets)
+        save()
+    }
+
+    private func save() {
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(recentStops) {
             storage.set(data, forKey: storageKey)

@@ -32,6 +32,9 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Shared, platform-agnostic API client.
     var apiClient: OBAAPIClient
 
+    /// The API key retrieved from Info.plist.
+    private let apiKey: String
+
     /// Simple location manager used only on watch.
     private let locationManager: CLLocationManager
 
@@ -60,6 +63,75 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate {
         #endif
     }
 
+    struct RegionOption: Identifiable {
+        let id: String
+        let name: String
+        let coordinate: CLLocationCoordinate2D
+    }
+
+    static let regions: [RegionOption] = [
+        .init(id: "tampa-bay", name: "Tampa Bay", coordinate: .init(latitude: 27.9506, longitude: -82.4572)),
+        .init(id: "puget-sound", name: "Puget Sound", coordinate: .init(latitude: 47.6062, longitude: -122.3321)),
+        .init(id: "mta-new-york", name: "MTA New York", coordinate: .init(latitude: 40.7128, longitude: -74.0060)),
+        .init(id: "washington-dc", name: "Washington, D.C.", coordinate: .init(latitude: 38.9072, longitude: -77.0369)),
+        .init(id: "san-diego", name: "San Diego", coordinate: .init(latitude: 32.7157, longitude: -117.1611))
+    ]
+
+    /// Coordinates for regions defined in RegionOnboardingView
+    static let regionCoordinates: [String: CLLocationCoordinate2D] = [
+        "tampa-bay": .init(latitude: 27.9506, longitude: -82.4572),
+        "puget-sound": .init(latitude: 47.6062, longitude: -122.3321),
+        "mta-new-york": .init(latitude: 40.7128, longitude: -74.0060),
+        "washington-dc": .init(latitude: 38.9072, longitude: -77.0369),
+        "san-diego": .init(latitude: 32.7157, longitude: -117.1611)
+    ]
+
+    /// Base URLs for regions defined in RegionOnboardingView
+    static let regionBaseURLs: [String: String] = [
+        "tampa-bay": "http://oba.tampa.onebusaway.org",
+        "puget-sound": "https://api.pugetsound.onebusaway.org",
+        "mta-new-york": "https://bustime.mta.info",
+        "washington-dc": "https://api.wmata.com", // Note: DC usually needs more config
+        "san-diego": "https://realtime.sdmts.com/api/"
+    ]
+
+    /// Returns the location to use for nearby stops, taking into account
+    /// the user's preference for sharing current location vs. using a
+    /// manually selected region.
+    var effectiveLocation: CLLocation {
+        let shareLocation = UserDefaults.standard.bool(forKey: "watch_share_current_location")
+        
+        if shareLocation, let loc = currentLocation {
+            return loc
+        }
+        
+        // Fallback to selected region
+        let regionID = UserDefaults.standard.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
+        if let coord = Self.regionCoordinates[regionID] {
+            return CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+        }
+        
+        return CLLocation(latitude: 40.7128, longitude: -74.0060)
+    }
+
+    /// Updates the current region and API client.
+    func updateRegion(id: String) {
+         UserDefaults.standard.set(id, forKey: "watch_selected_region_id")
+         
+         if let urlString = Self.regionBaseURLs[id], let url = URL(string: urlString) {
+             let config = OBAURLSessionAPIClient.Configuration(
+                 baseURL: url,
+                 apiKey: self.apiKey,
+                 minutesBeforeArrivals: 5,
+                 minutesAfterArrivals: 125
+             )
+             self.apiClient = OBAURLSessionAPIClient(configuration: config)
+         }
+        
+        // Notify listeners that location/region might have changed
+        NotificationCenter.default.post(name: NSNotification.Name("LocationUpdated"), object: nil)
+    }
+
     private var configCancellable: AnyCancellable?
 
     private override init() {
@@ -67,13 +139,15 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate {
         // properties can be initialized before calling super.init().
         let manager = CLLocationManager()
 
-        // Configure shared API client.
-        // For now, mirror the iOS app's MTA New York configuration so that
-        // arrivals/nearby behavior matches the phone: same region base URL
-        // and arrivals time window.
-        let baseURL = URL(string: "https://bustime.mta.info")!
+        // Use the saved region if available, otherwise fall back to MTA New York.
+        let savedRegionID = UserDefaults.standard.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
+        let baseURLString = Self.regionBaseURLs[savedRegionID] ?? "https://bustime.mta.info"
+        let baseURL = URL(string: baseURLString)!
+        
         let obaConfig = Bundle.main.object(forInfoDictionaryKey: "OBAKitConfig") as? [String: Any]
         let apiKeyFromPlist = (obaConfig?["RESTServerAPIKey"] as? String) ?? "org.onebusaway.iphone"
+        self.apiKey = apiKeyFromPlist
+        
         let config = OBAURLSessionAPIClient.Configuration(
             baseURL: baseURL,
             apiKey: apiKeyFromPlist,
@@ -84,7 +158,15 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate {
         // Initialize stored properties.
         self.locationManager = manager
         self.authorizationStatus = CLLocationManager.authorizationStatus()
-        self.apiClient = OBAURLSessionAPIClient(configuration: config)
+        
+        // Initialize sync managers so they start listening for updates.
+        _ = BookmarksSyncManager.shared
+        _ = AlarmsSyncManager.shared
+
+        // Use the latest configuration from WatchConnectivity if available,
+        // otherwise use the region-based configuration.
+        let initialConfig = WatchConnectivityService.shared().currentConfiguration ?? config
+        self.apiClient = OBAURLSessionAPIClient(configuration: initialConfig)
 
         super.init()
 
@@ -99,7 +181,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate {
             await syncTime()
         }
 
-        configCancellable = WatchConnectivityService.shared.$currentConfiguration.sink { [weak self] configuration in
+        configCancellable = WatchConnectivityService.shared().$currentConfiguration.sink { [weak self] configuration in
             guard let self = self, let configuration = configuration else { return }
             self.apiClient = OBAURLSessionAPIClient(configuration: configuration)
         }

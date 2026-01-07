@@ -19,8 +19,8 @@ struct NearbyStopsView: View {
     
     init() {
         _viewModel = StateObject(wrappedValue: NearbyStopsViewModel(
-            apiClient: WatchAppState.shared.apiClient,
-            locationProvider: { WatchAppState.shared.currentLocation }
+            apiClientProvider: { WatchAppState.shared.apiClient },
+            locationProvider: { WatchAppState.shared.effectiveLocation }
         ))
     }
     
@@ -61,7 +61,7 @@ struct NearbyStopsView: View {
                 .foregroundColor(.secondary)
             Text("No Stops Found")
                 .font(.headline)
-            Text(viewModel.locationStatus)
+            Text("0 stops found near this location")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -94,8 +94,19 @@ struct NearbyStopsView: View {
 
         return List {
             Section {
-                TextField("Search nearby stops", text: $searchText)
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                    TextField("Search nearby stops", text: $searchText)
+                        .font(.system(size: 16))
+                        .padding(.vertical, 8)
+                }
             }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.15))
+            )
 
             if !limitedStops.isEmpty {
                 NearbyMapView(
@@ -103,7 +114,11 @@ struct NearbyStopsView: View {
                     currentLocation: appState.currentLocation,
                     mapStyle: useStandardMapStyle ? .standard : .imagery
                 )
+                .frame(maxWidth: .infinity)
                 .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
             }
 
             ForEach(sortedKeys, id: \.self) { key in
@@ -120,6 +135,10 @@ struct NearbyStopsView: View {
                                     routesSummary: viewModel.routeSummaryByStopID[stop.id]
                                 )
                             }
+                            .listRowBackground(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.1))
+                            )
                         }
                     }
                 }
@@ -149,38 +168,40 @@ struct NearbyStopRow: View {
     let routesSummary: String?
     
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "bus")
-                .foregroundColor(.green)
-                .font(.system(size: 14))
+        HStack(spacing: 12) {
+            Image(systemName: "signpost.right.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 30, height: 30)
+                .background(Color.green.gradient)
+                .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(stop.name)
-                    .font(.headline)
-                    .lineLimit(2)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
                 
-                HStack(spacing: 4) {
+                HStack(spacing: 6) {
                     if let code = stop.code {
                         Text("#\(code)")
-                            .font(.caption)
+                            .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
 
                     if let location = currentLocation {
                         let stopLocation = CLLocation(latitude: stop.latitude, longitude: stop.longitude)
                         let distance = stopLocation.distance(from: location)
-                        Image(systemName: "location.fill")
-                            .font(.system(size: 8))
-                            .foregroundColor(.secondary)
+                        
                         Text(formatDistance(distance))
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundColor(.secondary)
                     }
                 }
 
                 if let routesSummary {
-                    Text("Routes: \(routesSummary)")
-                        .font(.caption2)
+                    Text(routesSummary)
+                        .font(.system(size: 12))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 }
@@ -203,34 +224,14 @@ struct NearbyMapView: View {
     let currentLocation: CLLocation?
     var mapStyle: MapStyle = .standard
 
-    @State private var region: MKCoordinateRegion
-
-    init(stops: [OBAStop], currentLocation: CLLocation?, mapStyle: MapStyle = .standard) {
-        self.stops = stops
-        self.currentLocation = currentLocation
-        self.mapStyle = mapStyle
-
-        let center: CLLocationCoordinate2D
-        if let loc = currentLocation?.coordinate {
-            center = loc
-        } else if let first = stops.first {
-            center = CLLocationCoordinate2D(latitude: first.latitude, longitude: first.longitude)
-        } else {
-            center = CLLocationCoordinate2D(latitude: 0, longitude: 0)
-        }
-
-        _region = State(initialValue: MKCoordinateRegion(
-            center: center,
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        ))
-    }
-
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: stops.prefix(20)) { stop in
-            MapMarker(
-                coordinate: CLLocationCoordinate2D(latitude: stop.latitude, longitude: stop.longitude),
-                tint: .green
-            )
+        Map {
+            UserAnnotation()
+            
+            ForEach(stops.prefix(20)) { stop in
+                Marker(stop.name, systemImage: "bus", coordinate: CLLocationCoordinate2D(latitude: stop.latitude, longitude: stop.longitude))
+                    .tint(.green)
+            }
         }
         .mapStyle(mapStyle)
     }

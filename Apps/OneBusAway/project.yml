@@ -87,6 +87,24 @@ targets:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.OBAWidget
+  OBASharedCore:
+    type: framework
+    platform: [iOS, watchOS]
+    sources: ["OBASharedCore"]
+  OBA Watch App:
+    type: watchapp
+    platform: watchOS
+    sources: ["OBA Watch App"]
+    dependencies:
+      - target: OBAKitCore
+      - target: OBASharedCore
+    info:
+      path: "OBA Watch App/OBAWatch-AppInfo.plist"
+      properties:
+        CFBundleDisplayName: OneBusAway
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.watchkitapp
 include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml

@@ -15,9 +15,20 @@ struct VehicleSearchView: View {
     var body: some View {
         List {
             Section {
-                TextField("Vehicle ID", text: $viewModel.query)
-                    .onSubmit { viewModel.performSearch() }
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
+                    TextField("Vehicle ID", text: $viewModel.query)
+                        .font(.system(size: 16))
+                        .padding(.vertical, 8)
+                        .onSubmit { viewModel.performSearch() }
+                }
             }
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.15))
+            )
 
             if viewModel.isLoading {
                 Section {
@@ -27,6 +38,7 @@ struct VehicleSearchView: View {
                         Spacer()
                     }
                 }
+                .listRowBackground(Color.clear)
             } else if let error = viewModel.errorMessage {
                 Section {
                     Text(error)
@@ -34,79 +46,89 @@ struct VehicleSearchView: View {
                         .foregroundColor(.red)
                 }
             } else if let vehicle = viewModel.vehicle {
-                Section("Vehicle") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(vehicle.id)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                        
-                        if let status = vehicle.status, !status.isEmpty {
-                            HStack(spacing: 4) {
-                                Image(systemName: "info.circle")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                                Text("Status: \(status)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "car.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 30, height: 30)
+                                .background(Color.purple.gradient)
+                                .clipShape(Circle())
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Vehicle \(vehicle.id)")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                if let status = vehicle.status, !status.isEmpty {
+                                    Text(status)
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
                             }
                         }
+                        
+                        Divider()
+                            .padding(.vertical, 4)
                         
                         if let phase = vehicle.phase, !phase.isEmpty {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "arrow.right.circle")
-                                    .font(.caption2)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                                 Text("Phase: \(phase)")
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                             }
                         }
                         
-                        if let tripID = vehicle.tripID {
+                        if let tripID = vehicle.tripID, !tripID.isEmpty {
                             NavigationLink {
                                 TripDetailsView(tripID: tripID, vehicleID: vehicle.id)
                             } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "map")
-                                        .font(.caption2)
+                                HStack(spacing: 6) {
+                                    Image(systemName: "map.fill")
+                                        .font(.system(size: 12))
                                         .foregroundColor(.blue)
                                     Text("Trip: \(tripID)")
-                                        .font(.caption)
+                                        .font(.system(size: 12))
                                         .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
                                 }
                             }
                         }
                         
                         if let lastUpdate = vehicle.lastUpdateTime {
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                    .font(.caption2)
+                            HStack(spacing: 6) {
+                                Image(systemName: "clock.fill")
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                                 Text("Updated: \(DateFormatterHelper.contextualDateTimeString(lastUpdate))")
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                             }
                         }
                         
                         if let lat = vehicle.latitude, let lon = vehicle.longitude {
-                            HStack(spacing: 4) {
+                            HStack(spacing: 6) {
                                 Image(systemName: "location.fill")
-                                    .font(.caption2)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                                 Text(String(format: "%.4f, %.4f", lat, lon))
-                                    .font(.caption)
+                                    .font(.system(size: 12))
                                     .foregroundColor(.secondary)
                             }
                         }
                     }
                     .padding(.vertical, 4)
                 }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white.opacity(0.1))
+                )
             } else if !viewModel.nearbyVehicles.isEmpty {
-                Section("Nearby Vehicles") {
+                Section {
                     ForEach(viewModel.nearbyVehicles) { trip in
                         NavigationLink {
                             TripDetailsView(
@@ -116,27 +138,40 @@ struct VehicleSearchView: View {
                                 headsign: trip.tripHeadsign
                             )
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack {
-                                    Text(trip.routeShortName ?? trip.vehicleID)
-                                        .font(.headline)
-                                    Spacer()
-                                    if let orientation = trip.orientation {
-                                        Image(systemName: "arrow.up")
-                                            .rotationEffect(.degrees(orientation))
-                                            .font(.caption2)
+                            HStack(spacing: 12) {
+                                Image(systemName: "car.2.fill")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 30, height: 30)
+                                    .background(Color.purple.gradient)
+                                    .clipShape(Circle())
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack {
+                                        Text(trip.routeShortName ?? trip.vehicleID)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        if let orientation = trip.orientation {
+                                            Image(systemName: "arrow.up")
+                                                .rotationEffect(.degrees(orientation))
+                                                .font(.system(size: 10))
+                                        }
+                                    }
+                                    
+                                    if let headsign = trip.tripHeadsign {
+                                        Text(headsign)
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
                                     }
                                 }
-                                
-                                if let headsign = trip.tripHeadsign {
-                                    Text(headsign)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
                             }
-                            .padding(.vertical, 4)
                         }
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.1))
+                        )
                     }
                 }
             }

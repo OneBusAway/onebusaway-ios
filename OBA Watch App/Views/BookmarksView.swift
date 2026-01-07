@@ -63,30 +63,39 @@ struct BookmarkRow: View {
     let bookmark: Bookmark
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(bookmark.name)
-                .font(.headline)
-                .lineLimit(1)
-            
-            if let routeName = bookmark.routeShortName {
-                HStack(spacing: 4) {
-                    Text("Route \(routeName)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    if let headsign = bookmark.tripHeadsign {
-                        Text("•")
-                            .foregroundColor(.secondary)
-                        Text(headsign)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-            } else if let stop = bookmark.stop {
-                Text(stop.name)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+        HStack(spacing: 10) {
+            Image(systemName: "bookmark.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 24, height: 24)
+                .background(Color.blue.gradient)
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(bookmark.name)
+                    .font(.headline)
                     .lineLimit(1)
+                
+                if let routeName = bookmark.routeShortName {
+                    HStack(spacing: 4) {
+                        Text("Route \(routeName)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        if let headsign = bookmark.tripHeadsign {
+                            Text("•")
+                                .foregroundColor(.secondary)
+                            Text(headsign)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                } else if let stop = bookmark.stop {
+                    Text(stop.name)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
         }
     }

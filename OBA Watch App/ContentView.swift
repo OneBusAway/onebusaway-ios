@@ -82,20 +82,8 @@ struct LocationOnboardingView: View {
 /// Second step of onboarding: lets the user pick a service region in a
 /// watch-appropriate way, inspired by the iOS "Choose Region" screen.
 struct RegionOnboardingView: View {
-    struct RegionOption: Identifiable {
-        let id: String
-        let name: String
-        let coordinate: CLLocationCoordinate2D
-    }
-
-    private let regions: [RegionOption] = [
-        .init(id: "tampa-bay", name: "Tampa Bay", coordinate: .init(latitude: 27.9506, longitude: -82.4572)),
-        .init(id: "puget-sound", name: "Puget Sound", coordinate: .init(latitude: 47.6062, longitude: -122.3321)),
-        .init(id: "mta-new-york", name: "MTA New York", coordinate: .init(latitude: 40.7128, longitude: -74.0060)),
-        .init(id: "washington-dc", name: "Washington, D.C.", coordinate: .init(latitude: 38.9072, longitude: -77.0369)),
-        .init(id: "san-diego", name: "San Diego", coordinate: .init(latitude: 32.7157, longitude: -117.1611))
-    ]
-
+    @EnvironmentObject var appState: WatchAppState
+    
     @AppStorage("watch_selected_region_id") private var selectedRegionID: String = "mta-new-york"
     @AppStorage("watch_share_current_location") private var shareCurrentLocation: Bool = true
 
@@ -105,10 +93,14 @@ struct RegionOnboardingView: View {
 
     init(onContinue: @escaping () -> Void) {
         self.onContinue = onContinue
-        // Start the map centered on the default selected region (MTA New York).
-        let defaultCoordinate = CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        
+        // Use the saved region if available, otherwise fall back to MTA New York.
+        let savedRegionID = UserDefaults.standard.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
+        
+        let initialCoordinate = WatchAppState.regionCoordinates[savedRegionID] ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        
         _mapRegion = State(initialValue: MKCoordinateRegion(
-            center: defaultCoordinate,
+            center: initialCoordinate,
             span: MKCoordinateSpan(latitudeDelta: 3.0, longitudeDelta: 3.0)
         ))
     }
@@ -127,9 +119,9 @@ struct RegionOnboardingView: View {
             }
 
             Section {
-                ForEach(regions) { region in
+                ForEach(WatchAppState.regions) { region in
                     Button {
-                        selectedRegionID = region.id
+                        appState.updateRegion(id: region.id)
                         mapRegion.center = region.coordinate
                     } label: {
                         HStack {
@@ -146,9 +138,10 @@ struct RegionOnboardingView: View {
 
             Section {
                 Map(coordinateRegion: $mapRegion)
-                    .frame(maxWidth: .infinity, minHeight: 100, maxHeight: 100)
-                    .cornerRadius(8)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .frame(maxWidth: .infinity, minHeight: 140, maxHeight: 140)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .listRowInsets(EdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
+                    .listRowBackground(Color.clear)
             }
 
             Section {
@@ -195,6 +188,9 @@ struct MoreView: View {
 }
 
 struct SettingsView: View {
+    @EnvironmentObject var appState: WatchAppState
+    @AppStorage("watch_selected_region_id") private var selectedRegionID: String = "mta-new-york"
+    
     // Map
     @AppStorage("watch_map_style_standard") private var useStandardMapStyle: Bool = true
     @AppStorage("watch_map_shows_scale") private var showsScale: Bool = false
@@ -219,10 +215,21 @@ struct SettingsView: View {
     @AppStorage("watch_send_usage_data") private var sendUsageData: Bool = true
 
     var body: some View {
-        // This view is pushed via NavigationLink from MoreView's NavigationStack,
-        // so we do NOT embed another NavigationStack here. That way, watchOS
-        // shows a standard back button automatically.
         List {
+            Section("Region") {
+                NavigationLink {
+                    ChooseRegionView()
+                } label: {
+                    HStack {
+                        Text("Choose Region")
+                        Spacer()
+                        Text(WatchAppState.regions.first(where: { $0.id == selectedRegionID })?.name ?? "Unknown")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
             Section("Map") {
                 Toggle("Standard map style", isOn: $useStandardMapStyle)
                 Toggle("Shows scale", isOn: $showsScale)
@@ -256,11 +263,38 @@ struct SettingsView: View {
     }
 }
 
+struct ChooseRegionView: View {
+    @EnvironmentObject var appState: WatchAppState
+    @AppStorage("watch_selected_region_id") private var selectedRegionID: String = "mta-new-york"
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        List {
+            ForEach(WatchAppState.regions) { region in
+                Button {
+                    appState.updateRegion(id: region.id)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(region.name)
+                        Spacer()
+                        if region.id == selectedRegionID {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Choose Region")
+    }
+}
+
 /// Simple map showing the selected region from onboarding, with nearby stops.
 struct RegionPreviewMapView: View {
     @AppStorage("watch_selected_region_id") private var selectedRegionID: String = "mta-new-york"
     @AppStorage("watch_map_style_standard") private var useStandardMapStyle: Bool = true
-    @StateObject private var viewModel = RegionPreviewMapViewModel(apiClient: WatchAppState.shared.apiClient)
+    @StateObject private var viewModel = RegionPreviewMapViewModel()
 
     private var centerCoordinate: CLLocationCoordinate2D {
         switch selectedRegionID {
@@ -311,7 +345,7 @@ struct RegionPreviewMapView: View {
         }
         .onAppear {
             Task {
-                await viewModel.loadStops(around: centerCoordinate)
+                await viewModel.loadStops(around: centerCoordinate, apiClient: WatchAppState.shared.apiClient)
             }
         }
     }
@@ -321,13 +355,7 @@ struct RegionPreviewMapView: View {
 final class RegionPreviewMapViewModel: ObservableObject {
     @Published var stops: [OBAStop] = []
 
-    private let apiClient: OBAAPIClient
-
-    init(apiClient: OBAAPIClient) {
-        self.apiClient = apiClient
-    }
-
-    func loadStops(around coordinate: CLLocationCoordinate2D) async {
+    func loadStops(around coordinate: CLLocationCoordinate2D, apiClient: OBAAPIClient) async {
         do {
             let fetched = try await apiClient.fetchNearbyStops(
                 latitude: coordinate.latitude,
@@ -343,49 +371,92 @@ final class RegionPreviewMapViewModel: ObservableObject {
 
 /// Main menu shown after permission has been handled.
 struct MainMenuView: View {
+    @AppStorage("watch_selected_region_id") private var selectedRegionID: String = "mta-new-york"
+    
+    private var regionName: String {
+        switch selectedRegionID {
+        case "tampa-bay": return "Tampa Bay"
+        case "puget-sound": return "Puget Sound"
+        case "mta-new-york": return "MTA New York"
+        case "washington-dc": return "Washington, D.C."
+        case "san-diego": return "San Diego"
+        default: return "OneBusAway"
+        }
+    }
+    
     var body: some View {
         List {
-            // Full-width map for the selected region from onboarding.
+            // Search & Map at the top
             Section {
-                RegionPreviewMapView()
-                    .frame(maxWidth: .infinity, minHeight: 130, maxHeight: 130)
-                    .cornerRadius(10)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                NavigationLink {
+                    SearchView()
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                        .font(.headline)
+                }
             }
 
-            // Primary actions: Bookmarks, Nearby, Recent, Search.
+            Section {
+                RegionPreviewMapView()
+                    .frame(height: 120)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .listRowInsets(EdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
+                    .listRowBackground(Color.clear)
+            }
+
+            // Bookmarks Section - Keep this because user asked to fix it!
             Section {
                 NavigationLink {
                     BookmarksView()
                 } label: {
                     Label("Bookmarks", systemImage: "bookmark.fill")
+                        .foregroundColor(.blue)
                 }
+            }
 
+            // Trip Planning Section - Make this prominent
+            Section {
+                NavigationLink {
+                    TripPlanningEntryView()
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Label("Trip Planner", systemImage: "figure.walk")
+                            .font(.headline)
+                            .foregroundColor(.green)
+                        Text("Plan your journey")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            } header: {
+                Text("Plan")
+            }
+            
+            // Other useful actions but minimized
+            Section {
                 NavigationLink {
                     NearbyStopsView()
                 } label: {
-                    Label("Nearby Stops", systemImage: "location.fill")
+                    Label("Nearby", systemImage: "location.fill")
                 }
 
                 NavigationLink {
                     RecentStopsView()
                 } label: {
-                    Label("Recent Stops", systemImage: "clock.fill")
-                }
-
-                NavigationLink {
-                    SearchView()
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Label("Recents", systemImage: "clock.fill")
                 }
                 
                 NavigationLink {
-                    ExploreView()
+                    VehiclesView()
                 } label: {
-                    Label("Explore", systemImage: "safari.fill")
+                    Label("Vehicles", systemImage: "bus.fill")
                 }
+            } header: {
+                Text("Explore")
             }
         }
+        .navigationTitle(regionName)
     }
 }
 
