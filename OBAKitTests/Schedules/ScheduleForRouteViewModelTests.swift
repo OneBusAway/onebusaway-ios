@@ -194,13 +194,13 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_departureTimesByPeriod_beforeFetch_isEmpty() {
+    func test_departureTimesDisplay_beforeFetch_isEmpty() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimesByPeriod).to(beEmpty())
+        expect(viewModel.departureTimesDisplay).to(beEmpty())
     }
 
     // MARK: - Time Formatting Tests
@@ -234,7 +234,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_formatTimeAccessible_withDate_includesAMPM() {
+    func test_formatTimeAccessible_withDate_returns24HourFormat() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -244,9 +244,9 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTimeAccessible(date)
 
-        // Should contain either AM or PM
-        let containsAMPM = result.contains("AM") || result.contains("PM")
-        expect(containsAMPM).to(beTrue())
+        // Should return 24-hour format (HH:mm)
+        expect(result).to(contain(":"))
+        expect(result).toNot(equal("-"))
     }
 
     @MainActor

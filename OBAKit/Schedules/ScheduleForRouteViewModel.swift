@@ -12,15 +12,6 @@ import Combine
 import SwiftUI
 import OBAKitCore
 
-// MARK: - Time Period Grouping
-
-/// Represents a group of departure times for a specific time period (AM or PM)
-struct TimePeriodGroup: Identifiable {
-    let id: String
-    let label: String
-    let times: [[Date?]]
-}
-
 /// View model that manages schedule data for a specific route
 @MainActor
 class ScheduleForRouteViewModel: ObservableObject {
@@ -123,64 +114,10 @@ class ScheduleForRouteViewModel: ObservableObject {
         return sorted.map { $0.times }
     }
 
-    /// Returns departure times grouped by time period (AM/PM)
-    /// Each group contains trips where the actual trip start time is in that period
-    var departureTimesByPeriod: [TimePeriodGroup] {
-        guard let direction = currentDirection,
-              let scheduleDate = scheduleData?.scheduleDate else {
-            return []
-        }
-        let calendar = Calendar.current
-        var amTrips: [[Date?]] = []
-        var pmTrips: [[Date?]] = []
-
-        let tripsWithStartTimes: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
-            let trip = direction.tripsWithStopTimes[index]
-            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
-        }
-        let sorted = tripsWithStartTimes.sorted { trip1, trip2 in
-            switch (trip1.startTime, trip2.startTime) {
-            case (let t1?, let t2?):
-                return t1 < t2
-            case (nil, _):
-                return false
-            case (_, nil):
-                return true
-            }
-        }
-        for (times, startTime) in sorted {
-            guard let startTime = startTime else {
-                pmTrips.append(times)
-                continue
-            }
-
-            let hour = calendar.component(.hour, from: startTime)
-            if hour < 12 {
-                amTrips.append(times)
-            } else {
-                pmTrips.append(times)
-            }
-        }
-
-        var groups: [TimePeriodGroup] = []
-
-        if !amTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "AM",
-                label: OBALoc("schedule_view.am_period", value: "AM", comment: "Morning time period label"),
-                times: amTrips
-            ))
-        }
-
-        if !pmTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "PM",
-                label: OBALoc("schedule_view.pm_period", value: "PM", comment: "Afternoon/evening time period label"),
-                times: pmTrips
-            ))
-        }
-
-        return groups
+    /// Returns departure times for display (sorted list without AM/PM grouping)
+    /// Uses 24-hour format, so AM/PM grouping is unnecessary
+    var departureTimesDisplay: [[Date?]] {
+        return sortedDepartureTimes
     }
 
     // MARK: - Private Properties
@@ -201,13 +138,13 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
+        formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
     private static let timeFormatterWithAMPM: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
+        formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
