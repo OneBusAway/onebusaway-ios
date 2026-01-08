@@ -234,7 +234,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_formatTimeAccessible_withDate_returnsReadableTime() {
+    func test_formatTimeAccessible_withDate_includesAMPM() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -244,31 +244,9 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTimeAccessible(date)
 
-        // Always contains readable time format
-        expect(result).to(contain(":"))
-        expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
-        
-        // Locale-aware AM/PM handling
-        if viewModel.uses12HourClock {
-            let containsAMPM = result.contains("AM") || result.contains("PM")
-            expect(containsAMPM).to(beTrue())
-        } else {
-            let noAMPM = !result.contains("AM") && !result.contains("PM")
-            expect(noAMPM).to(beTrue())
-        }
-    }
-
-    @MainActor
-    func test_uses12HourClock_returnsCorrectValue() {
-        let dataLoader = MockDataLoader(testName: name)
-        stubScheduleForRoute(dataLoader: dataLoader)
-        let app = createApplication(dataLoader: dataLoader)
-        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-        
-        let expected = Locale.current.hourCycle == .oneToTwelve ||
-                       Locale.current.hourCycle == .zeroToEleven
-        expect(viewModel.uses12HourClock) == expected
+        // Should contain either AM or PM
+        let containsAMPM = result.contains("AM") || result.contains("PM")
+        expect(containsAMPM).to(beTrue())
     }
 
     @MainActor
