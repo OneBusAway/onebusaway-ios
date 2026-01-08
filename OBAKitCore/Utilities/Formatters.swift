@@ -9,6 +9,11 @@
 
 import Foundation
 import MapKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(WatchKit)
+import WatchKit
+#endif
 
 public class Formatters: NSObject {
     private let locale: Locale

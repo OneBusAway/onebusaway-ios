@@ -9,6 +9,7 @@
 
 import Foundation
 import CoreLocation
+import OBASharedCore
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate {
@@ -75,6 +76,19 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         self.locationService.addDelegate(self)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionActivated),
+            name: WatchConnectivityService.sessionActivatedNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleSessionActivated() {
+        if let region = currentRegion {
+            syncRegionToWatch(region)
+        }
     }
 
     // MARK: - Delegates
@@ -163,6 +177,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             do {
                 try userDefaults.encodeUserDefaultsObjects(newValue, key: RegionsService.currentRegionUserDefaultsKey)
                 notifyDelegatesRegionChanged(newValue)
+                syncRegionToWatch(newValue)
             }
             catch {
                 Logger.error("Unable to write currentRegion to user defaults: \(error)")
@@ -394,5 +409,24 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         currentRegion = newRegion
+    }
+
+    public func findRegionIndex(id: Int) -> Int? {
+        regions.firstIndex { $0.regionIdentifier == id }
+    }
+
+    private func syncRegionToWatch(_ region: Region) {
+        // Sync the full region data
+        if let regionData = try? JSONEncoder().encode(region) {
+            WatchConnectivityService.shared().send(message: ["region": regionData])
+        }
+
+        // Also sync the API config for convenience
+        let config: [String: Any] = [
+            "baseURL": region.OBABaseURL.absoluteString,
+            "minutesBeforeArrivals": 5,
+            "minutesAfterArrivals": 125
+        ]
+        WatchConnectivityService.shared().send(message: ["apiConfig": config])
     }
 }

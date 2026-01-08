@@ -9,6 +9,8 @@
 
 import Foundation
 import MapKit
+import WatchConnectivity
+import OBASharedCore
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, vehicles, settings
@@ -263,7 +265,20 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
+        super.init()
+
         self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleSessionActivated),
+            name: WatchConnectivityService.sessionActivatedNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleSessionActivated() {
+        syncBookmarksToWatch()
     }
 
     // MARK: - Debug Mode
@@ -356,6 +371,39 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarks) // swiftlint:disable:this force_try
+            syncBookmarksToWatch()
+        }
+    }
+
+    public func syncBookmarksToWatch() {
+        let watchBookmarks = bookmarks.compactMap { bookmark -> [String: Any]? in
+            // We need to provide a dictionary that matches the Watch's Bookmark struct
+            // { id, stopID, name, routeShortName, tripHeadsign, stop }
+            var dict: [String: Any] = [
+                "id": bookmark.id.uuidString,
+                "stopID": bookmark.stopID,
+                "name": bookmark.name
+            ]
+            if let rsn = bookmark.routeShortName { dict["routeShortName"] = rsn }
+            if let th = bookmark.tripHeadsign { dict["tripHeadsign"] = th }
+            
+            // For the stop, we need to map it to OBASharedCore.OBAStop format which the watch uses
+            let stopDict: [String: Any] = [
+                "id": bookmark.stop.id,
+                "name": bookmark.stop.name,
+                "lat": bookmark.stop.location.coordinate.latitude,
+                "lon": bookmark.stop.location.coordinate.longitude,
+                "code": bookmark.stop.code,
+                "direction": bookmark.stop.direction == .unknown ? "" : "\(bookmark.stop.direction)"
+            ]
+            dict["stop"] = stopDict
+            
+            return dict
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: watchBookmarks, options: []) {
+            let message: [String: Any] = ["watch.bookmarks": data]
+            WatchConnectivityService.shared().send(message: message)
         }
     }
 

@@ -9,6 +9,8 @@
 
 import Foundation
 import os.log
+import OBASharedCore
+import WatchConnectivity
 
 @objc public protocol AgencyAlertsDelegate: NSObjectProtocol {
     @objc optional func agencyAlertsUpdated()
@@ -173,6 +175,25 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
         }
 
         self.notifyDelegatesAlertsUpdated()
+        self.syncAlertsToWatch()
+    }
+
+    private func syncAlertsToWatch() {
+        let watchAlerts = agencyAlerts.map { alert -> [String: Any] in
+            var dict: [String: Any] = [
+                "id": alert.id,
+                "title": alert.title(forLocale: .current) ?? "Alert"
+            ]
+            if let body = alert.body(forLocale: .current) { dict["body"] = body }
+            if let url = alert.url(forLocale: .current) { dict["url"] = url.absoluteString }
+            dict["severity"] = alert.isHighSeverity ? "High" : "Normal"
+
+            return dict
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: watchAlerts, options: []) {
+            WatchConnectivityService.shared().send(message: ["service_alerts": data])
+        }
     }
 
     /// Deletes all local data. Useful in preparation for changing the region.
@@ -183,6 +204,9 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
             self.agencies.removeAll()
             self.readAlertIDs.removeAll()
             self.alerts.removeAll()
+            DispatchQueue.main.async {
+                self.syncAlertsToWatch()
+            }
         }
     }
 
