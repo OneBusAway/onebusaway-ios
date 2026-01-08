@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>OneBusAway</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>onebusaway.co</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>MapStatusView</key>
+		<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	<key>OBAKitConfig</key>
+	<dict>
+		<key>AppDevelopersEmailAddress</key>
+		<string>iphone-app@onebusaway.org</string>
+		<key>AppGroup</key>
+		<string>group.org.onebusaway.iphone</string>
+		<key>BundledRegionsFileName</key>
+		<string>regions.json</string>
+		<key>Donations</key>
+		<dict>
+			<key>DonationManagementPortal</key>
+			<string>https://onebusaway.co/manage-donations</string>
+			<key>Enabled</key>
+			<true/>
+		</dict>
+		<key>ExtensionURLScheme</key>
+		<string>onebusaway</string>
+		<key>PrivacyPolicyURL</key>
+		<string>https://onebusaway.org/privacy/</string>
+		<key>PushNotificationAPIKey</key>
+		<string>d5d0d28a-6091-46cd-9627-0ce01ffa9f9e</string>
+		<key>RESTServerAPIKey</key>
+		<string>org.onebusaway.iphone</string>
+		<key>RegionsServerAPIPath</key>
+		<string>/regions-v3.json</string>
+		<key>RegionsServerBaseAddress</key>
+		<string>https://regions.onebusaway.org</string>
+	</dict>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>org.onebusaway.iphone</string>
+</dict>
+</plist>
