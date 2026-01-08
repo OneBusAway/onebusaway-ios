@@ -4,7 +4,7 @@ targets:
     platform: iOS
     sources: ["."]
     dependencies:
-      - target: OBAKitCore
+      - target: OBAKitCore_iOS
       - sdk: SwiftUI.framework
       - sdk: WidgetKit.framework
     entitlements:
