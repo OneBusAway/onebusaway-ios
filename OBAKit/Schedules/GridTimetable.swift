@@ -14,27 +14,15 @@ struct GridTimetable: View {
     /// Column width for each stop in the timetable
     private let columnWidth: CGFloat = 80
 
-    private var uses12HourClock: Bool {
-        viewModel.uses12HourClock
-    }
-
     var body: some View {
         // Single ScrollView for both horizontal and vertical scrolling
         // LazyVStack with pinnedViews keeps header sticky during vertical scroll
         ScrollView([.horizontal, .vertical], showsIndicators: true) {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    if uses12HourClock {
-                        // AM/PM periods and rows (12-hour format)
-                        ForEach(viewModel.departureTimesByPeriod) { period in
-                            periodSection(period)
-                        }
-                    } else {
-                        // All departure times in one list (24-hour format)
-                        ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { index, row in
-                            departureRow(times: row, isAlternate: index % 2 == 1)
-                            Divider()
-                        }
+                    // AM/PM periods and rows
+                    ForEach(viewModel.departureTimesByPeriod) { period in
+                        periodSection(period)
                     }
                 } header: {
                     // Stop names header - pinned during vertical scroll

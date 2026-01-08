@@ -11,23 +11,13 @@ import SwiftUI
 struct AccessibilityTimetable: View {
     @EnvironmentObject var viewModel: ScheduleForRouteViewModel
 
-    private var uses12HourClock: Bool {
-        viewModel.uses12HourClock
-    }
-
     var body: some View {
         List {
-            if uses12HourClock {
-                ForEach(viewModel.departureTimesByPeriod) { period in
-                    Section(period.label) {
-                        ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
-                            accessibilityTripRow(times: tripTimes)
-                        }
+            ForEach(viewModel.departureTimesByPeriod) { period in
+                Section(period.label) {
+                    ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
+                        accessibilityTripRow(times: tripTimes)
                     }
-                }
-            } else {
-                ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
-                    accessibilityTripRow(times: tripTimes)
                 }
             }
         }
