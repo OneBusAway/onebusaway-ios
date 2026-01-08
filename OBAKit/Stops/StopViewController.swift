@@ -314,7 +314,7 @@ public class StopViewController: UIViewController,
             action: #selector(showScheduleForStop)
         )
 
-        navigationItem.rightBarButtonItems = [filterMenuButton, moreMenuButton, schedulesButton]
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesButton]
 
         self.moreMenuButton = moreMenuButton
     }
