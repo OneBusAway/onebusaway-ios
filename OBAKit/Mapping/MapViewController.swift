@@ -779,9 +779,6 @@ class MapViewController: UIViewController,
             // and just go directly to pushing the stop onto the navigation stack.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
-        } else if let annotation = view.annotation as? UserDroppedPin {
-            mapView.setCenter(annotation.coordinate, animated: true)
-            return
         } else if let placemark = view.annotation as? MKPlacemark {
             let mapItem = MKMapItem(placemark: placemark)
             displayMapItemController(mapItem)
