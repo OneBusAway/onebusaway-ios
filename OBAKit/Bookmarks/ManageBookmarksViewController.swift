@@ -13,6 +13,7 @@ import OBAKitCore
 
 class ManageBookmarksViewController: FormViewController {
     private let application: Application
+    private var isFormLoaded = false
 
     init(application: Application) {
         self.application = application
@@ -28,10 +29,19 @@ class ManageBookmarksViewController: FormViewController {
 
     // MARK: - UIViewController
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidLoad() {
+        super.viewDidLoad()
         loadForm()
         tableView.setEditing(true, animated: false)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if !isFormLoaded {
+            loadForm()
+            tableView.setEditing(true, animated: false)
+            isFormLoaded = true
+        }
     }
 
     // MARK: - Form Builders
@@ -43,6 +53,7 @@ class ManageBookmarksViewController: FormViewController {
         for s in bookmarksSections {
             form +++ s
         }
+        isFormLoaded = true
     }
 
     // MARK: - TableView Delegate Overrides
@@ -142,5 +153,11 @@ class ManageBookmarksViewController: FormViewController {
                 }
             }
         }
+    }
+    
+    func reloadData() {
+        isFormLoaded = false
+        loadForm()
+        tableView.setEditing(true, animated: false)
     }
 }

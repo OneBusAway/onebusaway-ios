@@ -13,6 +13,7 @@ import OBAKitCore
 
 class ManageGroupsViewController: FormViewController {
     private let application: Application
+    private var isFormLoaded = false
 
     init(application: Application) {
         self.application = application
@@ -26,10 +27,19 @@ class ManageGroupsViewController: FormViewController {
 
     // MARK: - UIViewController
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidLoad() {
+        super.viewDidLoad()
         loadForm()
         tableView.setEditing(true, animated: false)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        if !isFormLoaded {
+            loadForm()
+            tableView.setEditing(true, animated: false)
+            isFormLoaded = true
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -44,6 +54,7 @@ class ManageGroupsViewController: FormViewController {
     private func loadForm() {
         form.removeAll()
         form +++ groupsSection
+        isFormLoaded = true
     }
 
     // MARK: - Groups Section
@@ -85,6 +96,12 @@ class ManageGroupsViewController: FormViewController {
         let nameRows = groupsSection.allRows.filter { $0 is NameRow } as! [NameRow] // swiftlint:disable:this force_cast
         let newGroups = nameRows.bookmarkGroups
         application.userDataStore.replaceBookmarkGroups(with: newGroups)
+    }
+    
+    func reloadData() {
+        isFormLoaded = false
+        loadForm()
+        tableView.setEditing(true, animated: false)
     }
 }
 
