@@ -679,11 +679,20 @@ class MapViewController: UIViewController,
 
     private var semiModalMapItemController: FloatingPanelController?
 
+    /// Helper to dismiss any existing map item controller to avoid stacking
+    private func dismissExistingMapItemController(animated: Bool = false) {
+        if let existingController = semiModalMapItemController {
+            removeSemiModalPanel(existingController, animated: animated)
+            semiModalMapItemController = nil
+        }
+    }
+
     /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
     /// - Parameters:
     ///   - mapItem: The map item to display
     ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
     private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
+        dismissExistingMapItemController()
         // Create remove pin handler if this is a user-dropped pin
         let removePinHandler: (() -> Void)?
         if let pin = userPin {
@@ -697,10 +706,7 @@ class MapViewController: UIViewController,
         let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self, removePinHandler: removePinHandler) { [weak self] in
             guard let self else { return }
 
-            if let semiModalMapItemController = self.semiModalMapItemController {
-                self.removeSemiModalPanel(semiModalMapItemController, animated: true)
-            }
-
+            self.dismissExistingMapItemController(animated: true)
             self.showTripPlanner(destination: mapItem)
             self.semiModalPanel?.move(to: .tip, animated: false)
         }
@@ -722,6 +728,7 @@ class MapViewController: UIViewController,
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
+        dismissExistingMapItemController()
         floatingPanel.move(to: .half, animated: false)
 
         let mapDestination = mapItem.placemark.coordinate
@@ -779,6 +786,9 @@ class MapViewController: UIViewController,
             // and just go directly to pushing the stop onto the navigation stack.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
+        } else if let annotation = view.annotation as? UserDroppedPin {
+            mapView.setCenter(annotation.coordinate, animated: true)
+            return
         } else if let placemark = view.annotation as? MKPlacemark {
             let mapItem = MKMapItem(placemark: placemark)
             displayMapItemController(mapItem)
@@ -869,10 +879,7 @@ class MapViewController: UIViewController,
 
     public func mapRegionManager(_ manager: MapRegionManager, didRemoveUserAnnotation annotation: UserDroppedPin) {
         // Dismiss any open map item controller when a pin is removed
-        if let mapItemController = semiModalMapItemController {
-            removeSemiModalPanel(mapItemController, animated: true)
-            semiModalMapItemController = nil
-        }
+        dismissExistingMapItemController(animated: true)
     }
 
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
