@@ -5,6 +5,7 @@
 //  Original Source: https://nshipster.com/swiftui-previews/.
 //
 
+#if !os(watchOS)
 import UIKit
 
 #if DEBUG
@@ -27,4 +28,5 @@ public struct UIViewPreview<View: UIView>: UIViewRepresentable {
         view.setContentHuggingPriority(.defaultHigh, for: .vertical)
     }
 }
+#endif
 #endif
