@@ -1,0 +1,21 @@
+targets:
+  OBAWatchApp:
+    type: application
+    platform: watchOS
+    sources: 
+      - path: .
+    info:
+      path: OBAWatch-AppInfo.plist
+      properties:
+        CFBundleDisplayName: OneBusAway
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: org.onebusaway.iphone
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.watchkitapp
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        I_PHONE_OS_DEPLOYMENT_TARGET: "18.0"
+        WATCHOS_DEPLOYMENT_TARGET: "11.0"
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: org.onebusaway.iphone
+    dependencies:
+      - target: OBAKitCoreWatch
