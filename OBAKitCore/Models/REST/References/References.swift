@@ -120,7 +120,7 @@ extension References {
     }
 
     public func stopsWithIDs(_ ids: [String]) -> [Stop] {
-        return ids.compactMap { id in stopWithID(id) }
+        return stops.filter { ids.contains($0.id) }
     }
 
     // MARK: - Trips
