@@ -8,7 +8,11 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(WatchKit)
+import WatchKit
+#endif
 
 public typealias RouteID = String
 
