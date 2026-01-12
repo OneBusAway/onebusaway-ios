@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if !os(watchOS)
 import UIKit
 
 // MARK: - SelfSizing
@@ -27,3 +28,4 @@ public extension SelfSizing where Self: UICollectionViewCell {
         return layoutAttributes
     }
 }
+#endif
