@@ -17,12 +17,11 @@ import OBAKitCore
 ///
 /// This view model extracts and formats data from an `MKMapItem` and handles user interactions
 /// such as opening the location in Maps, making phone calls, opening URLs, and navigating to
-/// nearby stops. It's designed to work with SwiftUI views using the `@Observable` macro.
+/// nearby stops. It's designed to work with SwiftUI views using the `ObservableObject` protocol.
 ///
 /// - Note: This class is marked with `@MainActor` to ensure all UI-related operations run on the main thread.
 @MainActor
-@Observable
-public class MapItemViewModel {
+public class MapItemViewModel: ObservableObject {
     /// The map item containing the location data
     let mapItem: MKMapItem
 
@@ -31,9 +30,6 @@ public class MapItemViewModel {
 
     let planTripHandler: () -> Void
 
-    /// Optional handler for removing a user-dropped pin
-    let removePinHandler: (() -> Void)?
-
     /// Delegate for handling modal dismissal
     weak var delegate: ModalDelegate?
 
@@ -41,38 +37,30 @@ public class MapItemViewModel {
     private weak var presentingViewController: UIViewController?
 
     /// The name/title of the location
-    var title: String
+    @Published var title: String
 
     /// The formatted postal address of the location, if available
-    var formattedAddress: String?
+    @Published var formattedAddress: String?
 
     /// The phone number of the location, if available
-    var phoneNumber: String?
+    @Published var phoneNumber: String?
 
     /// The website URL of the location, if available
-    var url: URL?
-
-    /// The point of interest category, if available
-    var pointOfInterestCategory: String?
+    @Published var url: URL?
 
     /// Controls whether the "Plan a trip" button is visible
-    var showPlanTripButton: Bool = false
+    @Published var showPlanTripButton: Bool = false
 
     /// Indicates whether there is any content to display in the "About" section.
     var hasAboutContent: Bool {
         formattedAddress != nil || phoneNumber != nil || url != nil
     }
 
-    /// Indicates whether the remove pin button should be shown
-    var canRemovePin: Bool {
-        removePinHandler != nil
-    }
-
     /// The Look Around scene for the location, if available
-    var lookAroundScene: MKLookAroundScene?
+    @Published var lookAroundScene: MKLookAroundScene?
 
     /// Indicates whether Look Around is loading
-    var isLoadingLookAround: Bool = false
+    @Published var isLoadingLookAround: Bool = false
 
     /// Initializes a new map item view model.
     ///
@@ -80,13 +68,10 @@ public class MapItemViewModel {
     ///   - mapItem: The map item containing location information
     ///   - application: The OBA application instance
     ///   - delegate: Optional delegate for handling modal dismissal
-    ///   - removePinHandler: Optional handler called when user wants to remove a dropped pin
-    ///   - planTripHandler: Handler called when user wants to plan a trip
-    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?, removePinHandler: (() -> Void)? = nil, planTripHandler: @escaping () -> Void) {
+    public init(mapItem: MKMapItem, application: Application, delegate: ModalDelegate?, planTripHandler: @escaping () -> Void) {
         self.mapItem = mapItem
         self.application = application
         self.delegate = delegate
-        self.removePinHandler = removePinHandler
         self.planTripHandler = planTripHandler
 
         self.title = mapItem.name ?? ""
@@ -99,44 +84,24 @@ public class MapItemViewModel {
         self.phoneNumber = mapItem.phoneNumber
         self.url = mapItem.url
 
-        if let category = mapItem.pointOfInterestCategory {
-            self.pointOfInterestCategory = category.rawValue.replacing("MKPOICategory", with: "")
-        }
-
         Task {
             await fetchLookAroundScene()
         }
     }
 
-    /// Fetches the Look Around scene for the map item's location,
-    /// falling back to a coordinate-based request if needed.
+    /// Fetches the Look Around scene for the map item's location
     private func fetchLookAroundScene() async {
         isLoadingLookAround = true
         defer { isLoadingLookAround = false }
 
-        // LookAround using the mapItem anchor
-        if let scene = await fetchScene(using: MKLookAroundSceneRequest(mapItem: mapItem)) {
-            self.lookAroundScene = scene
-            return
-        }
-
-        // Fallback: LookAround using raw coordinates
-        let coord = mapItem.placemark.coordinate
-        if let scene = await fetchScene(using: MKLookAroundSceneRequest(coordinate: coord)) {
-            self.lookAroundScene = scene
-            return
-        }
-
-        // Nothing available anywhere near this location
-        self.lookAroundScene = nil
-    }
-
-    /// Helper: attempts to load a scene, returns nil on failure
-    private func fetchScene(using request: MKLookAroundSceneRequest) async -> MKLookAroundScene? {
+        let request = MKLookAroundSceneRequest(mapItem: mapItem)
         do {
-            return try await request.scene
+            if let scene = try await request.scene {
+                self.lookAroundScene = scene
+            }
         } catch {
-            return nil
+            // Look Around not available for this location
+            self.lookAroundScene = nil
         }
     }
 
@@ -196,62 +161,11 @@ public class MapItemViewModel {
         planTripHandler()
     }
 
-    /// Removes the user-dropped pin and dismisses the view.
-    ///
-    /// This is only available when the view model was initialized with a removePinHandler.
-    func removePin() {
-        removePinHandler?()
-    }
-
     /// Dismisses the view by calling the delegate's dismissModalController method.
     ///
     /// This properly dismisses the FloatingPanel that contains the MapItemViewController.
     func dismissView() {
         guard let presenter = presentingViewController else { return }
         delegate?.dismissModalController(presenter)
-    }
-
-    /// Uses the MapKit Place ID when available to generate a stable "Place Link" URL,
-    /// falling back to query + coordinates when the place identity is not available.
-    func shareLocation() {
-        guard let presenter = presentingViewController else { return }
-        guard let url = appleMapsShareURL(for: mapItem) else { return }
-
-        let activityItems: [Any] = [url]
-        let activityController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-
-        // iPad support
-        if let popover = activityController.popoverPresentationController {
-            popover.sourceView = presenter.view
-            popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
-            popover.permittedArrowDirections = []
-        }
-
-        presenter.present(activityController, animated: true)
-    }
-
-    /// Generates an Apple Maps share URL using the Place ID when available,
-    /// otherwise falls back to a query + coordinates URL.
-    private func appleMapsShareURL(for item: MKMapItem) -> URL? {
-        // Best case: stable place identity via MapKit Place ID
-        if let rawID = item.identifier?.rawValue {
-            var components = URLComponents(string: "https://maps.apple.com/place")
-            // Newer Place IDs typically start with "I", legacy AUIDs are numeric
-            if rawID.hasPrefix("I") {
-                components?.queryItems = [URLQueryItem(name: "place-id", value: rawID)]
-            } else {
-                components?.queryItems = [URLQueryItem(name: "auid", value: rawID)]
-            }
-            return components?.url
-        }
-
-        // Fallback: query + coordinates
-        let coordinate = item.placemark.coordinate
-        var components = URLComponents(string: "https://maps.apple.com/")
-        components?.queryItems = [
-            URLQueryItem(name: "q", value: item.name ?? "Place"),
-            URLQueryItem(name: "ll", value: "\(coordinate.latitude),\(coordinate.longitude)")
-        ]
-        return components?.url
     }
 }
