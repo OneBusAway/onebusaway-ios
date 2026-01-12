@@ -27,8 +27,7 @@ class MapViewController: UIViewController,
     ModalDelegate,
     MapPanelDelegate,
     UIContextMenuInteractionDelegate,
-    UILargeContentViewerInteractionDelegate,
-    UIGestureRecognizerDelegate {
+    UILargeContentViewerInteractionDelegate {
 
     // MARK: - Hoverbar
 
@@ -124,9 +123,8 @@ class MapViewController: UIViewController,
 
         // Long press gesture to add a pin to the map
 
-        longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
         longPressGesture.minimumPressDuration = 0.5
-        longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
     }
 
@@ -310,21 +308,12 @@ class MapViewController: UIViewController,
         mapRegionManager.userPressedMap(gesture)
     }
 
-    // MARK: - UIGestureRecognizerDelegate
-
-    /// Must return `true` for user-dropped pin removal to work alongside MKMapView's internal gestures.
-    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
-        return true
-    }
-
     // MARK: - Trip Planner
 
     private var semiModalTripPlannerController: FloatingPanelController?
 
     private var tripPlanner: TripPlanner?
     private var tripPlannerHostingController: UIViewController?
-    private var longPressGesture: UILongPressGestureRecognizer!
-
     private lazy var tripPlannerMapView: MKMapView = {
         let mapView = MKMapView.autolayoutNew()
         mapView.alpha = 0
@@ -653,20 +642,8 @@ class MapViewController: UIViewController,
     // MARK: - Modal Delegate
 
     public func dismissModalController(_ controller: UIViewController) {
-        // Check if it's the map item controller
-        if controller == semiModalMapItemController?.contentViewController,
-           let panel = semiModalMapItemController {
-            mapRegionManager.mapView.selectedAnnotations.forEach { annotation in
-                if annotation is UserDroppedPin {
-                    mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
-                }
-            }
-
-            removeSemiModalPanel(panel, animated: true)
-            semiModalMapItemController = nil
-        }
-        // Check if it's the semi modal panel
-        else if controller == semiModalPanel?.contentViewController {
+        // TODO: this is clearly buggy. Fix it.
+        if controller == semiModalPanel?.contentViewController {
             mapRegionManager.cancelSearch()
             semiModalPanel?.removePanelFromParent(animated: true)
         }
@@ -680,21 +657,9 @@ class MapViewController: UIViewController,
     private var semiModalMapItemController: FloatingPanelController?
 
     /// Presents a `MapItemController` with the provided `MKMapItem` as a semi-modal panel.
-    /// - Parameters:
-    ///   - mapItem: The map item to display
-    ///   - userPin: Optional user-dropped pin associated with this map item (for removal functionality)
-    private func displayMapItemController(_ mapItem: MKMapItem, userPin: UserDroppedPin? = nil) {
-        // Create remove pin handler if this is a user-dropped pin
-        let removePinHandler: (() -> Void)?
-        if let pin = userPin {
-            removePinHandler = { [weak self] in
-                self?.mapRegionManager.removeUserAnnotation(pin)
-            }
-        } else {
-            removePinHandler = nil
-        }
-
-        let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self, removePinHandler: removePinHandler) { [weak self] in
+    /// - Parameter mapItem: The map item to display
+    private func displayMapItemController(_ mapItem: MKMapItem) {
+        let viewModel = MapItemViewModel(mapItem: mapItem, application: application, delegate: self) { [weak self] in
             guard let self else { return }
 
             if let semiModalMapItemController = self.semiModalMapItemController {
@@ -779,25 +744,6 @@ class MapViewController: UIViewController,
             // and just go directly to pushing the stop onto the navigation stack.
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
-        } else if let placemark = view.annotation as? MKPlacemark {
-            let mapItem = MKMapItem(placemark: placemark)
-            displayMapItemController(mapItem)
-            mapView.deselectAnnotation(view.annotation, animated: true)
-        }
-    }
-
-    public func mapRegionManager(_ manager: MapRegionManager, didSelectUserAnnotation annotation: UserDroppedPin) {
-        presentMapItem(for: annotation)
-    }
-
-    private func presentMapItem(for userPin: UserDroppedPin) {
-        if let storedMapItem = mapRegionManager.mapItem(for: userPin) {
-            displayMapItemController(storedMapItem, userPin: userPin)
-        } else {
-            let placemark = MKPlacemark(coordinate: userPin.coordinate)
-            let mapItem = MKMapItem(placemark: placemark)
-            mapItem.name = userPin.title ?? "Dropped Pin"
-            displayMapItemController(mapItem, userPin: userPin)
         }
     }
 
@@ -844,9 +790,7 @@ class MapViewController: UIViewController,
 
             switch result {
             case let result as MKMapItem:
-                // Check if this MapItem is associated with a user-dropped pin
-                let userPin = manager.findUserPin(for: result)
-                displayMapItemController(result, userPin: userPin)
+                displayMapItemController(result)
             case let result as StopsForRoute:
                 let routeStopController = RouteStopsViewController(application: application, stopsForRoute: result, delegate: self)
                 showSemiModalPanel(childController: routeStopController)
@@ -864,14 +808,6 @@ class MapViewController: UIViewController,
             default:
                 fatalError()
             }
-        }
-    }
-
-    public func mapRegionManager(_ manager: MapRegionManager, didRemoveUserAnnotation annotation: UserDroppedPin) {
-        // Dismiss any open map item controller when a pin is removed
-        if let mapItemController = semiModalMapItemController {
-            removeSemiModalPanel(mapItemController, animated: true)
-            semiModalMapItemController = nil
         }
     }
 
