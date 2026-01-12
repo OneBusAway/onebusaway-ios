@@ -150,7 +150,7 @@ class StopHeaderView: UIView {
 
         addGestureRecognizer(toggleRouteDetailsGestureRecognizer)
 
-        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self, UITraitUserInterfaceStyle.self]
+        let sizeTraits: [UITrait] = [UITraitVerticalSizeClass.self, UITraitHorizontalSizeClass.self ,  UITraitUserInterfaceStyle.self]
         registerForTraitChanges(sizeTraits) { (self: Self, _) in
             self.configureView()
         }
