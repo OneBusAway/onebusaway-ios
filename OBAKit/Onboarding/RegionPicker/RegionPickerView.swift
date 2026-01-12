@@ -68,20 +68,8 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                     "Automatically select region",
                     isOn: $regionProvider.automaticallySelectRegion)
 
-                Button(action: {
-                    Task {
-                        await doRefreshRegions()
-                    }
-                }, label: {
-                    Text(Strings.refresh)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                })
-                .disabled(disableInteractions)
-                .buttonStyle(.bordered)
-                .listRowSeparator(.hidden)
-
                 Picker("", selection: $selectedRegion) {
-                    ForEach(filteredRegions, id: \.regionIdentifier) { region in
+                    ForEach(filteredRegions, id: \.self) { region in
                         cell(for: region)
                             .tag(Optional(region))  // The tag type must match the selection type (an *optional* Region)
                     }
@@ -309,4 +297,5 @@ struct RegionPickerView_Previews: PreviewProvider {
             .previewDisplayName("Standalone (for previewing variants)")
     }
 }
+
 #endif
