@@ -223,8 +223,8 @@ final class TripBookmarkTableCell: OBAListViewCell {
         standardInfoStack.forEach { $0.isHidden = isAccessibility }
         accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
 
-        stackView.axis = isAccessibility ? .vertical : .horizontal
-        minutesStackView.axis = isAccessibility ? .horizontal : .vertical
+        stackView.axis = isAccessibility ? NSLayoutConstraint.Axis.vertical : NSLayoutConstraint.Axis.horizontal
+        minutesStackView.axis = isAccessibility ? NSLayoutConstraint.Axis.horizontal : NSLayoutConstraint.Axis.vertical
 
         stackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
         minutesStackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding

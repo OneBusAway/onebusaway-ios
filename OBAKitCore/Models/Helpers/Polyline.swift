@@ -58,6 +58,7 @@ public struct Polyline {
     }
 
     /// Convert polyline to MKPolyline to use with MapKit (nil if polyline cannot be decoded)
+    @available(tvOS 9.2, watchOS 7.0, *)
     public var mkPolyline: MKPolyline? {
         guard let coordinates = self.coordinates else { return nil }
         let mkPolyline = MKPolyline(coordinates: coordinates, count: coordinates.count)
