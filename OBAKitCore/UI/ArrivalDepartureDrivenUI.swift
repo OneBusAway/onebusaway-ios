@@ -5,6 +5,7 @@
 //  Created by Alan Chu on 6/2/20.
 //
 
+#if !os(watchOS)
 import UIKit
 
 /// Tracks arrival/departure times for `ArrivalDeparture`s.
@@ -46,3 +47,4 @@ extension ArrivalDepartureDrivenUI {
         arrivalDepartureTimes[arrivalDeparture.tripID] = arrivalDeparture.arrivalDepartureMinutes
     }
 }
+#endif
