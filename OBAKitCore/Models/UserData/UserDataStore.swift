@@ -8,7 +8,9 @@
 //
 
 import Foundation
+#if !os(watchOS)
 import MapKit
+#endif
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
     case map, recentStops, bookmarks, vehicles, settings
@@ -131,7 +133,7 @@ public protocol UserDataStore: NSObjectProtocol {
     var maximumRecentStopsCount: Int { get }
 
     // MARK: - Recent Map Items
-
+#if !os(watchOS)
     /// A list of recently-selected map items from search
     var recentMapItems: [MKMapItem] { get }
 
@@ -139,7 +141,7 @@ public protocol UserDataStore: NSObjectProtocol {
     ///
     /// - Parameter mapItem: The map item to add to the list
     func addRecentMapItem(_ mapItem: MKMapItem)
-
+#endif
     /// Deletes all recent map items.
     func deleteAllRecentMapItems()
 
@@ -262,6 +264,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
+
+        super.init()
 
         self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
     }
@@ -531,7 +535,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     // MARK: - Recent Map Items
-
+#if !os(watchOS)
     public var recentMapItems: [MKMapItem] {
         get {
             guard let data = userDefaults.data(forKey: UserDefaultsKeys.recentMapItems) else {
@@ -581,6 +585,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
         self.recentMapItems = items
     }
+#endif
 
     public func deleteAllRecentMapItems() {
         userDefaults.removeObject(forKey: UserDefaultsKeys.recentMapItems)
