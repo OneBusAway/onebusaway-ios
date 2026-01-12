@@ -13,9 +13,12 @@ struct AccessibilityTimetable: View {
 
     var body: some View {
         List {
-            // All departure times in one section (24-hour format)
-            ForEach(Array(viewModel.departureTimesDisplay.enumerated()), id: \.offset) { _, tripTimes in
-                accessibilityTripRow(times: tripTimes)
+            ForEach(viewModel.departureTimesByPeriod) { period in
+                Section(period.label) {
+                    ForEach(Array(period.times.enumerated()), id: \.offset) { _, tripTimes in
+                        accessibilityTripRow(times: tripTimes)
+                    }
+                }
             }
         }
         .listStyle(.plain)

@@ -194,13 +194,13 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_departureTimesDisplay_beforeFetch_isEmpty() {
+    func test_departureTimesByPeriod_beforeFetch_isEmpty() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimesDisplay).to(beEmpty())
+        expect(viewModel.departureTimesByPeriod).to(beEmpty())
     }
 
     // MARK: - Time Formatting Tests
@@ -219,37 +219,6 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         expect(result).to(contain(":"))
         expect(result).toNot(equal("-"))
-        expect(result).toNot(contain("AM"))
-        expect(result).toNot(contain("PM"))
-        expect(result.count) == 5
-    }
-
-    @MainActor
-    func test_formatTime_midnight_returns0000() {
-        let dataLoader = MockDataLoader(testName: name)
-        stubScheduleForRoute(dataLoader: dataLoader)
-        let app = createApplication(dataLoader: dataLoader)
-        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-
-        let date = Date(timeIntervalSince1970: 0) // Midnight (00:00)
-
-        let result = viewModel.formatTime(date)
-
-        expect(result) == "00:00"
-    }
-
-    @MainActor
-    func test_formatTime_noon_returns1200() {
-        let dataLoader = MockDataLoader(testName: name)
-        stubScheduleForRoute(dataLoader: dataLoader)
-        let app = createApplication(dataLoader: dataLoader)
-        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-
-        let date = Date(timeIntervalSince1970: 43200) // Noon (12:00)
-
-        let result = viewModel.formatTime(date)
-
-        expect(result) == "12:00"
     }
 
     @MainActor
@@ -265,7 +234,7 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_formatTimeAccessible_withDate_returnsReadableTime() {
+    func test_formatTimeAccessible_withDate_includesAMPM() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
@@ -275,10 +244,9 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTimeAccessible(date)
 
-        // Locale-aware format contains colon and readable time
-        expect(result).to(contain(":"))
-        expect(result).toNot(beEmpty())
-        expect(result).toNot(equal("-"))
+        // Should contain either AM or PM
+        let containsAMPM = result.contains("AM") || result.contains("PM")
+        expect(containsAMPM).to(beTrue())
     }
 
     @MainActor

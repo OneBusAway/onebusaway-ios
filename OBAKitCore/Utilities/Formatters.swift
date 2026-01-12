@@ -8,7 +8,14 @@
 //
 
 import Foundation
+#if !os(watchOS)
 import MapKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(WatchKit)
+import WatchKit
+#endif
 
 public class Formatters: NSObject {
     private let locale: Locale
@@ -27,13 +34,14 @@ public class Formatters: NSObject {
     }
 
     // MARK: - Distance Formatting
-
+#if !os(watchOS)
     /// Formats distances into human-readable strings that conform to the user's locale.
     public lazy var distanceFormatter: MKDistanceFormatter = {
         let formatter = MKDistanceFormatter()
         formatter.locale = locale
         return formatter
     }()
+#endif
 
     // MARK: - Formatted Times
 

@@ -9,11 +9,12 @@
 
 import Foundation
 import CoreGraphics
+
+#if !os(watchOS)
 import UIKit
 
 /// Creates image 'badges', or squircles with overlayed monochromatic images.
 public class ImageBadgeRenderer: NSObject {
-
     private let fillColor: UIColor
     private let backgroundColor: UIColor
     public let badgeSize: CGFloat
@@ -78,3 +79,6 @@ public class ImageBadgeRenderer: NSObject {
         return CGRect(x: x, y: y, width: scaledImageSize.width, height: scaledImageSize.height)
     }
 }
+#else
+import WatchKit
+#endif

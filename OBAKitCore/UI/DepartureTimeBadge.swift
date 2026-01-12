@@ -6,6 +6,7 @@
 //  Copyright © 2019 OneBusAway. All rights reserved.
 //
 
+#if !os(watchOS)
 import UIKit
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
@@ -143,7 +144,7 @@ struct DepartureTimeBadge_Previews: PreviewProvider {
             nineNineNineChineseBadge.widthAnchor.constraint(equalToConstant: 48)
         ])
 
-        let stack = UIStackView.stack(arrangedSubviews: [nowBadge, fiveMinutesBadge, ninetyNineMinutesBadge, nineNineNineChineseBadge])
+        let stack = UIStackView.stack(axis: .horizontal, arrangedSubviews: [nowBadge, fiveMinutesBadge, ninetyNineMinutesBadge, nineNineNineChineseBadge])
         NSLayoutConstraint.activate([stack.heightAnchor.constraint(equalToConstant: 24)])
         return stack
     }()
@@ -162,5 +163,5 @@ extension DepartureTimeBadge.Configuration {
         return .init(accessibilityLabel: "", displayText: text, backgroundColor: color.cgColor)
     }
 }
-
+#endif
 #endif

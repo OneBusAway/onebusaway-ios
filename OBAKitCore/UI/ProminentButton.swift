@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if !os(watchOS)
 import UIKit
 
 /// A button with a background color, designed to give the button more of a tappable affordance.
@@ -60,3 +61,4 @@ public class ProminentButton: UIButton {
         highlightLayer.frame = highlightFrame.insetBy(dx: -ThemeMetrics.buttonContentPadding, dy: -ThemeMetrics.buttonContentPadding)
     }
 }
+#endif

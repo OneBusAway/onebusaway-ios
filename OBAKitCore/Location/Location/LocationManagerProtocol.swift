@@ -17,7 +17,7 @@ public protocol LocationManager {
 
     func requestWhenInUseAuthorization()
 
-    @available(iOS 14, *)
+    @available(iOS 14, watchOS 7, *)
     func requestTemporaryFullAccuracyAuthorization(withPurposeKey purposeKey: String)
 
     /// Replaces the CLLocationManager class func of the same name. This is used
@@ -30,7 +30,7 @@ public protocol LocationManager {
     /// to try to mock class functions.
     var isLocationServicesEnabled: Bool { get }
 
-    @available(iOS 14, *)
+    @available(iOS 14, watchOS 7, *)
     var accuracyAuthorization: CLAccuracyAuthorization { get }
 
     // MARK: - Location
