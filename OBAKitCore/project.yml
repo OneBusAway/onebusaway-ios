@@ -2,6 +2,7 @@ targets:
   OBAKitCore:
     type: framework
     platform: iOS
+    deploymentTarget: "18.0"
     sources: ["."]
     dependencies:
       - package: SwiftProtobuf
@@ -14,3 +15,23 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
+        BUILD_LIBRARY_FOR_DISTRIBUTION: YES
+
+  OBAKitCoreWatch:
+    type: framework
+    platform: watchOS
+    deploymentTarget: "11.0"
+    sources: ["."]
+    dependencies:
+      - package: SwiftProtobuf
+    scheme:
+      gatherCoverageData: true
+    info:
+      path: "Info.plist"
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+    settings:
+      base:
+        APPLICATION_EXTENSION_API_ONLY: true
+        BUILD_LIBRARY_FOR_DISTRIBUTION: YES
+        PRODUCT_NAME: OBAKitCore
