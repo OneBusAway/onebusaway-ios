@@ -7,16 +7,25 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if canImport(UIKit)
 import UIKit
+#elseif canImport(WatchKit)
+import WatchKit
+#endif
 import UniformTypeIdentifiers
+#if !os(watchOS)
 import MobileCoreServices
+#endif
 
+#if !os(watchOS)
 // MARK: - Scrollable
 
 public protocol Scrollable where Self: UIViewController {
     var scrollView: UIScrollView { get }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UIAlertAction
 
 public extension UIAlertAction {
@@ -31,7 +40,9 @@ public extension UIAlertAction {
         return UIAlertAction(title: Strings.dismiss, style: .default, handler: nil)
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UIAlertController
 
 public extension UIAlertController {
@@ -58,7 +69,9 @@ public extension UIAlertController {
         addAction(UIAlertAction(title: title, style: style, handler: handler))
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UIBarButtonItem
 
 public extension UIBarButtonItem {
@@ -73,6 +86,7 @@ public extension UIBarButtonItem {
         return UIBarButtonItem(title: Strings.back, style: .plain, target: nil, action: nil)
     }
 }
+#endif
 
 // MARK: - UIColor
 
@@ -191,10 +205,18 @@ public extension UIColor {
     /// Returns a dark text color if the receiver is light, and light if the receiver is dark.
     var contrastingTextColor: UIColor {
         if isLightColor {
-            return UIColor.darkText
+            #if os(watchOS)
+            return .black
+            #else
+            return .darkText
+            #endif
         }
         else {
-            return UIColor.lightText
+            #if os(watchOS)
+            return .white
+            #else
+            return .lightText
+            #endif
         }
     }
 
@@ -234,6 +256,7 @@ public extension UIColor {
     }
 }
 
+#if !os(watchOS)
 // MARK: - UICollectionView
 
 public extension UICollectionView {
@@ -264,6 +287,7 @@ public extension UIDevice {
         return identifier
     }
 }
+#endif
 
 // MARK: - UIEdgeInsets
 
@@ -289,6 +313,7 @@ public extension UIFont {
         return UIFont(descriptor: descriptor!, size: 0) // size 0 means keep the size as-is.
     }
 
+#if !os(watchOS)
     /// Returns a bold version of `self`.
     var bold: UIFont {
         return withTraits(traits: .traitBold)
@@ -298,8 +323,10 @@ public extension UIFont {
     var italic: UIFont {
         return withTraits(traits: .traitItalic)
     }
+#endif
 }
 
+#if !os(watchOS)
 // MARK: - UIImage
 
 // Adapted from https://gist.github.com/lynfogeek/4b6ce0117fb0acdabe229f6d8759a139
@@ -358,7 +385,9 @@ public extension UIImage {
         return UIGraphicsGetImageFromCurrentImageContext()!
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UILabel
 
 public extension UILabel {
@@ -406,7 +435,9 @@ public extension UILabel {
         return label
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UILayoutPriority
 
 extension UILayoutPriority {
@@ -418,7 +449,9 @@ extension UILayoutPriority {
         return UILayoutPriority(lhs.rawValue - rhs)
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UIPasteboard
 
 public extension UIPasteboard {
@@ -437,7 +470,9 @@ public extension UIPasteboard {
         items = [[UTType.rtf.identifier: rtfString, UTType.plainText.identifier: attributedString.string]]
     }
 }
+#endif
 
+#if !os(watchOS)
 // MARK: - UIStackView
 
 public extension UIStackView {
@@ -457,26 +492,33 @@ public extension UIStackView {
         return stack(axis: .vertical, arrangedSubviews: views)
     }
 
-    /// Creates a stack view with the specified parameters.
+    /// A helper for creating stack views.
     ///
-    /// - Parameter axis: This property determines the orientation of the arranged views. Assigning the `.vertical` value creates a column of views. Assigning the `.horizontal` value creates a row. The default value is `.horizontal`.
-    /// - Parameter distribution: This property determines how the stack view lays out its arranged views along its axis. The default value is `.fill`. For a list of possible values, see `UIStackView.Distribution`.
-    /// - Parameter alignment: This property determines how the stack view lays out its arranged views perpendicularly to its axis. The default value is `.fill`. For a list of possible values, see `UIStackView.Alignment`.
-    /// - Parameter views: The arranged subviews
-    /// - Returns: The stack view configured with the specified parameters.
-    class func stack(axis: NSLayoutConstraint.Axis = .horizontal,
-                     distribution: UIStackView.Distribution = .fill,
-                     alignment: UIStackView.Alignment = .fill,
-                     arrangedSubviews views: [UIView]) -> UIStackView {
+    /// - Parameter axis: The axis (horizontal or vertical) for the stack view.
+    /// - Parameter distribution: The distribution of the stack view.
+    /// - Parameter alignment: The alignment of the stack view.
+    /// - Parameter views: The arranged subviews.
+    /// - Returns: The stack view.
+    public class func stack(axis: NSLayoutConstraint.Axis, distribution: UIStackView.Distribution = .fill, alignment: UIStackView.Alignment = .fill, arrangedSubviews views: [UIView]) -> UIStackView {
         let stack = UIStackView(arrangedSubviews: views)
+        stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = axis
         stack.distribution = distribution
         stack.alignment = alignment
-        stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }
-}
 
+    /// Removes all subviews from the receiver's `arrangedSubviews` list and from the view hierarchy.
+    func removeAllArrangedSubviews() {
+        for view in arrangedSubviews {
+            removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+    }
+}
+#endif
+
+#if !os(watchOS)
 // MARK: - UIView
 
 public extension UIView {
@@ -574,8 +616,9 @@ public extension UIWindow {
 
     /// Retrieve the top-most view controller in the receiver.
     ///
+    /// - Returns: The top-most view controller.
     /// - Note: Derived from [Stack Overflow](https://stackoverflow.com/a/16443826).
-    var topViewController: UIViewController? {
+    func topViewController() -> UIViewController? {
         var top = rootViewController
         while true {
             if let presented = top?.presentedViewController {
@@ -594,3 +637,25 @@ public extension UIWindow {
         return top
     }
 }
+
+// MARK: - UIViewController Topmost
+
+public extension UIViewController {
+    /// Recursively find the top-most view controller starting from `self`.
+    func topMostViewController() -> UIViewController {
+        if let presented = presentedViewController {
+            return presented.topMostViewController()
+        }
+
+        if let navigation = self as? UINavigationController {
+            return navigation.visibleViewController?.topMostViewController() ?? navigation
+        }
+
+        if let tab = self as? UITabBarController {
+            return tab.selectedViewController?.topMostViewController() ?? tab
+        }
+
+        return self
+    }
+}
+#endif

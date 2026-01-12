@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if !os(watchOS)
 import UIKit
 
 /// Provides a implementation of the 'empty data set' UI pattern.
@@ -215,4 +216,5 @@ struct EmptyDataSetView_Previews: PreviewProvider {
         }
     }
 }
+#endif
 #endif
