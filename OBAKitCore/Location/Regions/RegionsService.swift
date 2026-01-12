@@ -9,6 +9,7 @@
 
 import Foundation
 import CoreLocation
+import Combine
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate {
@@ -73,8 +74,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
         }
-
-        self.locationService.addDelegate(self)
     }
 
     // MARK: - Delegates
@@ -394,5 +393,9 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         }
 
         currentRegion = newRegion
+    }
+
+    public func findRegionIndex(id: Int) -> Int? {
+        regions.firstIndex { $0.regionIdentifier == id }
     }
 }
