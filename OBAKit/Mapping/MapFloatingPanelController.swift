@@ -167,6 +167,21 @@ class MapFloatingPanelController: VisualEffectViewController,
         nearbyStopsListViewController.dataSource = self
         nearbyStopsListViewController.delegate = self
 
+        nearbyStopsListViewController.onExpandSearchTapped = { [weak self] in
+            guard let self = self else { return }
+
+            self.mapRegionManager.preferredLoadDataRegionFudgeFactor = 3.0
+
+            /// This tells the manager the region changed, which triggers a new API call(Forcing the API call)
+            self.mapRegionManager.mapView(self.mapRegionManager.mapView, regionDidChangeAnimated: false)
+
+            /// After the 3-second delay, this resets the multiplier back to the default value (1.1)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                /// This ensures that the next time the user pans the map normally, the app goes back to its standard, efficient search radius.
+                self.mapRegionManager.preferredLoadDataRegionFudgeFactor = 1.1
+            }
+        }
+
         searchListViewController = SearchListViewController()
         searchListViewController.view.translatesAutoresizingMaskIntoConstraints = false
         searchListViewController.delegate = self
