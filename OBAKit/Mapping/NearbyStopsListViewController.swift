@@ -1,12 +1,12 @@
 //
-//  NearbyStopsViewController.swift
+//  NearbyStopsListViewController.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 4/4/23.
 //
 
 import Foundation
-
+import SwiftUI
 import MapKit
 import OBAKitCore
 
@@ -25,6 +25,9 @@ protocol NearbyStopsListDataSource: AnyObject {
 
 /// Displays a list of stops and high-priority alerts.
 class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate, Scrollable {
+
+    var onExpandSearchTapped: (() -> Void)?
+
     // MARK: - Type definitions
     private enum Section: Hashable {
         case alert
@@ -152,13 +155,36 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
 
     private func toggleEmptyDataView(isShowing: Bool) {
         if isShowing {
-            let viewModel = OBAListView.StandardEmptyDataViewModel(
-                title: OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller"),
-                body: OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller.")
-            )
+            let emptyStateView = VStack(spacing: 20) {
+                VStack(spacing: 8) {
+                    Text(OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller"))
+                        .font(.headline)
+                        .foregroundColor(.primary)
 
-            emptyDataView.apply(viewModel)
-            collectionView.backgroundView = emptyDataView
+                    Text(OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller."))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 40)
+
+                TaskButton(OBALoc("nearby_stops_controller.empty_set.button", value: "Search Wider Area", comment: "Button")) {
+                    await withCheckedContinuation { continuation in
+                        self.onExpandSearchTapped?()
+                        continuation.resume()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(ThemeColors.shared.brand))
+                .clipShape(Capsule())
+            }
+
+            let hostingController = UIHostingController(rootView: emptyStateView)
+            hostingController.view.backgroundColor = .clear
+
+            self.addChild(hostingController)
+            collectionView.backgroundView = hostingController.view
+            hostingController.didMove(toParent: self)
         } else {
             collectionView.backgroundView = nil
         }
