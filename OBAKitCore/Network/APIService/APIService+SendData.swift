@@ -69,11 +69,7 @@ extension APIService {
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             logger.error("DECODING ERROR: \(message, privacy: .public)")
-            throw NSError(
-                domain: "DecodingError",
-                code: 0,
-                userInfo: [NSLocalizedDescriptionKey: message]
-            )
+            throw error
         } catch {
             logger.error("UNEXPECTED DECODING ERROR: \(error.localizedDescription, privacy: .public)")
             throw error
