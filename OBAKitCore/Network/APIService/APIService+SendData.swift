@@ -64,7 +64,16 @@ extension APIService {
 
         try handleSendDateHttpResponse(response, url, method)
 
-        return try JSONDecoder().decode(Response.self, from: data)
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch let error as DecodingError {
+            let message = DecodingErrorReporter.message(from: error)
+            logger.error("DECODING ERROR: \(message, privacy: .public)")
+            throw error
+        } catch {
+            logger.error("UNEXPECTED DECODING ERROR: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
     }
 
     private func handleSendDateHttpResponse(_ response: URLResponse, _ url: URL, _ method: HTTPMethod) throws {
