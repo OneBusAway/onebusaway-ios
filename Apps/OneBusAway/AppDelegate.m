@@ -17,7 +17,7 @@
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
-@property(nonatomic,strong) OBAClassicApplicationRootController *rootController;
+@property(nonatomic,strong) OBAPanelApplicationRootController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
 @end
 
@@ -112,7 +112,7 @@
 
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     void(^showRootController)(void) = ^{
-        self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        self.rootController = [[OBAPanelApplicationRootController alloc] initWithApplication:application];
         self.window.rootViewController = self.rootController;
     };
 
