@@ -74,6 +74,9 @@ extension APIService {
                 code: 0,
                 userInfo: [NSLocalizedDescriptionKey: message]
             )
+        } catch {
+            logger.error("UNEXPECTED DECODING ERROR: \(error.localizedDescription, privacy: .public)")
+            throw error
         }
     }
 
