@@ -149,6 +149,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        guard indexPath.section < lastDataSourceSnapshot.count else { return }
+
         var correctedItemIndex = indexPath.item
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
             // If index path is zero, the user selected the header item.
@@ -158,7 +160,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
             correctedItemIndex -= 1
         }
 
-        let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex]
+        guard let item = lastDataSourceSnapshot[indexPath.section][correctedItemIndex] else { return }
         item.onSelectAction?(item)
 
         // Fixes #399 -- List view cells appears selected after presenting/pushing view controller
@@ -211,6 +213,8 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
         var correctedItemIndex = indexPath.item
 
+        guard lastDataSourceSnapshot[indexPath.section].contents.count > 0 else { return nil }
+
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
             guard correctedItemIndex != 0 else { return nil }
             correctedItemIndex -= 1
@@ -222,6 +226,7 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     // MARK: - Layout configuration
     fileprivate func createLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { [unowned self] section, environment -> NSCollectionLayoutSection? in
+            guard section < self.lastDataSourceSnapshot.count else { return nil }
             let sectionModel = self.lastDataSourceSnapshot[section]
 
             var configuration = sectionModel.configuration.listConfiguration()
