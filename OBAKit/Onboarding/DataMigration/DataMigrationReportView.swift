@@ -77,8 +77,11 @@ struct DataMigrationReportView: View {
         List {
             Section(OBALoc("data_migration_bulletin.report_summary_title", value: "Summary", comment: "Title for the Summary section of a data migration report")) {
                 Text(
-                    OBALoc("data_migration_bulletin.report_summary_number_of_successes", format: "%d successful", comment: "Data migration report label for showing the number of successful migration tasks.", numberOfSuccessItems))
-                Text(OBALoc("data_migration_bulletin.report_summary_number_of_failures", format: "%d failures", comment: "Data migration report label for showing the number of failed migration tasks.", numberOfErrorItems))
+                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_successes", value: "%d successful", comment: "Data migration report label for showing the number of successful migration tasks."), numberOfSuccessItems)
+                )
+                Text(
+                    String(format: OBALoc("data_migration_bulletin.report_summary_number_of_failures", value: "%d failures", comment: "Data migration report label for showing the number of failed migration tasks."), numberOfErrorItems)
+                )
             }
 
             ForEach(reports) { group in

@@ -4,11 +4,26 @@
 /* Text for the table header for bookmarking an individual trip. */
 "add_bookmark_controller.bookmark_trip_header" = "Bookmark a Trip";
 
+/* Explanatory text shown when route bookmarking is unavailable due to no upcoming departures. */
+"add_bookmark_controller.trip_bookmark_unavailable" = "Route bookmarks are only available when there are upcoming departures for this stop.";
+
 /* Text field placeholder on the Add Group Alert. */
 "add_group_alert.placeholder" = "Bookmark Group Title";
 
 /* Title of the Add Bookmark Group controller */
 "add_group_alert.title" = "Add Group";
+
+/* Action to call agency */
+"agencies_controller.call_agency" = "Call Agency";
+
+/* Error dialog title */
+"agencies_controller.error_title" = "Error";
+
+/* Error message for invalid phone */
+"agencies_controller.invalid_phone" = "Invalid phone number.";
+
+/* Action to open agency website */
+"agencies_controller.open_website" = "Open Website";
 
 /* Title of the Agencies controller */
 "agencies_controller.title" = "Agencies";
@@ -119,10 +134,10 @@
 "data_migration_bulletin.finished_loading" = "Data Upgrade Complete!";
 
 /* Data migration report label for showing the number of failed migration tasks. */
-"data_migration_bulletin.report_summary_number_of_failures" = "data_migration_bulletin.report_summary_number_of_failures";
+"data_migration_bulletin.report_summary_number_of_failures" = "%d failures";
 
 /* Data migration report label for showing the number of successful migration tasks. */
-"data_migration_bulletin.report_summary_number_of_successes" = "data_migration_bulletin.report_summary_number_of_successes";
+"data_migration_bulletin.report_summary_number_of_successes" = "%d successful";
 
 /* Title for the Summary section of a data migration report */
 "data_migration_bulletin.report_summary_title" = "Summary";
@@ -238,6 +253,18 @@
 /* No comment provided by engineer. */
 "locationservices_alert_request_precise_location_once.button" = "Allow Once";
 
+/* Message shown when there are no logs to display */
+"log_viewer_controller.no_logs" = "No logs available.";
+
+/* Message for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.message" = "There are no log files to share.";
+
+/* Title for alert when there are no logs to share */
+"log_viewer_controller.no_logs_to_share.title" = "No Logs";
+
+/* Title of the Logs viewer controller */
+"log_viewer_controller.title" = "Logs";
+
 /* Explains the purpose of the Manage Bookmarks controller */
 "manage_bookmarks.controller_footer" = "You can rearrange and delete Bookmarks from this screen.";
 
@@ -292,14 +319,48 @@
 /* Search bar placeholder on the map floating panel when the trip planner is enabled. */
 "map_floating_panel.where_are_you_going" = "Where are you going?";
 
-/* about section header */
+/* About section header */
 "map_item_controller.about_header" = "About";
 
-/* A table row that shows stops nearby. */
-"map_item_controller.nearby_stops_row" = "Nearby Stops";
+/* Call button */
+"map_item_controller.call" = "Call";
 
-/* Button to plan a trip from this location */
-"map_item_controller.plan_trip" = "Plan a trip";
+/* Accessibility label for call button */
+"map_item_controller.call_accessibility" = "Call phone number";
+
+/* Accessibility label for close button */
+"map_item_controller.close_button" = "Close";
+
+/* Accessibility label for Look Around preview */
+"map_item_controller.look_around" = "Look Around preview. Tap to open full screen viewer";
+
+/* Button to view nearby stops
+   Nearby stops button */
+"map_item_controller.nearby_stops" = "Nearby Stops";
+
+/* Accessibility label for nearby stops button */
+"map_item_controller.nearby_stops_accessibility" = "View nearby transit stops";
+
+/* Plan trip button */
+"map_item_controller.plan_trip" = "Plan Trip";
+
+/* Accessibility label for plan trip button */
+"map_item_controller.plan_trip_accessibility" = "Plan trip to this location";
+
+/* Button to remove a dropped pin from the map */
+"map_item_controller.remove_pin" = "Remove Pin";
+
+/* Accessibility label for remove pin button */
+"map_item_controller.remove_pin_accessibility" = "Remove this pin from the map";
+
+/* Accessibility label for share button */
+"map_item_controller.share_button" = "Share Location";
+
+/* Website button */
+"map_item_controller.website" = "Website";
+
+/* Accessibility label for website button */
+"map_item_controller.website_accessibility" = "Open website";
 
 /* Displayed in the map status view at the top of the map when the user has declined to give the app access to their location */
 "map_status_view.location_services_unavailable" = "Location services unavailable";
@@ -378,6 +439,9 @@
 
 /* Updates and Alerts header text */
 "more_controller.updates_and_alerts.header" = "Updates and Alerts";
+
+/* A link to view application logs */
+"more_controller.view_logs_row_title" = "View Logs";
 
 /* Explanation about how this app is built and maintained by volunteers. */
 "more_header.support_us_label_text" = "This app is made and supported by volunteers.";
