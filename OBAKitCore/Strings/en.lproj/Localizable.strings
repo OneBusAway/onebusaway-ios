@@ -358,6 +358,12 @@
 /* Subway, Metro. Any underground rail system within a metropolitan area. */
 "route_type.subway" = "Subway";
 
+/* The body of the schedule/timetable feature tip */
+"schedule_tip.message" = "Tap here and then tap 'Schedules' to view the schedule or timetable for your buses and trains.";
+
+/* Title for the schedule/timetable feature tip */
+"schedule_tip.title" = "View Your Route's Schedule";
+
 /* User-facing string that means the location of the stop on the map is wrong. */
 "stop_problem_code.user_description.location_wrong" = "Location is wrong";
 
