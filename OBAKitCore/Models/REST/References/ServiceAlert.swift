@@ -117,42 +117,53 @@ public class ServiceAlert: NSObject, Identifiable, Decodable, HasReferences {
     public class TimeWindow: NSObject, Decodable, Comparable {
         public let from: Date
         public let to: Date
-
         public var interval: DateInterval {
-            // Sometimes, `to` is equal to 1970, which will mess this up.
-            if to < from {
+            guard to >= from else {
                 return DateInterval(start: from, end: from)
-            } else {
-                return DateInterval(start: from, end: to)
             }
+            return DateInterval(start: from, end: to)
         }
 
-        enum CodingKeys: String, CodingKey {
+        private enum CodingKeys: String, CodingKey {
             case from, to
+        }
+
+        /// Decodes a Unix timestamp that may be expressed
+        /// in seconds or milliseconds.
+        private static func decodeUnixTimestamp(_ value: Int) -> Date {
+            let seconds: TimeInterval
+
+            if value > 10_000_000_000 {
+                seconds = TimeInterval(value) / 1_000
+            } else {
+                seconds = TimeInterval(value)
+            }
+            return Date(timeIntervalSince1970: seconds)
         }
 
         public required init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            from = Date(timeIntervalSince1970: TimeInterval(try container.decode(Int.self, forKey: .from)))
-
-            if let rawToValue = try container.decodeIfPresent(Int.self, forKey: .to) {
-                to = Date(timeIntervalSince1970: TimeInterval(rawToValue))
-            }
-            else {
-                to = Date.distantFuture
+            let rawFrom = try container.decode(Int.self, forKey: .from)
+            self.from = Self.decodeUnixTimestamp(rawFrom)
+            if let rawTo = try container.decodeIfPresent(Int.self, forKey: .to) {
+                self.to = Self.decodeUnixTimestamp(rawTo)
+            } else {
+                self.to = .distantFuture
             }
         }
+
+        // MARK: - Equality & Ordering
 
         public override func isEqual(_ object: Any?) -> Bool {
             guard let rhs = object as? TimeWindow else { return false }
             return from == rhs.from && to == rhs.to
         }
 
-        public static func < (lhs: ServiceAlert.TimeWindow, rhs: ServiceAlert.TimeWindow) -> Bool {
-            return lhs.interval < rhs.interval
+        public static func < (lhs: TimeWindow, rhs: TimeWindow) -> Bool {
+            lhs.interval < rhs.interval
         }
 
-        override public var hash: Int {
+        public override var hash: Int {
             var hasher = Hasher()
             hasher.combine(from)
             hasher.combine(to)
