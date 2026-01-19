@@ -395,8 +395,7 @@ public class MapRegionManager: NSObject,
         let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
             guard
                 let stop = annotation as? Stop,
-                bookmarksHash[stop.id] != nil,
-                stops.contains(where: { $0.id == stop.id })
+                bookmarksHash[stop.id] != nil
             else {
                 return nil
             }
@@ -415,16 +414,20 @@ public class MapRegionManager: NSObject,
             return bookmark
         }
         let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
-        for annotation in allAnnotationsToRemove where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
+        for annotation in allAnnotationsToRemove
+            where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
             mapView.deselectAnnotation(annotation, animated: false)
         }
         mapView.removeAnnotations(allAnnotationsToRemove)
 
-        let bookmarksToAdd = bookmarks.filter { !existingBookmarkIDs.contains($0.stopID) }
-        mapView.addAnnotations(bookmarksToAdd)
+        let bookmarksToAdd = bookmarksHash.values.filter {
+            !existingBookmarkIDs.contains($0.stopID)
+        }
+        mapView.addAnnotations(Array(bookmarksToAdd))
 
         let stopsToAdd = stops.filter {
-            !bookmarksHash.keys.contains($0.id) && !existingStopIDs.contains($0.id)
+            !bookmarksHash.keys.contains($0.id) &&
+            !existingStopIDs.contains($0.id)
         }
         mapView.addAnnotations(stopsToAdd)
         refreshAnnotationViews(for: Array(affectedStopIDs))
