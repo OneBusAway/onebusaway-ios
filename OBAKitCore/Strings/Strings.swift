@@ -122,4 +122,27 @@ public class Strings: NSObject {
     public static let emptyBookmarkBodyWithPendingMigration = OBALoc("common.empty_bookmark_set.body_with_pending_migration", value: "Go to the More tab > Settings > Migrate Data to see your bookmarks appear here.", comment: "Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app.")
 
     public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
+
+    public static let externalSurveyPrivacyInfo = OBALoc("common.external_survey_privacy_info.description", value: "This survey will share your stop, route, region, current location", comment: "Description of the privacy policy for sharing data with the external survey service.")
+
+    public static let go = OBALoc("common.go", value: "Go", comment: "The verb 'to go'")
+
+    public static let submit = OBALoc("common.submit", value: "Submit", comment: "The verb 'to submit', i.e. to submit a survey answer.")
+
+    public static let next = OBALoc("common.next", value: "Next", comment: "The verb 'to next', i.e. to get next survey question.")
+
+    public static let surveyDismissAlertTitle = OBALoc("survey_alert.dismissal.title", value: "Dismiss Survey", comment: "Title for survey dismissal action alert.")
+
+    public static let surveyDismissAlertBody = OBALoc("survey_alert.dismissal.body", value: "Your feedback helps improve transit services and app experiences.", comment: "Body for survey dismissal action alert.")
+
+    public static let skipSurvey = OBALoc("survey_alert.skip.survey", value: "Skip This Survey", comment: "The action of skipping the current survey.")
+
+    public static let remindLater = OBALoc("survey_alert.remind.later", value: "Remind Me Later", comment: "The action of reminding later. i.e, to remind me later on the survey.")
+
+    public static let surveyRequiredRemainingQuestionsError = OBALoc("survey_error.required_remaining_questions.error", value: "Please answer all required questions", comment: "Error message to show when the user has not answered all required survey questions.")
+
+    public static let surveyHeroQuestionAnswerError = OBALoc("survey_error.hero_question_answer.error", value: "Please enter a valid answer", comment: "Error message to show when the user has not answered the hero survey question with a valid answer.")
+
+    public static let surveyAnswerSuccessfullySubmitted = OBALoc("survey_success.submitted", value: "Survey answer submitted! please answer rest of the questions for better feedback.", comment: "Success message to show when the survey is successfully submitted.")
+
 }

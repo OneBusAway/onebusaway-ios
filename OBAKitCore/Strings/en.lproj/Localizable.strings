@@ -172,6 +172,28 @@
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Vehicles";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "This survey will share your stop, route, region, current location.";
+
+"common.go" = "Go";
+
+"common.submit" = "Submit";
+
+"common.next" = "Next";
+
+"survey_alert.dismissal.title" = "Dismiss Survey";
+
+"survey_alert.dismissal.body" = "Your feedback helps improve transit services and app experiences.";
+
+"survey_alert.skip.survey" = "Skip This Survey";
+
+"survey_alert.remind.later" = "Remind Me Later";
+
+"survey_error.required_remaining_questions.error" = "Please answer all required questions";
+
+"survey_error.hero_question_answer.error" = "Please enter a valid answer";
+
+"survey_success.submitted" = "Survey answer submitted! please answer rest of the questions for better feedback";
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
 
