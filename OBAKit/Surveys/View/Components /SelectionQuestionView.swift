@@ -19,13 +19,21 @@ struct SelectionQuestionView: View {
     // Internal state for saving the selected options
     @State private var selectionList: Set<String> = []
 
+    init(options: [String], selection: Set<String> = [], isMultipleSelection: Bool, onUpdateAnswer: @escaping (SurveyQuestionAnswer) -> Void) {
+        self.options = options
+        self.isMultipleSelection = isMultipleSelection
+        self.onUpdateAnswer = onUpdateAnswer
+        self._selectionList = State(wrappedValue: selection)
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             ForEach(options.indices, id: \.self) { index in
                 getOptionItemView(options[index])
             }
-            .padding(.horizontal, 16)
         }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
     }
 
     // MARK: - Components
@@ -39,7 +47,7 @@ struct SelectionQuestionView: View {
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(.clear)
-                .stroke(colorFor(option: option))
+                .stroke(colorFor(option: option), lineWidth: 0.8)
         )
         .contentShape(.rect)
         .onTapGesture {
@@ -59,7 +67,6 @@ struct SelectionQuestionView: View {
             .frame(width: 18, height: 18)
             .fontWeight(.light)
             .foregroundStyle(colorFor(option: option))
-            .padding(.top, 2)
     }
 
     private func optionText(_ option: String) -> some View {
@@ -84,21 +91,21 @@ struct SelectionQuestionView: View {
 
     private func onTapOptionItem(_ option: String) {
         if !isMultipleSelection {
-               selectionList = [option]
-               onUpdateAnswer(.radio(option))
-               return
-           }
+            selectionList = [option]
+            onUpdateAnswer(.radio(option))
+            return
+        }
 
-           if selectionList.contains(option) {
-               selectionList.remove(option)
-           } else {
-               selectionList.insert(option)
-           }
+        if selectionList.contains(option) {
+            selectionList.remove(option)
+        } else {
+            selectionList.insert(option)
+        }
 
-           onUpdateAnswer(.checkbox(selectionList))
+        onUpdateAnswer(.checkbox(selectionList))
     }
 
-    //MARK: -  Helper Methods
+    // MARK: - Helper Methods
     private func isOptionSelected(_ option: String) -> Bool {
         selectionList.contains(option)
     }
@@ -106,7 +113,6 @@ struct SelectionQuestionView: View {
     private func colorFor(option: String) -> Color {
         isOptionSelected(option) ? ThemeColors.shared.brand.toColor() : ThemeColors.shared.gray.toColor()
     }
-
 
     // MARK: - Accessibility Helpers
     private func accessibilityValue(for option: String) -> String {
