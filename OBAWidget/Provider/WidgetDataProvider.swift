@@ -29,11 +29,7 @@ class WidgetDataProvider: NSObject, ObservableObject {
     }()
 
     private var bestAvailableBookmarks: [Bookmark] {
-        var bookmarks = app.userDataStore.favoritedBookmarks
-        if bookmarks.isEmpty {
-            bookmarks = app.userDataStore.bookmarks
-        }
-        return bookmarks
+        return app.userDataStore.favoritedBookmarks
     }
 
     /// Dictionary mapping trip bookmark keys to arrival/departure data.
