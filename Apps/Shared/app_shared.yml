@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 25.4.2
+    MARKETING_VERSION: 26.1.0
 
 options:
   minimumXcodeGenVersion: 2.42
