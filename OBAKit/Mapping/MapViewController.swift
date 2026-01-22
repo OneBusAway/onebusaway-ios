@@ -361,11 +361,14 @@ class MapViewController: UIViewController,
     }
 
     private func buildTripPlanner(otpURL: URL) -> TripPlanner {
+        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
+
         let config = OTPConfiguration(
             otpServerURL: otpURL,
             themeConfiguration: .init(
                 primaryColor: Color(uiColor: ThemeColors().brand)
-            )
+            ),
+            searchRegion: MKCoordinateRegion(searchRect)
         )
 
         let apiService = RestAPIService(baseURL: otpURL)
