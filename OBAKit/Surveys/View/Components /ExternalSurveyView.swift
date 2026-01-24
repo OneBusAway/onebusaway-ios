@@ -6,7 +6,6 @@
 //  This source code is licensed under the Apache 2.0 license found in the
 //  LICENSE file in the root directory of this source tree.
 //
-/
 
 import SwiftUI
 import OBAKitCore
@@ -26,20 +25,13 @@ struct ExternalSurveyView: View {
     }
 
     var body: some View {
-        HStack(spacing: 24) {
-            VStack(spacing: 12) {
-                titleView
-                subtitleView
-            }
-
-            goButton
-                .padding(.trailing, 18)
+        VStack(spacing: 8) {
+            titleView
+            subtitleView
+            optionsStack
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 12)
-        .overlay(alignment: .topTrailing) {
-            closeButton
-        }
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(UIColor.tertiarySystemBackground.toColor())
@@ -50,7 +42,6 @@ struct ExternalSurveyView: View {
         Text(question.content.labelText)
             .font(.headline)
             .fontWeight(.medium)
-            .lineLimit(2)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -58,27 +49,61 @@ struct ExternalSurveyView: View {
         Text(Strings.externalSurveyPrivacyInfo)
             .font(.footnote)
             .foregroundStyle(UIColor.darkGray.toColor())
-            .lineLimit(3)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var optionsStack: some View {
+        HStack(spacing: 16) {
+            cancelSurveyButton
+            goButton
+        }
+        .padding(.top, 8)
+    }
+
     private var goButton: some View {
+        actionButton(
+            title: Strings.go,
+            systemImage: "arrow.up.right",
+            font: .body,
+            horizontalPadding: 22,
+            verticalPadding: 6,
+            action: onSubmitAction
+        )
+    }
+
+    private var cancelSurveyButton: some View {
+        actionButton(
+            title: Strings.doNotShowAgain,
+            systemImage: "xmark",
+            font: .footnote,
+            action: onCloseAction
+        )
+    }
+
+    private func actionButton(
+        title: String,
+        systemImage: String,
+        font: Font,
+        horizontalPadding: CGFloat = 16,
+        verticalPadding: CGFloat = 8,
+        action: @escaping () -> Void
+    ) -> some View {
         Button {
-            onSubmitAction()
+            action()
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: "arrow.up.right")
+                Image(systemName: systemImage)
                     .resizable()
                     .frame(width: 13, height: 13)
-                    .fontWeight(.medium)
+                    .fontWeight(.bold)
 
-                Text(Strings.go)
-                    .font(.body)
-                    .fontWeight(.medium)
+                Text(title)
+                    .font(font)
+                    .fontWeight(.bold)
             }
             .foregroundStyle(.white)
-            .padding(6)
-            .padding(.horizontal, 16)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .background(
                 RoundedRectangle(cornerRadius: 18)
                     .fill(ThemeColors.shared.brand.toColor())
@@ -87,20 +112,6 @@ struct ExternalSurveyView: View {
         .buttonStyle(.plain)
     }
 
-    private var closeButton: some View {
-        Button {
-            onCloseAction()
-        } label: {
-            Image(systemName: "xmark")
-                .resizable()
-                .fontWeight(.bold)
-                .frame(width: 14, height: 14)
-                .foregroundStyle(UIColor.label.toColor())
-        }
-        .buttonStyle(.plain)
-        .padding(12)
-        .padding(.top, 2)
-    }
 }
 
 #Preview {
@@ -109,7 +120,7 @@ struct ExternalSurveyView: View {
             id: 1,
             position: 1,
             required: true,
-            content: .init(labelText: "External Survey Question External Survey Question External Survey Question", type: .externalSurvey)
+            content: .init(labelText: "External Survey Question", type: .externalSurvey)
         ),
         onCloseAction: {
 
@@ -117,5 +128,6 @@ struct ExternalSurveyView: View {
 
         }
     )
+    .padding(.horizontal, 16)
 
 }
