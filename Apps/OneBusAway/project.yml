@@ -28,6 +28,9 @@ targets:
     info:
       path: Apps/OneBusAway/Info.plist
       properties:
+
+        NSSupportsLiveActivities: true
+        
         CFBundleDisplayName: OneBusAway
         CFBundleURLTypes: [{CFBundleTypeRole: "Editor", CFBundleURLIconFile: "", CFBundleURLName: "onebusaway", CFBundleURLSchemes: ["onebusaway"]}]
         LSApplicationQueriesSchemes:
@@ -67,6 +70,9 @@ targets:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone
+  
+  # Note: The main logic for OBAWidget is in the included OBAWidget/project.yml
+  # This section just adds Shared Assets to it.
   OBAWidget:
     sources: ["Apps/OneBusAway/Assets.xcassets"]
     entitlements:
@@ -87,6 +93,7 @@ targets:
       base:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.OBAWidget
+
 include:
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
