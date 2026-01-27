@@ -84,7 +84,7 @@ public class PushService: NSObject {
                 let pushBody = try JSONDecoder().decode(AlarmPushBody.self, from: jsonData)
                 delegate?.pushService(self, received: pushBody)
             } catch let error {
-                print("Error decoding AlarmPushBody: \(error)")
+                Logger.error("Error decoding AlarmPushBody: \(error)")
             }
             return
         }

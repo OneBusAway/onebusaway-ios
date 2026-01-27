@@ -130,6 +130,37 @@ class ReferencesTests: OBATestCase {
         expect(stop.wheelchairBoarding) == .unknown
     }
 
+    func test_stopsWithIDs_preservesInputOrder() {
+        // Get some stop IDs from the references in a specific order that differs from the internal sorted order
+        let stopIDs = references.stops.map { $0.id }
+
+        // The internal stops array is sorted by ID for binary search
+        // We'll request stops in reverse order to verify the result preserves our requested order
+        let reversedIDs = Array(stopIDs.reversed())
+
+        let result = references.stopsWithIDs(reversedIDs)
+
+        // The returned stops should be in the same order as the requested IDs
+        expect(result.map { $0.id }).to(equal(reversedIDs),
+            description: "stopsWithIDs should preserve the order of the input IDs array")
+    }
+
+    func test_stopsWithIDs_returnsEmptyArrayForEmptyInput() {
+        let result = references.stopsWithIDs([])
+        expect(result).to(beEmpty())
+    }
+
+    func test_stopsWithIDs_filtersOutInvalidIDs() {
+        let validID = references.stops.first!.id
+        let invalidID = "invalid_stop_id_that_does_not_exist"
+
+        let result = references.stopsWithIDs([validID, invalidID])
+
+        // Should only return the valid stop
+        expect(result.count) == 1
+        expect(result.first!.id) == validID
+    }
+
     // MARK: - Trips
 
     func test_trips_success() {

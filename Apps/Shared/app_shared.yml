@@ -6,7 +6,7 @@ name: OBAKit
 
 settings:
   base:
-    MARKETING_VERSION: 25.4.1
+    MARKETING_VERSION: 26.1.0
 
 options:
   minimumXcodeGenVersion: 2.42
@@ -78,12 +78,6 @@ packages:
     BLTNBoard:
         url: https://github.com/alexaubry/BulletinBoard.git
         exactVersion: 5.0.0
-    CocoaLumberjack:
-        url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.9.0
-    CocoaLumberjackSwift:
-        url: https://github.com/CocoaLumberjack/CocoaLumberjack.git
-        exactVersion: 3.9.0
     Eureka:
         url: https://github.com/xmartlabs/Eureka.git
         exactVersion: 5.5.0
