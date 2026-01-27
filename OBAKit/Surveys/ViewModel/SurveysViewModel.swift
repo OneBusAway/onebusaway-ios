@@ -39,12 +39,14 @@ final public class SurveysViewModel {
     public var study: Study?
 
     /// Hero Question Content
-    public var heroQuestion: SurveyQuestion? = .init(id: 1, position: 1, required: false, content: .init(labelText: "test", type: .text))
+    public var heroQuestion: SurveyQuestion?
 
     public var heroQuestionAnswer: SurveyQuestionAnswer?
 
     /// Surveys full question
-    public var questions: [SurveyQuestion] = [ .init(id: 1, position: 1, required: false, content: .init(labelText: "test", type: .text)),  .init(id: 2, position: 1, required: false, content: .init(labelText: "test", type: .text))]
+    public var questions: [SurveyQuestion] = []
+
+    public var incompleteQuestionIDs: [Int] = []
 
     public var externalSurveyURL: URL?
 
@@ -89,7 +91,6 @@ final public class SurveysViewModel {
         switch action {
 
         case .onAppear:
-            showHeroQuestion = true
             onAppear()
 
         case .updateHeroAnswer(let answer):
@@ -292,21 +293,31 @@ extension SurveysViewModel {
 
         if !questions.isEmpty {
             self.questions = questions
+
+            // Set questions ids to answers dictionary
+            questions.forEach { self.questionsAnswers[$0.id] = .text("") }
+
             self.showFullSurveyQuestions = true
         }
     }
 
     private func updateQuestionAnswer(_ answer: SurveyQuestionAnswer, id: Int) {
         questionsAnswers[id] = answer
+        incompleteQuestionIDs.removeAll(where: { $0 == id })
     }
 
     private func validateQuestionsAnswers() -> Bool {
         let validAnswers = answerableQuestionCount == answeredQuestionCount
         if !validAnswers {
             showToastMessage(Strings.surveyRequiredRemainingQuestionsError, type: .error)
+            computeInvalidQuestions()
             return false
         }
         return true
+    }
+
+    private func computeInvalidQuestions() {
+        self.incompleteQuestionIDs = questionsAnswers.filter { $0.value.stringValue.isEmpty }.map { $0.key }
     }
 
     private func buildQuestionsAnswersModel() -> [QuestionAnswerSubmission] {
@@ -363,16 +374,18 @@ extension SurveysViewModel {
 extension SurveysViewModel {
 
     private func skipSurvey() {
-        guard let survey else { return }
         showSurveyDismissSheet = false
+
+        guard let survey else { return }
         stateManager.setSurveySkipped(survey.id)
         clearHeroQuestionState()
         removeSurvey()
     }
 
     private func postponeSurvey() {
-        guard survey != nil else { return }
         showSurveyDismissSheet = false
+
+        guard survey != nil else { return }
         stateManager.setNextReminderDate()
         clearHeroQuestionState()
         removeSurvey()
