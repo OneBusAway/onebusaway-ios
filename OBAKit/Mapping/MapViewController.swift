@@ -970,61 +970,67 @@ class MapViewController: UIViewController,
     private var surveyPopupController: UIViewController?
 
     // MARK: - Survey Hero Question View
-    @ViewBuilder
-    private func getSurveyHeroQuestionView() -> some View {
-        if let heroQuestion = surveysVM.heroQuestion {
-            surveyHeroQuestionView(heroQuestion)
-                .padding(.horizontal, 12)
-        }
-    }
+//    @ViewBuilder
+//    private func getSurveyHeroQuestionView() -> some View {
+//        if let heroQuestion = surveysVM.heroQuestion {
+//            surveyHeroQuestionView(heroQuestion)
+//                .padding(.horizontal, 12)
+//        }
+//    }
 
-    @ViewBuilder
-    private func surveyHeroQuestionView(_ heroQuestion: SurveyQuestion) -> some View {
-        if heroQuestion.content.type == .externalSurvey {
-            ExternalSurveyView(question: heroQuestion) { [weak self] in
-                self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-            } onSubmitAction: {[weak self] in
-                self?.surveysVM.onAction(.onTapNextHeroQuestion)
-            }
-
-        } else {
-            SurveyQuestionView(
-                question: heroQuestion,
-                isHeroQuestion: true
-            ) { [weak self] answer in
-                self?.surveysVM.onAction(.updateHeroAnswer(answer))
-            } onCloseAction: { [weak self] in
-                self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-            } onSubmitAction: { [weak self] in
-                self?.surveysVM.onAction(.onTapNextHeroQuestion)
-            }
-        }
-    }
+//    @ViewBuilder
+//    private func surveyHeroQuestionView(_ heroQuestion: SurveyQuestion) -> some View {
+////        let topPadding = ThemeMetrics.controllerMargin + 180
+//        Group {
+//            if heroQuestion.content.type == .externalSurvey {
+//                ExternalSurveyView(question: heroQuestion) { [weak self] in
+//                    self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
+//                } onSubmitAction: {[weak self] in
+//                    self?.surveysVM.onAction(.onTapNextHeroQuestion)
+//                }
+//            } else {
+//                SurveyQuestionView(
+//                    question: heroQuestion,
+//                    isHeroQuestion: true
+//                ) { [weak self] answer in
+//                    self?.surveysVM.onAction(.updateHeroAnswer(answer))
+//                } onCloseAction: { [weak self] in
+//                    self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
+//                } onSubmitAction: { [weak self] in
+//                    self?.surveysVM.onAction(.onTapNextHeroQuestion)
+//                }
+//            }
+//        }
+//    }
 
     // MARK: - Show/Hide HeroQuestion
     private func showSurveyHeroQuestionPopup() {
         guard surveyPopupController == nil else { return }
 
-        let hostingController = createPopupHostingController(content: getSurveyHeroQuestionView())
-        application.viewRouter.present(hostingController, from: self)
+        let surveyQuestionView = MapHeroQuestionView(viewModel: surveysVM)
+        let hostingController = createPopupHostingController(content: surveyQuestionView)
+        view.insertSubview(hostingController.view, aboveSubview: mapRegionManager.mapView)
+
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            hostingController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
+            hostingController.view.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 24),
+            hostingController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: ThemeMetrics.controllerMargin),
+            hostingController.view.widthAnchor.constraint(equalToConstant: view.bounds.width)
+        ])
+
         surveyPopupController = hostingController
     }
 
     private func createPopupHostingController<Content: View>(content: Content) -> UIHostingController<Content> {
         let controller = UIHostingController(rootView: content)
         controller.view.backgroundColor = .clear
-        controller.modalPresentationStyle = .overFullScreen
-        controller.modalTransitionStyle = .crossDissolve
-
-        let width = view.bounds.width * 0.8
-        let maxHeight = view.bounds.height * 0.9
-        controller.preferredContentSize = CGSize(width: width, height: maxHeight)
-
         return controller
     }
 
     @objc private func dismissSurveyPopup() {
-        surveyPopupController?.dismiss(animated: true)
+        surveyPopupController?.view.removeFromSuperview()
         surveyPopupController = nil
     }
 
@@ -1064,8 +1070,8 @@ class MapViewController: UIViewController,
     func observeSurveyDismissActionSheet() {
         withObservationTracking { [weak self] in
             guard let self else { return }
-            if self.surveysVM.showSurveyDismissSheet, let surveyPopupController {
-                self.showSurveyDismissActionSheet(surveyPopupController)
+            if self.surveysVM.showSurveyDismissSheet {
+                self.showSurveyDismissActionSheet()
             }
         } onChange: {
             Task { @MainActor [weak self] in
