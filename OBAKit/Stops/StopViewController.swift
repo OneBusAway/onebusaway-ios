@@ -1420,7 +1420,7 @@ public class StopViewController: UIViewController,
         withObservationTracking { [weak self] in
             guard let self else { return }
             if self.surveysVM.showSurveyDismissSheet {
-                self.showSurveyDismissActionSheet(self)
+                self.showSurveyDismissActionSheet()
             }
         } onChange: {
             Task { @MainActor [weak self] in

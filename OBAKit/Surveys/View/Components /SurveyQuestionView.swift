@@ -16,6 +16,8 @@ struct SurveyQuestionView: View {
 
     let isHeroQuestion: Bool
 
+    let showError: Bool
+
     let onUpdateAnswer: (SurveyQuestionAnswer) -> Void
 
     let onCloseAction: (() -> Void)?
@@ -26,6 +28,7 @@ struct SurveyQuestionView: View {
         question: SurveyQuestion,
         answer: SurveyQuestionAnswer? = nil,
         isHeroQuestion: Bool,
+        showError: Bool = false,
         onUpdateAnswer: @escaping (SurveyQuestionAnswer) -> Void,
         onCloseAction: (() -> Void)? = nil,
         onSubmitAction: (() -> Void)? = nil
@@ -33,6 +36,7 @@ struct SurveyQuestionView: View {
         self.question = question
         self.answer = answer
         self.isHeroQuestion = isHeroQuestion
+        self.showError = showError
         self.onUpdateAnswer = onUpdateAnswer
         self.onCloseAction = onCloseAction
         self.onSubmitAction = onSubmitAction
@@ -56,8 +60,15 @@ struct SurveyQuestionView: View {
 
     @ViewBuilder
     private var borderView: some View {
-        RoundedRectangle(cornerRadius: 12)
-            .fill(UIColor.tertiarySystemBackground.toColor())
+        if showError {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(UIColor.tertiarySystemBackground.toColor())
+                .stroke(.red)
+                .shadow(color: .red.opacity(0.4), radius: 5)
+        } else {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(UIColor.tertiarySystemBackground.toColor())
+        }
     }
 
     private var questionHeader: some View {
@@ -155,7 +166,8 @@ extension SurveyQuestionView {
                 required: true,
                 content: .init(labelText: "Test question Test Test Test Test  Test Test  Test", type: .checkbox, options: ["yes", "No", "Maybe"])
             ),
-            isHeroQuestion: false
+            isHeroQuestion: false,
+            showError: true
         ) { _ in
 
         } onCloseAction: {
@@ -166,5 +178,5 @@ extension SurveyQuestionView {
 
     }
     .frame(maxHeight: .infinity)
-    .background(UIColor.tertiarySystemBackground.toColor())
+    .padding(.horizontal, 16)
 }
