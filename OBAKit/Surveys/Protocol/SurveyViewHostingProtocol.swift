@@ -37,7 +37,7 @@ protocol SurveyViewHostingProtocol {
 
     func showSurveyError(_ error: Error)
 
-    func showSurveyDismissActionSheet(_ presenter: UIViewController)
+    func showSurveyDismissActionSheet()
 
     func openSafari(with url: URL)
 
@@ -89,20 +89,6 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
         }
     }
 
-//    func observeSurveyDismissActionSheet() {
-//        withObservationTracking { [weak self] in
-//            guard let self else { return }
-//            if self.surveysVM.showSurveyDismissSheet {
-//                self.showSurveyDismissActionSheet()
-//            }
-//        } onChange: {
-//            Task { @MainActor [weak self] in
-//                guard let self, self.observationActive else { return }
-//                self.observeSurveyDismissActionSheet()
-//            }
-//        }
-//    }
-
     func observeSurveyToastMessage() {
         withObservationTracking { [weak self] in
             let showToast = self?.surveysVM.showToastMessage ?? false
@@ -143,7 +129,7 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
         }
     }
 
-    func showSurveyDismissActionSheet(_ presenter: UIViewController) {
+    func showSurveyDismissActionSheet() {
         let alertController = UIAlertController(
             title: Strings.surveyDismissAlertTitle,
             message: Strings.surveyDismissAlertBody,
@@ -168,7 +154,7 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
             self?.surveysVM.showSurveyDismissSheet = false
         }
 
-        presenter.present(alertController, animated: true)
+        self.present(alertController, animated: true)
     }
 
 }
