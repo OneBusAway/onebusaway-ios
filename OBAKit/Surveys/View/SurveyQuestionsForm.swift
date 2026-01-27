@@ -12,7 +12,7 @@ struct SurveyQuestionsForm: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State var viewModel: SurveysViewModel
+    @Bindable var viewModel: SurveysViewModel
 
     var onDismiss: (() -> Void)?
 
@@ -44,6 +44,7 @@ struct SurveyQuestionsForm: View {
             }
         }
         .onDisappear {
+            viewModel.showFullSurveyQuestions = false
             onDismiss?()
         }
     }
@@ -105,9 +106,11 @@ struct SurveyQuestionsForm: View {
                 if question.content.type == .label {
                     SurveyLabelView(textContent: "\(question.position). \(question.content.labelText)")
                 } else {
+                    let showError = viewModel.incompleteQuestionIDs.contains(question.id)
                     SurveyQuestionView(
                         question: question,
-                        isHeroQuestion: false
+                        isHeroQuestion: false,
+                        showError: showError
                     ) { answer in
                         viewModel.onAction(.onUpdateQuestion(answer: answer, id: question.id))
                     }
