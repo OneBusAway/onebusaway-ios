@@ -679,7 +679,10 @@ class MapViewController: UIViewController,
 
     private var semiModalMapItemController: FloatingPanelController?
 
-    /// Helper to dismiss any existing map item controller to avoid stacking
+    /// Dismisses the currently displayed map item controller panel, if one exists.
+    /// Ensures proper cleanup before displaying a new map item or when the associated pin is removed.
+    /// - Parameter animated: Whether to animate the dismissal. Use `false` for immediate replacement,
+    ///   `true` for user-initiated actions like pin removal.
     private func dismissExistingMapItemController(animated: Bool = false) {
         if let existingController = semiModalMapItemController {
             removeSemiModalPanel(existingController, animated: animated)
@@ -728,7 +731,6 @@ class MapViewController: UIViewController,
     }
 
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem) {
-        dismissExistingMapItemController()
         floatingPanel.move(to: .half, animated: false)
 
         let mapDestination = mapItem.placemark.coordinate
@@ -787,6 +789,9 @@ class MapViewController: UIViewController,
             application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.mapStopAnnotationTapped, value: nil)
             show(stop: stop)
         } else if let annotation = view.annotation as? UserDroppedPin {
+            // Sheet presentation for user-dropped pins is handled via
+            // mapRegionManager(_:didSelectUserAnnotation:) delegate callback.
+            // Early return here prevents falling through to the MKPlacemark case.
             mapView.setCenter(annotation.coordinate, animated: true)
             return
         } else if let placemark = view.annotation as? MKPlacemark {
