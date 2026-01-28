@@ -73,7 +73,8 @@ public struct OBAListViewSection: Hashable, Identifiable {
         self.configuration = .init(appearance: .insetGrouped)
     }
 
-    subscript(_ itemIndex: Int) -> AnyOBAListViewItem {
+    subscript(_ itemIndex: Int) -> AnyOBAListViewItem? {
+        guard itemIndex >= 0 && itemIndex < contents.count else { return nil }
         return contents[itemIndex]
     }
 
