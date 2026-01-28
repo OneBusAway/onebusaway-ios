@@ -120,7 +120,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
     private static func buildLabel(textStyle: UIFont.TextStyle) -> UILabel {
         let label = UILabel.obaLabel(font: .preferredFont(forTextStyle: textStyle))
         label.setContentCompressionResistancePriority(.required, for: .vertical)
-        label.setCompressionResistance(horizontal: .required, vertical: .required)
+        label.setCompressionResistance(horizontal: .defaultHigh, vertical: .required)
         label.setHugging(horizontal: .defaultLow, vertical: .defaultLow)
 
         return label
