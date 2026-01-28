@@ -177,6 +177,8 @@ public class StopViewController: UIViewController,
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 
+        configureTabBarButtons()
+
         listView.obaDelegate = self
         listView.obaDataSource = self
         listView.contextMenuDelegate = self
@@ -305,7 +307,14 @@ public class StopViewController: UIViewController,
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
-        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+        let schedulesButton = UIBarButtonItem(
+            image: UIImage(systemName: "calendar"),
+            style: .plain,
+            target: self,
+            action: #selector(showScheduleForStop)
+        )
+
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesButton]
 
         self.moreMenuButton = moreMenuButton
     }
@@ -363,11 +372,7 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        let schedulesAction = UIAction(title: Strings.schedules, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-            self.showScheduleForStop()
-        }
-
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction, schedulesAction])
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -1139,7 +1144,7 @@ public class StopViewController: UIViewController,
         present(scheduleVC, animated: true)
     }
 
-    func showScheduleForStop() {
+    @objc func showScheduleForStop() {
         let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
         present(scheduleVC, animated: true)
     }

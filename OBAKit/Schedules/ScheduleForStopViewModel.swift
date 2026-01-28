@@ -45,6 +45,45 @@ class ScheduleForStopViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Stop-Focused Schedule
+
+    /// A single departure for the selected stop and route
+    struct StopDeparture: Identifiable {
+        let id: String
+        let time: Date
+        let headsign: String
+    }
+
+    /// All departures at this stop for the currently selected route and date
+    var departuresForSelectedRoute: [StopDeparture] {
+        guard
+            let scheduleData = scheduleData,
+            let routeID = selectedRouteID,
+            let routeSchedule = scheduleData.stopRouteSchedules.first(where: { $0.routeID == routeID })
+        else {
+            return []
+        }
+
+        var departures: [StopDeparture] = []
+
+        for directionSchedule in routeSchedule.stopRouteDirectionSchedules {
+            let directionHeadsign = directionSchedule.tripHeadsign
+
+            for stopTime in directionSchedule.scheduleStopTimes {
+                let headsign = stopTime.stopHeadsign.isEmpty ? directionHeadsign : stopTime.stopHeadsign
+
+                let departure = StopDeparture(
+                    id: stopTime.tripID,
+                    time: stopTime.departureDate,
+                    headsign: headsign
+                )
+                departures.append(departure)
+            }
+        }
+
+        return departures.sorted { $0.time < $1.time }
+    }
+
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
