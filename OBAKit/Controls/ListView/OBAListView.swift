@@ -149,7 +149,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
 
     // MARK: - Item selection actions
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard indexPath.section < lastDataSourceSnapshot.count else { return }
+        guard indexPath.section < lastDataSourceSnapshot.count else {
+            Logger.warn("didSelectItemAt: section index \(indexPath.section) out of bounds")
+            return
+        }
 
         var correctedItemIndex = indexPath.item
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
@@ -208,12 +211,11 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     /// Accounts for whether the section has a header or not.
     func itemForIndexPath(_ indexPath: IndexPath) -> AnyOBAListViewItem? {
         guard indexPath.section < lastDataSourceSnapshot.count else {
+            Logger.warn("itemForIndexPath: section index \(indexPath.section) out of bounds")
             return nil
         }
 
         var correctedItemIndex = indexPath.item
-
-        guard lastDataSourceSnapshot[indexPath.section].contents.count > 0 else { return nil }
 
         if lastDataSourceSnapshot[indexPath.section].hasHeader {
             guard correctedItemIndex != 0 else { return nil }
@@ -226,7 +228,10 @@ public class OBAListView: UICollectionView, UICollectionViewDelegate {
     // MARK: - Layout configuration
     fileprivate func createLayout() -> UICollectionViewLayout {
         return UICollectionViewCompositionalLayout { [unowned self] section, environment -> NSCollectionLayoutSection? in
-            guard section < self.lastDataSourceSnapshot.count else { return nil }
+            guard section < self.lastDataSourceSnapshot.count else {
+                Logger.warn("createLayout: section index \(section) out of bounds")
+                return nil
+            }
             let sectionModel = self.lastDataSourceSnapshot[section]
 
             var configuration = sectionModel.configuration.listConfiguration()
