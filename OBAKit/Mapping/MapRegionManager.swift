@@ -141,7 +141,7 @@ public class MapRegionManager: NSObject,
     private let mapViewShowsHeadingKey = "mapRegionManager.mapViewShowsHeadingKey"
 
     /// Provides storage for the last visible map rect of the map view.
-    /// 
+    ///
     /// In the event that this value is unavailable, the getter will try to offer up an alternative,
     /// such as the current region's service rect.
     public var lastVisibleMapRect: MKMapRect? {
@@ -384,6 +384,7 @@ public class MapRegionManager: NSObject,
 
     private func displayUniqueStopAnnotations() {
         var bookmarksHash = [StopID: Bookmark]()
+        // When multiple bookmarks exist for the same stop, the last one in the bookmarks array takes precedence
         for bm in bookmarks {
             bookmarksHash[bm.stopID] = bm
         }
@@ -414,8 +415,8 @@ public class MapRegionManager: NSObject,
             return bookmark
         }
         let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
-        for annotation in allAnnotationsToRemove
-            where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
+        for annotation in allAnnotationsToRemove {
+            guard mapView.selectedAnnotations.contains(where: { $0 === annotation }) else { continue }
             mapView.deselectAnnotation(annotation, animated: false)
         }
         mapView.removeAnnotations(allAnnotationsToRemove)
