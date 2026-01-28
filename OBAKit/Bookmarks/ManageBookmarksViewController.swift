@@ -129,6 +129,8 @@ class ManageBookmarksViewController: FormViewController {
                 $0 <<< NameRow {
                     $0.tag = bm.id.uuidString
                     $0.value = bm.name
+                }.onChange { [weak self] row in
+                    self?.saveBookmarkNameChange(row: row, group: group)
                 }
             }
         }
@@ -145,8 +147,25 @@ class ManageBookmarksViewController: FormViewController {
                 $0 <<< NameRow {
                     $0.tag = bm.id.uuidString
                     $0.value = bm.name
+                }.onChange { [weak self] row in
+                    self?.saveBookmarkNameChange(row: row, group: nil)
                 }
             }
         }
+    }
+
+    // MARK: - Bookmark Name Updates
+
+    private func saveBookmarkNameChange(row: NameRow, group: BookmarkGroup?) {
+        guard
+            let bookmarkID = UUID(optionalUUIDString: row.tag),
+            let newName = row.value,
+            !newName.trimmingCharacters(in: .whitespaces).isEmpty,
+            let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
+        else {
+            return
+        }
+        bookmark.name = newName
+        application.userDataStore.add(bookmark, to: group)
     }
 }
