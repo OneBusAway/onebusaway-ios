@@ -53,8 +53,14 @@ class ManageBookmarksViewController: FormViewController {
         }
 
         let destinationGroup = groupForBookmarkIndexPath(destinationIndexPath)
-
         application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
+
+        // Refreshing immediately causes index-out-of-bounds in Eureka.
+        // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
+        // Defer until after the current run loop when UIKit's animation is committed.
+        DispatchQueue.main.async { [weak self] in
+            self?.loadForm()
+        }
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
