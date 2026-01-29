@@ -194,13 +194,13 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_departureTimesByPeriod_beforeFetch_isEmpty() {
+    func test_departureTimesDisplay_beforeFetch_isEmpty() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        expect(viewModel.departureTimesByPeriod).to(beEmpty())
+        expect(viewModel.departureTimesDisplay).to(beEmpty())
     }
 
     // MARK: - Time Formatting Tests
@@ -244,31 +244,14 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTimeAccessible(date)
 
-        // Always contains readable time format
+        // 24-hour format contains colon but no AM/PM
         expect(result).to(contain(":"))
         expect(result).toNot(beEmpty())
         expect(result).toNot(equal("-"))
-        
-        // Locale-aware AM/PM handling
-        if viewModel.uses12HourClock {
-            let containsAMPM = result.contains("AM") || result.contains("PM")
-            expect(containsAMPM).to(beTrue())
-        } else {
-            let noAMPM = !result.contains("AM") && !result.contains("PM")
-            expect(noAMPM).to(beTrue())
-        }
-    }
 
-    @MainActor
-    func test_uses12HourClock_returnsCorrectValue() {
-        let dataLoader = MockDataLoader(testName: name)
-        stubScheduleForRoute(dataLoader: dataLoader)
-        let app = createApplication(dataLoader: dataLoader)
-        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-        
-        let expected = Locale.current.hourCycle == .oneToTwelve ||
-                       Locale.current.hourCycle == .zeroToEleven
-        expect(viewModel.uses12HourClock) == expected
+        // 24-hour format does not use AM/PM
+        let noAMPM = !result.contains("AM") && !result.contains("PM")
+        expect(noAMPM).to(beTrue())
     }
 
     @MainActor
