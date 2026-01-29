@@ -123,74 +123,10 @@ class ScheduleForRouteViewModel: ObservableObject {
         return sorted.map { $0.times }
     }
 
-    /// Returns departure times grouped by time period (AM/PM)
-    /// Each group contains trips where the actual trip start time is in that period
-    var departureTimesByPeriod: [TimePeriodGroup] {
-        guard let direction = currentDirection,
-              let scheduleDate = scheduleData?.scheduleDate else {
-            return []
-        }
-        let calendar = Calendar.current
-        var amTrips: [[Date?]] = []
-        var pmTrips: [[Date?]] = []
-
-        let tripsWithStartTimes: [(times: [Date?], startTime: Date?)] = departureTimes.enumerated().map { index, times in
-            let trip = direction.tripsWithStopTimes[index]
-            return (times, actualStartTime(for: trip, scheduleDate: scheduleDate))
-        }
-        let sorted = tripsWithStartTimes.sorted { trip1, trip2 in
-            switch (trip1.startTime, trip2.startTime) {
-            case (let t1?, let t2?):
-                return t1 < t2
-            case (nil, _):
-                return false
-            case (_, nil):
-                return true
-            }
-        }
-        for (times, startTime) in sorted {
-            guard let startTime = startTime else {
-                pmTrips.append(times)
-                continue
-            }
-
-            let hour = calendar.component(.hour, from: startTime)
-            if hour < 12 {
-                amTrips.append(times)
-            } else {
-                pmTrips.append(times)
-            }
-        }
-
-        var groups: [TimePeriodGroup] = []
-
-        if !amTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "AM",
-                label: OBALoc("schedule_view.am_period", value: "AM", comment: "Morning time period label"),
-                times: amTrips
-            ))
-        }
-
-        if !pmTrips.isEmpty {
-            groups.append(TimePeriodGroup(
-                id: "PM",
-                label: OBALoc("schedule_view.pm_period", value: "PM", comment: "Afternoon/evening time period label"),
-                times: pmTrips
-            ))
-        }
-
-        return groups
-    }
-
-    /// 24h format: Same data structure as 12h (without AM/PM grouping)
+    /// Returns departure times for display in 24-hour format
+    /// All trips shown in one continuous list without AM/PM grouping
     var departureTimesDisplay: [[Date?]] {
         return sortedDepartureTimes
-    }
-
-    var uses12HourClock: Bool {
-        Locale.current.hourCycle == .oneToTwelve ||
-        Locale.current.hourCycle == .zeroToEleven
     }
 
     // MARK: - Private Properties
@@ -211,8 +147,7 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     private lazy var timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
+        formatter.dateFormat = "HH:mm"
         formatter.locale = .current
         formatter.timeZone = TimeZone.current
         return formatter
@@ -220,8 +155,7 @@ class ScheduleForRouteViewModel: ObservableObject {
 
     private lazy var accessibilityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
+        formatter.dateFormat = "HH:mm"
         formatter.locale = .current
         formatter.timeZone = TimeZone.current
         return formatter
