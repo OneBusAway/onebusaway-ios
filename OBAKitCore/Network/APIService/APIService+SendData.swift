@@ -68,10 +68,10 @@ extension APIService {
             return try JSONDecoder().decode(Response.self, from: data)
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
-            logger.error("DECODING ERROR: \(message, privacy: .public)")
+            logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
             throw error
         } catch {
-            logger.error("UNEXPECTED DECODING ERROR: \(error.localizedDescription, privacy: .public)")
+            logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }

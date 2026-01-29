@@ -9,10 +9,10 @@
 
 import Foundation
 
-enum DecodingErrorReporter {
+public enum DecodingErrorReporter {
 
     /// Generates a detailed error message from a DecodingError
-    static func message(from error: DecodingError) -> String {
+    public static func message(from error: DecodingError) -> String {
         switch error {
         case .keyNotFound(let key, let context):
             return """
