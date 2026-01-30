@@ -28,6 +28,12 @@ jobs:
     - name: Switch Xcode
       run: sudo xcode-select -switch /Applications/Xcode_26.2.app
 
+    - name: List Applications
+      run: ls /Applications
+
+    - name: List available simulators and devices
+      run: xcrun simctl list
+
     - name: Install xcodegen
       run: brew install xcodegen
 
