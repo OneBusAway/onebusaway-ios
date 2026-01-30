@@ -8,17 +8,17 @@ on:
 
 # GitHub macOS Runner images are documented at:
 # https://github.com/actions/runner-images?tab=readme-ov-file
-# Installed versions of Xcode on macOS 15 are documented at:
-# https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+# Installed versions of Xcode on macOS 26 are documented at:
+# https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26-arm64
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/cache@v4
+    - uses: actions/cache@v5
       with:
         path: .build
         key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
@@ -26,7 +26,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_26.0.app
+      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
