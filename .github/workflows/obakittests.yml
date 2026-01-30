@@ -26,7 +26,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
+      run: sudo xcode-select -switch /Applications/Xcode_26.1.1.app
 
     - name: List Applications
       run: ls /Applications
@@ -44,7 +44,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.1'
+        -destination 'platform=iOS Simulator,name=iPhone 16'
         -quiet
 
     # Unit Test
@@ -53,7 +53,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.1'
+        -destination 'platform=iOS Simulator,name=iPhone 16'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
