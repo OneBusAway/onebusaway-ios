@@ -26,7 +26,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_26.0.app
+      run: sudo xcode-select -switch /Applications/Xcode_16.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
