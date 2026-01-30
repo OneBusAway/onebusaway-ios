@@ -6,14 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
-# GitHub macOS Runner images are documented at:
-# https://github.com/actions/runner-images?tab=readme-ov-file
-# Installed versions of Xcode on macOS 15 are documented at:
-# https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
-
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26-arm64  #
 
     steps:
     - uses: actions/checkout@v4
@@ -26,7 +21,7 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_16.2.app
+      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
@@ -34,28 +29,25 @@ jobs:
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
-    # Build
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 16'
+        -destination 'platform=iOS Simulator,name=iPhone 17'  #  Latest simulator
         -quiet
 
-    # Unit Test
     - name: OBAKit Unit Test
       run: xcodebuild test-without-building
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 16'
+        -destination 'platform=iOS Simulator,name=iPhone 17'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
-    # Upload results
     - uses: kishikawakatsumi/xcresulttool@v1.7.0
       continue-on-error: true
       with:
-        show-passed-tests: false    # Avoid truncation of annotations by GitHub by omitting succeeding tests.
+        show-passed-tests: false
         path: |
           OBAKitTests.xcresult
       if: success() || failure()
