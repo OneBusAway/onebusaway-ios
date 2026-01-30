@@ -44,7 +44,7 @@ jobs:
     - name: Build OneBusAway
       run: xcodebuild clean build-for-testing
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 16'
+        -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
         -quiet
 
     # Unit Test
@@ -53,7 +53,7 @@ jobs:
         -only-testing:OBAKitTests
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
-        -destination 'platform=iOS Simulator,name=iPhone 16'
+        -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 
