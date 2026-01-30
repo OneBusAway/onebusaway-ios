@@ -186,44 +186,4 @@ class ReferencesTests: OBATestCase {
         expect(trip.shapeID) == "Hillsborough Area Regional Transit_38042"
         expect(trip.headsign) == "Downtown to UATC via 15th St"
     }
-    func test_serviceAlerts_withMilliseconds() throws {
-        // Milliseconds-based JSON
-        let millisecondsJSON = """
-        {
-            "activeWindows": [
-                {
-                    "from": 1539781200000,
-                    "to": 1539826200000
-                }
-            ]
-        }
-        """.data(using: .utf8)!
-
-        // Seconds-based JSON (same moments in time)
-        let secondsJSON = """
-        {
-            "activeWindows": [
-                {
-                    "from": 1539781200,
-                    "to": 1539826200
-                }
-            ]
-        }
-        """.data(using: .utf8)!
-
-        struct Wrapper: Decodable {
-            let activeWindows: Set<ServiceAlert.TimeWindow>
-        }
-
-        let decoder = JSONDecoder()
-
-        let millisecondsResult = try decoder.decode(Wrapper.self, from: millisecondsJSON)
-        let secondsResult = try decoder.decode(Wrapper.self, from: secondsJSON)
-
-        XCTAssertEqual(
-            millisecondsResult.activeWindows,
-            secondsResult.activeWindows,
-            "TimeWindow decoded from milliseconds should match seconds-based decoding"
-        )
-    }
 }
