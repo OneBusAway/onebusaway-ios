@@ -8,6 +8,7 @@
 import SwiftUI
 import Observation
 import OBAKitCore
+import SafariServices
 
 protocol SurveyViewHostingProtocol {
 
@@ -21,42 +22,26 @@ protocol SurveyViewHostingProtocol {
 
     func stopObserveSurveysState()
 
-    func observeSurveyError()
-
     func observeSurveyLoadingState()
 
-    func observeSurveyFullQuestionsState()
+    func observeSurveyFullQuestionsState(_ router: ViewRouter)
 
     func observeSurveyDismissActionSheet()
 
     func observeSurveyToastMessage()
 
-    func observeOpenExternalSurvey()
+    func observeOpenExternalSurvey(_ router: ViewRouter)
 
-    func presentFullSurveyQuestions()
-
-    func showSurveyError(_ error: Error)
+    func presentFullSurveyQuestions(_ router: ViewRouter)
 
     func showSurveyDismissActionSheet()
 
-    func openSafari(with url: URL)
+    func openSafari(with url: URL, router: ViewRouter)
 
 }
 
+@MainActor
 extension SurveyViewHostingProtocol where Self: UIViewController {
-
-    func observeSurveyError() {
-        withObservationTracking { [weak self] in
-            if let error = self?.surveysVM.error {
-                self?.showSurveyError(error)
-            }
-        } onChange: { [weak self] in
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyError()
-            }
-        }
-    }
 
     func observeSurveyLoadingState() {
         withObservationTracking {
@@ -73,18 +58,18 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
         }
     }
 
-    func observeSurveyFullQuestionsState() {
+    func observeSurveyFullQuestionsState(_ router: ViewRouter) {
         withObservationTracking { [weak self] in
             guard let self else { return }
 
             if self.surveysVM.showFullSurveyQuestions {
                 self.stopObserveSurveysState()
-                self.presentFullSurveyQuestions()
+                self.presentFullSurveyQuestions(router)
             }
         } onChange: {
             Task { @MainActor [weak self] in
                 guard let self, self.observationActive else { return }
-                self.observeSurveyFullQuestionsState()
+                self.observeSurveyFullQuestionsState(router)
             }
         }
     }
@@ -92,15 +77,16 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
     func observeSurveyToastMessage() {
         withObservationTracking { [weak self] in
             let showToast = self?.surveysVM.showToastMessage ?? false
-            guard let self, showToast else { return }
+            let type = self?.surveysVM.toast?.type
 
-            switch self.surveysVM.toastType {
+            guard let self, let type = type, showToast else { return }
+
+            switch type {
             case .error:
-                showErrorToast(surveysVM.toastMessage)
+                showErrorToast(surveysVM.toast?.message)
             case .success:
-                showSuccessToast(surveysVM.toastMessage)
+                showSuccessToast(surveysVM.toast?.message)
             }
-            self.surveysVM.showToastMessage = false
 
         } onChange: {
             Task { @MainActor [weak self] in
@@ -110,22 +96,15 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
         }
     }
 
-    func observeOpenExternalSurvey() {
+    func observeOpenExternalSurvey(_ router: ViewRouter) {
         withObservationTracking { [weak self] in
             guard let self, self.surveysVM.openExternalSurvey, let url = self.surveysVM.externalSurveyURL else { return }
-            self.openSafari(with: url)
+            self.openSafari(with: url, router: router)
         } onChange: {
             Task { @MainActor [weak self] in
                 guard let self, self.observationActive else { return }
-                self.observeOpenExternalSurvey()
+                self.observeOpenExternalSurvey(router)
             }
-        }
-    }
-
-    func showSurveyError(_ error: Error) {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            await AlertPresenter.show(error: error, presentingController: self)
         }
     }
 
@@ -151,10 +130,38 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
         }
 
         alertController.addAction(title: Strings.cancel, style: .cancel) { [weak self] _ in
-            self?.surveysVM.showSurveyDismissSheet = false
+            self?.surveysVM.onAction(.hideSurveyDismissSheet)
         }
 
         self.present(alertController, animated: true)
+    }
+
+    func presentFullSurveyQuestions(_ router: ViewRouter) {
+        let surveyQuestionsForm = SurveyQuestionsForm(viewModel: self.surveysVM) { [weak self] in
+            self?.observeSurveysState()
+        }
+
+        let hosting = UIHostingController(rootView: surveyQuestionsForm)
+        router.present(hosting, from: self, isModal: true, isPopover: true)
+    }
+
+    func openSafari(with url: URL, router: ViewRouter) {
+        let safariView = SFSafariViewController(url: url)
+        router.present(safariView, from: self, isModal: true)
+    }
+
+    func observeSurveyDismissActionSheet() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            if self.surveysVM.showSurveyDismissSheet {
+                self.showSurveyDismissActionSheet()
+            }
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self, self.observationActive else { return }
+                self.observeSurveyDismissActionSheet()
+            }
+        }
     }
 
 }

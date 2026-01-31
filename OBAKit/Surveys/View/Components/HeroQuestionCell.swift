@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-
 import UIKit
 import OBAKitCore
 import SwiftUI
@@ -25,38 +24,13 @@ class HeroQuestionCell: OBAListViewCell {
         setupView()
     }
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupView()
-    }
-
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
     private func setupView() {
+        guard let model else { return }
 
-        let swiftUIView = getQuestionView()
-        let hostingController = UIHostingController(rootView: swiftUIView)
-        hostingController.view.backgroundColor = .clear
-
-        contentView.addSubview(hostingController.view)
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            hostingController.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-            hostingController.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            hostingController.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            hostingController.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-        ])
-
-    }
-
-    @ViewBuilder
-    private func getQuestionView() -> some View {
-        if let model {
+        contentConfiguration = UIHostingConfiguration {
             questionView(for: model)
         }
+        .margins(.all, 0)
     }
 
     @ViewBuilder
@@ -93,7 +67,7 @@ struct HeroQuestionListItem: OBAListViewItem {
         return HeroQuestionCell.self
     }
 
-    let id: String
+    var id: Int { question.id }
 
     let question: SurveyQuestion
 
@@ -110,7 +84,6 @@ struct HeroQuestionListItem: OBAListViewItem {
         onSubmitAction: @escaping () -> Void,
         onCloseAction: @escaping () -> Void
     ) {
-        self.id = UUID().uuidString
         self.onSelectAction = onSelectAction
         self.onSubmitAction = onSubmitAction
         self.onCloseAction = onCloseAction

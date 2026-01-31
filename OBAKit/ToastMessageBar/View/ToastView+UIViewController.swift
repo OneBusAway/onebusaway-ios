@@ -15,11 +15,13 @@ extension UIViewController {
 
     private static var toastWindow: UIWindow?
 
-    func showSuccessToast(_ message: String, duration: TimeInterval = 3.0) {
+    func showSuccessToast(_ message: String?, duration: TimeInterval = 3.0) {
+        guard let message, !message.isEmpty else { return }
         showToast(message: message, type: .success, duration: duration)
     }
 
-    func showErrorToast(_ message: String, duration: TimeInterval = 3.0) {
+    func showErrorToast(_ message: String?, duration: TimeInterval = 3.0) {
+        guard let message, !message.isEmpty else { return }
         showToast(message: message, type: .error, duration: duration)
     }
 
