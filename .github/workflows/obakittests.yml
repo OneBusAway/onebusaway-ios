@@ -26,7 +26,8 @@ jobs:
           ${{ runner.os }}-spm-
 
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_26.0.app
+      # FIX: Updated from 26.0 to 26.2 because 26.0 was removed in the Jan 27 update
+      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
 
     - name: Install xcodegen
       run: brew install xcodegen
