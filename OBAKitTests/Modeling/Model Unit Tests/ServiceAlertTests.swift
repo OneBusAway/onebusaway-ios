@@ -119,6 +119,33 @@ class ServiceAlertTests: OBATestCase {
         expect(timeWindow.interval.start) == timeWindow.from
         expect(timeWindow.interval.end) == timeWindow.to
     }
+
+    func test_timeWindowDecodingWithMilliseconds() {
+        let millisecondsData: [String: Any] = [
+            "from": 1539781200000,
+            "to": 1539826200000
+        ]
+        
+        let timeWindow = try! Fixtures.dictionaryToModel(type: ServiceAlert.TimeWindow.self, dictionary: millisecondsData)
+        
+        expect(timeWindow.from.timeIntervalSince1970) == 1539781200
+        expect(timeWindow.to.timeIntervalSince1970) == 1539826200
+    }
+
+    func test_timeWindowThresholdBoundary() {
+        // Just at threshold (10_000_000_000) -> Treated as seconds
+        let atThresholdData: [String: Any] = ["from": 10_000_000_000, "to": 10_000_003_600]
+        let atThresholdWindow = try! Fixtures.dictionaryToModel(type: ServiceAlert.TimeWindow.self, dictionary: atThresholdData)
+        
+        expect(atThresholdWindow.from.timeIntervalSince1970) == 10_000_000_000
+        
+        // Just above threshold (10_000_000_001) -> Treated as milliseconds
+        let aboveThresholdData: [String: Any] = ["from": 10_000_000_001, "to": 10_000_000_002]
+        let aboveThresholdWindow = try! Fixtures.dictionaryToModel(type: ServiceAlert.TimeWindow.self, dictionary: aboveThresholdData)
+        
+        // Use beCloseTo to fix floating point error
+        expect(aboveThresholdWindow.from.timeIntervalSince1970).to(beCloseTo(10_000_000.001, within: 0.0001))
+    }
     
     func test_timeWindowWithMissingTo() {
         let timeWindowData: [String: Any] = [
