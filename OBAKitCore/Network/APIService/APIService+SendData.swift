@@ -47,6 +47,7 @@ extension APIService {
         request.httpMethod = method.value
         request.httpBody = requestData
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
 
         let (data, response): (Foundation.Data, URLResponse)
 
@@ -64,7 +65,16 @@ extension APIService {
 
         try handleSendDateHttpResponse(response, url, method)
 
-        return try JSONDecoder().decode(Response.self, from: data)
+        do {
+            return try JSONDecoder().decode(Response.self, from: data)
+        } catch let error as DecodingError {
+            let message = DecodingErrorReporter.message(from: error)
+            logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
+            throw error
+        } catch {
+            logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
     }
 
     private func handleSendDateHttpResponse(_ response: URLResponse, _ url: URL, _ method: HTTPMethod) throws {
