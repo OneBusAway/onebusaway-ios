@@ -17,9 +17,13 @@ enum SurveysAction {
     // Cancellation actions
     case onCloseSurveyHeroQuestion
 
+    case hideSurveyDismissSheet
+
     case onRemindLater
 
     case onSkipSurvey
+
+    case hideToastMessage
 
     // Questions Form
 
@@ -28,5 +32,7 @@ enum SurveysAction {
     case onUpdateQuestion(answer: SurveyQuestionAnswer, id: Int)
 
     case onSubmitQuestions
+
+    case dismissFullQuestionsForm
 
 }

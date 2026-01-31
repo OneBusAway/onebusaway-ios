@@ -31,7 +31,7 @@ struct SurveyQuestionsForm: View {
             }
             .disabled(viewModel.isLoading)
             .background(ThemeColors.shared.groupedTableBackground.toColor())
-            .toast(message: viewModel.toastMessage, type: viewModel.toastType, isPresented: $viewModel.showToastMessage)
+            .toast(toast: viewModel.toast, isPresented: $viewModel.showToastMessage)
             .toolbar {
                 closeButton
                 answeredQuestionProgress
@@ -44,7 +44,7 @@ struct SurveyQuestionsForm: View {
             }
         }
         .onDisappear {
-            viewModel.showFullSurveyQuestions = false
+            viewModel.onAction(.dismissFullQuestionsForm)
             onDismiss?()
         }
     }
