@@ -1,5 +1,5 @@
 //
-//  FirebaseAnalytics.swift
+//  AnalyticsOrchestrator.swift
 //  App
 //
 //  Copyright © Open Transit Software Foundation
@@ -9,6 +9,7 @@
 
 import OBAKitCore
 import OBAKit
+import FirebaseCrashlytics
 
 @objc(OBAAnalyticsOrchestrator) public class AnalyticsOrchestrator: NSObject, OBAKit.Analytics {
     private let userDefaults: UserDefaults
@@ -21,6 +22,31 @@ import OBAKit
     
     @objc public func configure(userID: String) {
         firebaseAnalytics = FirebaseAnalytics(userID: userID)
+        
+        DecodingErrorReporter.reportHandler = { error, url, httpMethod, message in
+            let crashlytics = Crashlytics.crashlytics()
+            
+            let errorType: String
+            switch error {
+            case .keyNotFound:
+                errorType = "keyNotFound"
+            case .typeMismatch:
+                errorType = "typeMismatch"
+            case .valueNotFound:
+                errorType = "valueNotFound"
+            case .dataCorrupted:
+                errorType = "dataCorrupted"
+            @unknown default:
+                errorType = "unknown"
+            }
+            
+            crashlytics.setCustomValue(url.absoluteString, forKey: "request_url")
+            crashlytics.setCustomValue(httpMethod, forKey: "http_method")
+            crashlytics.setCustomValue(errorType, forKey: "decoding_error_type")
+            crashlytics.setCustomValue(message, forKey: "decoding_error_detail")
+            
+            crashlytics.record(error: error)
+        }
     }
     
     public func updateServer(defaultDomainURL: URL, analyticsServerURL: URL?) {

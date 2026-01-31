@@ -272,4 +272,99 @@ final class DecodingErrorReporterTests: XCTestCase {
                          "Message should include context section")
         }
     }
+    
+    // MARK: - Handler Verification Tests
+    
+    func testReportHandlerCapturesErrorType() {
+        let testCases: [(DecodingError, String)] = [
+            (.keyNotFound(TestCodingKey(stringValue: "test"), .init(codingPath: [], debugDescription: "Missing")), "keyNotFound"),
+            (.typeMismatch(String.self, .init(codingPath: [], debugDescription: "Wrong type")), "typeMismatch"),
+            (.valueNotFound(String.self, .init(codingPath: [], debugDescription: "Null value")), "valueNotFound"),
+            (.dataCorrupted(.init(codingPath: [], debugDescription: "Corrupted")), "dataCorrupted")
+        ]
+        
+        for (error, expectedType) in testCases {
+            let expectation = self.expectation(description: "Handler called for \(expectedType)")
+            var capturedError: DecodingError?
+            
+            DecodingErrorReporter.reportHandler = { error, _, _, _ in
+                capturedError = error
+                expectation.fulfill()
+            }
+            
+            let mockURL = URL(string: "https://api.onebusaway.org/test")!
+            DecodingErrorReporter.report(error: error, url: mockURL, httpMethod: "GET")
+            
+            waitForExpectations(timeout: 1.0)
+            XCTAssertNotNil(capturedError, "Should capture \(expectedType) error")
+            
+            // Verify the captured error matches the expected type
+            switch capturedError {
+            case .keyNotFound where expectedType == "keyNotFound":
+                XCTAssertTrue(true)
+            case .typeMismatch where expectedType == "typeMismatch":
+                XCTAssertTrue(true)
+            case .valueNotFound where expectedType == "valueNotFound":
+                XCTAssertTrue(true)
+            case .dataCorrupted where expectedType == "dataCorrupted":
+                XCTAssertTrue(true)
+            default:
+                XCTFail("Error type mismatch for \(expectedType)")
+            }
+        }
+        
+        DecodingErrorReporter.reportHandler = nil
+    }
+    
+    func testReportHandlerWithDifferentHTTPMethods() {
+        let postExpectation = self.expectation(description: "POST handler called")
+        var capturedMethod: String?
+        
+        DecodingErrorReporter.reportHandler = { _, _, httpMethod, _ in
+            capturedMethod = httpMethod
+            postExpectation.fulfill()
+        }
+        
+        let mockURL = URL(string: "https://api.onebusaway.org/stops")!
+        let mockError = DecodingError.keyNotFound(
+            TestCodingKey(stringValue: "id"),
+            .init(codingPath: [], debugDescription: "Missing id")
+        )
+        
+        DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "POST")
+        
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(capturedMethod, "POST", "Should capture POST method correctly")
+        
+        DecodingErrorReporter.reportHandler = nil
+    }
+    
+    func testReportHandlerNotCalledWhenNil() {
+        DecodingErrorReporter.reportHandler = nil
+        
+        let mockURL = URL(string: "https://api.onebusaway.org/test")!
+        let mockError = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
+        
+        // Calling report with no handler configured should not crash
+        DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "GET")
+        
+        XCTAssertTrue(true, "Should handle nil handler gracefully")
+    }
+    
+    // MARK: - Helper Types
+    
+    struct TestCodingKey: CodingKey {
+        var stringValue: String
+        var intValue: Int?
+        
+        init(stringValue: String) {
+            self.stringValue = stringValue
+            self.intValue = nil
+        }
+        
+        init?(intValue: Int) {
+            self.stringValue = "\(intValue)"
+            self.intValue = intValue
+        }
+    }
 }
