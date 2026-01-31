@@ -88,10 +88,10 @@ struct ToastModifier: ViewModifier {
 }
 
 extension View {
-    func toast(message: String, type: Toast.ToastType, isPresented: Binding<Bool>, duration: TimeInterval = 3.0) -> some View {
+    func toast(toast: Toast?, isPresented: Binding<Bool>, duration: TimeInterval = 3.0) -> some View {
         self.modifier(ToastModifier(
-            message: message,
-            type: type,
+            message: toast?.message,
+            type: toast?.type,
             duration: duration,
             isPresented: isPresented
         ))

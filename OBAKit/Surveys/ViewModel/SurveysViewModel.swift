@@ -10,9 +10,10 @@ import Observation
 import OBAKitCore
 
 @Observable
+@MainActor
 final public class SurveysViewModel {
 
-    /// Dependancies
+    /// Dependencies
     private let service: SurveyServiceProtocol
     private let prioritizer: SurveyPrioritizing
     private var stateManager: SurveyStateProtocol
@@ -20,35 +21,31 @@ final public class SurveysViewModel {
 
     /// Toast Message
     public var showToastMessage: Bool = false
-    public var toastMessage: String = ""
-    public var toastType: Toast.ToastType = .success
-
-    /// Error State
-    public var error: Error?
+    public private(set) var toast: Toast?
 
     /// Loading State
-    public var isLoading: Bool = false
+    public private(set) var isLoading: Bool = false
 
     /// Surveys Show/Hide  state variables
-    public var showHeroQuestion: Bool = false
-    public var showFullSurveyQuestions: Bool = false
-    public var showSurveyDismissSheet: Bool = false
-    public var openExternalSurvey: Bool = false
+    public private(set) var showHeroQuestion: Bool = false
+    public private(set) var showFullSurveyQuestions: Bool = false
+    public private(set) var showSurveyDismissSheet: Bool = false
+    public private(set) var openExternalSurvey: Bool = false
 
     /// Survey Study
-    public var study: Study?
+    public private(set) var study: Study?
 
     /// Hero Question Content
-    public var heroQuestion: SurveyQuestion?
+    public private(set) var heroQuestion: SurveyQuestion?
 
-    public var heroQuestionAnswer: SurveyQuestionAnswer?
+    public private(set) var heroQuestionAnswer: SurveyQuestionAnswer?
 
     /// Surveys full question
-    public var questions: [SurveyQuestion] = []
+    public private(set) var questions: [SurveyQuestion] = []
 
-    public var incompleteQuestionIDs: [Int] = []
+    public private(set) var incompleteQuestionIDs: [Int] = []
 
-    public var externalSurveyURL: URL?
+    public private(set) var externalSurveyURL: URL?
 
     /// Full survey questions answers  state
     public var answerableQuestionCount: Int {
@@ -87,6 +84,7 @@ final public class SurveysViewModel {
         self.externalLinkBuilder = externalLinkBuilder
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func onAction(_ action: SurveysAction) {
         switch action {
 
@@ -118,6 +116,16 @@ final public class SurveysViewModel {
 
         case .onSubmitQuestions:
             submitSurveyQuestionsAnswers()
+
+        case .dismissFullQuestionsForm:
+            showFullSurveyQuestions = false
+
+        case .hideToastMessage:
+            showToastMessage = false
+
+        case .hideSurveyDismissSheet:
+            showSurveyDismissSheet = false
+
         }
     }
 
@@ -135,7 +143,8 @@ final public class SurveysViewModel {
                     self.getNextSurvey()
                 }
             } catch {
-                print(error)
+                Logger.error(error.localizedDescription)
+                showToastMessage(error.localizedDescription, type: .error)
             }
         }
     }
@@ -156,8 +165,7 @@ final public class SurveysViewModel {
     }
 
     private func showToastMessage(_ message: String, type: Toast.ToastType) {
-        toastMessage = message
-        toastType = type
+        self.toast = Toast(message: message, type: type)
         showToastMessage = true
     }
 
@@ -223,8 +231,10 @@ extension SurveysViewModel {
 
                 self.showToastMessage(Strings.surveyAnswerSuccessfullySubmitted, type: .success)
                 self.setRemainingSurveyQuestions()
+
             } catch {
-                self.error = error
+                Logger.error(error.localizedDescription)
+                showToastMessage(error.localizedDescription, type: .error)
             }
         }
 
@@ -355,8 +365,8 @@ extension SurveysViewModel {
                 self.onSubmitQuestionsAnswersSuccess()
 
             } catch {
-                print(error)
-                self.showToastMessage(error.localizedDescription, type: .error)
+                Logger.error(error.localizedDescription)
+                showToastMessage(error.localizedDescription, type: .error)
             }
         }
 
