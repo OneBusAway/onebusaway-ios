@@ -11,7 +11,8 @@ import Foundation
 
 public enum DecodingErrorReporter {
 
-    /// Generates a detailed error message from a DecodingError
+    public static var reportHandler: ((_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?
+
     public static func message(from error: DecodingError) -> String {
         switch error {
         case .keyNotFound(let key, let context):
@@ -45,6 +46,10 @@ public enum DecodingErrorReporter {
         @unknown default:
             return "Unknown decoding error encountered."
         }
+    }
+
+    public static func report(error: DecodingError, url: URL, httpMethod: String) {
+        reportHandler?(error, url, httpMethod, message(from: error))
     }
 
     private static func path(_ context: DecodingError.Context) -> String {
