@@ -56,6 +56,7 @@ class ManageBookmarksViewController: FormViewController {
         application.userDataStore.add(bookmark, to: destinationGroup, index: destinationIndexPath.row)
 
         // Defer refresh to avoid index-out-of-bounds during Eureka's internal animation.
+        // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
         // Use performWithoutAnimation to prevent visual glitches.
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
@@ -106,8 +107,11 @@ class ManageBookmarksViewController: FormViewController {
 
     private func bookmarkForBookmarkIndexPath(_ indexPath: IndexPath) -> Bookmark? {
         let section = bookmarksSections[indexPath.section]
-        guard let row = section.allRows[indexPath.row] as? NameRow,
-              let id = UUID(optionalUUIDString: row.tag) else {
+        guard let row = section.allRows[indexPath.row] as? NameRow else {
+            Logger.warn("bookmarkForBookmarkIndexPath: Expected NameRow at \(indexPath)")
+            return nil
+        }
+        guard let id = UUID(optionalUUIDString: row.tag) else {
             return nil
         }
 
