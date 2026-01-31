@@ -1329,13 +1329,12 @@ public class StopViewController: UIViewController,
 
     func observeSurveysState() {
         observationActive = true
-        observeSurveyError()
         observeSurveyLoadingState()
         observeSurveyHeroQuestion()
         observeSurveyToastMessage()
-        observeSurveyFullQuestionsState()
+        observeSurveyFullQuestionsState(application.viewRouter)
         observeSurveyDismissActionSheet()
-        observeOpenExternalSurvey()
+        observeOpenExternalSurvey(application.viewRouter)
     }
 
     func observeSurveyHeroQuestion() {
@@ -1355,31 +1354,5 @@ public class StopViewController: UIViewController,
         observationActive = false
     }
 
-    func presentFullSurveyQuestions() {
-        let surveyQuestionsForm = SurveyQuestionsForm(viewModel: self.surveysVM) { [weak self] in
-            self?.observeSurveysState()
-        }
-        let hosting = UIHostingController(rootView: surveyQuestionsForm)
-        application.viewRouter.present(hosting, from: self, isModal: true, isPopover: true)
-    }
-
-    func openSafari(with url: URL) {
-        let safariView = SFSafariViewController(url: url)
-        application.viewRouter.present(safariView, from: self, isModal: true)
-    }
-
-    func observeSurveyDismissActionSheet() {
-        withObservationTracking { [weak self] in
-            guard let self else { return }
-            if self.surveysVM.showSurveyDismissSheet {
-                self.showSurveyDismissActionSheet()
-            }
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyDismissActionSheet()
-            }
-        }
-    }
 }
 // swiftlint:enable file_length

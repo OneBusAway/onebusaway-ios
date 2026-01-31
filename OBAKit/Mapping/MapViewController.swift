@@ -1042,6 +1042,8 @@ class MapViewController: UIViewController,
 
         let surveyQuestionView = MapHeroQuestionView(viewModel: surveysVM)
         let hostingController = createPopupHostingController(content: surveyQuestionView)
+
+        addChild(hostingController)
         view.insertSubview(hostingController.view, aboveSubview: mapRegionManager.mapView)
 
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
@@ -1050,9 +1052,9 @@ class MapViewController: UIViewController,
             hostingController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
             hostingController.view.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 24),
             hostingController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: ThemeMetrics.controllerMargin),
-            hostingController.view.widthAnchor.constraint(equalToConstant: view.bounds.width)
         ])
 
+        hostingController.didMove(toParent: self)
         surveyPopupController = hostingController
     }
 
@@ -1063,7 +1065,9 @@ class MapViewController: UIViewController,
     }
 
     @objc private func dismissSurveyPopup() {
+        surveyPopupController?.willMove(toParent: nil)
         surveyPopupController?.view.removeFromSuperview()
+        surveyPopupController?.removeFromParent()
         surveyPopupController = nil
     }
 
@@ -1071,13 +1075,12 @@ class MapViewController: UIViewController,
 
     func observeSurveysState() {
         observationActive = true
-        observeSurveyError()
         observeSurveyLoadingState()
         observeSurveyHeroQuestion()
         observeSurveyToastMessage()
-        observeSurveyFullQuestionsState()
+        observeSurveyFullQuestionsState(application.viewRouter)
         observeSurveyDismissActionSheet()
-        observeOpenExternalSurvey()
+        observeOpenExternalSurvey(application.viewRouter)
     }
 
     func stopObserveSurveysState() {
@@ -1098,34 +1101,6 @@ class MapViewController: UIViewController,
                 self.observeSurveyHeroQuestion()
             }
         }
-    }
-
-    func observeSurveyDismissActionSheet() {
-        withObservationTracking { [weak self] in
-            guard let self else { return }
-            if self.surveysVM.showSurveyDismissSheet {
-                self.showSurveyDismissActionSheet()
-            }
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyDismissActionSheet()
-            }
-        }
-    }
-
-    func presentFullSurveyQuestions() {
-        let surveyQuestionsForm = SurveyQuestionsForm(viewModel: self.surveysVM) { [weak self] in
-            self?.observeSurveysState()
-        }
-
-        let hosting = UIHostingController(rootView: surveyQuestionsForm)
-        application.viewRouter.present(hosting, from: self, isModal: true, isPopover: true)
-    }
-
-    func openSafari(with url: URL) {
-        let safariView = SFSafariViewController(url: url)
-        application.viewRouter.present(safariView, from: self, isModal: true)
     }
 
 }
