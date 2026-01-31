@@ -37,7 +37,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
@@ -81,7 +81,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
@@ -127,7 +127,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
