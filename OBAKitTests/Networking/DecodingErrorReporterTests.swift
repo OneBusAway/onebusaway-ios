@@ -215,6 +215,8 @@ final class DecodingErrorReporterTests: XCTestCase {
             
             XCTAssertTrue(message.contains("Path:"),
                          "Message should contain path information")
+            XCTAssertTrue(message.contains("Path: root"),
+                         "Empty coding path should display 'root'")
         }
     }
     
