@@ -12,15 +12,6 @@ import Combine
 import SwiftUI
 import OBAKitCore
 
-// MARK: - Time Period Grouping
-
-/// Represents a group of departure times for a specific time period (AM or PM)
-struct TimePeriodGroup: Identifiable {
-    let id: String
-    let label: String
-    let times: [[Date?]]
-}
-
 /// View model that manages schedule data for a specific route
 @MainActor
 class ScheduleForRouteViewModel: ObservableObject {
@@ -148,14 +139,14 @@ class ScheduleForRouteViewModel: ObservableObject {
     private lazy var timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
-        formatter.locale = .current
         formatter.timeZone = TimeZone.current
         return formatter
     }()
 
     private lazy var accessibilityTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
         formatter.locale = .current
         formatter.timeZone = TimeZone.current
         return formatter
