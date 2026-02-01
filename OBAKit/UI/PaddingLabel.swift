@@ -5,7 +5,6 @@
 //  Created by Alan Chu on 8/16/20.
 //
 
-#if !os(watchOS)
 import UIKit
 
 public class PaddingLabel: UILabel {
@@ -73,4 +72,3 @@ public class PaddingLabel: UILabel {
         }
     }
 }
-#endif

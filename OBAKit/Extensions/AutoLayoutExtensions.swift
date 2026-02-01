@@ -7,7 +7,6 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-#if !os(watchOS)
 import UIKit
 
 // MARK: - Autolayoutable
@@ -187,4 +186,3 @@ public protocol Anchorable {
 
 extension UIView: Anchorable {}
 extension UILayoutGuide: Anchorable {}
-#endif

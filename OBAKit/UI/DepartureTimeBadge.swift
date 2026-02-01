@@ -6,8 +6,8 @@
 //  Copyright © 2019 OneBusAway. All rights reserved.
 //
 
-#if !os(watchOS)
 import UIKit
+import OBAKitCore
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
 public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
@@ -163,5 +163,4 @@ extension DepartureTimeBadge.Configuration {
         return .init(accessibilityLabel: "", displayText: text, backgroundColor: color.cgColor)
     }
 }
-#endif
 #endif

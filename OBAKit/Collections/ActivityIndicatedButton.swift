@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-#if !os(watchOS)
 import UIKit
+import OBAKitCore
 
 /// A button can be replaced with an activity indicator.
 public class ActivityIndicatedButton: UIView {
@@ -139,4 +139,3 @@ public class ActivityIndicatedButton: UIView {
         showActivityIndicator()
     }
 }
-#endif
