@@ -219,6 +219,37 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         expect(result).to(contain(":"))
         expect(result).toNot(equal("-"))
+        expect(result).toNot(contain("AM"))
+        expect(result).toNot(contain("PM"))
+        expect(result.count) == 5
+    }
+
+    @MainActor
+    func test_formatTime_midnight_returns0000() {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForRoute(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        let date = Date(timeIntervalSince1970: 0) // Midnight (00:00)
+
+        let result = viewModel.formatTime(date)
+
+        expect(result) == "00:00"
+    }
+
+    @MainActor
+    func test_formatTime_noon_returns1200() {
+        let dataLoader = MockDataLoader(testName: name)
+        stubScheduleForRoute(dataLoader: dataLoader)
+        let app = createApplication(dataLoader: dataLoader)
+        let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
+
+        let date = Date(timeIntervalSince1970: 43200) // Noon (12:00)
+
+        let result = viewModel.formatTime(date)
+
+        expect(result) == "12:00"
     }
 
     @MainActor
@@ -244,14 +275,10 @@ class ScheduleForRouteViewModelTests: OBATestCase {
 
         let result = viewModel.formatTimeAccessible(date)
 
-        // 24-hour format contains colon but no AM/PM
+        // Locale-aware format contains colon and readable time
         expect(result).to(contain(":"))
         expect(result).toNot(beEmpty())
         expect(result).toNot(equal("-"))
-
-        // 24-hour format does not use AM/PM
-        let noAMPM = !result.contains("AM") && !result.contains("PM")
-        expect(noAMPM).to(beTrue())
     }
 
     @MainActor
