@@ -11,7 +11,14 @@ import Foundation
 
 public enum DecodingErrorReporter {
 
-    /// Generates a detailed error message from a DecodingError
+    private static let lock = NSLock()
+    private static var _reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)?
+
+    public static var reportHandler: (@Sendable (_ error: DecodingError, _ url: URL, _ httpMethod: String, _ message: String) -> Void)? {
+        get { lock.withLock { _reportHandler } }
+        set { lock.withLock { _reportHandler = newValue } }
+    }
+
     public static func message(from error: DecodingError) -> String {
         switch error {
         case .keyNotFound(let key, let context):
@@ -45,6 +52,17 @@ public enum DecodingErrorReporter {
         @unknown default:
             return "Unknown decoding error encountered."
         }
+    }
+
+    public static func report(error: DecodingError, url: URL, httpMethod: String) {
+        let errorMessage = message(from: error)
+
+        guard let handler = reportHandler else {
+            Logger.warn("Handler not configured. DecodingError not reported: \(url.absoluteString)")
+            return
+        }
+
+        handler(error, url, httpMethod, errorMessage)
     }
 
     private static func path(_ context: DecodingError.Context) -> String {

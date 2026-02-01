@@ -22,6 +22,11 @@ final class DecodingErrorReporterTests: XCTestCase {
         let count: Int
     }
 
+    override func tearDown() {
+        DecodingErrorReporter.reportHandler = nil
+        super.tearDown()
+    }
+
     // MARK: - keyNotFound Tests
     
     func testKeyNotFound() throws {
@@ -208,9 +213,10 @@ final class DecodingErrorReporterTests: XCTestCase {
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            // The path should show root or the immediate key
             XCTAssertTrue(message.contains("Path:"),
                          "Message should contain path information")
+            XCTAssertTrue(message.contains("Path: root"),
+                         "Empty coding path should display 'root'")
         }
     }
     
@@ -270,6 +276,132 @@ final class DecodingErrorReporterTests: XCTestCase {
             
             XCTAssertTrue(message.contains("Context:"),
                          "Message should include context section")
+        }
+    }
+    
+    // MARK: - Handler Verification Tests
+    
+    func testReportHandlerCapturesErrorType() {
+        let testCases: [(DecodingError, String)] = [
+            (.keyNotFound(TestCodingKey(stringValue: "test"), .init(codingPath: [], debugDescription: "Missing")), "keyNotFound"),
+            (.typeMismatch(String.self, .init(codingPath: [], debugDescription: "Wrong type")), "typeMismatch"),
+            (.valueNotFound(String.self, .init(codingPath: [], debugDescription: "Null value")), "valueNotFound"),
+            (.dataCorrupted(.init(codingPath: [], debugDescription: "Corrupted")), "dataCorrupted")
+        ]
+        
+        for (error, expectedType) in testCases {
+            let expectation = self.expectation(description: "Handler called for \(expectedType)")
+            let capturedError = SendableBox<DecodingError?>(nil)
+            
+            DecodingErrorReporter.reportHandler = { error, _, _, _ in
+                capturedError.value = error
+                expectation.fulfill()
+            }
+            
+            let mockURL = URL(string: "https://api.onebusaway.org/test")!
+            DecodingErrorReporter.report(error: error, url: mockURL, httpMethod: "GET")
+            
+            waitForExpectations(timeout: 1.0)
+            XCTAssertNotNil(capturedError.value, "Should capture \(expectedType) error")
+            
+            switch capturedError.value {
+            case .keyNotFound where expectedType == "keyNotFound":
+                XCTAssertTrue(true)
+            case .typeMismatch where expectedType == "typeMismatch":
+                XCTAssertTrue(true)
+            case .valueNotFound where expectedType == "valueNotFound":
+                XCTAssertTrue(true)
+            case .dataCorrupted where expectedType == "dataCorrupted":
+                XCTAssertTrue(true)
+            default:
+                XCTFail("Error type mismatch for \(expectedType)")
+            }
+        }
+    }
+    
+    func testReportHandlerWithDifferentHTTPMethods() {
+        let postExpectation = self.expectation(description: "POST handler called")
+        let capturedMethod = SendableBox<String?>(nil)
+        
+        DecodingErrorReporter.reportHandler = { _, _, httpMethod, _ in
+            capturedMethod.value = httpMethod
+            postExpectation.fulfill()
+        }
+        
+        let mockURL = URL(string: "https://api.onebusaway.org/stops")!
+        let mockError = DecodingError.keyNotFound(
+            TestCodingKey(stringValue: "id"),
+            .init(codingPath: [], debugDescription: "Missing id")
+        )
+        
+        DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "POST")
+        
+        waitForExpectations(timeout: 1.0)
+        XCTAssertEqual(capturedMethod.value, "POST", "Should capture POST method correctly")
+    }
+    
+    func testReportHandlerNotCalledWhenNil() {
+        DecodingErrorReporter.reportHandler = nil
+        
+        let mockURL = URL(string: "https://api.onebusaway.org/test")!
+        let mockError = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
+        
+        DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "GET")
+        
+        XCTAssertTrue(true, "Should handle nil handler gracefully")
+    }
+
+    func testReportHandlerCapturesURLCorrectly() {
+        let capturedURL = SendableBox<URL?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
+
+        DecodingErrorReporter.reportHandler = { _, url, _, _ in
+            capturedURL.value = url
+        }
+
+        let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
+        DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+
+        XCTAssertEqual(capturedURL.value, testURL)
+    }
+
+    func testReportHandlerCapturesMessageCorrectly() {
+        let capturedMessage = SendableBox<String?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
+
+        DecodingErrorReporter.reportHandler = { _, _, _, message in
+            capturedMessage.value = message
+        }
+
+        let error = DecodingError.keyNotFound(
+            TestCodingKey(stringValue: "fare"),
+            .init(codingPath: [], debugDescription: "Missing fare key")
+        )
+        DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+
+        XCTAssertNotNil(capturedMessage.value)
+        XCTAssertTrue(capturedMessage.value!.contains("Missing key: 'fare'"))
+    }
+    
+    // MARK: - Helper Types
+
+    final class SendableBox<T>: @unchecked Sendable {
+        var value: T
+        init(_ value: T) { self.value = value }
+    }
+    
+    struct TestCodingKey: CodingKey {
+        var stringValue: String
+        var intValue: Int?
+        
+        init(stringValue: String) {
+            self.stringValue = stringValue
+            self.intValue = nil
+        }
+        
+        init?(intValue: Int) {
+            self.stringValue = "\(intValue)"
+            self.intValue = intValue
         }
     }
 }
