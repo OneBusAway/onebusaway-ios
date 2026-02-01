@@ -23,7 +23,9 @@ import FirebaseCrashlytics
     @objc public func configure(userID: String) {
         firebaseAnalytics = FirebaseAnalytics(userID: userID)
         
-        DecodingErrorReporter.reportHandler = { error, url, httpMethod, message in
+        DecodingErrorReporter.reportHandler = { [weak self] error, url, httpMethod, message in
+            guard self?.reportingEnabled() == true else { return }
+
             let crashlytics = Crashlytics.crashlytics()
             
             let errorType: String

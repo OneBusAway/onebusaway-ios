@@ -22,6 +22,11 @@ final class DecodingErrorReporterTests: XCTestCase {
         let count: Int
     }
 
+    override func tearDown() {
+        DecodingErrorReporter.reportHandler = nil
+        super.tearDown()
+    }
+
     // MARK: - keyNotFound Tests
     
     func testKeyNotFound() throws {
@@ -208,7 +213,6 @@ final class DecodingErrorReporterTests: XCTestCase {
         } catch let error as DecodingError {
             let message = DecodingErrorReporter.message(from: error)
             
-            // The path should show root or the immediate key
             XCTAssertTrue(message.contains("Path:"),
                          "Message should contain path information")
         }
@@ -285,10 +289,10 @@ final class DecodingErrorReporterTests: XCTestCase {
         
         for (error, expectedType) in testCases {
             let expectation = self.expectation(description: "Handler called for \(expectedType)")
-            var capturedError: DecodingError?
+            let capturedError = SendableBox<DecodingError?>(nil)
             
             DecodingErrorReporter.reportHandler = { error, _, _, _ in
-                capturedError = error
+                capturedError.value = error
                 expectation.fulfill()
             }
             
@@ -296,10 +300,9 @@ final class DecodingErrorReporterTests: XCTestCase {
             DecodingErrorReporter.report(error: error, url: mockURL, httpMethod: "GET")
             
             waitForExpectations(timeout: 1.0)
-            XCTAssertNotNil(capturedError, "Should capture \(expectedType) error")
+            XCTAssertNotNil(capturedError.value, "Should capture \(expectedType) error")
             
-            // Verify the captured error matches the expected type
-            switch capturedError {
+            switch capturedError.value {
             case .keyNotFound where expectedType == "keyNotFound":
                 XCTAssertTrue(true)
             case .typeMismatch where expectedType == "typeMismatch":
@@ -312,16 +315,14 @@ final class DecodingErrorReporterTests: XCTestCase {
                 XCTFail("Error type mismatch for \(expectedType)")
             }
         }
-        
-        DecodingErrorReporter.reportHandler = nil
     }
     
     func testReportHandlerWithDifferentHTTPMethods() {
         let postExpectation = self.expectation(description: "POST handler called")
-        var capturedMethod: String?
+        let capturedMethod = SendableBox<String?>(nil)
         
         DecodingErrorReporter.reportHandler = { _, _, httpMethod, _ in
-            capturedMethod = httpMethod
+            capturedMethod.value = httpMethod
             postExpectation.fulfill()
         }
         
@@ -334,9 +335,7 @@ final class DecodingErrorReporterTests: XCTestCase {
         DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "POST")
         
         waitForExpectations(timeout: 1.0)
-        XCTAssertEqual(capturedMethod, "POST", "Should capture POST method correctly")
-        
-        DecodingErrorReporter.reportHandler = nil
+        XCTAssertEqual(capturedMethod.value, "POST", "Should capture POST method correctly")
     }
     
     func testReportHandlerNotCalledWhenNil() {
@@ -345,13 +344,49 @@ final class DecodingErrorReporterTests: XCTestCase {
         let mockURL = URL(string: "https://api.onebusaway.org/test")!
         let mockError = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
         
-        // Calling report with no handler configured should not crash
         DecodingErrorReporter.report(error: mockError, url: mockURL, httpMethod: "GET")
         
         XCTAssertTrue(true, "Should handle nil handler gracefully")
     }
+
+    func testReportHandlerCapturesURLCorrectly() {
+        let capturedURL = SendableBox<URL?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
+
+        DecodingErrorReporter.reportHandler = { _, url, _, _ in
+            capturedURL.value = url
+        }
+
+        let error = DecodingError.dataCorrupted(.init(codingPath: [], debugDescription: "Test"))
+        DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+
+        XCTAssertEqual(capturedURL.value, testURL)
+    }
+
+    func testReportHandlerCapturesMessageCorrectly() {
+        let capturedMessage = SendableBox<String?>(nil)
+        let testURL = URL(string: "https://api.onebusaway.org/api/where/stops?key=TEST")!
+
+        DecodingErrorReporter.reportHandler = { _, _, _, message in
+            capturedMessage.value = message
+        }
+
+        let error = DecodingError.keyNotFound(
+            TestCodingKey(stringValue: "fare"),
+            .init(codingPath: [], debugDescription: "Missing fare key")
+        )
+        DecodingErrorReporter.report(error: error, url: testURL, httpMethod: "GET")
+
+        XCTAssertNotNil(capturedMessage.value)
+        XCTAssertTrue(capturedMessage.value!.contains("Missing key: 'fare'"))
+    }
     
     // MARK: - Helper Types
+
+    final class SendableBox<T>: @unchecked Sendable {
+        var value: T
+        init(_ value: T) { self.value = value }
+    }
     
     struct TestCodingKey: CodingKey {
         var stringValue: String
