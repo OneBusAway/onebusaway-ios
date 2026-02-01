@@ -58,9 +58,7 @@ public enum DecodingErrorReporter {
         let errorMessage = message(from: error)
 
         guard let handler = reportHandler else {
-            #if DEBUG
-            print("[DecodingErrorReporter] Handler not configured. Error not reported: \(url.absoluteString)")
-            #endif
+            Logger.warn("Handler not configured. DecodingError not reported: \(url.absoluteString)")
             return
         }
 

@@ -24,7 +24,13 @@ import FirebaseCrashlytics
         firebaseAnalytics = FirebaseAnalytics(userID: userID)
         
         DecodingErrorReporter.reportHandler = { [weak self] error, url, httpMethod, message in
-            guard self?.reportingEnabled() == true else { return }
+            guard let self = self else { return }
+            guard self.reportingEnabled() else {
+                #if DEBUG
+                print("[DecodingErrorReporter] Reporting disabled by user preference")
+                #endif
+                return
+            }
 
             let crashlytics = Crashlytics.crashlytics()
             
