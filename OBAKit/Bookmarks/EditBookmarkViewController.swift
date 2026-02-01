@@ -57,6 +57,11 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
         loadForm()
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        refreshGroupSelection()
+    }
+
     // MARK: - Data Helpers
 
     /// Determines the selected bookmark group from the form.
@@ -176,6 +181,21 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     /// A callback that fires when the user creates a new `BookmarkGroup` through the `addGroupAlert`
     func bookmarkGroupSaved(_ group: BookmarkGroup) {
         addRow(for: group, to: selectedBookmarkGroupSection)
+    }
+
+    // MARK: - Group Selection
+    private func refreshGroupSelection() {
+        guard let existingBookmark = bookmark else { return }
+        let currentGroupID = application.userDataStore.bookmarkGroups
+            .first { group in
+                application.userDataStore.bookmarksInGroup(group).contains { $0.id == existingBookmark.id }
+            }?
+            .id.uuidString ?? ""
+        for row in selectedBookmarkGroupSection.allRows {
+            guard let checkRow = row as? ListCheckRow<String> else { continue }
+            checkRow.value = (checkRow.selectableValue == currentGroupID) ? checkRow.selectableValue : nil
+            checkRow.updateCell()
+        }
     }
 
     // MARK: - Actions
