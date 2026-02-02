@@ -59,10 +59,14 @@ public enum SurveyError: Error, LocalizedError {
 
     case serviceUnavailable
 
+    case missingUpdatePath
+
     public var errorDescription: String? {
         switch self {
         case .serviceUnavailable:
             return Strings.surveyServiceNotAvailable
+        case .missingUpdatePath:
+            return Strings.surveyMissingUpdatePath
         }
     }
 

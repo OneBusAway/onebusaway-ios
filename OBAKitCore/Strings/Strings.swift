@@ -149,4 +149,7 @@ public class Strings: NSObject {
 
     public static let surveyServiceNotAvailable = OBALoc("survey_service.not.available", value: "Survey Service is unavailable.", comment: "Indicating that survey service is not setup up right or has some other issue.")
 
+    public static let externalSurveyMissing = OBALoc("survey.external.url.missing", value: "We couldn’t open the survey right now. Please try again later.", comment: "Indicating missing external survey url")
+
+    public static let surveyMissingUpdatePath = OBALoc("survey_service.update.path.missing", value: "Something went wrong when submitting your responses. Please try again later.", comment: "Indicating missing survey update id when submitting responses")
 }
