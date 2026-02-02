@@ -253,12 +253,13 @@ extension SurveysViewModel {
         self.heroQuestionAnswer = nil
         self.showHeroQuestion = false
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
-            guard let self else { return }
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
             if survey.getQuestions().count > 1, heroQuestionID != -1 {
-                self.setSurveysQuestions(heroQuestionID)
+                self?.setSurveysQuestions(heroQuestionID)
             }
         }
+
     }
 
 }
@@ -267,7 +268,10 @@ extension SurveysViewModel {
 extension SurveysViewModel {
 
     private func handleOpenExternalSurvey() {
-        guard let externalURL = getExternalURL(), let survey else { return }
+        guard let externalURL = getExternalURL(), let survey else {
+            showToastMessage(Strings.externalSurveyMissing, type: .error)
+            return
+        }
 
         self.externalSurveyURL = externalURL
         self.openExternalSurvey = true
@@ -284,7 +288,7 @@ extension SurveysViewModel {
 
     private func clearExternalSurveyState() {
         Task { @MainActor [weak self] in
-            try await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(2))
             self?.heroQuestion = nil
             self?.externalSurveyURL = nil
             self?.openExternalSurvey = false
