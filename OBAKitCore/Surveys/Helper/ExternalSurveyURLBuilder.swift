@@ -16,7 +16,6 @@ final public class ExternalSurveyURLBuilder {
     private let application: CoreApplication
 
     private let userID: String
-    private var stop: Stop?
 
     public init(userStore: UserDataStore, userID: String, application: CoreApplication) {
         self.userStore = userStore
@@ -28,37 +27,38 @@ final public class ExternalSurveyURLBuilder {
         guard let baseURL = survey.questions.first?.content.url,
               var components = URLComponents(string: baseURL)
         else {
+            Logger.error("External survey URL missing for survey ID: \(survey.id)")
             return nil
         }
 
         var queryItems: [URLQueryItem] = components.queryItems ?? []
 
         if let keys = survey.questions.first?.content.embeddedDataFields {
-            setEmbeddedKeyValue(to: &queryItems, for: keys)
+            setEmbeddedKeyValue(to: &queryItems, for: keys, stop: stop)
         }
 
         components.queryItems = queryItems
         return components.url
     }
 
-    private func setEmbeddedKeyValue(to items: inout [URLQueryItem], for keys: [String]) {
+    private func setEmbeddedKeyValue(to items: inout [URLQueryItem], for keys: [String], stop: Stop?) {
         for key in keys {
-            if let value = getEmbeddedKeyValue(key) {
+            if let value = getEmbeddedKeyValue(key, stop: stop) {
                 items.append(.init(name: key, value: value))
             }
         }
     }
 
-    private func getEmbeddedKeyValue(_ key: String) -> String? {
+    private func getEmbeddedKeyValue(_ key: String, stop: Stop?) -> String? {
         return switch key {
         case "user_id":
             userID
         case "region_id":
             getRegionID()
         case "route_id":
-            getRouteId()
+            getRouteId(stop)
         case "stop_id":
-            getStopId()
+            getStopId(stop)
         case "recent_stop_ids":
             getRecentStopIds()
         case "current_location":
@@ -75,12 +75,12 @@ final public class ExternalSurveyURLBuilder {
         return "\(regionId)"
     }
 
-    private func getRouteId() -> String? {
+    private func getRouteId(_ stop: Stop?) -> String? {
         guard let stop, !stop.routeIDs.isEmpty else { return nil }
         return stop.routeIDs.joined(separator: ",")
     }
 
-    private func getStopId() -> String? {
+    private func getStopId(_ stop: Stop?) -> String? {
         guard let stop else { return nil }
         return "\(stop.id)"
     }
