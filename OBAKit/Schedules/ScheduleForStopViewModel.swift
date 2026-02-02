@@ -49,7 +49,7 @@ class ScheduleForStopViewModel: ObservableObject {
 
     /// A single departure for the selected stop and route
     struct ScheduledDeparture: Identifiable, Hashable {
-        //Use a composite ID to prevent duplicates (Trip ID + Time)
+        // Use a composite ID to prevent duplicates (Trip ID + Time)
         var id: String {
             "\(tripID)-\(time.timeIntervalSince1970)"
         }
