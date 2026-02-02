@@ -9,9 +9,6 @@ import Foundation
 
 public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 
-    /// Holds the last error emitted by survey operations.
-    @Published public var error: Error?
-
     /// All surveys fetched from the backend.
     public private(set) var surveys: [Survey] = []
 
@@ -36,19 +33,18 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
     ///
     /// Any error during fetch is published through `error`.
     @MainActor
-    public func fetchSurveys() async {
-        error = nil
+    public func fetchSurveys() async throws {
 
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
             let studyResponse = try await apiService.getSurveys()
             self.surveys = studyResponse.surveys
         } catch {
-            self.error = error
+            throw error
         }
     }
 
@@ -69,7 +65,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
         stopLongitude: Double? = nil,
         stopLatitude: Double? = nil,
         _ response: QuestionAnswerSubmission
-    ) async {
+    ) async throws {
 
         let userId = surveyStore.userSurveyId
 
@@ -83,18 +79,16 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             responses: [response]
         )
 
-        error = nil
-
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
             let submissionResponse = try await apiService.submitSurveyResponse(surveyResponse: responseModel)
             surveyStore.setSurveyResponse(submissionResponse)
         } catch {
-            self.error = error
+            throw error
         }
     }
 
@@ -115,12 +109,15 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
         stopLongitude: Double? = nil,
         stopLatitude: Double? = nil,
         _ responses: [QuestionAnswerSubmission]
-    ) async {
+    ) async throws {
 
         let userId = surveyStore.userSurveyId
 
         /// Retrieve the path ID used for updating survey responses.
-        let surveyResponseId = surveyStore.getSurveyResponse()?.surveyPathId() ?? ""
+        guard let surveyResponseId = surveyStore.getSurveyResponse()?.surveyPathId() else {
+            Logger.error("Missing survey update path from Survey Store for survey id: \(surveyId)")
+            throw SurveyError.missingUpdatePath
+        }
 
         let responsesModel = SurveySubmission(
             userIdentifier: userId,
@@ -131,11 +128,9 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             responses: responses
         )
 
-        error = nil
-
         guard let apiService else {
             Logger.error("Survey API service is nil.")
-            return
+            throw SurveyError.serviceUnavailable
         }
 
         do {
@@ -144,7 +139,7 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
                 surveyResponses: responsesModel
             )
         } catch {
-            self.error = error
+            throw error
         }
     }
 

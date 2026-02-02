@@ -237,6 +237,14 @@ open class CoreApplication: NSObject,
 
     public lazy var surveyStateManager: SurveyStateProtocol = SurveyStateManager(surveyStore: userDefaultsStore)
 
+    public lazy var surveyPrioritizer: SurveyPrioritizing = SurveyPrioritizer(surveyStore: userDefaultsStore)
+
+    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilder = ExternalSurveyURLBuilder(
+        userStore: userDataStore,
+        userID: userDefaultsStore.userSurveyId,
+        application: self
+    )
+
     /// Recreates the Survey API service based on the current region and user survey UUID.
     /// This should be called when the region refresh/changes.
     private func refreshSurveysService() {
