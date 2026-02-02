@@ -95,6 +95,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     private var diffableDataSource: UICollectionViewDiffableDataSource<Section, ItemType>!
     private var headerCellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
+    private var emptyStateHostingController: UIHostingController<AnyView>?
     private lazy var emptyDataView: EmptyDataSetView = {
         let view = EmptyDataSetView()
         view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin]
@@ -165,27 +166,32 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
-                    }
-                    .padding(.horizontal, 40)
+                }
+                .padding(.horizontal, 40)
 
-                TaskButton(OBALoc("nearby_stops_controller.empty_set.button", value: "Search Wider Area", comment: "Button")) {
-                    await withCheckedContinuation { continuation in
-                        self.onExpandSearchTapped?()
-                        continuation.resume()
-                    }
+                TaskButton(OBALoc("nearby_controller.empty_set.button", value: "Search Wider Area", comment: "Button to search wider area"), actionOptions: []) {
+                    self.onExpandSearchTapped?()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(ThemeColors.shared.brand))
                 .clipShape(Capsule())
             }
 
-            let hostingController = UIHostingController(rootView: emptyStateView)
+            let hostingController = UIHostingController(rootView: AnyView(emptyStateView))
             hostingController.view.backgroundColor = .clear
 
             self.addChild(hostingController)
             collectionView.backgroundView = hostingController.view
             hostingController.didMove(toParent: self)
+
+            self.emptyStateHostingController = hostingController
         } else {
+            if let hostingController = emptyStateHostingController {
+                hostingController.willMove(toParent: nil)
+                hostingController.view.removeFromSuperview()
+                hostingController.removeFromParent()
+                self.emptyStateHostingController = nil
+            }
             collectionView.backgroundView = nil
         }
     }
