@@ -8,9 +8,9 @@
 import SwiftUI
 import OBAKitCore
 
-struct MapHeroQuestionView<ViewModel: SurveysViewModel>: View {
+struct MapHeroQuestionView: View {
 
-    let viewModel: ViewModel
+    let viewModel: SurveysViewModel
 
     var body: some View {
         if let question = viewModel.heroQuestion {
