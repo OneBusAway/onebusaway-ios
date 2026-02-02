@@ -65,6 +65,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         super.init()
 
+        self.locationService.addDelegate(self)
+
         if let delegate = delegate {
             addDelegate(delegate)
         }

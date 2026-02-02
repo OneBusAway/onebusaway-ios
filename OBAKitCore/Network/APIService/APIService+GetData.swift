@@ -61,9 +61,6 @@ extension APIService {
     nonisolated func getData(for url: URL) async throws -> (Data, HTTPURLResponse) {
         var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
         request.setValue("gzip", forHTTPHeaderField: "Accept-Encoding")
-        // Force en-US locale to prevent server-side locale-dependent number parsing issues.
-        // Some OBA servers use Accept-Language to set their parsing locale, causing 400 errors
-        // when parsing coordinates like "47.123" with a locale that expects "47,123".
         request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
 
         return try await data(for: request)
@@ -86,13 +83,8 @@ extension APIService {
 
         do {
             return try decoder.decode(T.self, from: data)
-        } catch let error as DecodingError {
-            let message = DecodingErrorReporter.message(from: error)
-            logger.error("Decoder failed for \(url, privacy: .public): \(message, privacy: .public)")
-            DecodingErrorReporter.report(error: error, url: url, httpMethod: "GET")
-            throw error
         } catch {
-            logger.error("Decoder failed for \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            logger.error("Decoder failed for \(url, privacy: .public): \(error, privacy: .public)")
             throw error
         }
     }
