@@ -12,7 +12,7 @@ private struct OBAFormattersKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    var obaFormatters: Formatters {
+    public var obaFormatters: Formatters {
         get { self[OBAFormattersKey.self] }
         set { self[OBAFormattersKey.self] = newValue }
     }
