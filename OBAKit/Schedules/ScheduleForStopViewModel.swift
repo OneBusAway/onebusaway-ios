@@ -48,14 +48,18 @@ class ScheduleForStopViewModel: ObservableObject {
     // MARK: - Stop-Focused Schedule
 
     /// A single departure for the selected stop and route
-    struct StopDeparture: Identifiable {
-        let id: String
+    struct ScheduledDeparture: Identifiable, Hashable {
+        //Use a composite ID to prevent duplicates (Trip ID + Time)
+        var id: String {
+            "\(tripID)-\(time.timeIntervalSince1970)"
+        }
+        let tripID: String
         let time: Date
         let headsign: String
     }
 
     /// All departures at this stop for the currently selected route and date
-    var departuresForSelectedRoute: [StopDeparture] {
+    var departuresForSelectedRoute: [ScheduledDeparture] {
         guard
             let scheduleData = scheduleData,
             let routeID = selectedRouteID,
@@ -64,7 +68,7 @@ class ScheduleForStopViewModel: ObservableObject {
             return []
         }
 
-        var departures: [StopDeparture] = []
+        var departures: [ScheduledDeparture] = []
 
         for directionSchedule in routeSchedule.stopRouteDirectionSchedules {
             let directionHeadsign = directionSchedule.tripHeadsign
@@ -72,8 +76,8 @@ class ScheduleForStopViewModel: ObservableObject {
             for stopTime in directionSchedule.scheduleStopTimes {
                 let headsign = stopTime.stopHeadsign.isEmpty ? directionHeadsign : stopTime.stopHeadsign
 
-                let departure = StopDeparture(
-                    id: stopTime.tripID,
+                let departure = ScheduledDeparture(
+                    tripID: stopTime.tripID,
                     time: stopTime.departureDate,
                     headsign: headsign
                 )
@@ -124,9 +128,12 @@ class ScheduleForStopViewModel: ObservableObject {
             let response = try await apiService.getScheduleForStop(stopID: stopID, date: selectedDate)
             scheduleData = response.entry
 
-            // Auto-select the first route if none is selected
-            if selectedRouteID == nil, let firstRoute = scheduleData?.stopRouteSchedules.first {
-                selectedRouteID = firstRoute.routeID
+            // Validation - If the previously selected route doesn't exist on this new date, switch to the first available one.
+            if let routeID = selectedRouteID,
+               !(response.entry.stopRouteSchedules.contains(where: { $0.routeID == routeID })) {
+                selectedRouteID = response.entry.stopRouteSchedules.first?.routeID
+            } else if selectedRouteID == nil {
+                selectedRouteID = response.entry.stopRouteSchedules.first?.routeID
             }
         } catch {
             self.error = error

@@ -68,7 +68,7 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                     "Automatically select region",
                     isOn: $regionProvider.automaticallySelectRegion)
 
-                TaskButton(action: {
+                Button(action: {
                     Task {
                         await doRefreshRegions()
                     }

@@ -17,7 +17,11 @@ private enum StopScheduleStrings {
     static let unableToLoad = OBALoc("stop_schedule_view.unable_to_load", value: "Unable to load schedule", comment: "Error message when schedule fails to load")
     static let date = OBALoc("stop_schedule_view.date", value: "Date", comment: "Label for date picker in schedule view")
     static let route = OBALoc("stop_schedule_view.route", value: "Route", comment: "Label for route picker in schedule view")
-    static let noDepartures = OBALoc("stop_schedule_view.no_departures", value: "No departures scheduled for this date", comment: "Message when no departures are scheduled")
+    static let noDepartures = OBALoc("stop_schedule_view.no_departures", value: "No departures", comment: "Message when no departures are scheduled")
+    static let stopSchedule = OBALoc("stop_schedule_view.stop_schedule", value: "Stop Schedule", comment: "Title for the stop schedule toggle")
+    static let fullRouteSchedule = OBALoc("stop_schedule_view.full_route_schedule", value: "Full Route Schedule", comment: "Title for the full route schedule toggle")
+    static let toDestination = OBALoc("stop_schedule_view.to_destination_fmt", value: "To: %@", comment: "Format string for destination. e.g. To: Downtown")
+    static let chooseScheduleType = OBALoc("stop_schedule_view.accessibility.choose_schedule_type", value: "Choose between stop schedule and full route schedule", comment: "Accessibility label for schedule type picker")
 }
 
 /// A SwiftUI view that displays the schedule for a specific stop
@@ -38,16 +42,27 @@ struct ScheduleForStopView: View {
     }
 
     var body: some View {
-        content
-            .task {
-                await stopViewModel.fetchSchedule()
-            }
-            .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
-                updateRouteViewModel(for: newRouteID)
-            }
-            .onChange(of: stopViewModel.selectedDate) { _, newDate in
-                routeViewModel?.selectedDate = newDate
-            }
+        NavigationStack {
+            content
+                .navigationTitle(Strings.schedules)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(Strings.close) {
+                            dismiss()
+                        }
+                    }
+                }
+                .task {
+                    await stopViewModel.fetchSchedule()
+                }
+                .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
+                    updateRouteViewModel(for: newRouteID)
+                }
+                .onChange(of: stopViewModel.selectedDate) { _, newDate in
+                    routeViewModel?.selectedDate = newDate
+                }
+        }
     }
 
     // MARK: - Content
@@ -144,10 +159,11 @@ struct ScheduleForStopView: View {
             // Segmented control: Stop vs Full Route
             if stopViewModel.selectedRouteID != nil {
                 Picker("", selection: $isShowingFullRouteSchedule) {
-                    Text("Stop Schedule").tag(false)
-                    Text("Full Route Schedule").tag(true)
+                    Text(StopScheduleStrings.stopSchedule).tag(false)
+                    Text(StopScheduleStrings.fullRouteSchedule).tag(true)
                 }
                 .pickerStyle(.segmented)
+                .accessibilityLabel(StopScheduleStrings.chooseScheduleType)
                 .padding(.horizontal)
                 .padding(.bottom, 12)
             }
@@ -177,7 +193,7 @@ struct ScheduleForStopView: View {
                         Spacer()
                     }
 
-                    Text("To: \(departure.headsign)")
+                    Text(String(format: StopScheduleStrings.toDestination, departure.headsign))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
