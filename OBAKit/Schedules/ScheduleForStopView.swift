@@ -156,7 +156,7 @@ struct ScheduleForStopView: View {
                 .padding(.bottom, 8)
             }
 
-            // Segmented control: Stop vs Full Route
+            // Segmented control: Stop Focused Schedules vs Full Route Schedules
             if stopViewModel.selectedRouteID != nil {
                 Picker("", selection: $isShowingFullRouteSchedule) {
                     Text(StopScheduleStrings.stopSchedule).tag(false)
