@@ -415,8 +415,7 @@ public class MapRegionManager: NSObject,
             return bookmark
         }
         let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
-        for annotation in allAnnotationsToRemove {
-            guard mapView.selectedAnnotations.contains(where: { $0 === annotation }) else { continue }
+        for annotation in allAnnotationsToRemove where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
             mapView.deselectAnnotation(annotation, animated: false)
         }
         mapView.removeAnnotations(allAnnotationsToRemove)

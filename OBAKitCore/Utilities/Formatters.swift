@@ -9,6 +9,11 @@
 
 import Foundation
 import MapKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(WatchKit)
+import WatchKit
+#endif
 
 public class Formatters: NSObject {
     private let locale: Locale
@@ -27,7 +32,6 @@ public class Formatters: NSObject {
     }
 
     // MARK: - Distance Formatting
-
     /// Formats distances into human-readable strings that conform to the user's locale.
     public lazy var distanceFormatter: MKDistanceFormatter = {
         let formatter = MKDistanceFormatter()
