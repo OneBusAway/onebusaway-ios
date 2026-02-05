@@ -98,7 +98,7 @@ extension References {
     }
 
     public func routesWithIDs(_ ids: [String]) -> [Route] {
-        return ids.compactMap { routeWithID($0) }
+        return routes.filter { ids.contains($0.id) }
     }
 
     // MARK: - Service Alerts
@@ -109,7 +109,7 @@ extension References {
     }
 
     public func serviceAlertsWithIDs(_ ids: [String]) -> [ServiceAlert] {
-        return ids.compactMap { alertWithID($0) }
+        return serviceAlerts.filter { ids.contains($0.id) }
     }
 
     // MARK: - Stops
@@ -120,7 +120,7 @@ extension References {
     }
 
     public func stopsWithIDs(_ ids: [String]) -> [Stop] {
-        return ids.compactMap { stopWithID($0) }
+        return stops.filter { ids.contains($0.id) }
     }
 
     // MARK: - Trips

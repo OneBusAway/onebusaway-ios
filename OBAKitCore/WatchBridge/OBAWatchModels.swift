@@ -23,28 +23,13 @@ public struct OBAArrivalsResult: Codable, Equatable, Sendable {
     public let stopName: String?
     public let stopCode: String?
     public let stopDirection: String?
-    /// The geographic latitude of the stop, if available from the server response.
-    /// Nil when the server did not return coordinates (some fallback code paths).
-    public let stopLatitude: Double?
-    /// The geographic longitude of the stop, if available from the server response.
-    public let stopLongitude: Double?
 
-    public init(
-        arrivals: [OBAArrival],
-        routes: [OBARoute],
-        stopName: String?,
-        stopCode: String?,
-        stopDirection: String?,
-        stopLatitude: Double? = nil,
-        stopLongitude: Double? = nil
-    ) {
+    public init(arrivals: [OBAArrival], routes: [OBARoute], stopName: String?, stopCode: String?, stopDirection: String?) {
         self.arrivals = arrivals
         self.routes = routes
         self.stopName = stopName
         self.stopCode = stopCode
         self.stopDirection = stopDirection
-        self.stopLatitude = stopLatitude
-        self.stopLongitude = stopLongitude
     }
 }
 
@@ -385,13 +370,13 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
         public let closestStop: OBAStopID?
         public let nextStop: OBAStopID?
         public let predicted: Bool?
-
+        
         public let lastLocationUpdateTime: Date?
         public let lastUpdateTime: Date?
-
+        
         public let position: Position?
         public let orientation: Double?
-
+        
         public struct Position: Codable, Equatable, Sendable {
             public let lat: Double
             public let lon: Double
@@ -401,7 +386,7 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
                 self.lon = lon
             }
         }
-
+        
         private enum CodingKeys: String, CodingKey {
             case activeTripID = "activeTripId"
             case blockTripSequence
@@ -448,7 +433,7 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
             orientation = try container.decodeIfPresent(Double.self, forKey: .orientation)
         }
     }
-
+    
     private enum CodingKeys: String, CodingKey {
         case tripID = "tripId"
         case serviceDate

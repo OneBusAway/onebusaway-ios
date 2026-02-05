@@ -8,24 +8,6 @@
 import Foundation
 import CoreLocation
 
-// MARK: - Route Mapping Helper
-
-protocol OBARawRouteContainer {
-    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] { get }
-}
-
-extension OBARawRouteContainer {
-    func toDomainRoutes() -> [OBARoute] {
-        rawRoutes.map { raw in
-            OBARoute(
-                id: raw.id,
-                shortName: raw.shortName,
-                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-            )
-        }
-    }
-}
-
 // MARK: - Transport-layer DTOs
 
 /// Raw envelope for the `shape` API, which returns an encoded polyline
@@ -154,7 +136,7 @@ struct OBARawArrival: Decodable, Sendable {
 }
 
 /// Raw envelope for the `routes-for-stop` API.
-struct OBARawRoutesForStopResponse: Decodable, Sendable, OBARawRouteContainer {
+struct OBARawRoutesForStopResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let list: [OBARawRoutesForLocationResponse.RawRoute]?
         let routes: [OBARawRoutesForLocationResponse.RawRoute]?
@@ -162,15 +144,21 @@ struct OBARawRoutesForStopResponse: Decodable, Sendable, OBARawRouteContainer {
 
     let data: Data
 
-    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
-        data.list ?? data.routes ?? []
+    func toDomainRoutes() -> [OBARoute] {
+        (data.list ?? data.routes ?? []).map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
     }
 }
 
 /// Generic list response shape that many REST endpoints follow.
 /// Mirrors the structure of the OneBusAway `RESTAPIResponse` used in the iOS app,
 /// but keeps only the pieces we need in the shared core.
-struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable, OBARawRouteContainer {
+struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable {
     private struct DataContainer: Decodable, Sendable {
         let list: Element?
         let entry: Element?
@@ -185,10 +173,6 @@ struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable, O
     let list: Element
     let stop: OBARawStopResponse.StopEntry?
     let references: OBARawStopResponse.References?
-
-    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
-        stop?.routes ?? references?.routes ?? []
-    }
 
     private enum CodingKeys: String, CodingKey {
         case code, currentTime, text, version, data
@@ -370,12 +354,12 @@ struct OBARawStopsForRoute: Decodable, Sendable {
 
     struct StopGrouping: Decodable, Sendable {
         let stopGroups: [StopGroup]?
-
+        
         private enum CodingKeys: String, CodingKey {
             case stopGroups
             case ordered
         }
-
+        
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.stopGroups = try container.decodeIfPresent([StopGroup].self, forKey: .stopGroups)
@@ -439,7 +423,7 @@ struct OBARawStopsForRoute: Decodable, Sendable {
 }
 
 /// Thin DTO for the `stop` API.
-struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
+struct OBARawStopResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let id: OBAStopID?
         let name: String?
@@ -452,7 +436,7 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
         let stop: StopEntry?
         let references: References?
     }
-
+    
     struct StopEntry: Decodable, Sendable {
         let id: OBAStopID?
         let name: String?
@@ -488,26 +472,22 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
     struct References: Decodable, Sendable {
         let routes: [OBARawRoutesForLocationResponse.RawRoute]?
     }
-
+    
     let data: Data
-
-    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
-        data.entry?.routes ?? data.stop?.routes ?? data.routes ?? data.references?.routes ?? []
-    }
 
     func toDomainStop() -> OBAStop {
         let stopID = data.entry?.id ?? data.stop?.id ?? data.id
         let name = data.entry?.name ?? data.stop?.name ?? data.name
         let lat = data.entry?.lat ?? data.stop?.lat ?? data.lat
         let lon = data.entry?.lon ?? data.stop?.lon ?? data.lon
-
+        
         if stopID == nil || name == nil || lat == nil || lon == nil {
             Logger.error("OBARawStopResponse missing critical data: id=\(String(describing: stopID)), name=\(String(describing: name)), lat=\(String(describing: lat)), lon=\(String(describing: lon))")
         }
 
         let code = data.entry?.code ?? data.stop?.code ?? data.code
         let direction = data.entry?.direction ?? data.stop?.direction ?? data.direction
-
+        
         return OBAStop(
             id: stopID ?? "unknown",
             name: name ?? "Unknown",
@@ -516,6 +496,17 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
             code: code,
             direction: direction
         )
+    }
+
+    func toDomainRoutes() -> [OBARoute] {
+        let routes = data.entry?.routes ?? data.stop?.routes ?? data.routes ?? data.references?.routes ?? []
+        return routes.map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
     }
 }
 
@@ -645,24 +636,24 @@ struct OBARawAgenciesWithCoverageResponse: Decodable, Sendable {
             let id: String?
         }
     }
-
+    
     private let list: [AgencyRaw]
-
+    
     private enum CodingKeys: String, CodingKey {
         case data
     }
-
+    
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-
+        
         // 1. Try to decode 'data' as a dictionary containing 'list'
         if let dataContainer = try? container.decode(DataContainer.self, forKey: .data) {
             self.list = dataContainer.list
-        }
+        } 
         // 2. Try to decode 'data' as a direct array (common for MTA and some other servers)
         else if let list = try? container.decode([AgencyRaw].self, forKey: .data) {
             self.list = list
-        }
+        } 
         else {
             Logger.warn("OBARawAgenciesWithCoverageResponse: Unable to decode data container, falling back to empty list")
             self.list = []
@@ -680,7 +671,7 @@ struct OBARawAgenciesWithCoverageResponse: Decodable, Sendable {
     }
 }
 
-struct OBARawRoutesForLocationResponse: Decodable, Sendable, OBARawRouteContainer {
+struct OBARawRoutesForLocationResponse: Decodable, Sendable {
     struct Data: Decodable, Sendable {
         let list: [RawRoute]?
         let routes: [RawRoute]?
@@ -695,8 +686,14 @@ struct OBARawRoutesForLocationResponse: Decodable, Sendable, OBARawRouteContaine
 
     let data: Data
 
-    var rawRoutes: [RawRoute] {
-        data.list ?? data.routes ?? []
+    func toDomainRoutes() -> [OBARoute] {
+        (data.list ?? data.routes ?? []).map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
     }
 }
 
@@ -832,7 +829,7 @@ struct OBARawStopsForLocationResponse: Decodable, Sendable {
 
     func stopIDToRouteNames() -> [OBAStopID: String] {
         var result: [OBAStopID: String] = [:]
-        let routeMap = [String: String](uniqueKeysWithValues: (data.references?.routes ?? []).compactMap { route in
+        let routeMap = Dictionary<String, String>(uniqueKeysWithValues: (data.references?.routes ?? []).compactMap { route in
             return (route.id, route.shortName ?? route.longName ?? "")
         })
 
