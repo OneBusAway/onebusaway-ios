@@ -8,6 +8,13 @@
 //
 
 import Foundation
+
+extension NSNotification.Name {
+    public static let OBABookmarksUpdated = NSNotification.Name("OBABookmarksUpdatedNotification")
+    public static let OBAAlarmsUpdated = NSNotification.Name("OBAAlarmsUpdatedNotification")
+    public static let OBAServiceAlertsUpdated = NSNotification.Name("OBAServiceAlertsUpdatedNotification")
+}
+
 import MapKit
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
@@ -139,7 +146,6 @@ public protocol UserDataStore: NSObjectProtocol {
     var maximumRecentStopsCount: Int { get }
 
     // MARK: - Recent Map Items
-
     /// A list of recently-selected map items from search
     var recentMapItems: [MKMapItem] { get }
 
@@ -147,7 +153,6 @@ public protocol UserDataStore: NSObjectProtocol {
     ///
     /// - Parameter mapItem: The map item to add to the list
     func addRecentMapItem(_ mapItem: MKMapItem)
-
     /// Deletes all recent map items.
     func deleteAllRecentMapItems()
 
@@ -291,6 +296,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
+        super.init()
+
         self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
     }
 
@@ -384,6 +391,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarks) // swiftlint:disable:this force_try
+            NotificationCenter.default.post(name: .OBABookmarksUpdated, object: self)
         }
     }
 
@@ -562,7 +570,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     // MARK: - Recent Map Items
-
     public var recentMapItems: [MKMapItem] {
         get {
             guard let data = userDefaults.data(forKey: UserDefaultsKeys.recentMapItems) else {
@@ -642,6 +649,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.alarms) // swiftlint:disable:this force_try
+            NotificationCenter.default.post(name: .OBAAlarmsUpdated, object: self)
         }
     }
 
