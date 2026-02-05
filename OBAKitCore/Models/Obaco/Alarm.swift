@@ -16,6 +16,17 @@ public class Alarm: NSObject, Codable {
     public var tripDate: Date?
     public var alarmDate: Date?
 
+    public var watchAlarmItem: WatchAlarmItem {
+        return WatchAlarmItem(
+            id: url.absoluteString,
+            stopID: deepLink?.stopID ?? "",
+            routeShortName: deepLink?.title,
+            headsign: nil,
+            scheduledTime: tripDate,
+            status: nil
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case url, deepLink, tripDate, alarmDate
     }

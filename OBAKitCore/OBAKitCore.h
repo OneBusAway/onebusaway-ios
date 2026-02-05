@@ -7,7 +7,11 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if TARGET_OS_WATCH
+#import <WatchKit/WatchKit.h>
+#else
 #import <UIKit/UIKit.h>
+#endif
 
 //! Project version number for OBAKitCore.
 FOUNDATION_EXPORT double OBAKitCoreVersionNumber;
