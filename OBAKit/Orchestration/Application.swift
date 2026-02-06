@@ -721,7 +721,7 @@ extension Application {
     private func sendBookmarksToWatch() {
         let bookmarks = userDataStore.bookmarks
         let watchBookmarks = bookmarks.map { $0.watchBookmarkObject }
-        
+
         // Write to shared container (App Group) if possible
         if let data = try? JSONEncoder().encode(watchBookmarks) {
             userDefaults.set(data, forKey: "watch.bookmarks")
@@ -741,7 +741,7 @@ extension Application {
     private func sendAlarmsToWatch() {
         let alarms = userDataStore.alarms
         let watchAlarms = alarms.map { $0.watchAlarmItem }
-        
+
         if let data = try? JSONEncoder().encode(watchAlarms) {
             userDefaults.set(data, forKey: "watch.alarms")
         }
@@ -760,7 +760,7 @@ extension Application {
     private func sendServiceAlertsToWatch() {
         let alerts = alertsStore.agencyAlerts
         let watchAlerts = alerts.map { $0.watchServiceAlert }
-        
+
         if let data = try? JSONEncoder().encode(watchAlerts) {
             userDefaults.set(data, forKey: "watch.service_alerts")
         }
