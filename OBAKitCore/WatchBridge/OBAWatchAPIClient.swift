@@ -161,87 +161,118 @@ public extension OBAAPIClient {
                     if filterByLocation, let lat = trip.latitude, let lon = trip.longitude {
                         let latDiff = abs(lat - latitude)
                         let lonDiff = abs(lon - longitude)
-                        if latDiff > latSpan * 1.5 || lonDiff > lonSpan * 1.5 { continue }
+                        // Within roughly the requested span plus a buffer
+                        if latDiff > latSpan * 1.5 || lonDiff > lonSpan * 1.5 {
+                            continue
+                        }
                     }
 
                     seenIDs.insert(id)
                     allVehicles.append(trip)
-                    if trip.latitude != nil && trip.longitude != nil { hasAnyLocation = true }
+                    if trip.latitude != nil && trip.longitude != nil {
+                        hasAnyLocation = true
+                    }
                 }
             }
         }
 
         // 1. Try trips-for-location first
         do {
-            let result = try await fetchTripsForLocation(latitude: latitude, longitude: longitude, latSpan: latSpan, lonSpan: lonSpan)
+            let result = try await fetchTripsForLocation(
+                latitude: latitude,
+                longitude: longitude,
+                latSpan: latSpan,
+                lonSpan: lonSpan
+            )
             addUnique(result)
         } catch {
             lastError = error
             Logger.error("fetchTripsForLocation failed: \(error.localizedDescription)")
         }
 
-        if !allVehicles.isEmpty && hasAnyLocation { return allVehicles }
+        if !allVehicles.isEmpty && hasAnyLocation {
+            return allVehicles
+        }
 
-        // 2. Fallback: Search for nearby routes
+        // 2. Fallback: Search for nearby routes and fetch vehicles for each in parallel
+        let radius = max(latSpan, lonSpan) * 111000.0 // Convert degrees to meters roughly
         do {
-            let radius = max(latSpan, lonSpan) * 111000.0
-            let routes = try await searchRoutes(query: "", latitude: latitude, longitude: longitude, radius: max(radius, 5000.0))
-            addUnique(await fetchTripsForRoutes(routes))
+            let nearbyRoutes = try await searchRoutes(
+                query: "",
+                latitude: latitude,
+                longitude: longitude,
+                radius: max(radius, 5000.0) // At least 5km
+            )
+
+            let routeTrips = await withTaskGroup(of: [OBATripForLocation].self) { group in
+                for route in nearbyRoutes {
+                    group.addTask {
+                        do {
+                            return try await self.fetchTripsForRoute(routeID: route.id)
+                        } catch {
+                            Logger.error("fetchTripsForRoute failed for \(route.id): \(error.localizedDescription)")
+                            return []
+                        }
+                    }
+                }
+
+                var results: [OBATripForLocation] = []
+                for await trips in group {
+                    results.append(contentsOf: trips)
+                }
+                return results
+            }
+
+            addUnique(routeTrips)
         } catch {
             lastError = error
             Logger.error("searchRoutes failed: \(error.localizedDescription)")
         }
 
-        if !allVehicles.isEmpty && hasAnyLocation { return allVehicles }
+        if !allVehicles.isEmpty && hasAnyLocation {
+            return allVehicles
+        }
 
-        // 3. Last resort: Fetch all vehicles for agencies
+        // 3. Last resort: Fetch all vehicles for agencies that have coverage near this location in parallel
         do {
             let agencies = try await fetchAgenciesWithCoverage()
-            let nearbyAgencies = agencies.filter {
-                abs($0.centerLatitude - latitude) < 0.5 && abs($0.centerLongitude - longitude) < 0.5
+            let nearbyAgencies = agencies.filter { agency in
+                let latDiff = abs(agency.centerLatitude - latitude)
+                let lonDiff = abs(agency.centerLongitude - longitude)
+                // Within ~50km (roughly 0.5 degrees)
+                return latDiff < 0.5 && lonDiff < 0.5
             }
-            addUnique(await fetchVehiclesForAgencies(nearbyAgencies), filterByLocation: true)
+
+            let agencyVehicles = await withTaskGroup(of: [OBATripForLocation].self) { group in
+                for agency in nearbyAgencies {
+                    group.addTask {
+                        do {
+                            return try await self.fetchVehiclesForAgency(agencyID: agency.agencyID)
+                        } catch {
+                            Logger.error("fetchVehiclesForAgency failed for \(agency.agencyID): \(error.localizedDescription)")
+                            return []
+                        }
+                    }
+                }
+
+                var results: [OBATripForLocation] = []
+                for await vehicles in group {
+                    results.append(contentsOf: vehicles)
+                }
+                return results
+            }
+
+            addUnique(agencyVehicles, filterByLocation: true)
         } catch {
             lastError = error
             Logger.error("fetchAgenciesWithCoverage failed: \(error.localizedDescription)")
         }
 
-        if allVehicles.isEmpty, let error = lastError { throw error }
+        if allVehicles.isEmpty, let error = lastError {
+            throw error
+        }
+
         return allVehicles
-    }
-
-    private func fetchTripsForRoutes(_ routes: [OBARoute]) async -> [OBATripForLocation] {
-        await withTaskGroup(of: [OBATripForLocation].self) { group in
-            for route in routes {
-                group.addTask {
-                    do { return try await self.fetchTripsForRoute(routeID: route.id) }
-                    catch {
-                        Logger.error("fetchTripsForRoute failed for \(route.id): \(error.localizedDescription)")
-                        return []
-                    }
-                }
-            }
-            var results: [OBATripForLocation] = []
-            for await trips in group { results.append(contentsOf: trips) }
-            return results
-        }
-    }
-
-    private func fetchVehiclesForAgencies(_ agencies: [OBAAgencyCoverage]) async -> [OBATripForLocation] {
-        await withTaskGroup(of: [OBATripForLocation].self) { group in
-            for agency in agencies {
-                group.addTask {
-                    do { return try await self.fetchVehiclesForAgency(agencyID: agency.agencyID) }
-                    catch {
-                        Logger.error("fetchVehiclesForAgency failed for \(agency.agencyID): \(error.localizedDescription)")
-                        return []
-                    }
-                }
-            }
-            var results: [OBATripForLocation] = []
-            for await vehicles in group { results.append(contentsOf: vehicles) }
-            return results
-        }
     }
 }
 

@@ -134,7 +134,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
         contentView.backgroundColor = ThemeColors.shared.systemBackground
 
         contentView.addSubview(stackView)
-        stackView.pinToSuperview(UIView.AutoLayoutPinTarget.readableContent)
+        stackView.pinToSuperview(.readableContent)
 
         NSLayoutConstraint.activate([
             primaryMinutesLabel.widthAnchor.constraint(greaterThanOrEqualTo: self.widthAnchor, multiplier: 1/8)
@@ -223,8 +223,8 @@ final class TripBookmarkTableCell: OBAListViewCell {
         standardInfoStack.forEach { $0.isHidden = isAccessibility }
         accessibilityInfoStack.forEach { $0.isHidden = !isAccessibility }
 
-        stackView.axis = isAccessibility ? NSLayoutConstraint.Axis.vertical : NSLayoutConstraint.Axis.horizontal
-        minutesStackView.axis = isAccessibility ? NSLayoutConstraint.Axis.horizontal : NSLayoutConstraint.Axis.vertical
+        stackView.axis = isAccessibility ? .vertical : .horizontal
+        minutesStackView.axis = isAccessibility ? .horizontal : .vertical
 
         stackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
         minutesStackView.spacing = isAccessibility ? ThemeMetrics.accessibilityPadding : ThemeMetrics.compactPadding
