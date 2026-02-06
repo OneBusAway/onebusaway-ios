@@ -366,12 +366,12 @@ struct OBARawStopsForRoute: Decodable, Sendable {
 
     struct StopGrouping: Decodable, Sendable {
         let stopGroups: [StopGroup]?
-        
+
         private enum CodingKeys: String, CodingKey {
             case stopGroups
             case ordered
         }
-        
+
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
             self.stopGroups = try container.decodeIfPresent([StopGroup].self, forKey: .stopGroups)
@@ -448,7 +448,7 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
         let stop: StopEntry?
         let references: References?
     }
-    
+
     struct StopEntry: Decodable, Sendable {
         let id: OBAStopID?
         let name: String?
@@ -484,7 +484,7 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
     struct References: Decodable, Sendable {
         let routes: [OBARawRoutesForLocationResponse.RawRoute]?
     }
-    
+
     let data: Data
 
     var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
@@ -496,14 +496,14 @@ struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
         let name = data.entry?.name ?? data.stop?.name ?? data.name
         let lat = data.entry?.lat ?? data.stop?.lat ?? data.lat
         let lon = data.entry?.lon ?? data.stop?.lon ?? data.lon
-        
+
         if stopID == nil || name == nil || lat == nil || lon == nil {
             Logger.error("OBARawStopResponse missing critical data: id=\(String(describing: stopID)), name=\(String(describing: name)), lat=\(String(describing: lat)), lon=\(String(describing: lon))")
         }
 
         let code = data.entry?.code ?? data.stop?.code ?? data.code
         let direction = data.entry?.direction ?? data.stop?.direction ?? data.direction
-        
+
         return OBAStop(
             id: stopID ?? "unknown",
             name: name ?? "Unknown",
@@ -641,24 +641,24 @@ struct OBARawAgenciesWithCoverageResponse: Decodable, Sendable {
             let id: String?
         }
     }
-    
+
     private let list: [AgencyRaw]
-    
+
     private enum CodingKeys: String, CodingKey {
         case data
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
         // 1. Try to decode 'data' as a dictionary containing 'list'
         if let dataContainer = try? container.decode(DataContainer.self, forKey: .data) {
             self.list = dataContainer.list
-        } 
+        }
         // 2. Try to decode 'data' as a direct array (common for MTA and some other servers)
         else if let list = try? container.decode([AgencyRaw].self, forKey: .data) {
             self.list = list
-        } 
+        }
         else {
             Logger.warn("OBARawAgenciesWithCoverageResponse: Unable to decode data container, falling back to empty list")
             self.list = []
@@ -828,7 +828,7 @@ struct OBARawStopsForLocationResponse: Decodable, Sendable {
 
     func stopIDToRouteNames() -> [OBAStopID: String] {
         var result: [OBAStopID: String] = [:]
-        let routeMap = Dictionary<String, String>(uniqueKeysWithValues: (data.references?.routes ?? []).compactMap { route in
+        let routeMap = [String: String](uniqueKeysWithValues: (data.references?.routes ?? []).compactMap { route in
             return (route.id, route.shortName ?? route.longName ?? "")
         })
 

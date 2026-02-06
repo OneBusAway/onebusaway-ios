@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import Combine
 
 public protocol RegionProvider: ObservableObject {
     /// OBA-regions and custom regions.

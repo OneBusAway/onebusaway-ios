@@ -370,13 +370,13 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
         public let closestStop: OBAStopID?
         public let nextStop: OBAStopID?
         public let predicted: Bool?
-        
+
         public let lastLocationUpdateTime: Date?
         public let lastUpdateTime: Date?
-        
+
         public let position: Position?
         public let orientation: Double?
-        
+
         public struct Position: Codable, Equatable, Sendable {
             public let lat: Double
             public let lon: Double
@@ -386,7 +386,7 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
                 self.lon = lon
             }
         }
-        
+
         private enum CodingKeys: String, CodingKey {
             case activeTripID = "activeTripId"
             case blockTripSequence
@@ -433,7 +433,7 @@ public struct OBAVehicleTripStatus: Codable, Equatable, Sendable {
             orientation = try container.decodeIfPresent(Double.self, forKey: .orientation)
         }
     }
-    
+
     private enum CodingKeys: String, CodingKey {
         case tripID = "tripId"
         case serviceDate

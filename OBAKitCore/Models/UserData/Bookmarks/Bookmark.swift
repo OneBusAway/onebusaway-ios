@@ -13,7 +13,7 @@ import Foundation
 @objc(OBABookmark) public class Bookmark: NSObject, Identifiable, Codable {
     // Add a way to convert to watch-compatible format if needed, 
     // but the Codable keys already match mostly.
-    
+
     public var watchBookmarkObject: WatchBookmark {
         let watchStop = OBAStop(
             id: stop.id,
