@@ -121,7 +121,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let (_, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (_, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -154,7 +155,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let (_, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (_, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -166,10 +168,10 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         radius: Double
     ) async throws -> OBANearbyStopsResult {
         let path = "/api/where/stops-for-location.json"
-        
+
         // Use a larger radius for MTA or if zero results, or use latSpan/lonSpan
         let finalRadius = radius > 0 ? radius : 1000.0
-        
+
         let queryItems = [
             URLQueryItem(name: "lat", value: String(latitude)),
             URLQueryItem(name: "lon", value: String(longitude)),
@@ -216,18 +218,18 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         ]
 
         let url = try buildURL(path: path, queryItems: queryItems)
-        
+
         var arrivals: [OBAArrival] = []
         var routes: [OBARoute] = []
-        var stopName: String? = nil
-        var stopCode: String? = nil
-        var stopDirection: String? = nil
-        
+        var stopName: String?
+        var stopCode: String?
+        var stopDirection: String?
+
         do {
             let response: OBARawListResponse<[OBARawArrival]> = try await get(url: url)
             let now = Date()
             arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
-            
+
             if let rawStop = response.stop {
                 stopName = rawStop.name
                 stopCode = rawStop.code
@@ -241,7 +243,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     )
                 }
             }
-            
+
             return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
         } catch {
             Logger.error("fetchArrivals primary call failed for stop \(stopID): \(error.localizedDescription)")
@@ -253,14 +255,14 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 URLQueryItem(name: "minutesBefore", value: String(configuration.minutesBeforeArrivals)),
                 URLQueryItem(name: "minutesAfter", value: String(configuration.minutesAfterArrivals))
             ]
-            
+
             do {
                 let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
                 do {
                     let response: OBARawListResponse<[OBARawArrival]> = try await get(url: fallbackURL)
                     let now = Date()
                     arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
-                    
+
                     if let rawStop = response.stop {
                         stopName = rawStop.name
                         stopCode = rawStop.code
@@ -274,7 +276,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                             )
                         }
                     }
-                    
+
                     return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
                 } catch {
                     Logger.error("Arrivals fallback 1 failed: \(error.localizedDescription)")
@@ -294,7 +296,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     stopCode = domainStop.code
                     stopDirection = domainStop.direction
                     routes = response.toDomainRoutes()
-                    
+
                     // If we reach here, we have routes and stop name, but no arrivals (since we only called stop API)
                     return OBAArrivalsResult(arrivals: [], routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
                 } catch {
@@ -303,7 +305,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             } catch {
                 Logger.error("Failed to build URL for arrivals fallback 2: \(error.localizedDescription)")
             }
-            
+
             throw error
         }
     }
@@ -315,11 +317,11 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         lonSpan: Double
     ) async throws -> [OBATripForLocation] {
         let path = "/api/where/trips-for-location.json"
-        
+
         // Use provided spans or default to ~1km if zero
         let finalLatSpan = latSpan > 0 ? latSpan : 0.01
         let finalLonSpan = lonSpan > 0 ? lonSpan : 0.01
-        
+
         let queryItems = [
             URLQueryItem(name: "lat", value: String(latitude)),
             URLQueryItem(name: "lon", value: String(longitude)),
@@ -347,7 +349,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     public func fetchRoutesForStop(stopID: OBAStopID) async throws -> [OBARoute] {
         let path = "/api/where/routes-for-stop/\(stopID).json"
         let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-        
+
         do {
             let response: OBARawRoutesForStopResponse = try await get(url: url)
             return response.toDomainRoutes()
@@ -357,7 +359,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             // Fallback 1: try as query parameter
             let fallbackPath = "/api/where/routes-for-stop.json"
             let fallbackQueryItems = apiKeyQueryItem + [URLQueryItem(name: "stopId", value: stopID)]
-            
+
             do {
                 let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
                 do {
@@ -406,7 +408,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             } catch {
                 Logger.error("Failed to build URL for RoutesForStop fallback 3: \(error.localizedDescription)")
             }
-            
+
             throw error
         }
     }
@@ -439,7 +441,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         queryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
 
         let url = try buildURL(path: path, queryItems: queryItems)
-        
+
         do {
             let response: OBARawStopsForRouteResponse = try await get(url: url)
             return response.data.toDomainDirections()
@@ -451,7 +453,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             var fallbackQueryItems = apiKeyQueryItem
             fallbackQueryItems.append(URLQueryItem(name: "routeId", value: routeID))
             fallbackQueryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
-            
+
             do {
                 let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
                 do {
@@ -470,22 +472,20 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     public func fetchShapeIDForRoute(routeID: OBARouteID) async throws -> String? {
         let path = "/api/where/schedule-for-route/\(routeID).json"
         let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-        
+
         do {
             let response: OBARawScheduleForRouteResponse = try await get(url: url)
             return response.firstShapeID()
         } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription). Falling back to routeID as shapeID.")
-            // MTA doesn't always support schedule-for-route. 
-            // Return the routeID as a 'pseudo' shapeID so fetchShape can fall back to stops-for-route
-            return routeID
+            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription)")
+            return nil
         }
     }
 
     public func fetchShape(shapeID: String) async throws -> String {
         let path = "/api/where/shape/\(shapeID).json"
         let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-        
+
         do {
             let response: OBARawShapeResponse = try await get(url: url)
             return response.data.entry.points
@@ -496,14 +496,14 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let fallbackPath = "/api/where/stops-for-route/\(shapeID).json"
             var fallbackQueryItems = apiKeyQueryItem
             fallbackQueryItems.append(URLQueryItem(name: "includePolylines", value: "true"))
-            
+
             do {
                 let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
                 do {
                     let response: OBARawStopsForRouteResponse = try await get(url: fallbackURL)
                     // Merge all polylines into one points string if available
                     var points = (response.data.polylines ?? []).compactMap { $0.points }.joined()
-                    
+
                     // If top-level polylines are missing, check stopGroupings (common in MTA)
                     if points.isEmpty {
                         let groupings = response.data.stopGroupings ?? response.data.entry?.stopGroupings ?? []
@@ -512,7 +512,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                                          .compactMap { $0.points }
                                          .joined()
                     }
-                    
+
                     if !points.isEmpty {
                         return points
                     }
@@ -530,7 +530,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         let path = "/api/where/vehicle/\(vehicleID).json"
         let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
         let response: OBARawListResponse<OBARawVehicleStatus> = try await get(url: url)
-        
+
         // Handle potentially missing vehicle status in MTA response
         return response.list.toDomainVehicle()
     }
@@ -552,35 +552,35 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     public func fetchTripDetails(tripID: OBATripID) async throws -> OBATripExtendedDetails {
         let path = "/api/where/trip-details/\(tripID).json"
         let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-        
+
         let response: OBARawTripDetailsResponse = try await get(url: url)
-        
+
         // Handle potentially missing entry/schedule in MTA response
         guard let entry = response.data.entry ?? response.data.tripDetails else {
             throw OBAAPIError.badServerResponse(statusCode: 200, url: url)
         }
-        
+
         var details = entry
-        
+
         // Enhance stop times with names from references if needed
         if let stops = response.data.references?.stops, let schedule = details.schedule {
             let stopMapByID = Dictionary(uniqueKeysWithValues: stops.compactMap { stop -> (String, OBARawTripDetailsResponse.RawStop)? in
                 guard let id = stop.id else { return nil }
                 return (id, stop)
             })
-            
+
             let enhancedStopTimes = schedule.stopTimes.map { stopTime -> OBATripExtendedDetails.StopTime in
                 let rawStop = stopTime.stopId.flatMap { stopMapByID[$0] }
-                
+
                 // Prioritize headsign, but only if it's not nil or empty
-                var name: String? = nil
+                var name: String?
                 if let stopHeadsign = stopTime.stopHeadsign, !stopHeadsign.isEmpty {
                     name = stopHeadsign
                 } else {
                     // Fallback to raw stop name from references
                     name = rawStop?.name
                 }
-                
+
                 return OBATripExtendedDetails.StopTime(
                     arrivalTime: stopTime.arrivalTime,
                     departureTime: stopTime.departureTime,
@@ -592,7 +592,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     longitude: rawStop?.lon
                 )
             }
-            
+
             let enhancedSchedule = OBATripExtendedDetails.Schedule(
                 timeZone: schedule.timeZone,
                 stopTimes: enhancedStopTimes,
@@ -600,7 +600,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 nextTripId: schedule.nextTripId,
                 frequency: schedule.frequency
             )
-            
+
             details = OBATripExtendedDetails(
                 tripId: details.tripId,
                 serviceDate: details.serviceDate,
@@ -609,7 +609,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 schedule: enhancedSchedule
             )
         }
-        
+
         return details
     }
 
@@ -619,7 +619,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         var index = encodedPolyline.startIndex
         var lat = 0
         var lon = 0
-        
+
         while index < encodedPolyline.endIndex {
             func decodeNext() -> Int? {
                 var result = 0
@@ -635,7 +635,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 } while byte >= 0x20
                 return (result & 1) != 0 ? ~(result >> 1) : (result >> 1)
             }
-            
+
             guard let dLat = decodeNext(), let dLon = decodeNext() else { break }
             lat += dLat
             lon += dLon
@@ -654,12 +654,13 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         struct CurrentTimeResponse: Decodable {
             let currentTime: Date
         }
-        
-        let (data, response) = try await urlSession.data(from: url)
+
+        let request = buildRequest(url: url)
+        let (data, response) = try await urlSession.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
              throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
         }
-        
+
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
         do {
@@ -684,7 +685,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     internal func buildURL(path: String, queryItems: [URLQueryItem]) throws -> URL {
         let baseURLString = configuration.baseURL.absoluteString
         let joinedURLString: String
-        
+
         if baseURLString.hasSuffix("/") && path.hasPrefix("/") {
             joinedURLString = baseURLString + String(path.dropFirst())
         } else if !baseURLString.hasSuffix("/") && !path.hasPrefix("/") {
@@ -692,16 +693,16 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         } else {
             joinedURLString = baseURLString + path
         }
-        
+
         guard var components = URLComponents(string: joinedURLString) else {
             throw OBAAPIError.invalidURL
         }
-        
+
         components.queryItems = queryItems
         guard let url = components.url else {
             throw OBAAPIError.invalidURL
         }
-        
+
         return url
     }
 
@@ -712,9 +713,16 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         return []
     }
 
+    private func buildRequest(url: URL) -> URLRequest {
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
+        return request
+    }
+
     private func get<Response: Decodable & Sendable>(url: URL) async throws -> Response {
-        let (data, response) = try await urlSession.data(from: url)
-        
+        let request = buildRequest(url: url)
+        let (data, response) = try await urlSession.data(for: request)
+
         // Check HTTP status code
         if let httpResponse = response as? HTTPURLResponse {
             switch httpResponse.statusCode {
@@ -729,7 +737,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
             }
         }
-        
+
         // Handle servers that return a literal `null` body for missing resources
         if data.count <= 6 {
             let s = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -737,7 +745,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 throw OBAAPIError.notFound(url: url)
             }
         }
-        
+
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .millisecondsSince1970
         do {

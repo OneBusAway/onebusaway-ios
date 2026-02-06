@@ -9,7 +9,6 @@
 
 import Foundation
 import CoreLocation
-import Combine
 
 @objc(OBARegionsServiceDelegate)
 public protocol RegionsServiceDelegate {
@@ -65,8 +64,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         super.init()
 
-        self.locationService.addDelegate(self)
-
         if let delegate = delegate {
             addDelegate(delegate)
         }
@@ -76,6 +73,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
         }
+
+        self.locationService.addDelegate(self)
     }
 
     // MARK: - Delegates

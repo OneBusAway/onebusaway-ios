@@ -8,6 +8,24 @@
 import Foundation
 import CoreLocation
 
+// MARK: - Route Mapping Helper
+
+protocol OBARawRouteContainer {
+    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] { get }
+}
+
+extension OBARawRouteContainer {
+    func toDomainRoutes() -> [OBARoute] {
+        rawRoutes.map { raw in
+            OBARoute(
+                id: raw.id,
+                shortName: raw.shortName,
+                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
+            )
+        }
+    }
+}
+
 // MARK: - Transport-layer DTOs
 
 /// Raw envelope for the `shape` API, which returns an encoded polyline
@@ -136,7 +154,7 @@ struct OBARawArrival: Decodable, Sendable {
 }
 
 /// Raw envelope for the `routes-for-stop` API.
-struct OBARawRoutesForStopResponse: Decodable, Sendable {
+struct OBARawRoutesForStopResponse: Decodable, Sendable, OBARawRouteContainer {
     struct Data: Decodable, Sendable {
         let list: [OBARawRoutesForLocationResponse.RawRoute]?
         let routes: [OBARawRoutesForLocationResponse.RawRoute]?
@@ -144,14 +162,8 @@ struct OBARawRoutesForStopResponse: Decodable, Sendable {
 
     let data: Data
 
-    func toDomainRoutes() -> [OBARoute] {
-        (data.list ?? data.routes ?? []).map { raw in
-            OBARoute(
-                id: raw.id,
-                shortName: raw.shortName,
-                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-            )
-        }
+    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
+        data.list ?? data.routes ?? []
     }
 }
 
@@ -423,7 +435,7 @@ struct OBARawStopsForRoute: Decodable, Sendable {
 }
 
 /// Thin DTO for the `stop` API.
-struct OBARawStopResponse: Decodable, Sendable {
+struct OBARawStopResponse: Decodable, Sendable, OBARawRouteContainer {
     struct Data: Decodable, Sendable {
         let id: OBAStopID?
         let name: String?
@@ -475,6 +487,10 @@ struct OBARawStopResponse: Decodable, Sendable {
     
     let data: Data
 
+    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
+        data.entry?.routes ?? data.stop?.routes ?? data.routes ?? data.references?.routes ?? []
+    }
+
     func toDomainStop() -> OBAStop {
         let stopID = data.entry?.id ?? data.stop?.id ?? data.id
         let name = data.entry?.name ?? data.stop?.name ?? data.name
@@ -496,17 +512,6 @@ struct OBARawStopResponse: Decodable, Sendable {
             code: code,
             direction: direction
         )
-    }
-
-    func toDomainRoutes() -> [OBARoute] {
-        let routes = data.entry?.routes ?? data.stop?.routes ?? data.routes ?? data.references?.routes ?? []
-        return routes.map { raw in
-            OBARoute(
-                id: raw.id,
-                shortName: raw.shortName,
-                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-            )
-        }
     }
 }
 
@@ -671,7 +676,7 @@ struct OBARawAgenciesWithCoverageResponse: Decodable, Sendable {
     }
 }
 
-struct OBARawRoutesForLocationResponse: Decodable, Sendable {
+struct OBARawRoutesForLocationResponse: Decodable, Sendable, OBARawRouteContainer {
     struct Data: Decodable, Sendable {
         let list: [RawRoute]?
         let routes: [RawRoute]?
@@ -686,14 +691,8 @@ struct OBARawRoutesForLocationResponse: Decodable, Sendable {
 
     let data: Data
 
-    func toDomainRoutes() -> [OBARoute] {
-        (data.list ?? data.routes ?? []).map { raw in
-            OBARoute(
-                id: raw.id,
-                shortName: raw.shortName,
-                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-            )
-        }
+    var rawRoutes: [RawRoute] {
+        data.list ?? data.routes ?? []
     }
 }
 
