@@ -17,4 +17,3 @@ targets:
     settings:
       base:
         APPLICATION_EXTENSION_API_ONLY: true
-        BUILD_LIBRARY_FOR_DISTRIBUTION: YES

@@ -106,20 +106,6 @@ public extension UIDevice {
     }
 }
 
-// MARK: - UIFont
-
-public extension UIFont {
-    /// Returns a bold version of `self`.
-    var bold: UIFont {
-        return withTraits(traits: .traitBold)
-    }
-
-    /// Returns an italic version of `self`.
-    var italic: UIFont {
-        return withTraits(traits: .traitItalic)
-    }
-}
-
 // MARK: - UIImage
 
 // Adapted from https://gist.github.com/lynfogeek/4b6ce0117fb0acdabe229f6d8759a139
@@ -200,30 +186,6 @@ public extension UILabel {
         let rect = labelText.boundingRect(with: CGSize(width: frame.width, height: CGFloat.greatestFiniteMagnitude), options: [.usesLineFragmentOrigin], attributes: attributes, context: nil)
 
         frame.size.height = rect.height
-    }
-
-    /// Creates a new autolayout `UILabel` that attempts to maintain full visibility. This means it will adjust
-    /// its font size, font scale, then font tightening to maintain visibilty. It also adapts to the user's content
-    /// size setting, provided you specify a valid `UIFont`.
-    /// - parameter font: The font to set for this label. It is recommended that you use
-    ///     `.preferredFont` so it will adjust for content size. The default is `.preferredFont(forTextStyle: .body)`.
-    /// - parameter textColor: The text color to set. The default is `.label`.
-    /// - parameter numberOfLines: The number of lines to set for this label. The default is `0`.
-    /// - parameter minimumScaleFactor: The smallest multiplier for the current font size that
-    ///     yields an acceptable font size to use when displaying the label’s text. The default is `1`, which means the font won't scale by default.
-    class func obaLabel(font: UIFont = .preferredFont(forTextStyle: .body),
-                        textColor: UIColor = ThemeColors.shared.label,
-                        numberOfLines: Int = 0,
-                        minimumScaleFactor: CGFloat = 1) -> Self {
-        let label = Self.autolayoutNew()
-        label.font = font
-        label.textColor = textColor
-        label.numberOfLines = numberOfLines
-        label.minimumScaleFactor = minimumScaleFactor
-        label.allowsDefaultTighteningForTruncation = true
-        label.adjustsFontForContentSizeCategory = true
-        label.adjustsFontSizeToFitWidth = true
-        return label
     }
 }
 

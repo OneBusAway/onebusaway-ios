@@ -286,7 +286,7 @@ class OBAWatchDTOsTests: XCTestCase {
         
         // Test Case 4: Malformed input (should not crash)
         let malformedCoords = OBAURLSessionAPIClient.decodePolyline("!!! malformed !!!")
-        // The decoder should just stop when it hits invalid data
-        XCTAssert(malformedCoords.count >= 0)
+        // The decoder should return an empty array for malformed input.
+        XCTAssertTrue(malformedCoords.isEmpty)
     }
 }
