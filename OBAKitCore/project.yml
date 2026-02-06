@@ -1,7 +1,10 @@
 targets:
   OBAKitCore:
     type: framework
-    platform: iOS
+    supportedDestinations: [iOS, watchOS]
+    deploymentTarget:
+      iOS: "18.0"
+      watchOS: "11.0"
     sources: ["."]
     dependencies:
       - package: SwiftProtobuf

@@ -360,15 +360,13 @@ class MapViewController: UIViewController,
         }
     }
 
-    private func buildTripPlanner(otpURL: URL) -> TripPlanner {
-        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
-
+    private func buildTripPlanner(otpURL: URL, searchRegion: MKCoordinateRegion) -> TripPlanner {
         let config = OTPConfiguration(
             otpServerURL: otpURL,
             themeConfiguration: .init(
                 primaryColor: Color(uiColor: ThemeColors().brand)
             ),
-            searchRegion: MKCoordinateRegion(searchRect)
+            searchRegion: searchRegion
         )
 
         let apiService = RestAPIService(baseURL: otpURL)
@@ -414,7 +412,8 @@ class MapViewController: UIViewController,
 
         subscribeToTripPlannerNotifications()
 
-        let tripPlanner = buildTripPlanner(otpURL: otpURL)
+        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
+        let tripPlanner = buildTripPlanner(otpURL: otpURL, searchRegion: MKCoordinateRegion(searchRect))
 
         let tripPlannerView = tripPlanner.createTripPlannerView(origin: origin, destination: destinationLocation) { [weak self] in
             guard let self else { return }
@@ -889,7 +888,6 @@ class MapViewController: UIViewController,
         // Dismiss any open map item controller when a pin is removed
         dismissExistingMapItemController(animated: true)
     }
-
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
         mapStatusView.configure(
             for: mapStatusView.state(for: application.locationService),

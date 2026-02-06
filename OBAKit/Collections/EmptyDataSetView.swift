@@ -7,8 +7,8 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-#if canImport(UIKit)
 import UIKit
+import OBAKitCore
 
 /// Provides a implementation of the 'empty data set' UI pattern.
 /// To add a button, set `button.config`. See `ActivityIndicatedButton.Configuration` for more details.
@@ -216,5 +216,4 @@ struct EmptyDataSetView_Previews: PreviewProvider {
         }
     }
 }
-#endif
 #endif
