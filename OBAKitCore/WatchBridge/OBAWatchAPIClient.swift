@@ -152,7 +152,6 @@ public extension OBAAPIClient {
         var allVehicles: [OBATripForLocation] = []
         var seenIDs = Set<String>()
         var hasAnyLocation = false
-        var lastError: Error?
 
         func addUnique(_ trips: [OBATripForLocation], filterByLocation: Bool = false) {
             for trip in trips {
@@ -186,7 +185,6 @@ public extension OBAAPIClient {
             )
             addUnique(result)
         } catch {
-            lastError = error
             Logger.error("fetchTripsForLocation failed: \(error.localizedDescription)")
         }
 
@@ -225,7 +223,6 @@ public extension OBAAPIClient {
 
             addUnique(routeTrips)
         } catch {
-            lastError = error
             Logger.error("searchRoutes failed: \(error.localizedDescription)")
         }
 
@@ -264,12 +261,7 @@ public extension OBAAPIClient {
 
             addUnique(agencyVehicles, filterByLocation: true)
         } catch {
-            lastError = error
             Logger.error("fetchAgenciesWithCoverage failed: \(error.localizedDescription)")
-        }
-
-        if allVehicles.isEmpty, let error = lastError {
-            throw error
         }
 
         return allVehicles
