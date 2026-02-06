@@ -13,9 +13,11 @@ import OBAKitCore
 // MARK: - Autolayoutable
 
 extension UIView {
+    public enum AutoLayoutPinTarget: Int {
         case edges, layoutMargins, readableContent, safeArea
     }
 }
+
 
 // MARK: - Extension UIView
 
@@ -44,7 +46,7 @@ extension UIView {
         wrapper.addSubview(self)
 
         if setConstraints {
-            pinToSuperview(.edges)
+            pinToSuperview(AutoLayoutPinTarget.edges)
         }
 
         return wrapper
@@ -142,6 +144,11 @@ public struct DirectionalPinTargets {
         self.top = topBottom
         self.bottom = topBottom
     }
+
+    public static var edges: DirectionalPinTargets { .init(pinTarget: .edges) }
+    public static var layoutMargins: DirectionalPinTargets { .init(pinTarget: .layoutMargins) }
+    public static var readableContent: DirectionalPinTargets { .init(pinTarget: .readableContent) }
+    public static var safeArea: DirectionalPinTargets { .init(pinTarget: .safeArea) }
 }
 
 public protocol Anchorable {
