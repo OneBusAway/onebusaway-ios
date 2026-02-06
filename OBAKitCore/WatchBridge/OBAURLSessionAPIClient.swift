@@ -121,8 +121,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let request = buildRequest(url: url)
-        let (_, response) = try await urlSession.data(for: request)
+        let (_, response) = try await urlSession.data(from: url)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -155,8 +154,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let request = buildRequest(url: url)
-        let (_, response) = try await urlSession.data(for: request)
+        let (_, response) = try await urlSession.data(from: url)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -477,8 +475,10 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let response: OBARawScheduleForRouteResponse = try await get(url: url)
             return response.firstShapeID()
         } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription)")
-            return nil
+            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription). Falling back to routeID as shapeID.")
+            // MTA doesn't always support schedule-for-route. 
+            // Return the routeID as a 'pseudo' shapeID so fetchShape can fall back to stops-for-route
+            return routeID
         }
     }
 
@@ -655,8 +655,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let currentTime: Date
         }
 
-        let request = buildRequest(url: url)
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await urlSession.data(from: url)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
              throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
         }
@@ -713,15 +712,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         return []
     }
 
-    private func buildRequest(url: URL) -> URLRequest {
-        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
-        request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
-        return request
-    }
-
     private func get<Response: Decodable & Sendable>(url: URL) async throws -> Response {
-        let request = buildRequest(url: url)
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await urlSession.data(from: url)
 
         // Check HTTP status code
         if let httpResponse = response as? HTTPURLResponse {
