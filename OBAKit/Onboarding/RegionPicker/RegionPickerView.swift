@@ -68,14 +68,10 @@ public struct RegionPickerView<Provider: RegionProvider>: View, OnboardingView {
                     "Automatically select region",
                     isOn: $regionProvider.automaticallySelectRegion)
 
-                TaskButton(action: {
-                    Task {
-                        await doRefreshRegions()
-                    }
-                }, label: {
+                TaskButton(action: doRefreshRegions) {
                     Text(Strings.refresh)
                         .frame(maxWidth: .infinity, alignment: .center)
-                })
+                }
                 .disabled(disableInteractions)
                 .buttonStyle(.bordered)
                 .listRowSeparator(.hidden)
