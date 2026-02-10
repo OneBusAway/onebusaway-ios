@@ -95,12 +95,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     private var diffableDataSource: UICollectionViewDiffableDataSource<Section, ItemType>!
     private var headerCellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
-    private var emptyStateHostingController: UIHostingController<AnyView>?
-    private lazy var emptyDataView: EmptyDataSetView = {
-        let view = EmptyDataSetView()
-        view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin]
-        return view
-    }()
+    private var emptyStateHostingController: UIViewController?
 
     // MARK: - UIViewController lifecycle
     override func viewDidLoad() {
@@ -169,15 +164,15 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
                 }
                 .padding(.horizontal, 40)
 
-                TaskButton(OBALoc("nearby_controller.empty_set.button", value: "Search Wider Area", comment: "Button to search wider area"), actionOptions: []) {
-                    self.onExpandSearchTapped?()
+                TaskButton(OBALoc("nearby_controller.empty_set.button", value: "Search Wider Area", comment: "Button to search wider area"), actionOptions: []) { [weak self] in
+                    self?.onExpandSearchTapped?()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color(ThemeColors.shared.brand))
                 .clipShape(Capsule())
             }
 
-            let hostingController = UIHostingController(rootView: AnyView(emptyStateView))
+            let hostingController = UIHostingController(rootView: emptyStateView)
             hostingController.view.backgroundColor = .clear
 
             self.addChild(hostingController)
