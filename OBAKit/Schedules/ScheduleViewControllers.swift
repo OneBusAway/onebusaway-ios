@@ -42,6 +42,8 @@ class ScheduleForStopViewController: UIHostingController<ScheduleForStopView> {
     init(stopID: StopID, application: Application) {
         let rootView = ScheduleForStopView(stopID: stopID, application: application)
         super.init(rootView: rootView)
+
+        self.modalPresentationStyle = .pageSheet
     }
 
     @available(*, unavailable)

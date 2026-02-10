@@ -58,6 +58,8 @@ public class StopViewController: UIViewController,
 
     let stopID: StopID
 
+    private var schedulesButton: UIBarButtonItem?
+
     public var bookmarkContext: Bookmark?
 
     let minutesBefore: UInt = 5
@@ -218,8 +220,9 @@ public class StopViewController: UIViewController,
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        if let moreMenuButton {
-            scheduleTipPresenter.showIfNeeded(sourceItem: moreMenuButton) { [weak self] vc in
+        if let schedulesButton {
+
+            scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
                 guard let self else { return }
                 present(vc, animated: animated)
             } presentedController: { [weak self] in
@@ -307,14 +310,10 @@ public class StopViewController: UIViewController,
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
-        let schedulesButton = UIBarButtonItem(
-            image: UIImage(systemName: "calendar"),
-            style: .plain,
-            target: self,
-            action: #selector(showScheduleForStop)
-        )
+        self.schedulesButton = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
+        self.schedulesButton?.accessibilityLabel = Strings.schedules
 
-        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesButton]
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesButton!]
 
         self.moreMenuButton = moreMenuButton
     }
@@ -1286,3 +1285,4 @@ public class StopViewController: UIViewController,
         }
     }
 }
+
