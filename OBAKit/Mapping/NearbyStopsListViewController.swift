@@ -150,8 +150,8 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     }
 
     private func toggleEmptyDataView(isShowing: Bool) {
-        guard emptyStateHostingController == nil else { return }
         if isShowing {
+            guard emptyStateHostingController == nil else { return }
             let emptyStateView = VStack(spacing: 20) {
                 VStack(spacing: 8) {
                     Text(OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller"))
