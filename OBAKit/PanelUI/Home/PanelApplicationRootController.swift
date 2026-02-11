@@ -1,5 +1,5 @@
 //
-//  VehiclesViewController.swift
+//  PanelApplicationRootController.swift
 //  OBAKit
 //
 //  Copyright © Open Transit Software Foundation
@@ -11,30 +11,28 @@ import UIKit
 import SwiftUI
 import OBAKitCore
 
-/// A view controller that wraps the SwiftUI VehiclesMapView for use in UIKit tab bar
-class VehiclesViewController: UIViewController, AppContext {
-    let application: Application
+/// A UIViewController that wraps PanelApplicationRootView for use as the app's root view controller.
+/// This controller provides @objc compatibility for the Objective-C AppDelegate.
+@objc(OBAPanelApplicationRootController)
+public class PanelApplicationRootController: UIViewController {
+    public let application: Application
 
-    private var hostingController: UIHostingController<VehiclesMapView>?
+    private var hostingController: UIHostingController<PanelApplicationRootView>?
 
-    init(application: Application) {
+    @objc public init(application: Application) {
         self.application = application
         super.init(nibName: nil, bundle: nil)
-
-        title = Strings.vehicles
-        tabBarItem.image = Icons.vehiclesTabIcon
-        tabBarItem.selectedImage = Icons.vehiclesSelectedTabIcon
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func viewDidLoad() {
+    public override func viewDidLoad() {
         super.viewDidLoad()
 
-        let vehiclesMapView = VehiclesMapView(application: application)
-        let hostingController = UIHostingController(rootView: vehiclesMapView)
+        let rootView = PanelApplicationRootView(application: application)
+        let hostingController = UIHostingController(rootView: rootView)
 
         addChild(hostingController)
         view.addSubview(hostingController.view)
