@@ -150,6 +150,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     }
 
     private func toggleEmptyDataView(isShowing: Bool) {
+        guard emptyStateHostingController == nil else { return }
         if isShowing {
             let emptyStateView = VStack(spacing: 20) {
                 VStack(spacing: 8) {
