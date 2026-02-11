@@ -11,7 +11,7 @@ import Foundation
 import ActivityKit
 import UIKit
 
-// Live Activities data contract for trip bookmark cell
+/// Live Activities data contract for trip bookmark tracking.
 public struct TripAttributes: ActivityAttributes {
     public struct StaticData: Codable, Hashable {
         public let routeShortName: String
@@ -58,7 +58,10 @@ public struct TripAttributes: ActivityAttributes {
 
 // MARK: - CodableColor Wrapper
 
-// Wraps UIColor to make it Codable for ActivityKit storage
+/// Wraps `UIColor` to make it `Codable` for ActivityKit storage.
+///
+/// Colors are converted to the sRGB color space before extracting components,
+/// ensuring correct encoding even for colors in extended color spaces (e.g., Display P3).
 public struct CodableColor: Codable, Hashable {
     private let red: CGFloat
     private let green: CGFloat
@@ -71,7 +74,27 @@ public struct CodableColor: Codable, Hashable {
         var b: CGFloat = 0
         var a: CGFloat = 0
 
-        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        // Convert to sRGB to guarantee getRed succeeds. UIColor.getRed returns
+        // false for colors not in a compatible color space.
+        let sRGBColor: UIColor
+        if let converted = color.cgColor.converted(
+            to: CGColorSpace(name: CGColorSpace.sRGB)!,
+            intent: .defaultIntent,
+            options: nil
+        ) {
+            sRGBColor = UIColor(cgColor: converted)
+        } else {
+            sRGBColor = color
+        }
+
+        guard sRGBColor.getRed(&r, green: &g, blue: &b, alpha: &a) else {
+            // Fallback: opaque black if conversion still fails (should not happen).
+            self.red = 0
+            self.green = 0
+            self.blue = 0
+            self.alpha = 1
+            return
+        }
 
         self.red = r
         self.green = g

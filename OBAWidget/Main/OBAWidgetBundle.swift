@@ -12,9 +12,6 @@ import SwiftUI
 struct CBWidgetBundle: WidgetBundle {
     var body: some Widget {
         OBAWidget()
-        // Add the Live Activity widget
-        if #available(iOS 16.2, *) {
-            TripLiveActivity()
-        }
+        TripLiveActivity()
     }
 }

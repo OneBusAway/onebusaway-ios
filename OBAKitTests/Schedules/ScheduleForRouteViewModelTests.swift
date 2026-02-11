@@ -225,38 +225,41 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_formatTime_midnight_returns0000() {
+    func test_formatTime_midnight_returnsExpectedFormat() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-        // Use a DateFormatter to create the date.
-        // This ensures the date created is "00:00" in WHATEVER time zone the system is currently using.
-        let localFormatter = DateFormatter()
-        localFormatter.dateFormat = "HH:mm"
-        localFormatter.calendar = Calendar.current
-        localFormatter.timeZone = TimeZone.current // Explicitly sync with system time zone
 
-        // This creates a date that is guaranteed to be "00:00" in the ViewModel's eyes
-        let date = localFormatter.date(from: "00:00")!
+        let date = Date(timeIntervalSince1970: 0)
+
         let result = viewModel.formatTime(date)
-        expect(result) == "00:00"
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = .current
+        let expected = formatter.string(from: date)
+
+        expect(result) == expected
     }
 
     @MainActor
-    func test_formatTime_noon_returns1200() {
+    func test_formatTime_noon_returnsExpectedFormat() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
-        // Use the same formatter technique for Noon
-        let localFormatter = DateFormatter()
-        localFormatter.dateFormat = "HH:mm"
-        localFormatter.calendar = Calendar.current
-        localFormatter.timeZone = TimeZone.current
-        let date = localFormatter.date(from: "12:00")!
+
+        let date = Date(timeIntervalSince1970: 43200)
+
         let result = viewModel.formatTime(date)
-        expect(result) == "12:00"
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = .current
+        let expected = formatter.string(from: date)
+
+        expect(result) == expected
     }
 
     @MainActor

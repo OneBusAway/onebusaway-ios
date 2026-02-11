@@ -208,50 +208,27 @@ public class BookmarksViewController: UIViewController,
 
         guard !activeBookmarks.isEmpty else { return nil }
 
-        let items = activeBookmarks.map {
-            buildListItem($0)
-        }.compactMap({$0})
-
-        return OBAListViewSection(id: id, title: title, contents: items)
+        let items = activeBookmarks.compactMap { buildListItem($0) }
+        var section = OBAListViewSection(id: id, title: title, contents: items)
+        section.configuration = .appearance(.plain)
+        return section
     }
 
+    /// Builds a `BookmarkArrivalViewModel` for a single bookmark, loading arrival data if available.
     private func buildListItem(_ bookmark: Bookmark) -> BookmarkArrivalViewModel? {
-        guard bookmark.isTripBookmark,
-              let routeID = bookmark.routeID,
-              let routeShortName = bookmark.routeShortName,
-              let tripHeadsign = bookmark.tripHeadsign else {
-            return BookmarkArrivalViewModel(
-                bookmark: bookmark,
-                arrivalDepartures: [],
-                onSelect: { [weak self] viewModel in
-                    self?.onSelectBookmark(viewModel)
-                }
-            )
-        }
-        let tripBookmarkKey = TripBookmarkKey(
-            stopID: bookmark.stopID,
-            routeShortName: routeShortName,
-            routeID: routeID,
-            tripHeadsign: tripHeadsign
-        )
-        let arrivalDepartures = dataLoader.dataForKey(tripBookmarkKey)
-        guard !arrivalDepartures.isEmpty else {
-            return BookmarkArrivalViewModel(
-                bookmark: bookmark,
-                arrivalDepartures: [],
-                onSelect: { [weak self] viewModel in
-                    self?.onSelectBookmark(viewModel)
-                }
-            )
-        }
-        // Track highlight status - create the pairs array
-        let arrivalPairs: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = arrivalDepartures.map {
-            (arrDep: $0, shouldHighlightOnDisplay: shouldHighlight(arrivalDeparture: $0))
+        // Build arrival/departure pairs if this is a trip bookmark with data.
+        var arrDeps: [BookmarkArrivalViewModel.ArrivalDepartureShouldHighlightPair] = []
+
+        if bookmark.isTripBookmark, let key = TripBookmarkKey(bookmark: bookmark) {
+            let data = dataLoader.dataForKey(key)
+            arrDeps = data.map { arrDep in
+                (arrDep, shouldHighlight(arrivalDeparture: arrDep))
+            }
         }
 
         return BookmarkArrivalViewModel(
             bookmark: bookmark,
-            arrivalDepartures: arrivalPairs,
+            arrivalDepartures: arrDeps,
             onSelect: { [weak self] viewModel in
                 self?.onSelectBookmark(viewModel)
             }
@@ -370,7 +347,9 @@ public class BookmarksViewController: UIViewController,
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         guard let item = item.as(BookmarkArrivalViewModel.self) else { return nil }
 
-        let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
+        let menu: OBAListViewMenuActions.MenuProvider = { [weak self] _ -> UIMenu? in
+            guard let self else { return nil }
+
             var children: [UIMenuElement] = []
             // Check if Live Activities are enabled
             if ActivityAuthorizationInfo().areActivitiesEnabled {
@@ -378,8 +357,8 @@ public class BookmarksViewController: UIViewController,
                 let liveActivityAction = UIAction(
                     title: title,
                     image: Icons.liveActivity
-                ) { _ in
-                    self.startLiveActivity(for: item)
+                ) { [weak self] _ in
+                    self?.startLiveActivity(for: item)
                 }
                 children.append(liveActivityAction)
             }
@@ -409,39 +388,35 @@ public class BookmarksViewController: UIViewController,
     // MARK: - Live Activity Management
 
     func startLiveActivity(for viewModel: BookmarkArrivalViewModel) {
-        let (routeShortName, routeHeadsign) = BookmarkNameParser.parse(viewModel.name)
+        // Use structured properties directly from the Bookmark model instead of parsing
+        // the display name, which would break on hyphenated route names like "A-Line".
+        let routeShortName = viewModel.bookmark.routeShortName ?? viewModel.name
+        let routeHeadsign = viewModel.bookmark.tripHeadsign ?? ""
+
         let staticData = TripAttributes.StaticData(
             routeShortName: routeShortName,
             routeHeadsign: routeHeadsign,
             stopID: viewModel.stopID
         )
+
         guard let contentState = buildContentState(for: viewModel) else {
             Logger.error("Failed to build content state for Live Activity")
             return
         }
+
         let attributes = TripAttributes(staticData: staticData)
         do {
+            // Note: pushType is set to .token in preparation for future backend support.
+            // There is currently no server-side infrastructure to receive push tokens
+            // or send APNs updates to Live Activities. When a backend is implemented,
+            // add a Task to iterate over activity.pushTokenUpdates and send tokens
+            // to the server. That Task must be stored and cancelled in deinit.
             let activity = try Activity.request(
                 attributes: attributes,
                 content: .init(state: contentState, staleDate: nil),
                 pushType: .token
             )
             Logger.info("Started Live Activity with ID: \(activity.id)")
-            trackActivity(activity, for: viewModel.bookmark)
-            Task {
-                for await pushToken in activity.pushTokenUpdates {
-                    let tokenString = pushToken.map { String(format: "%02x", $0) }.joined()
-                    Logger.info("Live Activity push token: \(tokenString)")
-                    // TODO: Send push token to backend server for APNs updates
-                    // Required parameters:
-                    // - token: tokenString (for APNs)
-                    // - activityID: activity.id (to identify which Live Activity to update)
-                    // - stopID: staticData.stopID
-                    // - routeShortName: staticData.routeShortName
-                    // - routeHeadsign: staticData.routeHeadsign
-                    //
-                }
-            }
             showLiveActivityStartedAlert()
         } catch {
             Logger.error("Failed to start Live Activity: \(error)")
@@ -450,7 +425,6 @@ public class BookmarksViewController: UIViewController,
     }
 
     func updateRunningLiveActivities() {
-            // Get all running activities
         let activities = Activity<TripAttributes>.activities
         for activity in activities {
             let staticData = activity.attributes.staticData
@@ -480,7 +454,7 @@ public class BookmarksViewController: UIViewController,
         }
         let formatters = application.formatters
         let firstArrival = arrivalDepartures[0]
-        let statusText = buildStatusText(from: firstArrival, formatters: formatters)
+        let statusText = TripBookmarkRow.buildStatusText(from: firstArrival, formatters: formatters)
         let statusColor = formatters.colorForScheduleStatus(firstArrival.scheduleStatus)
         let minutes = arrivalDepartures.prefix(3).map { arrivalDeparture -> TripAttributes.MinuteInfo in
             let minuteText = formatters.shortFormattedTime(until: arrivalDeparture)
@@ -497,28 +471,11 @@ public class BookmarksViewController: UIViewController,
         )
     }
 
-    private func buildStatusText(from arrivalDeparture: ArrivalDeparture, formatters: Formatters) -> String {
-        let timeString = formatters.timeFormatter.string(from: arrivalDeparture.arrivalDepartureDate)
-        let deviationText: String
-        if arrivalDeparture.scheduleStatus == .unknown {
-            deviationText = Strings.scheduledNotRealTime
-        } else {
-            deviationText = formatters.formattedScheduleDeviation(for: arrivalDeparture)
-        }
-        return "\(timeString) - \(deviationText)"
-    }
-
-    private func trackActivity(_ activity: Activity<TripAttributes>, for bookmark: Bookmark) {
-        var activeActivities = UserDefaults.standard.dictionary(forKey: "activeActivities") as? [String: String] ?? [:]
-        activeActivities[bookmark.id.uuidString] = activity.id
-        UserDefaults.standard.set(activeActivities, forKey: "activeActivities")
-    }
-
     private func showLiveActivityStartedAlert() {
         let title = OBALoc("live_activity.started.title", value: "Tracking on Lock Screen", comment: "Alert title when a Live Activity starts")
         let message = OBALoc("live_activity.started.message", value: "You'll see live arrival updates on your Lock Screen and Dynamic Island.", comment: "Alert message explaining where to find the Live Activity")
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default)) // Use Strings.ok
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
         present(alert, animated: true)
     }
 
@@ -526,7 +483,7 @@ public class BookmarksViewController: UIViewController,
         let title = OBALoc("live_activity.error.title", value: "Unable to Start Tracking", comment: "Alert title when Live Activity fails to start")
         let message = OBALoc("live_activity.error.message", value: "Please check your Live Activities settings in System Preferences.", comment: "Alert message for Live Activity error")
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: Strings.ok, style: .default)) // Use Strings.ok
+        alert.addAction(UIAlertAction(title: Strings.ok, style: .default))
         present(alert, animated: true)
     }
 
