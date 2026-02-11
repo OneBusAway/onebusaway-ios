@@ -17,7 +17,11 @@ private enum StopScheduleStrings {
     static let unableToLoad = OBALoc("stop_schedule_view.unable_to_load", value: "Unable to load schedule", comment: "Error message when schedule fails to load")
     static let date = OBALoc("stop_schedule_view.date", value: "Date", comment: "Label for date picker in schedule view")
     static let route = OBALoc("stop_schedule_view.route", value: "Route", comment: "Label for route picker in schedule view")
-    static let noDepartures = OBALoc("stop_schedule_view.no_departures", value: "No departures scheduled for this date", comment: "Message when no departures are scheduled")
+    static let noDepartures = OBALoc("stop_schedule_view.no_departures", value: "No departures", comment: "Message when no departures are scheduled")
+    static let stopSchedule = OBALoc("stop_schedule_view.stop_schedule", value: "Stop Schedule", comment: "Title for the stop schedule toggle")
+    static let fullRouteSchedule = OBALoc("stop_schedule_view.full_route_schedule", value: "Full Route Schedule", comment: "Title for the full route schedule toggle")
+    static let toDestination = OBALoc("stop_schedule_view.to_destination_fmt", value: "To: %@", comment: "Format string for destination. e.g. To: Downtown")
+    static let chooseScheduleType = OBALoc("stop_schedule_view.accessibility.choose_schedule_type", value: "Choose between stop schedule and full route schedule", comment: "Accessibility label for schedule type picker")
 }
 
 /// A SwiftUI view that displays the schedule for a specific stop
@@ -25,13 +29,16 @@ private enum StopScheduleStrings {
 struct ScheduleForStopView: View {
     @StateObject private var stopViewModel: ScheduleForStopViewModel
     @State private var routeViewModel: ScheduleForRouteViewModel?
+    @State private var isShowingFullRouteSchedule = false
     @Environment(\.dismiss) private var dismiss
 
     private let application: Application
 
     init(stopID: StopID, application: Application) {
         self.application = application
-        _stopViewModel = StateObject(wrappedValue: ScheduleForStopViewModel(stopID: stopID, application: application))
+        _stopViewModel = StateObject(
+            wrappedValue: ScheduleForStopViewModel(stopID: stopID, application: application)
+        )
     }
 
     var body: some View {
@@ -50,6 +57,9 @@ struct ScheduleForStopView: View {
                     await stopViewModel.fetchSchedule()
                 }
                 .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
+                    // Reset the toggle so the user starts fresh on the new route
+                    isShowingFullRouteSchedule = false
+
                     updateRouteViewModel(for: newRouteID)
                 }
                 .onChange(of: stopViewModel.selectedDate) { _, newDate in
@@ -82,7 +92,12 @@ struct ScheduleForStopView: View {
         VStack(spacing: 0) {
             headerSection
             Divider()
-            routeScheduleSection
+
+            if isShowingFullRouteSchedule {
+                fullRouteScheduleSection
+            } else {
+                stopFocusedScheduleSection
+            }
         }
     }
 
@@ -143,14 +158,59 @@ struct ScheduleForStopView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
             }
+
+            // Segmented control: Stop Focused Schedules vs Full Route Schedules
+            if stopViewModel.selectedRouteID != nil {
+                Picker(StopScheduleStrings.chooseScheduleType, selection: $isShowingFullRouteSchedule) {
+                    Text(StopScheduleStrings.stopSchedule).tag(false)
+                    Text(StopScheduleStrings.fullRouteSchedule).tag(true)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel(StopScheduleStrings.chooseScheduleType)
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+            }
         }
         .background(Color(.systemGroupedBackground))
+    }
+
+    // MARK: - Stop-Focused Schedule Section
+
+    @ViewBuilder
+    private var stopFocusedScheduleSection: some View {
+        let departures = stopViewModel.departuresForSelectedRoute
+
+        if stopViewModel.isLoading && departures.isEmpty {
+            ProgressView()
+                .padding()
+        } else if departures.isEmpty {
+            Text(StopScheduleStrings.noDepartures)
+                .foregroundStyle(.secondary)
+                .padding()
+        } else {
+            List(departures) { departure in
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(departure.time.formatted(date: .omitted, time: .shortened))
+                            .font(.headline)
+                        Spacer()
+                    }
+
+                    Text(String(format: StopScheduleStrings.toDestination, departure.headsign))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.vertical, 4)
+            }
+            .listStyle(.plain)
+        }
     }
 
     // MARK: - Route Schedule Section (embedded timetable)
 
     @ViewBuilder
-    private var routeScheduleSection: some View {
+    private var fullRouteScheduleSection: some View {
         if let routeVM = routeViewModel {
             RouteScheduleContentView(viewModel: routeVM, showDatePicker: false)
                 .id(routeVM.routeID)

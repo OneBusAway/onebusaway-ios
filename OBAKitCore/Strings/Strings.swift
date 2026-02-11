@@ -79,7 +79,7 @@ public class Strings: NSObject {
 
     public static let scheduleTipTitle = OBALoc("schedule_tip.title", value: "View Your Route's Schedule", comment: "Title for the schedule/timetable feature tip")
 
-    public static let scheduleTipMessage = OBALoc("schedule_tip.message", value: "Tap here and then tap 'Schedules' to view the schedule or timetable for your buses and trains.", comment: "The body of the schedule/timetable feature tip")
+    public static let scheduleTipMessage = OBALoc("schedule_tip.message", value: "Tap here to view the schedule or timetable for your buses and trains.", comment: "The body of the schedule/timetable feature tip")
 
     public static let refresh = OBALoc("common.refresh", value: "Refresh", comment: "The verb 'refresh', as in 'reload'.")
 

@@ -58,6 +58,8 @@ public class StopViewController: UIViewController,
 
     let stopID: StopID
 
+    private var schedulesButton: UIBarButtonItem?
+
     public var bookmarkContext: Bookmark?
 
     let minutesBefore: UInt = 5
@@ -177,6 +179,8 @@ public class StopViewController: UIViewController,
 
         view.backgroundColor = ThemeColors.shared.systemBackground
 
+        configureTabBarButtons()
+
         listView.obaDelegate = self
         listView.obaDataSource = self
         listView.contextMenuDelegate = self
@@ -216,8 +220,8 @@ public class StopViewController: UIViewController,
     public override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
 
-        if let moreMenuButton {
-            scheduleTipPresenter.showIfNeeded(sourceItem: moreMenuButton) { [weak self] vc in
+        if let schedulesButton {
+            scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
                 guard let self else { return }
                 present(vc, animated: animated)
             } presentedController: { [weak self] in
@@ -305,7 +309,11 @@ public class StopViewController: UIViewController,
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
-        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton]
+        let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
+        schedulesBtn.accessibilityLabel = Strings.schedules
+        self.schedulesButton = schedulesBtn
+
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesBtn]
 
         self.moreMenuButton = moreMenuButton
     }
@@ -363,11 +371,7 @@ public class StopViewController: UIViewController,
             alertsAction.attributes = .disabled
         }
 
-        let schedulesAction = UIAction(title: Strings.schedules, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-            self.showScheduleForStop()
-        }
-
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction, schedulesAction])
+        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
     }
 
     fileprivate func locationMenu() -> UIMenu {
@@ -1139,7 +1143,7 @@ public class StopViewController: UIViewController,
         present(scheduleVC, animated: true)
     }
 
-    func showScheduleForStop() {
+    @objc func showScheduleForStop() {
         let scheduleVC = ScheduleForStopViewController(stopID: stopID, application: application)
         present(scheduleVC, animated: true)
     }
