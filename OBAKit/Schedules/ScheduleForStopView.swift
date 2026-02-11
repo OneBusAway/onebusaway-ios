@@ -57,6 +57,9 @@ struct ScheduleForStopView: View {
                     await stopViewModel.fetchSchedule()
                 }
                 .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
+                    // Reset the toggle so the user starts fresh on the new route
+                    isShowingFullRouteSchedule = false
+
                     updateRouteViewModel(for: newRouteID)
                 }
                 .onChange(of: stopViewModel.selectedDate) { _, newDate in
@@ -158,7 +161,7 @@ struct ScheduleForStopView: View {
 
             // Segmented control: Stop Focused Schedules vs Full Route Schedules
             if stopViewModel.selectedRouteID != nil {
-                Picker("", selection: $isShowingFullRouteSchedule) {
+                Picker(StopScheduleStrings.chooseScheduleType, selection: $isShowingFullRouteSchedule) {
                     Text(StopScheduleStrings.stopSchedule).tag(false)
                     Text(StopScheduleStrings.fullRouteSchedule).tag(true)
                 }

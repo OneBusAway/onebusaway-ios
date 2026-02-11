@@ -221,7 +221,6 @@ public class StopViewController: UIViewController,
         super.viewDidAppear(animated)
 
         if let schedulesButton {
-
             scheduleTipPresenter.showIfNeeded(sourceItem: schedulesButton) { [weak self] vc in
                 guard let self else { return }
                 present(vc, animated: animated)
@@ -310,10 +309,11 @@ public class StopViewController: UIViewController,
 
         let filterMenuButton = UIBarButtonItem(title: filterButtonTitle, image: filterButtonImage, menu: filterMenu())
         let moreMenuButton = UIBarButtonItem(title: "MORE", image: UIImage(systemName: "ellipsis.circle"), menu: pulldownMenu())
-        self.schedulesButton = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
-        self.schedulesButton?.accessibilityLabel = Strings.schedules
+        let schedulesBtn = UIBarButtonItem(image: UIImage(systemName: "calendar"), style: .plain, target: self, action: #selector(showScheduleForStop))
+        schedulesBtn.accessibilityLabel = Strings.schedules
+        self.schedulesButton = schedulesBtn
 
-        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesButton!]
+        navigationItem.rightBarButtonItems = [moreMenuButton, filterMenuButton, schedulesBtn]
 
         self.moreMenuButton = moreMenuButton
     }
@@ -1285,4 +1285,3 @@ public class StopViewController: UIViewController,
         }
     }
 }
-
