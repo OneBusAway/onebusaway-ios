@@ -138,13 +138,15 @@ class StopHeaderView: UIView {
 
         let stack = UIStackView.verticalStack(arrangedSubviews: [stopNameLabel, stopNumberLabel, routesLabel, stackPaddingBottom])
         addSubview(stack)
+        let stackMinimumHeightConstraint = stack.heightAnchor.constraint(greaterThanOrEqualToConstant: StopHeaderView.minimumHeight)
+        stackMinimumHeightConstraint.priority = .defaultHigh
 
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: readableContentGuide.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: readableContentGuide.trailingAnchor),
             stack.topAnchor.constraint(equalTo: layoutMarginsGuide.topAnchor, constant: ThemeMetrics.padding),
             stack.bottomAnchor.constraint(equalTo: layoutMarginsGuide.bottomAnchor, constant: -ThemeMetrics.padding),
-            stack.heightAnchor.constraint(greaterThanOrEqualToConstant: StopHeaderView.minimumHeight),
+            stackMinimumHeightConstraint,
             stack.heightAnchor.constraint(lessThanOrEqualToConstant: StopHeaderView.maximumHeight)
         ])
 
