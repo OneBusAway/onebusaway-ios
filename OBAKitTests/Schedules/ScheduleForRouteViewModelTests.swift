@@ -225,41 +225,31 @@ class ScheduleForRouteViewModelTests: OBATestCase {
     }
 
     @MainActor
-    func test_formatTime_midnight_returnsExpectedFormat() {
+    func test_formatTime_midnight_returns0000() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        let date = Date(timeIntervalSince1970: 0)
+        let date = Date(timeIntervalSince1970: 0) // Midnight (00:00)
 
         let result = viewModel.formatTime(date)
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = .current
-        let expected = formatter.string(from: date)
-
-        expect(result) == expected
+        expect(result) == "00:00"
     }
 
     @MainActor
-    func test_formatTime_noon_returnsExpectedFormat() {
+    func test_formatTime_noon_returns1200() {
         let dataLoader = MockDataLoader(testName: name)
         stubScheduleForRoute(dataLoader: dataLoader)
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        let date = Date(timeIntervalSince1970: 43200)
+        let date = Date(timeIntervalSince1970: 43200) // Noon (12:00)
 
         let result = viewModel.formatTime(date)
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = .current
-        let expected = formatter.string(from: date)
-
-        expect(result) == expected
+        expect(result) == "12:00"
     }
 
     @MainActor
