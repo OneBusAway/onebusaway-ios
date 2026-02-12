@@ -527,7 +527,7 @@ class MapViewController: UIViewController,
 
     @objc private func reloadBookmarkAnnotations() {
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, let region = self.application.currentRegion else { return }
+            guard let self, let region = self.application.currentRegion else { return }
             self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
         }
     }

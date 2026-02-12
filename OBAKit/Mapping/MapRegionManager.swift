@@ -406,25 +406,22 @@ public class MapRegionManager: NSObject,
             return stop
         }
 
-        //  Remove Bookmark annotations that are stale:
-        ///   - The bookmark's stop no longer has ANY bookmark (deleted), OR
-        ///   - The bookmark on the map is a different object than the current one (replaced)
+        // Remove Bookmark annotations that are stale:
+        //   - The bookmark's stop no longer has ANY bookmark (deleted), OR
+        //   - The bookmark on the map is a different object than the current one (replaced)
         let bookmarkAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
             guard let bookmark = annotation as? Bookmark else {
                 return nil
             }
 
-            let currentBookmark = bookmarksHash[bookmark.stopID]
-
-            // If no bookmark exists for this stop anymore, remove the old annotation
-            if currentBookmark == nil {
+            guard let currentBookmark = bookmarksHash[bookmark.stopID] else {
+                // No bookmark exists for this stop anymore, remove the stale annotation
                 affectedStopIDs.insert(bookmark.stopID)
                 return bookmark
             }
 
-            // If a different bookmark now represents this stop (e.g., user bookmarked a different trip),
-            // remove the old annotation so the new one can be added
-            if currentBookmark!.id != bookmark.id {
+            // If a different bookmark now represents this stop, remove the old one
+            if currentBookmark.id != bookmark.id {
                 affectedStopIDs.insert(bookmark.stopID)
                 return bookmark
             }

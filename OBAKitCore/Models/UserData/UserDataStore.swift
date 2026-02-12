@@ -433,6 +433,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func delete(bookmark: Bookmark) {
         delete(bookmark: bookmark, reorderGroup: true)
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     private func delete(bookmark: Bookmark, reorderGroup: Bool) {
@@ -451,8 +452,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 elt.sortOrder = idx
                 bookmarks.append(elt)
             }
-
-            NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
         }
     }
 
