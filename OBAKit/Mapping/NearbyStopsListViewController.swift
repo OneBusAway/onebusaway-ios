@@ -1,12 +1,12 @@
 //
-//  NearbyStopsViewController.swift
+//  NearbyStopsListViewController.swift
 //  OBAKit
 //
 //  Created by Alan Chu on 4/4/23.
 //
 
 import Foundation
-
+import SwiftUI
 import MapKit
 import OBAKitCore
 
@@ -25,6 +25,9 @@ protocol NearbyStopsListDataSource: AnyObject {
 
 /// Displays a list of stops and high-priority alerts.
 class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate, Scrollable {
+
+    var onExpandSearchTapped: (() -> Void)?
+
     // MARK: - Type definitions
     private enum Section: Hashable {
         case alert
@@ -92,11 +95,7 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
     private var diffableDataSource: UICollectionViewDiffableDataSource<Section, ItemType>!
     private var headerCellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
     private var cellRegistration: UICollectionView.CellRegistration<UICollectionViewListCell, ItemType>!
-    private lazy var emptyDataView: EmptyDataSetView = {
-        let view = EmptyDataSetView()
-        view.autoresizingMask = [.flexibleLeftMargin, .flexibleRightMargin, .flexibleTopMargin]
-        return view
-    }()
+    private var emptyStateHostingController: UIViewController?
 
     // MARK: - UIViewController lifecycle
     override func viewDidLoad() {
@@ -152,14 +151,43 @@ class NearbyStopsListViewController: UIViewController, UICollectionViewDelegate,
 
     private func toggleEmptyDataView(isShowing: Bool) {
         if isShowing {
-            let viewModel = OBAListView.StandardEmptyDataViewModel(
-                title: OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller"),
-                body: OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller.")
-            )
+            guard emptyStateHostingController == nil else { return }
+            let emptyStateView = VStack(spacing: 20) {
+                VStack(spacing: 8) {
+                    Text(OBALoc("nearby_controller.empty_set.title", value: "No Nearby Stops", comment: "Title for the empty set indicator on the Nearby controller"))
+                        .font(.headline)
+                        .foregroundColor(.primary)
 
-            emptyDataView.apply(viewModel)
-            collectionView.backgroundView = emptyDataView
+                    Text(OBALoc("nearby_controller.empty_set.body", value: "Zoom out or pan around to find some stops.", comment: "Body for the empty set indicator on the Nearby controller."))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 40)
+
+                TaskButton(OBALoc("nearby_controller.empty_set.button", value: "Search Wider Area", comment: "Button to search wider area"), actionOptions: []) { [weak self] in
+                    self?.onExpandSearchTapped?()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(ThemeColors.shared.brand))
+                .clipShape(Capsule())
+            }
+
+            let hostingController = UIHostingController(rootView: emptyStateView)
+            hostingController.view.backgroundColor = .clear
+
+            self.addChild(hostingController)
+            collectionView.backgroundView = hostingController.view
+            hostingController.didMove(toParent: self)
+
+            self.emptyStateHostingController = hostingController
         } else {
+            if let hostingController = emptyStateHostingController {
+                hostingController.willMove(toParent: nil)
+                hostingController.view.removeFromSuperview()
+                hostingController.removeFromParent()
+                self.emptyStateHostingController = nil
+            }
             collectionView.backgroundView = nil
         }
     }

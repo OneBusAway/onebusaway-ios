@@ -49,6 +49,8 @@ class MapFloatingPanelController: VisualEffectViewController,
         application.alertsStore.recentHighSeverityAlerts
     }
 
+    private var resetFudgeFactorWorkItem: DispatchWorkItem?
+
     private(set) var stops = [Stop]() {
         didSet {
             nearbyStopsListViewController.updateList()
@@ -73,6 +75,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     deinit {
+        resetFudgeFactorWorkItem?.cancel()
         mapRegionManager.removeDelegate(self)
         application.regionsService.removeDelegate(self)
         application.alertsStore.removeDelegate(self)
@@ -166,6 +169,29 @@ class MapFloatingPanelController: VisualEffectViewController,
         nearbyStopsListViewController.view.translatesAutoresizingMaskIntoConstraints = false
         nearbyStopsListViewController.dataSource = self
         nearbyStopsListViewController.delegate = self
+
+        nearbyStopsListViewController.onExpandSearchTapped = { [weak self] in
+            guard let self else { return }
+
+            self.resetFudgeFactorWorkItem?.cancel()
+
+            self.mapRegionManager.preferredLoadDataRegionFudgeFactor = 3.0
+
+            // Force a data reload by simulating a region change event.
+            self.mapRegionManager.mapView(self.mapRegionManager.mapView, regionDidChangeAnimated: false)
+
+            // Create a new work item to reset the value
+            let workItem = DispatchWorkItem { [weak self] in
+                // This ensures that the next time the user pans the map normally,
+                // the app goes back to its standard, efficient search radius.
+                self?.mapRegionManager.preferredLoadDataRegionFudgeFactor =
+                    UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
+            }
+
+            self.resetFudgeFactorWorkItem = workItem
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: workItem)
+        }
 
         searchListViewController = SearchListViewController()
         searchListViewController.view.translatesAutoresizingMaskIntoConstraints = false
