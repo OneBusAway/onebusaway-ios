@@ -9,6 +9,7 @@
 
 import UIKit
 import OBAKitCore
+import SwiftUI
 
 // MARK: - UIButton
 
@@ -73,5 +74,11 @@ extension UIApplication {
             .flatMap({ $0 as? UIWindowScene })?.windows
 
         return windows ?? []
+    }
+}
+
+extension UIColor {
+    func toColor() -> Color {
+        Color(uiColor: self)
     }
 }

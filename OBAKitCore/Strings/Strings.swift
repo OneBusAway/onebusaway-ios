@@ -122,4 +122,49 @@ public class Strings: NSObject {
     public static let emptyBookmarkBodyWithPendingMigration = OBALoc("common.empty_bookmark_set.body_with_pending_migration", value: "Go to the More tab > Settings > Migrate Data to see your bookmarks appear here.", comment: "Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app.")
 
     public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
+
+    public static let externalSurveyPrivacyInfo = OBALoc("common.external_survey_privacy_info.description", value: "This survey will share your stop, route, region, current location", comment: "Description of the privacy policy for sharing data with the external survey service.")
+
+    public static let go = OBALoc("common.go", value: "Go", comment: "The verb 'to go'")
+
+    public static let submit = OBALoc("common.submit", value: "Submit", comment: "The verb 'to submit', i.e. to submit a survey answer.")
+
+    public static let next = OBALoc("common.next", value: "Next", comment: "The verb 'to next', i.e. to get next survey question.")
+
+    public static let surveyDismissAlertTitle = OBALoc("survey_alert.dismissal.title", value: "Dismiss Survey", comment: "Title for survey dismissal action alert.")
+
+    public static let surveyDismissAlertBody = OBALoc("survey_alert.dismissal.body", value: "Your feedback helps improve transit services and app experiences.", comment: "Body for survey dismissal action alert.")
+
+    public static let skipSurvey = OBALoc("survey_alert.skip.survey", value: "Skip This Survey", comment: "The action of skipping the current survey.")
+
+    public static let remindLater = OBALoc("survey_alert.remind.later", value: "Remind Me Later", comment: "The action of reminding later. i.e, to remind me later on the survey.")
+
+    public static let surveyRequiredRemainingQuestionsError = OBALoc("survey_error.required_remaining_questions.error", value: "Please answer all required questions", comment: "Error message to show when the user has not answered all required survey questions.")
+
+    public static let surveyHeroQuestionAnswerError = OBALoc("survey_error.hero_question_answer.error", value: "Please enter a valid answer", comment: "Error message to show when the user has not answered the hero survey question with a valid answer.")
+
+    public static let surveyAnswerSuccessfullySubmitted = OBALoc("survey_success.submitted", value: "Survey answer submitted! Please answer rest of the questions for better feedback.", comment: "Success message to show when the survey is successfully submitted.")
+
+    public static let doNotShowAgain = OBALoc("survey_alert.do.not.show.again", value: "Don't Show Again", comment: "The action of not showing the survey again.")
+
+    public static let surveyServiceNotAvailable = OBALoc("survey_service.not.available", value: "Survey Service is unavailable.", comment: "Indicating that survey service is not setup up right or has some other issue.")
+
+    public static let externalSurveyMissing = OBALoc("survey.external.url.missing", value: "We couldn’t open the survey right now. Please try again later.", comment: "Indicating missing external survey url")
+
+    public static let surveyMissingUpdatePath = OBALoc("survey_service.update.path.missing", value: "Something went wrong when submitting your responses. Please try again later.", comment: "Indicating missing survey update id when submitting responses")
+
+    public static let selectedValueAccessibility = OBALoc("surveys.accessibility_selected_value", value: "Selected", comment: "Accessibility label for a selected value.")
+
+    public static let notSelectedAccessibility = OBALoc("surveys.accessibility_not_selected_value", value: "Not Selected", comment: "Accessibility label for a value that is not selected.")
+
+    public static let toggleSelectionAccessibility = OBALoc("surveys.accessibility_tap_toggle_selection", value: "Tap to toggle selection", comment: "Accessibility label  that toggles the selection state of a survey option.")
+
+    public static let tapSelectAccessibility = OBALoc("surveys.accessibility_tap_to_select", value: "Tap to select", comment: "Accessibility label that allows selection of a survey option.")
+
+    public static let answerInputAccessibility = OBALoc("surveys.accessibility_answer.input", value: "Answer input", comment: "Accessibility label for an input field in a survey.")
+
+    public static let answerInputQuestionAccessibility = OBALoc("surveys.accessibility.hint_answer.input", value: "Enter your answer to the survey question", comment: "Accessibility hint for an input field in a survey.")
+
+    public static let surveyLabel = OBALoc("surveys.accessibility_survey_label", value: "Survey Label", comment: "Accessibility for survey label")
+
 }

@@ -11,9 +11,7 @@ public protocol SurveyServiceProtocol {
 
     var surveys: [Survey] { get }
 
-    var error: Error? { get }
-
-    func fetchSurveys() async
+    func fetchSurveys() async throws
 
     func submitSurveyResponse(
         surveyId: Int,
@@ -21,7 +19,7 @@ public protocol SurveyServiceProtocol {
         stopLongitude: Double?,
         stopLatitude: Double?,
         _ response: QuestionAnswerSubmission
-    ) async
+    ) async throws
 
     func updateSurveyResponses(
         surveyId: Int,
@@ -29,6 +27,6 @@ public protocol SurveyServiceProtocol {
         stopLongitude: Double?,
         stopLatitude: Double?,
         _ responses: [QuestionAnswerSubmission]
-    ) async
+    ) async throws
 
 }
