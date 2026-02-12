@@ -14,6 +14,11 @@ import MapKit
     case map, recentStops, bookmarks, vehicles, settings
 }
 
+public extension Notification.Name {
+    /// Posted whenever bookmarks are added, updated, or deleted in the UserDataStore.
+    static let bookmarksDidChange = Notification.Name("UserDataStore.bookmarksDidChange")
+}
+
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
 ///
 /// This protocol is designed to support pluggable data storage layers, so that services ranging
@@ -422,10 +427,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 bookmarks.append(elt)
             }
         }
+
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     public func delete(bookmark: Bookmark) {
         delete(bookmark: bookmark, reorderGroup: true)
+        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     private func delete(bookmark: Bookmark, reorderGroup: Bool) {

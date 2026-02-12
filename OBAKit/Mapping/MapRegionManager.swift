@@ -390,9 +390,10 @@ public class MapRegionManager: NSObject,
         }
 
         let existingAnnotations = mapView.annotations
-        let existingBookmarkIDs = Set(existingAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
         var affectedStopIDs: Set<StopID> = []
+
+        // Remove Stop annotations that now have a corresponding Bookmark
         let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
             guard
                 let stop = annotation as? Stop,
@@ -404,16 +405,30 @@ public class MapRegionManager: NSObject,
             affectedStopIDs.insert(stop.id)
             return stop
         }
+
+        // Remove Bookmark annotations that are stale:
+        //   - The bookmark's stop no longer has ANY bookmark (deleted), OR
+        //   - The bookmark on the map is a different object than the current one (replaced)
         let bookmarkAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
-            guard
-                let bookmark = annotation as? Bookmark,
-                bookmarksHash[bookmark.stopID] == nil
-            else {
+            guard let bookmark = annotation as? Bookmark else {
                 return nil
             }
-            affectedStopIDs.insert(bookmark.stopID)
-            return bookmark
+
+            guard let currentBookmark = bookmarksHash[bookmark.stopID] else {
+                // No bookmark exists for this stop anymore, remove the stale annotation
+                affectedStopIDs.insert(bookmark.stopID)
+                return bookmark
+            }
+
+            // If a different bookmark now represents this stop, remove the old one
+            if currentBookmark.id != bookmark.id {
+                affectedStopIDs.insert(bookmark.stopID)
+                return bookmark
+            }
+
+            return nil
         }
+
         let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
         for annotation in allAnnotationsToRemove {
             guard mapView.selectedAnnotations.contains(where: { $0 === annotation }) else { continue }
@@ -421,11 +436,15 @@ public class MapRegionManager: NSObject,
         }
         mapView.removeAnnotations(allAnnotationsToRemove)
 
+        //  Add new Bookmark annotations that aren't already on the map
+        //  Check by bookmark ID (not just stopID) to correctly add replacements
+        let existingBookmarkIDs = Set(mapView.annotations.compactMap { ($0 as? Bookmark)?.id })
         let bookmarksToAdd = bookmarksHash.values.filter {
-            !existingBookmarkIDs.contains($0.stopID)
+            !existingBookmarkIDs.contains($0.id)
         }
         mapView.addAnnotations(Array(bookmarksToAdd))
 
+        //  Re-add Stop annotations for stops that no longer have bookmarks
         let stopsToAdd = stops.filter {
             !bookmarksHash.keys.contains($0.id) &&
             !existingStopIDs.contains($0.id)

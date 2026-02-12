@@ -76,6 +76,7 @@ class MapViewController: UIViewController,
 
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
+        self.application.notificationCenter.addObserver(self, selector: #selector(reloadBookmarkAnnotations), name: .bookmarksDidChange, object: nil)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -522,6 +523,13 @@ class MapViewController: UIViewController,
         }
 
         centerMapOnUserLocation()
+    }
+
+    @objc private func reloadBookmarkAnnotations() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let region = self.application.currentRegion else { return }
+            self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
+        }
     }
 
     // MARK: - Content Presentation
