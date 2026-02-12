@@ -137,6 +137,13 @@ class Icons: NSObject {
         systemImage(named: "trash.fill")
     }
 
+    // MARK: - Live Activity
+
+    // An icon used for Live Activities ..
+    public class var liveActivity: UIImage {
+        systemImage(named: "waveform.circle.fill")
+    }
+
     // MARK: - Bookmarks
 
     /// An icon used to represent bookmarked stops and trips.
