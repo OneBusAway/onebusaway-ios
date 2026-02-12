@@ -121,7 +121,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let (_, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (_, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -154,7 +155,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             }
         }
         let url = try buildURL(path: path, queryItems: items)
-        let (_, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (_, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             throw OBAAPIError.badServerResponse(statusCode: (response as? HTTPURLResponse)?.statusCode ?? 0, url: url)
         }
@@ -209,103 +211,55 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     }
 
     public func fetchArrivals(for stopID: OBAStopID) async throws -> OBAArrivalsResult {
-        let path = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
-        let queryItems = apiKeyQueryItem + [
-            URLQueryItem(name: "minutesBefore", value: String(configuration.minutesBeforeArrivals)),
-            URLQueryItem(name: "minutesAfter", value: String(configuration.minutesAfterArrivals))
-        ]
-
-        let url = try buildURL(path: path, queryItems: queryItems)
-
-        var arrivals: [OBAArrival] = []
-        var routes: [OBARoute] = []
-        var stopName: String?
-        var stopCode: String?
-        var stopDirection: String?
-
-        do {
-            let response: OBARawListResponse<[OBARawArrival]> = try await get(url: url)
-            let now = Date()
-            arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
-
-            if let rawStop = response.stop {
-                stopName = rawStop.name
-                stopCode = rawStop.code
-                stopDirection = rawStop.direction
-                let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
-                routes = rawRoutes.map { raw in
-                    OBARoute(
-                        id: raw.id,
-                        shortName: raw.shortName,
-                        longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-                    )
-                }
+        try await tryFallback([
+            {
+                let path = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
+                let queryItems = self.apiKeyQueryItem + [
+                    URLQueryItem(name: "minutesBefore", value: String(self.configuration.minutesBeforeArrivals)),
+                    URLQueryItem(name: "minutesAfter", value: String(self.configuration.minutesAfterArrivals))
+                ]
+                let url = try self.buildURL(path: path, queryItems: queryItems)
+                let response: OBARawListResponse<[OBARawArrival]> = try await self.get(url: url)
+                return self.mapArrivalsResponse(response)
+            },
+            {
+                let path = "/api/where/arrivals-and-departures-for-stop.json"
+                let queryItems = self.apiKeyQueryItem + [
+                    URLQueryItem(name: "stopId", value: stopID),
+                    URLQueryItem(name: "minutesBefore", value: String(self.configuration.minutesBeforeArrivals)),
+                    URLQueryItem(name: "minutesAfter", value: String(self.configuration.minutesAfterArrivals))
+                ]
+                let url = try self.buildURL(path: path, queryItems: queryItems)
+                let response: OBARawListResponse<[OBARawArrival]> = try await self.get(url: url)
+                return self.mapArrivalsResponse(response)
+            },
+            {
+                let stopPath = "/api/where/stop/\(stopID).json"
+                let stopURL = try self.buildURL(path: stopPath, queryItems: self.apiKeyQueryItem)
+                let response: OBARawStopResponse = try await self.get(url: stopURL)
+                let domainStop = response.toDomainStop()
+                return OBAArrivalsResult(
+                    arrivals: [],
+                    routes: response.toDomainRoutes(),
+                    stopName: domainStop.name,
+                    stopCode: domainStop.code,
+                    stopDirection: domainStop.direction
+                )
             }
+        ])
+    }
 
-            return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
-        } catch {
-            Logger.error("fetchArrivals primary call failed for stop \(stopID): \(error.localizedDescription)")
-
-            // Fallback 1: try as query parameter
-            let fallbackPath = "/api/where/arrivals-and-departures-for-stop.json"
-            let fallbackQueryItems = apiKeyQueryItem + [
-                URLQueryItem(name: "stopId", value: stopID),
-                URLQueryItem(name: "minutesBefore", value: String(configuration.minutesBeforeArrivals)),
-                URLQueryItem(name: "minutesAfter", value: String(configuration.minutesAfterArrivals))
-            ]
-
-            do {
-                let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
-                do {
-                    let response: OBARawListResponse<[OBARawArrival]> = try await get(url: fallbackURL)
-                    let now = Date()
-                    arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
-
-                    if let rawStop = response.stop {
-                        stopName = rawStop.name
-                        stopCode = rawStop.code
-                        stopDirection = rawStop.direction
-                        let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
-                        routes = rawRoutes.map { raw in
-                            OBARoute(
-                                id: raw.id,
-                                shortName: raw.shortName,
-                                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-                            )
-                        }
-                    }
-
-                    return OBAArrivalsResult(arrivals: arrivals, routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
-                } catch {
-                    Logger.error("Arrivals fallback 1 failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for arrivals fallback 1: \(error.localizedDescription)")
-            }
-
-            // Fallback 2: try stop/[ID].json to at least get routes and stop name if arrivals fail
-            let stopPath = "/api/where/stop/\(stopID).json"
-            do {
-                let stopURL = try buildURL(path: stopPath, queryItems: apiKeyQueryItem)
-                do {
-                    let response: OBARawStopResponse = try await get(url: stopURL)
-                    let domainStop = response.toDomainStop()
-                    stopName = domainStop.name
-                    stopCode = domainStop.code
-                    stopDirection = domainStop.direction
-                    routes = response.toDomainRoutes()
-
-                    // If we reach here, we have routes and stop name, but no arrivals (since we only called stop API)
-                    return OBAArrivalsResult(arrivals: [], routes: routes, stopName: stopName, stopCode: stopCode, stopDirection: stopDirection)
-                } catch {
-                    Logger.error("Arrivals fallback 2 failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for arrivals fallback 2: \(error.localizedDescription)")
-            }
-
-            throw error
-        }
+    private func mapArrivalsResponse(_ response: OBARawListResponse<[OBARawArrival]>) -> OBAArrivalsResult {
+        let now = Date()
+        let arrivals = response.list.map { $0.toDomainArrival(referenceDate: now) }
+        let routes = response.toDomainRoutes()
+        return OBAArrivalsResult(
+            arrivals: arrivals,
+            routes: routes,
+            stopName: response.stop?.name,
+            stopCode: response.stop?.code,
+            stopDirection: response.stop?.direction
+        )
     }
 
     public func fetchTripsForLocation(
@@ -345,70 +299,33 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     }
 
     public func fetchRoutesForStop(stopID: OBAStopID) async throws -> [OBARoute] {
-        let path = "/api/where/routes-for-stop/\(stopID).json"
-        let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-
-        do {
-            let response: OBARawRoutesForStopResponse = try await get(url: url)
-            return response.toDomainRoutes()
-        } catch {
-            Logger.error("fetchRoutesForStop primary call failed for stop \(stopID): \(error.localizedDescription)")
-
-            // Fallback 1: try as query parameter
-            let fallbackPath = "/api/where/routes-for-stop.json"
-            let fallbackQueryItems = apiKeyQueryItem + [URLQueryItem(name: "stopId", value: stopID)]
-
-            do {
-                let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
-                do {
-                    let response: OBARawRoutesForStopResponse = try await get(url: fallbackURL)
-                    return response.toDomainRoutes()
-                } catch {
-                    Logger.error("RoutesForStop fallback 1 failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for RoutesForStop fallback 1: \(error.localizedDescription)")
+        try await tryFallback([
+            {
+                let path = "/api/where/routes-for-stop/\(stopID).json"
+                let url = try self.buildURL(path: path, queryItems: self.apiKeyQueryItem)
+                let response: OBARawRoutesForStopResponse = try await self.get(url: url)
+                return response.toDomainRoutes()
+            },
+            {
+                let path = "/api/where/routes-for-stop.json"
+                let queryItems = self.apiKeyQueryItem + [URLQueryItem(name: "stopId", value: stopID)]
+                let url = try self.buildURL(path: path, queryItems: queryItems)
+                let response: OBARawRoutesForStopResponse = try await self.get(url: url)
+                return response.toDomainRoutes()
+            },
+            {
+                let stopPath = "/api/where/stop/\(stopID).json"
+                let stopURL = try self.buildURL(path: stopPath, queryItems: self.apiKeyQueryItem)
+                let response: OBARawStopResponse = try await self.get(url: stopURL)
+                return response.toDomainRoutes()
+            },
+            {
+                let arrivalsPath = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
+                let arrivalsURL = try self.buildURL(path: arrivalsPath, queryItems: self.apiKeyQueryItem)
+                let response: OBARawListResponse<[OBARawArrival]> = try await self.get(url: arrivalsURL)
+                return response.toDomainRoutes()
             }
-
-            // Fallback 2: try stop/[ID].json (common in MTA)
-            let stopPath = "/api/where/stop/\(stopID).json"
-            do {
-                let stopURL = try buildURL(path: stopPath, queryItems: apiKeyQueryItem)
-                do {
-                    let response: OBARawStopResponse = try await get(url: stopURL)
-                    return response.toDomainRoutes()
-                } catch {
-                    Logger.error("RoutesForStop fallback 2 failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for RoutesForStop fallback 2: \(error.localizedDescription)")
-            }
-
-            // Fallback 3: try arrivals-and-departures-for-stop (often contains stop details in MTA)
-            let arrivalsPath = "/api/where/arrivals-and-departures-for-stop/\(stopID).json"
-            do {
-                let arrivalsURL = try buildURL(path: arrivalsPath, queryItems: apiKeyQueryItem)
-                do {
-                    let response: OBARawListResponse<[OBARawArrival]> = try await get(url: arrivalsURL)
-                    if let rawStop = response.stop {
-                        let rawRoutes = rawStop.routes ?? response.references?.routes ?? []
-                        return rawRoutes.map { raw in
-                            OBARoute(
-                                id: raw.id,
-                                shortName: raw.shortName,
-                                longName: raw.longName?.isEmpty == false ? raw.longName : raw.description
-                            )
-                        }
-                    }
-                } catch {
-                    Logger.error("RoutesForStop fallback 3 failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for RoutesForStop fallback 3: \(error.localizedDescription)")
-            }
-
-            throw error
-        }
+        ])
     }
 
     public func searchRoutes(
@@ -475,10 +392,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let response: OBARawScheduleForRouteResponse = try await get(url: url)
             return response.firstShapeID()
         } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription). Falling back to routeID as shapeID.")
-            // MTA doesn't always support schedule-for-route. 
-            // Return the routeID as a 'pseudo' shapeID so fetchShape can fall back to stops-for-route
-            return routeID
+            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -655,7 +570,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let currentTime: Date
         }
 
-        let (data, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (data, response) = try await urlSession.data(for: request)
         if let httpResponse = response as? HTTPURLResponse, !(200...299).contains(httpResponse.statusCode) {
              throw OBAAPIError.badServerResponse(statusCode: httpResponse.statusCode, url: url)
         }
@@ -712,8 +628,30 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         return []
     }
 
+    private func buildRequest(url: URL) -> URLRequest {
+        var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 10.0)
+        request.setValue("en-US", forHTTPHeaderField: "Accept-Language")
+        return request
+    }
+
+    private func tryFallback<T>(_ closures: [() async throws -> T]) async throws -> T {
+        var lastError: Error?
+        for closure in closures {
+            do {
+                return try await closure()
+            } catch {
+                lastError = error
+            }
+        }
+        if let lastError = lastError {
+            throw lastError
+        }
+        throw OBAAPIError.invalidURL // Should not happen
+    }
+
     private func get<Response: Decodable & Sendable>(url: URL) async throws -> Response {
-        let (data, response) = try await urlSession.data(from: url)
+        let request = buildRequest(url: url)
+        let (data, response) = try await urlSession.data(for: request)
 
         // Check HTTP status code
         if let httpResponse = response as? HTTPURLResponse {
