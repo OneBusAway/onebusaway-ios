@@ -10,6 +10,7 @@ import Observation
 import OBAKitCore
 import SafariServices
 
+@MainActor
 protocol SurveyViewHostingProtocol {
 
     var surveysVM: SurveysViewModel { get set }
@@ -40,7 +41,6 @@ protocol SurveyViewHostingProtocol {
 
 }
 
-@MainActor
 extension SurveyViewHostingProtocol where Self: UIViewController {
 
     func observeSurveyLoadingState() {

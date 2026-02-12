@@ -144,7 +144,7 @@ final public class SurveysViewModel {
                 }
             } catch {
                 Logger.error(error.localizedDescription)
-                showToastMessage(error.localizedDescription, type: .error)
+                displayToast(error.localizedDescription, type: .error)
             }
         }
     }
@@ -158,13 +158,15 @@ final public class SurveysViewModel {
 
     private func getNextSurvey() {
         let surveyIndex = prioritizer.nextSurveyIndex(service.surveys, visibleOnStop: stopContext, stop: stop)
-        if surveyIndex != -1 {
-            self.survey = service.surveys[surveyIndex]
-            setHeroQuestion()
-        }
+        guard surveyIndex >= 0, surveyIndex < service.surveys.count else { return }
+        
+        self.survey = service.surveys[surveyIndex]
+        self.study = survey?.study
+
+        setHeroQuestion()
     }
 
-    private func showToastMessage(_ message: String, type: Toast.ToastType) {
+    private func displayToast(_ message: String, type: Toast.ToastType) {
         self.toast = Toast(message: message, type: type)
         showToastMessage = true
     }
@@ -178,10 +180,9 @@ final public class SurveysViewModel {
 // MARK: - Hero Question
 extension SurveysViewModel {
 
-    /// Should Refactor this 
     private func setHeroQuestion() {
         guard let survey else { return }
-        let firstQuestion = survey.getQuestions().first { $0.content.type != .label }
+        guard let firstQuestion = survey.getQuestions().first(where: { $0.content.type != .label }) else { return }
         self.heroQuestion = firstQuestion
         self.showHeroQuestion = true
     }
@@ -196,7 +197,7 @@ extension SurveysViewModel {
 
     private func validateHeroQuestionAnswer() -> Bool {
         guard let heroQuestionAnswer, !heroQuestionAnswer.stringValue.isEmpty else {
-            showToastMessage(Strings.surveyHeroQuestionAnswerError, type: .error)
+            displayToast(Strings.surveyHeroQuestionAnswerError, type: .error)
             return false
         }
 
@@ -229,12 +230,12 @@ extension SurveysViewModel {
                     response
                 )
 
-                self.showToastMessage(Strings.surveyAnswerSuccessfullySubmitted, type: .success)
+                self.displayToast(Strings.surveyAnswerSuccessfullySubmitted, type: .success)
                 self.setRemainingSurveyQuestions()
 
             } catch {
                 Logger.error(error.localizedDescription)
-                showToastMessage(error.localizedDescription, type: .error)
+                displayToast(error.localizedDescription, type: .error)
             }
         }
 
@@ -269,7 +270,7 @@ extension SurveysViewModel {
 
     private func handleOpenExternalSurvey() {
         guard let externalURL = getExternalURL(), let survey else {
-            showToastMessage(Strings.externalSurveyMissing, type: .error)
+            displayToast(Strings.externalSurveyMissing, type: .error)
             return
         }
 
@@ -323,7 +324,7 @@ extension SurveysViewModel {
     private func validateQuestionsAnswers() -> Bool {
         let validAnswers = answerableQuestionCount == answeredQuestionCount
         if !validAnswers {
-            showToastMessage(Strings.surveyRequiredRemainingQuestionsError, type: .error)
+            displayToast(Strings.surveyRequiredRemainingQuestionsError, type: .error)
             computeInvalidQuestions()
             return false
         }
@@ -370,7 +371,7 @@ extension SurveysViewModel {
 
             } catch {
                 Logger.error(error.localizedDescription)
-                showToastMessage(error.localizedDescription, type: .error)
+                displayToast(error.localizedDescription, type: .error)
             }
         }
 
@@ -379,7 +380,7 @@ extension SurveysViewModel {
     private func onSubmitQuestionsAnswersSuccess() {
         removeSurvey()
         self.showFullSurveyQuestions = false
-        self.showToastMessage(Strings.surveyAnswerSuccessfullySubmitted, type: .success)
+        self.displayToast(Strings.surveyAnswerSuccessfullySubmitted, type: .success)
     }
 
 }
