@@ -746,15 +746,25 @@ public class StopViewController: UIViewController,
         if stopPreferences.sortType == .time {
             let arrDeps: [ArrivalDeparture]
             if isListFiltered {
-                arrDeps = stopArrivals.arrivalsAndDepartures.filter(preferences: stopPreferences)
+                arrDeps = stopArrivals.arrivalsAndDepartures
+                    .filter(preferences: stopPreferences)
+                    .filteringTerminalDuplicates()
             } else {
                 arrDeps = stopArrivals.arrivalsAndDepartures
+                    .filteringTerminalDuplicates()
             }
             sections = [sectionForGroup(groupRoute: nil, arrDeps: arrDeps)]
         } else {
-            let groups = stopArrivals.arrivalsAndDepartures.group(preferences: stopPreferences, filter: isListFiltered).localizedStandardCompare()
-            // Regardless of the provided `showSectionHeader`, if stops are grouped by route, we will always show the section header.
-            sections = groups.map { sectionForGroup(groupRoute: $0.route, arrDeps: $0.arrivalDepartures) }
+            let groups = stopArrivals.arrivalsAndDepartures
+                .group(preferences: stopPreferences, filter: isListFiltered)
+                .localizedStandardCompare()
+            // Apply deduplication within each route group independently.
+            sections = groups.map {
+                sectionForGroup(
+                    groupRoute: $0.route,
+                    arrDeps: $0.arrivalDepartures.filteringTerminalDuplicates()
+                )
+            }
         }
 
         return sections
