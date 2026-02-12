@@ -56,6 +56,17 @@ public class StopViewController: UIViewController,
 
     public let application: Application
 
+    private let statusLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .footnote)
+        label.textColor = .secondaryLabel
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        label.backgroundColor = ThemeColors.shared.systemBackground
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
     let stopID: StopID
 
     private var schedulesButton: UIBarButtonItem?
@@ -194,8 +205,23 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
 
+        view.addSubview(statusLabel)
         view.addSubview(listView)
-        listView.pinToSuperview(.edges)
+
+        listView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            statusLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
+            statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            statusLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 16),
+
+            listView.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 4),
+            listView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            listView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            listView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
         listView.addSubview(refreshControl)
 
         if !stopViewShowsServiceAlerts {
@@ -548,11 +574,14 @@ public class StopViewController: UIViewController,
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
     private func updateTitle() {
+        self.title = "Live Arrivals"
+
         guard let lastUpdated = lastUpdated else {
+            statusLabel.text = ""
             return
         }
 
-        title = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
+        statusLabel.text = String(format: Strings.updatedAtFormat, application.formatters.timeAgoInWords(date: lastUpdated))
     }
 
     // MARK: - Broken Bookmarks
