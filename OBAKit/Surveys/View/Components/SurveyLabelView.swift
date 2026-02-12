@@ -25,7 +25,7 @@ struct SurveyLabelView: View {
                     .fill(UIColor.tertiarySystemBackground.toColor())
                     .shadow(color: .gray.opacity(0.4), radius: 3)
             }
-            .accessibilityLabel("Survey Label")
+            .accessibilityLabel(Strings.surveyLabel)
             .accessibilityValue(textContent)
             .accessibilityAddTraits(.isStaticText)
             .padding(.horizontal, 12)

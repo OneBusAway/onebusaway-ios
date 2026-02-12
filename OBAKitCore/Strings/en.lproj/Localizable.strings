@@ -193,7 +193,7 @@
 
 "survey_error.hero_question_answer.error" = "Please enter a valid answer";
 
-"survey_success.submitted" = "Survey answer submitted! please answer rest of the questions for better feedback";
+"survey_success.submitted" = "Survey answer submitted! Please answer rest of the questions for better feedback.";
 
 "survey_alert.do.not.show.again" = "Don't Show Again";
 
@@ -455,3 +455,13 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "scheduled to depart in %1$d minutes at %2$@.";
 
+"surveys.accessibility_selected_value" = "Selected";
+"surveys.accessibility_not_selected_value" = "Not Selected";
+
+"surveys.accessibility_tap_toggle_selection" = "Tap to toggle selection";
+"surveys.accessibility_tap_to_select" = "Tap to select";
+
+"surveys.accessibility_answer.input" = "Answer input";
+"surveys.accessibility.hint_answer.input" = "Enter your answer to the survey question";
+
+"surveys.accessibility_survey_label" = "Survey Label";
