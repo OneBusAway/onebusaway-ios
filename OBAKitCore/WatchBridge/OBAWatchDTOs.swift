@@ -170,7 +170,7 @@ struct OBARawRoutesForStopResponse: Decodable, Sendable, OBARawRouteContainer {
 /// Generic list response shape that many REST endpoints follow.
 /// Mirrors the structure of the OneBusAway `RESTAPIResponse` used in the iOS app,
 /// but keeps only the pieces we need in the shared core.
-struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable {
+struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable, OBARawRouteContainer {
     private struct DataContainer: Decodable, Sendable {
         let list: Element?
         let entry: Element?
@@ -185,6 +185,10 @@ struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable {
     let list: Element
     let stop: OBARawStopResponse.StopEntry?
     let references: OBARawStopResponse.References?
+
+    var rawRoutes: [OBARawRoutesForLocationResponse.RawRoute] {
+        stop?.routes ?? references?.routes ?? []
+    }
 
     private enum CodingKeys: String, CodingKey {
         case code, currentTime, text, version, data
