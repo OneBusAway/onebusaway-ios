@@ -62,6 +62,31 @@ class MapSnapshotter: NSObject {
         return options
     }
 
+    public func snapshot(stop: Stop, traitCollection: UITraitCollection) async throws -> UIImage {
+        let options = snapshotOptions(stop: stop, traitCollection: traitCollection)
+
+        let snapshotter = MKMapSnapshotter(options: options)
+        let snapshot = try await snapshotter.start()
+
+        // Generate the stop icon.
+        let stopIcon = self.stopIconFactory.buildIcon(for: stop, isBookmarked: false, traits: traitCollection)
+
+        // Calculate the point at which to draw the stop icon.
+        // It needs to be shifted up by 1/2 the stop icon height
+        // in order to draw it at the proper location.
+        var point = snapshot.point(for: stop.coordinate)
+        point.y -= (stopIcon.size.height / 2.0)
+
+        // Render the composited image.
+        var annotatedImage = UIImage.draw(image: stopIcon, onto: snapshot.image, at: point)
+
+        if traitCollection.userInterfaceStyle == .light {
+            annotatedImage = annotatedImage.darkened()
+        }
+
+        return annotatedImage
+    }
+
     public func snapshot(stop: Stop, traitCollection: UITraitCollection, completion: @escaping MapSnapshotterCompletionHandler) {
         let options = snapshotOptions(stop: stop, traitCollection: traitCollection)
 
