@@ -32,8 +32,26 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private let apiService: RegionsAPIService?
     private let locationService: LocationService
     private let userDefaults: UserDefaults
+    private let fileManager: RegionsServiceFileManagerProtocol
     private let bundledRegionsFilePath: String
     private let apiPath: String?
+
+    private static var regionsDirectory: URL {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!
+        return appSupport.appendingPathComponent("Regions")
+    }
+
+    private static var customRegionsDirectory: URL {
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+            .first!
+        return documents.appendingPathComponent("custom-regions")
+    }
+
+    public static var defaultRegionsFileURL: URL {
+        regionsDirectory.appendingPathComponent("default-regions.json")
+    }
 
     /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
     /// - Parameters:
@@ -43,10 +61,11 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///   - bundledRegionsFilePath: The path to the bundled regions file. It is probably named "regions.json" or something similar.
     ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
     ///   - delegate: A delegate object for callbacks.
-    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil) {
+    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, fileManager: RegionsServiceFileManagerProtocol = RegionsServiceFileManager(), bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil) {
         self.apiService = apiService
         self.locationService = locationService
         self.userDefaults = userDefaults
+        self.fileManager = fileManager
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.apiPath = apiPath
 
@@ -55,7 +74,7 @@ public class RegionsService: NSObject, LocationServiceDelegate {
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: false
         ])
 
-        if let regions = RegionsService.loadStoredRegions(from: userDefaults), regions.count > 0 {
+        if let regions = RegionsService.loadStoredRegions(fileManager: fileManager), regions.count > 0 {
             self.regions = regions
         }
         else {
@@ -144,29 +163,16 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// The app's currently-selected `Region`. Note that this may be different from `physicallyLocatedRegion`.
     public var currentRegion: Region? {
         get {
-            do {
-                return try userDefaults.decodeUserDefaultsObjects(type: Region.self, key: RegionsService.currentRegionUserDefaultsKey)
-            }
-            catch let error {
-                Logger.error("Unable to read region from user defaults: \(error)")
+            guard let regionId = userDefaults.object(forKey: RegionsService.currentRegionUserDefaultsKey) as? Int else {
                 return nil
             }
+            return find(id: regionId)
         }
         set {
-            guard
-                let newValue = newValue,
-                newValue != currentRegion
-            else {
-                return
-            }
+            guard let newValue = newValue, newValue != currentRegion else { return }
 
-            do {
-                try userDefaults.encodeUserDefaultsObjects(newValue, key: RegionsService.currentRegionUserDefaultsKey)
-                notifyDelegatesRegionChanged(newValue)
-            }
-            catch {
-                Logger.error("Unable to write currentRegion to user defaults: \(error)")
-            }
+            userDefaults.set(newValue.regionIdentifier, forKey: RegionsService.currentRegionUserDefaultsKey)
+            notifyDelegatesRegionChanged(newValue)
         }
     }
 
@@ -205,16 +211,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     // MARK: - Custom Regions
     /// Adds the provided custom region to the RegionsService.
     /// If an existing custom region with the same `regionIdentifier` exists, the new region replaces the existing region.
-    /// - throws: Persistence storage errors.
+    /// - throws: File system errors.
     public func add(customRegion newRegion: Region) async throws {
-        var regions = customRegions
-        if let index = regions.firstIndex(where: { $0.regionIdentifier == newRegion.regionIdentifier }) {
-            regions.remove(at: index)
-        }
-
-        regions.append(newRegion)
-
-        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
+        let fileURL = RegionsService.customRegionsDirectory.appendingPathComponent("region-\(newRegion.regionIdentifier).json")
+        try fileManager.save(newRegion, to: fileURL)
     }
 
     /// Deletes the custom region. If the region could not be found, this method exits normally.
@@ -228,26 +228,31 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     /// - parameter identifier: The region identifier used to find the custom region to delete.
     /// - throws: If a custom region with the provided `identifier` could not be found, or is not a custom region, this method will throw.
     public func delete(customRegionIdentifier identifier: RegionIdentifier) async throws {
-        var regions = customRegions
-
         guard self.currentRegion?.regionIdentifier != identifier else {
             throw UnstructuredError(
                 "Cannot delete the current selected region",
                 recoverySuggestion: "Choose a different region to be the currently selected region, before deleting this region.")
         }
 
-        guard let index = regions.firstIndex(where: { $0.regionIdentifier == identifier }) else {
-            return
+        let fileURL = RegionsService.customRegionsDirectory.appendingPathComponent("region-\(identifier).json")
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.delete(at: fileURL)
         }
-
-        regions.remove(at: index)
-        try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedCustomRegionsUserDefaultsKey)
     }
 
     public var customRegions: [Region] {
-        let regions: [Region]
+        let directory = RegionsService.customRegionsDirectory
+        guard fileManager.fileExists(atPath: directory.path) else {
+            return []
+        }
+
+        var regions: [Region] = []
         do {
-            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedCustomRegionsUserDefaultsKey) ?? []
+            let files = try fileManager.contentsOfDirectory(at: directory)
+            for file in files where file.pathExtension == "json" {
+                let region = try fileManager.load(Region.self, from: file)
+                regions.append(region)
+            }
         } catch {
             regions = []
         }
@@ -262,8 +267,6 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     public static let alwaysRefreshRegionsOnLaunchUserDefaultsKey = "OBAAlwaysRefreshRegionsOnLaunchUserDefaultsKey"
     static let automaticallySelectRegionUserDefaultsKey = "OBAAutomaticallySelectRegionUserDefaultsKey"
-    static let storedRegionsUserDefaultsKey = "OBAStoredRegionsUserDefaultsKey"
-    static let storedCustomRegionsUserDefaultsKey = "OBAStoredCustomRegionsUserDefaultsKey"
     static let currentRegionUserDefaultsKey = "OBACurrentRegionUserDefaultsKey"
     static let regionsUpdatedAtUserDefaultsKey = "OBARegionsUpdatedAtUserDefaultsKey"
 
@@ -271,32 +274,37 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
     private func storeRegions() {
         do {
-            try userDefaults.encodeUserDefaultsObjects(regions, key: RegionsService.storedRegionsUserDefaultsKey)
+            try fileManager.save(regions, to: RegionsService.defaultRegionsFileURL)
             userDefaults.set(Date(), forKey: RegionsService.regionsUpdatedAtUserDefaultsKey)
         }
         catch {
-            Logger.error("Unable to write regions to user defaults: \(error)")
+            Logger.error("Unable to write regions to disk: \(error)")
         }
     }
 
     // MARK: - Load Stored Regions
+    private static func loadStoredRegions(fileManager: RegionsServiceFileManagerProtocol) -> [Region]? {
+    let fileURL = defaultRegionsFileURL
 
-    private class func loadStoredRegions(from userDefaults: UserDefaults) -> [Region]? {
-        let regions: [Region]
-
-        do {
-            regions = try userDefaults.decodeUserDefaultsObjects(type: [Region].self, key: RegionsService.storedRegionsUserDefaultsKey) ?? []
-        } catch {
-            return nil
-        }
-
-        if regions.count == 0 {
-            return nil
-        }
-        else {
-            return regions
-        }
+    guard fileManager.fileExists(atPath: fileURL.path) else {
+        return nil
     }
+
+    let regions: [Region]
+
+    do {
+        regions = try fileManager.load([Region].self, from: fileURL)
+    } catch {
+        return nil
+    }
+
+    if regions.count == 0 {
+        return nil
+    }
+    else {
+        return regions
+    }
+}
 
     // MARK: - Bundled Regions
 
