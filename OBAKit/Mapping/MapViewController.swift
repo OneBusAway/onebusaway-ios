@@ -150,8 +150,6 @@ class MapViewController: UIViewController,
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
 
-        observeSurveysState()
-
         surveysVM.onAction(.onAppear)
     }
 

@@ -256,7 +256,6 @@ public class StopViewController: UIViewController,
         }
 
         surveysVM.onAction(.onAppear)
-        observeSurveysState()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
