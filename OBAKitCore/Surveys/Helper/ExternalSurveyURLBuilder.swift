@@ -86,7 +86,8 @@ final public class ExternalSurveyURLBuilder {
     }
 
     private func getRecentStopIds() -> String? {
-        userStore.recentStops.map { $0.id }.joined(separator: ",")
+        let ids = userStore.recentStops.map { $0.id }.joined(separator: ",")
+        return ids.isEmpty ? nil : ids
     }
 
     private func getCurrentLocation() -> String? {
