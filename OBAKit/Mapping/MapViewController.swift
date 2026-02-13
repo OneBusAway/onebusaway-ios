@@ -633,7 +633,9 @@ class MapViewController: UIViewController,
 
         // Disables voiceover interacting with map elements (such as streets and POIs).
         // See #431.
-        mapRegionManager.mapView.accessibilityElementsHidden = !floatingPanelPositionIsCollapsed
+        // Only hide the map from VoiceOver if the sheet is covering the ENTIRE screen.
+        // This allows users to interact with map pins when the sheet is in .half or .tip state.
+        mapRegionManager.mapView.accessibilityElementsHidden = (vc.state == .full)
 
         if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
@@ -644,7 +646,7 @@ class MapViewController: UIViewController,
         mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
         if UIAccessibility.isVoiceOverRunning {
-            floatingPanel.move(to: .full, animated: true)
+            floatingPanel.move(to: .half, animated: true)
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
                 self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
