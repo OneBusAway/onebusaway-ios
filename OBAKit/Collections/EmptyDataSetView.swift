@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+#if canImport(UIKit)
 import UIKit
 import OBAKitCore
 
@@ -216,4 +217,5 @@ struct EmptyDataSetView_Previews: PreviewProvider {
         }
     }
 }
+#endif
 #endif
