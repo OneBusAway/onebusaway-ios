@@ -11,6 +11,31 @@ import Foundation
 
 /// This is a bookmark for a `Stop` or a trip.
 @objc(OBABookmark) public class Bookmark: NSObject, Identifiable, Codable {
+    // Add a way to convert to watch-compatible format if needed, 
+    // but the Codable keys already match mostly.
+
+    public var watchBookmarkObject: WatchBookmark {
+        let watchStop = OBAStop(
+            id: stop.id,
+            name: stop.name,
+            latitude: stop.location.coordinate.latitude,
+            longitude: stop.location.coordinate.longitude,
+            code: stop.code,
+            direction: stop.direction != .unknown ? String(describing: stop.direction).uppercased() : nil,
+            locationType: stop.locationType.rawValue
+        )
+        return WatchBookmark(id: id, stopID: stopID, name: name, routeShortName: routeShortName, tripHeadsign: tripHeadsign, stop: watchStop)
+    }
+
+    public var watchBookmarkData: Data? {
+        try? JSONEncoder().encode(watchBookmarkObject)
+    }
+
+    /// A dictionary representation of the bookmark, suitable for Watch Connectivity.
+    public var dictionary: [String: Any]? {
+        guard let data = try? JSONEncoder().encode(self) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+    }
 
     /// Optional. The unique identifier for the `BookmarkGroup` to which this object belongs.
     public var groupID: UUID?

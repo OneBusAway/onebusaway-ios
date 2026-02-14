@@ -88,10 +88,11 @@ targets:
         DEVELOPMENT_TEAM: 4ZQCMA634J
         PRODUCT_BUNDLE_IDENTIFIER: org.onebusaway.iphone.OBAWidget
 include:
+  - path: OBAKitCore/project.yml
   - path: Apps/Shared/app_shared.yml
   - path: Apps/Shared/analytics_fx_config.yml
   - path: Apps/Shared/push_config.yml
-  - path: OBAKitCore/project.yml
   - path: OBAKit/project.yml
   - path: OBAKitTests/project.yml
   - path: OBAWidget/project.yml
+  - path: OBA Watch App/project.yml

@@ -206,6 +206,7 @@ public class AgencyAlertsStore: NSObject, RegionsServiceDelegate {
 
     private func notifyDelegatesAlertsUpdated() {
         let delegates = self.delegates.allObjects
+        NotificationCenter.default.post(name: .OBAServiceAlertsUpdated, object: self)
         DispatchQueue.main.async {
             for d in delegates {
                 d.agencyAlertsUpdated?()

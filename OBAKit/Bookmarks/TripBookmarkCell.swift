@@ -110,7 +110,7 @@ final class TripBookmarkTableCell: OBAListViewCell {
 
     // MARK: - Outer Stack
 
-    lazy var stackView = UIStackView.stack(alignment: .leading, arrangedSubviews: [
+    lazy var stackView = UIStackView.stack(axis: .horizontal, alignment: .leading, arrangedSubviews: [
         infoStackView,
         minutesStackView
     ])

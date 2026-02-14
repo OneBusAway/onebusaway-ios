@@ -395,4 +395,8 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         currentRegion = newRegion
     }
+
+    public func findRegionIndex(id: Int) -> Int? {
+        regions.firstIndex { $0.regionIdentifier == id }
+    }
 }

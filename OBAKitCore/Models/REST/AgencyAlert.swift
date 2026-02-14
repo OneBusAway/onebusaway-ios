@@ -36,6 +36,16 @@ public class AgencyAlert: NSObject, Identifiable {
 
     public let agency: AgencyWithCoverage?
 
+    public var watchServiceAlert: WatchServiceAlert {
+        return WatchServiceAlert(
+            id: id,
+            title: title(forLocale: .current) ?? "Alert",
+            body: body(forLocale: .current),
+            severity: isHighSeverity ? "high" : "normal",
+            url: url(forLocale: .current)?.absoluteString
+        )
+    }
+
     // MARK: - Localized Content Accessors
 
     public func title(forLocale locale: Locale) -> String? {
