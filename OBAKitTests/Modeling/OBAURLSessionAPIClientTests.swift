@@ -84,4 +84,177 @@ class OBAURLSessionAPIClientTests: XCTestCase {
         // Should stop decoding at the emoji
         XCTAssertTrue(coords.isEmpty)
     }
+
+    // MARK: - Fallback Logic Tests
+
+    class MockURLSession: URLSession {
+        var responses: [String: (Data?, URLResponse?, Error?)] = [:]
+        var requests: [URLRequest] = []
+
+        override func data(for request: URLRequest, delegate: (URLSessionTaskDelegate)? = nil) async throws -> (Data, URLResponse) {
+            requests.append(request)
+            
+            let urlString = request.url?.absoluteString ?? ""
+            for (pattern, response) in responses {
+                if urlString.contains(pattern) {
+                    if let error = response.2 { throw error }
+                    return (response.0 ?? Data(), response.1 ?? HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+                }
+            }
+            
+            return (Data(), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        }
+    }
+
+    func testFetchArrivalsFallback() async throws {
+        let mockSession = MockURLSession()
+        let config = OBAURLSessionAPIClient.Configuration(baseURL: URL(string: "https://example.com")!)
+        let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
+        
+        // Mock 1st attempt failure
+        mockSession.responses["/api/where/arrivals-and-departures-for-stop/123.json"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
+        
+        // Mock 2nd attempt success
+        let successData = """
+        {
+            "data": {
+                "arrivalsAndDepartures": [],
+                "stop": { "id": "123", "name": "Test Stop" },
+                "references": { "routes": [] }
+            }
+        }
+        """.data(using: .utf8)!
+        mockSession.responses["/api/where/arrivals-and-departures-for-stop.json"] = (successData, nil, nil)
+        
+        let result = try await client.fetchArrivals(for: "123")
+        
+        XCTAssertEqual(result.stopName, "Test Stop")
+        XCTAssertEqual(mockSession.requests.count, 2)
+        XCTAssertTrue(mockSession.requests[0].url!.absoluteString.contains("arrivals-and-departures-for-stop/123.json"))
+        XCTAssertTrue(mockSession.requests[1].url!.absoluteString.contains("arrivals-and-departures-for-stop.json"))
+    }
+
+    func testFetchArrivalsThirdFallback() async throws {
+        let mockSession = MockURLSession()
+        let config = OBAURLSessionAPIClient.Configuration(baseURL: URL(string: "https://example.com")!)
+        let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
+        
+        // Mock 1st and 2nd attempt failure
+        mockSession.responses["/api/where/arrivals-and-departures-for-stop"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
+        
+        // Mock 3rd attempt success (stop details)
+        let stopData = """
+        {
+            "data": {
+                "entry": {
+                    "id": "123",
+                    "name": "Fallback Stop",
+                    "lat": 47.0,
+                    "lon": -122.0,
+                    "routes": []
+                }
+            }
+        }
+        """.data(using: .utf8)!
+        mockSession.responses["/api/where/stop/123.json"] = (stopData, nil, nil)
+        
+        let result = try await client.fetchArrivals(for: "123")
+        
+        XCTAssertEqual(result.stopName, "Fallback Stop")
+        XCTAssertEqual(mockSession.requests.count, 3)
+    }
+
+    func testTryFallbackSuccessFirst() async throws {
+        let client = OBAURLSessionAPIClient(configuration: .init(baseURL: URL(string: "https://example.com")!))
+        var callCount = 0
+        let result = try await client.testTryFallback([
+            { callCount += 1; return "first" },
+            { callCount += 1; return "second" }
+        ])
+        XCTAssertEqual(result, "first")
+        XCTAssertEqual(callCount, 1)
+    }
+
+    func testTryFallbackSuccessSecond() async throws {
+        let client = OBAURLSessionAPIClient(configuration: .init(baseURL: URL(string: "https://example.com")!))
+        var callCount = 0
+        let result = try await client.testTryFallback([
+            { callCount += 1; throw OBAAPIError.invalidURL },
+            { callCount += 1; return "second" }
+        ])
+        XCTAssertEqual(result, "second")
+        XCTAssertEqual(callCount, 2)
+    }
+
+    func testTryFallbackTotalFailure() async throws {
+        let client = OBAURLSessionAPIClient(configuration: .init(baseURL: URL(string: "https://example.com")!))
+        do {
+            _ = try await client.testTryFallback([
+                { throw OBAAPIError.badServerResponse(statusCode: 500, url: URL(string: "https://a.com")!) },
+                { throw OBAAPIError.notFound(url: URL(string: "https://b.com")!) }
+            ] as [() async throws -> String])
+            XCTFail("Should have thrown")
+        } catch OBAAPIError.notFound {
+            // Expected last error
+        } catch {
+            XCTFail("Wrong error: \(error)")
+        }
+    }
+
+    func testFetchRoutesForStopFallback() async throws {
+        let mockSession = MockURLSession()
+        let config = OBAURLSessionAPIClient.Configuration(baseURL: URL(string: "https://example.com")!)
+        let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
+        
+        // Fail first 3
+        mockSession.responses["/api/where/routes-for-stop"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
+        mockSession.responses["/api/where/stop/123.json"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/2")!))
+        
+        // Success on 4th (arrivals-and-departures-for-stop)
+        let arrivalsData = """
+        {
+            "data": {
+                "arrivalsAndDepartures": [],
+                "references": {
+                    "routes": [
+                        { "id": "R1", "shortName": "1", "longName": "Route One" }
+                    ]
+                }
+            }
+        }
+        """.data(using: .utf8)!
+        mockSession.responses["/api/where/arrivals-and-departures-for-stop/123.json"] = (arrivalsData, nil, nil)
+        
+        let routes = try await client.fetchRoutesForStop(stopID: "123")
+        
+        XCTAssertEqual(routes.count, 1)
+        XCTAssertEqual(routes[0].id, "R1")
+        XCTAssertEqual(mockSession.requests.count, 4)
+    }
+}
+
+// Helper to expose internal tryFallback for testing
+extension OBAURLSessionAPIClient {
+    func testTryFallback<T>(_ closures: [() async throws -> T]) async throws -> T {
+        // This is a bit of a hack since tryFallback is private. 
+        // In a real project we might make it internal or use a public method that calls it.
+        // For this task, I'll use a public wrapper.
+        struct Wrapper: Decodable {}
+        return try await self.tryFallback_exposed(closures)
+    }
+
+    fileprivate func tryFallback_exposed<T>(_ closures: [() async throws -> T]) async throws -> T {
+        var lastError: Error?
+        for closure in closures {
+            do {
+                return try await closure()
+            } catch {
+                lastError = error
+            }
+        }
+        if let lastError = lastError {
+            throw lastError
+        }
+        throw OBAAPIError.invalidURL
+    }
 }

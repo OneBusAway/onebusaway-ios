@@ -735,18 +735,29 @@ extension Application {
         }
 
         var context: [String: Any] = [:]
-        context["bookmarks"] = buildBookmarkData()
-        context["alarms"] = buildAlarmData()
-        context["alerts"] = buildAlertData()
+
+        if let bookmarkData = buildBookmarkData(), !bookmarkData.isEmpty {
+            context["bookmarks"] = bookmarkData
+        }
+
+        if let alarmData = buildAlarmData(), !alarmData.isEmpty {
+            context["alarms"] = alarmData
+        }
+
+        if let alertData = buildAlertData(), !alertData.isEmpty {
+            context["alerts"] = alertData
+        }
 
         do {
             try session.updateApplicationContext(context)
         } catch {
-            Logger.error("Failed to update watch application context: \(error)")
+            Logger.error("Watch sync failed: \(error)")
         }
     }
 
-    private func buildWatchData<T: Encodable>(items: [T], defaultsKey: String, logName: String) -> [[String: Any]] {
+    private func buildWatchData<T: Encodable>(items: [T], defaultsKey: String, logName: String) -> [[String: Any]]? {
+        guard !items.isEmpty else { return nil }
+
         // Write to shared container (App Group) if possible
         do {
             let data = try JSONEncoder().encode(items)
@@ -766,15 +777,15 @@ extension Application {
         }
     }
 
-    private func buildBookmarkData() -> [[String: Any]] {
+    private func buildBookmarkData() -> [[String: Any]]? {
         buildWatchData(items: userDataStore.bookmarks.map { $0.watchBookmarkObject }, defaultsKey: "watch.bookmarks", logName: "bookmarks")
     }
 
-    private func buildAlarmData() -> [[String: Any]] {
+    private func buildAlarmData() -> [[String: Any]]? {
         buildWatchData(items: userDataStore.alarms.map { $0.watchAlarmItem }, defaultsKey: "watch.alarms", logName: "alarms")
     }
 
-    private func buildAlertData() -> [[String: Any]] {
+    private func buildAlertData() -> [[String: Any]]? {
         buildWatchData(items: alertsStore.agencyAlerts.map { $0.watchServiceAlert }, defaultsKey: "watch.service_alerts", logName: "service alerts")
     }
 }

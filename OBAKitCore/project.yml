@@ -3,8 +3,8 @@ targets:
     type: framework
     supportedDestinations: [iOS, watchOS]
     deploymentTarget:
-      iOS: "18.0"
-      watchOS: "11.0"
+      iOS: "17.0"
+      watchOS: "10.0"
     sources: ["."]
     dependencies:
       - package: SwiftProtobuf
