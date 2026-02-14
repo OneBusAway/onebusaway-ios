@@ -55,6 +55,7 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         groupsController.updateModelState()
+        bookmarksController.restoreEmptyBookmarkNames()
         delegate?.manageBookmarksReloadData(self)
     }
 
@@ -82,6 +83,7 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
 
     @objc private func toggleControllers() {
         if controllerToggle.selectedSegmentIndex == 0 {
+            bookmarksController.restoreEmptyBookmarkNames()
             removeChildController(bookmarksController)
             addChildController(groupsController)
             groupsController.view.pinToSuperview(.edges)
