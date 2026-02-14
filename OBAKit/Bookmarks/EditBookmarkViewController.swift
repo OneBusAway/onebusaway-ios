@@ -205,10 +205,16 @@ class EditBookmarkViewController: FormViewController, AddGroupAlertDelegate {
     }
 
     @objc private func save() {
-        guard
-            let name = form.values()[bookmarkNameTag] as? String,
-            let region = application.currentRegion
-        else { return }
+        guard let region = application.currentRegion else { return }
+
+        // If the user cleared the name, restore the original transit-derived name.
+        let rawName = form.values()[bookmarkNameTag] as? String
+        let name: String
+        if let rawName, !rawName.trimmingCharacters(in: .whitespaces).isEmpty {
+            name = rawName
+        } else {
+            name = dataObjectName
+        }
 
         let addMode = self.bookmark == nil
 
