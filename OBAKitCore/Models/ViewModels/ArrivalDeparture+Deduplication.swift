@@ -12,6 +12,8 @@ import Foundation
 // MARK: - Terminal Duplicate Filtering
 
 /// A composite key identifying a single vehicle visit at a single stop.
+/// Uses the same (tripID, stopID, routeID) pattern as `TripBookmarkKey`
+/// to uniquely identify a trip at a stop.
 /// Two `ArrivalDeparture` objects with the same `VisitIdentity` represent the
 /// arrival/departure pair at a terminal and should be merged into one row.
 private struct VisitIdentity: Hashable {
