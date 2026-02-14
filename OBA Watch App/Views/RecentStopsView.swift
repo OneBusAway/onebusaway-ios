@@ -8,17 +8,23 @@
 import SwiftUI
 import OBAKitCore
 struct RecentStopsView: View {
-    @ObservedObject private var viewModel = RecentStopsViewModel.shared
+    @StateObject private var viewModel: RecentStopsViewModel
+    
+    init() {
+        _viewModel = StateObject(wrappedValue: RecentStopsViewModel())
+    }
     
     var body: some View {
-        Group {
-            if viewModel.recentStops.isEmpty {
-                emptyStateView
-            } else {
-                recentStopsList
+        NavigationStack {
+            Group {
+                if viewModel.recentStops.isEmpty {
+                    emptyStateView
+                } else {
+                    recentStopsList
+                }
             }
+            .navigationTitle("Recent Stops")
         }
-        .navigationTitle(OBALoc("recent_stops.title", value: "Recent Stops", comment: "Title for recent stops screen"))
     }
     
     private var emptyStateView: some View {
@@ -26,9 +32,9 @@ struct RecentStopsView: View {
             Image(systemName: "clock")
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
-            Text(OBALoc("recent_stops.no_recent_stops", value: "No Recent Stops", comment: "Empty state title for recent stops"))
+            Text("No Recent Stops")
                 .font(.headline)
-            Text(OBALoc("recent_stops.view_stops_instruction", value: "View stops to see them here", comment: "Instruction for recent stops"))
+            Text("View stops to see them here")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -79,7 +85,7 @@ struct RecentStopRow: View {
                         .foregroundColor(.blue)
                         .lineLimit(1)
                 } else if let code = stop.code {
-                    Text(String(format: OBALoc("recent_stops.stop_code_fmt", value: "Stop %@", comment: "Stop code format"), code))
+                    Text("Stop \(code)")
                         .font(.system(size: 12))
                         .foregroundColor(.secondary)
                 }
@@ -92,3 +98,4 @@ struct RecentStopRow: View {
 #Preview {
     RecentStopsView()
 }
+

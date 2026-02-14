@@ -43,8 +43,8 @@ class BookmarksViewModel: ObservableObject {
             let decoded = try decoder.decode([WatchBookmark].self, from: data)
             bookmarks = decoded.sorted { $0.name < $1.name }
         } catch {
-            Logger.error("Failed to decode bookmarks: \(error)")
-            errorMessage = OBALoc("bookmarks.load_error", value: "Failed to load bookmarks.", comment: "Error loading bookmarks")
+            bookmarks = []
+            errorMessage = "Failed to load bookmarks."
         }
     }
     
@@ -77,7 +77,7 @@ class BookmarksViewModel: ObservableObject {
             let data = try JSONEncoder().encode(bookmarks)
             WatchAppState.userDefaults.set(data, forKey: storageKey)
         } catch {
-            errorMessage = OBALoc("bookmarks.save_error", value: "Failed to save bookmark.", comment: "Error saving bookmark")
+            errorMessage = "Failed to save bookmark."
         }
     }
 }

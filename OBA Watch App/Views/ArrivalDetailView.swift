@@ -25,7 +25,7 @@ struct ArrivalDetailView: View {
                         Image(systemName: "location.fill")
                             .font(.system(size: 10))
                             .foregroundColor(.green)
-                        Text(OBALoc("arrival_detail.real_time", value: "Real-time", comment: "Real-time arrival status"))
+                        Text("Real-time")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
@@ -51,10 +51,10 @@ struct ArrivalDetailView: View {
                             Image(systemName: "bus.fill")
                                 .foregroundColor(.green)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(String(format: OBALoc("common.route_fmt", value: "Route %@", comment: "Route name format"), routeShortName))
+                                Text("Route \(routeShortName)")
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                Text(OBALoc("arrival_detail.view_route_details", value: "View route details", comment: "Action to view route details"))
+                                Text("View route details")
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
@@ -77,7 +77,7 @@ struct ArrivalDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "list.bullet.rectangle.portrait")
                             .foregroundColor(.blue)
-                        Text(OBALoc("arrival_detail.view_trip_schedule", value: "View Trip Schedule", comment: "Action to view trip schedule"))
+                        Text("View Trip Schedule")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         Spacer()
@@ -91,12 +91,18 @@ struct ArrivalDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.bubble")
                             .foregroundColor(.red)
-                        Text(OBALoc("arrival_detail.report_trip_problem", value: "Report Trip Problem", comment: "Action to report a trip problem"))
+                        Text("Report Trip Problem")
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         Spacer()
                     }
                     .padding(.vertical, 4)
+                }
+                
+                NavigationLink(isActive: $showTripProblem) {
+                    ProblemReportView(mode: .trip(tripID: arrival.tripID, vehicleID: arrival.vehicleID, stopID: arrival.stopID))
+                } label: {
+                    EmptyView()
                 }
                 
                 // Vehicle Details Link
@@ -107,7 +113,7 @@ struct ArrivalDetailView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "bus")
                                 .foregroundColor(.orange)
-                            Text(String(format: OBALoc("arrival_detail.view_vehicle_fmt", value: "View Vehicle %@", comment: "Action to view vehicle details"), vehicleID.components(separatedBy: "_").last ?? vehicleID))
+                            Text("View Vehicle \(vehicleID.components(separatedBy: "_").last ?? vehicleID)")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                             Spacer()
@@ -120,10 +126,10 @@ struct ArrivalDetailView: View {
                     .padding(.vertical, 4)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(OBALoc("arrival_detail.departure_in", value: "Departure in", comment: "Label for departure time"))
+                    Text("Departure in")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(arrival.timeString)
+                    Text(timeString(for: arrival))
                         .font(.title3)
                         .fontWeight(.semibold)
                 }
@@ -133,10 +139,19 @@ struct ArrivalDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
-        .navigationTitle(arrival.routeShortName ?? OBALoc("common.trip", value: "Trip", comment: "Default title for a trip"))
+        .navigationTitle(arrival.routeShortName ?? "Trip")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $showTripProblem) {
-            ProblemReportView(mode: .trip(tripID: arrival.tripID, vehicleID: arrival.vehicleID, stopID: arrival.stopID))
+    }
+
+    private func timeString(for arrival: OBAArrival) -> String {
+        let minutes = arrival.minutesFromNow
+        if minutes <= 0 {
+            return "Now"
+        } else if minutes < 60 {
+            return "\(minutes) min"
+        } else {
+            let hours = Double(minutes) / 60.0
+            return String(format: "%.1f h", hours)
         }
     }
 }

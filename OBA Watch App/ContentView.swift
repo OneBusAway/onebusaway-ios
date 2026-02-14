@@ -29,7 +29,7 @@ struct ContentView: View {
                     MainMenuView()
                 }
             }
-            .navigationTitle(OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application"))
+            .navigationTitle("OneBusAway")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -63,11 +63,11 @@ struct LocationOnboardingView: View {
                 .padding(.top, 24)
             
             VStack(spacing: 2) {
-                Text(OBALoc("location_onboarding.nearby_transit", value: "Nearby Transit", comment: "Title for the location onboarding screen"))
+                Text("Nearby Transit")
                     .font(.system(size: 17, weight: .bold))
                     .multilineTextAlignment(.center)
                 
-                Text(OBALoc("location_onboarding.description", value: "Find stops and schedules based on where you are.", comment: "Description for the location onboarding screen"))
+                Text("Find stops and schedules based on where you are.")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -85,7 +85,7 @@ struct LocationOnboardingView: View {
                     Image(systemName: "location.fill")
                         .font(.system(size: 14, weight: .semibold))
 
-                    Text(OBALoc("location_onboarding.allow_access", value: "Allow Access", comment: "Button title to request location permission"))
+                    Text("Allow Access")
                         .font(.system(size: 15, weight: .semibold))
                 }
                 .foregroundStyle(Color.green)
@@ -121,8 +121,7 @@ struct RegionOnboardingView: View {
         // Use the saved region if available, otherwise fall back to MTA New York.
         let savedRegionID = WatchAppState.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
         
-        let region = WatchAppState.regions.first(where: { $0.id == savedRegionID })
-        let initialCoordinate = region?.coordinate ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        let initialCoordinate = WatchAppState.regionCoordinates[savedRegionID] ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
         
         _mapRegion = State(initialValue: MKCoordinateRegion(
             center: initialCoordinate,
@@ -137,14 +136,14 @@ struct RegionOnboardingView: View {
                     HStack {
                         Image(systemName: "globe")
                             .foregroundColor(.green)
-                        Text(OBALoc("region_onboarding.share_location", value: "Share Current Location", comment: "Option to share current location"))
+                        Text("Share Current Location")
                             .font(.headline)
                     }
                 }
             }
 
             Section {
-                ForEach(WatchAppState.regions.filter { $0.obaBaseURL != nil }) { region in
+                ForEach(WatchAppState.regions) { region in
                     Button {
                         appState.updateRegion(id: region.id)
                         mapRegion.center = region.coordinate
@@ -171,7 +170,7 @@ struct RegionOnboardingView: View {
 
             Section {
                 Button(action: onContinue) {
-                    Text(OBALoc("common.continue", value: "Continue", comment: "Button title to continue"))
+                    Text("Continue")
                         .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -198,11 +197,11 @@ struct MoreView: View {
                     NavigationLink {
                         SettingsView()
                     } label: {
-                        Label(OBALoc("common.settings", value: "Settings", comment: "Title for settings menu item"), systemImage: "gearshape")
+                        Label("Settings", systemImage: "gearshape")
                     }
                 }
             }
-            .navigationTitle(OBALoc("common.more", value: "More", comment: "Title for the More screen"))
+            .navigationTitle("More")
         }
     }
 }
@@ -214,10 +213,18 @@ struct RegionPreviewMapView: View {
     @StateObject private var viewModel = RegionPreviewMapViewModel()
 
     private var centerCoordinate: CLLocationCoordinate2D {
-        if let region = WatchAppState.regions.first(where: { $0.id == selectedRegionID }) {
-            return region.coordinate
+        switch selectedRegionID {
+        case "tampa-bay":
+            return .init(latitude: 27.9506, longitude: -82.4572)
+        case "puget-sound":
+            return .init(latitude: 47.6062, longitude: -122.3321)
+        case "washington-dc":
+            return .init(latitude: 38.9072, longitude: -77.0369)
+        case "san-diego":
+            return .init(latitude: 32.7157, longitude: -117.1611)
+        default: // "mta-new-york" and fallback
+            return .init(latitude: 40.7128, longitude: -74.0060)
         }
-        return .init(latitude: 40.7128, longitude: -74.0060)
     }
 
     var body: some View {
@@ -262,7 +269,6 @@ final class RegionPreviewMapViewModel: ObservableObject {
             )
             stops = fetched.stops
         } catch {
-            Logger.error("Failed to load stops for preview map: \(error)")
             // For the preview map, we silently ignore errors and leave the base map.
         }
     }
@@ -270,53 +276,27 @@ final class RegionPreviewMapViewModel: ObservableObject {
 
 /// Main menu shown after permission has been handled.
 struct MainMenuView: View {
-    @EnvironmentObject var appState: WatchAppState
     @AppStorage("watch_selected_region_id", store: WatchAppState.userDefaults) private var selectedRegionID: String = "mta-new-york"
-    /// Becomes true only after the debounce window closes without a successful sync,
-    /// preventing a flash on normal fast launches.
-    @State private var showTimeSyncWarning: Bool = false
-
+    
     private var regionName: String {
-        return WatchAppState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application")
+        switch selectedRegionID {
+        case "tampa-bay": return "Tampa Bay"
+        case "puget-sound": return "Puget Sound"
+        case "mta-new-york": return "MTA New York"
+        case "washington-dc": return "Washington, D.C."
+        case "san-diego": return "San Diego"
+        default: return "OneBusAway"
+        }
     }
     
     var body: some View {
         List {
-            // Time sync warning — shown only if all retry attempts failed.
-            if showTimeSyncWarning && !appState.timeSyncSucceeded {
-                Section {
-                    Button {
-                        Task { await appState.syncTime() }
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "clock.badge.exclamationmark")
-                                .foregroundColor(.yellow)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(OBALoc("time_sync.warning.title", value: "Clock Sync Failed", comment: "Warning: time sync failed"))
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.yellow)
-                                Text(OBALoc("time_sync.warning.subtitle", value: "Arrival times may be inaccurate. Tap to retry.", comment: "Warning subtitle for time sync failure"))
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .listRowBackground(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.yellow.opacity(0.12))
-                )
-            }
-
             // Search & Map at the top
             Section {
                 NavigationLink {
                     SearchView()
                 } label: {
-                    Label(OBALoc("common.search", value: "Search", comment: "Title for search menu item"), systemImage: "magnifyingglass")
+                    Label("Search", systemImage: "magnifyingglass")
                         .font(.headline)
                 }
             }
@@ -334,7 +314,7 @@ struct MainMenuView: View {
                 NavigationLink {
                     BookmarksView()
                 } label: {
-                    Label(OBALoc("common.bookmarks", value: "Bookmarks", comment: "Title for bookmarks menu item"), systemImage: "bookmark.fill")
+                    Label("Bookmarks", systemImage: "bookmark.fill")
                         .foregroundColor(.blue)
                 }
             }
@@ -345,17 +325,17 @@ struct MainMenuView: View {
                     TripPlanningEntryView()
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
-                        Label(OBALoc("common.trip_planner", value: "Trip Planner", comment: "Title for trip planner menu item"), systemImage: "figure.walk")
+                        Label("Trip Planner", systemImage: "figure.walk")
                             .font(.headline)
                             .foregroundColor(.green)
-                        Text(OBALoc("main_menu.plan_your_journey", value: "Plan your journey", comment: "Subtitle for trip planner menu item"))
+                        Text("Plan your journey")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 4)
                 }
             } header: {
-                Text(OBALoc("main_menu.section.plan", value: "Plan", comment: "Section header for planning"))
+                Text("Plan")
             }
             
             // Other useful actions but minimized
@@ -363,36 +343,25 @@ struct MainMenuView: View {
                 NavigationLink {
                     NearbyStopsView()
                 } label: {
-                    Label(OBALoc("common.nearby", value: "Nearby", comment: "Title for nearby stops menu item"), systemImage: "location.fill")
+                    Label("Nearby", systemImage: "location.fill")
                 }
 
                 NavigationLink {
                     RecentStopsView()
                 } label: {
-                    Label(OBALoc("common.recents", value: "Recents", comment: "Title for recent stops menu item"), systemImage: "clock.fill")
+                    Label("Recents", systemImage: "clock.fill")
                 }
                 
                 NavigationLink {
                     VehiclesView()
                 } label: {
-                    Label(OBALoc("common.vehicles", value: "Vehicles", comment: "Title for vehicles menu item"), systemImage: "bus.fill")
+                    Label("Vehicles", systemImage: "bus.fill")
                 }
             } header: {
-                Text(OBALoc("main_menu.section.explore", value: "Explore", comment: "Section header for explore"))
+                Text("Explore")
             }
         }
         .navigationTitle(regionName)
-        .onAppear {
-            // Show the warning only after a 15-second window, so it doesn't
-            // flash briefly on fast connections where sync completes quickly.
-            Task {
-                try? await Task.sleep(nanoseconds: 15 * 1_000_000_000)
-                showTimeSyncWarning = true
-            }
-        }
-        .onChange(of: appState.timeSyncSucceeded) { _, succeeded in
-            if succeeded { showTimeSyncWarning = false }
-        }
     }
 }
 

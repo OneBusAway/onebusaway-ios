@@ -25,18 +25,13 @@ final class BookmarksSyncManager {
             WatchAppState.userDefaults.set(encodedData, forKey: storageKey)
             NotificationCenter.default.post(name: Self.bookmarksUpdatedNotification, object: nil)
         } catch {
-            Logger.error("updateBookmarks failed: \(error)")
+            Logger.error("updateBookmarks failed: \(error.localizedDescription)")
         }
     }
 
     /// Retrieves the current list of bookmarks.
     func getBookmarks() -> [WatchBookmark] {
         guard let data = WatchAppState.userDefaults.data(forKey: storageKey) else { return [] }
-        do {
-            return try JSONDecoder().decode([WatchBookmark].self, from: data)
-        } catch {
-            Logger.error("Failed to decode bookmarks: \(error)")
-            return []
-        }
+        return (try? JSONDecoder().decode([WatchBookmark].self, from: data)) ?? []
     }
 }

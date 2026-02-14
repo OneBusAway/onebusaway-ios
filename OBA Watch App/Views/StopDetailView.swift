@@ -30,7 +30,7 @@ struct StopDetailView: View {
                         Text(stop.name)
                             .font(.headline)
                         if let code = stop.code, !code.isEmpty {
-                            Text(String(format: OBALoc("stop_details.stop_code_fmt", value: "Stop %@", comment: "Stop code format"), code))
+                            Text("Stop \(code)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -41,16 +41,16 @@ struct StopDetailView: View {
                         }
                     }
                 }
-                Section(OBALoc("common.location", value: "Location", comment: "Section title for location")) {
+                Section("Location") {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(format: OBALoc("stop_details.lat_fmt", value: "Lat: %.5f", comment: "Latitude format"), stop.latitude))
-                        Text(String(format: OBALoc("stop_details.lon_fmt", value: "Lon: %.5f", comment: "Longitude format"), stop.longitude))
+                        Text(String(format: "Lat: %.5f", stop.latitude))
+                        Text(String(format: "Lon: %.5f", stop.longitude))
                     }
                     .font(.caption)
                 }
             }
         }
-        .navigationTitle(OBALoc("stop_details.title_short", value: "Stop", comment: "Short title for stop details"))
+        .navigationTitle("Stop")
         .task {
             await load()
         }
@@ -67,7 +67,7 @@ struct StopDetailView: View {
             let s = try await WatchAppState.shared.apiClient.fetchStop(id: stopID)
             stop = s
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            errorMessage = error.localizedDescription
         }
     }
 }

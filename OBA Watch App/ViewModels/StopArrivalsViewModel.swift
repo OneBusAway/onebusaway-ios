@@ -46,11 +46,8 @@ class StopArrivalsViewModel: ObservableObject {
     }
     
     func loadArrivals() async {
-        guard !isLoading else { return }
-        
         let apiClient = apiClientProvider()
         isLoading = true
-        defer { isLoading = false }
         errorMessage = nil
         
         do {
@@ -65,54 +62,41 @@ class StopArrivalsViewModel: ObservableObject {
             // Update stop name if we got it
             if let fetchedName = result.stopName {
                 stopName = fetchedName
-
-                // Save to recent stops using real coordinates if the server returned them.
+                
+                // Save to recent stops
                 saveToRecentStops(
                     name: fetchedName,
                     code: result.stopCode,
-                    direction: result.stopDirection,
-                    latitude: result.stopLatitude,
-                    longitude: result.stopLongitude
+                    direction: result.stopDirection
                 )
             }
             
             lastUpdated = Date()
+        } catch let apiError as OBAAPIError {
+            errorMessage = apiError.errorDescription ?? "API Error"
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            errorMessage = error.localizedDescription
         }
         
+        isLoading = false
     }
 
-    private func saveToRecentStops(
-        name: String,
-        code: String? = nil,
-        direction: String? = nil,
-        latitude: Double? = nil,
-        longitude: Double? = nil
-    ) {
+    private func saveToRecentStops(name: String, code: String? = nil, direction: String? = nil) {
         let routeNames = routes.compactMap { $0.shortName }.joined(separator: ", ")
-
-        // Use real server coordinates when available; fall back to 0,0 only as a
-        // last resort. Views that show distance should check for the zero sentinel
-        // and suppress the distance label in that case.
-        let lat = latitude ?? 0.0
-        let lon = longitude ?? 0.0
-        if lat == 0.0 && lon == 0.0 {
-            Logger.warn("saveToRecentStops: No coordinates available for stop \(stopID) — distance display will be suppressed in views.")
-        }
-
+        
         let stop = OBAStop(
             id: stopID,
             name: name,
-            latitude: lat,
-            longitude: lon,
+            latitude: 0, // We don't have lat/lon here but it's okay for recent list
+            longitude: 0,
             code: code,
             direction: direction,
             routeNames: routeNames.isEmpty ? nil : routeNames
         )
-
-        RecentStopsViewModel.shared.addRecentStop(stop)
-
+        
+        let recentViewModel = RecentStopsViewModel()
+        recentViewModel.addRecentStop(stop)
+        
         // Notify other views
         NotificationCenter.default.post(name: NSNotification.Name("RecentStopsUpdated"), object: nil)
     }
@@ -123,9 +107,9 @@ class StopArrivalsViewModel: ObservableObject {
             let fetched = try await apiClient.fetchRoutesForStop(stopID: stopID)
             routes = fetched
         } catch let apiError as OBAAPIError {
-            Logger.error("loadRoutes failed: \(apiError)")
+            Logger.error("loadRoutes failed: \(apiError.localizedDescription)")
         } catch {
-            Logger.error("loadRoutes failed with unknown error: \(error)")
+            Logger.error("loadRoutes failed with unknown error: \(error.localizedDescription)")
             // We don't want to show an error message here, as it might
             // overwrite a more important error from `loadArrivals`.
         }

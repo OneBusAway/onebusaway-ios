@@ -3,8 +3,6 @@ import OBAKitCore
 
 struct AlarmsView: View {
     @State private var alarms: [WatchAlarmItem] = AlarmsSyncManager.shared.currentAlarms()
-    @State private var infoMessage: String?
-
     var body: some View {
         List {
             if alarms.isEmpty {
@@ -12,14 +10,14 @@ struct AlarmsView: View {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text(OBALoc("alarms.no_alarms", value: "No Alarms", comment: "Empty state title for alarms"))
+                    Text("No Alarms")
                         .font(.headline)
                 }
                 .padding()
             } else {
                 ForEach(alarms) { alarm in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(alarm.routeShortName ?? OBALoc("alarms.default_title", value: "Alarm", comment: "Default title for an alarm"))
+                        Text(alarm.routeShortName ?? "Alarm")
                             .font(.headline)
                         if let headsign = alarm.headsign, !headsign.isEmpty {
                             Text(headsign)
@@ -34,10 +32,7 @@ struct AlarmsView: View {
                             }
                             Spacer()
                             Button {
-                                let ok = DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
-                                if !ok {
-                                    infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
-                                }
+                                DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
                             } label: {
                                 Image(systemName: "iphone")
                             }
@@ -47,17 +42,9 @@ struct AlarmsView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("alarms.title", value: "Alarms", comment: "Title for alarms screen"))
+        .navigationTitle("Alarms")
         .onReceive(NotificationCenter.default.publisher(for: AlarmsSyncManager.alarmsUpdatedNotification)) { _ in
             alarms = AlarmsSyncManager.shared.currentAlarms()
-        }
-        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
-            get: { infoMessage != nil },
-            set: { if !$0 { infoMessage = nil } }
-        )) {
-            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
-        } message: {
-            Text(infoMessage ?? "")
         }
     }
 }

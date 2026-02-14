@@ -15,7 +15,7 @@ class NearbyStopsViewModel: ObservableObject {
     @Published var stops: [OBAStop] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var locationStatus: String = OBALoc("nearby_stops.getting_location", value: "Getting location...", comment: "Status: getting location")
+    @Published var locationStatus: String = "Getting location..."
     @Published var routeSummaryByStopID: [OBAStopID: String] = [:]
     
     private let apiClientProvider: () -> OBAAPIClient
@@ -47,7 +47,7 @@ class NearbyStopsViewModel: ObservableObject {
         
         isLoading = true
         errorMessage = nil
-        locationStatus = OBALoc("nearby_stops.loading_stops", value: "Loading stops...", comment: "Status: loading stops")
+        locationStatus = "Loading stops..."
         
         defer { isLoading = false }
 
@@ -68,13 +68,13 @@ class NearbyStopsViewModel: ObservableObject {
                 }
             
             if stops.isEmpty {
-                locationStatus = OBALoc("nearby_stops.no_stops_near_location", value: "0 stops found near this location", comment: "Status: 0 stops found")
+                locationStatus = "0 stops found near this location"
             } else {
-                locationStatus = String(format: OBALoc("nearby_stops.stops_found_fmt", value: "%d stops found", comment: "Status: multiple stops found"), stops.count)
+                locationStatus = "\(stops.count) stops found"
             }
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
-            locationStatus = OBALoc("nearby_stops.error_loading_stops", value: "Error loading stops", comment: "Status: error loading stops")
+            errorMessage = error.localizedDescription
+            locationStatus = "Error loading stops"
         }
     }
 }
