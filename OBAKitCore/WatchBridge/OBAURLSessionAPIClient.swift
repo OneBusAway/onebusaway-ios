@@ -234,9 +234,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                 return self.mapArrivalsResponse(response)
             },
             {
-                let stopPath = "/api/where/stop/\(stopID).json"
-                let stopURL = try self.buildURL(path: stopPath, queryItems: self.apiKeyQueryItem)
-                let response: OBARawStopResponse = try await self.get(url: stopURL)
+                let path = "/api/where/stop/\(stopID).json"
+                let url = try self.buildURL(path: path, queryItems: self.apiKeyQueryItem)
+                let response: OBARawStopResponse = try await self.get(url: url)
                 let domainStop = response.toDomainStop()
                 return OBAArrivalsResult(
                     arrivals: [],
@@ -351,44 +351,30 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     }
 
     public func fetchStopsForRoute(routeID: OBARouteID) async throws -> [OBARouteDirection] {
-        let path = "/api/where/stops-for-route/\(routeID).json"
-        var queryItems = apiKeyQueryItem
-        queryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
-
-        let url = try buildURL(path: path, queryItems: queryItems)
-
-        do {
-            let response: OBARawStopsForRouteResponse = try await get(url: url)
-            return response.data.toDomainDirections()
-        } catch {
-            Logger.error("fetchStopsForRoute primary call failed for route \(routeID): \(error.localizedDescription)")
-
-            // Fallback: some servers might prefer routeId as a query parameter
-            let fallbackPath = "/api/where/stops-for-route.json"
-            var fallbackQueryItems = apiKeyQueryItem
-            fallbackQueryItems.append(URLQueryItem(name: "routeId", value: routeID))
-            fallbackQueryItems.append(URLQueryItem(name: "includePolylines", value: "false"))
-
-            do {
-                let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
-                do {
-                    let response: OBARawStopsForRouteResponse = try await get(url: fallbackURL)
-                    return response.data.toDomainDirections()
-                } catch {
-                    Logger.error("StopsForRoute fallback failed: \(error.localizedDescription)")
-                }
-            } catch {
-                Logger.error("Failed to build URL for StopsForRoute fallback: \(error.localizedDescription)")
+        try await tryFallback([
+            {
+                let path = "/api/where/stops-for-route/\(routeID).json"
+                let url = try self.buildURL(path: path, queryItems: self.apiKeyQueryItem + [URLQueryItem(name: "includePolylines", value: "false")])
+                let response: OBARawStopsForRouteResponse = try await self.get(url: url)
+                return response.data.toDomainDirections()
+            },
+            {
+                let path = "/api/where/stops-for-route.json"
+                let queryItems = self.apiKeyQueryItem + [
+                    URLQueryItem(name: "routeId", value: routeID),
+                    URLQueryItem(name: "includePolylines", value: "false")
+                ]
+                let url = try self.buildURL(path: path, queryItems: queryItems)
+                let response: OBARawStopsForRouteResponse = try await self.get(url: url)
+                return response.data.toDomainDirections()
             }
-            throw error
-        }
+        ])
     }
 
     public func fetchShapeIDForRoute(routeID: OBARouteID) async throws -> String? {
         let path = "/api/where/schedule-for-route/\(routeID).json"
-        let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-
         do {
+            let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
             let response: OBARawScheduleForRouteResponse = try await get(url: url)
             return response.firstShapeID()
         } catch {
@@ -398,47 +384,29 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
     }
 
     public func fetchShape(shapeID: String) async throws -> String {
-        let path = "/api/where/shape/\(shapeID).json"
-        let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-
-        do {
-            let response: OBARawShapeResponse = try await get(url: url)
-            return response.data.entry.points
-        } catch {
-            Logger.error("fetchShape primary call failed for shape \(shapeID): \(error.localizedDescription)")
-
-            // Fallback: try stops-for-route to get the shape (common in MTA)
-            let fallbackPath = "/api/where/stops-for-route/\(shapeID).json"
-            var fallbackQueryItems = apiKeyQueryItem
-            fallbackQueryItems.append(URLQueryItem(name: "includePolylines", value: "true"))
-
-            do {
-                let fallbackURL = try buildURL(path: fallbackPath, queryItems: fallbackQueryItems)
-                do {
-                    let response: OBARawStopsForRouteResponse = try await get(url: fallbackURL)
-                    // Merge all polylines into one points string if available
-                    var points = (response.data.polylines ?? []).compactMap { $0.points }.joined()
-
-                    // If top-level polylines are missing, check stopGroupings (common in MTA)
-                    if points.isEmpty {
-                        let groupings = response.data.stopGroupings ?? response.data.entry?.stopGroupings ?? []
-                        points = groupings.flatMap { $0.stopGroups ?? [] }
-                                         .flatMap { $0.polylines ?? [] }
-                                         .compactMap { $0.points }
-                                         .joined()
-                    }
-
-                    if !points.isEmpty {
-                        return points
-                    }
-                } catch {
-                    Logger.error("Shape fallback failed: \(error.localizedDescription)")
+        try await tryFallback([
+            {
+                let path = "/api/where/shape/\(shapeID).json"
+                let url = try self.buildURL(path: path, queryItems: self.apiKeyQueryItem)
+                let response: OBARawShapeResponse = try await self.get(url: url)
+                return response.data.entry.points
+            },
+            {
+                let path = "/api/where/stops-for-route/\(shapeID).json"
+                let url = try self.buildURL(path: path, queryItems: self.apiKeyQueryItem + [URLQueryItem(name: "includePolylines", value: "true")])
+                let response: OBARawStopsForRouteResponse = try await self.get(url: url)
+                var points = (response.data.polylines ?? []).compactMap { $0.points }.joined()
+                if points.isEmpty {
+                    let groupings = response.data.stopGroupings ?? response.data.entry?.stopGroupings ?? []
+                    points = groupings.flatMap { $0.stopGroups ?? [] }
+                                     .flatMap { $0.polylines ?? [] }
+                                     .compactMap { $0.points }
+                                     .joined()
                 }
-            } catch {
-                Logger.error("Failed to build URL for shape fallback: \(error.localizedDescription)")
+                if points.isEmpty { throw OBAAPIError.notFound(url: url) }
+                return points
             }
-            throw error
-        }
+        ])
     }
 
     public func fetchVehicle(vehicleID: String) async throws -> OBAVehicle {
