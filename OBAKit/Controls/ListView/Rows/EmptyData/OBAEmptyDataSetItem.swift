@@ -64,7 +64,7 @@ struct EmptyDataSetItem: OBAListViewItem {
                 icon = UIImage(systemName: "bolt.horizontal.circle")
             case .requestNotFound:
                 icon = UIImage(systemName: "questionmark.square.dashed")
-            case .serverError, .serverUnavailable:
+            case .serverUnavailable:
                 icon = UIImage(systemName: "server.rack")
             }
         default:
