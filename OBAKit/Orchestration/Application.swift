@@ -741,17 +741,9 @@ extension Application {
 
         var context: [String: Any] = [:]
 
-        if let bookmarkData = buildBookmarkData(), !bookmarkData.isEmpty {
-            context["bookmarks"] = bookmarkData
-        }
-
-        if let alarmData = buildAlarmData(), !alarmData.isEmpty {
-            context["alarms"] = alarmData
-        }
-
-        if let alertData = buildAlertData(), !alertData.isEmpty {
-            context["alerts"] = alertData
-        }
+        context["bookmarks"] = buildBookmarkData() ?? []
+        context["alarms"] = buildAlarmData() ?? []
+        context["alerts"] = buildAlertData() ?? []
 
         do {
             try session.updateApplicationContext(context)
@@ -761,7 +753,10 @@ extension Application {
     }
 
     private func buildWatchData<T: Encodable>(items: [T], defaultsKey: String, logName: String) -> [[String: Any]]? {
-        guard !items.isEmpty else { return nil }
+        guard !items.isEmpty else {
+            userDefaults.removeObject(forKey: defaultsKey)
+            return nil
+        }
 
         // Write to shared container (App Group) if possible
         do {
