@@ -664,7 +664,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 return .map
             }
             let raw = userDefaults.integer(forKey: UserDefaultsKeys.lastSelectedView)
-            return SelectedTab(rawValue: raw)!
+            return SelectedTab(rawValue: raw) ?? .map
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.lastSelectedView)
