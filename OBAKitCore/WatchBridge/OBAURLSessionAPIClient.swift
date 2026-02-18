@@ -602,12 +602,16 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         return request
     }
 
-    private func tryFallback<T>(_ closures: [() async throws -> T]) async throws -> T {
+    func tryFallback<T>(
+        _ closures: [() async throws -> T],
+        function: String = #function
+    ) async throws -> T {
         var lastError: Error?
-        for closure in closures {
+        for (index, closure) in closures.enumerated() {
             do {
                 return try await closure()
             } catch {
+                Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error.localizedDescription)")
                 lastError = error
             }
         }

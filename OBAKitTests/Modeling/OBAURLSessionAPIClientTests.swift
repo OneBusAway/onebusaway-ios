@@ -88,7 +88,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
     // MARK: - Fallback Logic Tests
 
     class MockURLSession: URLSession {
-        var responses: [String: (Data?, URLResponse?, Error?)] = [:]
+        var responses: [(String, (Data?, URLResponse?, Error?))] = []
         var requests: [URLRequest] = []
 
         override func data(for request: URLRequest, delegate: (URLSessionTaskDelegate)? = nil) async throws -> (Data, URLResponse) {
@@ -112,7 +112,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
         let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
         
         // Mock 1st attempt failure
-        mockSession.responses["/api/where/arrivals-and-departures-for-stop/123.json"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
+        mockSession.responses.append(("/api/where/arrivals-and-departures-for-stop/123.json", (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))))
         
         // Mock 2nd attempt success
         let successData = """
@@ -124,7 +124,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
             }
         }
         """.data(using: .utf8)!
-        mockSession.responses["/api/where/arrivals-and-departures-for-stop.json"] = (successData, nil, nil)
+        mockSession.responses.append(("/api/where/arrivals-and-departures-for-stop.json", (successData, nil, nil)))
         
         let result = try await client.fetchArrivals(for: "123")
         
@@ -140,7 +140,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
         let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
         
         // Mock 1st and 2nd attempt failure
-        mockSession.responses["/api/where/arrivals-and-departures-for-stop"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
+        mockSession.responses.append(("/api/where/arrivals-and-departures-for-stop", (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))))
         
         // Mock 3rd attempt success (stop details)
         let stopData = """
@@ -156,7 +156,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
             }
         }
         """.data(using: .utf8)!
-        mockSession.responses["/api/where/stop/123.json"] = (stopData, nil, nil)
+        mockSession.responses.append(("/api/where/stop/123.json", (stopData, nil, nil)))
         
         let result = try await client.fetchArrivals(for: "123")
         
@@ -207,8 +207,8 @@ class OBAURLSessionAPIClientTests: XCTestCase {
         let client = OBAURLSessionAPIClient(configuration: config, urlSession: mockSession)
         
         // Fail first 3
-        mockSession.responses["/api/where/routes-for-stop"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))
-        mockSession.responses["/api/where/stop/123.json"] = (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/2")!))
+        mockSession.responses.append(("/api/where/routes-for-stop", (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/1")!))))
+        mockSession.responses.append(("/api/where/stop/123.json", (nil, nil, OBAAPIError.notFound(url: URL(string: "https://example.com/2")!))))
         
         // Success on 4th (arrivals-and-departures-for-stop)
         let arrivalsData = """
@@ -223,7 +223,7 @@ class OBAURLSessionAPIClientTests: XCTestCase {
             }
         }
         """.data(using: .utf8)!
-        mockSession.responses["/api/where/arrivals-and-departures-for-stop/123.json"] = (arrivalsData, nil, nil)
+        mockSession.responses.append(("/api/where/arrivals-and-departures-for-stop/123.json", (arrivalsData, nil, nil)))
         
         let routes = try await client.fetchRoutesForStop(stopID: "123")
         
@@ -236,25 +236,6 @@ class OBAURLSessionAPIClientTests: XCTestCase {
 // Helper to expose internal tryFallback for testing
 extension OBAURLSessionAPIClient {
     func testTryFallback<T>(_ closures: [() async throws -> T]) async throws -> T {
-        // This is a bit of a hack since tryFallback is private. 
-        // In a real project we might make it internal or use a public method that calls it.
-        // For this task, I'll use a public wrapper.
-        struct Wrapper: Decodable {}
-        return try await self.tryFallback_exposed(closures)
-    }
-
-    fileprivate func tryFallback_exposed<T>(_ closures: [() async throws -> T]) async throws -> T {
-        var lastError: Error?
-        for closure in closures {
-            do {
-                return try await closure()
-            } catch {
-                lastError = error
-            }
-        }
-        if let lastError = lastError {
-            throw lastError
-        }
-        throw OBAAPIError.invalidURL
+        return try await self.tryFallback(closures)
     }
 }
