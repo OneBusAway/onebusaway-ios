@@ -22,7 +22,7 @@ struct SurveyLabelView: View {
             .frame(minHeight: 70)
             .background {
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(UIColor.tertiarySystemBackground.toColor())
+                    .fill(Color(uiColor: UIColor.tertiarySystemBackground))
                     .shadow(color: .gray.opacity(0.4), radius: 3)
             }
             .accessibilityLabel(Strings.surveyLabel)
