@@ -31,7 +31,7 @@ struct TextQuestionView: View {
             .background(textEditorBorder)
             .padding([.horizontal, .bottom], 8)
             .accessibilityLabel(Strings.answerInputAccessibility)
-            .accessibilityHint(Strings.surveyHeroQuestionAnswerError)
+            .accessibilityHint(Strings.answerInputQuestionAccessibility)
             .accessibilityValue(text)
             .onChange(of: text) { _, newValue in
                 onUpdateAnswer(.text(newValue))
