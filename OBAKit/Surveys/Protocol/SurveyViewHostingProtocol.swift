@@ -76,10 +76,8 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
 
     func observeSurveyToastMessage() {
         withObservationTracking { [weak self] in
-            let showToast = self?.surveysVM.showToastMessage ?? false
-            let type = self?.surveysVM.toast?.type
 
-            guard let self, let type = type, showToast else { return }
+            guard let self, let type = self.surveysVM.toast?.type, self.surveysVM.showToastMessage else { return }
 
             switch type {
             case .error:

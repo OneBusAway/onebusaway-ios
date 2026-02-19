@@ -83,15 +83,34 @@ struct SurveyQuestionView: View {
     @ViewBuilder
     private var questionContent: some View {
         let type = question.content.type
+        let options = question.content.options ?? []
 
-        if case .text = type {
-            TextQuestionView(text: textAnswerValue, onUpdateAnswer: onUpdateAnswer)
-        } else if case .radio = type {
-            let options = question.content.options ?? []
-            SelectionQuestionView(options: options, selection: selectionAnswerValues, isMultipleSelection: false, onUpdateAnswer: onUpdateAnswer)
-        } else if case .checkbox = type {
-            let options = question.content.options ?? []
-            SelectionQuestionView(options: options, selection: selectionAnswerValues, isMultipleSelection: true, onUpdateAnswer: onUpdateAnswer)
+        switch type {
+        case .text:
+            TextQuestionView(
+                text: textAnswerValue,
+                onUpdateAnswer: onUpdateAnswer
+            )
+
+        case .radio:
+            SelectionQuestionView(
+                options: options,
+                selection: selectionAnswerValues,
+                isMultipleSelection: false,
+                onUpdateAnswer: onUpdateAnswer
+            )
+
+        case .checkbox:
+            SelectionQuestionView(
+                options: options,
+                selection: selectionAnswerValues,
+                isMultipleSelection: true,
+                onUpdateAnswer: onUpdateAnswer
+            )
+
+        case .label, .externalSurvey:
+            EmptyView()
+
         }
     }
 

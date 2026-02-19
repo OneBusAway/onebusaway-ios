@@ -51,15 +51,15 @@ struct SurveyQuestionsForm: View {
 
     @ViewBuilder
     private var surveyStudyInfo: some View {
-        if viewModel.study != nil {
+        if let study = viewModel.study {
             VStack(alignment: .leading, spacing: 12) {
-                Text(viewModel.study?.name ?? "")
+                Text(study.name)
                     .font(.headline)
                     .fontWeight(.bold)
                     .lineLimit(2)
                     .lineSpacing(4)
 
-                Text(viewModel.study?.description ?? "")
+                Text(study.description ?? "")
                     .font(.footnote)
                     .fontWeight(.medium)
                     .lineSpacing(4)
@@ -130,29 +130,30 @@ struct SurveyQuestionsForm: View {
 
     @ViewBuilder
     private var submitButtonLabel: some View {
-
-        if #available(iOS 26.0, *) {
-            Text(Strings.submit)
-                .font(.body)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .clipShape(.rect(cornerRadius: 8))
-                .glassEffect(.regular.tint(ThemeColors.shared.brand.toColor()).interactive())
-                .padding(.horizontal, 16)
-
-        } else {
-            Text(Strings.submit)
-                .font(.body)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(ThemeColors.shared.brand.toColor())
-                .clipShape(.rect(cornerRadius: 8))
-                .padding(.horizontal, 16)
+        Group {
+            if #available(iOS 26.0, *) {
+                submitButtonLabelText
+                    .glassEffect(
+                        .regular
+                            .tint(ThemeColors.shared.brand.toColor())
+                            .interactive()
+                    )
+            } else {
+                submitButtonLabelText
+                    .background(ThemeColors.shared.brand.toColor())
+            }
         }
+        .clipShape(.rect(cornerRadius: 8))
+        .padding(.horizontal, 16)
+    }
+
+    private var submitButtonLabelText: some View {
+        Text(Strings.submit)
+            .font(.body)
+            .fontWeight(.bold)
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
 
     }
 

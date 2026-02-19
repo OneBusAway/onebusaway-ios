@@ -17,7 +17,7 @@ final public class SurveysViewModel {
     private let service: SurveyServiceProtocol
     private let prioritizer: SurveyPrioritizing
     private var stateManager: SurveyStateProtocol
-    private let externalLinkBuilder: ExternalSurveyURLBuilder
+    private let externalLinkBuilder: ExternalSurveyURLBuilderProtocol
 
     /// Toast Message
     public var showToastMessage: Bool = false
@@ -74,7 +74,7 @@ final public class SurveysViewModel {
         stateManager: SurveyStateProtocol,
         service: SurveyServiceProtocol,
         prioritizer: SurveyPrioritizing,
-        externalLinkBuilder: ExternalSurveyURLBuilder
+        externalLinkBuilder: ExternalSurveyURLBuilderProtocol
     ) {
         self.stopContext = stopContext
         self.service = service
@@ -159,7 +159,7 @@ final public class SurveysViewModel {
     private func getNextSurvey() {
         let surveyIndex = prioritizer.nextSurveyIndex(service.surveys, visibleOnStop: stopContext, stop: stop)
         guard surveyIndex >= 0, surveyIndex < service.surveys.count else { return }
-        
+
         self.survey = service.surveys[surveyIndex]
         self.study = survey?.study
 
@@ -214,10 +214,10 @@ extension SurveysViewModel {
             answer: heroQuestionAnswer.stringValue
         )
 
-        self.isLoading = true
-
         Task { [weak self] in
             guard let self, let survey else { return }
+
+            self.isLoading = true
 
             defer { self.isLoading = false }
 
@@ -242,9 +242,7 @@ extension SurveysViewModel {
     }
 
     private func setRemainingSurveyQuestions() {
-        guard let survey else { return }
-
-        let heroQuestionID = heroQuestion?.id ?? -1
+        guard let survey, let heroQuestionID = heroQuestion?.id else { return }
 
         // Mark survey as completed.
         stateManager.setSurveyCompleted(survey.id)
@@ -310,8 +308,12 @@ extension SurveysViewModel {
             self.questions = questions
 
             // Set questions ids to answers dictionary
-            questions.forEach { self.questionsAnswers[$0.id] = .text("") }
+            questions
+                .filter { $0.content.type != .label }
+                .forEach { self.questionsAnswers[$0.id] = .text("") }
 
+            // Don't show survey form if the remaining questions content type are `label`
+            guard answerableQuestionCount > 0 else { return }
             self.showFullSurveyQuestions = true
         }
     }
@@ -351,10 +353,10 @@ extension SurveysViewModel {
         guard validateQuestionsAnswers(), let survey else { return }
         let responses = buildQuestionsAnswersModel()
 
-        isLoading = true
-
         Task { [weak self] in
             guard let self else { return }
+
+            self.isLoading = true
 
             defer { isLoading = false }
 
