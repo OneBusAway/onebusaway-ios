@@ -1171,6 +1171,7 @@ class MapViewController: UIViewController,
 
     func stopObserveSurveysState() {
         observationActive = false
+        ProgressHUD.dismiss()
     }
 
     func observeSurveyHeroQuestion() {
