@@ -45,6 +45,18 @@ class ManageBookmarksViewController: FormViewController {
         }
     }
 
+    /// Rebuilds the form from the current userDataStore on the next run loop iteration.
+    /// Deferral avoids index-out-of-bounds inside Eureka during child controller transitions.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/922
+    func reloadFormFromStore() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            UIView.performWithoutAnimation {
+                self.loadForm()
+            }
+        }
+    }
+
     // MARK: - TableView Delegate Overrides
 
     override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
@@ -57,13 +69,7 @@ class ManageBookmarksViewController: FormViewController {
 
         // Defer refresh to avoid index-out-of-bounds during Eureka's internal animation.
         // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
-        // Use performWithoutAnimation to prevent visual glitches.
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            UIView.performWithoutAnimation {
-                self.loadForm()
-            }
-        }
+        reloadFormFromStore()
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {

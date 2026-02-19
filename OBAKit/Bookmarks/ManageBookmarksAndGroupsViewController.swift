@@ -89,9 +89,13 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
             groupsController.view.pinToSuperview(.edges)
         }
         else {
+            // Persist group additions/deletions/renames so the bookmarks
+            // tab sees the current groups when it rebuilds its sections.
+            groupsController.updateModelState()
             removeChildController(groupsController)
             addChildController(bookmarksController)
             bookmarksController.view.pinToSuperview(.edges)
+            bookmarksController.reloadFormFromStore()
         }
     }
 }
