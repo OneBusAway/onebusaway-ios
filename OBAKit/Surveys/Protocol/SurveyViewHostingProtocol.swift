@@ -44,8 +44,9 @@ protocol SurveyViewHostingProtocol {
 extension SurveyViewHostingProtocol where Self: UIViewController {
 
     func observeSurveyLoadingState() {
-        withObservationTracking {
-            if surveysVM.isLoading {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            if self.surveysVM.isLoading {
                 ProgressHUD.show()
             } else {
                 ProgressHUD.dismiss()

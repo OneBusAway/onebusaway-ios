@@ -1495,6 +1495,7 @@ public class StopViewController: UIViewController,
 
     func stopObserveSurveysState() {
         observationActive = false
+        ProgressHUD.dismiss()
     }
 
 }
