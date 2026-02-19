@@ -76,9 +76,3 @@ extension UIApplication {
         return windows ?? []
     }
 }
-
-extension UIColor {
-    func toColor() -> Color {
-        Color(uiColor: self)
-    }
-}

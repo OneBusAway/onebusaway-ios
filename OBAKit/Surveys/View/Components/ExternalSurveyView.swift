@@ -34,7 +34,7 @@ struct ExternalSurveyView: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 6)
-                .fill(UIColor.tertiarySystemBackground.toColor())
+                .fill(Color(uiColor: UIColor.tertiarySystemBackground))
         )
     }
 
@@ -48,7 +48,7 @@ struct ExternalSurveyView: View {
     private var subtitleView: some View {
         Text(Strings.externalSurveyPrivacyInfo)
             .font(.footnote)
-            .foregroundStyle(UIColor.darkGray.toColor())
+            .foregroundStyle(Color(uiColor: UIColor.darkGray))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -106,7 +106,7 @@ struct ExternalSurveyView: View {
             .padding(.vertical, verticalPadding)
             .background(
                 RoundedRectangle(cornerRadius: 18)
-                    .fill(ThemeColors.shared.brand.toColor())
+                    .fill(Color(uiColor: ThemeColors.shared.brand))
             )
         }
         .buttonStyle(.plain)

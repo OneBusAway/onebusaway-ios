@@ -41,7 +41,7 @@ struct TextQuestionView: View {
 
     private var textEditorBorder: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(UIColor.tertiarySystemBackground.toColor())
+            .fill(Color(uiColor: UIColor.tertiarySystemBackground))
             .stroke(.gray, lineWidth: 0.5)
     }
 
