@@ -17,7 +17,8 @@ class HeroQuestionCell: OBAListViewCell {
 
     public override func apply(_ config: OBAContentConfiguration) {
         guard let config = config as? HeroQuestionContentConfiguration else {
-            fatalError()
+            assertionFailure("HeroQuestionCell received unexpected config: \(type(of: config))")
+            return
         }
 
         model = config.model
