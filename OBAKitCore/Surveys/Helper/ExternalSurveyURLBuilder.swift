@@ -9,15 +9,15 @@
 
 import Foundation
 
-final public class ExternalSurveyURLBuilder {
+final public class ExternalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol {
 
     private let userStore: UserDataStore
 
-    private let application: CoreApplication
+    private let application: SurveyURLApplicationContext
 
     private let userID: String
 
-    public init(userStore: UserDataStore, userID: String, application: CoreApplication) {
+    public init(userStore: UserDataStore, userID: String, application: SurveyURLApplicationContext) {
         self.userStore = userStore
         self.userID = userID
         self.application = application
@@ -25,6 +25,7 @@ final public class ExternalSurveyURLBuilder {
 
     public func buildURL(for survey: Survey, stop: Stop?) -> URL? {
         guard let baseURL = survey.questions.first?.content.url,
+              isValidURL(baseURL),
               var components = URLComponents(string: baseURL)
         else {
             Logger.error("External survey URL missing for survey ID: \(survey.id)")
@@ -69,7 +70,7 @@ final public class ExternalSurveyURLBuilder {
     }
 
     private func getRegionID() -> String? {
-        guard let regionId = application.currentRegion?.regionIdentifier else {
+        guard let regionId = application.currentRegionIdentifier else {
             return nil
         }
         return "\(regionId)"
@@ -91,9 +92,21 @@ final public class ExternalSurveyURLBuilder {
     }
 
     private func getCurrentLocation() -> String? {
-        guard let coordinate = application.locationService.currentLocation?.coordinate else {
+        guard let coordinate = application.currentCoordinate else {
             return nil
         }
         return "\(coordinate.latitude),\(coordinate.longitude)"
+    }
+
+    private func isValidURL(_ string: String) -> Bool {
+        guard let components = URLComponents(string: string),
+              let scheme = components.scheme,
+              ["http", "https"].contains(scheme),
+              components.host != nil
+        else {
+            return false
+        }
+
+        return true
     }
 }
