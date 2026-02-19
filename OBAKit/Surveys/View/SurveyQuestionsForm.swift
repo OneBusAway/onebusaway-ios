@@ -74,7 +74,6 @@ struct SurveyQuestionsForm: View {
         ToolbarItem(placement: .topBarLeading) {
             Button {
                 viewModel.onAction(.onCloseQuestionsForm)
-                dismiss()
             } label: {
                 Image(systemName: "xmark")
                     .resizable()
