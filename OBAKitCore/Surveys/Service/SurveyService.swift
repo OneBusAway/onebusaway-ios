@@ -40,12 +40,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             throw SurveyError.serviceUnavailable
         }
 
-        do {
-            let studyResponse = try await apiService.getSurveys()
-            self.surveys = studyResponse.surveys
-        } catch {
-            throw error
-        }
+        let studyResponse = try await apiService.getSurveys()
+        self.surveys = studyResponse.surveys
     }
 
     /// Submits a single survey response to the backend.
@@ -84,12 +80,8 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             throw SurveyError.serviceUnavailable
         }
 
-        do {
-            let submissionResponse = try await apiService.submitSurveyResponse(surveyResponse: responseModel)
-            surveyStore.setSurveyResponse(submissionResponse)
-        } catch {
-            throw error
-        }
+        let submissionResponse = try await apiService.submitSurveyResponse(surveyResponse: responseModel)
+        surveyStore.setSurveyResponse(submissionResponse)
     }
 
     /// Updates an already submitted survey response by PATCHing the new data.
@@ -133,14 +125,10 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
             throw SurveyError.serviceUnavailable
         }
 
-        do {
-            try await apiService.updateSurveyResponse(
-                surveyResponseId: surveyResponseId,
-                surveyResponses: responsesModel
-            )
-        } catch {
-            throw error
-        }
+        try await apiService.updateSurveyResponse(
+            surveyResponseId: surveyResponseId,
+            surveyResponses: responsesModel
+        )
     }
 
 }
