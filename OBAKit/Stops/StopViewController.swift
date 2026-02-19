@@ -188,6 +188,8 @@ public class StopViewController: UIViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
+        self.navigationItem.titleView = UIView()
+
         view.backgroundColor = ThemeColors.shared.systemBackground
 
         configureTabBarButtons()
@@ -574,7 +576,7 @@ public class StopViewController: UIViewController,
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
     private func updateTitle() {
-        self.title = "Live Arrivals"
+        self.title = stop?.name ?? "Live Arrivals"
 
         guard let lastUpdated = lastUpdated else {
             statusLabel.text = ""
