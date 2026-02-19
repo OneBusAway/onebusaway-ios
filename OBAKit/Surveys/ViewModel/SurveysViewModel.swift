@@ -288,7 +288,7 @@ extension SurveysViewModel {
     private func clearExternalSurveyState() {
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(2))
-            self?.heroQuestion = nil
+            self?.clearHeroQuestionState()
             self?.externalSurveyURL = nil
             self?.openExternalSurvey = false
             self?.removeSurvey()
