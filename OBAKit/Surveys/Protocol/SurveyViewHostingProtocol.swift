@@ -77,16 +77,17 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
 
     func observeSurveyToastMessage() {
         withObservationTracking { [weak self] in
+            guard let self,
+                  let toast = self.surveysVM.toast,
+                  self.surveysVM.showToastMessage
+            else { return }
 
-            guard let self, let type = self.surveysVM.toast?.type, self.surveysVM.showToastMessage else { return }
-
-            switch type {
+            switch toast.type {
             case .error:
-                showErrorToast(surveysVM.toast?.message)
+                showErrorToast(toast.message)
             case .success:
-                showSuccessToast(surveysVM.toast?.message)
+                showSuccessToast(toast.message)
             }
-
         } onChange: {
             Task { @MainActor [weak self] in
                 guard let self, self.observationActive else { return }
@@ -97,7 +98,11 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
 
     func observeOpenExternalSurvey(_ router: ViewRouter) {
         withObservationTracking { [weak self] in
-            guard let self, self.surveysVM.openExternalSurvey, let url = self.surveysVM.externalSurveyURL else { return }
+            guard let self,
+                  self.surveysVM.openExternalSurvey,
+                  let url = self.surveysVM.externalSurveyURL
+            else { return }
+            
             self.openSafari(with: url, router: router)
         } onChange: {
             Task { @MainActor [weak self] in
