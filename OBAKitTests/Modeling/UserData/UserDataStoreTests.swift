@@ -159,6 +159,11 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.bookmarks
     }
 
+    func test_selectedTabIndex_invalidRawValueFallsBackToMap() {
+        userDefaults.set(999, forKey: "UserDataStore.lastSelectedView")
+        expect(self.userDefaultsStore.lastSelectedView) == SelectedTab.map
+    }
+
     // MARK: - Debug Mode
 
     func test_debugMode_defaultValue() {
