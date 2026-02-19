@@ -239,47 +239,42 @@ class MapViewController: UIViewController,
 
     private lazy var weatherButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setTitle("—", for: .normal)
-        button.titleLabel?.adjustsFontSizeToFitWidth = true
+
+        var config = UIButton.Configuration.plain()
+        config.imagePlacement = .top
+        config.imagePadding = 2
+
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.systemFont(ofSize: 10, weight: .bold)
+            return outgoing
+        }
+
+        button.configuration = config
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
-        button.titleLabel?.font = UIFont.preferredFont(forTextStyle: .body).bold
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
+
         return button
     }()
 
     @objc private func showWeather() {
         guard let forecast = forecast else { return }
-        let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
-        let formattedFeelsLikeTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperatureFeelsLike, unit: .fahrenheit, to: application.locale)
 
-        let measurementSystem = Locale.current.measurementSystem
-        let windSpeed: String
-        switch measurementSystem {
-        case .us, .uk:
-            let mph = forecast.currentForecast.windSpeed / 1.60934
-            windSpeed = "\(Int(mph)) mph"
-        default:
-            windSpeed = "\(Int(forecast.currentForecast.windSpeed)) km/h"
-        }
+        let weatherView = WeatherForecastView(forecast: forecast, locale: application.locale)
+        let hostingController = UIHostingController(rootView: weatherView)
 
-        let alert = UIAlertController(
-            title: forecast.todaySummary,
-            message: """
-                Temp: \(formattedTemp) (Feels like \(formattedFeelsLikeTemp))
-                Wind: \(windSpeed)
-                Precipitation: \(Int(forecast.currentForecast.precipProbability * 100))% chance
-                """,
-            preferredStyle: .alert
-        )
-        alert.addAction(.dismissAction)
-        present(alert, animated: true)
+        present(hostingController, animated: true)
     }
 
     private var forecast: WeatherForecast? {
         didSet {
             if let forecast = forecast {
                 let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
-                weatherButton.setTitle(formattedTemp, for: .normal)
+                let iconName = systemImageName(for: forecast.currentForecast.iconName)
+
+                weatherButton.configuration?.image = UIImage(systemName: iconName)
+                weatherButton.configuration?.title = formattedTemp
+
                 weatherButton.isHidden = false
             }
             else {
@@ -302,6 +297,23 @@ class MapViewController: UIViewController,
                 Logger.error(error.localizedDescription)
             }
         }
+    }
+
+    private func systemImageName(for weatherIcon: String) -> String {
+        let mapping: [String: String] = [
+            "clear-day": "sun.max.fill",
+            "clear-night": "moon.stars.fill",
+            "rain": "cloud.rain.fill",
+            "snow": "cloud.snow.fill",
+            "sleet": "cloud.sleet.fill",
+            "wind": "wind",
+            "fog": "cloud.fog.fill",
+            "cloudy": "cloud.fill",
+            "partly-cloudy-day": "cloud.sun.fill",
+            "partly-cloudy-night": "cloud.moon.fill"
+        ]
+
+        return mapping[weatherIcon] ?? "thermometer"
     }
 
     // MARK: - Long Press Gesture
