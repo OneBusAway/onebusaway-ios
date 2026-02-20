@@ -96,7 +96,10 @@ class MapViewController: UIViewController,
         mapView.pinToSuperview(.edges)
 
         mapStatusView.configure(with: application.locationService)
-        mapStatusView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapMapStatus)))
+
+        let statusTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapStatusTap(_:)))
+        mapStatusView.addGestureRecognizer(statusTapGesture)
+
         view.addSubview(mapStatusView)
         NSLayoutConstraint.activate([
             mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -186,6 +189,30 @@ class MapViewController: UIViewController,
         if floatingPanel.state == .full {
             floatingPanel.move(to: .half, animated: true)
         }
+    }
+
+    // MARK: - Status View Handlers
+
+    private var isShowingZoomWarning = false
+
+    @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
+        if isShowingZoomWarning {
+            didTapZoomInForStops()
+        } else {
+            didTapMapStatus(sender)
+        }
+    }
+
+    private func didTapZoomInForStops() {
+        let currentCenter = mapRegionManager.mapView.region.center
+
+        let targetSpan = MKCoordinateSpan(
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01
+        )
+
+        let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)
+        mapRegionManager.mapView.setRegion(newRegion, animated: true)
     }
 
     @objc func didTapMapStatus(_ sender: Any) {
@@ -899,11 +926,13 @@ class MapViewController: UIViewController,
         dismissExistingMapItemController(animated: true)
     }
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-        mapStatusView.configure(
-            for: mapStatusView.state(for: application.locationService),
-            zoomInStatus: showStatus
-        )
-    }
+            self.isShowingZoomWarning = showStatus
+
+            mapStatusView.configure(
+                for: mapStatusView.state(for: application.locationService),
+                zoomInStatus: showStatus
+            )
+        }
 
     // MARK: Loading Indicator
 
