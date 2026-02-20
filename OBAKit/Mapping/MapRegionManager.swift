@@ -274,7 +274,35 @@ public class MapRegionManager: NSObject,
                 // Some UI code is dependent on this being changed on Main.
                 self.stops = stops
             }
+
+            // Save to cache in the background for offline use.
+            // See: https://github.com/OneBusAway/onebusaway-ios/issues/62
+            if let regionId = application.currentRegion?.regionIdentifier,
+               let repository = application.stopCacheRepository {
+                repository.saveStops(stops, regionId: regionId)
+            }
         } catch {
+            // On API failure, try serving from cache before showing error
+            if let regionId = application.currentRegion?.regionIdentifier,
+               let repository = application.stopCacheRepository {
+                let minLat = mapRegion.center.latitude - mapRegion.span.latitudeDelta / 2.0
+                let maxLat = mapRegion.center.latitude + mapRegion.span.latitudeDelta / 2.0
+                let minLon = mapRegion.center.longitude - mapRegion.span.longitudeDelta / 2.0
+                let maxLon = mapRegion.center.longitude + mapRegion.span.longitudeDelta / 2.0
+
+                let cachedStops = repository.stopsInRegion(
+                    minLat: minLat, maxLat: maxLat,
+                    minLon: minLon, maxLon: maxLon,
+                    regionId: regionId
+                )
+
+                if !cachedStops.isEmpty {
+                    await MainActor.run {
+                        self.stops = cachedStops
+                    }
+                    return
+                }
+            }
             await self.application.displayError(error)
         }
     }

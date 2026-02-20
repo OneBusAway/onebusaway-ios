@@ -122,6 +122,25 @@ open class CoreApplication: NSObject,
 
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)
 
+    // MARK: - Stop Cache
+
+    /// The SQLite database for caching transit stops.
+    /// Initialized lazily; if database creation fails, the app falls back to direct API calls.
+    public private(set) lazy var stopCacheDatabase: StopCacheDatabase? = {
+        do {
+            return try StopCacheDatabase()
+        } catch {
+            Logger.error("Failed to initialize stop cache database: \(error)")
+            return nil
+        }
+    }()
+
+    /// Repository for reading/writing cached stops.
+    public private(set) lazy var stopCacheRepository: StopCacheRepository? = {
+        guard let database = stopCacheDatabase else { return nil }
+        return StopCacheRepository(database: database)
+    }()
+
     // MARK: - LocationServiceDelegate
 
     public func locationService(_ service: LocationService, authorizationStatusChanged status: CLAuthorizationStatus) {
