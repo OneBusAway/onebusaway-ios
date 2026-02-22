@@ -247,7 +247,7 @@ open class CoreApplication: NSObject,
 
     public lazy var surveyPrioritizer: SurveyPrioritizing = SurveyPrioritizer(surveyStore: userDefaultsStore)
 
-    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilder = ExternalSurveyURLBuilder(
+    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol = ExternalSurveyURLBuilder(
         userStore: userDataStore,
         userID: userDefaultsStore.userSurveyId,
         application: self
@@ -275,7 +275,7 @@ open class CoreApplication: NSObject,
     }
 }
 
-//MARK: - Survey URL ApplicationContext
+// MARK: - Survey URL ApplicationContext
 
 extension CoreApplication: SurveyURLApplicationContext {
 
@@ -286,5 +286,5 @@ extension CoreApplication: SurveyURLApplicationContext {
     public var currentCoordinate: CLLocationCoordinate2D? {
         locationService.currentLocation?.coordinate
     }
-    
+
 }
