@@ -31,6 +31,10 @@ public protocol UserDataStore: NSObjectProtocol {
 
     var debugMode: Bool { get set }
 
+    // MARK: - New UI
+
+    var useNewUI: Bool { get set }
+
     // MARK: - Bookmark Groups
 
     /// Retrieves a list of `BookmarkGroup` objects.
@@ -230,6 +234,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarks = "UserDataStore.bookmarks"
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
+        static let useNewUI = "UserDataStore.useNewUI"
         static let disabledVehicleFeedAgencies = "UserDataStore.disabledVehicleFeedAgencies"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
@@ -246,7 +251,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
 
-        self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
+        self.userDefaults.register(defaults: [
+            UserDefaultsKeys.debugMode: false,
+            UserDefaultsKeys.useNewUI: false
+        ])
     }
 
     // MARK: - Debug Mode
@@ -257,6 +265,17 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.debugMode)
+        }
+    }
+
+    // MARK: - New UI
+
+    public var useNewUI: Bool {
+        get {
+            return userDefaults.bool(forKey: UserDefaultsKeys.useNewUI)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.useNewUI)
         }
     }
 

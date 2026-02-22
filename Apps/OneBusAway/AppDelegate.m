@@ -17,7 +17,7 @@
 @interface AppDelegate ()<OBAApplicationDelegate>
 @property(nonatomic,strong) OBAApplication *app;
 @property(nonatomic,strong) NSUserDefaults *userDefaults;
-@property(nonatomic,strong) OBAPanelApplicationRootController *rootController;
+@property(nonatomic,strong) UIViewController *rootController;
 @property(nonatomic,strong) OBAAnalyticsOrchestrator *analyticsClient;
 @end
 
@@ -36,7 +36,8 @@
         _userDefaults = [[NSUserDefaults alloc] initWithSuiteName:appGroup];
 
         [_userDefaults registerDefaults:@{
-            OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES)
+            OBAAnalyticsKeys.reportingEnabledUserDefaultsKey: @(YES),
+            @"UserDataStore.useNewUI": @(NO)
         }];
 
 //        // If you need to debug a user's NSUserDefaults data, drop the XML file they provide into Xcode's Project Navigator
@@ -110,9 +111,18 @@
     return UIApplication.sharedApplication.registeredForRemoteNotifications;
 }
 
+- (BOOL)useNewUI {
+    return [self.userDefaults boolForKey:@"UserDataStore.useNewUI"];
+}
+
 - (void)applicationReloadRootInterface:(OBAApplication*)application {
     void(^showRootController)(void) = ^{
-        self.rootController = [[OBAPanelApplicationRootController alloc] initWithApplication:application];
+        if (self.useNewUI) {
+            self.rootController = [[OBAPanelApplicationRootController alloc] initWithApplication:application];
+        }
+        else {
+            self.rootController = [[OBAClassicApplicationRootController alloc] initWithApplication:application];
+        }
         self.window.rootViewController = self.rootController;
     };
 

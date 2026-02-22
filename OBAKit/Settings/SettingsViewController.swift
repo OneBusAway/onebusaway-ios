@@ -56,7 +56,8 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
-            debugModeEnabled: application.userDataStore.debugMode
+            debugModeEnabled: application.userDataStore.debugMode,
+            useNewUIEnabled: application.userDataStore.useNewUI
         ])
     }
 
@@ -101,6 +102,10 @@ class SettingsViewController: FormViewController {
 
         if let debugEnabled = values[debugModeEnabled] as? Bool {
             application.userDataStore.debugMode = debugEnabled
+        }
+
+        if let useNewUI = values[useNewUIEnabled] as? Bool {
+            application.userDataStore.useNewUI = useNewUI
         }
 
         if let alwaysRefreshRegions = values[RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey] as? Bool {
@@ -188,12 +193,18 @@ class SettingsViewController: FormViewController {
 
     // MARK: - Debug Section
 
+    private let useNewUIEnabled = "useNewUIEnabled"
     private let debugModeEnabled = "debugModeEnabled"
     private let crashAppKey = "crashAppKey"
     private let pushIDKey = "pushIDKey"
 
     private lazy var debugSection: Section = {
         let section = Section(OBALoc("settings_controller.debug_section.title", value: "Debug", comment: "Settings > Debug section title"))
+
+        section <<< SwitchRow {
+            $0.tag = useNewUIEnabled
+            $0.title = OBALoc("settings_controller.debug_section.use_new_ui", value: "Use new UI", comment: "Settings > Debug section > Use new UI")
+        }
 
         section <<< SwitchRow {
             $0.tag = debugModeEnabled
