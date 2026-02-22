@@ -158,12 +158,12 @@ struct SurveyQuestionView: View {
 /// from `SurveysVM` for use in SwiftUI-based question views hosted inside UIKit.
 extension SurveyQuestionView {
 
-    var textAnswerValue: String {
+    private var textAnswerValue: String {
         guard case let .text(value) = answer else { return "" }
         return value
     }
 
-    var selectionAnswerValues: Set<String> {
+    private var selectionAnswerValues: Set<String> {
         switch answer {
         case .checkbox(let values):
             return values
