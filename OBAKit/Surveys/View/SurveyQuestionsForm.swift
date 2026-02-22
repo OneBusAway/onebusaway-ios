@@ -30,7 +30,7 @@ struct SurveyQuestionsForm: View {
                 loadingView
             }
             .disabled(viewModel.isLoading)
-            .background(ThemeColors.shared.groupedTableBackground.toColor())
+            .background(Color(uiColor: ThemeColors.shared.groupedTableBackground))
             .toast(toast: viewModel.toast, isPresented: $viewModel.showToastMessage)
             .toolbar {
                 closeButton
@@ -74,13 +74,12 @@ struct SurveyQuestionsForm: View {
         ToolbarItem(placement: .topBarLeading) {
             Button {
                 viewModel.onAction(.onCloseQuestionsForm)
-                dismiss()
             } label: {
                 Image(systemName: "xmark")
                     .resizable()
                     .fontWeight(.bold)
                     .frame(width: 14, height: 14)
-                    .foregroundStyle(UIColor.label.toColor())
+                    .foregroundStyle(Color(uiColor: UIColor.label))
             }
             .buttonStyle(.plain)
         }
@@ -95,7 +94,7 @@ struct SurveyQuestionsForm: View {
                 Text(Strings.submit)
                     .font(.body)
                     .fontWeight(.bold)
-                    .foregroundStyle(ThemeColors.shared.brand.toColor())
+                    .foregroundStyle(Color(uiColor: ThemeColors.shared.brand))
             }
         }
     }
@@ -135,12 +134,12 @@ struct SurveyQuestionsForm: View {
                 submitButtonLabelText
                     .glassEffect(
                         .regular
-                            .tint(ThemeColors.shared.brand.toColor())
+                            .tint(Color(uiColor: ThemeColors.shared.brand))
                             .interactive()
                     )
             } else {
                 submitButtonLabelText
-                    .background(ThemeColors.shared.brand.toColor())
+                    .background(Color(uiColor: ThemeColors.shared.brand))
             }
         }
         .clipShape(.rect(cornerRadius: 8))
@@ -161,7 +160,7 @@ struct SurveyQuestionsForm: View {
     private var loadingView: some View {
         if viewModel.isLoading {
             Rectangle()
-                .fill(ThemeColors.shared.gray.toColor().opacity(0.4))
+                .fill(Color(uiColor: ThemeColors.shared.gray).opacity(0.4))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .overlay {
                     ProgressView()

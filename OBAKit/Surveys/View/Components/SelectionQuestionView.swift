@@ -111,7 +111,7 @@ struct SelectionQuestionView: View {
     }
 
     private func colorFor(option: String) -> Color {
-        isOptionSelected(option) ? ThemeColors.shared.brand.toColor() : ThemeColors.shared.gray.toColor()
+        Color(uiColor: isOptionSelected(option) ? ThemeColors.shared.brand : ThemeColors.shared.gray)
     }
 
     // MARK: - Accessibility Helpers

@@ -62,12 +62,12 @@ struct SurveyQuestionView: View {
     private var borderView: some View {
         if showError {
             RoundedRectangle(cornerRadius: 12)
-                .fill(UIColor.tertiarySystemBackground.toColor())
+                .fill(Color(uiColor: UIColor.tertiarySystemBackground))
                 .stroke(.red)
                 .shadow(color: .red.opacity(0.4), radius: 5)
         } else {
             RoundedRectangle(cornerRadius: 12)
-                .fill(UIColor.tertiarySystemBackground.toColor())
+                .fill(Color(uiColor: UIColor.tertiarySystemBackground))
         }
     }
 
@@ -128,7 +128,7 @@ struct SurveyQuestionView: View {
                     .padding(.horizontal, 32)
                     .background(
                         RoundedRectangle(cornerRadius: 24)
-                            .fill(ThemeColors.shared.brand.toColor())
+                            .fill(Color(uiColor: ThemeColors.shared.brand))
                     )
             }
             .buttonStyle(.plain)
@@ -144,7 +144,7 @@ struct SurveyQuestionView: View {
                 .resizable()
                 .fontWeight(.bold)
                 .frame(width: 14, height: 14)
-                .foregroundStyle(UIColor.label.toColor())
+                .foregroundStyle(Color(uiColor: UIColor.label))
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 16)

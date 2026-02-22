@@ -29,7 +29,7 @@ public struct Toast: Equatable {
         var color: Color {
             switch self {
             case .success:
-                return ThemeColors.shared.brand.toColor()
+                return Color(uiColor: ThemeColors.shared.brand)
             case .error:
                 return .red
             }
