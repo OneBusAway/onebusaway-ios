@@ -10,14 +10,14 @@ struct AlarmsView: View {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("No Alarms")
+                    Text(OBALoc("alarms.no_alarms", value: "No Alarms", comment: "Empty state title for alarms"))
                         .font(.headline)
                 }
                 .padding()
             } else {
                 ForEach(alarms) { alarm in
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(alarm.routeShortName ?? "Alarm")
+                        Text(alarm.routeShortName ?? OBALoc("alarms.default_title", value: "Alarm", comment: "Default title for an alarm"))
                             .font(.headline)
                         if let headsign = alarm.headsign, !headsign.isEmpty {
                             Text(headsign)
@@ -32,7 +32,8 @@ struct AlarmsView: View {
                             }
                             Spacer()
                             Button {
-                                DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
+                                // TODO: Implement DeepLinkSyncManager in PR3/PR4
+                                // DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
                             } label: {
                                 Image(systemName: "iphone")
                             }
@@ -42,7 +43,7 @@ struct AlarmsView: View {
                 }
             }
         }
-        .navigationTitle("Alarms")
+        .navigationTitle(OBALoc("alarms.title", value: "Alarms", comment: "Title for alarms screen"))
         .onReceive(NotificationCenter.default.publisher(for: AlarmsSyncManager.alarmsUpdatedNotification)) { _ in
             alarms = AlarmsSyncManager.shared.currentAlarms()
         }

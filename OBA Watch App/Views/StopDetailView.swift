@@ -30,7 +30,7 @@ struct StopDetailView: View {
                         Text(stop.name)
                             .font(.headline)
                         if let code = stop.code, !code.isEmpty {
-                            Text("Stop \(code)")
+                            Text(String(format: OBALoc("stop_details.stop_code_fmt", value: "Stop %@", comment: "Stop code format"), code))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -41,16 +41,16 @@ struct StopDetailView: View {
                         }
                     }
                 }
-                Section("Location") {
+                Section(OBALoc("common.location", value: "Location", comment: "Section title for location")) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(String(format: "Lat: %.5f", stop.latitude))
-                        Text(String(format: "Lon: %.5f", stop.longitude))
+                        Text(String(format: OBALoc("stop_details.lat_fmt", value: "Lat: %.5f", comment: "Latitude format"), stop.latitude))
+                        Text(String(format: OBALoc("stop_details.lon_fmt", value: "Lon: %.5f", comment: "Longitude format"), stop.longitude))
                     }
                     .font(.caption)
                 }
             }
         }
-        .navigationTitle("Stop")
+        .navigationTitle(OBALoc("stop_details.title_short", value: "Stop", comment: "Short title for stop details"))
         .task {
             await load()
         }

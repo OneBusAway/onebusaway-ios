@@ -29,7 +29,7 @@ struct ContentView: View {
                     MainMenuView()
                 }
             }
-            .navigationTitle("OneBusAway")
+            .navigationTitle(OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application"))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -63,11 +63,11 @@ struct LocationOnboardingView: View {
                 .padding(.top, 24)
             
             VStack(spacing: 2) {
-                Text("Nearby Transit")
+                Text(OBALoc("location_onboarding.nearby_transit", value: "Nearby Transit", comment: "Title for the location onboarding screen"))
                     .font(.system(size: 17, weight: .bold))
                     .multilineTextAlignment(.center)
                 
-                Text("Find stops and schedules based on where you are.")
+                Text(OBALoc("location_onboarding.description", value: "Find stops and schedules based on where you are.", comment: "Description for the location onboarding screen"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -85,7 +85,7 @@ struct LocationOnboardingView: View {
                     Image(systemName: "location.fill")
                         .font(.system(size: 14, weight: .semibold))
 
-                    Text("Allow Access")
+                    Text(OBALoc("location_onboarding.allow_access", value: "Allow Access", comment: "Button title to request location permission"))
                         .font(.system(size: 15, weight: .semibold))
                 }
                 .foregroundStyle(Color.green)
@@ -121,7 +121,8 @@ struct RegionOnboardingView: View {
         // Use the saved region if available, otherwise fall back to MTA New York.
         let savedRegionID = WatchAppState.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
         
-        let initialCoordinate = WatchAppState.regionCoordinates[savedRegionID] ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
+        let region = WatchAppState.regions.first(where: { $0.id == savedRegionID })
+        let initialCoordinate = region?.coordinate ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
         
         _mapRegion = State(initialValue: MKCoordinateRegion(
             center: initialCoordinate,
@@ -136,7 +137,7 @@ struct RegionOnboardingView: View {
                     HStack {
                         Image(systemName: "globe")
                             .foregroundColor(.green)
-                        Text("Share Current Location")
+                        Text(OBALoc("region_onboarding.share_location", value: "Share Current Location", comment: "Option to share current location"))
                             .font(.headline)
                     }
                 }
@@ -170,7 +171,7 @@ struct RegionOnboardingView: View {
 
             Section {
                 Button(action: onContinue) {
-                    Text("Continue")
+                    Text(OBALoc("common.continue", value: "Continue", comment: "Button title to continue"))
                         .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -195,13 +196,15 @@ struct MoreView: View {
             List {
                 Section {
                     NavigationLink {
-                        SettingsView()
+                        // TODO: Implement SettingsView in PR3/PR4
+                        // SettingsView()
+                        Text(OBALoc("settings.coming_soon", value: "Settings Coming Soon", comment: "Placeholder text for settings screen"))
                     } label: {
-                        Label("Settings", systemImage: "gearshape")
+                        Label(OBALoc("common.settings", value: "Settings", comment: "Title for settings menu item"), systemImage: "gearshape")
                     }
                 }
             }
-            .navigationTitle("More")
+            .navigationTitle(OBALoc("common.more", value: "More", comment: "Title for the More screen"))
         }
     }
 }
@@ -213,18 +216,10 @@ struct RegionPreviewMapView: View {
     @StateObject private var viewModel = RegionPreviewMapViewModel()
 
     private var centerCoordinate: CLLocationCoordinate2D {
-        switch selectedRegionID {
-        case "tampa-bay":
-            return .init(latitude: 27.9506, longitude: -82.4572)
-        case "puget-sound":
-            return .init(latitude: 47.6062, longitude: -122.3321)
-        case "washington-dc":
-            return .init(latitude: 38.9072, longitude: -77.0369)
-        case "san-diego":
-            return .init(latitude: 32.7157, longitude: -117.1611)
-        default: // "mta-new-york" and fallback
-            return .init(latitude: 40.7128, longitude: -74.0060)
+        if let region = WatchAppState.regions.first(where: { $0.id == selectedRegionID }) {
+            return region.coordinate
         }
+        return .init(latitude: 40.7128, longitude: -74.0060)
     }
 
     var body: some View {
@@ -269,6 +264,7 @@ final class RegionPreviewMapViewModel: ObservableObject {
             )
             stops = fetched.stops
         } catch {
+            Logger.error("Failed to load stops for preview map: \(error.localizedDescription)")
             // For the preview map, we silently ignore errors and leave the base map.
         }
     }
@@ -279,14 +275,7 @@ struct MainMenuView: View {
     @AppStorage("watch_selected_region_id", store: WatchAppState.userDefaults) private var selectedRegionID: String = "mta-new-york"
     
     private var regionName: String {
-        switch selectedRegionID {
-        case "tampa-bay": return "Tampa Bay"
-        case "puget-sound": return "Puget Sound"
-        case "mta-new-york": return "MTA New York"
-        case "washington-dc": return "Washington, D.C."
-        case "san-diego": return "San Diego"
-        default: return "OneBusAway"
-        }
+        return WatchAppState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application")
     }
     
     var body: some View {
@@ -294,9 +283,11 @@ struct MainMenuView: View {
             // Search & Map at the top
             Section {
                 NavigationLink {
-                    SearchView()
+                    // TODO: Implement SearchView in PR3/PR4
+                    // SearchView()
+                    Text(OBALoc("search.coming_soon", value: "Search Coming Soon", comment: "Placeholder text for search screen"))
                 } label: {
-                    Label("Search", systemImage: "magnifyingglass")
+                    Label(OBALoc("common.search", value: "Search", comment: "Title for search menu item"), systemImage: "magnifyingglass")
                         .font(.headline)
                 }
             }
@@ -322,7 +313,9 @@ struct MainMenuView: View {
             // Trip Planning Section - Make this prominent
             Section {
                 NavigationLink {
-                    TripPlanningEntryView()
+                    // TODO: Implement TripPlanningEntryView in PR3/PR4
+                    // TripPlanningEntryView()
+                    Text("Trip Planning Coming Soon")
                 } label: {
                     VStack(alignment: .leading, spacing: 4) {
                         Label("Trip Planner", systemImage: "figure.walk")
@@ -353,7 +346,9 @@ struct MainMenuView: View {
                 }
                 
                 NavigationLink {
-                    VehiclesView()
+                    // TODO: Implement VehiclesView in PR3/PR4
+                    // VehiclesView()
+                    Text("Vehicles Coming Soon")
                 } label: {
                     Label("Vehicles", systemImage: "bus.fill")
                 }
