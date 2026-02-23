@@ -23,29 +23,22 @@ struct NearbyStopsView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.errorMessage {
-                    ErrorView(message: error)
-                } else if viewModel.stops.isEmpty {
-                    emptyStateView
-                } else {
-                    NearbyStopsListView(
-                        stops: viewModel.stops,
-                        currentLocation: appState.currentLocation,
-                        mapStyle: appState.mapStyle,
-                        routeSummaryByStopID: viewModel.routeSummaryByStopID,
-                        searchText: $searchText
-                    )
-                }
-            }
-            .navigationTitle(OBALoc("nearby_stops.title", value: "Nearby Stops", comment: "Title for nearby stops screen"))
-            .refreshable {
-                await viewModel.loadNearbyStops()
-            }
+        NearbyStopsContainerView(
+            isLoading: viewModel.isLoading,
+            errorMessage: viewModel.errorMessage,
+            hasStops: !viewModel.stops.isEmpty,
+            title: OBALoc("nearby_stops.title", value: "Nearby Stops", comment: "Title for nearby stops screen"),
+            refreshAction: { await viewModel.loadNearbyStops() }
+        ) {
+            NearbyStopsListView(
+                stops: viewModel.stops,
+                currentLocation: appState.currentLocation,
+                mapStyle: appState.mapStyle,
+                routeSummaryByStopID: viewModel.routeSummaryByStopID,
+                searchText: $searchText
+            )
+        } emptyState: {
+            emptyStateView
         }
     }
     
@@ -253,3 +246,36 @@ struct NearbyMapView: View {
 #Preview {
     NearbyStopsView()
 }
+
+/// A shared container view for displaying nearby stops with consistent loading, error, and empty states.
+struct NearbyStopsContainerView<Content: View, EmptyView: View>: View {
+    let isLoading: Bool
+    let errorMessage: String?
+    let hasStops: Bool
+    let title: String
+    let refreshAction: () async -> Void
+    @ViewBuilder let content: () -> Content
+    @ViewBuilder let emptyState: () -> EmptyView
+    
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let errorMessage {
+                    ErrorView(message: errorMessage)
+                } else if !hasStops {
+                    emptyState()
+                } else {
+                    content()
+                }
+            }
+            .navigationTitle(title)
+            .refreshable {
+                await refreshAction()
+            }
+        }
+    }
+}
+

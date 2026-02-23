@@ -25,26 +25,20 @@ struct NearbyStopsAtLocationView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let error = viewModel.errorMessage {
-                    ErrorView(message: error)
-                } else if viewModel.stops.isEmpty {
-                    emptyStateView
-                } else {
-                    NearbyStopsListView(
-                        stops: viewModel.stops,
-                        currentLocation: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude),
-                        mapStyle: appState.mapStyle,
-                        routeSummaryByStopID: nil,
-                        searchText: $searchText
-                    )
-                }
-            }
-            .navigationTitle(title)
+        NearbyStopsContainerView(
+            isLoading: viewModel.isLoading,
+            errorMessage: viewModel.errorMessage,
+            hasStops: !viewModel.stops.isEmpty,
+            title: title,
+            refreshAction: { await viewModel.loadNearbyStops() }
+        ) {
+            NearbyStopsListView(
+                stops: viewModel.stops,
+                currentLocation: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude),
+                mapStyle: appState.mapStyle,
+                routeSummaryByStopID: nil,
+                searchText: $searchText
+            )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -60,9 +54,8 @@ struct NearbyStopsAtLocationView: View {
                     }
                 }
             }
-            .refreshable {
-                await viewModel.loadNearbyStops()
-            }
+        } emptyState: {
+            emptyStateView
         }
     }
 
