@@ -73,7 +73,7 @@ class StopArrivalsViewModel: ObservableObject {
             
             lastUpdated = Date()
         } catch let apiError as OBAAPIError {
-            errorMessage = apiError.errorDescription ?? "API Error"
+            errorMessage = apiError.errorDescription ?? OBALoc("common.api_error", value: "API Error", comment: "Default API error message")
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -94,8 +94,7 @@ class StopArrivalsViewModel: ObservableObject {
             routeNames: routeNames.isEmpty ? nil : routeNames
         )
         
-        let recentViewModel = RecentStopsViewModel()
-        recentViewModel.addRecentStop(stop)
+        RecentStopsViewModel.shared.addRecentStop(stop)
         
         // Notify other views
         NotificationCenter.default.post(name: NSNotification.Name("RecentStopsUpdated"), object: nil)

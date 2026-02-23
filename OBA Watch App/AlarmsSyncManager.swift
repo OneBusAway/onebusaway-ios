@@ -11,7 +11,12 @@ final class AlarmsSyncManager {
 
     func currentAlarms() -> [WatchAlarmItem] {
         guard let data = WatchAppState.userDefaults.data(forKey: storageKey) else { return [] }
-        return (try? JSONDecoder().decode([WatchAlarmItem].self, from: data)) ?? []
+        do {
+            return try JSONDecoder().decode([WatchAlarmItem].self, from: data)
+        } catch {
+            Logger.error("Failed to decode alarms: \(error)")
+            return []
+        }
     }
 
     /// Updates local alarms from data received via WatchConnectivity.
