@@ -356,10 +356,12 @@ struct ArrivalRowView: View {
     }
 }
 
+
+
 extension OBAArrival {
+    /// Formatted time string for the arrival (e.g. "Now", "5 min", "1.2 h")
     var timeString: String {
         let minutes = self.minutesFromNow
-
         if minutes <= 0 {
             return OBALoc("times.now", value: "Now", comment: "Time: now")
         } else if minutes < 60 {
@@ -388,6 +390,7 @@ struct EmptyArrivalsView: View {
     }
 }
 
+
 struct ErrorView: View {
     let message: String
     
@@ -407,6 +410,7 @@ struct ErrorView: View {
         .padding()
     }
 }
+
 
 #Preview {
     NavigationStack {
