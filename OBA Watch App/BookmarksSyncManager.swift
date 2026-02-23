@@ -32,6 +32,11 @@ final class BookmarksSyncManager {
     /// Retrieves the current list of bookmarks.
     func getBookmarks() -> [WatchBookmark] {
         guard let data = WatchAppState.userDefaults.data(forKey: storageKey) else { return [] }
-        return (try? JSONDecoder().decode([WatchBookmark].self, from: data)) ?? []
+        do {
+            return try JSONDecoder().decode([WatchBookmark].self, from: data)
+        } catch {
+            Logger.error("Failed to decode bookmarks: \(error)")
+            return []
+        }
     }
 }

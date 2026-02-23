@@ -72,49 +72,65 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         let id: String
         let name: String
         let coordinate: CLLocationCoordinate2D
+        let obaBaseURL: URL?
+        let otpBaseURL: URL?
     }
 
     static let regions: [RegionOption] = [
-        .init(id: "tampa-bay", name: "Tampa Bay", coordinate: .init(latitude: 27.9506, longitude: -82.4572)),
-        .init(id: "puget-sound", name: "Puget Sound", coordinate: .init(latitude: 47.6062, longitude: -122.3321)),
-        .init(id: "mta-new-york", name: "MTA New York", coordinate: .init(latitude: 40.7128, longitude: -74.0060)),
-        .init(id: "washington-dc", name: "Washington, D.C.", coordinate: .init(latitude: 38.9072, longitude: -77.0369)),
-        .init(id: "san-diego", name: "San Diego", coordinate: .init(latitude: 32.7157, longitude: -117.1611))
-    ]
-
-    /// Coordinates for regions defined in RegionOnboardingView
-    static let regionCoordinates: [String: CLLocationCoordinate2D] = [
-        "tampa-bay": .init(latitude: 27.9506, longitude: -82.4572),
-        "puget-sound": .init(latitude: 47.6062, longitude: -122.3321),
-        "mta-new-york": .init(latitude: 40.7128, longitude: -74.0060),
-        "washington-dc": .init(latitude: 38.9072, longitude: -77.0369),
-        "san-diego": .init(latitude: 32.7157, longitude: -117.1611)
-    ]
-
-    /// Base URLs for regions defined in RegionOnboardingView
-    static let regionBaseURLs: [String: String] = [
-        "tampa-bay": "https://api.tampa.onebusawaycloud.com/",
-        "puget-sound": "https://api.pugetsound.onebusaway.org/",
-        "mta-new-york": "https://bustime.mta.info/",
-        "washington-dc": "https://buseta.wmata.com/onebusaway-api-webapp/",
-        "san-diego": "https://realtime.sdmts.com/api/"
-    ]
-
-    /// Base URLs for OTP regions defined in RegionOnboardingView
-    static let regionOTPBaseURLs: [String: String] = [
-        "tampa-bay": "https://otp.prod.obahart.org/otp/",
-        "puget-sound": "https://otp.prod.sound.obaweb.org/otp/routers/default/",
-        "atlanta": "https://opentrip.atlantaregion.com/otp",
-        "san-diego": "https://realtime.sdmts.com:9091/otp",
-        "adelaide-metro": "https://otp.nautilus-tech.com.au/otp/"
+        .init(
+            id: "tampa-bay",
+            name: OBALoc("region.tampa_bay", value: "Tampa Bay", comment: "Region: Tampa Bay"),
+            coordinate: .init(latitude: 27.9506, longitude: -82.4572),
+            obaBaseURL: URL(string: "https://api.tampa.onebusawaycloud.com/"),
+            otpBaseURL: URL(string: "https://otp.prod.obahart.org/otp/")
+        ),
+        .init(
+            id: "puget-sound",
+            name: OBALoc("region.puget_sound", value: "Puget Sound", comment: "Region: Puget Sound"),
+            coordinate: .init(latitude: 47.6062, longitude: -122.3321),
+            obaBaseURL: URL(string: "https://api.pugetsound.onebusaway.org/"),
+            otpBaseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")
+        ),
+        .init(
+            id: "mta-new-york",
+            name: OBALoc("region.mta_new_york", value: "MTA New York", comment: "Region: MTA New York"),
+            coordinate: .init(latitude: 40.7128, longitude: -74.0060),
+            obaBaseURL: URL(string: "https://bustime.mta.info/"),
+            otpBaseURL: nil
+        ),
+        .init(
+            id: "washington-dc",
+            name: OBALoc("region.washington_dc", value: "Washington, D.C.", comment: "Region: Washington, D.C."),
+            coordinate: .init(latitude: 38.9072, longitude: -77.0369),
+            obaBaseURL: URL(string: "https://buseta.wmata.com/onebusaway-api-webapp/"),
+            otpBaseURL: nil
+        ),
+        .init(
+            id: "san-diego",
+            name: OBALoc("region.san_diego", value: "San Diego", comment: "Region: San Diego"),
+            coordinate: .init(latitude: 32.7157, longitude: -117.1611),
+            obaBaseURL: URL(string: "https://realtime.sdmts.com/api/"),
+            otpBaseURL: URL(string: "https://realtime.sdmts.com:9091/otp")
+        ),
+        .init(
+            id: "atlanta",
+            name: OBALoc("region.atlanta", value: "Atlanta", comment: "Region: Atlanta"),
+            coordinate: .init(latitude: 33.74819, longitude: -84.39086),
+            obaBaseURL: nil,
+            otpBaseURL: URL(string: "https://opentrip.atlantaregion.com/otp")
+        ),
+        .init(
+            id: "adelaide-metro",
+            name: OBALoc("region.adelaide_metro", value: "Adelaide Metro", comment: "Region: Adelaide Metro"),
+            coordinate: .init(latitude: -34.833098, longitude: 138.621111),
+            obaBaseURL: nil,
+            otpBaseURL: URL(string: "https://otp.nautilus-tech.com.au/otp/")
+        )
     ]
 
     var currentOTPBaseURL: URL? {
         let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        if let urlString = Self.regionOTPBaseURLs[regionID] {
-            return URL(string: urlString)
-        }
-        return nil
+        return Self.regions.first(where: { $0.id == regionID })?.otpBaseURL
     }
 
     /// Returns the location to use for nearby stops, taking into account
@@ -129,8 +145,8 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         
         // Fallback to selected region
         let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        if let coord = Self.regionCoordinates[regionID] {
-            return CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+        if let region = Self.regions.first(where: { $0.id == regionID }) {
+            return CLLocation(latitude: region.coordinate.latitude, longitude: region.coordinate.longitude)
         }
         
         return CLLocation(latitude: 40.7128, longitude: -74.0060)
@@ -158,7 +174,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
     func updateRegion(id: String) {
          Self.userDefaults.set(id, forKey: "watch_selected_region_id")
          
-         if let urlString = Self.regionBaseURLs[id], let url = URL(string: urlString) {
+         if let region = Self.regions.first(where: { $0.id == id }), let url = region.obaBaseURL {
              let config = OBAURLSessionAPIClient.Configuration(
                  baseURL: url,
                  apiKey: self.apiKey,
@@ -189,11 +205,22 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         let manager = CLLocationManager()
         
         let defaults = Self.userDefaults
+        defaults.register(defaults: ["DataLoadFeedbackGenerator.enabled": true])
 
         // Use the saved region if available, otherwise fall back to MTA New York.
         let savedRegionID = defaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        let baseURLString = Self.regionBaseURLs[savedRegionID] ?? "https://bustime.mta.info"
-        let baseURL = URL(string: baseURLString)!
+        let savedRegion = Self.regions.first(where: { $0.id == savedRegionID })
+        
+        // Ensure we have a valid URL without force unwrapping
+        var baseURL: URL
+        if let regionURL = savedRegion?.obaBaseURL {
+            baseURL = regionURL
+        } else if let defaultURL = URL(string: "https://bustime.mta.info") {
+            baseURL = defaultURL
+        } else {
+            // This fallback should never be needed if the hardcoded URL is valid
+            baseURL = URL(fileURLWithPath: "/")
+        }
         
         let obaConfig = Bundle.main.object(forInfoDictionaryKey: "OBAKitConfig") as? [String: Any]
         let apiKeyFromPlist = (obaConfig?["RESTServerAPIKey"] as? String) ?? "org.onebusaway.iphone"
@@ -257,7 +284,8 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
                 BookmarksSyncManager.shared.updateBookmarks(bookmarks)
             }
             if let alerts = userInfo["alerts"] as? [[String: Any]] {
-                ServiceAlertsSyncManager.shared.updateAlerts(alerts)
+                // TODO: Implement ServiceAlertsSyncManager in PR3/PR4
+                // ServiceAlertsSyncManager.shared.updateAlerts(alerts)
             }
             if let alarms = userInfo["alarms"] as? [[String: Any]] {
                 AlarmsSyncManager.shared.updateAlarms(alarms)
@@ -267,7 +295,10 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
 
     /// Sends a request to the paired iPhone to perform an action.
     func sendMessageToPhone(_ message: [String: Any]) {
-        guard session.activationState == .activated else { return }
+        guard session.activationState == .activated else {
+            Logger.error("sendMessageToPhone failed: WCSession is not activated (state: \(session.activationState.rawValue)). Message dropped.")
+            return
+        }
         session.transferUserInfo(message)
     }
 

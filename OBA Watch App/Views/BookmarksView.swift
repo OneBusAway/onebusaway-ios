@@ -24,7 +24,7 @@ struct BookmarksView: View {
                     bookmarksList
                 }
             }
-            .navigationTitle("Bookmarks")
+            .navigationTitle(OBALoc("common.bookmarks", value: "Bookmarks", comment: "Title for the Bookmarks screen"))
             .task {
                 await viewModel.refreshData()
             }
@@ -36,9 +36,9 @@ struct BookmarksView: View {
             Image(systemName: "bookmark")
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
-            Text("No Bookmarks")
+            Text(OBALoc("bookmarks.no_bookmarks", value: "No Bookmarks", comment: "Empty state title for bookmarks"))
                 .font(.headline)
-            Text("Add bookmarks in the iOS app")
+            Text(OBALoc("bookmarks.add_in_ios_app", value: "Add bookmarks in the iOS app", comment: "Empty state description for bookmarks"))
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -78,7 +78,7 @@ struct BookmarkRow: View {
                 
                 if let routeName = bookmark.routeShortName {
                     HStack(spacing: 4) {
-                        Text("Route \(routeName)")
+                        Text(String(format: OBALoc("common.route_fmt", value: "Route %@", comment: "Route name format"), routeName))
                             .font(.caption2)
                             .foregroundColor(.secondary)
                         if let headsign = bookmark.tripHeadsign {
