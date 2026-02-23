@@ -44,7 +44,7 @@ class BookmarksViewModel: ObservableObject {
             bookmarks = decoded.sorted { $0.name < $1.name }
         } catch {
             bookmarks = []
-            errorMessage = "Failed to load bookmarks."
+            errorMessage = OBALoc("bookmarks.load_error", value: "Failed to load bookmarks.", comment: "Error loading bookmarks")
         }
     }
     
@@ -77,7 +77,7 @@ class BookmarksViewModel: ObservableObject {
             let data = try JSONEncoder().encode(bookmarks)
             WatchAppState.userDefaults.set(data, forKey: storageKey)
         } catch {
-            errorMessage = "Failed to save bookmark."
+            errorMessage = OBALoc("bookmarks.save_error", value: "Failed to save bookmark.", comment: "Error saving bookmark")
         }
     }
 }

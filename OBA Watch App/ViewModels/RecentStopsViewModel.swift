@@ -13,20 +13,22 @@ import OBAKitCore
 class RecentStopsViewModel: ObservableObject {
     @Published var recentStops: [OBAStop] = []
     
+    static let shared = RecentStopsViewModel()
+    
     private let storage = WatchAppState.userDefaults
     private let storageKey = "OBASharedRecentStops"
+    private var cancellables = Set<AnyCancellable>()
     
     init() {
         loadRecentStops()
         
         // Listen for updates
-        NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("RecentStopsUpdated"),
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.loadRecentStops()
-        }
+        NotificationCenter.default.publisher(for: NSNotification.Name("RecentStopsUpdated"))
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.loadRecentStops()
+            }
+            .store(in: &cancellables)
     }
     
     func loadRecentStops() {
@@ -36,7 +38,12 @@ class RecentStopsViewModel: ObservableObject {
         }
 
         let decoder = JSONDecoder()
-        recentStops = (try? decoder.decode([OBAStop].self, from: data)) ?? []
+        do {
+            recentStops = try decoder.decode([OBAStop].self, from: data)
+        } catch {
+            Logger.error("Failed to decode recent stops: \(error)")
+            recentStops = []
+        }
     }
 
     func addRecentStop(_ stop: OBAStop) {
@@ -56,8 +63,11 @@ class RecentStopsViewModel: ObservableObject {
 
     private func save() {
         let encoder = JSONEncoder()
-        if let data = try? encoder.encode(recentStops) {
+        do {
+            let data = try encoder.encode(recentStops)
             storage.set(data, forKey: storageKey)
+        } catch {
+            Logger.error("Failed to encode recent stops: \(error)")
         }
     }
 }

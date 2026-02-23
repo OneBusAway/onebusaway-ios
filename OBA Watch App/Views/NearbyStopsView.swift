@@ -33,10 +33,16 @@ struct NearbyStopsView: View {
                 } else if viewModel.stops.isEmpty {
                     emptyStateView
                 } else {
-                    stopsList
+                    NearbyStopsListView(
+                        stops: viewModel.stops,
+                        currentLocation: appState.currentLocation,
+                        mapStyle: appState.mapStyle,
+                        routeSummaryByStopID: viewModel.routeSummaryByStopID,
+                        searchText: $searchText
+                    )
                 }
             }
-            .navigationTitle("Nearby Stops")
+            .navigationTitle(OBALoc("nearby_stops.title", value: "Nearby Stops", comment: "Title for nearby stops screen"))
             .refreshable {
                 await viewModel.loadNearbyStops()
             }
@@ -48,18 +54,28 @@ struct NearbyStopsView: View {
             Image(systemName: "location.slash")
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
-            Text("No Stops Found")
+            Text(OBALoc("nearby_stops.no_stops", value: "No Stops Found", comment: "Empty state title for nearby stops"))
                 .font(.headline)
-            Text("0 stops found near this location")
+            Text(OBALoc("nearby_stops.no_stops_description", value: "0 stops found near this location", comment: "Empty state description for nearby stops"))
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .padding()
     }
+}
+
+/// Shared list view for displaying nearby stops with search and filtering
+struct NearbyStopsListView: View {
+    let stops: [OBAStop]
+    let currentLocation: CLLocation?
+    let mapStyle: MapStyle
+    let routeSummaryByStopID: [String: String]?
     
-    private var stopsList: some View {
-        let filtered = viewModel.stops.filter { stop in
+    @Binding var searchText: String
+    
+    var body: some View {
+        let filtered = stops.filter { stop in
             let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else { return true }
             if stop.name.localizedCaseInsensitiveContains(query) { return true }
@@ -71,9 +87,15 @@ struct NearbyStopsView: View {
         // list performant on watchOS.
         let limitedStops = Array(filtered.prefix(50))
 
-        let grouped = Dictionary(grouping: limitedStops, by: directionLabel)
+        let grouped = Dictionary(grouping: limitedStops, by: Self.directionLabel)
         let allKeys = grouped.keys
-        let preferredOrder = ["Northbound", "Southbound", "Eastbound", "Westbound", "Nearby"]
+        let preferredOrder = [
+            OBALoc("direction.northbound", value: "Northbound", comment: "Direction: Northbound"),
+            OBALoc("direction.southbound", value: "Southbound", comment: "Direction: Southbound"),
+            OBALoc("direction.eastbound", value: "Eastbound", comment: "Direction: Eastbound"),
+            OBALoc("direction.westbound", value: "Westbound", comment: "Direction: Westbound"),
+            OBALoc("common.nearby", value: "Nearby", comment: "Nearby section title")
+        ]
         let sortedKeys = allKeys.sorted { lhs, rhs in
             let lhsIndex = preferredOrder.firstIndex(of: lhs) ?? preferredOrder.count
             let rhsIndex = preferredOrder.firstIndex(of: rhs) ?? preferredOrder.count
@@ -87,7 +109,7 @@ struct NearbyStopsView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
-                    TextField("Search nearby stops", text: $searchText)
+                    TextField(OBALoc("common.search_nearby_stops", value: "Search nearby stops", comment: "Placeholder text for search field"), text: $searchText)
                         .font(.system(size: 16))
                         .padding(.vertical, 8)
                 }
@@ -100,8 +122,8 @@ struct NearbyStopsView: View {
             if !limitedStops.isEmpty {
                 NearbyMapView(
                     stops: limitedStops,
-                    currentLocation: appState.currentLocation,
-                    mapStyle: appState.mapStyle
+                    currentLocation: currentLocation,
+                    mapStyle: mapStyle
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 140)
@@ -111,7 +133,7 @@ struct NearbyStopsView: View {
             }
 
             ForEach(sortedKeys, id: \.self) { key in
-                let title = key.isEmpty ? "Nearby" : key
+                let title = key.isEmpty ? OBALoc("common.nearby", value: "Nearby", comment: "Nearby section title") : key
                 if let stopsForDirection = grouped[key] {
                     Section(title) {
                         ForEach(stopsForDirection) { stop in
@@ -120,8 +142,8 @@ struct NearbyStopsView: View {
                             } label: {
                                 NearbyStopRow(
                                     stop: stop,
-                                    currentLocation: appState.currentLocation,
-                                    routesSummary: viewModel.routeSummaryByStopID[stop.id]
+                                    currentLocation: currentLocation,
+                                    routesSummary: routeSummaryByStopID?[stop.id]
                                 )
                             }
                             .listRowBackground(
@@ -135,17 +157,17 @@ struct NearbyStopsView: View {
         }
     }
 
-    private func directionLabel(for stop: OBAStop) -> String {
+    static func directionLabel(for stop: OBAStop) -> String {
         guard let dir = stop.direction?.lowercased() else { return "" }
         switch dir {
-        case "n": return "Northbound"
-        case "s": return "Southbound"
-        case "e": return "Eastbound"
-        case "w": return "Westbound"
-        case "ne": return "Northeast"
-        case "nw": return "Northwest"
-        case "se": return "Southeast"
-        case "sw": return "Southwest"
+        case "n": return OBALoc("direction.northbound", value: "Northbound", comment: "Direction: Northbound")
+        case "s": return OBALoc("direction.southbound", value: "Southbound", comment: "Direction: Southbound")
+        case "e": return OBALoc("direction.eastbound", value: "Eastbound", comment: "Direction: Eastbound")
+        case "w": return OBALoc("direction.westbound", value: "Westbound", comment: "Direction: Westbound")
+        case "ne": return OBALoc("direction.northeast", value: "Northeast", comment: "Direction: Northeast")
+        case "nw": return OBALoc("direction.northwest", value: "Northwest", comment: "Direction: Northwest")
+        case "se": return OBALoc("direction.southeast", value: "Southeast", comment: "Direction: Southeast")
+        case "sw": return OBALoc("direction.southwest", value: "Southwest", comment: "Direction: Southwest")
         default: return ""
         }
     }
@@ -174,7 +196,7 @@ struct NearbyStopRow: View {
                 
                 HStack(spacing: 6) {
                     if let code = stop.code {
-                        Text("#\(code)")
+                        Text(String(format: OBALoc("nearby_stops.stop_code_fmt", value: "#%@", comment: "Stop code format"), code))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -201,9 +223,9 @@ struct NearbyStopRow: View {
     
     private func formatDistance(_ meters: Double) -> String {
         if meters < 1000 {
-            return String(format: "%.0f m", meters)
+            return String(format: OBALoc("distance.meters_fmt", value: "%.0f m", comment: "Distance in meters"), meters)
         } else {
-            return String(format: "%.1f km", meters / 1000.0)
+            return String(format: OBALoc("distance.kilometers_fmt", value: "%.1f km", comment: "Distance in kilometers"), meters / 1000.0)
         }
     }
 }
