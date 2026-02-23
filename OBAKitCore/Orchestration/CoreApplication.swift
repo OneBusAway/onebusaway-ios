@@ -105,6 +105,7 @@ open class CoreApplication: NSObject,
         refreshRESTAPIService()
         refreshObacoService()
         refreshSurveysService()
+        purgeStaleStopCache()
         apiServicesRefreshed()
     }
 
@@ -140,6 +141,17 @@ open class CoreApplication: NSObject,
         guard let database = stopCacheDatabase else { return nil }
         return StopCacheRepository(database: database)
     }()
+
+    /// Purges cached stops older than 30 days for the current region.
+    /// Called during `refreshServices()` (app launch and region change).
+    private func purgeStaleStopCache() {
+        guard let repository = stopCacheRepository,
+              let regionId = currentRegion?.regionIdentifier else {
+            return
+        }
+        let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
+        repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
+    }
 
     // MARK: - LocationServiceDelegate
 

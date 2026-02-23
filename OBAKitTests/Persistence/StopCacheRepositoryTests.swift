@@ -238,6 +238,45 @@ class StopCacheRepositoryTests: XCTestCase {
         }
     }
 
+    // MARK: - Routes Safety
+
+    func test_cachedStop_routesIsNotNil_afterRoundTrip() {
+        let stop = makeStop(id: "1_100")
+        repository.saveStops([stop], regionId: 1)
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(results.count, 1)
+
+        // Stop.routes is [Route]! — if this is nil, the next line would crash.
+        XCTAssertNotNil(results[0].routes)
+        // Accessing prioritizedRouteTypeForDisplay exercises routes.map internally.
+        XCTAssertEqual(results[0].prioritizedRouteTypeForDisplay, .unknown)
+    }
+
+    // MARK: - Corrupted Data
+
+    func test_stopsInRegion_gracefullyHandlesCorruptedRouteIDs() throws {
+        // Insert a record with invalid JSON in routeIDs directly via GRDB
+        try database.dbQueue.write { db in
+            try db.execute(
+                sql: """
+                    INSERT INTO cachedStop (id, regionId, code, name, latitude, longitude, direction, locationType, wheelchairBoarding, routeIDs, lastUpdated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                arguments: ["corrupt_1", 1, "0000", "Corrupt Stop", 47.6, -122.3, "N", 0, "unknown", "NOT_VALID_JSON", Date().timeIntervalSince1970]
+            )
+        }
+
+        // Also insert a valid stop
+        let validStop = makeStop(id: "valid_1", lat: 47.6, lon: -122.3)
+        repository.saveStops([validStop], regionId: 1)
+
+        // The corrupted record should be silently filtered out by compactMap in stopsInRegion
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results[0].id, "valid_1")
+    }
+
     // MARK: - Multiple Stops
 
     func test_saveMultipleStops_allPersisted() {
