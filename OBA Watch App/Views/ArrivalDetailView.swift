@@ -25,7 +25,7 @@ struct ArrivalDetailView: View {
                         Image(systemName: "location.fill")
                             .font(.system(size: 10))
                             .foregroundColor(.green)
-                        Text("Real-time")
+                        Text(OBALoc("arrival_detail.real_time", value: "Real-time", comment: "Real-time arrival status"))
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
@@ -40,21 +40,23 @@ struct ArrivalDetailView: View {
                 // Route details
                 if let routeShortName = arrival.routeShortName {
                     NavigationLink {
-                        RouteDetailView(route: OBARoute(
-                            id: arrival.routeID,
-                            shortName: routeShortName,
-                            longName: nil,
-                            agencyName: nil
-                        ))
+                        // TODO: Implement RouteDetailView in PR3/PR4
+                        // RouteDetailView(route: OBARoute(
+                        //     id: arrival.routeID,
+                        //     shortName: routeShortName,
+                        //     longName: nil,
+                        //     agencyName: nil
+                        // ))
+                        Text(OBALoc("arrival_detail.route_details_coming_soon", value: "Route Details Coming Soon", comment: "Placeholder for route details"))
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "bus.fill")
                                 .foregroundColor(.green)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Route \(routeShortName)")
+                                Text(String(format: OBALoc("common.route_fmt", value: "Route %@", comment: "Route name format"), routeShortName))
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
-                                Text("View route details")
+                                Text(OBALoc("arrival_detail.view_route_details", value: "View route details", comment: "Action to view route details"))
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
                             }
@@ -66,18 +68,20 @@ struct ArrivalDetailView: View {
                 
                 // Trip Schedule Link
                 NavigationLink {
-                    TripDetailsView(
-                        tripID: arrival.tripID,
-                        vehicleID: arrival.vehicleID,
-                        routeShortName: arrival.routeShortName,
-                        headsign: arrival.headsign,
-                        initialTrip: arrival.toTripForLocation()
-                    )
+                    // TODO: Implement TripDetailsView in PR3/PR4
+                    // TripDetailsView(
+                    //     tripID: arrival.tripID,
+                    //     vehicleID: arrival.vehicleID,
+                    //     routeShortName: arrival.routeShortName,
+                    //     headsign: arrival.headsign,
+                    //     initialTrip: arrival.toTripForLocation()
+                    // )
+                    Text(OBALoc("arrival_detail.trip_details_coming_soon", value: "Trip Details Coming Soon", comment: "Placeholder for trip details"))
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "list.bullet.rectangle.portrait")
                             .foregroundColor(.blue)
-                        Text("View Trip Schedule")
+                        Text(OBALoc("arrival_detail.view_trip_schedule", value: "View Trip Schedule", comment: "Action to view trip schedule"))
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         Spacer()
@@ -91,7 +95,7 @@ struct ArrivalDetailView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.bubble")
                             .foregroundColor(.red)
-                        Text("Report Trip Problem")
+                        Text(OBALoc("arrival_detail.report_trip_problem", value: "Report Trip Problem", comment: "Action to report a trip problem"))
                             .font(.subheadline)
                             .fontWeight(.semibold)
                         Spacer()
@@ -99,21 +103,17 @@ struct ArrivalDetailView: View {
                     .padding(.vertical, 4)
                 }
                 
-                NavigationLink(isActive: $showTripProblem) {
-                    ProblemReportView(mode: .trip(tripID: arrival.tripID, vehicleID: arrival.vehicleID, stopID: arrival.stopID))
-                } label: {
-                    EmptyView()
-                }
-                
                 // Vehicle Details Link
                 if let vehicleID = arrival.vehicleID {
                     NavigationLink {
-                        VehicleSearchView(initialQuery: vehicleID)
+                        // TODO: Implement VehicleSearchView in PR3/PR4
+                        // VehicleSearchView(initialQuery: vehicleID)
+                        Text(OBALoc("arrival_detail.vehicle_search_coming_soon", value: "Vehicle Search Coming Soon", comment: "Placeholder for vehicle search"))
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "bus")
                                 .foregroundColor(.orange)
-                            Text("View Vehicle \(vehicleID.components(separatedBy: "_").last ?? vehicleID)")
+                            Text(String(format: OBALoc("arrival_detail.view_vehicle_fmt", value: "View Vehicle %@", comment: "Action to view vehicle details"), vehicleID.components(separatedBy: "_").last ?? vehicleID))
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
                             Spacer()
@@ -126,10 +126,10 @@ struct ArrivalDetailView: View {
                     .padding(.vertical, 4)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Departure in")
+                    Text(OBALoc("arrival_detail.departure_in", value: "Departure in", comment: "Label for departure time"))
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(timeString(for: arrival))
+                    Text(arrival.timeString)
                         .font(.title3)
                         .fontWeight(.semibold)
                 }
@@ -139,19 +139,12 @@ struct ArrivalDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
         }
-        .navigationTitle(arrival.routeShortName ?? "Trip")
+        .navigationTitle(arrival.routeShortName ?? OBALoc("common.trip", value: "Trip", comment: "Default title for a trip"))
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func timeString(for arrival: OBAArrival) -> String {
-        let minutes = arrival.minutesFromNow
-        if minutes <= 0 {
-            return "Now"
-        } else if minutes < 60 {
-            return "\(minutes) min"
-        } else {
-            let hours = Double(minutes) / 60.0
-            return String(format: "%.1f h", hours)
+        .navigationDestination(isPresented: $showTripProblem) {
+            // TODO: Implement ProblemReportView in PR3/PR4
+            // ProblemReportView(mode: .trip(tripID: arrival.tripID, vehicleID: arrival.vehicleID, stopID: arrival.stopID))
+            Text(OBALoc("arrival_detail.report_problem_coming_soon", value: "Report Problem Coming Soon", comment: "Placeholder for problem report"))
         }
     }
 }

@@ -41,7 +41,7 @@ struct StopArrivalsView: View {
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                                 .lineLimit(2)
-                            Text("Stop \(stopID)")
+                            Text(String(format: OBALoc("stop_arrivals.stop_id_fmt", value: "Stop %@", comment: "Stop ID format"), stopID))
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
@@ -49,7 +49,7 @@ struct StopArrivalsView: View {
                     }
 
                     if let updated = viewModel.lastUpdated {
-                        Text("Updated: \(relativeUpdateString(from: updated))")
+                        Text(String(format: OBALoc("stop_arrivals.updated_fmt", value: "Updated: %@", comment: "Last updated time format"), relativeUpdateString(from: updated)))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
@@ -95,7 +95,7 @@ struct StopArrivalsView: View {
                     }
                     
                     if viewModel.upcomingArrivals.count > 5 {
-                        Button(showAllArrivals ? "Show Fewer" : "Load More") {
+                        Button(showAllArrivals ? OBALoc("common.show_fewer", value: "Show Fewer", comment: "Button to show fewer items") : OBALoc("common.load_more", value: "Load More", comment: "Button to load more items")) {
                             showAllArrivals.toggle()
                         }
                         .font(.system(size: 12, weight: .medium))
@@ -106,7 +106,7 @@ struct StopArrivalsView: View {
             }
 
             if !viewModel.routes.isEmpty {
-                Section("Routes") {
+                Section(OBALoc("common.routes", value: "Routes", comment: "Section title for routes")) {
                     ForEach(viewModel.routes) { route in
                         HStack(spacing: 12) {
                             Text(route.shortName ?? "??")
@@ -117,7 +117,7 @@ struct StopArrivalsView: View {
                                 .clipShape(Circle())
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(route.longName ?? "Unknown Route")
+                                Text(route.longName ?? OBALoc("common.unknown_route", value: "Unknown Route", comment: "Fallback text for unknown route name"))
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
                                     .lineLimit(1)
@@ -140,26 +140,25 @@ struct StopArrivalsView: View {
             }
             
             // Hidden navigation links for sheet actions
-            Group {
-                NavigationLink(isActive: $showNearbyStops) {
-                    NearbyStopsView()
-                } label: { EmptyView() }
-                NavigationLink(isActive: $showStopDetails) {
-                    StopDetailView(stopID: stopID)
-                } label: { EmptyView() }
-                NavigationLink(isActive: $showStopSchedule) {
-                    StopScheduleView(stopID: stopID)
-                } label: { EmptyView() }
-                NavigationLink(isActive: $showStopProblem) {
-                    ProblemReportView(mode: .stop(stopID: stopID))
-                } label: { EmptyView() }
-            }
-            .frame(height: 0)
-            .opacity(0)
-            .listRowBackground(Color.clear)
         }
-        .navigationTitle("Arrivals")
+        .navigationTitle(OBALoc("stop_arrivals.title", value: "Arrivals", comment: "Title for stop arrivals screen"))
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(isPresented: $showNearbyStops) {
+            NearbyStopsView()
+        }
+        .navigationDestination(isPresented: $showStopDetails) {
+            StopDetailView(stopID: stopID)
+        }
+        .navigationDestination(isPresented: $showStopSchedule) {
+            // TODO: Implement StopScheduleView in PR3/PR4
+            // StopScheduleView(stopID: stopID)
+            Text(OBALoc("schedule.coming_soon", value: "Schedule Coming Soon", comment: "Placeholder text for schedule screen"))
+        }
+        .navigationDestination(isPresented: $showStopProblem) {
+            // TODO: Implement ProblemReportView in PR3/PR4
+            // ProblemReportView(mode: .stop(stopID: stopID))
+            Text(OBALoc("problem_report.coming_soon", value: "Report Problem Coming Soon", comment: "Placeholder text for problem report screen"))
+        }
         .task {
             await viewModel.loadArrivals()
         }
@@ -179,46 +178,47 @@ struct StopArrivalsView: View {
         .sheet(isPresented: $showActions) {
             List {
                 Section {
-                    Button("Add Bookmark") {
-                        infoMessage = "Use the iPhone app to add bookmarks for this stop."
+                    Button(OBALoc("common.add_bookmark", value: "Add Bookmark", comment: "Action to add a bookmark")) {
+                        infoMessage = OBALoc("stop_arrivals.add_bookmark_instruction", value: "Use the iPhone app to add bookmarks for this stop.", comment: "Instruction on how to add bookmarks")
                         showActions = false
                     }
-                    Button("Stop Details") {
+                    Button(OBALoc("stop_details.title", value: "Stop Details", comment: "Title for stop details screen")) {
                         showStopDetails = true
                         showActions = false
                     }
-                    Button("Schedules") {
+                    Button(OBALoc("common.schedules", value: "Schedules", comment: "Action to view schedules")) {
                         showStopSchedule = true
                         showActions = false
                     }
-                    Button("Nearby Stops") {
+                    Button(OBALoc("common.nearby_stops", value: "Nearby Stops", comment: "Action to view nearby stops")) {
                         showNearbyStops = true
                         showActions = false
                     }
-                    Button("Report a Problem") {
+                    Button(OBALoc("problem_report.title", value: "Report a Problem", comment: "Action to report a problem")) {
                         showStopProblem = true
                         showActions = false
                     }
-                    Button("Open on iPhone") {
-                        DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
+                    Button(OBALoc("common.open_on_iphone", value: "Open on iPhone", comment: "Action to open the stop on iPhone")) {
+                        // TODO: Implement DeepLinkSyncManager in PR3/PR4
+                        // DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
                         showActions = false
                     }
                 }
 
                 Section {
-                    Button("Close", role: .cancel) {
+                    Button(OBALoc("common.close", value: "Close", comment: "Action to close a sheet"), role: .cancel) {
                         showActions = false
                     }
                 }
             }
         }
-        .alert("Info", isPresented: Binding(
+        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
             get: { infoMessage != nil },
             set: { newValue in
                 if !newValue { infoMessage = nil }
             }
         )) {
-            Button("OK", role: .cancel) { }
+            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) { }
         } message: {
             Text(infoMessage ?? "")
         }
@@ -235,15 +235,15 @@ struct StopArrivalsView: View {
     private func relativeUpdateString(from date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
         if interval < 30 {
-            return "Just now"
+            return OBALoc("times.just_now", value: "Just now", comment: "Time elapsed: just now")
         } else if interval < 60 {
-            return "Less than a minute ago"
+            return OBALoc("times.less_than_minute_ago", value: "Less than a minute ago", comment: "Time elapsed: less than a minute")
         } else {
             let minutes = Int(interval / 60)
             if minutes == 1 {
-                return "1 minute ago"
+                return OBALoc("times.one_minute_ago", value: "1 minute ago", comment: "Time elapsed: 1 minute")
             } else {
-                return "\(minutes) minutes ago"
+                return String(format: OBALoc("times.minutes_ago_fmt", value: "%d minutes ago", comment: "Time elapsed: multiple minutes"), minutes)
             }
         }
     }
@@ -256,7 +256,7 @@ struct RoutesListView: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(routes) { route in
                 HStack {
-                    Text(route.shortName ?? "Unknown")
+                    Text(route.shortName ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value"))
                         .font(.headline)
                     Spacer()
                     Text(route.longName ?? "")
@@ -322,7 +322,7 @@ struct ArrivalRowView: View {
                 )
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(arrival.headsign ?? "Unknown")
+                Text(arrival.headsign ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value"))
                     .font(.subheadline)
                     .lineLimit(1)
                 
@@ -332,7 +332,7 @@ struct ArrivalRowView: View {
                             .font(.system(size: 8))
                             .foregroundColor(.green)
                     }
-                    Text(timeString(for: arrival))
+                    Text(arrival.timeString)
                         .font(.caption)
                         .foregroundColor(.secondary)
                     if let statusLabel = arrival.scheduleStatusLabel {
@@ -354,17 +354,19 @@ struct ArrivalRowView: View {
         let hue = Double(hash % 360) / 360.0
         return Color(hue: hue, saturation: 0.7, brightness: 0.8)
     }
-    
-    private func timeString(for arrival: OBAArrival) -> String {
-        let minutes = arrival.minutesFromNow
+}
+
+extension OBAArrival {
+    var timeString: String {
+        let minutes = self.minutesFromNow
 
         if minutes <= 0 {
-            return "Now"
+            return OBALoc("times.now", value: "Now", comment: "Time: now")
         } else if minutes < 60 {
-            return "\(minutes) min"
+            return String(format: OBALoc("times.minutes_short_fmt", value: "%d min", comment: "Time: minutes short format"), minutes)
         } else {
             let hours = Double(minutes) / 60.0
-            return String(format: "%.1f h", hours)
+            return String(format: OBALoc("times.hours_short_fmt", value: "%.1f h", comment: "Time: hours short format"), hours)
         }
     }
 }
@@ -375,9 +377,9 @@ struct EmptyArrivalsView: View {
             Image(systemName: "clock.badge.xmark")
                 .font(.system(size: 30))
                 .foregroundColor(.secondary)
-            Text("No Upcoming Arrivals")
+            Text(OBALoc("stop_arrivals.no_upcoming_arrivals", value: "No Upcoming Arrivals", comment: "Empty state: no upcoming arrivals"))
                 .font(.headline)
-            Text("Check back later")
+            Text(OBALoc("stop_arrivals.check_back_later", value: "Check back later", comment: "Empty state: check back later"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -394,7 +396,7 @@ struct ErrorView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 30))
                 .foregroundColor(.orange)
-            Text("Error")
+            Text(OBALoc("common.error", value: "Error", comment: "Error title"))
                 .font(.headline)
             Text(message)
                 .font(.caption)
