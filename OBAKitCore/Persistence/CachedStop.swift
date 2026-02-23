@@ -69,24 +69,25 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
             return nil
         }
 
-        // Build a dictionary matching Stop's CodingKeys, then decode through Stop's Codable init.
-        // NOTE: We include an empty "routes" array so that Stop.routes (which is [Route]!)
-        // decodes as [] instead of nil. Without this, any access to stop.routes,
-        // stop.routeTypes, or stop.prioritizedRouteTypeForDisplay would crash
-        // because routes is an implicitly unwrapped optional.
-        let stopDict: [String: Any] = [
+        // Decode through Stop's Codable init. Empty "routes" array prevents nil crash
+        // on Stop.routes (which is [Route]!).
+        var stopDict: [String: Any] = [
             "id": id,
             "code": code,
             "name": name,
             "lat": latitude,
             "lon": longitude,
-            "direction": direction as Any,
             "locationType": locationType,
-            "wheelchairBoarding": wheelchairBoarding as Any,
             "routeIds": decodedRouteIDs,
             "regionIdentifier": regionId,
             "routes": [] as [[String: Any]]
         ]
+        if let direction {
+            stopDict["direction"] = direction
+        }
+        if let wheelchairBoarding {
+            stopDict["wheelchairBoarding"] = wheelchairBoarding
+        }
 
         do {
             let data = try JSONSerialization.data(withJSONObject: stopDict)

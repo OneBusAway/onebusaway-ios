@@ -202,14 +202,22 @@ class StopCacheRepositoryTests: XCTestCase {
 
     // MARK: - Clear Cache
 
-    func test_clearCache_removesAllStopsForRegion() {
-        let stops = (1...5).map { makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
-        repository.saveStops(stops, regionId: 1)
+    func test_clearCache_removesAllStopsForRegion_andPreservesOtherRegions() {
+        let region1Stops = (1...5).map { makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
+        repository.saveStops(region1Stops, regionId: 1)
+
+        let region2Stop = makeStop(id: "region2_stop", lat: 27.9, lon: -82.5)
+        repository.saveStops([region2Stop], regionId: 2)
 
         repository.clearCache(regionId: 1)
 
-        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
-        XCTAssertEqual(results.count, 0)
+        let region1Results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(region1Results.count, 0)
+
+        // Region 2 should be untouched
+        let region2Results = repository.stopsInRegion(minLat: 27.0, maxLat: 28.0, minLon: -83.0, maxLon: -82.0, regionId: 2)
+        XCTAssertEqual(region2Results.count, 1)
+        XCTAssertEqual(region2Results[0].id, "region2_stop")
     }
 
     // MARK: - Direction Handling
@@ -253,6 +261,16 @@ class StopCacheRepositoryTests: XCTestCase {
         XCTAssertEqual(results[0].prioritizedRouteTypeForDisplay, .unknown)
     }
 
+    func test_cachedStop_emptyRouteIDs_roundTripsCorrectly() {
+        let stop = makeStop(id: "no_routes", routeIDs: [])
+        repository.saveStops([stop], regionId: 1)
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNotNil(results[0].routes)
+        XCTAssertEqual(results[0].routeIDs, [])
+    }
+
     // MARK: - Corrupted Data
 
     func test_stopsInRegion_gracefullyHandlesCorruptedRouteIDs() throws {
@@ -275,6 +293,32 @@ class StopCacheRepositoryTests: XCTestCase {
         let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
         XCTAssertEqual(results.count, 1)
         XCTAssertEqual(results[0].id, "valid_1")
+    }
+
+    // MARK: - Nil Direction / WheelchairBoarding
+
+    func test_stopWithNilDirectionAndWheelchairBoarding_roundTripsCorrectly() {
+        // direction=nil and wheelchairBoarding=nil must not produce NSNull in
+        // the JSON dictionary, which would break JSONDecoder's decodeIfPresent.
+        let dict: [String: Any] = [
+            "id": "nil_fields",
+            "code": "0000",
+            "name": "Nil Fields Stop",
+            "lat": 47.6,
+            "lon": -122.3,
+            "locationType": 0,
+            "routeIds": ["1_100"]
+        ]
+        // Explicitly omit direction and wheelchairBoarding
+        let data = try! JSONSerialization.data(withJSONObject: dict)
+        let stop = try! JSONDecoder().decode(Stop.self, from: data)
+
+        repository.saveStops([stop], regionId: 1)
+
+        let results = repository.stopsInRegion(minLat: 47.0, maxLat: 48.0, minLon: -123.0, maxLon: -122.0, regionId: 1)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results[0].id, "nil_fields")
+        XCTAssertEqual(results[0].direction, .unknown)
     }
 
     // MARK: - Multiple Stops

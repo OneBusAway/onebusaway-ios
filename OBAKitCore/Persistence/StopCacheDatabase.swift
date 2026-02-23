@@ -18,6 +18,7 @@ public class StopCacheDatabase {
     let dbQueue: DatabaseQueue
 
     /// Creates a persistent database at the specified directory.
+    /// If the database file is corrupted, it is deleted and recreated since this is a cache.
     /// - Parameter databasePath: The directory in which to create the database file.
     ///   Defaults to the app's Application Support directory.
     public init(databasePath: String? = nil) throws {
@@ -34,7 +35,18 @@ public class StopCacheDatabase {
             path = appSupport.appendingPathComponent("stop_cache.sqlite").path
         }
 
-        dbQueue = try DatabaseQueue(path: path)
+        let queue: DatabaseQueue
+        do {
+            queue = try DatabaseQueue(path: path)
+        } catch {
+            Logger.error("Cache database corrupted, recreating: \(error)")
+            try? FileManager.default.removeItem(atPath: path)
+            try? FileManager.default.removeItem(atPath: path + "-wal")
+            try? FileManager.default.removeItem(atPath: path + "-shm")
+            queue = try DatabaseQueue(path: path)
+        }
+
+        dbQueue = queue
         try runMigrations()
     }
 

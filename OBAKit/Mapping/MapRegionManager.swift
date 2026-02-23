@@ -941,6 +941,8 @@ public class MapRegionManager: NSObject,
     }
 
     /// Finds a user-dropped pin for a given MKMapItem
+    /// - Parameter mapItem: The map item to find the associated pin for
+    /// - Returns: The pin associated with this map item, or nil
     public func findUserPin(for mapItem: MKMapItem) -> UserDroppedPin? {
         // First try to find by object identity
         if let pin = userMapItems.first(where: { $0.value === mapItem })?.key {
@@ -957,6 +959,10 @@ public class MapRegionManager: NSObject,
     }
 
     /// Entrypoint for displaying a user-driven search result on the map
+    /// - Parameters:
+    ///   - coordinate: The coordinate of the search result
+    ///   - title: Optional title; it will be overwritten
+    ///   - subtitle: Optional subtitle; it will be overwritten
     private func setUserAnnotation(coordinate: CLLocationCoordinate2D, title: String?, subtitle: String?) {
         let annotation = UserDroppedPin()
         annotation.coordinate = coordinate
