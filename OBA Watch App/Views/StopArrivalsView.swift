@@ -150,14 +150,10 @@ struct StopArrivalsView: View {
             StopDetailView(stopID: stopID)
         }
         .navigationDestination(isPresented: $showStopSchedule) {
-            // TODO: Implement StopScheduleView in PR3/PR4
-            // StopScheduleView(stopID: stopID)
-            Text(OBALoc("schedule.coming_soon", value: "Schedule Coming Soon", comment: "Placeholder text for schedule screen"))
+            StopScheduleView(stopID: stopID)
         }
         .navigationDestination(isPresented: $showStopProblem) {
-            // TODO: Implement ProblemReportView in PR3/PR4
-            // ProblemReportView(mode: .stop(stopID: stopID))
-            Text(OBALoc("problem_report.coming_soon", value: "Report Problem Coming Soon", comment: "Placeholder text for problem report screen"))
+            ProblemReportView(mode: .stop(stopID: stopID))
         }
         .task {
             await viewModel.loadArrivals()
@@ -199,8 +195,7 @@ struct StopArrivalsView: View {
                         showActions = false
                     }
                     Button(OBALoc("common.open_on_iphone", value: "Open on iPhone", comment: "Action to open the stop on iPhone")) {
-                        // TODO: Implement DeepLinkSyncManager in PR3/PR4
-                        // DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
+                        DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
                         showActions = false
                     }
                 }
