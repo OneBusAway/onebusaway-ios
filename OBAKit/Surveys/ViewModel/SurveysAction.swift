@@ -23,8 +23,6 @@ enum SurveysAction {
 
     case onSkipSurvey
 
-    case hideToastMessage
-
     // Questions Form
 
     case onCloseQuestionsForm

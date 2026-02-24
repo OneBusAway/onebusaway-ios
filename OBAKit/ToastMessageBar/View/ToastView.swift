@@ -49,7 +49,7 @@ struct ToastView: View {
 
 struct ToastModifier: ViewModifier {
 
-    @ObservedObject var manager = ToastManager.shared
+    @EnvironmentObject var manager: ToastManager
 
     let message: String?
     let type: Toast.ToastType?
