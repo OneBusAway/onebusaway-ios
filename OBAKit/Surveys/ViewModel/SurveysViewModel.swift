@@ -120,9 +120,6 @@ final public class SurveysViewModel {
         case .dismissFullQuestionsForm:
             showFullSurveyQuestions = false
 
-        case .hideToastMessage:
-            showToastMessage = false
-
         case .hideSurveyDismissSheet:
             showSurveyDismissSheet = false
 

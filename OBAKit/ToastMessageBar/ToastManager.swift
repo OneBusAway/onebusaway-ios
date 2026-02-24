@@ -11,13 +11,12 @@ import Foundation
 import SwiftUI
 
 class ToastManager: ObservableObject {
-    static let shared = ToastManager()
 
     @Published var toast: Toast?
     @Published var isShowing: Bool = false
     private var workItem: DispatchWorkItem?
 
-    private init() {}
+    init() {}
 
     func showSuccess(_ message: String, duration: TimeInterval = 3.0) {
         let toast = Toast(message: message, type: .success, duration: duration)
