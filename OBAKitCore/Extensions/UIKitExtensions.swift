@@ -7,10 +7,42 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
-#elseif canImport(WatchKit)
+#elseif os(watchOS)
 import WatchKit
+#endif
+
+/// Protocol support for improving Auto Layout-compatible view creation.
+public protocol Autolayoutable {
+    static func autolayoutNew() -> Self
+}
+
+#if os(iOS)
+extension UIView: Autolayoutable {
+    /// Creates a new instance of the receiver class, configured for use with Auto Layout.
+    ///
+    /// - Returns: An instance of the receiver class.
+    public static func autolayoutNew() -> Self {
+        let view = self.init(frame: .zero)
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }
+}
+#endif
+
+#if os(iOS)
+extension UIView {
+    /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
+    public var layoutDirectionIsRTL: Bool {
+        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
+    }
+
+    /// Returns true if the app's is running in a left-to-right language, like English.
+    public var layoutDirectionIsLTR: Bool {
+        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .leftToRight
+    }
+}
 #endif
 
 // MARK: - UIColor
@@ -197,7 +229,7 @@ public extension UIEdgeInsets {
 
 // Adapted from https://spin.atomicobject.com/2018/02/02/swift-scaled-font-bold-italic/
 
-#if canImport(UIKit)
+#if os(iOS)
 public extension UIFont {
     /// Returns a new font based upon the receiver with the specified traits added.
     /// - Parameter traits: The traits to add to `self`.
@@ -220,7 +252,7 @@ public extension UIFont {
 
 // MARK: - UILabel
 
-#if canImport(UIKit)
+#if os(iOS)
 public extension UILabel {
 
     /// Creates a new autolayout `UILabel` that attempts to maintain full visibility. This means it will adjust
