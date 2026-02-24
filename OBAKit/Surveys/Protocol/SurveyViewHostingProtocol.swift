@@ -13,6 +13,8 @@ import SafariServices
 @MainActor
 protocol SurveyViewHostingProtocol {
 
+    var application: Application { get }
+
     var surveysVM: SurveysViewModel { get set }
 
     var observationActive: Bool { get set }
@@ -84,9 +86,9 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
 
             switch toast.type {
             case .error:
-                showErrorToast(toast.message)
+                self.showErrorToast(toast.message, using: self.application.toastManager)
             case .success:
-                showSuccessToast(toast.message)
+                self.showSuccessToast(toast.message, using: self.application.toastManager)
             }
         } onChange: {
             Task { @MainActor [weak self] in
@@ -102,7 +104,7 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
                   self.surveysVM.openExternalSurvey,
                   let url = self.surveysVM.externalSurveyURL
             else { return }
-            
+
             self.openSafari(with: url, router: router)
         } onChange: {
             Task { @MainActor [weak self] in
@@ -145,7 +147,10 @@ extension SurveyViewHostingProtocol where Self: UIViewController {
             self?.observeSurveysState()
         }
 
-        let hosting = UIHostingController(rootView: surveyQuestionsForm)
+        let hosting = UIHostingController(
+            rootView: surveyQuestionsForm
+                .environmentObject(application.toastManager)
+        )
         router.present(hosting, from: self, isModal: true, isPopover: true)
     }
 

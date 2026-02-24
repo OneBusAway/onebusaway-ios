@@ -568,8 +568,4 @@ final class SurveysViewModelTests: XCTestCase {
         expect(self.viewModel.showSurveyDismissSheet).to(beFalse())
     }
 
-    func test_hideToastMessage_hidesToast() {
-        viewModel.onAction(.hideToastMessage)
-        expect(self.viewModel.showToastMessage).to(beFalse())
-    }
 }
