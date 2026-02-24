@@ -32,8 +32,7 @@ struct AlarmsView: View {
                             }
                             Spacer()
                             Button {
-                                // TODO: Implement DeepLinkSyncManager in PR3/PR4
-                                // DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
+                                DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
                             } label: {
                                 Image(systemName: "iphone")
                             }
