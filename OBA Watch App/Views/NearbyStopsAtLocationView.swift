@@ -42,13 +42,12 @@ struct NearbyStopsAtLocationView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        // TODO: Implement DeepLinkSyncManager in PR3/PR4
-                        // DeepLinkSyncManager.shared.planTripOnPhone(
-                        //     originLat: coordinate.latitude,
-                        //     originLon: coordinate.longitude,
-                        //     destLat: nil,
-                        //     destLon: nil
-                        // )
+                        DeepLinkSyncManager.shared.planTripOnPhone(
+                            originLat: coordinate.latitude,
+                            originLon: coordinate.longitude,
+                            destLat: nil,
+                            destLon: nil
+                        )
                     } label: {
                         Label(OBALoc("common.plan_on_phone", value: "Plan on Phone", comment: "Action to plan trip on phone"), systemImage: "figure.walk")
                     }
