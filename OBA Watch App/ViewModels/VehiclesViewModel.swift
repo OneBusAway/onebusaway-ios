@@ -17,7 +17,7 @@ final class VehiclesViewModel: ObservableObject {
     func loadNearbyVehicles() async {
         let apiClient = apiClientProvider()
         guard let loc = locationProvider() else {
-            errorMessage = OBALoc("vehicles.error.location_unavailable", value: "Location not available", comment: "Error message when location is not available")
+            errorMessage = "Location not available"
             return
         }
         isLoading = true
@@ -34,7 +34,7 @@ final class VehiclesViewModel: ObservableObject {
             
             trips = result.sorted { ($0.lastUpdateTime ?? .distantPast) > ($1.lastUpdateTime ?? .distantPast) }
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            errorMessage = error.localizedDescription
         }
     }
 }

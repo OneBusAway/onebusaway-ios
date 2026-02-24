@@ -6,9 +6,7 @@ class OTPService {
     private init() {}
     
     func planTrip(baseURL: URL, from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) async throws -> [OTPItinerary] {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent("plan"), resolvingAgainstBaseURL: false) else {
-            throw URLError(.badURL)
-        }
+        var components = URLComponents(url: baseURL.appendingPathComponent("plan"), resolvingAgainstBaseURL: false)!
         
         components.queryItems = [
             URLQueryItem(name: "fromPlace", value: "\(from.latitude),\(from.longitude)"),
@@ -28,22 +26,13 @@ class OTPService {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-            throw NSError(
-                domain: "OTPServiceError",
-                code: http.statusCode,
-                userInfo: [NSLocalizedDescriptionKey: "OTP server returned HTTP \(http.statusCode)."]
-            )
-        }
+        let (data, _) = try await URLSession.shared.data(for: request)
         
         let decoder = JSONDecoder()
         
         // Try multiple date strategies as different OTP servers use different formats
         let dateFormats = ["yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"]
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
         
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
@@ -60,25 +49,23 @@ class OTPService {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(string)")
         }
         
-        let otpResponse = try decoder.decode(OTPPlanResponse.self, from: data)
+        let response = try decoder.decode(OTPPlanResponse.self, from: data)
         
-        if let error = otpResponse.error {
+        if let error = response.error {
             throw NSError(domain: "OTPError", code: error.id, userInfo: [NSLocalizedDescriptionKey: error.msg])
         }
         
-        return otpResponse.plan?.itineraries ?? []
+        return response.plan?.itineraries ?? []
     }
     
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h:mma"
         return formatter.string(from: date).lowercased()
     }
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "MM-dd-yyyy"
         return formatter.string(from: date)
     }

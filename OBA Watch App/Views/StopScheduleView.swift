@@ -11,7 +11,7 @@ struct StopScheduleView: View {
     var body: some View {
         List {
             Section {
-                DatePicker(OBALoc("schedule.date", value: "Date", comment: "Date picker label"), selection: $date, displayedComponents: .date)
+                DatePicker("Date", selection: $date, displayedComponents: .date)
                     .onChange(of: date) { _, _ in
                         Task { await load() }
                     }
@@ -31,16 +31,16 @@ struct StopScheduleView: View {
                         .font(.footnote)
                 }
             } else if let schedule {
-                Section(String(format: OBALoc("schedule.stop_fmt", value: "Stop %@", comment: "Stop header format"), schedule.stopID)) {
+                Section("Stop \(schedule.stopID)") {
                     ForEach(schedule.stopTimes.indices, id: \.self) { idx in
                         let t = schedule.stopTimes[idx]
                         VStack(alignment: .leading, spacing: 2) {
                             Text(t.tripID)
                                 .font(.subheadline)
                             HStack {
-                                Text(String(format: OBALoc("schedule.arrival_fmt", value: "Arr: %@", comment: "Arrival time format"), DateFormatterHelper.timeFormatter.string(from: t.arrivalTime)))
+                                Text("Arr: \(DateFormatterHelper.timeFormatter.string(from: t.arrivalTime))")
                                 Spacer()
-                                Text(String(format: OBALoc("schedule.departure_fmt", value: "Dep: %@", comment: "Departure time format"), DateFormatterHelper.timeFormatter.string(from: t.departureTime)))
+                                Text("Dep: \(DateFormatterHelper.timeFormatter.string(from: t.departureTime))")
                             }
                             .font(.caption2)
                             .foregroundColor(.secondary)
@@ -54,7 +54,7 @@ struct StopScheduleView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("schedule.title", value: "Schedule", comment: "Schedule title"))
+        .navigationTitle("Schedule")
         .task {
             await load()
         }
@@ -71,7 +71,7 @@ struct StopScheduleView: View {
             let s = try await WatchAppState.shared.apiClient.fetchScheduleForStop(stopID: stopID, date: date)
             schedule = s
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            errorMessage = error.localizedDescription
         }
     }
 }

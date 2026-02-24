@@ -1,10 +1,12 @@
 import Foundation
 import Combine
 import MapKit
-import OBAKitCore
+import os.log
 
 @MainActor
 final class AddressSearchViewModel: ObservableObject {
+    private let logger = Logger(subsystem: "com.onebusaway.watchkitapp", category: "AddressSearch")
+    
     @Published var query: String
     @Published var results: [MKMapItem] = []
     @Published var isLoading: Bool = false
@@ -16,6 +18,7 @@ final class AddressSearchViewModel: ObservableObject {
     init(initialQuery: String) {
         self.query = initialQuery
         self.searchCompleter.resultTypes = [.address, .pointOfInterest]
+        logger.debug("Initialized AddressSearchViewModel with query: \(initialQuery)")
     }
 
     deinit {
@@ -27,12 +30,14 @@ final class AddressSearchViewModel: ObservableObject {
         
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
+            logger.debug("Empty search query, clearing results")
             results = []
             return
         }
 
         isLoading = true
         errorMessage = nil
+        logger.debug("Starting search for: \(trimmed)")
 
         searchTask = Task {
             do {
@@ -40,11 +45,22 @@ final class AddressSearchViewModel: ObservableObject {
                 request.naturalLanguageQuery = trimmed
                 request.resultTypes = [.address, .pointOfInterest]
                 
+                logger.debug("Creating search request with query: \(trimmed)")
                 let search = MKLocalSearch(request: request)
                 let response = try await search.start()
                 
                 guard !Task.isCancelled else {
+                    logger.debug("Search was cancelled")
                     return
+                }
+                
+                logger.debug("Search completed. Found \(response.mapItems.count) results")
+                if response.mapItems.isEmpty {
+                    logger.warning("No results found for query: \(trimmed)")
+                } else {
+                    response.mapItems.forEach { item in
+                        logger.debug("Found: \(item.name ?? "No name") - \(item.placemark.title ?? "No subtitle")")
+                    }
                 }
                 
                 self.results = response.mapItems
@@ -53,21 +69,21 @@ final class AddressSearchViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 
-                Logger.error("Search failed: \(error)")
+                logger.error("Search failed: \(error.localizedDescription)")
                 
                 // Provide user-friendly error messages
                 if let urlError = error as? URLError {
                     switch urlError.code {
                     case .notConnectedToInternet, .networkConnectionLost:
-                        self.errorMessage = OBALoc("search.error.no_internet", value: "No internet connection", comment: "No internet error message")
+                        self.errorMessage = "No internet connection"
                     case .timedOut:
-                        self.errorMessage = OBALoc("search.error.timed_out", value: "Request timed out", comment: "Request timed out error message")
+                        self.errorMessage = "Request timed out"
                     default:
-                        self.errorMessage = OBALoc("search.error.network_issue", value: "Unable to search. Please check your network connection.", comment: "Generic network error message")
+                        self.errorMessage = "Unable to search. Please check your network connection."
                     }
                 } else {
                     // For other errors, show a generic message
-                    self.errorMessage = OBALoc("search.error.generic", value: "Unable to search. Please try again.", comment: "Generic search error message")
+                    self.errorMessage = "Unable to search. Please try again."
                 }
                 self.isLoading = false
             }

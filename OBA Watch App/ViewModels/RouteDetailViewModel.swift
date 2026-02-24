@@ -34,12 +34,18 @@ final class RouteDetailViewModel: ObservableObject {
                     shapeCoordinates = PolylineDecoder.decode(encodedPolyline: encoded)
                 }
             } catch {
-                Logger.error("Failed to fetch shape for route \(routeID): \(error)")
+                // We don't set errorMessage here because stops are more important
             }
         } catch let apiError as OBAAPIError {
-            errorMessage = apiError.errorDescription ?? OBALoc("common.api_error", value: "API Error", comment: "API error")
+            errorMessage = apiError.errorDescription ?? "API Error"
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            if let urlError = error as? URLError {
+                errorMessage = "Network error: \(urlError.localizedDescription)"
+            } else if error is DecodingError {
+                errorMessage = "Data format error from server."
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
 
         isLoading = false

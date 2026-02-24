@@ -53,7 +53,7 @@ struct TripDetailsView: View {
                 }
             }
         }
-        .navigationTitle(routeShortName ?? OBALoc("trip_details.title", value: "Trip Details", comment: "Trip details title"))
+        .navigationTitle(routeShortName ?? "Trip Details")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadDetails()
@@ -99,8 +99,7 @@ struct TripDetailsView: View {
     private func headerSection(_ details: OBATripExtendedDetails) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 4) {
-                let tripFallback = OBALoc("trip_details.trip_fallback", value: "Trip", comment: "Trip fallback")
-                Text("\(routeShortName ?? details.tripId ?? "") - \(headsign ?? details.schedule?.nextTripId ?? tripFallback)")
+                Text("\(routeShortName ?? details.tripId ?? "") - \(headsign ?? details.schedule?.nextTripId ?? "Trip")")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(2)
@@ -113,7 +112,7 @@ struct TripDetailsView: View {
                         Text("•")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
-                        Text(OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status"))
+                        Text("Scheduled")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -137,7 +136,7 @@ struct TripDetailsView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.green)
                         
-                        Text(status.vehicleID != nil ? String(format: OBALoc("trip_details.vehicle_fmt", value: "Vehicle %@", comment: "Vehicle format"), status.vehicleID!) : OBALoc("trip_details.vehicle_status", value: "Vehicle Status", comment: "Vehicle status title"))
+                        Text(status.vehicleID != nil ? "Vehicle \(status.vehicleID!)" : "Vehicle Status")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
                     }
@@ -148,11 +147,11 @@ struct TripDetailsView: View {
                                 .font(.system(size: 12))
                                 .foregroundColor(deviationColor(seconds: deviation))
                         } else if status.predicted == true || status.lastUpdateTime != nil {
-                            Text(OBALoc("status.on_time", value: "On time", comment: "On time status"))
+                            Text("On time")
                                 .font(.system(size: 12))
                                 .foregroundColor(.green)
                         } else {
-                            Text(OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status"))
+                            Text("Scheduled")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                         }
@@ -188,7 +187,7 @@ struct TripDetailsView: View {
     @ViewBuilder
     private func stopsSection(_ details: OBATripExtendedDetails) -> some View {
         if let schedule = details.schedule {
-            Section(OBALoc("trip_details.section.stops", value: "Stops", comment: "Stops section header")) {
+            Section("Stops") {
                 ForEach(Array(schedule.stopTimes.enumerated()), id: \.offset) { index, stopTime in
                     StopRow(
                         stopTime: stopTime,
@@ -213,8 +212,8 @@ struct TripDetailsView: View {
     
     private func deviationString(seconds: Int) -> String {
         let minutes = abs(seconds) / 60
-        if seconds == 0 { return OBALoc("status.on_time", value: "On time", comment: "On time status") }
-        let label = seconds > 0 ? OBALoc("status.late", value: "late", comment: "Late status") : OBALoc("status.early", value: "early", comment: "Early status")
+        if seconds == 0 { return "On time" }
+        let label = seconds > 0 ? "late" : "early"
         return "\(minutes)m \(label)"
     }
     
@@ -290,14 +289,14 @@ struct StopRow: View {
                  
                  HStack {
                      if let stopId = stopTime.stopId {
-                         Text(String(format: OBALoc("trip_details.stop_id_format", value: "ID: %@", comment: "Stop ID format"), stopId.components(separatedBy: "_").last ?? stopId))
+                         Text("ID: \(stopId.components(separatedBy: "_").last ?? stopId)")
                              .font(.system(size: 11))
                              .foregroundColor(.secondary)
                      }
                      
                      if let distance = stopTime.distanceAlongTrip, distance > 0 {
                          Spacer()
-                         Text(String(format: OBALoc("trip_details.distance_format", value: "%.1f mi", comment: "Distance format"), distance / 1609.34))
+                         Text(String(format: "%.1f mi", distance / 1609.34))
                              .font(.system(size: 11))
                              .foregroundColor(.secondary)
                      }

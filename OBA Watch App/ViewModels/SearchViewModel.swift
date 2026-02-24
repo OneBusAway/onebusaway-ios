@@ -27,6 +27,13 @@ class SearchViewModel: ObservableObject {
     private let recentSearchTermsKey = "watch_recent_search_terms"
     private let bookmarksKey = "watch.bookmarks"
 
+    enum QuickSearchType {
+        case route
+        case address
+        case stop
+        case vehicle
+    }
+    
     init(apiClientProvider: @escaping () -> OBAAPIClient, locationProvider: @escaping () -> CLLocation?) {
         self.apiClientProvider = apiClientProvider
         self.locationProvider = locationProvider
@@ -75,6 +82,22 @@ class SearchViewModel: ObservableObject {
         WatchAppState.userDefaults.removeObject(forKey: recentSearchTermsKey)
     }
 
+    func quickSearch(_ type: QuickSearchType) {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        switch type {
+        case .stop:
+            performSearch()
+        case .route:
+            errorMessage = "Route search is not yet available on Apple Watch. Please use the iPhone app."
+        case .address:
+            errorMessage = "Address search is not yet available on Apple Watch. Please use the iPhone app."
+        case .vehicle:
+            errorMessage = "Vehicle search is not yet available on Apple Watch. Please use the iPhone app."
+        }
+    }
+
     func recordRecent(stop: OBAStop) {
         // Move stop to front and cap at 10 entries.
         recentStops.removeAll { $0.id == stop.id }
@@ -88,7 +111,7 @@ class SearchViewModel: ObservableObject {
             let data = try JSONEncoder().encode(recentStops)
             WatchAppState.userDefaults.set(data, forKey: recentStopsKey)
         } catch {
-            Logger.error("Failed to persist recent stops: \(error)")
+            // Ignore persistence errors for now.
         }
     }
     
@@ -106,37 +129,33 @@ class SearchViewModel: ObservableObject {
                 if let first = agencies.first {
                     location = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                 } else {
-                    errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
+                    errorMessage = "Location required for search"
                     return
                 }
             } catch {
-                errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
+                errorMessage = "Location required for search"
                 return
             }
         }
         
         do {
             let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let loc = location else {
-                errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
-                return
-            }
             let fetched = try await apiClient.searchStops(
                 query: trimmed,
-                latitude: loc.coordinate.latitude,
-                longitude: loc.coordinate.longitude,
+                latitude: location!.coordinate.latitude,
+                longitude: location!.coordinate.longitude,
                 radius: 5000.0
             )
 
             searchResults = fetched.stops.sorted { (s1: OBAStop, s2: OBAStop) in
                 let loc1 = CLLocation(latitude: s1.latitude, longitude: s1.longitude)
                 let loc2 = CLLocation(latitude: s2.latitude, longitude: s2.longitude)
-                let d1 = loc1.distance(from: loc)
-                let d2 = loc2.distance(from: loc)
+                let d1 = loc1.distance(from: location!)
+                let d2 = loc2.distance(from: location!)
                 return d1 < d2
             }
         } catch {
-            errorMessage = error.watchOSUserFacingMessage
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -164,7 +183,6 @@ class SearchViewModel: ObservableObject {
         do {
             return try JSONDecoder().decode([OBAStop].self, from: data)
         } catch {
-            Logger.error("Failed to decode recent stops: \(error)")
             return []
         }
     }
@@ -174,7 +192,6 @@ class SearchViewModel: ObservableObject {
         do {
             return try JSONDecoder().decode([WatchBookmark].self, from: data)
         } catch {
-            Logger.error("Failed to decode bookmarks: \(error)")
             return []
         }
     }

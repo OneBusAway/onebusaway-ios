@@ -19,7 +19,7 @@ struct VehicleSearchView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
-                    TextField(OBALoc("vehicle_search.placeholder", value: "Vehicle ID", comment: "Vehicle ID placeholder"), text: $viewModel.query)
+                    TextField("Vehicle ID", text: $viewModel.query)
                         .font(.system(size: 16))
                         .padding(.vertical, 8)
                         .onSubmit { viewModel.performSearch() }
@@ -107,7 +107,7 @@ struct VehicleSearchView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("common.search", value: "Search", comment: "Search title"))
+        .navigationTitle("Search")
         .onAppear {
             viewModel.performSearch()
         }
@@ -116,13 +116,13 @@ struct VehicleSearchView: View {
     private func vehicleStatus(_ trip: OBATripForLocation) -> String? {
         if let deviation = trip.scheduleDeviation {
             let minutes = abs(deviation) / 60
-            if deviation == 0 { return OBALoc("status.on_time", value: "On time", comment: "On time status") }
-            let label = deviation > 0 ? OBALoc("status.late", value: "late", comment: "Late status") : OBALoc("status.early", value: "early", comment: "Early status")
+            if deviation == 0 { return "On time" }
+            let label = deviation > 0 ? "late" : "early"
             return "\(minutes)m \(label)"
         } else if trip.predicted == true || trip.lastUpdateTime != nil {
-            return OBALoc("status.on_time", value: "On time", comment: "On time status")
+            return "On time"
         } else if trip.predicted == false {
-            return OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status")
+            return "Scheduled"
         }
         return nil
     }

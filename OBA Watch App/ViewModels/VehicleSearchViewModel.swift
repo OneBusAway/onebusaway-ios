@@ -47,35 +47,30 @@ final class VehicleSearchViewModel: ObservableObject {
                 if let first = agencies.first {
                     searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                 } else {
-                    errorMessage = OBALoc("vehicle_search.error.location_unavailable", value: "Location unavailable", comment: "Location unavailable")
+                    errorMessage = "Location unavailable"
                     return
                 }
             } catch {
-                errorMessage = OBALoc("vehicle_search.error.location_unavailable", value: "Location unavailable", comment: "Location unavailable")
+                errorMessage = "Location unavailable"
                 return
             }
-        }
-
-        guard let resolvedLocation = searchLocation else {
-            errorMessage = OBALoc("vehicle_search.error.location_unavailable", value: "Location unavailable", comment: "Location unavailable")
-            return
         }
 
         do {
             let span = 0.015
             let vehicles = try await apiClient.fetchVehiclesReliably(
-                latitude: resolvedLocation.coordinate.latitude,
-                longitude: resolvedLocation.coordinate.longitude,
+                latitude: searchLocation!.coordinate.latitude,
+                longitude: searchLocation!.coordinate.longitude,
                 latSpan: span,
                 lonSpan: span
             )
             
             self.nearbyVehicles = vehicles
             if vehicles.isEmpty {
-                self.errorMessage = OBALoc("vehicle_search.error.none_nearby", value: "No active vehicles found nearby.", comment: "No vehicles found")
+                self.errorMessage = "No active vehicles found nearby."
             }
         } catch {
-            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("vehicle_search.error.unable_load_nearby", value: "Unable to load nearby vehicles.", comment: "Unable to load vehicles")
+            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unable to load nearby vehicles."
         }
     }
 
@@ -132,8 +127,8 @@ final class VehicleSearchViewModel: ObservableObject {
                         searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                         searchRegion = first.agencyRegionBound.serviceRect
                     } else {
-                        self.errorMessage = "Location required for search"
-                        self.isLoading = false
+                        await MainActor.run { self.errorMessage = "Location required for search" }
+                        isLoading = false
                         return
                     }
                 }
@@ -151,8 +146,10 @@ final class VehicleSearchViewModel: ObservableObject {
                 do {
                     response = try await search.start()
                 } catch {
-                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
-                    self.isLoading = false
+                    await MainActor.run {
+                        self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
+                    }
+                    isLoading = false
                     return
                 }
 
@@ -162,40 +159,48 @@ final class VehicleSearchViewModel: ObservableObject {
                     // If MKLocalSearch failed or no location found, treat as vehicle ID
                     do {
                         let v = try await apiClient.fetchVehicle(vehicleID: trimmed)
-                        self.vehicle = v
-                        self.errorMessage = nil
-                    } catch {
-                        if let urlError = error as? URLError {
-                            switch urlError.code {
-                            case .notConnectedToInternet, .networkConnectionLost:
-                                self.errorMessage = OBALoc("common.error.no_internet", value: "No internet connection", comment: "No internet")
-                            case .timedOut:
-                                self.errorMessage = OBALoc("common.error.timed_out", value: "Request timed out", comment: "Timed out")
-                            case .badServerResponse:
-                                self.errorMessage = String(format: OBALoc("vehicle_search.error.not_found_fmt", value: "Vehicle '%@' not found", comment: "Vehicle not found"), trimmed)
-                            default:
-                                self.errorMessage = OBALoc("common.error.unable_connect", value: "Unable to connect. Please check your network connection.", comment: "Unable to connect")
-                            }
-                        } else if error is DecodingError {
-                            self.errorMessage = String(format: OBALoc("vehicle_search.error.not_found_fmt", value: "Vehicle '%@' not found", comment: "Vehicle not found"), trimmed)
-                        } else {
-                            let errorDesc = error.localizedDescription
-                            if errorDesc.lowercased().contains("not found") || errorDesc.contains("404") {
-                                self.errorMessage = String(format: OBALoc("vehicle_search.error.not_found_fmt", value: "Vehicle '%@' not found", comment: "Vehicle not found"), trimmed)
-                            } else if errorDesc.isEmpty {
-                                self.errorMessage = OBALoc("vehicle_search.error.not_found", value: "Vehicle not found", comment: "Vehicle not found")
-                            } else {
-                                self.errorMessage = OBALoc("vehicle_search.error.unable_load", value: "Unable to load vehicle information", comment: "Unable to load vehicle")
-                            }
+                        await MainActor.run {
+                            self.vehicle = v
+                            self.errorMessage = nil
                         }
-                        self.vehicle = nil
+                    } catch {
+                        await MainActor.run {
+                            if let urlError = error as? URLError {
+                                switch urlError.code {
+                                case .notConnectedToInternet, .networkConnectionLost:
+                                    self.errorMessage = "No internet connection"
+                                case .timedOut:
+                                    self.errorMessage = "Request timed out"
+                                case .badServerResponse:
+                                    self.errorMessage = "Vehicle '\(trimmed)' not found"
+                                default:
+                                    self.errorMessage = "Unable to connect. Please check your network connection."
+                                }
+                            } else if error is DecodingError {
+                                self.errorMessage = "Vehicle '\(trimmed)' not found"
+                            } else {
+                                let errorDesc = error.localizedDescription
+                                if errorDesc.lowercased().contains("not found") || errorDesc.contains("404") {
+                                    self.errorMessage = "Vehicle '\(trimmed)' not found"
+                                } else if errorDesc.isEmpty {
+                                    self.errorMessage = "Vehicle not found"
+                                } else {
+                                    self.errorMessage = "Unable to load vehicle information"
+                                }
+                            }
+                            self.vehicle = nil
+                        }
                     }
                 }
             } catch {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("common.error.unexpected", value: "An unexpected error occurred.", comment: "Unexpected error")
+                await MainActor.run {
+                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred."
+                }
             }
-
-            self.isLoading = false
+            
+            await MainActor.run {
+                self.isLoading = false
+            }
         }
     }
 }

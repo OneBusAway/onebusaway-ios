@@ -4,10 +4,11 @@ import MapKit
 import OBAKitCore
 
 @MainActor
-class TripPlanningViewModel: ObservableObject {
-    @Published var itineraries: [OTPItinerary] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+@Observable
+class TripPlanningViewModel {
+    var itineraries: [OTPItinerary] = []
+    var isLoading = false
+    var error: Error?
     
     private let appState: WatchAppState
     
@@ -17,18 +18,19 @@ class TripPlanningViewModel: ObservableObject {
     
     func planTrip(from origin: CLLocationCoordinate2D, to destination: CLLocationCoordinate2D) async {
         guard let otpURL = appState.currentOTPBaseURL else {
-            self.errorMessage = OBALoc("trip_planning.error.unavailable_region", value: "Trip planning is not available in this region.", comment: "Error message when trip planning offline/unsupported")
+            self.error = NSError(domain: "TripPlanning", code: 1, userInfo: [NSLocalizedDescriptionKey: "Trip planning is not available in this region."])
             return
         }
         
         isLoading = true
-        defer { isLoading = false }
-        errorMessage = nil
+        error = nil
         
         do {
             self.itineraries = try await OTPService.shared.planTrip(baseURL: otpURL, from: origin, to: destination)
         } catch {
-            self.errorMessage = error.watchOSUserFacingMessage
+            self.error = error
         }
+        
+        isLoading = false
     }
 }

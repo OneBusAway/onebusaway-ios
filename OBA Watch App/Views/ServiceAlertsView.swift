@@ -3,8 +3,6 @@ import OBAKitCore
 
 struct ServiceAlertsView: View {
     @State private var alerts: [WatchServiceAlert] = ServiceAlertsSyncManager.shared.currentAlerts()
-    @State private var infoMessage: String?
-
     var body: some View {
         List {
             if alerts.isEmpty {
@@ -12,9 +10,9 @@ struct ServiceAlertsView: View {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text(OBALoc("alerts.empty.title", value: "No Notifications", comment: "No alerts title"))
+                    Text("No Notifications")
                         .font(.headline)
-                    Text(OBALoc("alerts.empty.subtitle", value: "No active notifications", comment: "No alerts subtitle"))
+                    Text("No active notifications")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -38,10 +36,7 @@ struct ServiceAlertsView: View {
                             }
                             Spacer()
                             Button {
-                                let ok = DeepLinkSyncManager.shared.openAlertsOnPhone()
-                                if !ok {
-                                    infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
-                                }
+                                DeepLinkSyncManager.shared.openAlertsOnPhone()
                             } label: {
                                 Image(systemName: "iphone")
                             }
@@ -51,17 +46,9 @@ struct ServiceAlertsView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("service_alerts.nav_title", value: "Notifications", comment: "Service alerts navigation title"))
+        .navigationTitle("Notifications")
         .onReceive(NotificationCenter.default.publisher(for: ServiceAlertsSyncManager.alertsUpdatedNotification)) { _ in
             alerts = ServiceAlertsSyncManager.shared.currentAlerts()
-        }
-        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
-            get: { infoMessage != nil },
-            set: { if !$0 { infoMessage = nil } }
-        )) {
-            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
-        } message: {
-            Text(infoMessage ?? "")
         }
     }
 }

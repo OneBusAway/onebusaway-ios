@@ -20,7 +20,7 @@ struct StopSearchResultsView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
-                    TextField(OBALoc("stop_search.placeholder", value: "Search stops", comment: "Search stops placeholder"), text: $viewModel.query)
+                    TextField("Search stops", text: $viewModel.query)
                         .font(.system(size: 16))
                         .padding(.vertical, 8)
                         .onSubmit { viewModel.performSearch() }
@@ -74,7 +74,7 @@ struct StopSearchResultsView: View {
                                         .lineLimit(1)
                                     
                                     if let code = stop.code {
-                                        Text(String(format: OBALoc("stop_search.stop_code_format", value: "Stop %@", comment: "Stop code format"), code))
+                                        Text("Stop \(code)")
                                             .font(.system(size: 12))
                                             .foregroundColor(.secondary)
                                             .lineLimit(1)
@@ -95,9 +95,9 @@ struct StopSearchResultsView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 30))
                             .foregroundColor(.secondary.opacity(0.5))
-                        Text(OBALoc("stop_search.empty.title", value: "No Stops Found", comment: "No stops found empty state title"))
+                        Text("No Stops Found")
                             .font(.system(size: 16, weight: .semibold))
-                        Text(OBALoc("stop_search.empty.subtitle", value: "Try a different search term.", comment: "No stops found empty state subtitle"))
+                        Text("Try a different search term.")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                         Spacer(minLength: 20)
@@ -107,7 +107,7 @@ struct StopSearchResultsView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("stop_search.nav_title", value: "Stops", comment: "Stop search navigation title"))
+        .navigationTitle("Stops")
         .onAppear {
             viewModel.performSearch()
         }

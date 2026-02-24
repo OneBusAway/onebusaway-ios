@@ -12,7 +12,7 @@ struct ItineraryListView: View {
                 }
             }
         }
-        .navigationTitle(OBALoc("itinerary.title", value: "Routes", comment: "Itineraries title"))
+        .navigationTitle("Routes")
     }
 }
 

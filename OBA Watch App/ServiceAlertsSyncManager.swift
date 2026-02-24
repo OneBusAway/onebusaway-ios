@@ -22,18 +22,13 @@ final class ServiceAlertsSyncManager {
             WatchAppState.userDefaults.set(encodedData, forKey: storageKey)
             NotificationCenter.default.post(name: Self.alertsUpdatedNotification, object: nil)
         } catch {
-            Logger.error("updateAlerts failed: \(error)")
+            Logger.error("updateAlerts failed: \(error.localizedDescription)")
         }
     }
 
     /// Retrieves the current list of service alerts.
     func currentAlerts() -> [WatchServiceAlert] {
         guard let data = WatchAppState.userDefaults.data(forKey: storageKey) else { return [] }
-        do {
-            return try JSONDecoder().decode([WatchServiceAlert].self, from: data)
-        } catch {
-            Logger.error("Failed to decode service alerts: \(error)")
-            return []
-        }
+        return (try? JSONDecoder().decode([WatchServiceAlert].self, from: data)) ?? []
     }
 }

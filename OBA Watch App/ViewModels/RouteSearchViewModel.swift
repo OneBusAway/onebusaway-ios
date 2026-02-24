@@ -53,26 +53,18 @@ final class RouteSearchViewModel: ObservableObject {
                         if let agencyBound = agencies?.first?.agencyRegionBound {
                             searchRegion = agencyBound.serviceRect
                         }
-                        if agencies?.first != nil {
-                            await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                        } else if let location = locationProvider() {
-                            await self.executeSearch(trimmed: trimmed, location: location, searchRegion: searchRegion)
-                        } else {
-                            self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
-                        }
+                        await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? (agencies?.first.map { CLLocation(latitude: $0.centerLatitude, longitude: $0.centerLongitude) } ?? CLLocation(latitude: 0, longitude: 0)), searchRegion: searchRegion)
                         isLoading = false
                         return
                     }
                 } catch {
                     // Geocoding failed, try to get agency coverage for default location
                     agencies = try await apiClient.fetchAgenciesWithCoverage()
-                    if agencies?.first != nil {
-                        await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                    } else if let location = locationProvider() {
-                        await self.executeSearch(trimmed: trimmed, location: location, searchRegion: searchRegion)
-                    } else {
-                        self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
+                    let defaultLocation = agencies?.first.map { CLLocation(latitude: $0.centerLatitude, longitude: $0.centerLongitude) } ?? CLLocation(latitude: 0, longitude: 0)
+                    if let agencyBound = agencies?.first?.agencyRegionBound {
+                        searchRegion = agencyBound.serviceRect
                     }
+                    await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? defaultLocation, searchRegion: searchRegion)
                     isLoading = false
                     return
                 }
@@ -89,7 +81,7 @@ final class RouteSearchViewModel: ObservableObject {
                     searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                     searchRegion = first.agencyRegionBound.serviceRect
                 } else {
-                    self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
+                    await MainActor.run { self.errorMessage = "Location required for route search" }
                     isLoading = false
                     return
                 }
@@ -108,23 +100,27 @@ final class RouteSearchViewModel: ObservableObject {
             do {
                 response = try await search.start()
             } catch {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
+                await MainActor.run {
+                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
+                }
                 isLoading = false
                 return
             }
 
-            if let mapItem = response?.mapItems.first, let loc = mapItem.placemark.location {
-                await self.executeSearch(trimmed: trimmed, location: loc, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
-            } else if let searchLoc = searchLocation {
-                await self.executeSearch(trimmed: trimmed, location: searchLoc, searchRegion: searchRegion)
+            if let mapItem = response?.mapItems.first {
+                await self.executeSearch(trimmed: trimmed, location: mapItem.placemark.location!, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
             } else {
-                self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
+                await self.executeSearch(trimmed: trimmed, location: searchLocation!, searchRegion: searchRegion)
             }
         } catch {
-            self.errorMessage = error.watchOSUserFacingMessage
+            await MainActor.run {
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred."
+            }
         }
         
-        self.isLoading = false
+        await MainActor.run {
+            self.isLoading = false
+        }
     }
 
     private func executeSearch(trimmed: String, location: CLLocation, searchRegion: MKMapRect?) async {
@@ -138,8 +134,9 @@ final class RouteSearchViewModel: ObservableObject {
             )
             self.routes = fetched
         } catch {
-            self.errorMessage = error.watchOSUserFacingMessage
+            self.errorMessage = error.localizedDescription
         }
     }
 }
+
 
