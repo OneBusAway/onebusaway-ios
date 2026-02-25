@@ -16,9 +16,14 @@ import CoreLocation
 // swiftlint:disable force_cast force_try
 
 /// Tests for `NearbyTripMatcher` filtering and sorting logic.
+///
+/// Uses `arrivals_and_departures_for_stop_1_10020.json` which contains:
+/// - Stop `1_10020` serving routes `1_30`, `1_65`, `1_74`
+/// - 4 arrivals: 2 on route `1_30`, 2 on route `1_65`
+/// - All have `predicted: true` (isRealTime) and vehicle positions
 class NearbyTripMatcherTests: OBATestCase {
-    /// Seattle downtown — used as the user's GPS position.
-    let userLocation = CLLocation(latitude: 47.6062, longitude: -122.3321)
+    /// Near stop 1_10020 in the fixture (NE 55th & 37th Ave NE).
+    let userLocation = CLLocation(latitude: 47.6685, longitude: -122.2883)
 
     var dataLoader: MockDataLoader!
 
@@ -29,55 +34,79 @@ class NearbyTripMatcherTests: OBATestCase {
 
     // MARK: - Helpers
 
-    /// Stubs the arrivals-and-departures-for-stop endpoint for any stop ID.
-    private func stubArrivals(fixture: String = "arrivals_and_departures_for_stop_1_10020.json") {
-        let data = Fixtures.loadData(file: fixture)
+    private let arrivalsFixture = "arrivals_and_departures_for_stop_1_10020.json"
+
+    /// Stubs the arrivals-and-departures-for-stop endpoint.
+    private func stubArrivals() {
+        let data = Fixtures.loadData(file: arrivalsFixture)
         dataLoader.mock(data: data) { request in
             request.url?.absoluteString.contains("arrivals-and-departures-for-stop") ?? false
         }
     }
 
-    /// Loads real stops from the Seattle fixture.
-    private func loadStops() -> [Stop] {
-        return try! Fixtures.loadSomeStops()
+    /// Loads stops from the arrivals fixture's references (these have matching route IDs).
+    private func stopsFromArrivalsFixture() -> [Stop] {
+        let response = try! Fixtures.loadRESTAPIPayload(type: StopArrivals.self, fileName: arrivalsFixture)
+        // The stop from the entry + referenced stops both serve routes 1_30, 1_65.
+        return [response.stop]
     }
 
-    /// Returns the first route found across all fixture stops, or nil.
-    private func firstRouteFromStops(_ stops: [Stop]) -> Route? {
-        for stop in stops {
-            if let route = stop.routes.first {
-                return route
-            }
-        }
-        return nil
+    /// Gets route `1_30` from the arrivals fixture references.
+    private func route30() -> Route {
+        let stops = stopsFromArrivalsFixture()
+        return stops.flatMap(\.routes).first { $0.id == "1_30" }!
     }
 
-    // MARK: - Basic Behavior
+    /// Gets route `1_65` from the arrivals fixture references.
+    private func route65() -> Route {
+        let stops = stopsFromArrivalsFixture()
+        return stops.flatMap(\.routes).first { $0.id == "1_65" }!
+    }
 
-    func test_findTrips_withValidStopsAndArrivals_returnsResults() async throws {
-        let stops = loadStops()
+    // MARK: - Positive Match
+
+    func test_findTrips_returnsMatchesForRoute30() async throws {
+        let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
-        guard let route = firstRouteFromStops(stops) else {
-            XCTFail("No routes found in fixture stops")
-            return
-        }
-
         let results = try await NearbyTripMatcher.findTrips(
-            for: route,
+            for: route30(),
             near: userLocation,
             using: restService,
             stops: stops,
             maxDistance: 500_000
         )
 
-        // Results may or may not be empty depending on fixture data containing
-        // real-time arrivals for this route. The key thing is it doesn't crash.
-        expect(results).toNot(beNil())
+        // Fixture has 2 arrivals on route 1_30 with vehicles 1_7028 and 1_7022.
+        expect(results.count) == 2
+        let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
+        expect(vehicleIDs).to(contain("1_7028"))
+        expect(vehicleIDs).to(contain("1_7022"))
     }
 
-    func test_findTrips_filtersOutWrongRoute_throwsNoStopsNearby() async {
-        let stops = loadStops()
+    func test_findTrips_returnsMatchesForRoute65() async throws {
+        let stops = stopsFromArrivalsFixture()
+        stubArrivals()
+
+        let results = try await NearbyTripMatcher.findTrips(
+            for: route65(),
+            near: userLocation,
+            using: restService,
+            stops: stops,
+            maxDistance: 500_000
+        )
+
+        // Fixture has 2 arrivals on route 1_65 with vehicles 1_3691 and 1_3674.
+        expect(results.count) == 2
+        let vehicleIDs = Set(results.compactMap { $0.arrivalDeparture.vehicleID })
+        expect(vehicleIDs).to(contain("1_3691"))
+        expect(vehicleIDs).to(contain("1_3674"))
+    }
+
+    // MARK: - Route Filtering
+
+    func test_findTrips_nonexistentRoute_throwsNoStopsNearby() async {
+        let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
         let fakeRoute = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: [
@@ -96,64 +125,83 @@ class NearbyTripMatcherTests: OBATestCase {
                 stops: stops,
                 maxDistance: 500_000
             )
-            XCTFail("Expected MatchError.noStopsNearby to be thrown")
+            XCTFail("Expected MatchError.noStopsNearby")
         } catch let error as NearbyTripMatcher.MatchError {
             expect(error) == .noStopsNearby
         } catch {
-            XCTFail("Unexpected error type: \(error)")
+            XCTFail("Unexpected error: \(error)")
         }
     }
 
-    func test_findTrips_emptyStops_throwsNoStopsNearby() async {
-        let data = Fixtures.loadData(file: "stops_for_location_outofrange.json")
-        dataLoader.mock(data: data) { request in
-            request.url?.absoluteString.contains("stops-for-location") ?? false
-        }
+    // MARK: - Distance Filtering
 
-        let fakeRoute = try! Fixtures.dictionaryToModel(type: Route.self, dictionary: [
-            "agencyId": "1",
-            "id": "1_100",
-            "shortName": "100",
-            "type": 3,
-            "longName": "Test"
-        ])
-
-        do {
-            _ = try await NearbyTripMatcher.findTrips(
-                for: fakeRoute,
-                near: userLocation,
-                using: restService,
-                stops: [],
-                maxDistance: 500
-            )
-            XCTFail("Expected MatchError.noStopsNearby to be thrown")
-        } catch let error as NearbyTripMatcher.MatchError {
-            expect(error) == .noStopsNearby
-        } catch {
-            XCTFail("Unexpected error type: \(error)")
-        }
-    }
-
-    // MARK: - Sorting
-
-    func test_findTrips_sortsByDistanceClosestFirst() async throws {
-        let stops = loadStops()
+    func test_findTrips_tightDistance_excludesFarVehicles() async throws {
+        let stops = stopsFromArrivalsFixture()
         stubArrivals()
 
-        guard let route = firstRouteFromStops(stops) else { return }
+        // 1 meter — should exclude all vehicles.
+        let tightResults = try await NearbyTripMatcher.findTrips(
+            for: route30(),
+            near: userLocation,
+            using: restService,
+            stops: stops,
+            maxDistance: 1
+        )
 
-        let results = try await NearbyTripMatcher.findTrips(
-            for: route,
+        let wideResults = try await NearbyTripMatcher.findTrips(
+            for: route30(),
             near: userLocation,
             using: restService,
             stops: stops,
             maxDistance: 500_000
         )
 
-        guard results.count >= 2 else { return }
+        expect(tightResults.count) < wideResults.count
+        expect(tightResults).to(beEmpty())
+        expect(wideResults.count) == 2
+    }
 
+    // MARK: - Sorting
+
+    func test_findTrips_sortsByDistanceClosestFirst() async throws {
+        let stops = stopsFromArrivalsFixture()
+        stubArrivals()
+
+        let results = try await NearbyTripMatcher.findTrips(
+            for: route30(),
+            near: userLocation,
+            using: restService,
+            stops: stops,
+            maxDistance: 500_000
+        )
+
+        expect(results.count) >= 2
         for i in 0..<(results.count - 1) {
             expect(results[i].distanceFromUser) <= results[i + 1].distanceFromUser
+        }
+    }
+
+    // MARK: - Empty Stops
+
+    func test_findTrips_emptyStopsAndAPI_throwsNoStopsNearby() async {
+        let data = Fixtures.loadData(file: "stops_for_location_outofrange.json")
+        dataLoader.mock(data: data) { request in
+            request.url?.absoluteString.contains("stops-for-location") ?? false
+        }
+
+        do {
+            _ = try await NearbyTripMatcher.findTrips(
+                for: route30(),
+                near: userLocation,
+                using: restService,
+                stops: [],
+                maxDistance: 500
+            )
+            XCTFail("Expected MatchError.noStopsNearby")
+        } catch let error as NearbyTripMatcher.MatchError {
+            expect(error) == .noStopsNearby
+        } catch {
+            XCTFail("Unexpected error: \(error)")
         }
     }
 
