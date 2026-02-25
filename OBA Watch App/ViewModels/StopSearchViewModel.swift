@@ -75,7 +75,7 @@ class StopSearchViewModel: ObservableObject {
                         searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
                         searchRegion = first.agencyRegionBound.serviceRect
                     } else {
-                        await MainActor.run { self.errorMessage = "Location required for search" }
+                        await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
                         isLoading = false
                         return
                     }
@@ -92,14 +92,16 @@ class StopSearchViewModel: ObservableObject {
                 let search = MKLocalSearch(request: request)
                 let response = try? await search.start()
 
-                if let mapItem = response?.mapItems.first {
-                    await self.executeSearch(trimmed: query, location: mapItem.placemark.location!, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
+                if let mapItem = response?.mapItems.first, let loc = mapItem.placemark.location {
+                    await self.executeSearch(trimmed: query, location: loc, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
+                } else if let searchLoc = searchLocation {
+                    await self.executeSearch(trimmed: query, location: searchLoc, searchRegion: searchRegion)
                 } else {
-                    await self.executeSearch(trimmed: query, location: searchLocation!, searchRegion: searchRegion)
+                    await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
                 }
             } catch {
                 await MainActor.run {
-                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred."
+                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("common.error.unexpected", value: "An unexpected error occurred.", comment: "Unexpected error")
                 }
             }
             
@@ -131,7 +133,7 @@ class StopSearchViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "Unable to load stops."
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unable_load_stops", value: "Unable to load stops.", comment: "Unable to load stops")
             }
         }
     }

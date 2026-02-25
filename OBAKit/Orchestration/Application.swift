@@ -685,7 +685,7 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
 extension Application {
     public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         if let error = error {
-            Logger.error("WCSession activation failed: \(error.localizedDescription)")
+            Logger.error("WCSession activation failed: \(error)")
             return
         }
 

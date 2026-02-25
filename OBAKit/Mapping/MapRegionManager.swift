@@ -948,7 +948,7 @@ public class MapRegionManager: NSObject,
                 if (error as NSError).code == CLError.geocodeCanceled.rawValue {
                     return
                 }
-                Logger.error("Geocoding error: \(error.localizedDescription)")
+                Logger.error("Geocoding error: \(error)")
                 annotation.title = "Unknown Location"
                 annotation.subtitle = "Could not retrieve location details"
                 return

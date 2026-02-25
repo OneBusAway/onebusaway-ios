@@ -85,7 +85,7 @@ class TripDetailsViewModel: ObservableObject {
                     let vehicleStatus = try await apiClient.fetchTripForVehicle(vehicleID: vID)
                     finalStatus = vehicleStatus.status
                 } catch {
-                    // Ignore error, just proceed without status
+                    Logger.error("fetchTripForVehicle failed for \(vID): \(error)")
                 }
             }
             

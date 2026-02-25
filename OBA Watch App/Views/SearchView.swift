@@ -19,16 +19,14 @@ struct SearchView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.searchText.isEmpty {
-                    recentOrEmptyState
-                } else {
-                    searchResultsList
-                }
+        Group {
+            if viewModel.searchText.isEmpty {
+                recentOrEmptyState
+            } else {
+                searchResultsList
             }
-            .navigationTitle("Search")
         }
+        .navigationTitle(OBALoc("common.search", value: "Search", comment: "Search title"))
         .onChange(of: viewModel.searchText) { _, newValue in
             let trimmed = viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
@@ -54,7 +52,7 @@ struct SearchView: View {
     private var emptySearchState: some View {
         List {
             Section {
-                TextField("Search routes, stops...", text: $viewModel.searchText)
+                TextField(OBALoc("search.placeholder", value: "Search routes, stops...", comment: "Search placeholder"), text: $viewModel.searchText)
                     .submitLabel(.search)
                     .onSubmit {
                         viewModel.performSearch()
@@ -66,9 +64,9 @@ struct SearchView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("Search for Stops")
+                    Text(OBALoc("search.empty.title", value: "Search for Stops", comment: "Empty state title"))
                         .font(.headline)
-                    Text("Enter a stop name or code")
+                    Text(OBALoc("search.empty.subtitle", value: "Enter a stop name or code", comment: "Empty state subtitle"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -83,9 +81,9 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 30))
                 .foregroundColor(.secondary)
-            Text("No Results")
+            Text(OBALoc("search.no_results.title", value: "No Results", comment: "No results title"))
                 .font(.headline)
-            Text("Try a different search term")
+            Text(OBALoc("search.no_results.subtitle", value: "Try a different search term", comment: "No results subtitle"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -96,7 +94,7 @@ struct SearchView: View {
     private var recentStopsList: some View {
         List {
             Section {
-                TextField("Search routes, stops...", text: $viewModel.searchText)
+                TextField(OBALoc("search.placeholder", value: "Search routes, stops...", comment: "Search placeholder"), text: $viewModel.searchText)
                     .submitLabel(.search)
                     .onSubmit {
                         viewModel.performSearch()
@@ -104,7 +102,7 @@ struct SearchView: View {
             }
 
             if !viewModel.recentSearchTerms.isEmpty {
-                Section(header: Text("Recent Searches")) {
+                Section(header: Text(OBALoc("search.recent_terms", value: "Recent Searches", comment: "Recent searches header"))) {
                     ForEach(viewModel.recentSearchTerms, id: \.self) { term in
                         Button {
                             viewModel.selectRecentSearchTerm(term)
@@ -126,7 +124,7 @@ struct SearchView: View {
                     Button {
                         viewModel.clearRecentSearchTerms()
                     } label: {
-                        Text("Clear Recent")
+                        Text(OBALoc("search.clear_recent", value: "Clear Recent", comment: "Clear recent button"))
                             .font(.caption2)
                             .foregroundColor(.red)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -135,7 +133,7 @@ struct SearchView: View {
             }
 
             if !viewModel.recentStops.isEmpty {
-                Section(header: Text("Recent Stops")) {
+                Section(header: Text(OBALoc("search.recent_stops", value: "Recent Stops", comment: "Recent stops header"))) {
                     ForEach(viewModel.recentStops) { stop in
                         NavigationLink {
                             StopArrivalsView(stopID: stop.id, stopName: stop.name)
@@ -151,7 +149,7 @@ struct SearchView: View {
     private var searchResultsList: some View {
         List {
             Section {
-                TextField("Search routes, stops...", text: $viewModel.searchText)
+                TextField(OBALoc("search.placeholder", value: "Search routes, stops...", comment: "Search placeholder"), text: $viewModel.searchText)
                     .submitLabel(.search)
                     .onSubmit {
                         viewModel.performSearch()
@@ -160,14 +158,14 @@ struct SearchView: View {
 
             let trimmed = viewModel.searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmed.isEmpty {
-                Section("Quick Search") {
+                Section(OBALoc("search.quick.header", value: "Quick Search", comment: "Quick search header")) {
                     NavigationLink {
                         RouteSearchView(initialQuery: viewModel.searchText)
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "bus.fill")
                                 .foregroundColor(.green)
-                            Text("Route: ")
+                            Text(OBALoc("search.quick.route", value: "Route:", comment: "Quick search route"))
                             Text(viewModel.searchText)
                                 .fontWeight(.semibold)
                         }
@@ -179,7 +177,7 @@ struct SearchView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "mappin.and.ellipse")
                                 .foregroundColor(.blue)
-                            Text("Address: ")
+                            Text(OBALoc("search.quick.address", value: "Address:", comment: "Quick search address"))
                             Text(viewModel.searchText)
                                 .fontWeight(.semibold)
                         }
@@ -191,7 +189,7 @@ struct SearchView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "tram.fill")
                                 .foregroundColor(.orange)
-                            Text("Stop: ")
+                            Text(OBALoc("search.quick.stop", value: "Stop:", comment: "Quick search stop"))
                             Text(viewModel.searchText)
                                 .fontWeight(.semibold)
                         }
@@ -203,7 +201,7 @@ struct SearchView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "car.fill")
                                 .foregroundColor(.purple)
-                            Text("Vehicle: ")
+                            Text(OBALoc("search.quick.vehicle", value: "Vehicle:", comment: "Quick search vehicle"))
                             Text(viewModel.searchText)
                                 .fontWeight(.semibold)
                         }
@@ -227,7 +225,7 @@ struct SearchView: View {
                 }
             } else if !viewModel.bookmarkResults.isEmpty || !viewModel.searchResults.isEmpty {
                 if !viewModel.bookmarkResults.isEmpty {
-                    Section("Bookmarks") {
+                    Section(OBALoc("search.section.bookmarks", value: "Bookmarks", comment: "Bookmarks section header")) {
                         ForEach(viewModel.bookmarkResults) { bm in
                             NavigationLink {
                                 StopArrivalsView(stopID: bm.stopID, stopName: bm.name)
@@ -255,7 +253,7 @@ struct SearchView: View {
                 }
                 
                 if !viewModel.searchResults.isEmpty {
-                    Section("Stops") {
+                    Section(OBALoc("search.section.stops", value: "Stops", comment: "Stops section header")) {
                         ForEach(viewModel.searchResults) { stop in
                             NavigationLink {
                                 StopArrivalsView(stopID: stop.id, stopName: stop.name)
@@ -295,7 +293,7 @@ struct SearchResultRow: View {
                     .lineLimit(2)
                 
                 if let code = stop.code {
-                    Text("Stop \(code)")
+                    Text(String(format: OBALoc("search.stop_code_fmt", value: "Stop %@", comment: "Stop code format"), code))
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }

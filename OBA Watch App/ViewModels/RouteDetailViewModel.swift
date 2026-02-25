@@ -34,7 +34,7 @@ final class RouteDetailViewModel: ObservableObject {
                     shapeCoordinates = PolylineDecoder.decode(encodedPolyline: encoded)
                 }
             } catch {
-                // We don't set errorMessage here because stops are more important
+                Logger.error("Failed to fetch shape for route \(routeID): \(error)")
             }
         } catch let apiError as OBAAPIError {
             errorMessage = apiError.errorDescription ?? "API Error"

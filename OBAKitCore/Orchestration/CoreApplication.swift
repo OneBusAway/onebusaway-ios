@@ -226,7 +226,7 @@ open class CoreApplication: NSObject,
 
     @MainActor
     open func displayError(_ error: Error) async {
-        Logger.error("Error: \(error.localizedDescription)")
+        Logger.error("Error: \(error)")
     }
 
     // MARK: - Surveys

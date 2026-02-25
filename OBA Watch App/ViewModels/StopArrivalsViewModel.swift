@@ -106,9 +106,9 @@ class StopArrivalsViewModel: ObservableObject {
             let fetched = try await apiClient.fetchRoutesForStop(stopID: stopID)
             routes = fetched
         } catch let apiError as OBAAPIError {
-            Logger.error("loadRoutes failed: \(apiError.localizedDescription)")
+            Logger.error("loadRoutes failed: \(apiError)")
         } catch {
-            Logger.error("loadRoutes failed with unknown error: \(error.localizedDescription)")
+            Logger.error("loadRoutes failed with unknown error: \(error)")
             // We don't want to show an error message here, as it might
             // overwrite a more important error from `loadArrivals`.
         }

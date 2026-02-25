@@ -378,7 +378,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             let response: OBARawScheduleForRouteResponse = try await get(url: url)
             return response.firstShapeID()
         } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription)")
+            Logger.error("schedule-for-route failed for \(routeID): \(error)")
             return nil
         }
     }
@@ -611,7 +611,7 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             do {
                 return try await closure()
             } catch {
-                Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error.localizedDescription)")
+                Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error)")
                 lastError = error
             }
         }
