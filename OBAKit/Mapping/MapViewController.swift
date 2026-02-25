@@ -360,7 +360,7 @@ class MapViewController: UIViewController,
                 }
             } catch {
                 weatherButton.isHidden = true
-                Logger.error(error.localizedDescription)
+                Logger.error("\(error)")
             }
         }
     }

@@ -14,21 +14,19 @@ struct VehiclesView: View {
         ))
     }
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle("Vehicles")
-                .refreshable {
+        content
+            .navigationTitle(OBALoc("vehicles.title", value: "Vehicles", comment: "Vehicles screen title"))
+            .refreshable {
+                await viewModel.loadNearbyVehicles()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("LocationUpdated"))) { _ in
+                Task {
                     await viewModel.loadNearbyVehicles()
                 }
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("LocationUpdated"))) { _ in
-                    Task {
-                        await viewModel.loadNearbyVehicles()
-                    }
-                }
-        }
-        .task {
-            await viewModel.loadNearbyVehicles()
-        }
+            }
+            .task {
+                await viewModel.loadNearbyVehicles()
+            }
     }
 
     @ViewBuilder
@@ -50,9 +48,9 @@ struct VehiclesView: View {
             Image(systemName: "bus")
                 .font(.system(size: 40))
                 .foregroundColor(.secondary)
-            Text("No Vehicles Found")
+            Text(OBALoc("vehicles.empty.title", value: "No Vehicles Found", comment: "Empty state title"))
                 .font(.headline)
-            Text("No vehicles currently in service")
+            Text(OBALoc("vehicles.empty.subtitle", value: "No vehicles currently in service", comment: "Empty state subtitle"))
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -101,7 +99,7 @@ struct VehiclesView: View {
                     )
                 }
             } header: {
-                Text("Nearby Vehicles")
+                Text(OBALoc("vehicles.section.nearby", value: "Nearby Vehicles", comment: "Section header"))
             }
         }
     }
@@ -109,13 +107,13 @@ struct VehiclesView: View {
     private func vehicleStatus(_ trip: OBATripForLocation) -> String? {
         if let deviation = trip.scheduleDeviation {
             let minutes = abs(deviation) / 60
-            if deviation == 0 { return "On time" }
-            let label = deviation > 0 ? "late" : "early"
+            if deviation == 0 { return OBALoc("status.on_time", value: "On time", comment: "On time status") }
+            let label = deviation > 0 ? OBALoc("status.late", value: "late", comment: "Late status") : OBALoc("status.early", value: "early", comment: "Early status")
             return "\(minutes)m \(label)"
         } else if trip.predicted == true || trip.lastUpdateTime != nil {
-            return "On time"
+            return OBALoc("status.on_time", value: "On time", comment: "On time status")
         } else if trip.predicted == false {
-            return "Scheduled"
+            return OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status")
         }
         return nil
     }
@@ -149,7 +147,7 @@ struct VehiclesMapView: View {
             
             ForEach(trips) { trip in
                 if let lat = trip.latitude, let lon = trip.longitude {
-                    Marker(trip.routeShortName ?? "Bus", systemImage: "bus", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
+                    Marker(trip.routeShortName ?? OBALoc("vehicles.marker.bus", value: "Bus", comment: "Vehicle marker title"), systemImage: "bus", coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon))
                         .tint(.blue)
                 }
             }
@@ -164,11 +162,4 @@ struct VehiclesMapView: View {
             }
         }
     }
-}
-
-struct VehiclePin: Identifiable {
-    let id: String
-    let coordinate: CLLocationCoordinate2D
-    let orientation: Double?
-    let routeShortName: String?
 }

@@ -6,7 +6,9 @@ class OTPService {
     private init() {}
     
     func planTrip(baseURL: URL, from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) async throws -> [OTPItinerary] {
-        var components = URLComponents(url: baseURL.appendingPathComponent("plan"), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appendingPathComponent("plan"), resolvingAgainstBaseURL: false) else {
+            throw URLError(.badURL)
+        }
         
         components.queryItems = [
             URLQueryItem(name: "fromPlace", value: "\(from.latitude),\(from.longitude)"),

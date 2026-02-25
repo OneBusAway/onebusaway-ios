@@ -22,19 +22,19 @@ struct ProblemReportView: View {
         List {
             switch mode {
             case .stop(let stopID):
-                Section("Stop \(stopID)") {
-                    TextField("Problem code", text: $code)
-                    TextField("Comment (optional)", text: $comment)
-                    Toggle("Include location", isOn: $includeLocation)
+                Section(String(format: OBALoc("problem_report.stop_fmt", value: "Stop %@", comment: "Stop header"), stopID)) {
+                    TextField(OBALoc("problem_report.problem_code", value: "Problem code", comment: "Problem code"), text: $code)
+                    TextField(OBALoc("problem_report.comment_optional", value: "Comment (optional)", comment: "Comment optional"), text: $comment)
+                    Toggle(OBALoc("problem_report.include_location", value: "Include location", comment: "Include location"), isOn: $includeLocation)
                 }
             case .trip(let tripID, _, let stopID):
-                Section("Trip \(tripID)") {
-                    TextField("Problem code", text: $code)
-                    TextField("Comment (optional)", text: $comment)
-                    Toggle("On vehicle", isOn: $userOnVehicle)
-                    DatePicker("Service date", selection: $serviceDate, displayedComponents: .date)
+                Section(String(format: OBALoc("problem_report.trip_fmt", value: "Trip %@", comment: "Trip header"), tripID)) {
+                    TextField(OBALoc("problem_report.problem_code", value: "Problem code", comment: "Problem code"), text: $code)
+                    TextField(OBALoc("problem_report.comment_optional", value: "Comment (optional)", comment: "Comment optional"), text: $comment)
+                    Toggle(OBALoc("problem_report.on_vehicle", value: "On vehicle", comment: "On vehicle"), isOn: $userOnVehicle)
+                    DatePicker(OBALoc("problem_report.service_date", value: "Service date", comment: "Service date"), selection: $serviceDate, displayedComponents: .date)
                     if let stopID {
-                        Text("Stop \(stopID)")
+                        Text(String(format: OBALoc("problem_report.stop_fmt", value: "Stop %@", comment: "Stop header"), stopID))
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -48,13 +48,13 @@ struct ProblemReportView: View {
                 }
             }
             Section {
-                Button(isSubmitting ? "Submitting..." : "Submit") {
+                Button(isSubmitting ? OBALoc("problem_report.submitting", value: "Submitting...", comment: "Submitting") : OBALoc("problem_report.submit", value: "Submit", comment: "Submit")) {
                     Task { await submit() }
                 }
                 .disabled(isSubmitting || code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .navigationTitle("Report Problem")
+        .navigationTitle(OBALoc("problem_report.title", value: "Report Problem", comment: "Report Problem"))
     }
 
     private func submit() async {

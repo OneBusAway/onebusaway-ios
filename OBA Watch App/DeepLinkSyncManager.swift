@@ -8,33 +8,33 @@ final class DeepLinkSyncManager {
     
     private init() {}
     
-    private func sendAction(_ action: String, data: [String: Any] = [:]) {
+    private func sendAction(_ action: String, data: [String: Any] = [:]) -> Bool {
         var message = data
         message["action"] = action
-        WatchAppState.shared.sendMessageToPhone(message)
+        return WatchAppState.shared.sendMessageToPhone(message)
     }
     
-    func openStopOnPhone(stopID: String) {
-        sendAction("open_stop", data: ["stopID": stopID])
+    func openStopOnPhone(stopID: String) -> Bool {
+        return sendAction("open_stop", data: ["stopID": stopID])
     }
     
-    func openTripOnPhone(tripID: String) {
-        sendAction("open_trip", data: ["tripID": tripID])
+    func openTripOnPhone(tripID: String) -> Bool {
+        return sendAction("open_trip", data: ["tripID": tripID])
     }
     
-    func openAlertsOnPhone() {
-        sendAction("open_alerts")
+    func openAlertsOnPhone() -> Bool {
+        return sendAction("open_alerts")
     }
     
-    func contactDeveloperOnPhone() {
-        sendAction("contact_developer")
+    func contactDeveloperOnPhone() -> Bool {
+        return sendAction("contact_developer")
     }
     
-    func contactTransitOnPhone() {
-        sendAction("contact_transit")
+    func contactTransitOnPhone() -> Bool {
+        return sendAction("contact_transit")
     }
     
-    func planTripOnPhone(originLat: Double, originLon: Double, destLat: Double?, destLon: Double?) {
+    func planTripOnPhone(originLat: Double, originLon: Double, destLat: Double?, destLon: Double?) -> Bool {
         var data: [String: Any] = [
             "originLat": originLat,
             "originLon": originLon
@@ -43,6 +43,6 @@ final class DeepLinkSyncManager {
             data["destLat"] = destLat
             data["destLon"] = destLon
         }
-        sendAction("plan_trip", data: data)
+        return sendAction("plan_trip", data: data)
     }
 }
