@@ -107,10 +107,12 @@ final class RouteSearchViewModel: ObservableObject {
                 return
             }
 
-            if let mapItem = response?.mapItems.first {
-                await self.executeSearch(trimmed: trimmed, location: mapItem.placemark.location!, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
+            if let mapItem = response?.mapItems.first, let loc = mapItem.placemark.location {
+                await self.executeSearch(trimmed: trimmed, location: loc, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
+            } else if let searchLoc = searchLocation {
+                await self.executeSearch(trimmed: trimmed, location: searchLoc, searchRegion: searchRegion)
             } else {
-                await self.executeSearch(trimmed: trimmed, location: searchLocation!, searchRegion: searchRegion)
+                await MainActor.run { self.errorMessage = "Location required for route search" }
             }
         } catch {
             await MainActor.run {
@@ -138,5 +140,4 @@ final class RouteSearchViewModel: ObservableObject {
         }
     }
 }
-
 

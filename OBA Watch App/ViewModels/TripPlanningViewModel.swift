@@ -4,11 +4,10 @@ import MapKit
 import OBAKitCore
 
 @MainActor
-@Observable
-class TripPlanningViewModel {
-    var itineraries: [OTPItinerary] = []
-    var isLoading = false
-    var error: Error?
+class TripPlanningViewModel: ObservableObject {
+    @Published var itineraries: [OTPItinerary] = []
+    @Published var isLoading = false
+    @Published var error: Error?
     
     private let appState: WatchAppState
     

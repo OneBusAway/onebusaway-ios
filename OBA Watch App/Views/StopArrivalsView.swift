@@ -155,9 +155,6 @@ struct StopArrivalsView: View {
         .navigationDestination(isPresented: $showStopProblem) {
             ProblemReportView(mode: .stop(stopID: stopID))
         }
-        .task {
-            await viewModel.loadArrivals()
-        }
         .refreshable {
             await viewModel.loadArrivals()
             WKInterfaceDevice.current().play(.success)
@@ -195,7 +192,10 @@ struct StopArrivalsView: View {
                         showActions = false
                     }
                     Button(OBALoc("common.open_on_iphone", value: "Open on iPhone", comment: "Action to open the stop on iPhone")) {
-                        DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
+                        let ok = DeepLinkSyncManager.shared.openStopOnPhone(stopID: stopID)
+                        if !ok {
+                            infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
+                        }
                         showActions = false
                     }
                 }
@@ -239,61 +239,6 @@ struct StopArrivalsView: View {
                 return OBALoc("times.one_minute_ago", value: "1 minute ago", comment: "Time elapsed: 1 minute")
             } else {
                 return String(format: OBALoc("times.minutes_ago_fmt", value: "%d minutes ago", comment: "Time elapsed: multiple minutes"), minutes)
-            }
-        }
-    }
-}
-
-struct RoutesListView: View {
-    let routes: [OBARoute]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(routes) { route in
-                HStack {
-                    Text(route.shortName ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value"))
-                        .font(.headline)
-                    Spacer()
-                    Text(route.longName ?? "")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-}
-
-struct StopHeaderView: View {
-    let title: String
-    let subtitle: String?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.headline)
-                .lineLimit(2)
-            if let subtitle {
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-struct ArrivalsListView: View {
-    let arrivals: [OBAArrival]
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(arrivals.prefix(5))) { arrival in
-                NavigationLink {
-                    ArrivalDetailView(arrival: arrival)
-                } label: {
-                    ArrivalRowView(arrival: arrival)
-                }
             }
         }
     }

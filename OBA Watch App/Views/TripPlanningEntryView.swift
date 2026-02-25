@@ -27,19 +27,19 @@ struct TripPlanningEntryView: View {
                             .font(.headline)
                             .foregroundColor(.blue)
                         VStack(alignment: .leading) {
-                            Text("Current Location")
+                            Text(OBALoc("trip_planning.current_location", value: "Current Location", comment: "Current location option"))
                                 .font(.headline)
-                            Text("Start trip from here")
+                            Text(OBALoc("trip_planning.start_here", value: "Start trip from here", comment: "Start trip from here"))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
                     }
                     .padding(.vertical, 4)
                 }
-                .alert("Location Access Required", isPresented: $showingLocationAlert) {
-                    Button("OK", role: .cancel) {}
+                .alert(OBALoc("trip_planning.location_required.title", value: "Location Access Required", comment: "Alert title"), isPresented: $showingLocationAlert) {
+                    Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
                 } message: {
-                    Text("Please enable location access in the Watch app settings to plan a trip from your current location.")
+                    Text(OBALoc("trip_planning.location_required.message", value: "Please enable location access in the Watch app settings to plan a trip from your current location.", comment: "Location required message"))
                 }
 
                 NavigationLink {
@@ -50,9 +50,9 @@ struct TripPlanningEntryView: View {
                             .font(.headline)
                             .foregroundColor(.purple)
                         VStack(alignment: .leading) {
-                            Text("Search Address")
+                            Text(OBALoc("trip_planning.search_address", value: "Search Address", comment: "Search address option"))
                                 .font(.headline)
-                            Text("Enter a destination")
+                            Text(OBALoc("trip_planning.enter_destination", value: "Enter a destination", comment: "Enter destination"))
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
                         }
@@ -60,11 +60,11 @@ struct TripPlanningEntryView: View {
                     .padding(.vertical, 4)
                 }
             } header: {
-                Text("Plan a Trip")
+                Text(OBALoc("trip_planning.header", value: "Plan a Trip", comment: "Plan a Trip header"))
             } footer: {
-                Text("Selecting an option will open the trip planner on your iPhone.")
+                Text(OBALoc("trip_planning.footer", value: "Selecting an option will open the trip planner on your iPhone.", comment: "Footer hint"))
             }
         }
-        .navigationTitle("Trip Planning")
+        .navigationTitle(OBALoc("trip_planning.title", value: "Trip Planning", comment: "Trip Planning title"))
     }
 }

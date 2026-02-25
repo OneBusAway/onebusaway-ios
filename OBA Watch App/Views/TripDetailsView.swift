@@ -53,7 +53,7 @@ struct TripDetailsView: View {
                 }
             }
         }
-        .navigationTitle(routeShortName ?? "Trip Details")
+        .navigationTitle(routeShortName ?? OBALoc("trip_details.title", value: "Trip Details", comment: "Trip details title"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.loadDetails()
@@ -99,7 +99,8 @@ struct TripDetailsView: View {
     private func headerSection(_ details: OBATripExtendedDetails) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(routeShortName ?? details.tripId ?? "") - \(headsign ?? details.schedule?.nextTripId ?? "Trip")")
+                let tripFallback = OBALoc("trip_details.trip_fallback", value: "Trip", comment: "Trip fallback")
+                Text("\(routeShortName ?? details.tripId ?? "") - \(headsign ?? details.schedule?.nextTripId ?? tripFallback)")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
                     .lineLimit(2)
@@ -112,7 +113,7 @@ struct TripDetailsView: View {
                         Text("•")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
-                        Text("Scheduled")
+                        Text(OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status"))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                     }
@@ -136,7 +137,7 @@ struct TripDetailsView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.green)
                         
-                        Text(status.vehicleID != nil ? "Vehicle \(status.vehicleID!)" : "Vehicle Status")
+                        Text(status.vehicleID != nil ? String(format: OBALoc("trip_details.vehicle_fmt", value: "Vehicle %@", comment: "Vehicle format"), status.vehicleID!) : OBALoc("trip_details.vehicle_status", value: "Vehicle Status", comment: "Vehicle status title"))
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.white)
                     }
@@ -147,11 +148,11 @@ struct TripDetailsView: View {
                                 .font(.system(size: 12))
                                 .foregroundColor(deviationColor(seconds: deviation))
                         } else if status.predicted == true || status.lastUpdateTime != nil {
-                            Text("On time")
+                            Text(OBALoc("status.on_time", value: "On time", comment: "On time status"))
                                 .font(.system(size: 12))
                                 .foregroundColor(.green)
                         } else {
-                            Text("Scheduled")
+                            Text(OBALoc("status.scheduled", value: "Scheduled", comment: "Scheduled status"))
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                         }
@@ -187,7 +188,7 @@ struct TripDetailsView: View {
     @ViewBuilder
     private func stopsSection(_ details: OBATripExtendedDetails) -> some View {
         if let schedule = details.schedule {
-            Section("Stops") {
+            Section(OBALoc("trip_details.section.stops", value: "Stops", comment: "Stops section header")) {
                 ForEach(Array(schedule.stopTimes.enumerated()), id: \.offset) { index, stopTime in
                     StopRow(
                         stopTime: stopTime,
@@ -212,8 +213,8 @@ struct TripDetailsView: View {
     
     private func deviationString(seconds: Int) -> String {
         let minutes = abs(seconds) / 60
-        if seconds == 0 { return "On time" }
-        let label = seconds > 0 ? "late" : "early"
+        if seconds == 0 { return OBALoc("status.on_time", value: "On time", comment: "On time status") }
+        let label = seconds > 0 ? OBALoc("status.late", value: "late", comment: "Late status") : OBALoc("status.early", value: "early", comment: "Early status")
         return "\(minutes)m \(label)"
     }
     

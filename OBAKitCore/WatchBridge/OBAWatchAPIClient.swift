@@ -177,7 +177,7 @@ public extension OBAAPIClient {
             addUnique(result)
         } catch {
             lastError = error
-            Logger.error("fetchTripsForLocation failed: \(error.localizedDescription)")
+            Logger.error("fetchTripsForLocation failed: \(error)")
             lastError = error
         }
 
@@ -190,7 +190,7 @@ public extension OBAAPIClient {
             addUnique(await fetchTripsForRoutes(routes))
         } catch {
             lastError = error
-            Logger.error("searchRoutes failed: \(error.localizedDescription)")
+            Logger.error("searchRoutes failed: \(error)")
             lastError = error
         }
 
@@ -205,7 +205,7 @@ public extension OBAAPIClient {
             addUnique(await fetchVehiclesForAgencies(nearbyAgencies), filterByLocation: true)
         } catch {
             lastError = error
-            Logger.error("fetchAgenciesWithCoverage failed: \(error.localizedDescription)")
+            Logger.error("fetchAgenciesWithCoverage failed: \(error)")
             lastError = error
         }
 
@@ -223,7 +223,7 @@ public extension OBAAPIClient {
                 group.addTask {
                     do { return try await self.fetchTripsForRoute(routeID: route.id) }
                     catch {
-                        Logger.error("fetchTripsForRoute failed for \(route.id): \(error.localizedDescription)")
+                        Logger.error("fetchTripsForRoute failed for \(route.id): \(error)")
                         return []
                     }
                 }
@@ -240,7 +240,7 @@ public extension OBAAPIClient {
                 group.addTask {
                     do { return try await self.fetchVehiclesForAgency(agencyID: agency.agencyID) }
                     catch {
-                        Logger.error("fetchVehiclesForAgency failed for \(agency.agencyID): \(error.localizedDescription)")
+                        Logger.error("fetchVehiclesForAgency failed for \(agency.agencyID): \(error)")
                         return []
                     }
                 }

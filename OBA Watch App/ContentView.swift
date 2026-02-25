@@ -262,7 +262,7 @@ final class RegionPreviewMapViewModel: ObservableObject {
             )
             stops = fetched.stops
         } catch {
-            Logger.error("Failed to load stops for preview map: \(error.localizedDescription)")
+            Logger.error("Failed to load stops for preview map: \(error)")
             // For the preview map, we silently ignore errors and leave the base map.
         }
     }

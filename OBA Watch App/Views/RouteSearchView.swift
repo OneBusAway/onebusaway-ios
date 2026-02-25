@@ -21,7 +21,7 @@ struct RouteSearchView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                         .font(.system(size: 16))
-                    TextField("Search routes", text: $viewModel.query)
+                    TextField(OBALoc("route_search.placeholder", value: "Search routes", comment: "Route search placeholder"), text: $viewModel.query)
                         .onSubmit { viewModel.performSearch() }
                         .onChange(of: viewModel.query) { _, newValue in
                             if !newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -56,7 +56,7 @@ struct RouteSearchView: View {
                         .foregroundColor(.red)
                 }
             } else if !viewModel.routes.isEmpty {
-                Section("Routes") {
+                Section(OBALoc("route_search.section.routes", value: "Routes", comment: "Routes section header")) {
                     ForEach(viewModel.routes, id: \.id) { route in
                         NavigationLink {
                             RouteDetailView(route: route)
@@ -98,9 +98,9 @@ struct RouteSearchView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 30))
                             .foregroundColor(.secondary.opacity(0.5))
-                        Text("No Routes Found")
+                        Text(OBALoc("route_search.no_results.title", value: "No Routes Found", comment: "No results title"))
                             .font(.system(size: 16, weight: .semibold))
-                        Text("Try a different search term.")
+                        Text(OBALoc("route_search.no_results.subtitle", value: "Try a different search term.", comment: "No results subtitle"))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                         Spacer(minLength: 20)
@@ -110,7 +110,7 @@ struct RouteSearchView: View {
                 }
             }
         }
-        .navigationTitle("Routes")
+        .navigationTitle(OBALoc("route_search.title", value: "Routes", comment: "Routes title"))
         .onAppear {
             viewModel.performSearch()
         }

@@ -29,7 +29,7 @@ final class AlarmsSyncManager {
             WatchAppState.userDefaults.set(encodedData, forKey: storageKey)
             NotificationCenter.default.post(name: Self.alarmsUpdatedNotification, object: nil)
         } catch {
-            Logger.error("updateAlarms failed: \(error.localizedDescription)")
+            Logger.error("updateAlarms failed: \(error)")
         }
     }
 }

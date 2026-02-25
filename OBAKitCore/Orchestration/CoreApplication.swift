@@ -267,7 +267,7 @@ open class CoreApplication: NSObject,
     /// Displays an error to the user. Subclasses should override to provide UI.
     @MainActor
     open func displayError(_ error: Error) async {
-        Logger.error("Error: \(error.localizedDescription)")
+        Logger.error("Error: \(error)")
     }
 
     // MARK: - Surveys
