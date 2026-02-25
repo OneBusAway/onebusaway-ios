@@ -15,8 +15,8 @@ extension RESTAPIService {
 
     /// Fetches all available surveys for a region and user
     /// - Parameter userID: The user's unique identifier
-    /// - Returns: SurveysResponse containing surveys and region info
-    public nonisolated func getSurveys(userID: String) async throws -> RESTAPIResponse<SurveysResponse> {
+    /// - Returns: StudyResponse containing surveys and region info
+    public nonisolated func getSurveys(userID: String) async throws -> RESTAPIResponse<StudyResponse> {
         guard let regionID = configuration.regionIdentifier else {
             throw APIError.noRegionSelected
         }
@@ -25,13 +25,13 @@ extension RESTAPIService {
             throw APIError.surveyServiceNotConfigured
         }
 
-        return try await getData(for: url, decodeRESTAPIResponseAs: SurveysResponse.self)
+        return try await getData(for: url, decodeRESTAPIResponseAs: StudyResponse.self)
     }
 
     /// Submits a survey response to the server
-    /// - Parameter surveyResponse: The survey response to submit
+    /// - Parameter surveySubmission: The survey submission to send
     /// - Returns: SurveySubmissionResponse with response ID and update path
-    public nonisolated func submitSurveyResponse(_ surveyResponse: SurveyResponse) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
+    public nonisolated func submitSurveyResponse(_ surveySubmission: SurveySubmission) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
         guard let url = urlBuilder.submitSurveyResponse() else {
             throw APIError.surveyServiceNotConfigured
         }
@@ -42,7 +42,7 @@ extension RESTAPIService {
 
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(surveyResponse)
+        request.httpBody = try encoder.encode(surveySubmission)
 
         return try await performSurveyRequest(request: request)
     }
@@ -52,7 +52,7 @@ extension RESTAPIService {
     ///   - responseID: The ID of the existing survey response
     ///   - additionalResponses: Additional question responses to add
     /// - Returns: Updated SurveySubmissionResponse
-    public nonisolated func updateSurveyResponse(responseID: String, additionalResponses: [SurveyQuestionResponse]) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
+    public nonisolated func updateSurveyResponse(responseID: String, additionalResponses: [QuestionAnswerSubmission]) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
         guard let url = urlBuilder.updateSurveyResponse(responseID: responseID) else {
             throw APIError.surveyServiceNotConfigured
         }
@@ -61,7 +61,7 @@ extension RESTAPIService {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let requestBody = ["response": additionalResponses]
+        let requestBody = ["responses": additionalResponses]
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         request.httpBody = try encoder.encode(requestBody)

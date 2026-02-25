@@ -12,11 +12,11 @@ class SurveyPreferencesStoreMock: NSObject, SurveyPreferencesStore {
 
     var appLaunch: Int = 0
 
-    var completedSurveys: Set<Int> {
+    var completedSurveyIDs: Set<Int> {
         return preferences.completedSurveyIDs
     }
 
-    var skippedSurveys: Set<Int> {
+    var skippedSurveyIDs: Set<Int> {
         return preferences.skippedSurveyIDs
     }
 

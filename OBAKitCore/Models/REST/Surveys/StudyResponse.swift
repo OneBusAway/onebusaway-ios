@@ -88,6 +88,8 @@ public struct Survey: Codable, Hashable {
     }
 }
 
+extension Survey: Identifiable { }
+
 extension Survey {
 
     /// Returns an array of survey questions whose content is valid (non-nil) based on their type.
@@ -105,6 +107,49 @@ extension Survey {
                 return $0.content.asExternalSurveyContent != nil
             }
         }
+    }
+
+    // MARK: - Compatibility properties for UI layer
+
+    public var alwaysVisible: Bool { allowsVisible }
+    public var visibleStopList: [String]? { visibleStopsList }
+    public var visibleRouteList: [String]? { visibleRoutesList }
+
+    /// Returns the first question (hero question) if it exists
+    public var heroQuestion: SurveyQuestion? {
+        return questions.first { $0.position == 1 }
+    }
+
+    /// Returns all questions except the hero question
+    public var remainingQuestions: [SurveyQuestion] {
+        return questions.filter { $0.position != 1 }
+    }
+
+    /// Returns true if the survey is currently active (within date range)
+    public var isActive: Bool {
+        let now = Date()
+        if let startDate = startDate, now < startDate { return false }
+        if let endDate = endDate, now > endDate { return false }
+        return true
+    }
+
+    /// Returns true if the survey should be shown on the specified stop
+    public func shouldShowOnStop(_ stopID: String) -> Bool {
+        guard showOnStops, isActive else { return false }
+        guard let visibleStops = visibleStopsList else { return true }
+        return visibleStops.contains(stopID)
+    }
+
+    /// Returns true if the survey should be shown for the specified route
+    public func shouldShowOnRoute(_ routeID: String) -> Bool {
+        guard showOnStops, isActive else { return false }
+        guard let visibleRoutes = visibleRoutesList else { return true }
+        return visibleRoutes.contains(routeID)
+    }
+
+    /// Returns true if the survey should be shown on the map
+    public var shouldShowOnMap: Bool {
+        return showOnMap && isActive
     }
 
 }
@@ -239,3 +284,17 @@ public struct ExternalSurveyContent: Codable, Hashable {
     public let provider: String?
     public let embeddedDataFields: [String]?
 }
+
+// MARK: - QuestionContent Compatibility
+
+extension QuestionContent {
+    /// Display text for UI layer compatibility
+    public var displayText: String { labelText }
+    /// Type string for API submission compatibility
+    public var typeString: String { type.rawValue }
+}
+
+// MARK: - Type Aliases
+
+/// Alias for RESTAPIService compatibility
+public typealias SurveysResponse = StudyResponse

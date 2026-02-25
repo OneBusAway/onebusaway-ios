@@ -9,6 +9,9 @@
 
 import Foundation
 
+/// Alias for UI layer compatibility
+public typealias SurveyQuestionResponse = QuestionAnswerSubmission
+
 public struct SurveySubmission: Codable, Hashable {
 
     public let userIdentifier: String

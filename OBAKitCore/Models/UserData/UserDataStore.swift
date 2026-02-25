@@ -1046,16 +1046,16 @@ extension UserDefaultsStore: SurveyPreferencesStore {
         return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCounter)
     }
 
-    /// Returns the list of completed survey IDs stored in user preferences.
-    /// - Note: If no preferences exist yet, an empty array is returned.
-    public var completedSurveys: Set<Int> {
+    /// Returns the set of completed survey IDs stored in user preferences.
+    /// - Note: If no preferences exist yet, an empty set is returned.
+    public var completedSurveyIDs: Set<Int> {
         let preferences = surveyPreferences()
         return preferences.completedSurveyIDs
     }
 
-    /// Returns the list of survey IDs the user has skipped.
-    /// - Note: If no preferences exist yet, an empty array is returned.
-    public var skippedSurveys: Set<Int> {
+    /// Returns the set of survey IDs the user has skipped.
+    /// - Note: If no preferences exist yet, an empty set is returned.
+    public var skippedSurveyIDs: Set<Int> {
         let preferences = surveyPreferences()
         return preferences.skippedSurveyIDs
     }

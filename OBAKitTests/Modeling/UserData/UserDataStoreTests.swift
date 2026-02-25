@@ -242,27 +242,27 @@ class UserDefaultsStoreTests: OBATestCase {
     // MARK: - Completed Surveys
 
     func test_completedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.completedSurveys).to(beEmpty())
+        expect(self.userDefaultsStore.completedSurveyIDs).to(beEmpty())
     }
 
     func test_completedSurveys_returnsStoredValues() {
         let preferences = SurveyPreferences(completedSurveyIDs: [1, 2, 3])
         userDefaultsStore.setSurveyPreferences(preferences)
 
-        expect(self.userDefaultsStore.completedSurveys) == [1, 2, 3]
+        expect(self.userDefaultsStore.completedSurveyIDs) == [1, 2, 3]
     }
 
     // MARK: - Skipped Surveys
 
     func test_skippedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.skippedSurveys).to(beEmpty())
+        expect(self.userDefaultsStore.skippedSurveyIDs).to(beEmpty())
     }
 
     func test_skippedSurveys_returnsStoredValues() {
         let preferences = SurveyPreferences(skippedSurveyIDs: [4, 5])
         userDefaultsStore.setSurveyPreferences(preferences)
 
-        expect(self.userDefaultsStore.skippedSurveys) == [4, 5]
+        expect(self.userDefaultsStore.skippedSurveyIDs) == [4, 5]
     }
 
 }
