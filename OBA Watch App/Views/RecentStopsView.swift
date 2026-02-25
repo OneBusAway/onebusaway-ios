@@ -8,23 +8,17 @@
 import SwiftUI
 import OBAKitCore
 struct RecentStopsView: View {
-    @StateObject private var viewModel: RecentStopsViewModel
-    
-    init() {
-        _viewModel = StateObject(wrappedValue: RecentStopsViewModel())
-    }
+    @ObservedObject private var viewModel = RecentStopsViewModel.shared
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.recentStops.isEmpty {
-                    emptyStateView
-                } else {
-                    recentStopsList
-                }
+        Group {
+            if viewModel.recentStops.isEmpty {
+                emptyStateView
+            } else {
+                recentStopsList
             }
-            .navigationTitle(OBALoc("recent_stops.title", value: "Recent Stops", comment: "Title for recent stops screen"))
         }
+        .navigationTitle(OBALoc("recent_stops.title", value: "Recent Stops", comment: "Title for recent stops screen"))
     }
     
     private var emptyStateView: some View {
@@ -98,4 +92,3 @@ struct RecentStopRow: View {
 #Preview {
     RecentStopsView()
 }
-

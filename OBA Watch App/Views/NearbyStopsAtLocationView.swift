@@ -2,6 +2,7 @@ import SwiftUI
 import CoreLocation
 import MapKit
 import OBAKitCore
+import WatchKit
 
 /// Shows nearby stops for a fixed coordinate selected from address search,
 /// mirroring the iOS "Nearby Stops" sheet but in a simplified watch layout.
@@ -42,12 +43,15 @@ struct NearbyStopsAtLocationView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        DeepLinkSyncManager.shared.planTripOnPhone(
+                        let ok = DeepLinkSyncManager.shared.planTripOnPhone(
                             originLat: coordinate.latitude,
                             originLon: coordinate.longitude,
                             destLat: nil,
                             destLon: nil
                         )
+                        if !ok {
+                            WKInterfaceDevice.current().play(.failure)
+                        }
                     } label: {
                         Label(OBALoc("common.plan_on_phone", value: "Plan on Phone", comment: "Action to plan trip on phone"), systemImage: "figure.walk")
                     }

@@ -258,24 +258,21 @@ struct NearbyStopsContainerView<Content: View, EmptyView: View>: View {
     @ViewBuilder let emptyState: () -> EmptyView
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let errorMessage {
-                    ErrorView(message: errorMessage)
-                } else if !hasStops {
-                    emptyState()
-                } else {
-                    content()
-                }
+        Group {
+            if isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let errorMessage {
+                ErrorView(message: errorMessage)
+            } else if !hasStops {
+                emptyState()
+            } else {
+                content()
             }
-            .navigationTitle(title)
-            .refreshable {
-                await refreshAction()
-            }
+        }
+        .navigationTitle(title)
+        .refreshable {
+            await refreshAction()
         }
     }
 }
-

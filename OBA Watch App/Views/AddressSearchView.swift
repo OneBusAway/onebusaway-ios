@@ -29,16 +29,16 @@ struct AddressSearchView: View {
                 resultsSection
             }
         }
-        .navigationTitle("Search Places")
+        .navigationTitle(OBALoc("address_search.title", value: "Search places", comment: "Address search title"))
         .onAppear {
             if !viewModel.query.isEmpty {
                 viewModel.performSearch()
             }
         }
-        .alert("Location Access Required", isPresented: $showLocationAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(OBALoc("address_search.location_required.title", value: "Location Access Required", comment: "Alert title"), isPresented: $showLocationAlert) {
+            Button(OBALoc("common.ok", value: "OK", comment: "OK"), role: .cancel) {}
         } message: {
-            Text("Please enable location access in the Watch app settings to search for nearby places.")
+            Text(OBALoc("address_search.location_required.message", value: "Please enable location access in the Watch app settings to search for nearby places.", comment: "Alert message"))
         }
     }
     
@@ -49,7 +49,7 @@ struct AddressSearchView: View {
                     .foregroundColor(.secondary)
                     .font(.system(size: 16))
                 
-                TextField("Search places", text: $viewModel.query)
+                TextField(OBALoc("address_search.placeholder", value: "Search places", comment: "Search field placeholder"), text: $viewModel.query)
                     .onSubmit {
                         viewModel.performSearch()
                     }
@@ -93,7 +93,7 @@ struct AddressSearchView: View {
                 Spacer()
                 VStack(spacing: 8) {
                     ProgressView()
-                    Text("Searching...")
+                    Text(OBALoc("address_search.searching", value: "Searching...", comment: "Searching status"))
                         .foregroundColor(.secondary)
                         .font(.caption)
                 }
@@ -106,14 +106,14 @@ struct AddressSearchView: View {
     private func errorSection(error: String) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Label("Search Error", systemImage: "exclamationmark.triangle")
+                Label(OBALoc("address_search.error.title", value: "Search Error", comment: "Error title"), systemImage: "exclamationmark.triangle")
                     .font(.headline)
                     .foregroundColor(.red)
                 Text(error)
                     .font(.caption)
                     .foregroundColor(.secondary)
                 
-                Button("Try Again") {
+                Button(OBALoc("common.try_again", value: "Try Again", comment: "Retry button")) {
                     viewModel.performSearch()
                 }
                 .buttonStyle(.bordered)
@@ -132,10 +132,10 @@ struct AddressSearchView: View {
                     .font(.system(size: 30))
                     .foregroundColor(.secondary.opacity(0.5))
                 
-                Text("No Results Found")
+                Text(OBALoc("address_search.no_results.title", value: "No Results Found", comment: "No results title"))
                     .font(.system(size: 16, weight: .semibold))
                 
-                Text("Try a different search term or check your spelling.")
+                Text(OBALoc("address_search.no_results.subtitle", value: "Try a different search term or check your spelling.", comment: "No results subtitle"))
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -149,7 +149,7 @@ struct AddressSearchView: View {
     }
     
     private var resultsSection: some View {
-        Section(header: Text("Results")) {
+        Section(header: Text(OBALoc("address_search.results.header", value: "Results", comment: "Results header"))) {
             ForEach(Array(viewModel.results.enumerated()), id: \.element) { _, item in
                 NavigationLink {
                     NearbyStopsAtLocationView(

@@ -105,6 +105,7 @@ open class CoreApplication: NSObject,
         refreshRESTAPIService()
         refreshObacoService()
         refreshSurveysService()
+        purgeStaleStopCache()
         apiServicesRefreshed()
     }
 
@@ -121,6 +122,38 @@ open class CoreApplication: NSObject,
     }
 
     public lazy var alertsStore = AgencyAlertsStore(userDefaults: userDefaults, regionsService: regionsService)
+
+    // MARK: - Stop Cache
+
+    /// The SQLite database for caching transit stops.
+    /// Initialized lazily; if database creation fails, the app falls back to direct API calls.
+    public private(set) lazy var stopCacheDatabase: StopCacheDatabase? = {
+        do {
+            return try StopCacheDatabase()
+        } catch {
+            Logger.error("Failed to initialize stop cache database: \(error)")
+            return nil
+        }
+    }()
+
+    /// Repository for reading/writing cached stops.
+    public private(set) lazy var stopCacheRepository: StopCacheRepository? = {
+        guard let database = stopCacheDatabase else { return nil }
+        return StopCacheRepository(database: database)
+    }()
+
+    /// Purges cached stops older than 30 days for the current region.
+    /// Called during `refreshServices()` (app launch and region change).
+    private func purgeStaleStopCache() {
+        guard let repository = stopCacheRepository,
+              let regionId = currentRegion?.regionIdentifier else {
+            return
+        }
+        Task.detached(priority: .utility) {
+            let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
+            repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
+        }
+    }
 
     // MARK: - LocationServiceDelegate
 
@@ -231,11 +264,10 @@ open class CoreApplication: NSObject,
 
     // MARK: - Error Handling
 
-    /// Classifies and displays an error to the user via `ErrorClassifier`.
+    /// Displays an error to the user. Subclasses should override to provide UI.
     @MainActor
     open func displayError(_ error: Error) async {
-        let classified = ErrorClassifier.classify(error, regionName: currentRegionName)
-        Logger.error("Error: \(classified.localizedDescription)")
+        Logger.error("Error: \(error)")
     }
 
     // MARK: - Surveys

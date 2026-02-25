@@ -172,23 +172,25 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
 
     /// Updates the current region and API client.
     func updateRegion(id: String) {
+         guard let region = Self.regions.first(where: { $0.id == id }) else { return }
+         guard let url = region.obaBaseURL else {
+             Logger.error("Selected region has no obaBaseURL: \(region.name)")
+             return
+         }
+         
          Self.userDefaults.set(id, forKey: "watch_selected_region_id")
          
-         if let region = Self.regions.first(where: { $0.id == id }), let url = region.obaBaseURL {
-             let config = OBAURLSessionAPIClient.Configuration(
-                 baseURL: url,
-                 apiKey: self.apiKey,
-                 minutesBeforeArrivals: 5,
-                 minutesAfterArrivals: 125
-             )
-             self.apiClient = OBAURLSessionAPIClient(configuration: config)
-         }
+         let config = OBAURLSessionAPIClient.Configuration(
+             baseURL: url,
+             apiKey: self.apiKey,
+             minutesBeforeArrivals: 5,
+             minutesAfterArrivals: 125
+         )
+         self.apiClient = OBAURLSessionAPIClient(configuration: config)
         
         // Notify listeners that location/region might have changed
         NotificationCenter.default.post(name: NSNotification.Name("LocationUpdated"), object: nil)
     }
-
-    private var configCancellable: AnyCancellable?
 
     /// Shared user defaults for the app group
     static let userDefaults: UserDefaults = {
@@ -273,7 +275,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         if let error = error {
-            Logger.error("WCSession activation failed: \(error.localizedDescription)")
+            Logger.error("WCSession activation failed: \(error)")
         }
     }
 
@@ -293,12 +295,13 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
     }
 
     /// Sends a request to the paired iPhone to perform an action.
-    func sendMessageToPhone(_ message: [String: Any]) {
+    func sendMessageToPhone(_ message: [String: Any]) -> Bool {
         guard session.activationState == .activated else {
             Logger.error("sendMessageToPhone failed: WCSession is not activated (state: \(session.activationState.rawValue)). Message dropped.")
-            return
+            return false
         }
         session.transferUserInfo(message)
+        return true
     }
 
     /// Syncs local time with server time to ensure accurate predictions.
@@ -310,7 +313,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
             // Adjusted Time = Date() + offset
             self.serverTimeOffset = serverTime.timeIntervalSince(localTime)
         } catch {
-            Logger.error("syncTime failed: \(error.localizedDescription)")
+            Logger.error("syncTime failed: \(error)")
         }
     }
     
