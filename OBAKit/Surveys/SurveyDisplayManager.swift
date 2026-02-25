@@ -14,10 +14,10 @@ import OBAKitCore
 /// Manages survey display across different view controllers
 public class SurveyDisplayManager {
     
-    private let surveyService: SurveyService
+    private let surveyService: SurveyUIService
     private weak var presentingViewController: UIViewController?
     
-    public init(surveyService: SurveyService) {
+    public init(surveyService: SurveyUIService) {
         self.surveyService = surveyService
     }
     

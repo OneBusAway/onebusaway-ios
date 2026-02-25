@@ -154,20 +154,22 @@ class SurveyCell: OBAListViewCell {
       optionButtons.removeAll()
       optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
       
-      switch question.content {
-      case .radio(_, let options):
+      switch question.content.type {
+      case .radio:
+          let options = question.content.options ?? []
           optionsStack.isHidden = false
           createRadioButtons(options: options)
-          
+
       case .text:
           optionsStack.isHidden = true
           // For text questions, just show action buttons
-          
-      case .checkbox(_, let options):
+
+      case .checkbox:
+          let options = question.content.options ?? []
           optionsStack.isHidden = false
           createCheckboxButtons(options: Array(options.prefix(3))) // Show first 3 for space
-          
-      case .label:
+
+      case .label, .externalSurvey:
           optionsStack.isHidden = true
       }
   }

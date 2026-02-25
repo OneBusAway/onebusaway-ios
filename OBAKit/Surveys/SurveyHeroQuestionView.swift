@@ -138,25 +138,27 @@ public class SurveyHeroQuestionView: UIView {
         optionsStack.spacing = 8
         optionsStack.translatesAutoresizingMaskIntoConstraints = false
         
-        switch question.content {
-        case .radio(_, let options):
+        switch question.content.type {
+        case .radio:
+            let options = question.content.options ?? []
             for option in options {
                 let button = createRadioButton(title: option)
                 optionsStack.addArrangedSubview(button)
             }
-            
+
         case .text:
             let textField = createTextInputField()
             optionsStack.addArrangedSubview(textField)
-            
-        case .checkbox(_, let options):
+
+        case .checkbox:
+            let options = question.content.options ?? []
             // For hero questions, we'll show first few options only
             let limitedOptions = Array(options.prefix(3))
             for option in limitedOptions {
                 let button = createCheckboxButton(title: option)
                 optionsStack.addArrangedSubview(button)
             }
-            
+
             if options.count > 3 {
                 let moreLabel = UILabel()
                 moreLabel.text = "...and \(options.count - 3) more options"
@@ -164,9 +166,9 @@ public class SurveyHeroQuestionView: UIView {
                 moreLabel.textColor = .secondaryLabel
                 optionsStack.addArrangedSubview(moreLabel)
             }
-            
-        case .label:
-            // Labels don't need interaction options
+
+        case .label, .externalSurvey:
+            // Labels and external surveys don't need interaction options
             break
         }
         

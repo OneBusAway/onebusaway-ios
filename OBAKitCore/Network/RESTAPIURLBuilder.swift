@@ -508,9 +508,9 @@ extension RESTAPIURLBuilder {
         return generateURL(path: path, params: ["user_id": userIdentifier])
     }
 
-    /// Create full URL for `submitSurveyResponse` API endpoint
+    /// Create full URL for `createSurveyResponse` API endpoint
     /// - Returns: An URL suitable for making a `POST` request to submit survey responses.
-    public func submitSurveyResponse() -> URL {
+    public func createSurveyResponse() -> URL {
         let path = "/api/v1/survey_responses/"
         return generateURL(path: path)
     }

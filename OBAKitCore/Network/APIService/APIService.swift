@@ -70,6 +70,7 @@ public struct APIServiceConfiguration {
         self.appVersion = ""
         self.uuid = uuid
         self.regionIdentifier = regionIdentifier
+        self.surveyBaseURL = nil
         self.defaultQueryItems = []
     }
 

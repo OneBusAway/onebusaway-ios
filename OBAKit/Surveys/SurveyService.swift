@@ -1,5 +1,5 @@
 //
-//  SurveyService.swift
+//  SurveyUIService.swift
 //  OBAKit
 //
 //  Copyright © Open Transit Software Foundation
@@ -12,7 +12,7 @@ import OBAKitCore
 
 /// Service responsible for managing survey operations including fetching, visibility logic, and submission
 @MainActor
-public class SurveyService: ObservableObject {
+public class SurveyUIService: ObservableObject {
 
     // MARK: - Properties
 
@@ -226,16 +226,16 @@ public class SurveyService: ObservableObject {
 
         let userID = userDataStore.surveyUserIdentifier
 
-        let surveyResponse = SurveyResponse(
+        let submission = SurveySubmission(
             userIdentifier: userID,
             surveyId: survey.id,
             stopIdentifier: stopID,
-            stopLatitude: stopLocation?.latitude,
             stopLongitude: stopLocation?.longitude,
-            response: [heroQuestionResponse]
+            stopLatitude: stopLocation?.latitude,
+            responses: [heroQuestionResponse]
         )
 
-        let response = try await apiService.submitSurveyResponse(surveyResponse)
+        let response = try await apiService.submitSurveyResponse(submission)
         return response.entry
     }
 

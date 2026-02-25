@@ -58,7 +58,7 @@ public actor SurveyAPIService: @preconcurrency APIService {
     public nonisolated func submitSurveyResponse(
         surveyResponse: SurveySubmission
     ) async throws -> SurveySubmissionResponse {
-        let url = urlBuilder.submitSurveyResponse()
+        let url = urlBuilder.createSurveyResponse()
         return try await postData(url: url, data: surveyResponse)
     }
 

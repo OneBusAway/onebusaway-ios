@@ -113,7 +113,7 @@ final class SurveyStateManagerTests: OBATestCase {
     func test_setSurveySkipped_appendsNewID() {
         surveyStateManager.setSurveySkipped(7)
 
-        let skippedIDs = surveyStateManager.surveyStore.skippedSurveys
+        let skippedIDs = surveyStateManager.surveyStore.skippedSurveyIDs
         expect(skippedIDs).to(equal([7]))
     }
 
@@ -121,7 +121,7 @@ final class SurveyStateManagerTests: OBATestCase {
         surveyStateManager.surveyStore.setSurveyPreferences(.init(completedSurveyIDs: [8]))
 
         surveyStateManager.setSurveySkipped(9)
-        let completedIDs = surveyStateManager.surveyStore.completedSurveys
+        let completedIDs = surveyStateManager.surveyStore.completedSurveyIDs
         expect(completedIDs).to(equal([8]))
     }
 
@@ -131,8 +131,8 @@ final class SurveyStateManagerTests: OBATestCase {
         surveyStateManager.setSurveyCompleted(1)
         surveyStateManager.setSurveySkipped(2)
 
-        expect(self.surveyStateManager.surveyStore.completedSurveys).to(equal([1]))
-        expect(self.surveyStateManager.surveyStore.skippedSurveys).to(equal([2]))
+        expect(self.surveyStateManager.surveyStore.completedSurveyIDs).to(equal([1]))
+        expect(self.surveyStateManager.surveyStore.skippedSurveyIDs).to(equal([2]))
     }
 
     func test_shouldShowSurvey_whenLaunchIsThirdButFeatureDisabled_returnsFalse() {

@@ -13,13 +13,13 @@ import OBAKitCore
 
 class SurveyBottomSheetController: FloatingPanelController {
     private let survey: Survey
-    private let surveyService: SurveyServiceProtocol 
+    private let surveyService: SurveyUIService 
     private let stopID: String?
     private let stopLocation: (latitude: Double, longitude: Double)?
 
     init(
         survey: Survey,
-        surveyService: SurveyServiceProtocol,
+        surveyService: SurveyUIService,
         stopID: String? = nil,
         stopLocation: (latitude: Double, longitude: Double)? = nil
     ) {
