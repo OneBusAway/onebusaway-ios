@@ -10,9 +10,9 @@ struct ServiceAlertsView: View {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 40))
                         .foregroundColor(.secondary)
-                    Text("No Notifications")
+                    Text(OBALoc("alerts.empty.title", value: "No Notifications", comment: "No alerts title"))
                         .font(.headline)
-                    Text("No active notifications")
+                    Text(OBALoc("alerts.empty.subtitle", value: "No active notifications", comment: "No alerts subtitle"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

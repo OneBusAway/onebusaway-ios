@@ -16,18 +16,16 @@ struct BookmarksView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            Group {
-                if viewModel.bookmarks.isEmpty {
-                    emptyStateView
-                } else {
-                    bookmarksList
-                }
+        Group {
+            if viewModel.bookmarks.isEmpty {
+                emptyStateView
+            } else {
+                bookmarksList
             }
-            .navigationTitle(OBALoc("common.bookmarks", value: "Bookmarks", comment: "Title for the Bookmarks screen"))
-            .task {
-                await viewModel.refreshData()
-            }
+        }
+        .navigationTitle(OBALoc("common.bookmarks", value: "Bookmarks", comment: "Title for the Bookmarks screen"))
+        .task {
+            await viewModel.refreshData()
         }
     }
     
