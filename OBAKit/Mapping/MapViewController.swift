@@ -195,6 +195,8 @@ class MapViewController: UIViewController,
 
     private var isShowingZoomWarning = false
 
+    private static let zoomInForStopsSpan = 0.01
+
     @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
         if isShowingZoomWarning {
             didTapZoomInForStops()
@@ -207,8 +209,8 @@ class MapViewController: UIViewController,
         let currentCenter = mapRegionManager.mapView.region.center
 
         let targetSpan = MKCoordinateSpan(
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01
+            latitudeDelta: MapViewController.zoomInForStopsSpan,
+            longitudeDelta: MapViewController.zoomInForStopsSpan
         )
 
         let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)
@@ -926,13 +928,13 @@ class MapViewController: UIViewController,
         dismissExistingMapItemController(animated: true)
     }
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
-            self.isShowingZoomWarning = showStatus
+        isShowingZoomWarning = showStatus
 
-            mapStatusView.configure(
-                for: mapStatusView.state(for: application.locationService),
-                zoomInStatus: showStatus
-            )
-        }
+        mapStatusView.configure(
+            for: mapStatusView.state(for: application.locationService),
+            zoomInStatus: showStatus
+        )
+    }
 
     // MARK: Loading Indicator
 
