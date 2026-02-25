@@ -48,6 +48,9 @@ class MapViewController: UIViewController,
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
+        hover.stackView.addArrangedSubview(HoverBarSeparator())
+        hover.stackView.addArrangedSubview(myTripButton)
+
         return hover
     }()
 
@@ -124,7 +127,8 @@ class MapViewController: UIViewController,
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
-            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
+            myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
         ])
 
         // Long press gesture to add a pin to the map
@@ -263,6 +267,24 @@ class MapViewController: UIViewController,
         button.accessibilityLabel = OBALoc("map_controller.center_user_location", value: "Center map on current location", comment: "Map controller for centering the map on the user's current location.")
         return button
     }()
+
+    // MARK: - My Trip
+
+    private lazy var myTripButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "bus.fill"), for: .normal)
+        button.addTarget(self, action: #selector(showCurrentTrip), for: .touchUpInside)
+        button.accessibilityLabel = OBALoc(
+            "map_controller.my_trip_button",
+            value: "My Trip",
+            comment: "Accessibility label for the My Trip button on the map toolbar."
+        )
+        return button
+    }()
+
+    @objc private func showCurrentTrip() {
+        application.viewRouter.navigateToCurrentTrip(from: self)
+    }
 
     // MARK: - Weather
 
