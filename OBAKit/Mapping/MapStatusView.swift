@@ -11,10 +11,10 @@ import SwiftUI
 import CoreLocation
 import OBAKitCore
 
-/// A view intended to be placed at the top of the screen, above a map view, that displays location information.
-/// You shouldn't manually change the visibility of this view. This view plays two roles, blurring the content behind
-/// the system status bar and displays location authorization, as needed.
-/// On iOS 13+, this will also show icons applicable to the situation.
+/// A compact floating pill that displays location authorization status or zoom-in prompts.
+///
+/// Place this centered horizontally below the safe area top. When there is no status message
+/// to display, the pill hides entirely — it no longer doubles as a status bar backdrop.
 class MapStatusView: UIView {
     enum LocationState {
         /// The user hasn't picked location services yet.
@@ -48,13 +48,25 @@ class MapStatusView: UIView {
         }
     }
 
-    // MARK: - UI elements
-    private var visualView: UIVisualEffectView!
+    // MARK: - UI Elements
+
+    private var visualEffectView: UIVisualEffectView!
     private var stackView: UIStackView!
     private var iconView: UIImageView!
     private var detailLabel: UILabel!
 
-    // MARK: Large Content properties
+    // MARK: - Layout Constants
+
+    private enum Layout {
+        static let horizontalPadding: CGFloat = 16
+        static let verticalPadding: CGFloat = 8
+        static let cornerRadius: CGFloat = 18
+        static let shadowBlur: CGFloat = 4
+        static let shadowOpacity: Float = 0.15
+        static let maxWidthRatio: CGFloat = 0.85
+    }
+
+    // MARK: - Large Content Properties
 
     override var showsLargeContentViewer: Bool {
         get { return true }
@@ -83,45 +95,67 @@ class MapStatusView: UIView {
     }
 
     private func configure() {
-        stackView = UIStackView.autolayoutNew()
-        stackView.alignment = .center
-        stackView.axis = .horizontal
-        stackView.spacing = 8
-
-        // Make visual view
+        // Icon
         iconView = UIImageView.autolayoutNew()
         iconView.tintColor = ThemeColors.shared.brand
-        stackView.addArrangedSubview(iconView)
 
         detailLabel = UILabel.autolayoutNew()
         detailLabel.font = .preferredFont(forTextStyle: .headline)
         detailLabel.textColor = ThemeColors.shared.brand
-        stackView.addArrangedSubview(detailLabel)
+        detailLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
 
-        visualView = UIVisualEffectView(effect: UIBlurEffect(style: .prominent))
-        visualView.translatesAutoresizingMaskIntoConstraints = false
-        visualView.contentView.addSubview(stackView)
+        // Stack
+        stackView = UIStackView(arrangedSubviews: [iconView, detailLabel])
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.alignment = .center
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+
+        // Blur pill
+        visualEffectView = UIVisualEffectView(effect: UIBlurEffect(style: .prominent))
+        visualEffectView.translatesAutoresizingMaskIntoConstraints = false
+        visualEffectView.layer.cornerRadius = Layout.cornerRadius
+        visualEffectView.layer.masksToBounds = true
+        visualEffectView.contentView.addSubview(stackView)
+
+        addSubview(visualEffectView)
+
+        // Shadow on the outer view for the floating effect
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOffset = CGSize(width: 0, height: 2)
+        layer.shadowRadius = Layout.shadowBlur
+        layer.shadowOpacity = Layout.shadowOpacity
 
         NSLayoutConstraint.activate([
-            stackView.centerXAnchor.constraint(equalTo: visualView.layoutMarginsGuide.centerXAnchor),
-            stackView.leadingAnchor.constraint(greaterThanOrEqualTo: visualView.readableContentGuide.leadingAnchor),
-            stackView.trailingAnchor.constraint(lessThanOrEqualTo: visualView.readableContentGuide.trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: visualView.layoutMarginsGuide.topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: visualView.layoutMarginsGuide.bottomAnchor)
+            // Stack inside the blur pill with padding
+            stackView.topAnchor.constraint(equalTo: visualEffectView.topAnchor, constant: Layout.verticalPadding),
+            stackView.bottomAnchor.constraint(equalTo: visualEffectView.bottomAnchor, constant: -Layout.verticalPadding),
+            stackView.leadingAnchor.constraint(equalTo: visualEffectView.leadingAnchor, constant: Layout.horizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: visualEffectView.trailingAnchor, constant: -Layout.horizontalPadding),
+
+            // Blur pill pinned to self edges — self is the pill
+            visualEffectView.topAnchor.constraint(equalTo: topAnchor),
+            visualEffectView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            visualEffectView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            visualEffectView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
 
-        self.addSubview(visualView)
-        visualView.pinToSuperview(.edges)
+        // Adapt shadow for dark mode
+        registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, _: UITraitCollection) in
+            self.layer.shadowOpacity = self.traitCollection.userInterfaceStyle == .dark ? 0 : Layout.shadowOpacity
+        }
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        let padding = traitCollection.verticalSizeClass == .compact ? ThemeMetrics.compactPadding : ThemeMetrics.padding
-        visualView.layoutMargins = UIEdgeInsets(top: padding, left: 0, bottom: padding, right: 0)
+    override var intrinsicContentSize: CGSize {
+        let stackSize = stackView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        return CGSize(
+            width: stackSize.width + Layout.horizontalPadding * 2,
+            height: stackSize.height + Layout.verticalPadding * 2
+        )
     }
 
-    // MARK: - State changes
+    // MARK: - State Changes
+
     func state(for service: LocationService) -> LocationState {
         return .init(
             service.authorizationStatus,
@@ -134,40 +168,42 @@ class MapStatusView: UIView {
     }
 
     func configure(for state: LocationState, zoomInStatus: Bool) {
-        var setHidden: Bool
+        var shouldHide: Bool
         var setImage: UIImage?
         var setLargeImage: UIImage?
         var setLabel: String?
 
         switch state {
         case .locationServicesUnavailable, .locationServicesOff, .notDetermined:
-            setHidden = false
-            setImage = UIImage(systemName: "location.slash")!
-            setLargeImage = UIImage(systemName: "location.slash.fill")!
+            shouldHide = false
+            setImage = UIImage(systemName: "location.slash")
+            setLargeImage = UIImage(systemName: "location.slash.fill")
             setLabel = OBALoc("map_status_view.location_services_unavailable", value: "Location services unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their location")
         case .impreciseLocation:
-            setHidden = false
-            setImage = UIImage(systemName: "location.circle")!
-            setLargeImage = UIImage(systemName: "location.circle.fill")!
+            shouldHide = false
+            setImage = UIImage(systemName: "location.circle")
+            setLargeImage = UIImage(systemName: "location.circle.fill")
             setLabel = OBALoc("map_status_view.precise_location_unavailable", value: "Precise location unavailable", comment: "Displayed in the map status view at the top of the map when the user has declined to give the app access to their precise location")
         case .locationServicesOn:
-            setHidden = true
+            shouldHide = true
         }
 
         if zoomInStatus {
-            setHidden = false
-            setImage = UIImage(systemName: "plus.magnifyingglass")!
-            setLargeImage = UIImage(systemName: "plus.magnifyingglass")!
+            shouldHide = false
+            setImage = UIImage(systemName: "plus.magnifyingglass")
+            setLargeImage = UIImage(systemName: "plus.magnifyingglass")
             setLabel = OBALoc("map_status_view.zoom_in_for_stops", value: "Zoom in for stops", comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map")
         }
 
         UIView.animate(withDuration: 0.25) {
-            self.stackView.isHidden = setHidden
+            self.alpha = shouldHide ? 0 : 1
             self.iconView.image = setImage
             self.detailLabel.text = setLabel
             self.largeContentImage = setLargeImage
-
-            self.layoutIfNeeded()
+            self.invalidateIntrinsicContentSize()
+            self.superview?.layoutIfNeeded()
+        } completion: { _ in
+            self.isHidden = shouldHide
         }
     }
 

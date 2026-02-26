@@ -102,10 +102,13 @@ class MapViewController: UIViewController,
         mapStatusView.addGestureRecognizer(statusTapGesture)
 
         view.addSubview(mapStatusView)
+
+        // Status pill: centered horizontally, anchored to safe area top.
+        // Max width prevents overflow on long status text or large Dynamic Type.
         NSLayoutConstraint.activate([
-            mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            mapStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
+            mapStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            mapStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding),
+            mapStatusView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.85),
         ])
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
@@ -118,9 +121,12 @@ class MapViewController: UIViewController,
 
         view.insertSubview(toolbar, aboveSubview: mapView)
 
+        // Toolbar: anchored to safe area top-right, independent of status pill.
+        // This matches Apple Maps where right-side buttons stay fixed regardless
+        // of whether a floating status element is visible.
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
@@ -700,9 +706,7 @@ class MapViewController: UIViewController,
         if controller == semiModalMapItemController?.contentViewController,
            let panel = semiModalMapItemController {
             mapRegionManager.mapView.selectedAnnotations.forEach { annotation in
-                if annotation is UserDroppedPin {
-                    mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
-                }
+                mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
             }
 
             removeSemiModalPanel(panel, animated: true)
