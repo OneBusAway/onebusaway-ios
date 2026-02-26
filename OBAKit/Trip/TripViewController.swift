@@ -472,7 +472,19 @@ class TripViewController: UIViewController,
 
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
-        application.viewRouter.navigateTo(stop: stopTime.stop, from: self)
+
+        var transferContext: TransferContext?
+        if let arrivalDeparture = tripConvertible.arrivalDeparture,
+           stopTime.stopID != arrivalDeparture.stopID {
+            transferContext = TransferContext(
+                arrivalTime: stopTime.arrivalDate,
+                fromRouteShortName: arrivalDeparture.routeShortName,
+                fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
+                fromRouteDisplay: arrivalDeparture.routeAndHeadsign
+            )
+        }
+
+        application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
     }
 
     // TODO FIXME: DRY up with MapRegionManager

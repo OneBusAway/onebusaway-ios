@@ -34,4 +34,45 @@ class FormattersTests: OBATestCase {
 
         expect(str).to(match("Arrived \\d+ min ago"))
     }
+
+    // MARK: - Transfer-Relative Time
+
+    func test_shortFormattedTransferTime_positiveMinutes() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: 4)
+        XCTAssertEqual(result, "4m")
+    }
+
+    func test_shortFormattedTransferTime_negativeMinutes() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: -3)
+        XCTAssertEqual(result, "-3m")
+    }
+
+    func test_shortFormattedTransferTime_zero() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: 0)
+        XCTAssertEqual(result, "NOW")
+    }
+
+    func test_transferArrivalBannerText() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        // Use a fixed date to avoid locale-dependent time formatting issues.
+        // 2023-10-15 16:10:00 UTC
+        var dateComponents = DateComponents()
+        dateComponents.year = 2023
+        dateComponents.month = 10
+        dateComponents.day = 15
+        dateComponents.hour = 16
+        dateComponents.minute = 10
+        dateComponents.timeZone = TimeZone(identifier: "America/Los_Angeles")
+        let arrivalTime = calendar.date(from: dateComponents)!
+
+        let result = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: "10 - Capitol Hill")
+
+        // The time format depends on locale but for en_US should contain "4:10 PM"
+        XCTAssertTrue(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
+        XCTAssertTrue(result.contains("4:10"), "Banner should contain formatted time: \(result)")
+    }
 }

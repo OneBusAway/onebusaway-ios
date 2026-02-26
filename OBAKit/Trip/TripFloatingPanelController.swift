@@ -241,7 +241,23 @@ class TripFloatingPanelController: UIViewController,
     }
 
     private func onSelectTripStop(_ tripStop: TripStopViewModel) {
-        application.viewRouter.navigateTo(stop: tripStop.stop, from: self)
+        let transferContext = buildTransferContext(for: tripStop)
+        application.viewRouter.navigateTo(stop: tripStop.stop, from: self, transferContext: transferContext)
+    }
+
+    private func buildTransferContext(for tripStop: TripStopViewModel) -> TransferContext? {
+        guard let arrivalDeparture = tripConvertible?.arrivalDeparture else { return nil }
+
+        // Only provide transfer context for stops that are not the user's
+        // boarding stop — transferring to the same stop is not meaningful.
+        guard tripStop.stop.id != arrivalDeparture.stopID else { return nil }
+
+        return TransferContext(
+            arrivalTime: tripStop.stopTime.arrivalDate,
+            fromRouteShortName: arrivalDeparture.routeShortName,
+            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
+            fromRouteDisplay: arrivalDeparture.routeAndHeadsign
+        )
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {
