@@ -37,15 +37,9 @@ final class RouteDetailViewModel: ObservableObject {
                 Logger.error("Failed to fetch shape for route \(routeID): \(error)")
             }
         } catch let apiError as OBAAPIError {
-            errorMessage = apiError.errorDescription ?? "API Error"
+            errorMessage = apiError.errorDescription ?? OBALoc("common.api_error", value: "API Error", comment: "API error")
         } catch {
-            if let urlError = error as? URLError {
-                errorMessage = "Network error: \(urlError.localizedDescription)"
-            } else if error is DecodingError {
-                errorMessage = "Data format error from server."
-            } else {
-                errorMessage = error.localizedDescription
-            }
+            errorMessage = error.watchOSUserFacingMessage
         }
 
         isLoading = false

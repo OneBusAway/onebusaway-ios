@@ -116,7 +116,7 @@ final class RouteSearchViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred."
+                self.errorMessage = error.watchOSUserFacingMessage
             }
         }
         
@@ -136,7 +136,7 @@ final class RouteSearchViewModel: ObservableObject {
             )
             self.routes = fetched
         } catch {
-            self.errorMessage = error.localizedDescription
+            self.errorMessage = error.watchOSUserFacingMessage
         }
     }
 }

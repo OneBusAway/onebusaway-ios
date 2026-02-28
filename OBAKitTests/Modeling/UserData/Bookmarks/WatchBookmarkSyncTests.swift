@@ -72,4 +72,118 @@ class WatchBookmarkSyncTests: OBATestCase {
         expect(decodedBookmark.stop?.longitude) == watchBookmark.stop?.longitude
         expect(decodedBookmark.stop?.locationType) == watchBookmark.stop?.locationType
     }
+
+    // MARK: - Sync Manager Update/Retrieve Pipeline Tests
+    //
+    // BookmarksSyncManager.updateBookmarks() receives [[String: Any]] over WatchConnectivity,
+    // deserializes it via JSONSerialization → JSONDecoder → [WatchBookmark], re-encodes to Data,
+    // and persists it via UserDefaults. getBookmarks() reverses the process.
+    // These tests verify the full round-trip without requiring access to the Watch app target.
+
+    /// Helper: emulates the BookmarksSyncManager.updateBookmarks pipeline and returns the
+    /// persisted Data, so the retrieve path can be tested in isolation.
+    private func encodeBookmarkPayload(_ bookmarks: [WatchBookmark]) throws -> Data {
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(bookmarks)
+        // Simulate the wire format: encode → serialize to [[String:Any]] → deserialize → re-encode
+        let array = try JSONSerialization.jsonObject(with: data) as! [[String: Any]]
+        let wireData = try JSONSerialization.data(withJSONObject: array)
+        let decoded = try JSONDecoder().decode([WatchBookmark].self, from: wireData)
+        return try JSONEncoder().encode(decoded)
+    }
+
+    func testSyncManagerUpdateBookmarks_singleBookmark() throws {
+        let stop = stops[0]
+        let bookmark = Bookmark(name: "Downtown Stop", regionIdentifier: region.regionIdentifier, stop: stop)
+        let watchBookmark = bookmark.watchBookmarkObject
+
+        let persistedData = try encodeBookmarkPayload([watchBookmark])
+        let retrieved = try JSONDecoder().decode([WatchBookmark].self, from: persistedData)
+
+        expect(retrieved.count) == 1
+        expect(retrieved[0].id) == watchBookmark.id
+        expect(retrieved[0].stopID) == watchBookmark.stopID
+        expect(retrieved[0].name) == watchBookmark.name
+        expect(retrieved[0].stop?.latitude) == watchBookmark.stop?.latitude
+        expect(retrieved[0].stop?.longitude) == watchBookmark.stop?.longitude
+    }
+
+    func testSyncManagerUpdateBookmarks_multipleBookmarks() throws {
+        let bookmarks: [WatchBookmark] = stops.prefix(3).map { stop in
+            let b = Bookmark(name: stop.name, regionIdentifier: region.regionIdentifier, stop: stop)
+            return b.watchBookmarkObject
+        }
+
+        let persistedData = try encodeBookmarkPayload(bookmarks)
+        let retrieved = try JSONDecoder().decode([WatchBookmark].self, from: persistedData)
+
+        expect(retrieved.count) == bookmarks.count
+        for (original, decoded) in zip(bookmarks, retrieved) {
+            expect(decoded.id) == original.id
+            expect(decoded.stopID) == original.stopID
+            expect(decoded.name) == original.name
+        }
+    }
+
+    func testSyncManagerUpdateBookmarks_emptyArray() throws {
+        let persistedData = try encodeBookmarkPayload([])
+        let retrieved = try JSONDecoder().decode([WatchBookmark].self, from: persistedData)
+        expect(retrieved).to(beEmpty(), description: "Empty payload must persist and retrieve as empty array")
+    }
+
+    func testSyncManagerBookmark_stopWithAllOptionalFields() throws {
+        // Create an OBAStop with every optional field populated.
+        let fullStop = OBAStop(
+            id: "FULL-001",
+            name: "Full Featured Stop",
+            latitude: 47.6062,
+            longitude: -122.3321,
+            code: "F001",
+            direction: "N",
+            routeNames: "10, 12, 44",
+            locationType: 1
+        )
+        let watchBookmark = WatchBookmark(
+            id: UUID(),
+            stopID: fullStop.id,
+            name: fullStop.name,
+            routeShortName: "10",
+            tripHeadsign: "Downtown",
+            stop: fullStop
+        )
+
+        let persistedData = try encodeBookmarkPayload([watchBookmark])
+        let retrieved = try JSONDecoder().decode([WatchBookmark].self, from: persistedData)
+
+        let decoded = try XCTUnwrap(retrieved.first)
+        expect(decoded.stop?.code) == "F001"
+        expect(decoded.stop?.direction) == "N"
+        expect(decoded.stop?.routeNames) == "10, 12, 44"
+        expect(decoded.stop?.locationType) == 1
+        expect(decoded.routeShortName) == "10"
+        expect(decoded.tripHeadsign) == "Downtown"
+    }
+
+    func testSyncManagerWatchAlarmItem_codableRoundTrip() throws {
+        // WatchAlarmItem mirrors AlarmsSyncManager's wire format.
+        let alarm = WatchAlarmItem(
+            id: "alarm-001",
+            stopID: "STOP-99",
+            routeShortName: "B",
+            headsign: "Airport",
+            scheduledTime: Date(timeIntervalSince1970: 1_710_000_000),
+            status: "active"
+        )
+
+        let encoded = try JSONEncoder().encode(alarm)
+        let decoded = try JSONDecoder().decode(WatchAlarmItem.self, from: encoded)
+
+        expect(decoded.id) == alarm.id
+        expect(decoded.stopID) == alarm.stopID
+        expect(decoded.routeShortName) == alarm.routeShortName
+        expect(decoded.headsign) == alarm.headsign
+        expect(decoded.status) == alarm.status
+        // scheduledTime uses default .secondsSince1970 encoder — allow 1-second tolerance.
+        expect(decoded.scheduledTime?.timeIntervalSince1970) ≈ (alarm.scheduledTime!.timeIntervalSince1970, delta: 1)
+    }
 }
