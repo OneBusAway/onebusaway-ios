@@ -17,6 +17,9 @@ import MapKit
 public extension Notification.Name {
     /// Posted whenever bookmarks are added, updated, or deleted in the UserDataStore.
     static let bookmarksDidChange = Notification.Name("UserDataStore.bookmarksDidChange")
+
+    /// Posted whenever proximity alerts are added or deleted in the UserDataStore.
+    static let proximityAlertsDidChange = Notification.Name("UserDataStore.proximityAlertsDidChange")
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -169,6 +172,25 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter alarm: The alarm object to delete.
     func delete(alarm: Alarm)
 
+    // MARK: - Proximity Alerts
+
+    /// All currently-stored proximity alerts.
+    var proximityAlerts: [ProximityAlert] { get }
+
+    /// Store a new proximity alert.
+    /// - Parameter proximityAlert: The proximity alert to store.
+    func add(proximityAlert: ProximityAlert)
+
+    /// Delete a proximity alert.
+    /// - Parameter proximityAlert: The proximity alert to delete.
+    func delete(proximityAlert: ProximityAlert)
+
+    /// Delete all proximity alerts.
+    func deleteAllProximityAlerts()
+
+    /// Deletes all proximity alerts that have expired (older than 24 hours).
+    func deleteExpiredProximityAlerts()
+
     // MARK: - View State/Last Selected Tab
 
     /// Stores the last selected tab that the user viewed.
@@ -252,6 +274,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarks = "UserDataStore.bookmarks"
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
+        static let proximityAlerts = "UserDataStore.proximityAlerts"
         static let disabledVehicleFeedAgencies = "UserDataStore.disabledVehicleFeedAgencies"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
@@ -628,6 +651,40 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func delete(alarm: Alarm) {
         alarms.removeAll { $0 == alarm }
+    }
+
+    // MARK: - Proximity Alerts
+
+    public var proximityAlerts: [ProximityAlert] {
+        get {
+            return decodeUserDefaultsObjects(type: [ProximityAlert].self, key: UserDefaultsKeys.proximityAlerts) ?? []
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.proximityAlerts) // swiftlint:disable:this force_try
+        }
+    }
+
+    public func add(proximityAlert: ProximityAlert) {
+        proximityAlerts.append(proximityAlert)
+        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+    }
+
+    public func delete(proximityAlert: ProximityAlert) {
+        proximityAlerts.removeAll { $0 == proximityAlert }
+        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+    }
+
+    public func deleteAllProximityAlerts() {
+        proximityAlerts.removeAll()
+        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+    }
+
+    public func deleteExpiredProximityAlerts() {
+        let beforeCount = proximityAlerts.count
+        proximityAlerts.removeAll { $0.isExpired }
+        if proximityAlerts.count != beforeCount {
+            NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+        }
     }
 
     // MARK: - Stop Preferences
