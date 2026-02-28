@@ -75,7 +75,7 @@ struct ChooseRegionView: View {
     
     var body: some View {
         List {
-            ForEach(WatchAppState.regions) { region in
+            ForEach(WatchAppState.regions.filter { $0.obaBaseURL != nil }) { region in
                 Button {
                     appState.updateRegion(id: region.id)
                     dismiss()

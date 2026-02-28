@@ -32,7 +32,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
     static let shared = WatchAppState()
 
     /// Shared, platform-agnostic API client.
-    var apiClient: OBAAPIClient
+    private(set) var apiClient: OBAAPIClient
 
     /// The API key retrieved from Info.plist.
     private let apiKey: String
@@ -47,6 +47,11 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
     /// Offset between server time and local time (server - local).
     /// Positive value means server is ahead.
     @Published var serverTimeOffset: TimeInterval = 0
+
+    /// True once at least one successful time-sync has completed.
+    /// Views can observe this to show a warning when it remains false
+    /// after launch (e.g. the watch clock may be out of sync with the server).
+    @Published var timeSyncSucceeded: Bool = false
 
     /// Watch Connectivity Session
     private let session: WCSession = .default
@@ -284,12 +289,25 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         Task { @MainActor in
             if let bookmarks = userInfo["bookmarks"] as? [[String: Any]] {
                 BookmarksSyncManager.shared.updateBookmarks(bookmarks)
+            } else if userInfo["bookmarks"] != nil {
+                Logger.error("Received 'bookmarks' in unexpected format: \(type(of: userInfo["bookmarks"]!))")
             }
+
             if let alerts = userInfo["alerts"] as? [[String: Any]] {
                 ServiceAlertsSyncManager.shared.updateAlerts(alerts)
+            } else if userInfo["alerts"] != nil {
+                Logger.error("Received 'alerts' in unexpected format: \(type(of: userInfo["alerts"]!))")
             }
+
             if let alarms = userInfo["alarms"] as? [[String: Any]] {
                 AlarmsSyncManager.shared.updateAlarms(alarms)
+            } else if userInfo["alarms"] != nil {
+                Logger.error("Received 'alarms' in unexpected format: \(type(of: userInfo["alarms"]!))")
+            }
+
+            let knownKeys: Set<String> = ["bookmarks", "alerts", "alarms"]
+            for key in userInfo.keys where !knownKeys.contains(key) {
+                Logger.error("Received unrecognized key in userInfo: '\(key)'")
             }
         }
     }
@@ -304,16 +322,33 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         return true
     }
 
-    /// Syncs local time with server time to ensure accurate predictions.
-    func syncTime() async {
-        do {
-            let serverTime = try await apiClient.fetchCurrentTime()
-            let localTime = Date()
-            // serverTimeOffset = serverTime - localTime
-            // Adjusted Time = Date() + offset
-            self.serverTimeOffset = serverTime.timeIntervalSince(localTime)
-        } catch {
-            Logger.error("syncTime failed: \(error)")
+    /// Syncs local time with server time to ensure accurate arrival predictions.
+    ///
+    /// Retries up to `maxAttempts` times with simple exponential backoff
+    /// (2 s → 4 s → 8 s) before giving up. On success, `timeSyncSucceeded`
+    /// is set to `true`; on total failure it stays `false` so the UI can
+    /// surface a clock-accuracy warning.
+    func syncTime(maxAttempts: Int = 3) async {
+        var attempt = 0
+        while attempt < maxAttempts {
+            do {
+                let serverTime = try await apiClient.fetchCurrentTime()
+                let localTime = Date()
+                // serverTimeOffset = serverTime - localTime
+                // Adjusted Time = Date() + offset
+                self.serverTimeOffset = serverTime.timeIntervalSince(localTime)
+                self.timeSyncSucceeded = true
+                return
+            } catch {
+                attempt += 1
+                let delaySeconds: UInt64 = 2 << (attempt - 1)  // 2, 4, 8 seconds
+                Logger.error("syncTime attempt \(attempt)/\(maxAttempts) failed: \(error)")
+                if attempt < maxAttempts {
+                    try? await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
+                } else {
+                    Logger.error("syncTime gave up after \(maxAttempts) attempts. Arrival times may be inaccurate.")
+                }
+            }
         }
     }
     
@@ -336,5 +371,50 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         authorizationStatus = .authorizedWhenInUse
         #endif
         locationManager.requestWhenInUseAuthorization()
+    }
+}
+
+// MARK: - Error Formatting Helper
+// Placed here to obey the "don't create any new file" constraint.
+
+extension Error {
+    /// Maps a raw error to a user-friendly, localized message suitable for the watchOS UI.
+    var watchOSUserFacingMessage: String {
+        if let urlError = self as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed:
+                return OBALoc("common.error.no_internet", value: "No internet connection.", comment: "No internet")
+            case .timedOut:
+                return OBALoc("common.error.timed_out", value: "Request timed out.", comment: "Timed out")
+            default:
+                return OBALoc("common.error.unable_connect", value: "Unable to connect.", comment: "Unable to connect")
+            }
+        }
+        
+        if self is DecodingError {
+            return OBALoc("common.error.decoding", value: "Data format error.", comment: "Decoding error")
+        }
+        
+        if let apiError = self as? OBAAPIError {
+            switch apiError {
+            case .notFound:
+                return OBALoc("common.error.not_found", value: "Not found.", comment: "Not found")
+            case .badServerResponse:
+                return OBALoc("common.error.server_error", value: "Server error.", comment: "Server error")
+            case .decodingError:
+                return OBALoc("common.error.decoding", value: "Data format error.", comment: "Decoding error")
+            case .invalidURL:
+                return OBALoc("common.error.invalid_url", value: "Invalid request.", comment: "Invalid URL")
+            case .other:
+                return OBALoc("common.error.unable_load", value: "Unable to load data.", comment: "Unable to load data")
+            }
+        }
+        
+        let desc = self.localizedDescription.lowercased()
+        if desc.contains("the data couldn’t be read") || desc.contains("the data couldn't be read") || desc.contains("format") {
+            return OBALoc("common.error.decoding", value: "Data format error.", comment: "Decoding error")
+        }
+        
+        return OBALoc("common.error.unexpected", value: "An unexpected error occurred.", comment: "Unexpected error")
     }
 }

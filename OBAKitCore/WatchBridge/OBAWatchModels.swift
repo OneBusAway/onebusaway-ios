@@ -23,13 +23,28 @@ public struct OBAArrivalsResult: Codable, Equatable, Sendable {
     public let stopName: String?
     public let stopCode: String?
     public let stopDirection: String?
+    /// The geographic latitude of the stop, if available from the server response.
+    /// Nil when the server did not return coordinates (some fallback code paths).
+    public let stopLatitude: Double?
+    /// The geographic longitude of the stop, if available from the server response.
+    public let stopLongitude: Double?
 
-    public init(arrivals: [OBAArrival], routes: [OBARoute], stopName: String?, stopCode: String?, stopDirection: String?) {
+    public init(
+        arrivals: [OBAArrival],
+        routes: [OBARoute],
+        stopName: String?,
+        stopCode: String?,
+        stopDirection: String?,
+        stopLatitude: Double? = nil,
+        stopLongitude: Double? = nil
+    ) {
         self.arrivals = arrivals
         self.routes = routes
         self.stopName = stopName
         self.stopCode = stopCode
         self.stopDirection = stopDirection
+        self.stopLatitude = stopLatitude
+        self.stopLongitude = stopLongitude
     }
 }
 

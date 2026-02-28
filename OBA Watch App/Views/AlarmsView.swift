@@ -3,6 +3,8 @@ import OBAKitCore
 
 struct AlarmsView: View {
     @State private var alarms: [WatchAlarmItem] = AlarmsSyncManager.shared.currentAlarms()
+    @State private var infoMessage: String?
+
     var body: some View {
         List {
             if alarms.isEmpty {
@@ -32,7 +34,10 @@ struct AlarmsView: View {
                             }
                             Spacer()
                             Button {
-                                DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
+                                let ok = DeepLinkSyncManager.shared.openStopOnPhone(stopID: alarm.stopID)
+                                if !ok {
+                                    infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
+                                }
                             } label: {
                                 Image(systemName: "iphone")
                             }
@@ -45,6 +50,14 @@ struct AlarmsView: View {
         .navigationTitle(OBALoc("alarms.title", value: "Alarms", comment: "Title for alarms screen"))
         .onReceive(NotificationCenter.default.publisher(for: AlarmsSyncManager.alarmsUpdatedNotification)) { _ in
             alarms = AlarmsSyncManager.shared.currentAlarms()
+        }
+        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
+            get: { infoMessage != nil },
+            set: { if !$0 { infoMessage = nil } }
+        )) {
+            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
+        } message: {
+            Text(infoMessage ?? "")
         }
     }
 }
