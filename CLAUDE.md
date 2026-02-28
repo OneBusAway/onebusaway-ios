@@ -37,9 +37,7 @@ swiftlint                              # Run SwiftLint directly
 
 ### Documentation
 ```bash
-bundle install                         # Install Ruby dependencies
-brew install sourcekitten             # Install documentation tool
-scripts/docs                          # Generate Jazzy documentation
+scripts/docs                          # Generate DocC documentation (output in docs/)
 ```
 
 ### Other Utilities
@@ -129,4 +127,4 @@ onebusaway://add-region?name=REGION_NAME&oba-url=ENCODED_SERVER_URL
 - SwiftLint has relaxed rules - check `.swiftlint.yml` for disabled rules
 - Core framework (OBAKitCore) must remain application extension safe
 - UI tests are minimal - focus is on unit tests
-- Documentation is generated with Jazzy and requires Sourcekitten
+- Documentation is generated with DocC via `scripts/docs`

@@ -1,8 +1,12 @@
 # Adding a Context Menu to a Collection Cell
 
+Learn how to implement iOS `UIContextMenu` interactions in OBAKit collection cells.
+
+## Overview
+
 This guide is about implementing an iOS 13 `UIContextMenu`, which replaced 3D Touch/Force Touch.
 
-<img src='images/uicontextmenu.jpg' width="320" alt="UIContextMenu example">
+![UIContextMenu example](uicontextmenu.jpg)
 
 ## Helpful Resources
 
@@ -18,13 +22,17 @@ This feature only works as described if your user interface is hosted within an 
 
 Mark your `OBAListSectionController` subclass as conforming to the `ContextMenuProvider` protocol:
 
-    final class MySectionController: OBAListSectionController<MyViewModel>, ContextMenuProvider { }
-    
+```swift
+final class MySectionController: OBAListSectionController<MyViewModel>, ContextMenuProvider { }
+```
+
 and then implement the `contextMenuConfiguration(forItemAt:)` method:
 
-    func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
-        // TODO!
-    }
+```swift
+func contextMenuConfiguration(forItemAt indexPath: IndexPath) -> UIContextMenuConfiguration? {
+    // TODO!
+}
+```
 
 Potientally add one or more blocks to your `ListDiffable`-implementing class (i.e. the view model) for a `UIViewController` preview and for each `UIMenu`action that you will support in the `UIContextMenu`.
 
@@ -32,20 +40,22 @@ If your previewed view controller implements the `Previewable` protocol, then yo
 
 Here's a complete example of creating a `UIContextMenuConfiguration` object within `contextMenuConfiguration(forItemAt:)`:
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: {
-            guard let controller = tableRow.previewDestination?() else { return nil }
-            if let previewable = controller as? Previewable {
-                previewable.enterPreviewMode()
-            }
-            return controller
-        }, actionProvider: { _ -> UIMenu? in
-            if let menu = tableRow.buildContextMenu?() as? UIMenu {
-                return menu
-            }
-            else {
-                return nil
-            }
-        })
+```swift
+return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+    guard let controller = tableRow.previewDestination?() else { return nil }
+    if let previewable = controller as? Previewable {
+        previewable.enterPreviewMode()
+    }
+    return controller
+}, actionProvider: { _ -> UIMenu? in
+    if let menu = tableRow.buildContextMenu?() as? UIMenu {
+        return menu
+    }
+    else {
+        return nil
+    }
+})
+```
 
 ## Hosting View Controller
 
