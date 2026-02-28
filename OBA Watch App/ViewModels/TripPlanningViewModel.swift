@@ -22,6 +22,7 @@ class TripPlanningViewModel: ObservableObject {
         }
         
         isLoading = true
+        defer { isLoading = false }
         error = nil
         
         do {
@@ -30,6 +31,5 @@ class TripPlanningViewModel: ObservableObject {
             self.error = error
         }
         
-        isLoading = false
     }
 }

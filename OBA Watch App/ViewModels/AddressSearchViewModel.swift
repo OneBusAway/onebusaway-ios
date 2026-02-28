@@ -1,12 +1,10 @@
 import Foundation
 import Combine
 import MapKit
-import os.log
+import OBAKitCore
 
 @MainActor
 final class AddressSearchViewModel: ObservableObject {
-    private let logger = Logger(subsystem: "com.onebusaway.watchkitapp", category: "AddressSearch")
-    
     @Published var query: String
     @Published var results: [MKMapItem] = []
     @Published var isLoading: Bool = false
@@ -18,7 +16,7 @@ final class AddressSearchViewModel: ObservableObject {
     init(initialQuery: String) {
         self.query = initialQuery
         self.searchCompleter.resultTypes = [.address, .pointOfInterest]
-        logger.debug("Initialized AddressSearchViewModel with query: \(initialQuery)")
+        Logger.info("Initialized AddressSearchViewModel with query: \(initialQuery)")
     }
 
     deinit {
@@ -30,14 +28,14 @@ final class AddressSearchViewModel: ObservableObject {
         
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            logger.debug("Empty search query, clearing results")
+            Logger.info("Empty search query, clearing results")
             results = []
             return
         }
 
         isLoading = true
         errorMessage = nil
-        logger.debug("Starting search for: \(trimmed)")
+        Logger.info("Starting search for: \(trimmed)")
 
         searchTask = Task {
             do {
@@ -45,21 +43,21 @@ final class AddressSearchViewModel: ObservableObject {
                 request.naturalLanguageQuery = trimmed
                 request.resultTypes = [.address, .pointOfInterest]
                 
-                logger.debug("Creating search request with query: \(trimmed)")
+                Logger.info("Creating search request with query: \(trimmed)")
                 let search = MKLocalSearch(request: request)
                 let response = try await search.start()
                 
                 guard !Task.isCancelled else {
-                    logger.debug("Search was cancelled")
+                    Logger.info("Search was cancelled")
                     return
                 }
                 
-                logger.debug("Search completed. Found \(response.mapItems.count) results")
+                Logger.info("Search completed. Found \(response.mapItems.count) results")
                 if response.mapItems.isEmpty {
-                    logger.warning("No results found for query: \(trimmed)")
+                    Logger.warn("No results found for query: \(trimmed)")
                 } else {
                     response.mapItems.forEach { item in
-                        logger.debug("Found: \(item.name ?? "No name") - \(item.placemark.title ?? "No subtitle")")
+                        Logger.info("Found: \(item.name ?? "No name") - \(item.placemark.title ?? "No subtitle")")
                     }
                 }
                 
@@ -69,7 +67,7 @@ final class AddressSearchViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 
-                logger.error("Search failed: \(error.localizedDescription)")
+                Logger.error("Search failed: \(error.localizedDescription)")
                 
                 // Provide user-friendly error messages
                 if let urlError = error as? URLError {
