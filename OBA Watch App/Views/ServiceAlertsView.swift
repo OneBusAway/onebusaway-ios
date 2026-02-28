@@ -3,6 +3,8 @@ import OBAKitCore
 
 struct ServiceAlertsView: View {
     @State private var alerts: [WatchServiceAlert] = ServiceAlertsSyncManager.shared.currentAlerts()
+    @State private var infoMessage: String?
+
     var body: some View {
         List {
             if alerts.isEmpty {
@@ -36,7 +38,10 @@ struct ServiceAlertsView: View {
                             }
                             Spacer()
                             Button {
-                                DeepLinkSyncManager.shared.openAlertsOnPhone()
+                                let ok = DeepLinkSyncManager.shared.openAlertsOnPhone()
+                                if !ok {
+                                    infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
+                                }
                             } label: {
                                 Image(systemName: "iphone")
                             }
@@ -46,9 +51,17 @@ struct ServiceAlertsView: View {
                 }
             }
         }
-        .navigationTitle("Notifications")
+        .navigationTitle(OBALoc("service_alerts.nav_title", value: "Notifications", comment: "Service alerts navigation title"))
         .onReceive(NotificationCenter.default.publisher(for: ServiceAlertsSyncManager.alertsUpdatedNotification)) { _ in
             alerts = ServiceAlertsSyncManager.shared.currentAlerts()
+        }
+        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
+            get: { infoMessage != nil },
+            set: { if !$0 { infoMessage = nil } }
+        )) {
+            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
+        } message: {
+            Text(infoMessage ?? "")
         }
     }
 }

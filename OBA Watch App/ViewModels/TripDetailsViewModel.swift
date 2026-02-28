@@ -59,17 +59,17 @@ class TripDetailsViewModel: ObservableObject {
                         tripIDToFetch = tID
                         self.tripID = tID
                     } else {
-                        errorMessage = "Vehicle \(vID) is not currently on an active trip."
+                        errorMessage = String(format: OBALoc("trip_details.error.vehicle_not_on_trip_fmt", value: "Vehicle %@ is not currently on an active trip.", comment: "Vehicle not on active trip"), vID)
                         return
                     }
                 } catch {
-                    errorMessage = "Unable to find trip for vehicle \(vID)."
+                    errorMessage = String(format: OBALoc("trip_details.error.unable_find_trip_fmt", value: "Unable to find trip for vehicle %@.", comment: "Unable to find trip for vehicle"), vID)
                     return
                 }
             }
             
             if tripIDToFetch.isEmpty {
-                errorMessage = "No trip information available."
+                errorMessage = OBALoc("trip_details.error.no_trip_info", value: "No trip information available.", comment: "No trip info available")
                 return
             }
 
@@ -110,7 +110,7 @@ class TripDetailsViewModel: ObservableObject {
                 }
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 }

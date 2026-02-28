@@ -136,7 +136,7 @@ class SearchViewModel: ObservableObject {
                 return d1 < d2
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 

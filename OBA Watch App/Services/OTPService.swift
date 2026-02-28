@@ -28,7 +28,15 @@ class OTPService {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            throw NSError(
+                domain: "OTPServiceError",
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "OTP server returned HTTP \(http.statusCode)."]
+            )
+        }
         
         let decoder = JSONDecoder()
         
@@ -51,13 +59,13 @@ class OTPService {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(string)")
         }
         
-        let response = try decoder.decode(OTPPlanResponse.self, from: data)
+        let otpResponse = try decoder.decode(OTPPlanResponse.self, from: data)
         
-        if let error = response.error {
+        if let error = otpResponse.error {
             throw NSError(domain: "OTPError", code: error.id, userInfo: [NSLocalizedDescriptionKey: error.msg])
         }
         
-        return response.plan?.itineraries ?? []
+        return otpResponse.plan?.itineraries ?? []
     }
     
     private func formatTime(_ date: Date) -> String {

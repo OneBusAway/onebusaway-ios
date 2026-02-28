@@ -95,9 +95,9 @@ struct StopSearchResultsView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 30))
                             .foregroundColor(.secondary.opacity(0.5))
-                        Text("No Stops Found")
+                        Text(OBALoc("stop_search.empty.title", value: "No Stops Found", comment: "No stops found empty state title"))
                             .font(.system(size: 16, weight: .semibold))
-                        Text("Try a different search term.")
+                        Text(OBALoc("stop_search.empty.subtitle", value: "Try a different search term.", comment: "No stops found empty state subtitle"))
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                         Spacer(minLength: 20)
@@ -107,7 +107,7 @@ struct StopSearchResultsView: View {
                 }
             }
         }
-        .navigationTitle("Stops")
+        .navigationTitle(OBALoc("stop_search.nav_title", value: "Stops", comment: "Stop search navigation title"))
         .onAppear {
             viewModel.performSearch()
         }
