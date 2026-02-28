@@ -99,6 +99,7 @@ class MapStatusView: UIView {
         iconView = UIImageView.autolayoutNew()
         iconView.tintColor = ThemeColors.shared.brand
 
+        // Label
         detailLabel = UILabel.autolayoutNew()
         detailLabel.font = .preferredFont(forTextStyle: .headline)
         detailLabel.textColor = ThemeColors.shared.brand
@@ -195,6 +196,14 @@ class MapStatusView: UIView {
             setLabel = OBALoc("map_status_view.zoom_in_for_stops", value: "Zoom in for stops", comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map")
         }
 
+        // Cancel any in-flight animation to prevent a stale completion
+        // from toggling isHidden after a newer state change.
+        self.layer.removeAllAnimations()
+
+        if !shouldHide {
+            self.isHidden = false
+        }
+
         UIView.animate(withDuration: 0.25) {
             self.alpha = shouldHide ? 0 : 1
             self.iconView.image = setImage
@@ -202,8 +211,11 @@ class MapStatusView: UIView {
             self.largeContentImage = setLargeImage
             self.invalidateIntrinsicContentSize()
             self.superview?.layoutIfNeeded()
-        } completion: { _ in
-            self.isHidden = shouldHide
+        } completion: { finished in
+            // Only hide if the animation completed without being cancelled.
+            if finished && shouldHide {
+                self.isHidden = true
+            }
         }
     }
 
