@@ -6,18 +6,22 @@ struct TripPlanningEntryView: View {
     @State private var planningFromLocation = false
     @State private var planningFromAddress = false
     @State private var showingLocationAlert = false
+    @State private var infoMessage: String?
     
     var body: some View {
         List {
             Section {
                 Button {
                     if let loc = appState.currentLocation?.coordinate {
-                        DeepLinkSyncManager.shared.planTripOnPhone(
+                        let ok = DeepLinkSyncManager.shared.planTripOnPhone(
                             originLat: loc.latitude,
                             originLon: loc.longitude,
                             destLat: nil,
                             destLon: nil
                         )
+                        if !ok {
+                            infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
+                        }
                     } else {
                         showingLocationAlert = true
                     }
@@ -66,5 +70,13 @@ struct TripPlanningEntryView: View {
             }
         }
         .navigationTitle(OBALoc("trip_planning.title", value: "Trip Planning", comment: "Trip Planning title"))
+        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
+            get: { infoMessage != nil },
+            set: { if !$0 { infoMessage = nil } }
+        )) {
+            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) {}
+        } message: {
+            Text(infoMessage ?? "")
+        }
     }
 }

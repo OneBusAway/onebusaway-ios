@@ -73,7 +73,7 @@ class NearbyStopsViewModel: ObservableObject {
                 locationStatus = String(format: OBALoc("nearby_stops.stops_found_fmt", value: "%d stops found", comment: "Status: multiple stops found"), stops.count)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
             locationStatus = OBALoc("nearby_stops.error_loading_stops", value: "Error loading stops", comment: "Status: error loading stops")
         }
     }

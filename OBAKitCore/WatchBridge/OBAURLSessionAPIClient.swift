@@ -243,7 +243,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     routes: response.toDomainRoutes(),
                     stopName: domainStop.name,
                     stopCode: domainStop.code,
-                    stopDirection: domainStop.direction
+                    stopDirection: domainStop.direction,
+                    stopLatitude: domainStop.latitude,
+                    stopLongitude: domainStop.longitude
                 )
             }
         ])
@@ -258,7 +260,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             routes: routes,
             stopName: response.stop?.name,
             stopCode: response.stop?.code,
-            stopDirection: response.stop?.direction
+            stopDirection: response.stop?.direction,
+            stopLatitude: response.stop?.lat,
+            stopLongitude: response.stop?.lon
         )
     }
 

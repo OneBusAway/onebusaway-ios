@@ -34,7 +34,7 @@ final class VehiclesViewModel: ObservableObject {
             
             trips = result.sorted { ($0.lastUpdateTime ?? .distantPast) > ($1.lastUpdateTime ?? .distantPast) }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 }

@@ -5,20 +5,20 @@ struct ItineraryDetailView: View {
     
     var body: some View {
         List {
-            Section(header: Text("Summary")) {
+            Section(header: Text(OBALoc("itinerary.section.summary", value: "Summary", comment: "Itinerary summary section header"))) {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text("Duration")
+                        Text(OBALoc("itinerary.label.duration", value: "Duration", comment: "Itinerary duration label"))
                         Spacer()
                         Text(formatDuration(itinerary.duration))
                     }
                     HStack {
-                        Text("Walk Time")
+                        Text(OBALoc("itinerary.label.walk_time", value: "Walk Time", comment: "Itinerary walk time label"))
                         Spacer()
                         Text(formatDuration(itinerary.walkTime))
                     }
                     HStack {
-                        Text("Transfers")
+                        Text(OBALoc("itinerary.label.transfers", value: "Transfers", comment: "Itinerary transfers label"))
                         Spacer()
                         Text("\(itinerary.transfers)")
                     }
@@ -26,13 +26,13 @@ struct ItineraryDetailView: View {
                 .font(.caption)
             }
             
-            Section(header: Text("Directions")) {
+            Section(header: Text(OBALoc("itinerary.section.directions", value: "Directions", comment: "Itinerary directions section header"))) {
                 ForEach(itinerary.legs) { leg in
                     LegDetailRow(leg: leg)
                 }
             }
         }
-        .navigationTitle("Details")
+        .navigationTitle(OBALoc("itinerary.nav_title", value: "Details", comment: "Itinerary detail navigation title"))
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
@@ -56,7 +56,7 @@ struct LegDetailRow: View {
                         .bold()
                     
                     if let headsign = leg.headsign {
-                        Text("to \(headsign)")
+                        Text(String(format: OBALoc("itinerary.leg.to_headsign_fmt", value: "to %@", comment: "Direction: to [headsign]"), headsign))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
                     }
