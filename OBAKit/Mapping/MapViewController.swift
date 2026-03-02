@@ -102,6 +102,10 @@ class MapViewController: UIViewController,
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
 
+        weatherButton.isHidden = true
+        view.addSubview(weatherButton)
+        weatherButton.translatesAutoresizingMaskIntoConstraints = false
+
         floatingPanel.addPanel(toParent: self)
 
         let appearance = UITabBarAppearance()
@@ -109,10 +113,6 @@ class MapViewController: UIViewController,
         tabBarItem.scrollEdgeAppearance = appearance
 
         view.insertSubview(toolbar, aboveSubview: mapView)
-
-        weatherButton.isHidden = true
-        view.addSubview(weatherButton)
-        weatherButton.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
