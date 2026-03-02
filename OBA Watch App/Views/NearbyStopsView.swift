@@ -194,7 +194,7 @@ struct NearbyStopRow: View {
                             .foregroundColor(.secondary)
                     }
 
-                    if let location = currentLocation {
+                    if let location = currentLocation, stop.latitude != 0.0 || stop.longitude != 0.0 {
                         let stopLocation = CLLocation(latitude: stop.latitude, longitude: stop.longitude)
                         let distance = stopLocation.distance(from: location)
                         

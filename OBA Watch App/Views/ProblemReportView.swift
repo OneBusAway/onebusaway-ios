@@ -73,7 +73,7 @@ struct ProblemReportView: View {
             }
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 }
