@@ -11,14 +11,6 @@ import Foundation
 import MapKit
 import CoreLocation
 
-extension MKCoordinateRegion {
-    init(_ mapRect: MKMapRect) {
-        let centerCoordinate = MKMapPoint(x: mapRect.midX, y: mapRect.midY).coordinate
-        let span = MKCoordinateSpan(latitudeDelta: mapRect.size.height, longitudeDelta: mapRect.size.width)
-        self.init(center: centerCoordinate, span: span)
-    }
-}
-
 extension MKPlacemark {
     var mkCoordinateRegion: MKCoordinateRegion? {
         guard let boundingRegion = self.region as? CLCircularRegion else { return nil }

@@ -43,7 +43,7 @@ class BookmarksViewModel: ObservableObject {
             let decoded = try decoder.decode([WatchBookmark].self, from: data)
             bookmarks = decoded.sorted { $0.name < $1.name }
         } catch {
-            bookmarks = []
+            Logger.error("Failed to decode bookmarks: \(error)")
             errorMessage = OBALoc("bookmarks.load_error", value: "Failed to load bookmarks.", comment: "Error loading bookmarks")
         }
     }

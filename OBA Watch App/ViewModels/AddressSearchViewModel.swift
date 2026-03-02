@@ -16,7 +16,6 @@ final class AddressSearchViewModel: ObservableObject {
     init(initialQuery: String) {
         self.query = initialQuery
         self.searchCompleter.resultTypes = [.address, .pointOfInterest]
-        Logger.info("Initialized AddressSearchViewModel with query: \(initialQuery)")
     }
 
     deinit {
@@ -28,14 +27,12 @@ final class AddressSearchViewModel: ObservableObject {
         
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            Logger.info("Empty search query, clearing results")
             results = []
             return
         }
 
         isLoading = true
         errorMessage = nil
-        Logger.info("Starting search for: \(trimmed)")
 
         searchTask = Task {
             do {
@@ -43,22 +40,11 @@ final class AddressSearchViewModel: ObservableObject {
                 request.naturalLanguageQuery = trimmed
                 request.resultTypes = [.address, .pointOfInterest]
                 
-                Logger.info("Creating search request with query: \(trimmed)")
                 let search = MKLocalSearch(request: request)
                 let response = try await search.start()
                 
                 guard !Task.isCancelled else {
-                    Logger.info("Search was cancelled")
                     return
-                }
-                
-                Logger.info("Search completed. Found \(response.mapItems.count) results")
-                if response.mapItems.isEmpty {
-                    Logger.warn("No results found for query: \(trimmed)")
-                } else {
-                    response.mapItems.forEach { item in
-                        Logger.info("Found: \(item.name ?? "No name") - \(item.placemark.title ?? "No subtitle")")
-                    }
                 }
                 
                 self.results = response.mapItems
@@ -67,21 +53,21 @@ final class AddressSearchViewModel: ObservableObject {
             } catch {
                 guard !Task.isCancelled else { return }
                 
-                Logger.error("Search failed: \(error.localizedDescription)")
+                Logger.error("Search failed: \(error)")
                 
                 // Provide user-friendly error messages
                 if let urlError = error as? URLError {
                     switch urlError.code {
                     case .notConnectedToInternet, .networkConnectionLost:
-                        self.errorMessage = "No internet connection"
+                        self.errorMessage = OBALoc("search.error.no_internet", value: "No internet connection", comment: "No internet error message")
                     case .timedOut:
-                        self.errorMessage = "Request timed out"
+                        self.errorMessage = OBALoc("search.error.timed_out", value: "Request timed out", comment: "Request timed out error message")
                     default:
-                        self.errorMessage = "Unable to search. Please check your network connection."
+                        self.errorMessage = OBALoc("search.error.network_issue", value: "Unable to search. Please check your network connection.", comment: "Generic network error message")
                     }
                 } else {
                     // For other errors, show a generic message
-                    self.errorMessage = "Unable to search. Please try again."
+                    self.errorMessage = OBALoc("search.error.generic", value: "Unable to search. Please try again.", comment: "Generic search error message")
                 }
                 self.isLoading = false
             }
