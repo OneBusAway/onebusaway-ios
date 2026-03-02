@@ -46,6 +46,8 @@ class StopArrivalsViewModel: ObservableObject {
     }
     
     func loadArrivals() async {
+        guard !isLoading else { return }
+        
         let apiClient = apiClientProvider()
         isLoading = true
         defer { isLoading = false }

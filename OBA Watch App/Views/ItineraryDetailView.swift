@@ -80,7 +80,7 @@ struct LegDetailRow: View {
     
     private var title: String {
         if leg.mode.uppercased() == "WALK" {
-            return "Walk \(Int(leg.distance))m"
+            return String(format: OBALoc("itinerary.leg.walk_format", value: "Walk %dm", comment: "Walk distance format"), Int(leg.distance))
         } else {
             return "\(leg.routeShortName ?? leg.mode) - \(leg.from.name)"
         }

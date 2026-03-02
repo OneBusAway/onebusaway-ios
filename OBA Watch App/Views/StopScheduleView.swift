@@ -71,7 +71,7 @@ struct StopScheduleView: View {
             let s = try await WatchAppState.shared.apiClient.fetchScheduleForStop(stopID: stopID, date: date)
             schedule = s
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 }
