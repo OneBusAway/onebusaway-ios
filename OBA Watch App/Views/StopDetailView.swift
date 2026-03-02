@@ -67,7 +67,7 @@ struct StopDetailView: View {
             let s = try await WatchAppState.shared.apiClient.fetchStop(id: stopID)
             stop = s
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.watchOSUserFacingMessage
         }
     }
 }

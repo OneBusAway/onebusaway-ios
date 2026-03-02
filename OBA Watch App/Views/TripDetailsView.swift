@@ -290,14 +290,14 @@ struct StopRow: View {
                  
                  HStack {
                      if let stopId = stopTime.stopId {
-                         Text("ID: \(stopId.components(separatedBy: "_").last ?? stopId)")
+                         Text(String(format: OBALoc("trip_details.stop_id_format", value: "ID: %@", comment: "Stop ID format"), stopId.components(separatedBy: "_").last ?? stopId))
                              .font(.system(size: 11))
                              .foregroundColor(.secondary)
                      }
                      
                      if let distance = stopTime.distanceAlongTrip, distance > 0 {
                          Spacer()
-                         Text(String(format: "%.1f mi", distance / 1609.34))
+                         Text(String(format: OBALoc("trip_details.distance_format", value: "%.1f mi", comment: "Distance format"), distance / 1609.34))
                              .font(.system(size: 11))
                              .foregroundColor(.secondary)
                      }

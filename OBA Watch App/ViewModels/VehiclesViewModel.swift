@@ -17,7 +17,7 @@ final class VehiclesViewModel: ObservableObject {
     func loadNearbyVehicles() async {
         let apiClient = apiClientProvider()
         guard let loc = locationProvider() else {
-            errorMessage = "Location not available"
+            errorMessage = OBALoc("vehicles.error.location_unavailable", value: "Location not available", comment: "Error message when location is not available")
             return
         }
         isLoading = true

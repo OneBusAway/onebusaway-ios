@@ -74,7 +74,7 @@ struct RouteDetailView: View {
                 }
             } else if !viewModel.directions.isEmpty {
                 ForEach(viewModel.directions, id: \.id) { direction in
-                    Section(direction.name ?? "Direction") {
+                    Section(direction.name ?? OBALoc("route_detail.section.direction", value: "Direction", comment: "Direction section header")) {
                         ForEach(direction.stops, id: \.id) { stop in
                             NavigationLink {
                                 StopArrivalsView(stopID: stop.id, stopName: stop.name)
@@ -94,7 +94,7 @@ struct RouteDetailView: View {
                                             .lineLimit(1)
                                         
                                         if let code = stop.code, !code.isEmpty {
-                                            Text("Stop \(code)")
+                                            Text(String(format: OBALoc("route_detail.stop_format", value: "Stop %@", comment: "Stop code format"), code))
                                                 .font(.system(size: 12))
                                                 .foregroundColor(.secondary)
                                                 .lineLimit(1)
@@ -111,7 +111,7 @@ struct RouteDetailView: View {
                 }
             }
         }
-        .navigationTitle(route.shortName ?? "Route")
+        .navigationTitle(route.shortName ?? OBALoc("route_detail.nav_title", value: "Route", comment: "Route detail navigation title"))
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await viewModel.load()

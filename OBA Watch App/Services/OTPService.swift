@@ -43,6 +43,7 @@ class OTPService {
         // Try multiple date strategies as different OTP servers use different formats
         let dateFormats = ["yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"]
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         
         decoder.dateDecodingStrategy = .custom { decoder in
             let container = try decoder.singleValueContainer()
@@ -70,12 +71,14 @@ class OTPService {
     
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h:mma"
         return formatter.string(from: date).lowercased()
     }
     
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "MM-dd-yyyy"
         return formatter.string(from: date)
     }

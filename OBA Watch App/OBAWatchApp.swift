@@ -344,7 +344,14 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
                 let delaySeconds: UInt64 = 2 << (attempt - 1)  // 2, 4, 8 seconds
                 Logger.error("syncTime attempt \(attempt)/\(maxAttempts) failed: \(error)")
                 if attempt < maxAttempts {
-                    try? await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
+                    do {
+                        try await Task.sleep(nanoseconds: delaySeconds * 1_000_000_000)
+                    } catch is CancellationError {
+                        Logger.info("syncTime was cancelled.")
+                        return
+                    } catch {
+                        Logger.error("syncTime retry sleep failed: \(error)")
+                    }
                 } else {
                     Logger.error("syncTime gave up after \(maxAttempts) attempts. Arrival times may be inaccurate.")
                 }

@@ -20,7 +20,7 @@ struct StopSearchResultsView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 16))
                         .foregroundColor(.secondary)
-                    TextField("Search stops", text: $viewModel.query)
+                    TextField(OBALoc("stop_search.placeholder", value: "Search stops", comment: "Search stops placeholder"), text: $viewModel.query)
                         .font(.system(size: 16))
                         .padding(.vertical, 8)
                         .onSubmit { viewModel.performSearch() }
@@ -74,7 +74,7 @@ struct StopSearchResultsView: View {
                                         .lineLimit(1)
                                     
                                     if let code = stop.code {
-                                        Text("Stop \(code)")
+                                        Text(String(format: OBALoc("stop_search.stop_code_format", value: "Stop %@", comment: "Stop code format"), code))
                                             .font(.system(size: 12))
                                             .foregroundColor(.secondary)
                                             .lineLimit(1)
