@@ -35,7 +35,7 @@ struct VehicleRow: View {
     }
 
     private var displayVehicleID: String {
-        let id = vehicleID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? (tripID ?? "Unknown") : vehicleID
+        let id = vehicleID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? (tripID ?? OBALoc("vehicle.unknown_id", value: "Unknown", comment: "Unknown vehicle ID")) : vehicleID
         return id.replacingOccurrences(of: " ", with: "\n")
     }
 

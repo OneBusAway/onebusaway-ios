@@ -144,7 +144,7 @@ struct RegionOnboardingView: View {
             }
 
             Section {
-                ForEach(WatchAppState.regions) { region in
+                ForEach(WatchAppState.regions.filter { $0.obaBaseURL != nil }) { region in
                     Button {
                         appState.updateRegion(id: region.id)
                         mapRegion.center = region.coordinate

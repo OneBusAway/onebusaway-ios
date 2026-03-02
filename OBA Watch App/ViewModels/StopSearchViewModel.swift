@@ -47,19 +47,27 @@ class StopSearchViewModel: ObservableObject {
                             if let agencyBound = agencies?.first?.agencyRegionBound {
                                 searchRegion = agencyBound.serviceRect
                             }
-                            await self.executeSearch(trimmed: query, location: locationProvider() ?? (agencies?.first.map { CLLocation(latitude: $0.centerLatitude, longitude: $0.centerLongitude) } ?? CLLocation(latitude: 0, longitude: 0)), searchRegion: searchRegion)
-                            isLoading = false
+                            if agencies?.first != nil {
+                                await self.executeSearch(trimmed: query, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
+                            } else if let location = locationProvider() {
+                                await self.executeSearch(trimmed: query, location: location, searchRegion: searchRegion)
+                            } else {
+                                await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
+                            }
+                            await MainActor.run { self.isLoading = false }
                             return
                         }
                     } catch {
                         // Geocoding failed, try to get agency coverage for default location
                         agencies = try await apiClient.fetchAgenciesWithCoverage()
-                        let defaultLocation = agencies?.first.map { CLLocation(latitude: $0.centerLatitude, longitude: $0.centerLongitude) } ?? CLLocation(latitude: 0, longitude: 0)
-                        if let agencyBound = agencies?.first?.agencyRegionBound {
-                            searchRegion = agencyBound.serviceRect
+                        if agencies?.first != nil {
+                            await self.executeSearch(trimmed: query, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
+                        } else if let location = locationProvider() {
+                            await self.executeSearch(trimmed: query, location: location, searchRegion: searchRegion)
+                        } else {
+                            await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
                         }
-                        await self.executeSearch(trimmed: query, location: locationProvider() ?? defaultLocation, searchRegion: searchRegion)
-                        isLoading = false
+                        await MainActor.run { self.isLoading = false }
                         return
                     }
                 } else {
@@ -90,7 +98,17 @@ class StopSearchViewModel: ObservableObject {
                 }
 
                 let search = MKLocalSearch(request: request)
-                let response = try? await search.start()
+                var response: MKLocalSearch.Response?
+                do {
+                    response = try await search.start()
+                } catch {
+                    Logger.error("Search failed: \(error)")
+                    await MainActor.run {
+                        self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unexpected", value: "An unexpected error occurred during local search.", comment: "Unexpected error")
+                    }
+                    isLoading = false
+                    return
+                }
 
                 if let mapItem = response?.mapItems.first, let loc = mapItem.placemark.location {
                     await self.executeSearch(trimmed: query, location: loc, searchRegion: (mapItem.placemark.region as? CLCircularRegion)?.toMKMapRect())
