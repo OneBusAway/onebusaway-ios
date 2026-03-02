@@ -25,7 +25,7 @@ extension RESTAPIService {
             throw APIError.surveyServiceNotConfigured
         }
 
-        return try await getData(for: url, decodeRESTAPIResponseAs: StudyResponse.self)
+        return try await getData(for: url, decodeRESTAPIResponseAs: StudyResponse.self, using: JSONDecoder.obacoServiceDecoder)
     }
 
     /// Submits a survey response to the server
@@ -72,17 +72,7 @@ extension RESTAPIService {
     // MARK: - Private Helper Methods
 
     private nonisolated func performSurveyRequest<T: Codable>(request: URLRequest) async throws -> RESTAPIResponse<T> {
-        let (data, response) = try await dataLoader.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw APIError.networkFailure(NSError(domain: "HTTPResponseError", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid HTTP response"]))
-        }
-
-        guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
-            throw APIError.requestFailure(httpResponse)
-        }
-
-        let decodedResponse = try decoder.decode(RESTAPIResponse<T>.self, from: data)
-        return decodedResponse
+        let (data, _) = try await self.data(for: request)
+        return try JSONDecoder.obacoServiceDecoder.decode(RESTAPIResponse<T>.self, from: data)
     }
 }

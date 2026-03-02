@@ -196,6 +196,12 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Stores the user's unique identifier for survey responses
     var surveyUserIdentifier: String { get set }
 
+    /// Whether the survey feature is enabled
+    var isSurveyEnabled: Bool { get set }
+
+    /// The next date at which the user should be reminded about surveys
+    var nextSurveyReminderDate: Date? { get set }
+
     /// Increments the app launch count for "answer later" logic
     func incrementAppLaunchCount()
 
@@ -330,6 +336,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
           static let surveysForLater = "UserDataStore.surveysForLater"
           static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
           static let appLaunchCount = "UserDataStore.appLaunchCount"
+          static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
+          static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -774,6 +782,28 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
     }
 
+    public var isSurveyEnabled: Bool {
+        get {
+            // Default to true if never set
+            if userDefaults.object(forKey: UserDefaultsKeys.isSurveyEnabled) == nil {
+                return true
+            }
+            return userDefaults.bool(forKey: UserDefaultsKeys.isSurveyEnabled)
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.isSurveyEnabled)
+        }
+    }
+
+    public var nextSurveyReminderDate: Date? {
+        get {
+            return userDefaults.object(forKey: UserDefaultsKeys.nextSurveyReminderDate) as? Date
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.nextSurveyReminderDate)
+        }
+    }
+
     // MARK: - Survey Tracking Private Properties
 
     private var completedSurveys: [CompletedSurvey] {
@@ -957,96 +987,14 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
 extension UserDefaultsStore {
 
-    public func increaseAppLaunchCount() {
-        let newValue = appLaunch + 1
-        userDefaults.set(newValue, forKey: UserDefaultsKeys.appLaunchCounter)
-    }
-
-}
-
-// MARK: - Survey Preferences Store
-extension UserDefaultsStore: SurveyPreferencesStore {
-
-    /// A persistent unique identifier used to associate all survey submissions
-    /// from this user/device.
-    ///
-    /// The value is:
-    /// - Retrieved from `UserDefaults` if it already exists.
-    /// - Automatically generated and stored if it does not exist.
-    /// - Returns: A UUID string representing the user's survey identity.
-    public var userSurveyId: String {
-        if let uuid = userDefaults.string(forKey: UserDefaultsKeys.userSurveyId), !uuid.isEmpty {
-            return uuid
-        } else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: UserDefaultsKeys.userSurveyId)
-            return uuid
-        }
-    }
-
-    /// Returns the number of times the app has been launched,
-    /// used to determine when to show surveys based on launch count logic.
+    /// The number of times the app has been launched (legacy counter used by survey gating).
     public var appLaunch: Int {
         return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCounter)
     }
 
-    /// Returns the set of completed survey IDs stored in user preferences.
-    /// - Note: If no preferences exist yet, an empty set is returned.
-    public var completedSurveyIDs: Set<Int> {
-        let preferences = surveyPreferences()
-        return preferences.completedSurveyIDs
-    }
-
-    /// Returns the set of survey IDs the user has skipped.
-    /// - Note: If no preferences exist yet, an empty set is returned.
-    public var skippedSurveyIDs: Set<Int> {
-        let preferences = surveyPreferences()
-        return preferences.skippedSurveyIDs
-    }
-
-    /// Saves the provided `SurveyPreferences` to UserDefaults.
-    /// - Parameter preferences: The preferences object containing all survey-related user settings.
-    public func setSurveyPreferences(_ preferences: SurveyPreferences) {
-        do {
-            try encodeUserDefaultsObjects(preferences, key: UserDefaultsKeys.surveyPreferencesKey)
-        } catch {
-            Logger.error("Unable to encode SurveyPreferences to UserDefaults")
-        }
-    }
-
-    /// Retrieves the saved `SurveyPreferences` from UserDefaults.
-    /// - Returns: A `SurveyPreferences` object if it exists, otherwise `nil`.
-    public func surveyPreferences() -> SurveyPreferences {
-        return decodeUserDefaultsObjects(type: SurveyPreferences.self, key: UserDefaultsKeys.surveyPreferencesKey) ?? .init()
-    }
-
-}
-
-extension UserDefaultsStore {
-
-    /// Retrieves the last saved survey response from `UserDefaults`.
-    ///
-    /// This is typically used to:
-    /// - Check if the user already submitted a survey
-    /// - Retrieve the `surveyPathId` needed for updating an existing response
-    ///
-    /// - Returns: A `SurveySubmissionResponse` if stored, otherwise `nil`.
-    public func getSurveyResponse() -> SurveySubmissionResponse? {
-        return decodeUserDefaultsObjects(type: SurveySubmissionResponse.self, key: UserDefaultsKeys.surveyResponse)
-    }
-
-    /// Persists a survey submission response in `UserDefaults`.
-    ///
-    /// This stored response is used for follow-up update operations (PATCH),
-    /// since the server returns a path identifier that must be reused.
-    ///
-    /// - Parameter submissionResponse: The survey submission response returned by the backend.
-    public func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse) {
-        do {
-           try encodeUserDefaultsObjects(submissionResponse, key: UserDefaultsKeys.surveyResponse)
-        } catch {
-            Logger.error("Unable to encode SurveySubmissionResponse to UserDefaults")
-        }
+    public func increaseAppLaunchCount() {
+        let newValue = appLaunch + 1
+        userDefaults.set(newValue, forKey: UserDefaultsKeys.appLaunchCounter)
     }
 
 }

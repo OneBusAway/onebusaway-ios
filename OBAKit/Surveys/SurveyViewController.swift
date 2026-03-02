@@ -14,14 +14,14 @@ import OBAKitCore
 class SurveyViewController: FormViewController {
 
     private let survey: Survey
-    private let surveyService: SurveyUIService
+    private let surveyService: SurveyService
     private let stopID: String?
     private let stopLocation: (latitude: Double, longitude: Double)?
 
     private var responses: [SurveyQuestionResponse] = []
     private var heroResponseID: String?
 
-    init(survey: Survey, surveyService: SurveyUIService, stopID: String? = nil, stopLocation: (latitude: Double, longitude: Double)? = nil) {
+    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: (latitude: Double, longitude: Double)? = nil) {
         self.survey = survey
         self.surveyService = surveyService
         self.stopID = stopID
