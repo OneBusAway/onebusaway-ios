@@ -12,10 +12,12 @@ concurrency:
 jobs:
   deploy:
     runs-on: macos-15
+    timeout-minutes: 45
 
     steps:
     - uses: actions/checkout@v4
 
+    # Cache Swift Package Manager dependencies.
     - uses: actions/cache@v4
       with:
         path: .build
@@ -23,13 +25,24 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
+    # Cache Ruby gems (fastlane and its dependencies).
+    - uses: actions/cache@v4
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
+
     - name: Switch Xcode
-      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
+      run: |
+        sudo xcode-select -switch /Applications/Xcode_26.2.app
+        xcodebuild -version
 
     - name: Install dependencies
       run: |
         brew install xcodegen
-        bundle install
+        bundle config path vendor/bundle
+        bundle install --jobs 4
 
     - name: Install code signing certificate
       env:
@@ -48,14 +61,26 @@ jobs:
         security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
         security list-keychain -d user -s $KEYCHAIN_PATH
 
-    - name: Install provisioning profile
+    - name: Install provisioning profiles
       env:
         PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+        WIDGET_PROVISIONING_PROFILE_BASE64: ${{ secrets.WIDGET_PROVISIONING_PROFILE_BASE64 }}
       run: |
-        PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $PP_PATH
-        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles/
+        PP_DIR=~/Library/MobileDevice/Provisioning\ Profiles
+        mkdir -p "$PP_DIR"
+
+        # Install the main app provisioning profile (org.onebusaway.iphone).
+        APP_PP_PATH=$RUNNER_TEMP/app.mobileprovision
+        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $APP_PP_PATH
+        cp $APP_PP_PATH "$PP_DIR/"
+
+        # Install the widget provisioning profile (org.onebusaway.iphone.OBAWidget)
+        # if provided. Not needed when using a wildcard profile.
+        if [ -n "$WIDGET_PROVISIONING_PROFILE_BASE64" ]; then
+          WIDGET_PP_PATH=$RUNNER_TEMP/widget.mobileprovision
+          echo -n "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode -o $WIDGET_PP_PATH
+          cp $WIDGET_PP_PATH "$PP_DIR/"
+        fi
 
     - name: Deploy to TestFlight
       env:
