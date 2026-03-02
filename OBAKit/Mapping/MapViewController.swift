@@ -253,7 +253,16 @@ class MapViewController: UIViewController,
 
         button.configuration = config
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
-        button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
+        button.accessibilityLabel = OBALoc(
+            "map_controller.show_weather_button",
+            value: "Show Weather Forecast",
+            comment: "Accessibility label for a button that provides the current forecast"
+        )
+        button.accessibilityHint = OBALoc(
+            "map_controller.show_weather_button.hint",
+            value: "Tap to view detailed weather forecast for this region",
+            comment: "Accessibility hint for the weather button on the map"
+        )
 
         let blur = UIBlurEffect(style: .systemUltraThinMaterial)
         let blurView = UIVisualEffectView(effect: blur)
@@ -384,6 +393,14 @@ class MapViewController: UIViewController,
                 config?.imagePlacement = .leading
                 config?.imagePadding = 5
                 weatherButton.configuration = config
+
+                weatherButton.isHidden = false
+
+                weatherButton.accessibilityLabel = OBALoc(
+                    "map_controller.show_weather_button.with_forecast",
+                    value: "Show Weather Forecast. Currently %@.",
+                    comment: "Accessibility label for the weather button when forecast is loaded. Includes current temperature."
+                ).replacingOccurrences(of: "%@", with: formattedTemp)
 
                 weatherButton.isHidden = false
 
