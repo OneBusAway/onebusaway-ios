@@ -43,11 +43,6 @@ class MapViewController: UIViewController,
         hover.stackView.addArrangedSubview(toggleMapTypeButton)
         setMapTypeButtonImage(toggleMapTypeButton)
 
-        if application.features.obaco == .running {
-            hover.stackView.addArrangedSubview(HoverBarSeparator())
-            hover.stackView.addArrangedSubview(weatherButton)
-        }
-
         return hover
     }()
 
@@ -115,13 +110,18 @@ class MapViewController: UIViewController,
 
         view.insertSubview(toolbar, aboveSubview: mapView)
 
+        weatherButton.isHidden = true
+        view.addSubview(weatherButton)
+        weatherButton.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
             toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
-            weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
-            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
+            weatherButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: ThemeMetrics.controllerMargin),
+            weatherButton.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin)
         ])
 
         // Long press gesture to add a pin to the map
@@ -241,12 +241,13 @@ class MapViewController: UIViewController,
         let button = UIButton(type: .system)
 
         var config = UIButton.Configuration.plain()
-        config.imagePlacement = .top
-        config.imagePadding = 2
+        config.imagePlacement = .leading
+        config.imagePadding = 5
+        config.contentInsets = NSDirectionalEdgeInsets(top: 8, leading: 10, bottom: 8, trailing: 12)
 
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
             var outgoing = incoming
-            outgoing.font = UIFont.systemFont(ofSize: 10, weight: .bold)
+            outgoing.font = UIFont.systemFont(ofSize: 13, weight: .semibold)
             return outgoing
         }
 
@@ -254,30 +255,143 @@ class MapViewController: UIViewController,
         button.addTarget(self, action: #selector(showWeather), for: .touchUpInside)
         button.accessibilityLabel = OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast", comment: "Accessibility label for a button that provides the current forecast")
 
+        let blur = UIBlurEffect(style: .systemUltraThinMaterial)
+        let blurView = UIVisualEffectView(effect: blur)
+        blurView.isUserInteractionEnabled = false
+        blurView.layer.cornerRadius = 12
+        blurView.layer.masksToBounds = true
+        blurView.translatesAutoresizingMaskIntoConstraints = false
+        blurView.alpha = 1.0
+
+        button.insertSubview(blurView, at: 0)
+        NSLayoutConstraint.activate([
+            blurView.leadingAnchor.constraint(equalTo: button.leadingAnchor),
+            blurView.trailingAnchor.constraint(equalTo: button.trailingAnchor),
+            blurView.topAnchor.constraint(equalTo: button.topAnchor),
+            blurView.bottomAnchor.constraint(equalTo: button.bottomAnchor)
+        ])
+
+        button.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.3)
+        button.tintColor = .label
+        button.layer.cornerRadius = 12
+        button.layer.masksToBounds = true
+        button.layer.shadowColor = UIColor.black.cgColor
+        button.layer.shadowOpacity = 0.15
+        button.layer.shadowOffset = CGSize(width: 0, height: 2)
+        button.layer.shadowRadius = 6
+
         return button
     }()
 
     @objc private func showWeather() {
+        if weatherCardViewController != nil {
+            dismissWeatherCard()
+            return
+        }
+
         guard let forecast = forecast else { return }
 
-        let weatherView = WeatherForecastView(forecast: forecast, locale: application.locale)
-        let hostingController = UIHostingController(rootView: weatherView)
+        let weatherCardView = WeatherCardView(
+            forecast: forecast,
+            locale: application.locale,
+            onDismiss: { [weak self] in
+                self?.dismissWeatherCard()
+            }
+        )
 
-        present(hostingController, animated: true)
+        let hostingController = UIHostingController(rootView: weatherCardView)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
+
+        NSLayoutConstraint.activate([
+            hostingController.view.centerXAnchor.constraint(
+                equalTo: view.centerXAnchor
+            ),
+            hostingController.view.centerYAnchor.constraint(
+                equalTo: view.centerYAnchor
+            ),
+            hostingController.view.widthAnchor.constraint(
+                equalTo: view.widthAnchor,
+                constant: -32
+            )
+        ])
+
+        weatherCardViewController = hostingController
+
+        UIView.animate(withDuration: 0.2) {
+            self.weatherButton.alpha = 0
+        }
+        self.weatherButton.isUserInteractionEnabled = false
+
+        hostingController.view.alpha = 0
+        hostingController.view.transform = CGAffineTransform(translationX: 0, y: -8)
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseOut) {
+            hostingController.view.alpha = 1
+            hostingController.view.transform = .identity
+        }
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissWeatherCard))
+        tapGesture.cancelsTouchesInView = false
+        weatherCardDismissTapGesture = tapGesture
+        view.addGestureRecognizer(tapGesture)
     }
+
+    @objc private func dismissWeatherCard() {
+        guard let card = weatherCardViewController else { return }
+
+        UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseIn) {
+            card.view.alpha = 0
+            card.view.transform = CGAffineTransform(translationX: 0, y: -8)
+        } completion: { _ in
+            card.willMove(toParent: nil)
+            card.view.removeFromSuperview()
+            card.removeFromParent()
+            self.weatherCardViewController = nil
+
+            self.weatherButton.isUserInteractionEnabled = true
+            UIView.animate(withDuration: 0.2) {
+                self.weatherButton.alpha = 1
+            }
+        }
+
+        if let gesture = weatherCardDismissTapGesture {
+            view.removeGestureRecognizer(gesture)
+            weatherCardDismissTapGesture = nil
+        }
+    }
+
+    private var weatherCardViewController: UIHostingController<WeatherCardView>?
+    private var weatherCardDismissTapGesture: UITapGestureRecognizer?
 
     private var forecast: WeatherForecast? {
         didSet {
             if let forecast = forecast {
-                let formattedTemp = MeasurementFormatter.unitlessConversion(temperature: forecast.currentForecast.temperature, unit: .fahrenheit, to: application.locale)
+                let formattedTemp = MeasurementFormatter.unitlessConversion(
+                    temperature: forecast.currentForecast.temperature,
+                    unit: .fahrenheit,
+                    to: application.locale
+                )
                 let iconName = systemImageName(for: forecast.currentForecast.iconName)
 
-                weatherButton.configuration?.image = UIImage(systemName: iconName)
-                weatherButton.configuration?.title = formattedTemp
+                var config = weatherButton.configuration
+                config?.image = UIImage(systemName: iconName)?
+                    .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
+                config?.title = formattedTemp
+                config?.imagePlacement = .leading
+                config?.imagePadding = 5
+                weatherButton.configuration = config
 
                 weatherButton.isHidden = false
-            }
-            else {
+
+                weatherButton.alpha = 0
+                UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                    self.weatherButton.alpha = 1
+                }
+            } else {
                 weatherButton.isHidden = true
             }
         }
