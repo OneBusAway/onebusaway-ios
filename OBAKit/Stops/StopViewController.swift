@@ -62,7 +62,6 @@ public class StopViewController: UIViewController,
         label.textColor = .secondaryLabel
         label.textAlignment = .center
         label.numberOfLines = 1
-        label.backgroundColor = ThemeColors.shared.systemBackground
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -216,7 +215,6 @@ public class StopViewController: UIViewController,
             statusLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 4),
             statusLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             statusLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            statusLabel.heightAnchor.constraint(greaterThanOrEqualToConstant: 16),
 
             listView.topAnchor.constraint(equalTo: statusLabel.bottomAnchor, constant: 4),
             listView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -507,7 +505,7 @@ public class StopViewController: UIViewController,
     func updateData() async {
         guard let apiService = application.apiService else { return }
 
-        title = Strings.updating
+        statusLabel.text = Strings.updating
 
         do {
             let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: stopID, minutesBefore: minutesBefore, minutesAfter: minutesAfter).entry
@@ -576,7 +574,7 @@ public class StopViewController: UIViewController,
 
     /// Refreshes the view controller's title with the last time its data was reloaded.
     private func updateTitle() {
-        self.title = stop?.name ?? "Live Arrivals"
+        self.title = stop?.name ?? Strings.liveArrivals
 
         guard let lastUpdated = lastUpdated else {
             statusLabel.text = ""
