@@ -25,15 +25,15 @@ struct SurveyStopListItem: OBAListViewItem {
     let id = UUID()
     let survey: Survey
     let stopID: String?
-    
+
     // State management (inspired by previous implementation)
     var selectedOption: String?
-    
+
     // Actions - simplified to just one next action
     let onNext: (String) -> Void  // Called when next is tapped with selected option
     let onDismiss: () -> Void
     let onSelectionChanged: (String?) -> Void
-    
+
     // MARK: - Initializer
     init(
         survey: Survey,
@@ -50,7 +50,7 @@ struct SurveyStopListItem: OBAListViewItem {
         self.onDismiss = onDismiss
         self.onSelectionChanged = onSelectionChanged
     }
-    
+
     // Legacy compatibility - map old actions to new ones
     init(
         survey: Survey,
