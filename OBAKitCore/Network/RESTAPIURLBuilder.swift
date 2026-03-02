@@ -494,33 +494,3 @@ extension RESTAPIURLBuilder {
     }
 }
 
-// MARK: - Surveys API URL Builder
-// Endpoints: GET surveys, POST survey response (hero question), PUT remaining responses
-extension RESTAPIURLBuilder {
-
-    /// Create  full URL for `getSurvey` API endpoint
-    /// - Parameters:
-    ///   - regionId: The region identifier
-    ///   - userIdentifier: The user unique identifier
-    /// - Returns: An URL suitable for making a `GET` request to retrieve information.
-    public func getSurveys(regionId: RegionIdentifier, userIdentifier: String) -> URL {
-        let path = "/api/v1/regions/\(regionId)/surveys.json"
-        return generateURL(path: path, params: ["user_id": userIdentifier])
-    }
-
-    /// Create full URL for `createSurveyResponse` API endpoint
-    /// - Returns: An URL suitable for making a `POST` request to submit survey responses.
-    public func createSurveyResponse() -> URL {
-        let path = "/api/v1/survey_responses/"
-        return generateURL(path: path)
-    }
-
-    /// Create full URL for `updateSurveyResponse` API endpoint
-    /// - Parameter surveyResponseId: The survey response id of the existing survey
-    /// - Returns: An URL suitable for making a `PUT` request to update the survey responses.
-    public func updateSurveyResponse(surveyResponseId: String) -> URL {
-        let path = "/api/v1/survey_responses/\(surveyResponseId)"
-        return generateURL(path: path)
-    }
-
-}
