@@ -152,6 +152,23 @@ final class SurveyServiceStateTests: OBATestCase {
         expect(self.surveyService.shouldShowSurvey()).to(beFalse())
     }
 
+    // MARK: - formatCheckboxAnswer
+
+    func test_formatCheckboxAnswer_normalCase() {
+        let result = surveyService.formatCheckboxAnswer(["Option A", "Option B"])
+        expect(result).to(equal("[\"Option A\",\"Option B\"]"))
+    }
+
+    func test_formatCheckboxAnswer_emptyArray() {
+        let result = surveyService.formatCheckboxAnswer([])
+        expect(result).to(equal("[]"))
+    }
+
+    func test_formatCheckboxAnswer_singleItem() {
+        let result = surveyService.formatCheckboxAnswer(["Only"])
+        expect(result).to(equal("[\"Only\"]"))
+    }
+
     // MARK: - Helpers
 
     private func setAppLaunchCount(_ count: Int) {
