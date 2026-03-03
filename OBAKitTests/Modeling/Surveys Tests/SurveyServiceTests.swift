@@ -5,7 +5,6 @@
 //  Created by Mohamed Sliem on 04/12/2025.
 //
 
-import OBAKitCore
 import XCTest
 import Nimble
 @testable import OBAKitCore
