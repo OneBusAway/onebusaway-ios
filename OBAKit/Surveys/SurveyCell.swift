@@ -47,18 +47,6 @@ class SurveyCell: OBAListViewCell {
       return button
   }()
 
-  lazy var closeButtonWrapper: UIView = {
-      let wrapper = closeButton.embedInWrapperView(setConstraints: false)
-      NSLayoutConstraint.activate([
-          closeButton.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
-          closeButton.topAnchor.constraint(equalTo: wrapper.topAnchor),
-          closeButton.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
-          wrapper.heightAnchor.constraint(greaterThanOrEqualTo: closeButton.heightAnchor)
-      ])
-      return wrapper
-  }()
-
-  // Removed headerRow from original code
   lazy var optionsStack: UIStackView = {
       let stack = UIStackView.verticalStack(arrangedSubviews: [])
       stack.spacing = 8
@@ -181,7 +169,7 @@ class SurveyCell: OBAListViewCell {
 
           // Update selection state
           if let selectedOption = viewModel?.selectedOption, selectedOption == option {
-              selectButton(button, isRadio: true)
+              selectButton(button)
           }
 
           optionButtons.append(button)
@@ -246,12 +234,12 @@ class SurveyCell: OBAListViewCell {
       // Deselect all other radio buttons
       optionButtons.forEach { button in
           if button != selectedButton {
-              deselectButton(button, isRadio: true)
+              deselectButton(button)
           }
       }
 
       // Select this button
-      selectButton(selectedButton, isRadio: true)
+      selectButton(selectedButton)
 
       // Get the selected option
       let selectedTitle = selectedButton.titleLabel?.text ?? ""
@@ -267,12 +255,11 @@ class SurveyCell: OBAListViewCell {
       button.isSelected.toggle()
 
       if button.isSelected {
-          selectButton(button, isRadio: false)
+          selectButton(button)
       } else {
-          deselectButton(button, isRadio: false)
+          deselectButton(button)
       }
 
-      // For now, just handle single selection for checkboxes too
       let selectedTitle = button.titleLabel?.text ?? ""
       if button.isSelected {
           viewModel?.onSelectionChanged(selectedTitle)
@@ -282,13 +269,13 @@ class SurveyCell: OBAListViewCell {
       updateNextButtonState()
   }
 
-  private func selectButton(_ button: UIButton, isRadio: Bool) {
+  private func selectButton(_ button: UIButton) {
       button.isSelected = true
       button.backgroundColor = .systemGreen.withAlphaComponent(0.15)
       button.layer.borderColor = UIColor.systemGreen.cgColor
   }
 
-  private func deselectButton(_ button: UIButton, isRadio: Bool) {
+  private func deselectButton(_ button: UIButton) {
       button.isSelected = false
       button.backgroundColor = .systemGray6
       button.layer.borderColor = UIColor.systemGray4.cgColor

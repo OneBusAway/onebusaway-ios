@@ -257,16 +257,10 @@ class SurveyViewController: FormViewController {
     }
 
     private func validateResponses() -> Bool {
-        let requiredQuestions = survey.questions.filter { $0.required }
         let answeredQuestionIDs = Set(responses.map { $0.questionId })
-
-        for question in requiredQuestions {
-            if !answeredQuestionIDs.contains(question.id) {
-                return false
-            }
-        }
-
-        return true
+        return survey.questions
+            .filter { $0.required }
+            .allSatisfy { answeredQuestionIDs.contains($0.id) }
     }
 
     private func showValidationError() {
