@@ -42,6 +42,9 @@ class SurveyViewController: FormViewController {
 
     private func setupNavigationBar() {
         title = survey.name
+        navigationItem.leftBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .close, target: self, action: #selector(cancelTapped)
+        )
     }
 
     private func setupForm() {
