@@ -979,4 +979,3 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         try userDefaults.encodeUserDefaultsObjects(object, key: key)
     }
 }
-
