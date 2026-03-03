@@ -26,7 +26,7 @@ public struct APIServiceConfiguration {
     let regionIdentifier: Int?
 
     /// Survey API base URL - different from regular OBA API base URL
-      let surveyBaseURL: URL?
+    let surveyBaseURL: URL?
 
     /// Generated query items from the initializer. Include this set of query items with every request you make.
     let defaultQueryItems: [URLQueryItem]

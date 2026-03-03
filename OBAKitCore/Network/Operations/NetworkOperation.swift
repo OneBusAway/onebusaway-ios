@@ -29,10 +29,10 @@ public enum APIError: Error, LocalizedError {
     case serverUnavailable(regionName: String, statusCode: Int?)
 
     /// Survey service is not configured or survey base URL is missing.
-      case surveyServiceNotConfigured
+    case surveyServiceNotConfigured
 
     /// No region has been selected.
-      case noRegionSelected
+    case noRegionSelected
 
     public var errorDescription: String? {
         switch self {
