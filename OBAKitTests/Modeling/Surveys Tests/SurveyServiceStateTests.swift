@@ -155,17 +155,17 @@ final class SurveyServiceStateTests: OBATestCase {
     // MARK: - formatCheckboxAnswer
 
     func test_formatCheckboxAnswer_normalCase() {
-        let result = surveyService.formatCheckboxAnswer(["Option A", "Option B"])
+        let result = SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
         expect(result).to(equal("[\"Option A\",\"Option B\"]"))
     }
 
     func test_formatCheckboxAnswer_emptyArray() {
-        let result = surveyService.formatCheckboxAnswer([])
+        let result = SurveyService.formatCheckboxAnswer([])
         expect(result).to(equal("[]"))
     }
 
     func test_formatCheckboxAnswer_singleItem() {
-        let result = surveyService.formatCheckboxAnswer(["Only"])
+        let result = SurveyService.formatCheckboxAnswer(["Only"])
         expect(result).to(equal("[\"Only\"]"))
     }
 
@@ -179,7 +179,7 @@ final class SurveyServiceStateTests: OBATestCase {
             content: QuestionContent(labelText: "How are you?", type: .text)
         )
 
-        let response = surveyService.createQuestionResponse(question: question, answer: "Great")
+        let response = SurveyService.createQuestionResponse(question: question, answer: "Great")
 
         expect(response.questionId).to(equal(42))
         expect(response.questionType).to(equal("text"))
@@ -195,7 +195,7 @@ final class SurveyServiceStateTests: OBATestCase {
             content: QuestionContent(labelText: "Pick one", type: .radio, options: ["A", "B"])
         )
 
-        let response = surveyService.createQuestionResponse(question: question, answer: "A")
+        let response = SurveyService.createQuestionResponse(question: question, answer: "A")
 
         expect(response.questionType).to(equal("radio"))
         expect(response.questionLabel).to(equal("Pick one"))
@@ -205,7 +205,7 @@ final class SurveyServiceStateTests: OBATestCase {
 
     func test_submitHeroQuestion_nilApiService_throws() async {
         let survey = makeSurvey(id: 1, questions: makeQuestions())
-        let response = surveyService.createQuestionResponse(
+        let response = SurveyService.createQuestionResponse(
             question: survey.questions[0],
             answer: "test"
         )

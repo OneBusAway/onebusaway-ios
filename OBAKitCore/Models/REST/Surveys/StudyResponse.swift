@@ -294,8 +294,3 @@ extension QuestionContent {
     /// Type string for API submission compatibility
     public var typeString: String { type.rawValue }
 }
-
-// MARK: - Type Aliases
-
-/// Alias for RESTAPIService compatibility
-public typealias SurveysResponse = StudyResponse

@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import UIKit
 import Eureka
 import OBAKitCore
@@ -16,13 +17,13 @@ class SurveyViewController: FormViewController {
     private let survey: Survey
     private let surveyService: SurveyService
     private let stopID: String?
-    private let stopLocation: (latitude: Double, longitude: Double)?
+    private let stopLocation: CLLocationCoordinate2D?
 
     private var responses: [SurveyQuestionResponse] = []
     private var heroResponseID: String?
     private var checkboxSelections: [Int: Set<String>] = [:]
 
-    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: (latitude: Double, longitude: Double)? = nil) {
+    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil) {
         self.survey = survey
         self.surveyService = surveyService
         self.stopID = stopID
@@ -156,7 +157,7 @@ class SurveyViewController: FormViewController {
                     }
 
                     let selections = Array(self.checkboxSelections[question.id, default: []])
-                    let jsonAnswer = self.surveyService.formatCheckboxAnswer(selections)
+                    let jsonAnswer = SurveyService.formatCheckboxAnswer(selections)
                     self.updateResponse(for: question, answer: jsonAnswer)
                 }
             }
@@ -192,7 +193,7 @@ class SurveyViewController: FormViewController {
         responses.removeAll { $0.questionId == question.id }
 
         // Add new response
-        let response = surveyService.createQuestionResponse(question: question, answer: answer)
+        let response = SurveyService.createQuestionResponse(question: question, answer: answer)
         responses.append(response)
     }
 
