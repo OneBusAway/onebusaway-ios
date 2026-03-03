@@ -410,6 +410,72 @@ final class SurveyServiceTests: OBATestCase {
         })
     }
 
+    // MARK: - isActive
+
+    func test_isActive_withinDateRange_returnsTrue() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(-3600),
+            endDate: Date().addingTimeInterval(3600)
+        )
+        expect(survey.isActive).to(beTrue())
+    }
+
+    func test_isActive_pastEndDate_returnsFalse() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(-7200),
+            endDate: Date().addingTimeInterval(-3600)
+        )
+        expect(survey.isActive).to(beFalse())
+    }
+
+    func test_isActive_futureStartDate_returnsFalse() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(3600),
+            endDate: Date().addingTimeInterval(7200)
+        )
+        expect(survey.isActive).to(beFalse())
+    }
+
+    func test_isActive_nilDates_returnsTrue() {
+        let survey = makeSurveyForIsActive(startDate: nil, endDate: nil)
+        expect(survey.isActive).to(beTrue())
+    }
+
+    private func makeSurveyForIsActive(startDate: Date?, endDate: Date?) -> Survey {
+        Survey(
+            id: 1, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: true,
+            startDate: startDate, endDate: endDate,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, allowsVisible: false,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: []
+        )
+    }
+
+    // MARK: - getSurveys nil region
+
+    func test_getSurveys_nilRegionIdentifier_throwsNoRegionSelected() async {
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: nil,
+            surveyBaseURL: surveyBaseURL
+        )
+        let service = RESTAPIService(config, dataLoader: mockDataLoader)
+
+        await expect {
+            try await service.getSurveys(userID: self.uuid)
+        }.to(throwError { error in
+            if case APIError.noRegionSelected = error {
+                return
+            }
+            fail("Expected APIError.noRegionSelected but got \(error)")
+        })
+    }
+
     // MARK: - remainingQuestions
 
     func test_remainingQuestions_doesNotDropQuestionsWithSamePositionAsHero() {
@@ -475,7 +541,7 @@ final class SurveyServiceTests: OBATestCase {
         await service.fetchSurveys()
 
         expect(service.allSurveys.count).to(equal(5))
-        // visibleSurveys may be empty if fixture dates are expired (isActive check)
+        expect(service.visibleSurveys.count).to(equal(5))
         expect(service.lastError).to(beNil())
         expect(service.isLoading).to(beFalse())
     }
