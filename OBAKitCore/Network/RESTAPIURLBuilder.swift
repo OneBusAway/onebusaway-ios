@@ -21,13 +21,7 @@ class RESTAPIURLBuilder: NSObject {
     private let defaultQueryItems: [URLQueryItem]
     private let surveyBaseURL: URL?
 
-    init(baseURL: URL, defaultQueryItems: [URLQueryItem]) {
-        self.baseURL = baseURL
-        self.defaultQueryItems = defaultQueryItems
-        self.surveyBaseURL = nil
-    }
-
-    init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL?) {
+    init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL? = nil) {
         self.baseURL = baseURL
         self.defaultQueryItems = defaultQueryItems
         self.surveyBaseURL = surveyBaseURL
@@ -493,4 +487,3 @@ extension RESTAPIURLBuilder {
         return builder.generateURL(path: "/api/v1/survey_responses/\(NetworkHelpers.escapePathVariable(responseID))")
     }
 }
-

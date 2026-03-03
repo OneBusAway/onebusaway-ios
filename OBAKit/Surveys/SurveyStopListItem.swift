@@ -26,7 +26,6 @@ struct SurveyStopListItem: OBAListViewItem {
     let survey: Survey
     let stopID: String?
 
-    // State management (inspired by previous implementation)
     var selectedOption: String?
 
     // Actions - simplified to just one next action
@@ -51,28 +50,6 @@ struct SurveyStopListItem: OBAListViewItem {
         self.onSelectionChanged = onSelectionChanged
     }
 
-    // Legacy compatibility - map old actions to new ones
-    init(
-        survey: Survey,
-        stopID: String?,
-        selectedOption: String? = nil,
-        onAnswer: @escaping (String) -> Void,
-        onMoreQuestions: @escaping () -> Void,
-        onAnswerLater: @escaping () -> Void,
-        onDismiss: @escaping () -> Void,
-        onSelectionChanged: @escaping (String?) -> Void
-    ) {
-        self.survey = survey
-        self.stopID = stopID
-        self.selectedOption = selectedOption
-        // Map the more questions action to our next action, but only if there's a selection
-        self.onNext = { selectedOption in
-            onAnswer(selectedOption)
-            onMoreQuestions()
-        }
-        self.onDismiss = onDismiss
-        self.onSelectionChanged = onSelectionChanged
-    }
 }
 
 // MARK: - Protocol Conformances

@@ -109,8 +109,7 @@ public final class SurveyService: ObservableObject {
 
     /// Sets the next reminder date for showing surveys (3 days from now).
     public func setNextReminderDate() {
-        let fallback = Date().addingTimeInterval(86400 * 3)
-        let nextDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? fallback
+        let nextDate = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date().addingTimeInterval(86400 * 3)
         userDataStore.nextSurveyReminderDate = nextDate
     }
 

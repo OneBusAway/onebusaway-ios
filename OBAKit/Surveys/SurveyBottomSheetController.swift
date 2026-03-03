@@ -38,52 +38,33 @@ class SurveyBottomSheetController: FloatingPanelController {
     }
 
     private func setupBottomSheet() {
-        // Set self as delegate to handle dismissal
         delegate = self
 
-        // Create the survey view controller
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: surveyService,
             stopID: stopID,
             stopLocation: stopLocation
         )
-
-        // Wrap in navigation controller
         let navigationController = UINavigationController(rootViewController: surveyVC)
-
-        // Set as content view controller
         set(contentViewController: navigationController)
 
-        // Configure layout
         layout = SurveyBottomSheetLayout()
-
-        // Configure behavior
         behavior = SurveyBottomSheetBehavior()
 
-        // Configure appearance using the correct FloatingPanel API
         let appearance = SurfaceAppearance()
         appearance.cornerRadius = 16
         appearance.backgroundColor = .systemBackground
         surfaceView.appearance = appearance
 
-        // Configure shadow
         surfaceView.contentView?.layer.shadowColor = UIColor.black.cgColor
         surfaceView.contentView?.layer.shadowOpacity = 0.1
-        surfaceView.contentView?.layer.shadowOffset = CGSize(
-            width: 0,
-            height: -2
-        )
+        surfaceView.contentView?.layer.shadowOffset = CGSize(width: 0, height: -2)
         surfaceView.contentView?.layer.shadowRadius = 8
 
-        // Enable backdrop tap to dismiss
         backdropView.dismissalTapGestureRecognizer.isEnabled = true
-
-        // Configure grab bar for better swipe indication
         surfaceView.grabberHandle.isHidden = false
         surfaceView.grabberHandle.barColor = .systemGray3
-
-        // Enable removal interaction (swipe to dismiss)
         isRemovalInteractionEnabled = true
     }
 }
@@ -104,23 +85,13 @@ extension SurveyBottomSheetController: FloatingPanelControllerDelegate {
         }
     }
 
-    func floatingPanelWillBeginDragging(_ fpc: FloatingPanelController) {
-        // Optional: Handle drag begin
-    }
-
     func floatingPanelWillEndDragging(_ fpc: FloatingPanelController, withVelocity velocity: CGPoint, targetState: UnsafeMutablePointer<FloatingPanelState>) {
-        // Customize dismissal behavior
         let currentY = fpc.surfaceLocation.y
         let panelHeight = fpc.surfaceView.bounds.height
 
-        // If user swipes down significantly, dismiss the panel
         if velocity.y > 500 || currentY > panelHeight * 0.6 {
             targetState.pointee = .hidden
         }
-    }
-
-    func floatingPanelDidEndDragging(_ fpc: FloatingPanelController, willAttract attract: Bool) {
-        // Optional: Handle drag end
     }
 }
 
