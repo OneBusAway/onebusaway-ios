@@ -47,7 +47,10 @@ public final class SurveyService: ObservableObject {
 
     /// Fetches surveys from the API for the current user.
     public func fetchSurveys() async {
-        guard !isLoading else { return }
+        guard !isLoading else {
+            Logger.info("fetchSurveys skipped: already loading")
+            return
+        }
 
         guard let apiService = apiService else {
             Logger.error("fetchSurveys called but apiService is nil")
@@ -57,6 +60,7 @@ public final class SurveyService: ObservableObject {
 
         isLoading = true
         lastError = nil
+        defer { isLoading = false }
 
         do {
             let userID = userDataStore.surveyUserIdentifier
@@ -71,8 +75,6 @@ public final class SurveyService: ObservableObject {
                 visibleSurveys = []
             }
         }
-
-        isLoading = false
     }
 
     // MARK: - Survey Finding
