@@ -461,7 +461,7 @@ final class SurveyServiceTests: OBATestCase {
     }
 
     @MainActor
-    func test_fetchSurveys_failure_setsError() async {
+    func test_fetchSurveys_failure_clearsWhenEmpty() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
@@ -475,6 +475,36 @@ final class SurveyServiceTests: OBATestCase {
         expect(service.visibleSurveys).to(beEmpty())
         expect(service.lastError).toNot(beNil())
         expect(service.isLoading).to(beFalse())
+    }
+
+    @MainActor
+    func test_fetchSurveys_failure_preservesExistingSurveys() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        // First, load surveys successfully
+        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // Now simulate a failure on second fetch
+        mockDataLoader.removeMappedResponses()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        await service.fetchSurveys()
+
+        // Surveys should be preserved, not cleared
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).toNot(beNil())
     }
 
 }

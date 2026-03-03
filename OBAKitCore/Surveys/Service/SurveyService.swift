@@ -67,8 +67,9 @@ public final class SurveyService: ObservableObject {
         } catch {
             Logger.error("Failed to fetch surveys: \(error)")
             lastError = error
-            allSurveys = []
-            visibleSurveys = []
+            if allSurveys.isEmpty {
+                visibleSurveys = []
+            }
         }
 
         isLoading = false
