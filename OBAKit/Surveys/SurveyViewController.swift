@@ -20,6 +20,7 @@ class SurveyViewController: FormViewController {
 
     private var responses: [SurveyQuestionResponse] = []
     private var heroResponseID: String?
+    private var checkboxSelections: [Int: Set<String>] = [:]
 
     init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: (latitude: Double, longitude: Double)? = nil) {
         self.survey = survey
@@ -136,7 +137,7 @@ class SurveyViewController: FormViewController {
             }
 
             // Add individual checkbox options
-            var selectedOptions: [String] = []
+            checkboxSelections[question.id] = []
             for (index, option) in options.enumerated() {
                 let optionTag = "\(questionTag)_checkbox_\(index)"
                 section <<< CheckRow(optionTag) { row in
@@ -146,12 +147,13 @@ class SurveyViewController: FormViewController {
                     guard let self = self else { return }
 
                     if row.value == true {
-                        selectedOptions.append(option)
+                        self.checkboxSelections[question.id, default: []].insert(option)
                     } else {
-                        selectedOptions.removeAll { $0 == option }
+                        self.checkboxSelections[question.id, default: []].remove(option)
                     }
 
-                    let jsonAnswer = self.surveyService.formatCheckboxAnswer(selectedOptions)
+                    let selections = Array(self.checkboxSelections[question.id, default: []])
+                    let jsonAnswer = self.surveyService.formatCheckboxAnswer(selections)
                     self.updateResponse(for: question, answer: jsonAnswer)
                 }
             }
@@ -229,6 +231,9 @@ class SurveyViewController: FormViewController {
                     stopID: stopID,
                     stopLocation: stopLocation
                 )
+
+                // Save hero response ID so retry skips re-submitting the hero
+                self.heroResponseID = submissionResponse.id
 
                 // Submit remaining questions if any
                 let remainingResponses = responses.filter { $0.questionId != heroQuestion.id }
