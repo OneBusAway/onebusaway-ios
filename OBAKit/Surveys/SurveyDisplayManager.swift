@@ -8,6 +8,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import UIKit
 import OBAKitCore
 
@@ -26,7 +27,7 @@ public class SurveyDisplayManager {
         _ survey: Survey,
         in viewController: UIViewController,
         stopID: String? = nil,
-        stopLocation: (latitude: Double, longitude: Double)? = nil,
+        stopLocation: CLLocationCoordinate2D? = nil,
         presentationStyle: SurveyPresentationStyle = .bottomSheet
     ) {
         self.presentingViewController = viewController
@@ -41,7 +42,7 @@ public class SurveyDisplayManager {
         }
     }
 
-    private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
+    private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: CLLocationCoordinate2D?) {
         guard let presentingViewController = presentingViewController else {
             Logger.warn("Cannot present survey bottom sheet: presentingViewController was deallocated")
             return
@@ -57,7 +58,7 @@ public class SurveyDisplayManager {
         presentingViewController.present(bottomSheet, animated: true)
     }
 
-    private func showFullScreen(survey: Survey, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
+    private func showFullScreen(survey: Survey, stopID: String?, stopLocation: CLLocationCoordinate2D?) {
         guard let presentingViewController = presentingViewController else {
             Logger.warn("Cannot present survey full screen: presentingViewController was deallocated")
             return
@@ -76,7 +77,7 @@ public class SurveyDisplayManager {
         presentingViewController.present(navigationController, animated: true)
     }
 
-    private func showHeroInline(survey: Survey, in containerView: UIView, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
+    private func showHeroInline(survey: Survey, in containerView: UIView, stopID: String?, stopLocation: CLLocationCoordinate2D?) {
         guard survey.heroQuestion != nil else {
             Logger.warn("Cannot show hero inline: survey \(survey.id) has no hero question")
             return
@@ -117,11 +118,11 @@ public class SurveyDisplayManager {
         heroView.animateIn()
     }
 
-    private func handleHeroAnswer(survey: Survey, answer: String, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
+    private func handleHeroAnswer(survey: Survey, answer: String, stopID: String?, stopLocation: CLLocationCoordinate2D?) {
         guard let heroQuestion = survey.heroQuestion else { return }
 
         Task { @MainActor in
-            let response = surveyService.createQuestionResponse(question: heroQuestion, answer: answer)
+            let response = SurveyService.createQuestionResponse(question: heroQuestion, answer: answer)
 
             do {
                 _ = try await surveyService.submitHeroQuestion(

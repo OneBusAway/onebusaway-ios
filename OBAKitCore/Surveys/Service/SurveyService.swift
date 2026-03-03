@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import Foundation
 
 /// Consolidated service for survey fetching, prioritization, state management, and submission.
@@ -142,7 +143,7 @@ public final class SurveyService: ObservableObject {
         survey: Survey,
         heroQuestionResponse: SurveyQuestionResponse,
         stopID: String? = nil,
-        stopLocation: (latitude: Double, longitude: Double)? = nil
+        stopLocation: CLLocationCoordinate2D? = nil
     ) async throws -> SurveySubmissionResponse {
         guard let apiService = apiService else {
             throw APIError.surveyServiceNotConfigured
@@ -183,7 +184,7 @@ public final class SurveyService: ObservableObject {
     // MARK: - Helpers
 
     /// Creates a question response for a given question and answer.
-    public func createQuestionResponse(question: SurveyQuestion, answer: String) -> SurveyQuestionResponse {
+    public static func createQuestionResponse(question: SurveyQuestion, answer: String) -> SurveyQuestionResponse {
         return SurveyQuestionResponse(
             questionId: question.id,
             questionType: question.content.typeString,
@@ -193,7 +194,7 @@ public final class SurveyService: ObservableObject {
     }
 
     /// Formats multiple checkbox selections into a JSON array string.
-    public func formatCheckboxAnswer(_ selections: [String]) -> String {
+    public static func formatCheckboxAnswer(_ selections: [String]) -> String {
         do {
             let jsonData = try JSONEncoder().encode(selections)
             guard let result = String(data: jsonData, encoding: .utf8) else {
@@ -227,8 +228,8 @@ public final class SurveyService: ObservableObject {
         guard !surveys.isEmpty else { return nil }
 
         let userID = userDataStore.surveyUserIdentifier
-        var alwaysVisibleIndex: Int = -1
-        var oneTimeSurveyIndex: Int = -1
+        var alwaysVisibleIndex: Int?
+        var oneTimeSurveyIndex: Int?
 
         for (index, survey) in surveys.enumerated() {
             guard !survey.questions.isEmpty else { continue }
@@ -239,19 +240,19 @@ public final class SurveyService: ObservableObject {
             switch priorityResult {
             case .returnImmediately(let survey):
                 return survey
-            case .setAlwaysVisible(let idx) where alwaysVisibleIndex == -1:
+            case .setAlwaysVisible(let idx) where alwaysVisibleIndex == nil:
                 alwaysVisibleIndex = idx
-            case .setOneTime(let idx) where oneTimeSurveyIndex == -1:
+            case .setOneTime(let idx) where oneTimeSurveyIndex == nil:
                 oneTimeSurveyIndex = idx
             default:
                 continue
             }
         }
 
-        if oneTimeSurveyIndex != -1 {
-            return surveys[oneTimeSurveyIndex]
-        } else if alwaysVisibleIndex != -1 {
-            return surveys[alwaysVisibleIndex]
+        if let idx = oneTimeSurveyIndex {
+            return surveys[idx]
+        } else if let idx = alwaysVisibleIndex {
+            return surveys[idx]
         }
 
         return nil

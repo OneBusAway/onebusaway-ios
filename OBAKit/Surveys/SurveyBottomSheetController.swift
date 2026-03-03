@@ -7,6 +7,7 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
+import CoreLocation
 import UIKit
 import FloatingPanel
 import OBAKitCore
@@ -15,13 +16,13 @@ class SurveyBottomSheetController: FloatingPanelController {
     private let survey: Survey
     private let surveyService: SurveyService
     private let stopID: String?
-    private let stopLocation: (latitude: Double, longitude: Double)?
+    private let stopLocation: CLLocationCoordinate2D?
 
     init(
         survey: Survey,
         surveyService: SurveyService,
         stopID: String? = nil,
-        stopLocation: (latitude: Double, longitude: Double)? = nil
+        stopLocation: CLLocationCoordinate2D? = nil
     ) {
         self.survey = survey
         self.surveyService = surveyService
