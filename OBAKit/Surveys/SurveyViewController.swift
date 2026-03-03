@@ -53,7 +53,7 @@ class SurveyViewController: FormViewController {
         }
 
         // Questions section
-        let questionsSection = Section("Questions")
+        let questionsSection = Section(OBALoc("survey_vc.questions_section_title", value: "Questions", comment: "Section header for survey questions"))
         form +++ questionsSection
 
         // Skip hero question if already answered
@@ -66,7 +66,7 @@ class SurveyViewController: FormViewController {
         // Actions section
         form +++ Section()
         <<< ButtonRow("submit") { row in
-            row.title = "Submit Survey"
+            row.title = OBALoc("survey_vc.submit_button", value: "Submit Survey", comment: "Button to submit the survey")
             row.onCellSelection { [weak self] _, _ in
                 self?.submitTapped()
             }
@@ -168,7 +168,7 @@ class SurveyViewController: FormViewController {
 
             // Then add the text input
             section <<< TextAreaRow(questionTag) { row in
-                row.placeholder = "Enter your answer..."
+                row.placeholder = OBALoc("survey_vc.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field")
                 row.textAreaHeight = .dynamic(initialTextViewHeight: 60)
             }.onChange { [weak self] row in
                 if let value = row.value {
@@ -268,22 +268,22 @@ class SurveyViewController: FormViewController {
 
     private func showValidationError() {
         let alert = UIAlertController(
-            title: "Incomplete Survey",
-            message: "Please answer all required questions before submitting.",
+            title: OBALoc("survey_vc.validation_error.title", value: "Incomplete Survey", comment: "Title for incomplete survey alert"),
+            message: OBALoc("survey_vc.validation_error.message", value: "Please answer all required questions before submitting.", comment: "Message when required survey questions are unanswered"),
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
         present(alert, animated: true)
     }
 
     private func showSubmissionError(_ error: Error) {
         Logger.error("Survey \(survey.id) submission failed: \(error)")
         let alert = UIAlertController(
-            title: "Submission Error",
+            title: OBALoc("survey_vc.submission_error.title", value: "Submission Error", comment: "Title for survey submission error alert"),
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        alert.addAction(UIAlertAction(title: OBALoc("survey_vc.ok_button", value: "OK", comment: "OK button on survey alerts"), style: .default))
         present(alert, animated: true)
     }
 }

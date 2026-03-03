@@ -164,7 +164,8 @@ public class SurveyHeroQuestionView: UIView {
 
             if options.count > 3 {
                 let moreLabel = UILabel()
-                moreLabel.text = "...and \(options.count - 3) more options"
+                let fmt = OBALoc("survey_hero.more_options_fmt", value: "...and %d more options", comment: "Label showing count of additional survey options not displayed")
+                moreLabel.text = String(format: fmt, options.count - 3)
                 moreLabel.font = .systemFont(ofSize: 14)
                 moreLabel.textColor = .secondaryLabel
                 optionsStack.addArrangedSubview(moreLabel)
@@ -228,7 +229,7 @@ public class SurveyHeroQuestionView: UIView {
     private func createTextInputField() -> UITextField {
         let textField = UITextField()
         textField.borderStyle = .roundedRect
-        textField.placeholder = "Enter your answer..."
+        textField.placeholder = OBALoc("survey_hero.text_placeholder", value: "Enter your answer...", comment: "Placeholder for text answer field in hero question")
         textField.font = .systemFont(ofSize: 15)
         textField.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
 
@@ -242,7 +243,7 @@ public class SurveyHeroQuestionView: UIView {
         buttonStack.spacing = 12
 
         let moreButton = UIButton(type: .system)
-        moreButton.setTitle("More Questions", for: .normal)
+        moreButton.setTitle(OBALoc("survey_hero.more_questions_button", value: "More Questions", comment: "Button to show additional survey questions"), for: .normal)
         moreButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         moreButton.backgroundColor = .systemBlue
         moreButton.setTitleColor(.white, for: .normal)
@@ -250,7 +251,7 @@ public class SurveyHeroQuestionView: UIView {
         moreButton.addTarget(self, action: #selector(moreQuestionsTapped), for: .touchUpInside)
 
         let laterButton = UIButton(type: .system)
-        laterButton.setTitle("Later", for: .normal)
+        laterButton.setTitle(OBALoc("survey_hero.later_button", value: "Later", comment: "Button to defer survey to later"), for: .normal)
         laterButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         laterButton.backgroundColor = .systemGray5
         laterButton.setTitleColor(.label, for: .normal)
