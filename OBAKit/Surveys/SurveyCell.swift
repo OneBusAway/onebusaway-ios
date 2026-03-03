@@ -68,7 +68,7 @@ class SurveyCell: OBAListViewCell {
   lazy var nextButton: UIButton = {
       let button = UIButton(configuration: .filled())
       button.translatesAutoresizingMaskIntoConstraints = false
-      button.setTitle("Next", for: .normal)
+      button.setTitle(OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question"), for: .normal)
       button.backgroundColor = .systemGreen
       button.layer.cornerRadius = 8
 
@@ -139,7 +139,7 @@ class SurveyCell: OBAListViewCell {
           // Setup question-specific UI
           setupQuestionUI(for: heroQuestion)
       } else {
-          questionLabel.text = "Take survey to help improve transit"
+          questionLabel.text = OBALoc("survey_cell.default_prompt", value: "Take survey to help improve transit", comment: "Default prompt when no hero question exists")
           questionLabel.isHidden = false
           optionsStack.isHidden = true
       }
