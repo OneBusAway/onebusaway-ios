@@ -28,10 +28,10 @@ class RESTAPIURLBuilder: NSObject {
     }
 
     init(baseURL: URL, defaultQueryItems: [URLQueryItem], surveyBaseURL: URL?) {
-          self.baseURL = baseURL
-          self.defaultQueryItems = defaultQueryItems
-          self.surveyBaseURL = surveyBaseURL
-      }
+        self.baseURL = baseURL
+        self.defaultQueryItems = defaultQueryItems
+        self.surveyBaseURL = surveyBaseURL
+    }
 
     public func generateURL(path: String, params: [String: Any]? = nil) -> URL {
         let urlString = joinBaseURLToPath(path)
