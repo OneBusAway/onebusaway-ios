@@ -277,6 +277,7 @@ class SurveyViewController: FormViewController {
     }
 
     private func showSubmissionError(_ error: Error) {
+        Logger.error("Survey \(survey.id) submission failed: \(error)")
         let alert = UIAlertController(
             title: "Submission Error",
             message: error.localizedDescription,
