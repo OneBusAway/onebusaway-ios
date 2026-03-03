@@ -42,7 +42,10 @@ public class SurveyDisplayManager {
     }
 
     private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
-        guard let presentingViewController = presentingViewController else { return }
+        guard let presentingViewController = presentingViewController else {
+            Logger.warn("Cannot present survey bottom sheet: presentingViewController was deallocated")
+            return
+        }
 
         let bottomSheet = SurveyBottomSheetController(
             survey: survey,
@@ -55,7 +58,10 @@ public class SurveyDisplayManager {
     }
 
     private func showFullScreen(survey: Survey, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
-        guard let presentingViewController = presentingViewController else { return }
+        guard let presentingViewController = presentingViewController else {
+            Logger.warn("Cannot present survey full screen: presentingViewController was deallocated")
+            return
+        }
 
         let surveyVC = SurveyViewController(
             survey: survey,
@@ -71,6 +77,11 @@ public class SurveyDisplayManager {
     }
 
     private func showHeroInline(survey: Survey, in containerView: UIView, stopID: String?, stopLocation: (latitude: Double, longitude: Double)?) {
+        guard survey.heroQuestion != nil else {
+            Logger.warn("Cannot show hero inline: survey \(survey.id) has no hero question")
+            return
+        }
+
         let heroView = SurveyHeroQuestionView(
             survey: survey,
             onAnswer: { [weak self] answer in

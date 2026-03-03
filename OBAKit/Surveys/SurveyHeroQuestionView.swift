@@ -74,7 +74,10 @@ public class SurveyHeroQuestionView: UIView {
     }
 
     private func setupContent() {
-        guard let heroQuestion = survey.heroQuestion else { return }
+        guard let heroQuestion = survey.heroQuestion else {
+            Logger.error("Survey \(survey.id) has no hero question (position == 1)")
+            return
+        }
 
         // Header with survey title and close button
         let headerView = createHeaderView()
