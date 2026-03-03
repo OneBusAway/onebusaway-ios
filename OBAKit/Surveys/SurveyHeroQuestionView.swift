@@ -185,56 +185,44 @@ public class SurveyHeroQuestionView: UIView {
         ])
     }
 
-    private func createRadioButton(title: String) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        button.setTitleColor(.systemBlue, for: .selected)
+    private func createOptionButton(title: String, iconName: String, selectedIconName: String, action: Selector) -> UIButton {
+        var config = UIButton.Configuration.plain()
+        config.title = title
+        config.baseForegroundColor = .label
+        config.image = UIImage(systemName: iconName)
+        config.imagePadding = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = UIFont.systemFont(ofSize: 15)
+            return outgoing
+        }
+
+        let button = UIButton(configuration: config)
+        button.configurationUpdateHandler = { btn in
+            var updatedConfig = btn.configuration
+            let name = btn.isSelected ? selectedIconName : iconName
+            updatedConfig?.image = UIImage(systemName: name)
+            updatedConfig?.baseForegroundColor = btn.isSelected ? .systemBlue : .label
+            btn.configuration = updatedConfig
+        }
         button.contentHorizontalAlignment = .leading
-        button.titleLabel?.numberOfLines = 0
-        button.titleLabel?.font = .systemFont(ofSize: 15)
+        button.tintColor = .systemBlue
         button.backgroundColor = .systemGray6
         button.layer.cornerRadius = 8
         button.layer.borderWidth = 1
         button.layer.borderColor = UIColor.systemGray4.cgColor
-        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-
-        // Add radio button indicator
-        let radioImage = UIImage(systemName: "circle")
-        let radioSelectedImage = UIImage(systemName: "circle.fill")
-        button.setImage(radioImage, for: .normal)
-        button.setImage(radioSelectedImage, for: .selected)
-        button.tintColor = .systemBlue
-
-        button.addTarget(self, action: #selector(radioButtonTapped(_:)), for: .touchUpInside)
+        button.addTarget(self, action: action, for: .touchUpInside)
 
         return button
     }
 
+    private func createRadioButton(title: String) -> UIButton {
+        createOptionButton(title: title, iconName: "circle", selectedIconName: "circle.fill", action: #selector(radioButtonTapped(_:)))
+    }
+
     private func createCheckboxButton(title: String) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.setTitleColor(.label, for: .normal)
-        button.setTitleColor(.systemBlue, for: .selected)
-        button.contentHorizontalAlignment = .leading
-        button.titleLabel?.numberOfLines = 0
-        button.titleLabel?.font = .systemFont(ofSize: 15)
-        button.backgroundColor = .systemGray6
-        button.layer.cornerRadius = 8
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.systemGray4.cgColor
-        button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
-
-        // Add checkbox indicator
-        let checkboxImage = UIImage(systemName: "square")
-        let checkboxSelectedImage = UIImage(systemName: "checkmark.square.fill")
-        button.setImage(checkboxImage, for: .normal)
-        button.setImage(checkboxSelectedImage, for: .selected)
-        button.tintColor = .systemBlue
-
-        button.addTarget(self, action: #selector(checkboxButtonTapped(_:)), for: .touchUpInside)
-
-        return button
+        createOptionButton(title: title, iconName: "square", selectedIconName: "checkmark.square.fill", action: #selector(checkboxButtonTapped(_:)))
     }
 
     private func createTextInputField() -> UITextField {
@@ -328,6 +316,16 @@ public class SurveyHeroQuestionView: UIView {
 
     @objc private func dismissTapped() {
         onDismiss()
+    }
+}
+
+// MARK: - Dark Mode Support
+extension SurveyHeroQuestionView {
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            layer.shadowColor = UIColor.black.cgColor
+        }
     }
 }
 

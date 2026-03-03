@@ -200,46 +200,34 @@ class SurveyCell: OBAListViewCell {
   }
 
   private func createOptionButton(title: String, isRadio: Bool) -> UIButton {
-      let button = UIButton(type: .system)
+      let iconName = isRadio ? "circle" : "square"
+      let selectedIconName = isRadio ? "circle.fill" : "checkmark.square.fill"
 
-      // Configure button appearance
+      var config = UIButton.Configuration.plain()
+      config.title = title
+      config.baseForegroundColor = .label
+      config.image = UIImage(systemName: iconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
+      config.imagePadding = 8
+      config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+      config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+          var outgoing = incoming
+          outgoing.font = .preferredFont(forTextStyle: .body)
+          return outgoing
+      }
+
+      let button = UIButton(configuration: config)
+      button.configurationUpdateHandler = { btn in
+          var updatedConfig = btn.configuration
+          let name = btn.isSelected ? selectedIconName : iconName
+          updatedConfig?.image = UIImage(systemName: name)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
+          btn.configuration = updatedConfig
+      }
+      button.contentHorizontalAlignment = .leading
       button.backgroundColor = .systemGray6
       button.layer.cornerRadius = 8
       button.layer.borderWidth = 1
       button.layer.borderColor = UIColor.systemGray4.cgColor
-      button.contentEdgeInsets = UIEdgeInsets(top: 12, left: 16, bottom: 12, right: 16)
 
-      // Configure text - ensure no background styling
-      button.setTitle(title, for: .normal)
-      button.setTitle(title, for: .selected)
-      button.setTitleColor(.label, for: .normal)
-      button.setTitleColor(.label, for: .selected)
-      button.titleLabel?.backgroundColor = .clear
-      button.titleLabel?.numberOfLines = 0
-      button.titleLabel?.font = .preferredFont(forTextStyle: .body)
-      button.contentHorizontalAlignment = .leading
-
-      // Remove any default button styling that might affect text
-      button.configuration = nil
-      button.titleLabel?.layer.backgroundColor = UIColor.clear.cgColor
-
-      // Add radio/checkbox indicator
-      let iconName = isRadio ? "circle" : "square"
-      let selectedIconName = isRadio ? "circle.fill" : "checkmark.square.fill"
-
-      // Normal state: green outline circle
-      let normalIcon = UIImage(systemName: iconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
-      // Selected state: green filled circle
-      let selectedIcon = UIImage(systemName: selectedIconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
-
-      button.setImage(normalIcon, for: .normal)
-      button.setImage(selectedIcon, for: .selected)
-
-      // Ensure proper spacing between icon and text
-      button.imageEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 8)
-      button.titleEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 0)
-
-      // Add action
       let action = UIAction { [weak self] _ in
           if isRadio {
               self?.handleRadioSelection(button)
@@ -313,5 +301,19 @@ class SurveyCell: OBAListViewCell {
       let hasSelection = viewModel.selectedOption != nil
       nextButton.isEnabled = hasSelection
       nextButton.alpha = hasSelection ? 1.0 : 0.6
+  }
+
+  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+      super.traitCollectionDidChange(previousTraitCollection)
+      if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+          layer.borderColor = UIColor.systemGray4.cgColor
+          for button in optionButtons {
+              if button.isSelected {
+                  button.layer.borderColor = UIColor.systemGreen.cgColor
+              } else {
+                  button.layer.borderColor = UIColor.systemGray4.cgColor
+              }
+          }
+      }
   }
 }
