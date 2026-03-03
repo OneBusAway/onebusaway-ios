@@ -420,4 +420,61 @@ final class SurveyServiceTests: OBATestCase {
         mockDataLoader.mock(response: response)
     }
 
+    // MARK: - SurveyService.fetchSurveys()
+
+    @MainActor
+    func test_fetchSurveys_nilApiService_setsError() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let service = SurveyService(apiService: nil, userDataStore: store)
+
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.visibleSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+
+        if case APIError.surveyServiceNotConfigured = service.lastError! {
+            // Expected
+        } else {
+            fail("Expected APIError.surveyServiceNotConfigured but got \(service.lastError!)")
+        }
+    }
+
+    @MainActor
+    func test_fetchSurveys_success_populatesSurveys() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let data = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let userID = store.surveyUserIdentifier
+
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: data
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.allSurveys.count).to(equal(5))
+        expect(service.visibleSurveys).toNot(beEmpty())
+        expect(service.lastError).to(beNil())
+        expect(service.isLoading).to(beFalse())
+    }
+
+    @MainActor
+    func test_fetchSurveys_failure_setsError() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.visibleSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+        expect(service.isLoading).to(beFalse())
+    }
+
 }

@@ -47,7 +47,10 @@ public final class SurveyService: ObservableObject {
 
     /// Fetches surveys from the API for the current user.
     public func fetchSurveys() async {
+        guard !isLoading else { return }
+
         guard let apiService = apiService else {
+            Logger.error("fetchSurveys called but apiService is nil")
             lastError = APIError.surveyServiceNotConfigured
             return
         }
@@ -62,6 +65,7 @@ public final class SurveyService: ObservableObject {
             allSurveys = response.entry.surveys
             updateVisibleSurveys()
         } catch {
+            Logger.error("Failed to fetch surveys: \(error)")
             lastError = error
             allSurveys = []
             visibleSurveys = []
