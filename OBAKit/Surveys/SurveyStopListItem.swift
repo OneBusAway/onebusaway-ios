@@ -22,7 +22,7 @@ struct SurveyStopListItem: OBAListViewItem {
         return SurveyCell.self
     }
 
-    let id = UUID()
+    var id: Int { survey.id }
     let survey: Survey
     let stopID: String?
 
@@ -78,22 +78,16 @@ struct SurveyStopListItem: OBAListViewItem {
 // MARK: - Protocol Conformances
 extension SurveyStopListItem: Equatable {
     static func == (lhs: SurveyStopListItem, rhs: SurveyStopListItem) -> Bool {
-        return lhs.id == rhs.id &&
-               lhs.survey.id == rhs.survey.id &&
+        return lhs.survey.id == rhs.survey.id &&
                lhs.selectedOption == rhs.selectedOption
     }
 }
 
 extension SurveyStopListItem: Hashable {
     func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
         hasher.combine(survey.id)
         hasher.combine(selectedOption)
     }
-}
-
-extension SurveyStopListItem: Identifiable {
-    // Already has `let id = UUID()`
 }
 
 // MARK: - Content Configuration
