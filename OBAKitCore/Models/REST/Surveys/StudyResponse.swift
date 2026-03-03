@@ -9,7 +9,7 @@
 
 import Foundation
 
-/// Represents a Study surveys response containing the survey data  with associated information
+/// Top-level response containing surveys and region metadata.
 public struct StudyResponse: Codable, Hashable {
 
     public let surveys: [Survey]
@@ -47,7 +47,7 @@ public struct Survey: Codable, Hashable {
 
     public let allowsMultipleResponses: Bool
 
-    public let allowsVisible: Bool
+    public let alwaysVisible: Bool
 
     public let study: Study
 
@@ -65,12 +65,12 @@ public struct Survey: Codable, Hashable {
         case visibleStopsList = "visible_stop_list"
         case visibleRoutesList = "visible_route_list"
         case allowsMultipleResponses = "allows_multiple_responses"
-        case allowsVisible = "always_visible"
+        case alwaysVisible = "always_visible"
         case study
         case questions
     }
 
-    public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, allowsVisible: Bool, study: Study, questions: [SurveyQuestion]) {
+    public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, alwaysVisible: Bool, study: Study, questions: [SurveyQuestion]) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
@@ -82,7 +82,7 @@ public struct Survey: Codable, Hashable {
         self.visibleStopsList = visibleStopsList
         self.visibleRoutesList = visibleRoutesList
         self.allowsMultipleResponses = allowsMultipleResponses
-        self.allowsVisible = allowsVisible
+        self.alwaysVisible = alwaysVisible
         self.study = study
         self.questions = questions
     }
@@ -111,7 +111,6 @@ extension Survey {
 
     // MARK: - Compatibility properties for UI layer
 
-    public var alwaysVisible: Bool { allowsVisible }
     public var visibleStopList: [String]? { visibleStopsList }
     public var visibleRouteList: [String]? { visibleRoutesList }
 
@@ -134,14 +133,16 @@ extension Survey {
         return true
     }
 
-    /// Returns true if the survey should be shown on the specified stop
+    /// Returns true if the survey should be shown on the specified stop.
+    /// Checks `showOnStops` and `isActive` before matching the stop list.
     public func shouldShowOnStop(_ stopID: String) -> Bool {
         guard showOnStops, isActive else { return false }
         guard let visibleStops = visibleStopsList else { return true }
         return visibleStops.contains(stopID)
     }
 
-    /// Returns true if the survey should be shown for the specified route
+    /// Returns true if the survey should be shown for the specified route.
+    /// Checks `showOnStops` and `isActive` before matching the route list.
     public func shouldShowOnRoute(_ routeID: String) -> Bool {
         guard showOnStops, isActive else { return false }
         guard let visibleRoutes = visibleRoutesList else { return true }

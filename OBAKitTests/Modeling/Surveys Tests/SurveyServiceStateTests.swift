@@ -287,7 +287,7 @@ final class SurveyServiceStateTests: OBATestCase {
             visibleStopsList: nil,
             visibleRoutesList: nil,
             allowsMultipleResponses: false,
-            allowsVisible: false,
+            alwaysVisible: false,
             study: Study(id: 1, name: "Study", description: nil),
             questions: questions
         )
