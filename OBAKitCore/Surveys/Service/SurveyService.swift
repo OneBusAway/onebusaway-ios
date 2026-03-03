@@ -195,7 +195,11 @@ public final class SurveyService: ObservableObject {
     public func formatCheckboxAnswer(_ selections: [String]) -> String {
         do {
             let jsonData = try JSONEncoder().encode(selections)
-            return String(data: jsonData, encoding: .utf8) ?? "[]"
+            guard let result = String(data: jsonData, encoding: .utf8) else {
+                Logger.error("formatCheckboxAnswer: UTF-8 encoding failed for \(selections.count) selections")
+                return "[]"
+            }
+            return result
         } catch {
             Logger.error("Failed to encode checkbox selections: \(error)")
             return "[]"
