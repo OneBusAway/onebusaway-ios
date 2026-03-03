@@ -125,8 +125,10 @@ public class SurveyDisplayManager {
                     surveyService.markSurveyCompleted(survey)
                 }
             } catch {
-                // Handle error - maybe show an alert
-                print("Error submitting hero question: \(error)")
+                Logger.error("Error submitting hero question: \(error)")
+                if let vc = self.presentingViewController {
+                    await AlertPresenter.show(error: error, presentingController: vc)
+                }
             }
         }
     }
