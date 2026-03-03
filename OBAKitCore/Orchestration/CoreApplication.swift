@@ -97,7 +97,7 @@ open class CoreApplication: NSObject,
         refreshServices()
 
         /// Updates the app launch count
-        userDataStore.increaseAppLaunchCount()
+        userDataStore.incrementAppLaunchCount()
     }
 
     /// This function reloads the REST API, Obaco Services, and Survey Services.

@@ -193,13 +193,16 @@ class UserDefaultsStoreTests: OBATestCase {
 
     // MARK: - App Launch Counter
 
-    func test_appLaunch_defaultValueIsZero() {
-        expect(self.userDefaultsStore.appLaunch) == 0
+    func test_appLaunchCount_defaultValueIsZero() {
+        expect(self.userDefaultsStore.appLaunchCount) == 0
     }
 
-    func test_appLaunch_readsStoredValue() {
-        userDefaultsStore.increaseAppLaunchCount()
-        expect(self.userDefaultsStore.appLaunch) == 1
+    func test_appLaunchCount_incrementsCorrectly() {
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 1
+
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 2
     }
 
     // MARK: - Survey Enabled
