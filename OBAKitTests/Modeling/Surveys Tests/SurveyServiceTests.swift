@@ -410,6 +410,27 @@ final class SurveyServiceTests: OBATestCase {
         })
     }
 
+    // MARK: - remainingQuestions
+
+    func test_remainingQuestions_doesNotDropQuestionsWithSamePositionAsHero() {
+        let q1 = SurveyQuestion(id: 10, position: 1, required: true, content: QuestionContent(labelText: "Hero", type: .text))
+        let q2 = SurveyQuestion(id: 20, position: 1, required: false, content: QuestionContent(labelText: "Also position 1", type: .label))
+        let q3 = SurveyQuestion(id: 30, position: 2, required: false, content: QuestionContent(labelText: "Position 2", type: .radio, options: ["A", "B"]))
+
+        let survey = Survey(
+            id: 99, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: true, startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, allowsVisible: false,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [q1, q2, q3]
+        )
+
+        expect(survey.heroQuestion?.id).to(equal(10))
+        expect(survey.remainingQuestions.count).to(equal(2))
+        expect(survey.remainingQuestions.map(\.id)).to(equal([20, 30]))
+    }
+
     private func makeResponseFailureMock(_ data: Data, url: URL, statusCode: Int, error: Error? = nil) {
         let urlResponse = mockDataLoader.buildURLResponse(URL: url, statusCode: statusCode)
         let response = MockDataResponse(data: data, urlResponse: urlResponse, error: error) { request in
