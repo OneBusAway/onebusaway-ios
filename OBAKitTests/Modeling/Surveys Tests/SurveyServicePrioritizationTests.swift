@@ -6,7 +6,6 @@
 //
 
 import XCTest
-import OBAKitCore
 import Nimble
 @testable import OBAKitCore
 
