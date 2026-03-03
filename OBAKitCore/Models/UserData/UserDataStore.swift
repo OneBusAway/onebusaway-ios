@@ -350,11 +350,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let surveyResponse = "UserDataStore.surveyResponse"
         static let userSurveyId = "UserDataStore.userSurveyIdentifier"
         static let completedSurveys = "UserDataStore.completedSurveys"
-          static let surveysForLater = "UserDataStore.surveysForLater"
-          static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
-          static let appLaunchCount = "UserDataStore.appLaunchCount"
-          static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
-          static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
+        static let surveysForLater = "UserDataStore.surveysForLater"
+        static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
+        static let appLaunchCount = "UserDataStore.appLaunchCount"
+        static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
+        static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
     }
 
     public init(userDefaults: UserDefaults) {
