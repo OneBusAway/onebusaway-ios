@@ -122,7 +122,8 @@ extension Survey {
 
     /// Returns all questions except the hero question
     public var remainingQuestions: [SurveyQuestion] {
-        return questions.filter { $0.position != 1 }
+        guard let hero = heroQuestion else { return questions }
+        return questions.filter { $0.id != hero.id }
     }
 
     /// Returns true if the survey is currently active (within date range)
