@@ -151,7 +151,7 @@ class SurveyViewController: FormViewController {
                         selectedOptions.removeAll { $0 == option }
                     }
 
-                    let jsonAnswer = self.formatCheckboxAnswer(selectedOptions)
+                    let jsonAnswer = self.surveyService.formatCheckboxAnswer(selectedOptions)
                     self.updateResponse(for: question, answer: jsonAnswer)
                 }
             }
@@ -189,15 +189,6 @@ class SurveyViewController: FormViewController {
         // Add new response
         let response = surveyService.createQuestionResponse(question: question, answer: answer)
         responses.append(response)
-    }
-
-    private func formatCheckboxAnswer(_ selections: [String]) -> String {
-        do {
-            let jsonData = try JSONEncoder().encode(selections)
-            return String(data: jsonData, encoding: .utf8) ?? "[]"
-        } catch {
-            return "[]"
-        }
     }
 
     @objc private func cancelTapped() {

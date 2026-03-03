@@ -192,6 +192,7 @@ public final class SurveyService: ObservableObject {
             let jsonData = try JSONEncoder().encode(selections)
             return String(data: jsonData, encoding: .utf8) ?? "[]"
         } catch {
+            Logger.error("Failed to encode checkbox selections: \(error)")
             return "[]"
         }
     }
