@@ -237,10 +237,6 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - region: The region to set trip planning status for.
     func setTripPlanningEnabled(_ enabled: Bool, for region: Region)
 
-    /// Increments the stored app launch counter by one.
-    /// - Note: This value is used to decide whether a survey should be shown
-    func increaseAppLaunchCount()
-
     // MARK: - Vehicle Feed Agency Filters
 
     /// Returns whether the agency is enabled for vehicle feed display.
@@ -329,7 +325,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let stopPreferences = "UserDataStore.stopPreferences"
         static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
         static let surveyPreferencesKey = "UserDataStore.surveyPreferences"
-        static let appLaunchCounter = "UserDataStore.appLaunchCounter"
         static let surveyResponse = "UserDataStore.surveyResponse"
         static let userSurveyId = "UserDataStore.userSurveyIdentifier"
         static let completedSurveys = "UserDataStore.completedSurveys"
@@ -985,16 +980,3 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 }
 
-extension UserDefaultsStore {
-
-    /// The number of times the app has been launched (legacy counter used by survey gating).
-    public var appLaunch: Int {
-        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCounter)
-    }
-
-    public func increaseAppLaunchCount() {
-        let newValue = appLaunch + 1
-        userDefaults.set(newValue, forKey: UserDefaultsKeys.appLaunchCounter)
-    }
-
-}
