@@ -182,8 +182,8 @@ final class SurveyServicePrioritizationTests: OBATestCase {
 
         let surveys = [
             makeSurvey(id: 0, questions: makeQuestions()),
-            makeSurvey(id: 1, allowsVisible: true, questions: makeQuestions()),
-            makeSurvey(id: 2, multipleResponses: true, allowsVisible: true, questions: makeQuestions())
+            makeSurvey(id: 1, alwaysVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 2, multipleResponses: true, alwaysVisible: true, questions: makeQuestions())
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
@@ -197,8 +197,8 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         store.markSurveyCompleted(surveyId: 1, userIdentifier: userID)
 
         let surveys = [
-            makeSurvey(id: 0, allowsVisible: true, questions: makeQuestions()),
-            makeSurvey(id: 1, allowsVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 0, alwaysVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 1, alwaysVisible: true, questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
@@ -214,8 +214,8 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         store.markSurveyCompleted(surveyId: 1, userIdentifier: userID)
 
         let surveys = [
-            makeSurvey(id: 0, allowsVisible: true, questions: makeQuestions()),
-            makeSurvey(id: 1, multipleResponses: true, allowsVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 0, alwaysVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 1, multipleResponses: true, alwaysVisible: true, questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys, userDataStore: store)
         let result = service.findSurveyForMap()
@@ -226,7 +226,7 @@ final class SurveyServicePrioritizationTests: OBATestCase {
 
     func test_oneTimeIncomplete_prioritizedOverMultipleResponses() async {
         let surveys = [
-            makeSurvey(id: 0, multipleResponses: true, allowsVisible: true, questions: makeQuestions()),
+            makeSurvey(id: 0, multipleResponses: true, alwaysVisible: true, questions: makeQuestions()),
             makeSurvey(id: 1, questions: makeQuestions()),
         ]
         let service = await fetchAndReturnService(surveys: surveys)
@@ -283,7 +283,7 @@ extension SurveyServicePrioritizationTests {
         stopList: [String]? = nil,
         routesList: [String]? = nil,
         multipleResponses: Bool = false,
-        allowsVisible: Bool = false,
+        alwaysVisible: Bool = false,
         study: Study? = nil,
         questions: [SurveyQuestion] = []
     ) -> Survey {
@@ -301,7 +301,7 @@ extension SurveyServicePrioritizationTests {
             visibleStopsList: stopList,
             visibleRoutesList: routesList,
             allowsMultipleResponses: multipleResponses,
-            allowsVisible: allowsVisible,
+            alwaysVisible: alwaysVisible,
             study: studyModel,
             questions: questions
         )

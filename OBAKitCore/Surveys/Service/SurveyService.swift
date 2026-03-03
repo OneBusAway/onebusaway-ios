@@ -138,7 +138,7 @@ public final class SurveyService: ObservableObject {
     // MARK: - Submission
 
     /// Submits a hero question response.
-    /// - Returns: Submission response with update path for additional questions.
+    /// - Returns: Submission response whose `id` is used to submit additional questions.
     public func submitHeroQuestion(
         survey: Survey,
         heroQuestionResponse: SurveyQuestionResponse,
@@ -215,6 +215,11 @@ public final class SurveyService: ObservableObject {
     }
 
     // MARK: - Private: Survey Finding
+    //
+    // Priority order (highest to lowest):
+    // 1. Always-visible, single-response, not yet completed → return immediately
+    // 2. One-time survey (not completed, or deferred via "show later") → first match wins
+    // 3. Always-visible, multi-response → first match wins (lowest priority)
 
     private enum SurveyPriorityResult {
         case returnImmediately(Survey)

@@ -63,7 +63,7 @@ final class SurveyServiceTests: OBATestCase {
         expect(survey?.name).to(equal("Always Visible — One-Time"))
         expect(survey?.showOnMap).to(beTrue())
         expect(survey?.showOnStops).to(beTrue())
-        expect(survey?.allowsVisible).to(beTrue())
+        expect(survey?.alwaysVisible).to(beTrue())
         expect(survey?.allowsMultipleResponses).to(beFalse())
 
         expect(survey?.visibleStopsList?.count).to(equal(2))
@@ -447,7 +447,7 @@ final class SurveyServiceTests: OBATestCase {
             showOnMap: true, showOnStops: true,
             startDate: startDate, endDate: endDate,
             visibleStopsList: nil, visibleRoutesList: nil,
-            allowsMultipleResponses: false, allowsVisible: false,
+            allowsMultipleResponses: false, alwaysVisible: false,
             study: Study(id: 1, name: "S", description: nil),
             questions: []
         )
@@ -487,7 +487,7 @@ final class SurveyServiceTests: OBATestCase {
             id: 99, name: "Test", createdAt: Date(), updatedAt: Date(),
             showOnMap: true, showOnStops: true, startDate: nil, endDate: nil,
             visibleStopsList: nil, visibleRoutesList: nil,
-            allowsMultipleResponses: false, allowsVisible: false,
+            allowsMultipleResponses: false, alwaysVisible: false,
             study: Study(id: 1, name: "S", description: nil),
             questions: [q1, q2, q3]
         )
