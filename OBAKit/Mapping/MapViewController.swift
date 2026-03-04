@@ -15,6 +15,7 @@ import FloatingPanel
 import OBAKitCore
 import SwiftUI
 import OTPKit
+import SafariServices
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
@@ -28,7 +29,8 @@ class MapViewController: UIViewController,
     MapPanelDelegate,
     UIContextMenuInteractionDelegate,
     UILargeContentViewerInteractionDelegate,
-    UIGestureRecognizerDelegate {
+    UIGestureRecognizerDelegate,
+    SurveyViewHostingProtocol {
 
     // MARK: - Hoverbar
 
@@ -133,6 +135,10 @@ class MapViewController: UIViewController,
         longPressGesture.minimumPressDuration = 0.5
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
+
+        observeSurveysState()
+
+        surveysVM.onAction(.onAppear)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -149,6 +155,8 @@ class MapViewController: UIViewController,
 
         updateVisibleMapRect()
         layoutMapMargins()
+
+        observeSurveysState()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -162,6 +170,7 @@ class MapViewController: UIViewController,
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
+        stopObserveSurveysState()
     }
 
     // MARK: - User Location
@@ -1067,6 +1076,140 @@ class MapViewController: UIViewController,
             didTapMapStatus(interaction)
         }
     }
+
+    // MARK: - Survey
+
+    lazy var surveysVM: SurveysViewModel = SurveysViewModel(
+        stateManager: application.surveyStateManager,
+        service: application.surveyService,
+        prioritizer: application.surveyPrioritizer,
+        externalLinkBuilder: application.externalSurveyURLBuilder
+    )
+
+    var observationActive: Bool = false
+
+    private var surveyPopupController: UIViewController?
+
+    // MARK: - Survey Hero Question View
+    @ViewBuilder
+    private func getSurveyHeroQuestionView() -> some View {
+        if let heroQuestion = surveysVM.heroQuestion {
+            surveyHeroQuestionView(heroQuestion)
+                .padding(.horizontal, 12)
+        }
+    }
+
+    @ViewBuilder
+    private func surveyHeroQuestionView(_ heroQuestion: SurveyQuestion) -> some View {
+        if heroQuestion.content.type == .externalSurvey {
+            ExternalSurveyView(question: heroQuestion) { [weak self] in
+                self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
+            } onSubmitAction: {[weak self] in
+                self?.surveysVM.onAction(.onTapNextHeroQuestion)
+            }
+
+        } else {
+            SurveyQuestionView(
+                question: heroQuestion,
+                isHeroQuestion: true
+            ) { [weak self] answer in
+                self?.surveysVM.onAction(.updateHeroAnswer(answer))
+            } onCloseAction: { [weak self] in
+                self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
+            } onSubmitAction: { [weak self] in
+                self?.surveysVM.onAction(.onTapNextHeroQuestion)
+            }
+        }
+    }
+
+    // MARK: - Show/Hide HeroQuestion
+    private func showSurveyHeroQuestionPopup() {
+        guard surveyPopupController == nil else { return }
+
+        let hostingController = createPopupHostingController(content: getSurveyHeroQuestionView())
+        application.viewRouter.present(hostingController, from: self)
+        surveyPopupController = hostingController
+    }
+
+    private func createPopupHostingController<Content: View>(content: Content) -> UIHostingController<Content> {
+        let controller = UIHostingController(rootView: content)
+        controller.view.backgroundColor = .clear
+        controller.modalPresentationStyle = .overFullScreen
+        controller.modalTransitionStyle = .crossDissolve
+
+        let width = view.bounds.width * 0.8
+        let maxHeight = view.bounds.height * 0.9
+        controller.preferredContentSize = CGSize(width: width, height: maxHeight)
+
+        return controller
+    }
+
+    @objc private func dismissSurveyPopup() {
+        surveyPopupController?.dismiss(animated: true)
+        surveyPopupController = nil
+    }
+
+    // MARK: - Surveys VM Observation
+
+    func observeSurveysState() {
+        observationActive = true
+        observeSurveyError()
+        observeSurveyLoadingState()
+        observeSurveyHeroQuestion()
+        observeSurveyToastMessage()
+        observeSurveyFullQuestionsState()
+        observeSurveyDismissActionSheet()
+        observeOpenExternalSurvey()
+    }
+
+    func stopObserveSurveysState() {
+        observationActive = false
+    }
+
+    func observeSurveyHeroQuestion() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            if self.surveysVM.showHeroQuestion {
+                showSurveyHeroQuestionPopup()
+            } else {
+                self.dismissSurveyPopup()
+            }
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self, self.observationActive else { return }
+                self.observeSurveyHeroQuestion()
+            }
+        }
+    }
+
+    func observeSurveyDismissActionSheet() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            if self.surveysVM.showSurveyDismissSheet, let surveyPopupController {
+                self.showSurveyDismissActionSheet(surveyPopupController)
+            }
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self, self.observationActive else { return }
+                self.observeSurveyDismissActionSheet()
+            }
+        }
+    }
+
+    func presentFullSurveyQuestions() {
+        let surveyQuestionsForm = SurveyQuestionsForm(viewModel: self.surveysVM) { [weak self] in
+            self?.observeSurveysState()
+        }
+
+        let hosting = UIHostingController(rootView: surveyQuestionsForm)
+        application.viewRouter.present(hosting, from: self, isModal: true, isPopover: true)
+    }
+
+    func openSafari(with url: URL) {
+        let safariView = SFSafariViewController(url: url)
+        application.viewRouter.present(safariView, from: self, isModal: true)
+    }
+
 }
 
 // swiftlint:enable file_length
