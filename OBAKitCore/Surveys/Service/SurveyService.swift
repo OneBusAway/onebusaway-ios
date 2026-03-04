@@ -81,7 +81,7 @@ public final class SurveyService: ObservableObject {
             let userID = userDataStore.surveyUserIdentifier
             let response = try await apiService.getSurveys(userID: userID)
 
-            allSurveys = response.entry.surveys
+            allSurveys = response.surveys
             updateVisibleSurveys()
             lastFetchDate = Date()
         } catch {
@@ -175,8 +175,7 @@ public final class SurveyService: ObservableObject {
             responses: [heroQuestionResponse]
         )
 
-        let response = try await apiService.submitSurveyResponse(submission)
-        return response.entry
+        return try await apiService.submitSurveyResponse(submission)
     }
 
     /// Submits additional questions for an existing survey response.
@@ -189,11 +188,10 @@ public final class SurveyService: ObservableObject {
             throw APIError.surveyServiceNotConfigured
         }
 
-        let response = try await apiService.updateSurveyResponse(
+        return try await apiService.updateSurveyResponse(
             responseID: responseID,
             additionalResponses: additionalResponses
         )
-        return response.entry
     }
 
     // MARK: - Helpers

@@ -317,16 +317,7 @@ final class SurveyServiceStateTests: OBATestCase {
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        let entryData = try! encoder.encode(studyResponse)  // swiftlint:disable:this force_try
-        let entryJSON = try! JSONSerialization.jsonObject(with: entryData)  // swiftlint:disable:this force_try
-
-        let wrappedJSON: [String: Any] = [
-            "code": 200,
-            "text": "OK",
-            "version": 2,
-            "data": ["entry": entryJSON]
-        ]
-        let data = try! JSONSerialization.data(withJSONObject: wrappedJSON)  // swiftlint:disable:this force_try
+        let data = try! encoder.encode(studyResponse)  // swiftlint:disable:this force_try
 
         let userID = testUserDataStore.surveyUserIdentifier
         mockLoader.mock(

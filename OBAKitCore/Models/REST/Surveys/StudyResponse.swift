@@ -70,6 +70,24 @@ public struct Survey: Codable, Hashable {
         case questions
     }
 
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        showOnMap = try container.decodeIfPresent(Bool.self, forKey: .showOnMap) ?? false
+        showOnStops = try container.decodeIfPresent(Bool.self, forKey: .showOnStops) ?? false
+        startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
+        endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
+        visibleStopsList = try container.decodeIfPresent([String].self, forKey: .visibleStopsList)
+        visibleRoutesList = try container.decodeIfPresent([String].self, forKey: .visibleRoutesList)
+        allowsMultipleResponses = try container.decodeIfPresent(Bool.self, forKey: .allowsMultipleResponses) ?? false
+        alwaysVisible = try container.decodeIfPresent(Bool.self, forKey: .alwaysVisible) ?? false
+        study = try container.decode(Study.self, forKey: .study)
+        questions = try container.decode([SurveyQuestion].self, forKey: .questions)
+    }
+
     public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, alwaysVisible: Bool, study: Study, questions: [SurveyQuestion]) {
         self.id = id
         self.name = name

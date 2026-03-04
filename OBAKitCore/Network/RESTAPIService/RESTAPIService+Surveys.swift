@@ -13,10 +13,8 @@ extension RESTAPIService {
 
     // MARK: - Survey Endpoints
 
-    /// Fetches all available surveys for a region and user
-    /// - Parameter userID: The user's unique identifier
-    /// - Returns: StudyResponse containing surveys and region info
-    public nonisolated func getSurveys(userID: String) async throws -> RESTAPIResponse<StudyResponse> {
+    /// Fetches all available surveys for a region and user.
+    public nonisolated func getSurveys(userID: String) async throws -> StudyResponse {
         guard let regionID = configuration.regionIdentifier else {
             throw APIError.noRegionSelected
         }
@@ -25,13 +23,11 @@ extension RESTAPIService {
             throw APIError.surveyServiceNotConfigured
         }
 
-        return try await getData(for: url, decodeRESTAPIResponseAs: StudyResponse.self, using: JSONDecoder.obacoServiceDecoder)
+        return try await getData(for: url, decodeAs: StudyResponse.self, using: JSONDecoder.obacoServiceDecoder)
     }
 
-    /// Submits a survey response to the server
-    /// - Parameter surveySubmission: The survey submission to send
-    /// - Returns: SurveySubmissionResponse with response ID and update path
-    public nonisolated func submitSurveyResponse(_ surveySubmission: SurveySubmission) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
+    /// Submits a survey response to the server.
+    public nonisolated func submitSurveyResponse(_ surveySubmission: SurveySubmission) async throws -> SurveySubmissionResponse {
         guard let url = urlBuilder.submitSurveyResponse() else {
             throw APIError.surveyServiceNotConfigured
         }
@@ -47,12 +43,8 @@ extension RESTAPIService {
         return try await performSurveyRequest(request: request)
     }
 
-    /// Updates an existing survey response with additional answers
-    /// - Parameters:
-    ///   - responseID: The ID of the existing survey response
-    ///   - additionalResponses: Additional question responses to add
-    /// - Returns: Updated SurveySubmissionResponse
-    public nonisolated func updateSurveyResponse(responseID: String, additionalResponses: [QuestionAnswerSubmission]) async throws -> RESTAPIResponse<SurveySubmissionResponse> {
+    /// Updates an existing survey response with additional answers.
+    public nonisolated func updateSurveyResponse(responseID: String, additionalResponses: [QuestionAnswerSubmission]) async throws -> SurveySubmissionResponse {
         guard let url = urlBuilder.updateSurveyResponse(responseID: responseID) else {
             throw APIError.surveyServiceNotConfigured
         }
@@ -71,8 +63,8 @@ extension RESTAPIService {
 
     // MARK: - Private Helper Methods
 
-    private nonisolated func performSurveyRequest<T: Codable>(request: URLRequest) async throws -> RESTAPIResponse<T> {
+    private nonisolated func performSurveyRequest<T: Decodable>(request: URLRequest) async throws -> T {
         let (data, _) = try await self.data(for: request)
-        return try JSONDecoder.obacoServiceDecoder.decode(RESTAPIResponse<T>.self, from: data)
+        return try JSONDecoder.obacoServiceDecoder.decode(T.self, from: data)
     }
 }

@@ -32,8 +32,8 @@ final class SurveyServiceTests: OBATestCase {
 
     // MARK: - GET Surveys
 
-    private func loadSurveys() async throws -> RESTAPIResponse<StudyResponse> {
-        let data = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+    private func loadSurveys() async throws -> StudyResponse {
+        let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
 
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345",
@@ -44,18 +44,17 @@ final class SurveyServiceTests: OBATestCase {
 
     func test_getSurveys_success_metadata() async throws {
         let response = try await loadSurveys()
-        let surveys = response.entry
 
-        expect(surveys.region.name).to(equal("Puget Sound"))
-        expect(surveys.region.id).to(equal(1))
+        expect(response.region.name).to(equal("Puget Sound"))
+        expect(response.region.id).to(equal(1))
 
-        expect(surveys.surveys.count).to(equal(5))
-        expect(surveys).toNot(beNil())
+        expect(response.surveys.count).to(equal(5))
+        expect(response).toNot(beNil())
     }
 
     func test_firstSurvey_basicProperties() async throws {
         let response = try await loadSurveys()
-        let survey = response.entry.surveys.first
+        let survey = response.surveys.first
 
         expect(survey).toNot(beNil())
 
@@ -73,7 +72,7 @@ final class SurveyServiceTests: OBATestCase {
 
     func test_firstSurvey_questionDecoding() async throws {
         let response = try await loadSurveys()
-        let survey = response.entry.surveys.first!
+        let survey = response.surveys.first!
 
         let questions = survey.questions
         expect(questions.count).to(equal(5))
@@ -102,7 +101,7 @@ final class SurveyServiceTests: OBATestCase {
 
     func test_firstSurvey_getQuestions_filtersCorrectly() async throws {
         let response = try await loadSurveys()
-        let survey = response.entry.surveys.first!
+        let survey = response.surveys.first!
 
         let filtered = survey.getQuestions()
 
@@ -120,15 +119,14 @@ final class SurveyServiceTests: OBATestCase {
         let submissionModel = makeFirstQuestionSubmissionModel()
 
         let response = try await testRESTService.submitSurveyResponse(submissionModel)
-        let submissionResponse = response.entry
 
-        expect(submissionResponse.id).to(equal("808d3a515daa39f4c15a"))
-        expect(submissionResponse.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(submissionResponse.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
+        expect(response.id).to(equal("808d3a515daa39f4c15a"))
+        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
+        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
     }
 
     private func setupMockSubmissionSuccess(_ surveyId: String = "") {
-        let data = Fixtures.loadData(file: "rest_survey_submission_response.json")
+        let data = Fixtures.loadData(file: "survey_submission_response.json")
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/survey_responses/\(surveyId)",
             with: data
@@ -165,11 +163,10 @@ final class SurveyServiceTests: OBATestCase {
             responseID: "surveyResponseId",
             additionalResponses: additionalResponses
         )
-        let submissionResponse = response.entry
 
-        expect(submissionResponse.id).to(equal("808d3a515daa39f4c15a"))
-        expect(submissionResponse.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(submissionResponse.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
+        expect(response.id).to(equal("808d3a515daa39f4c15a"))
+        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
+        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
     }
 
     // MARK: - Error Scenarios
@@ -453,6 +450,23 @@ final class SurveyServiceTests: OBATestCase {
         )
     }
 
+    // MARK: - Missing Optional Fields
+
+    func test_getSurveys_missingOptionalBooleans_defaultsToFalse() async throws {
+        let data = Fixtures.loadData(file: "surveys_missing_optional_fields.json")
+
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345",
+            with: data
+        )
+
+        let response = try await testRESTService.getSurveys(userID: uuid)
+        let survey = response.surveys.first!
+
+        expect(survey.allowsMultipleResponses).to(beFalse())
+        expect(survey.alwaysVisible).to(beFalse())
+    }
+
     // MARK: - getSurveys nil region
 
     func test_getSurveys_nilRegionIdentifier_throwsNoRegionSelected() async {
@@ -529,7 +543,7 @@ final class SurveyServiceTests: OBATestCase {
     @MainActor
     func test_fetchSurveys_success_populatesSurveys() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)
-        let data = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         let userID = store.surveyUserIdentifier
 
         mockDataLoader.mock(
@@ -540,9 +554,9 @@ final class SurveyServiceTests: OBATestCase {
         let service = SurveyService(apiService: testRESTService, userDataStore: store)
         await service.fetchSurveys()
 
+        expect(service.lastError).to(beNil())
         expect(service.allSurveys.count).to(equal(5))
         expect(service.visibleSurveys.count).to(equal(5))
-        expect(service.lastError).to(beNil())
         expect(service.isLoading).to(beFalse())
     }
 
@@ -570,7 +584,7 @@ final class SurveyServiceTests: OBATestCase {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
-        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
             with: successData
@@ -599,7 +613,7 @@ final class SurveyServiceTests: OBATestCase {
         let store = UserDefaultsStore(userDefaults: userDefaults)
         let userID = store.surveyUserIdentifier
 
-        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
             with: successData
@@ -636,7 +650,7 @@ final class SurveyServiceTests: OBATestCase {
 
         // Replace with success data — should fetch because allSurveys is empty
         mockDataLoader.removeMappedResponses()
-        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
             with: successData
@@ -655,7 +669,7 @@ final class SurveyServiceTests: OBATestCase {
         let userID = store.surveyUserIdentifier
 
         // First, load surveys successfully
-        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
         mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
             with: successData
