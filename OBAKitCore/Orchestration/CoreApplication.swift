@@ -149,8 +149,10 @@ open class CoreApplication: NSObject,
               let regionId = currentRegion?.regionIdentifier else {
             return
         }
-        let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
-        repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
+        Task.detached(priority: .utility) {
+            let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
+            repository.deleteStopsOlderThan(thirtyDaysAgo, regionId: regionId)
+        }
     }
 
     // MARK: - LocationServiceDelegate
