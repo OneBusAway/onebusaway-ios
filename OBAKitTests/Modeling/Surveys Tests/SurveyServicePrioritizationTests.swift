@@ -35,25 +35,13 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         let store = userDataStore ?? testUserDataStore!
         let mockLoader = MockDataLoader(testName: name)
 
-        // Encode the StudyResponse to JSON, then wrap in RESTAPIResponse format
         let studyResponse = StudyResponse(
             surveys: surveys,
             region: SurveyRegion(id: 1, name: "Test")
         )
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        let entryData = try! encoder.encode(studyResponse)
-        let entryJSON = try! JSONSerialization.jsonObject(with: entryData)
-
-        let wrappedJSON: [String: Any] = [
-            "code": 200,
-            "text": "OK",
-            "version": 2,
-            "data": [
-                "entry": entryJSON
-            ]
-        ]
-        let data = try! JSONSerialization.data(withJSONObject: wrappedJSON)
+        let data = try! encoder.encode(studyResponse) // swiftlint:disable:this force_try
 
         let userID = store.surveyUserIdentifier
         mockLoader.mock(
