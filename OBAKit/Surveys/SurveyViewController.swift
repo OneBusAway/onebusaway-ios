@@ -262,7 +262,8 @@ class SurveyViewController: FormViewController {
 
     private func validateResponses() -> Bool {
         let answeredQuestionIDs = Set(responses.map { $0.questionId })
-        return survey.questions
+        let questionsToValidate = heroResponseID != nil ? survey.remainingQuestions : survey.questions
+        return questionsToValidate
             .filter { $0.required }
             .allSatisfy { answeredQuestionIDs.contains($0.id) }
     }

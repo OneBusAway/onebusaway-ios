@@ -51,6 +51,20 @@ public struct SurveySubmission: Codable, Hashable {
         case responses
     }
 
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(userIdentifier, forKey: .userIdentifier)
+        try container.encode(surveyId, forKey: .surveyId)
+        try container.encodeIfPresent(stopIdentifier, forKey: .stopIdentifier)
+        try container.encodeIfPresent(stopLongitude, forKey: .stopLongitude)
+        try container.encodeIfPresent(stopLatitude, forKey: .stopLatitude)
+
+        // Server expects responses as a JSON string, not a nested array
+        let responsesData = try JSONEncoder().encode(responses)
+        let responsesString = String(data: responsesData, encoding: .utf8) ?? "[]"
+        try container.encode(responsesString, forKey: .responses)
+    }
+
 }
 
 public struct QuestionAnswerSubmission: Codable, Hashable {
@@ -79,7 +93,7 @@ public struct QuestionAnswerSubmission: Codable, Hashable {
 
 }
 
-public struct SurveySubmissionResponse: Codable, Hashable {
+public struct SurveySubmissionResponse: Hashable, Decodable {
 
     public let id: String
 
@@ -93,9 +107,21 @@ public struct SurveySubmissionResponse: Codable, Hashable {
         self.userIdentifier = userIdentifier
     }
 
-    enum CodingKeys: String, CodingKey {
+    private enum RootKeys: String, CodingKey {
+        case surveyResponse = "survey_response"
+    }
+
+    private enum NestedKeys: String, CodingKey {
         case id
         case updatePath = "update_path"
         case userIdentifier = "user_identifier"
+    }
+
+    public init(from decoder: Decoder) throws {
+        let root = try decoder.container(keyedBy: RootKeys.self)
+        let nested = try root.nestedContainer(keyedBy: NestedKeys.self, forKey: .surveyResponse)
+        self.id = try nested.decode(String.self, forKey: .id)
+        self.updatePath = try nested.decode(String.self, forKey: .updatePath)
+        self.userIdentifier = try nested.decode(String.self, forKey: .userIdentifier)
     }
 }

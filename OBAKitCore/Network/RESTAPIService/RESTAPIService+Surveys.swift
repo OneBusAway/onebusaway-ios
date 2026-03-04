@@ -53,10 +53,10 @@ extension RESTAPIService {
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let requestBody = ["responses": additionalResponses]
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        request.httpBody = try encoder.encode(requestBody)
+        let responsesData = try JSONEncoder().encode(additionalResponses)
+        let responsesString = String(data: responsesData, encoding: .utf8) ?? "[]"
+        let requestBody = ["responses": responsesString]
+        request.httpBody = try JSONEncoder().encode(requestBody)
 
         return try await performSurveyRequest(request: request)
     }

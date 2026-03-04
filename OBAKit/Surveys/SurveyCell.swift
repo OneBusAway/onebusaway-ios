@@ -47,7 +47,12 @@ class SurveyCell: OBAListViewCell {
     lazy var dismissButton: UIButton = {
         var config = UIButton.Configuration.plain()
         config.title = OBALoc("survey_cell.dismiss_button", value: "Dismiss", comment: "Button to dismiss the survey")
-        config.baseForegroundColor = .secondaryLabel
+        config.baseForegroundColor = .label
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .systemFont(ofSize: incoming.font?.pointSize ?? UIFont.labelFontSize, weight: .medium)
+            return outgoing
+        }
         config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
 
         let button = UIButton(configuration: config)
@@ -65,11 +70,16 @@ class SurveyCell: OBAListViewCell {
     }()
 
     lazy var nextButton: UIButton = {
-        let button = UIButton(configuration: .filled())
+        var config = UIButton.Configuration.filled()
+        config.title = OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question")
+        config.baseBackgroundColor = .systemGreen
+        config.baseForegroundColor = .white
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+
+        let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question"), for: .normal)
-        button.backgroundColor = .systemGreen
         button.layer.cornerRadius = 8
+        button.clipsToBounds = true
 
         let action = UIAction { [weak self] _ in
             guard let self,
@@ -288,7 +298,13 @@ class SurveyCell: OBAListViewCell {
     private func updateNextButtonState() {
         let hasSelection = currentSelection != nil
         nextButton.isEnabled = hasSelection
-        nextButton.alpha = hasSelection ? 1.0 : 0.6
+        nextButton.configurationUpdateHandler = { btn in
+            var config = btn.configuration
+            config?.baseBackgroundColor = .systemGreen
+            config?.baseForegroundColor = .white
+            btn.configuration = config
+            btn.alpha = btn.isEnabled ? 1.0 : 0.5
+        }
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
