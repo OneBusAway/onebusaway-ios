@@ -822,7 +822,7 @@ public class StopViewController: UIViewController,
             },
             onSelectionChanged: { _ in }
         )
-        return listViewSection(for: .survey, title: nil, items: [item])
+        return listViewSection(for: .survey, title: survey.study.name, items: [item])
     }
 
     private func handleSurveyAnswer(survey: Survey, answer: String) {

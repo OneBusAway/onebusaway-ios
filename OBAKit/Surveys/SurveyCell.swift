@@ -38,21 +38,30 @@ class SurveyCell: OBAListViewCell {
         return label
     }()
 
-    lazy var closeButton: UIButton = {
-        let button = UIButton.buildCloseButton()
-        button.tintColor = .systemGreen
+    lazy var optionsStack: UIStackView = {
+        let stack = UIStackView.verticalStack(arrangedSubviews: [])
+        stack.spacing = 8
+        return stack
+    }()
+
+    lazy var dismissButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.title = OBALoc("survey_cell.dismiss_button", value: "Dismiss", comment: "Button to dismiss the survey")
+        config.baseForegroundColor = .secondaryLabel
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
+
         let action = UIAction { [weak self] _ in
             guard let viewModel = self?.viewModel else { return }
             viewModel.onDismiss()
         }
         button.addAction(action, for: .touchUpInside)
         return button
-    }()
-
-    lazy var optionsStack: UIStackView = {
-        let stack = UIStackView.verticalStack(arrangedSubviews: [])
-        stack.spacing = 8
-        return stack
     }()
 
     lazy var nextButton: UIButton = {
@@ -73,8 +82,9 @@ class SurveyCell: OBAListViewCell {
     }()
 
     lazy var actionButtonsStack: UIStackView = {
-        let stack = UIStackView.horizontalStack(arrangedSubviews: [nextButton])
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [dismissButton, nextButton])
         stack.spacing = ThemeMetrics.compactPadding
+        stack.distribution = .fillEqually
         return stack
     }()
 
@@ -109,13 +119,6 @@ class SurveyCell: OBAListViewCell {
         // Add content stack with padding
         addSubview(contentStack)
         contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: -12, trailing: -12))
-
-        // Add close button positioned in top-right corner (like donation section)
-        addSubview(closeButton)
-        NSLayoutConstraint.activate([
-            closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
-        ])
     }
 
     // MARK: - UI Updates
@@ -292,6 +295,7 @@ class SurveyCell: OBAListViewCell {
         super.traitCollectionDidChange(previousTraitCollection)
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             layer.borderColor = UIColor.systemGray4.cgColor
+            dismissButton.layer.borderColor = UIColor.systemGray4.cgColor
             for button in optionButtons {
                 if button.isSelected {
                     button.layer.borderColor = UIColor.systemGreen.cgColor
