@@ -122,4 +122,6 @@ public class Strings: NSObject {
     public static let emptyBookmarkBodyWithPendingMigration = OBALoc("common.empty_bookmark_set.body_with_pending_migration", value: "Go to the More tab > Settings > Migrate Data to see your bookmarks appear here.", comment: "Body for the bookmark empty set indicator when the user has a pending migration from the old version of the app.")
 
     public static let emptyAlertTitle = OBALoc("common.empty_alert_set.title", value: "No Alerts", comment: "Title for the alert empty set indicator.")
+
+    public static let liveArrivals = OBALoc("common.live_arrivals", value: "Live Arrivals", comment: "Fallback title for the stop arrivals screen when the stop name is not yet available.")
 }
