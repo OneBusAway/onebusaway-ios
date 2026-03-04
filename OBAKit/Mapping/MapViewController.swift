@@ -185,7 +185,8 @@ class MapViewController: UIViewController,
         let surveyService = application.surveyService
         guard surveyService.shouldShowSurvey() else { return }
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             await surveyService.fetchSurveys()
 
             guard let survey = surveyService.findSurveyForMap() else { return }

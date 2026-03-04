@@ -12,295 +12,293 @@ import OBAKitCore
 
 class SurveyCell: OBAListViewCell {
 
-  var viewModel: SurveyStopListItem?
-  private var optionButtons: [UIButton] = []
+    var viewModel: SurveyStopListItem?
+    private var optionButtons: [UIButton] = []
+    private var currentSelection: String?
 
-  public override func apply(_ config: OBAContentConfiguration) {
-      super.apply(config)
+    public override func apply(_ config: OBAContentConfiguration) {
+        super.apply(config)
 
-      guard let config = config as? SurveyContentConfiguration else {
-          fatalError("Invalid configuration type for SurveyCell")
-      }
+        guard let config = config as? SurveyContentConfiguration else {
+            fatalError("Invalid configuration type for SurveyCell")
+        }
 
-      viewModel = config.viewModel
-      updateUI()
-  }
+        viewModel = config.viewModel
+        currentSelection = config.viewModel.selectedOption
+        updateUI()
+    }
 
-  // MARK: - UI Components
+    // MARK: - UI Components
 
-  lazy var questionLabel: UILabel = {
-      let label = UILabel.autolayoutNew()
-      label.numberOfLines = 0
-      label.font = .preferredFont(forTextStyle: .body)
-      label.textColor = .label
-      return label
-  }()
+    lazy var questionLabel: UILabel = {
+        let label = UILabel.autolayoutNew()
+        label.numberOfLines = 0
+        label.font = .preferredFont(forTextStyle: .body)
+        label.textColor = .label
+        return label
+    }()
 
-  lazy var closeButton: UIButton = {
-      let button = UIButton.buildCloseButton()
-      button.tintColor = .systemGreen
-      let action = UIAction { [weak self] _ in
-          guard let viewModel = self?.viewModel else { return }
-          viewModel.onDismiss()
-      }
-      button.addAction(action, for: .touchUpInside)
-      return button
-  }()
+    lazy var closeButton: UIButton = {
+        let button = UIButton.buildCloseButton()
+        button.tintColor = .systemGreen
+        let action = UIAction { [weak self] _ in
+            guard let viewModel = self?.viewModel else { return }
+            viewModel.onDismiss()
+        }
+        button.addAction(action, for: .touchUpInside)
+        return button
+    }()
 
-  lazy var optionsStack: UIStackView = {
-      let stack = UIStackView.verticalStack(arrangedSubviews: [])
-      stack.spacing = 8
-      return stack
-  }()
+    lazy var optionsStack: UIStackView = {
+        let stack = UIStackView.verticalStack(arrangedSubviews: [])
+        stack.spacing = 8
+        return stack
+    }()
 
-  lazy var nextButton: UIButton = {
-      let button = UIButton(configuration: .filled())
-      button.translatesAutoresizingMaskIntoConstraints = false
-      button.setTitle(OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question"), for: .normal)
-      button.backgroundColor = .systemGreen
-      button.layer.cornerRadius = 8
+    lazy var nextButton: UIButton = {
+        let button = UIButton(configuration: .filled())
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle(OBALoc("survey_cell.next_button", value: "Next", comment: "Button to proceed to next survey question"), for: .normal)
+        button.backgroundColor = .systemGreen
+        button.layer.cornerRadius = 8
 
-      let action = UIAction { [weak self] _ in
-          guard let viewModel = self?.viewModel,
-                let selectedOption = viewModel.selectedOption else { return }
-          viewModel.onNext(selectedOption)
-      }
-      button.addAction(action, for: .touchUpInside)
-      return button
-  }()
+        let action = UIAction { [weak self] _ in
+            guard let self,
+                  let viewModel = self.viewModel,
+                  let selectedOption = self.currentSelection else { return }
+            viewModel.onNext(selectedOption)
+        }
+        button.addAction(action, for: .touchUpInside)
+        return button
+    }()
 
-  lazy var actionButtonsStack: UIStackView = {
-      let stack = UIStackView.horizontalStack(arrangedSubviews: [nextButton])
-      stack.spacing = ThemeMetrics.compactPadding
-      return stack
-  }()
+    lazy var actionButtonsStack: UIStackView = {
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [nextButton])
+        stack.spacing = ThemeMetrics.compactPadding
+        return stack
+    }()
 
-  lazy var contentStack: UIStackView = {
-      let stack = UIStackView.verticalStack(arrangedSubviews: [
-          questionLabel,
-          optionsStack,
-          UIView.spacerView(height: 8.0),
-          actionButtonsStack
-      ])
-      stack.spacing = 8.0
-      return stack
-  }()
+    lazy var contentStack: UIStackView = {
+        let stack = UIStackView.verticalStack(arrangedSubviews: [
+            questionLabel,
+            optionsStack,
+            UIView.spacerView(height: 8.0),
+            actionButtonsStack
+        ])
+        stack.spacing = 8.0
+        return stack
+    }()
 
-  // MARK: - Initialization
+    // MARK: - Initialization
 
-  override init(frame: CGRect) {
-      super.init(frame: frame)
-      setupView()
-  }
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+    }
 
-  required init?(coder: NSCoder) {
-      fatalError("init(coder:) has not been implemented")
-  }
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
-  private func setupView() {
-      backgroundColor = .systemBackground
-      layer.cornerRadius = 12
-      layer.borderWidth = 1
-      layer.borderColor = UIColor.systemGray4.cgColor
+    private func setupView() {
+        backgroundColor = .systemBackground
+        layer.cornerRadius = 12
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.systemGray4.cgColor
 
-      // Add content stack with padding
-      addSubview(contentStack)
-      contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: -12, trailing: -12))
+        // Add content stack with padding
+        addSubview(contentStack)
+        contentStack.pinToSuperview(.edges, insets: NSDirectionalEdgeInsets(top: 12, leading: 12, bottom: -12, trailing: -12))
 
-      // Add close button positioned in top-right corner (like donation section)
-      addSubview(closeButton)
-      NSLayoutConstraint.activate([
-          closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 8),
-          closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
-      ])
-  }
+        // Add close button positioned in top-right corner (like donation section)
+        addSubview(closeButton)
+        NSLayoutConstraint.activate([
+            closeButton.topAnchor.constraint(equalTo: topAnchor, constant: 8),
+            closeButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
+        ])
+    }
 
-  // MARK: - UI Updates
+    // MARK: - UI Updates
 
-  private func updateUI() {
-      guard let viewModel = viewModel else { return }
+    private func updateUI() {
+        guard let viewModel = viewModel else { return }
 
-      if let heroQuestion = viewModel.survey.heroQuestion {
-          questionLabel.text = heroQuestion.content.displayText
-          questionLabel.isHidden = false
+        if let heroQuestion = viewModel.survey.heroQuestion {
+            questionLabel.text = heroQuestion.content.displayText
+            questionLabel.isHidden = false
 
-          // Setup question-specific UI
-          setupQuestionUI(for: heroQuestion)
-      } else {
-          questionLabel.text = OBALoc("survey_cell.default_prompt", value: "Take survey to help improve transit", comment: "Default prompt when no hero question exists")
-          questionLabel.isHidden = false
-          optionsStack.isHidden = true
-      }
+            // Setup question-specific UI
+            setupQuestionUI(for: heroQuestion)
+        } else {
+            questionLabel.text = OBALoc("survey_cell.default_prompt", value: "Take survey to help improve transit", comment: "Default prompt when no hero question exists")
+            questionLabel.isHidden = false
+            optionsStack.isHidden = true
+        }
 
-      // Update button state based on selection
-      updateNextButtonState()
-  }
+        // Update button state based on selection
+        updateNextButtonState()
+    }
 
-  private func setupQuestionUI(for question: SurveyQuestion) {
-      // Clear existing options
-      optionButtons.forEach { $0.removeFromSuperview() }
-      optionButtons.removeAll()
-      optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    private func setupQuestionUI(for question: SurveyQuestion) {
+        // Clear existing options
+        optionButtons.forEach { $0.removeFromSuperview() }
+        optionButtons.removeAll()
+        optionsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-      switch question.content.type {
-      case .radio:
-          let options = question.content.options ?? []
-          optionsStack.isHidden = false
-          createRadioButtons(options: options)
+        switch question.content.type {
+        case .radio:
+            let options = question.content.options ?? []
+            optionsStack.isHidden = false
+            createRadioButtons(options: options)
 
-      case .text:
-          optionsStack.isHidden = true
-          // For text questions, just show action buttons
+        case .text:
+            optionsStack.isHidden = true
+            // For text questions, just show action buttons
 
-      case .checkbox:
-          let options = question.content.options ?? []
-          optionsStack.isHidden = false
-          createCheckboxButtons(options: Array(options.prefix(3))) // Show first 3 for space
+        case .checkbox:
+            let options = question.content.options ?? []
+            optionsStack.isHidden = false
+            createCheckboxButtons(options: Array(options.prefix(3))) // Show first 3 for space
 
-      case .label, .externalSurvey:
-          optionsStack.isHidden = true
-      }
-  }
+        case .label, .externalSurvey:
+            optionsStack.isHidden = true
+        }
+    }
 
-  private func createRadioButtons(options: [String]) {
-      for (index, option) in options.enumerated() {
-          let button = createOptionButton(title: option, isRadio: true)
-          button.tag = index
+    private func createRadioButtons(options: [String]) {
+        for (index, option) in options.enumerated() {
+            let button = createOptionButton(title: option, isRadio: true)
+            button.tag = index
 
-          // Update selection state
-          if let selectedOption = viewModel?.selectedOption, selectedOption == option {
-              selectButton(button)
-          }
+            // Update selection state
+            if let selectedOption = viewModel?.selectedOption, selectedOption == option {
+                selectButton(button)
+            }
 
-          optionButtons.append(button)
-          optionsStack.addArrangedSubview(button)
-      }
-  }
+            optionButtons.append(button)
+            optionsStack.addArrangedSubview(button)
+        }
+    }
 
-  private func createCheckboxButtons(options: [String]) {
-      for (index, option) in options.enumerated() {
-          let button = createOptionButton(title: option, isRadio: false)
-          button.tag = index
+    private func createCheckboxButtons(options: [String]) {
+        for (index, option) in options.enumerated() {
+            let button = createOptionButton(title: option, isRadio: false)
+            button.tag = index
 
-          optionButtons.append(button)
-          optionsStack.addArrangedSubview(button)
-      }
-  }
+            optionButtons.append(button)
+            optionsStack.addArrangedSubview(button)
+        }
+    }
 
-  private func createOptionButton(title: String, isRadio: Bool) -> UIButton {
-      let iconName = isRadio ? "circle" : "square"
-      let selectedIconName = isRadio ? "circle.fill" : "checkmark.square.fill"
+    private func createOptionButton(title: String, isRadio: Bool) -> UIButton {
+        let iconName = isRadio ? "circle" : "square"
+        let selectedIconName = isRadio ? "circle.fill" : "checkmark.square.fill"
 
-      var config = UIButton.Configuration.plain()
-      config.title = title
-      config.baseForegroundColor = .label
-      config.image = UIImage(systemName: iconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
-      config.imagePadding = 8
-      config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-      config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
-          var outgoing = incoming
-          outgoing.font = .preferredFont(forTextStyle: .body)
-          return outgoing
-      }
+        var config = UIButton.Configuration.plain()
+        config.title = title
+        config.baseForegroundColor = .label
+        config.image = UIImage(systemName: iconName)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
+        config.imagePadding = 8
+        config.contentInsets = NSDirectionalEdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { incoming in
+            var outgoing = incoming
+            outgoing.font = .preferredFont(forTextStyle: .body)
+            return outgoing
+        }
 
-      let button = UIButton(configuration: config)
-      button.configurationUpdateHandler = { btn in
-          var updatedConfig = btn.configuration
-          let name = btn.isSelected ? selectedIconName : iconName
-          updatedConfig?.image = UIImage(systemName: name)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
-          btn.configuration = updatedConfig
-      }
-      button.contentHorizontalAlignment = .leading
-      button.backgroundColor = .systemGray6
-      button.layer.cornerRadius = 8
-      button.layer.borderWidth = 1
-      button.layer.borderColor = UIColor.systemGray4.cgColor
+        let button = UIButton(configuration: config)
+        button.configurationUpdateHandler = { btn in
+            var updatedConfig = btn.configuration
+            let name = btn.isSelected ? selectedIconName : iconName
+            updatedConfig?.image = UIImage(systemName: name)?.withTintColor(.systemGreen, renderingMode: .alwaysOriginal)
+            btn.configuration = updatedConfig
+        }
+        button.contentHorizontalAlignment = .leading
+        button.backgroundColor = .systemGray6
+        button.layer.cornerRadius = 8
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.systemGray4.cgColor
 
-      let action = UIAction { [weak self] _ in
-          if isRadio {
-              self?.handleRadioSelection(button)
-          } else {
-              self?.handleCheckboxSelection(button)
-          }
-      }
-      button.addAction(action, for: .touchUpInside)
+        let action = UIAction { [weak self] _ in
+            if isRadio {
+                self?.handleRadioSelection(button)
+            } else {
+                self?.handleCheckboxSelection(button)
+            }
+        }
+        button.addAction(action, for: .touchUpInside)
 
-      return button
-  }
+        return button
+    }
 
-  private func handleRadioSelection(_ selectedButton: UIButton) {
-      guard let viewModel = viewModel else { return }
+    private func handleRadioSelection(_ selectedButton: UIButton) {
+        // Deselect all other radio buttons
+        optionButtons.forEach { button in
+            if button != selectedButton {
+                deselectButton(button)
+            }
+        }
 
-      // Deselect all other radio buttons
-      optionButtons.forEach { button in
-          if button != selectedButton {
-              deselectButton(button)
-          }
-      }
+        // Select this button
+        selectButton(selectedButton)
 
-      // Select this button
-      selectButton(selectedButton)
+        guard let selectedTitle = selectedButton.titleLabel?.text, !selectedTitle.isEmpty else {
+            Logger.error("handleRadioSelection: button has no title, cannot record selection")
+            return
+        }
 
-      // Get the selected option
-      let selectedTitle = selectedButton.titleLabel?.text ?? ""
+        currentSelection = selectedTitle
+        viewModel?.onSelectionChanged(selectedTitle)
+        updateNextButtonState()
+    }
 
-      // Update view model
-      viewModel.onSelectionChanged(selectedTitle)
+    private func handleCheckboxSelection(_ button: UIButton) {
+        button.isSelected.toggle()
 
-      // Update button state
-      updateNextButtonState()
-  }
+        if button.isSelected {
+            selectButton(button)
+        } else {
+            deselectButton(button)
+        }
 
-  private func handleCheckboxSelection(_ button: UIButton) {
-      button.isSelected.toggle()
+        // Build current selection from all selected checkboxes
+        let selectedTitles = optionButtons
+            .filter { $0.isSelected }
+            .compactMap { $0.titleLabel?.text }
+        currentSelection = selectedTitles.isEmpty ? nil : SurveyService.formatCheckboxAnswer(selectedTitles)
+        viewModel?.onSelectionChanged(currentSelection)
+        updateNextButtonState()
+    }
 
-      if button.isSelected {
-          selectButton(button)
-      } else {
-          deselectButton(button)
-      }
+    private func selectButton(_ button: UIButton) {
+        button.isSelected = true
+        button.backgroundColor = .systemGreen.withAlphaComponent(0.15)
+        button.layer.borderColor = UIColor.systemGreen.cgColor
+    }
 
-      let selectedTitle = button.titleLabel?.text ?? ""
-      if button.isSelected {
-          viewModel?.onSelectionChanged(selectedTitle)
-      }
+    private func deselectButton(_ button: UIButton) {
+        button.isSelected = false
+        button.backgroundColor = .systemGray6
+        button.layer.borderColor = UIColor.systemGray4.cgColor
+    }
 
-      // Update button state
-      updateNextButtonState()
-  }
+    private func updateNextButtonState() {
+        let hasSelection = currentSelection != nil
+        nextButton.isEnabled = hasSelection
+        nextButton.alpha = hasSelection ? 1.0 : 0.6
+    }
 
-  private func selectButton(_ button: UIButton) {
-      button.isSelected = true
-      button.backgroundColor = .systemGreen.withAlphaComponent(0.15)
-      button.layer.borderColor = UIColor.systemGreen.cgColor
-  }
-
-  private func deselectButton(_ button: UIButton) {
-      button.isSelected = false
-      button.backgroundColor = .systemGray6
-      button.layer.borderColor = UIColor.systemGray4.cgColor
-  }
-
-  private func updateNextButtonState() {
-      guard let viewModel = viewModel else { return }
-
-      // Enable next button only if an option is selected
-      let hasSelection = viewModel.selectedOption != nil
-      nextButton.isEnabled = hasSelection
-      nextButton.alpha = hasSelection ? 1.0 : 0.6
-  }
-
-  override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-      super.traitCollectionDidChange(previousTraitCollection)
-      if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-          layer.borderColor = UIColor.systemGray4.cgColor
-          for button in optionButtons {
-              if button.isSelected {
-                  button.layer.borderColor = UIColor.systemGreen.cgColor
-              } else {
-                  button.layer.borderColor = UIColor.systemGray4.cgColor
-              }
-          }
-      }
-  }
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            layer.borderColor = UIColor.systemGray4.cgColor
+            for button in optionButtons {
+                if button.isSelected {
+                    button.layer.borderColor = UIColor.systemGreen.cgColor
+                } else {
+                    button.layer.borderColor = UIColor.systemGray4.cgColor
+                }
+            }
+        }
+    }
 }

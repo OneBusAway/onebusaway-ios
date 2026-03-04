@@ -23,11 +23,12 @@ class SurveyViewController: FormViewController {
     private var heroResponseID: String?
     private var checkboxSelections: [Int: Set<String>] = [:]
 
-    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil) {
+    init(survey: Survey, surveyService: SurveyService, stopID: String? = nil, stopLocation: CLLocationCoordinate2D? = nil, heroResponseID: String? = nil) {
         self.survey = survey
         self.surveyService = surveyService
         self.stopID = stopID
         self.stopLocation = stopLocation
+        self.heroResponseID = heroResponseID
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -198,6 +199,8 @@ class SurveyViewController: FormViewController {
     }
 
     @objc private func cancelTapped() {
+        surveyService.markSurveyForLater(survey)
+        surveyService.setNextReminderDate()
         dismiss(animated: true)
     }
 

@@ -109,11 +109,6 @@ extension Survey {
         }
     }
 
-    // MARK: - Compatibility properties for UI layer
-
-    public var visibleStopList: [String]? { visibleStopsList }
-    public var visibleRouteList: [String]? { visibleRoutesList }
-
     /// Returns the first question (hero question) if it exists
     public var heroQuestion: SurveyQuestion? {
         return questions.first { $0.position == 1 }
