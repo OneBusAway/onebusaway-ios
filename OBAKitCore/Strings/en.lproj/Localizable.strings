@@ -197,6 +197,8 @@
 
 "survey_alert.do.not.show.again" = "Don't Show Again";
 
+"survey_service.not.available" = "Survey Service is unavailable.";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
 
