@@ -114,7 +114,10 @@ public final class SurveyService: SurveyServiceProtocol, ObservableObject {
         let userId = surveyStore.userSurveyId
 
         /// Retrieve the path ID used for updating survey responses.
-        let surveyResponseId = surveyStore.getSurveyResponse()?.surveyPathId() ?? ""
+        guard let surveyResponseId = surveyStore.getSurveyResponse()?.surveyPathId() else {
+            Logger.error("Missing survey update path from Survey Store for survey id: \(surveyId)")
+            throw SurveyError.missingUpdatePath
+        }
 
         let responsesModel = SurveySubmission(
             userIdentifier: userId,

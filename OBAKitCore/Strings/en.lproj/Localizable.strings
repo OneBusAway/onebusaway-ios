@@ -199,6 +199,10 @@
 
 "survey_service.not.available" = "Survey Service is unavailable.";
 
+"survey.external.url.missing" = "We couldn’t open the survey right now. Please try again later.";
+
+"survey_service.update.path.missing" = "Something went wrong when submitting your responses. Please try again later.";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
 
