@@ -586,7 +586,7 @@ final class SurveyServiceTests: OBATestCase {
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
         makeResponseFailureMock(Data(), url: url, statusCode: 500)
 
-        await service.fetchSurveys()
+        await service.fetchSurveys(force: true)
 
         // Surveys should be preserved, not cleared
         expect(service.allSurveys.count).to(equal(initialCount))
