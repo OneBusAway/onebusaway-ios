@@ -63,6 +63,7 @@ public final class SurveyService: ObservableObject {
            !allSurveys.isEmpty,
            let lastFetch = lastFetchDate,
            abs(lastFetch.timeIntervalSinceNow) < fetchCooldown {
+            Logger.info("fetchSurveys skipped: cooldown not elapsed")
             return
         }
 

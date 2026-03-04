@@ -563,6 +563,92 @@ final class SurveyServiceTests: OBATestCase {
         expect(service.isLoading).to(beFalse())
     }
 
+    // MARK: - Staleness / Cooldown Tests
+
+    @MainActor
+    func test_fetchSurveys_cooldownSkipsSecondFetch() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // Replace mock with different data — but cooldown should prevent fetching
+        mockDataLoader.removeMappedResponses()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        await service.fetchSurveys()
+
+        // Should still have original surveys (cooldown prevented re-fetch)
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).to(beNil()) // no error because fetch was skipped
+    }
+
+    @MainActor
+    func test_fetchSurveys_forceBypassesCooldown() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // force: true should bypass cooldown and actually fetch
+        await service.fetchSurveys(force: true)
+
+        // Fetch went through (no error since same mock data is still valid)
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).to(beNil())
+    }
+
+    @MainActor
+    func test_fetchSurveys_emptySurveysBypassesCooldown() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        // First fetch fails, leaving allSurveys empty
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+
+        // Replace with success data — should fetch because allSurveys is empty
+        mockDataLoader.removeMappedResponses()
+        let successData = Fixtures.loadData(file: "rest_surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        await service.fetchSurveys()
+
+        // Should have fetched despite cooldown because allSurveys was empty
+        expect(service.allSurveys.count).to(beGreaterThan(0))
+        expect(service.lastError).to(beNil())
+    }
+
     @MainActor
     func test_fetchSurveys_failure_preservesExistingSurveys() async {
         let store = UserDefaultsStore(userDefaults: userDefaults)

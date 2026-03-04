@@ -74,15 +74,10 @@ class SurveyBottomSheetController: FloatingPanelController {
 extension SurveyBottomSheetController: FloatingPanelControllerDelegate {
 
     func floatingPanelDidChangeState(_ fpc: FloatingPanelController) {
-        // Handle state changes if needed
-        let state = fpc.state
-
-        switch state {
-        case .hidden:
-            // Panel was dismissed by swipe
+        if fpc.state == .hidden {
+            surveyService.markSurveyForLater(survey)
+            surveyService.setNextReminderDate()
             dismiss(animated: false)
-        default:
-            break
         }
     }
 

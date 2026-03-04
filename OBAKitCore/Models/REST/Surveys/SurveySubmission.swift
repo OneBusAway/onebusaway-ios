@@ -98,12 +98,4 @@ public struct SurveySubmissionResponse: Codable, Hashable {
         case updatePath = "update_path"
         case userIdentifier = "user_identifier"
     }
-
-    public func surveyPathId() -> String? {
-        guard let pathId = updatePath.split(separator: "/").last.map(String.init), !pathId.isEmpty else {
-            return nil
-        }
-        return pathId
-    }
-
 }

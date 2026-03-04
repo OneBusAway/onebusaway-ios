@@ -586,9 +586,10 @@ public class StopViewController: UIViewController,
 
         self.listView.applyData()
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             await application.surveyService.fetchSurveys()
-            self.listView.applyData()
+            listView.applyData()
         }
     }
 
@@ -838,12 +839,16 @@ public class StopViewController: UIViewController,
     }
 
     private func handleSurveyAnswer(survey: Survey, answer: String) {
-        guard let heroQuestion = survey.heroQuestion else { return }
+        guard let heroQuestion = survey.heroQuestion else {
+            Logger.error("handleSurveyAnswer: survey \(survey.id) has no hero question")
+            return
+        }
         let response = SurveyService.createQuestionResponse(
             question: heroQuestion, answer: answer
         )
 
-        Task {
+        Task { [weak self] in
+            guard let self else { return }
             do {
                 let submission = try await application.surveyService.submitHeroQuestion(
                     survey: survey,
@@ -855,16 +860,16 @@ public class StopViewController: UIViewController,
                 if survey.remainingQuestions.isEmpty {
                     application.surveyService.markSurveyCompleted(survey)
                 } else {
-                    showFullSurvey(survey)
+                    showFullSurvey(survey, heroResponseID: submission.id)
                 }
+
+                application.surveyService.setNextReminderDate()
+                listView.applyData()
             } catch {
                 Logger.error("Survey submission failed: \(error)")
                 await AlertPresenter.show(error: error, presentingController: self)
             }
         }
-
-        application.surveyService.setNextReminderDate()
-        listView.applyData()
     }
 
     private func handleSurveyDismiss(survey: Survey) {
@@ -873,12 +878,13 @@ public class StopViewController: UIViewController,
         listView.applyData()
     }
 
-    private func showFullSurvey(_ survey: Survey) {
+    private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
         let surveyVC = SurveyViewController(
             survey: survey,
             surveyService: application.surveyService,
             stopID: stopID,
-            stopLocation: stop?.coordinate
+            stopLocation: stop?.coordinate,
+            heroResponseID: heroResponseID
         )
         let nav = UINavigationController(rootViewController: surveyVC)
         present(nav, animated: true)
