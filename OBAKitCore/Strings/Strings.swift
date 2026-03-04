@@ -146,4 +146,6 @@ public class Strings: NSObject {
     public static let surveyHeroQuestionAnswerError = OBALoc("survey_error.hero_question_answer.error", value: "Please enter a valid answer", comment: "Error message to show when the user has not answered the hero survey question with a valid answer.")
 
     public static let surveyAnswerSuccessfullySubmitted = OBALoc("survey_success.submitted", value: "Survey answer submitted! please answer rest of the questions for better feedback.", comment: "Success message to show when the survey is successfully submitted.")
+
+    public static let doNotShowAgain = OBALoc("survey_alert.do.not.show.again", value: "Don't Show Again", comment: "The action of not showing the survey again.")
 }

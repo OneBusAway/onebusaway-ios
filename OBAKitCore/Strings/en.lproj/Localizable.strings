@@ -194,6 +194,9 @@
 "survey_error.hero_question_answer.error" = "Please enter a valid answer";
 
 "survey_success.submitted" = "Survey answer submitted! please answer rest of the questions for better feedback";
+
+"survey_alert.do.not.show.again" = "Don't Show Again";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
 
