@@ -109,6 +109,7 @@ public final class SurveyService: ObservableObject {
 
     /// Determines whether a survey should be shown based on launch count and reminder date.
     public func shouldShowSurvey() -> Bool {
+        if userDataStore.alwaysShowSurveysOnStops { return true }
         guard userDataStore.isSurveyEnabled else { return false }
 
         let launchCount = userDataStore.appLaunchCount

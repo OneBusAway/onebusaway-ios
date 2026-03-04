@@ -223,6 +223,9 @@ public protocol UserDataStore: NSObjectProtocol {
     /// The next date at which the user should be reminded about surveys
     var nextSurveyReminderDate: Date? { get set }
 
+    /// Whether to always show surveys on stops, bypassing gating checks
+    var alwaysShowSurveysOnStops: Bool { get set }
+
     /// Increments the app launch count for "answer later" logic
     func incrementAppLaunchCount()
 
@@ -352,6 +355,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let appLaunchCount = "UserDataStore.appLaunchCount"
         static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
         static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
+        static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -850,6 +854,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         set {
             userDefaults.set(newValue, forKey: UserDefaultsKeys.nextSurveyReminderDate)
         }
+    }
+
+    public var alwaysShowSurveysOnStops: Bool {
+        get { userDefaults.bool(forKey: UserDefaultsKeys.alwaysShowSurveysOnStops) }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.alwaysShowSurveysOnStops) }
     }
 
     // MARK: - Survey Tracking Private Properties
