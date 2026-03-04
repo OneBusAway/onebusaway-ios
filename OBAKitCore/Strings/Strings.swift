@@ -148,4 +148,6 @@ public class Strings: NSObject {
     public static let surveyAnswerSuccessfullySubmitted = OBALoc("survey_success.submitted", value: "Survey answer submitted! please answer rest of the questions for better feedback.", comment: "Success message to show when the survey is successfully submitted.")
 
     public static let doNotShowAgain = OBALoc("survey_alert.do.not.show.again", value: "Don't Show Again", comment: "The action of not showing the survey again.")
+
+    public static let surveyServiceNotAvailable = OBALoc("survey_service.not.available", value: "Survey Service is unavailable.", comment: "Indicating that survey service is not setup up right or has some other issue.")
 }
