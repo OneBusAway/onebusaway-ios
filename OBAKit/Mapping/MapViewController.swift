@@ -29,8 +29,7 @@ class MapViewController: UIViewController,
     MapPanelDelegate,
     UIContextMenuInteractionDelegate,
     UILargeContentViewerInteractionDelegate,
-    UIGestureRecognizerDelegate,
-    SurveyViewHostingProtocol {
+    UIGestureRecognizerDelegate {
 
     // MARK: - Hoverbar
 
@@ -60,6 +59,11 @@ class MapViewController: UIViewController,
     var mapRegionManager: MapRegionManager {
         return application.mapRegionManager
     }
+
+    // MARK: - Surveys
+
+    private var surveyDisplayManager: SurveyDisplayManager?
+    private var hasShownMapSurveyThisSession = false
 
     // MARK: - Init
 
@@ -136,7 +140,6 @@ class MapViewController: UIViewController,
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
 
-        surveysVM.onAction(.onAppear)
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -154,7 +157,6 @@ class MapViewController: UIViewController,
         updateVisibleMapRect()
         layoutMapMargins()
 
-        observeSurveysState()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -162,13 +164,36 @@ class MapViewController: UIViewController,
 
         loadWeather()
         updateVoiceover()
+        checkForMapSurvey()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
-        stopObserveSurveysState()
+    }
+
+    // MARK: - Surveys
+
+    private func checkForMapSurvey() {
+        guard !hasShownMapSurveyThisSession else { return }
+
+        let surveyService = application.surveyService
+        guard surveyService.shouldShowSurvey() else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await surveyService.fetchSurveys()
+
+            guard let survey = surveyService.findSurveyForMap() else { return }
+
+            let displayManager = SurveyDisplayManager(surveyService: surveyService)
+            self.surveyDisplayManager = displayManager
+            let presented = displayManager.showSurvey(survey, in: self, presentationStyle: .bottomSheet)
+            guard presented else { return }
+            surveyService.setNextReminderDate()
+            hasShownMapSurveyThisSession = true
+        }
     }
 
     // MARK: - User Location
@@ -1072,121 +1097,6 @@ class MapViewController: UIViewController,
     public func largeContentViewerInteraction(_ interaction: UILargeContentViewerInteraction, didEndOn item: UILargeContentViewerItem?, at point: CGPoint) {
         if mapStatusView.frame.contains(point) {
             didTapMapStatus(interaction)
-        }
-    }
-
-    // MARK: - Survey
-
-    lazy var surveysVM: SurveysViewModel = SurveysViewModel(
-        stateManager: application.surveyStateManager,
-        service: application.surveyService,
-        prioritizer: application.surveyPrioritizer,
-        externalLinkBuilder: application.externalSurveyURLBuilder
-    )
-
-    var observationActive: Bool = false
-
-    private var surveyPopupController: UIViewController?
-
-    // MARK: - Survey Hero Question View
-//    @ViewBuilder
-//    private func getSurveyHeroQuestionView() -> some View {
-//        if let heroQuestion = surveysVM.heroQuestion {
-//            surveyHeroQuestionView(heroQuestion)
-//                .padding(.horizontal, 12)
-//        }
-//    }
-
-//    @ViewBuilder
-//    private func surveyHeroQuestionView(_ heroQuestion: SurveyQuestion) -> some View {
-////        let topPadding = ThemeMetrics.controllerMargin + 180
-//        Group {
-//            if heroQuestion.content.type == .externalSurvey {
-//                ExternalSurveyView(question: heroQuestion) { [weak self] in
-//                    self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-//                } onSubmitAction: {[weak self] in
-//                    self?.surveysVM.onAction(.onTapNextHeroQuestion)
-//                }
-//            } else {
-//                SurveyQuestionView(
-//                    question: heroQuestion,
-//                    isHeroQuestion: true
-//                ) { [weak self] answer in
-//                    self?.surveysVM.onAction(.updateHeroAnswer(answer))
-//                } onCloseAction: { [weak self] in
-//                    self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-//                } onSubmitAction: { [weak self] in
-//                    self?.surveysVM.onAction(.onTapNextHeroQuestion)
-//                }
-//            }
-//        }
-//    }
-
-    // MARK: - Show/Hide HeroQuestion
-    private func showSurveyHeroQuestionPopup() {
-        guard surveyPopupController == nil else { return }
-
-        let surveyQuestionView = MapHeroQuestionView(viewModel: surveysVM)
-        let hostingController = createPopupHostingController(content: surveyQuestionView)
-
-        addChild(hostingController)
-        view.insertSubview(hostingController.view, aboveSubview: mapRegionManager.mapView)
-
-        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            hostingController.view.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            hostingController.view.topAnchor.constraint(equalTo: toolbar.bottomAnchor, constant: 24),
-            hostingController.view.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: ThemeMetrics.controllerMargin),
-        ])
-
-        hostingController.didMove(toParent: self)
-        surveyPopupController = hostingController
-    }
-
-    private func createPopupHostingController<Content: View>(content: Content) -> UIHostingController<Content> {
-        let controller = UIHostingController(rootView: content)
-        controller.view.backgroundColor = .clear
-        return controller
-    }
-
-    @objc private func dismissSurveyPopup() {
-        surveyPopupController?.willMove(toParent: nil)
-        surveyPopupController?.view.removeFromSuperview()
-        surveyPopupController?.removeFromParent()
-        surveyPopupController = nil
-    }
-
-    // MARK: - Surveys VM Observation
-
-    func observeSurveysState() {
-        observationActive = true
-        observeSurveyLoadingState()
-        observeSurveyHeroQuestion()
-        observeSurveyToastMessage()
-        observeSurveyFullQuestionsState(application.viewRouter)
-        observeSurveyDismissActionSheet()
-        observeOpenExternalSurvey(application.viewRouter)
-    }
-
-    func stopObserveSurveysState() {
-        observationActive = false
-        ProgressHUD.dismiss()
-    }
-
-    func observeSurveyHeroQuestion() {
-        withObservationTracking { [weak self] in
-            guard let self else { return }
-            if self.surveysVM.showHeroQuestion {
-                showSurveyHeroQuestionPopup()
-            } else {
-                self.dismissSurveyPopup()
-            }
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyHeroQuestion()
-            }
         }
     }
 

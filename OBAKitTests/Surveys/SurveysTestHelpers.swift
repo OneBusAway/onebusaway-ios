@@ -1,8 +1,6 @@
 //
-//  SurveyVMTestHelpers.swift
-//  OBAKit
-//
-//  Created by Mohamed Sliem on 19/02/2026.
+//  SurveysTestHelpers.swift
+//  OBAKitTests
 //
 
 import Foundation
@@ -80,7 +78,7 @@ enum SurveysTestHelpers {
         visibleStopsList: [String]? = nil,
         visibleRoutesList: [String]? = nil,
         allowsMultipleResponses: Bool = false,
-        allowsVisible: Bool = false,
+        alwaysVisible: Bool = false,
         study: Study? = nil,
         questions: [SurveyQuestion]? = nil
     ) -> Survey {
@@ -96,7 +94,7 @@ enum SurveysTestHelpers {
             visibleStopsList: visibleStopsList,
             visibleRoutesList: visibleRoutesList,
             allowsMultipleResponses: allowsMultipleResponses,
-            allowsVisible: allowsVisible,
+            alwaysVisible: alwaysVisible,
             study: study ?? makeStudy(),
             questions: questions ?? [makeSurveyQuestion()]
         )
@@ -119,7 +117,7 @@ enum SurveysTestHelpers {
             "wheelchairBoarding": "unknown"
         }
         """.data(using: .utf8)!
-        let stop = try! JSONDecoder().decode(Stop.self, from: json)
+        let stop = try! JSONDecoder().decode(Stop.self, from: json) // swiftlint:disable:this force_try
         stop.routes = []
         return stop
     }

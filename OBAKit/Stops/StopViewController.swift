@@ -33,14 +33,13 @@ public class StopViewController: UIViewController,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    StopPreferencesViewDelegate,
-    SurveyViewHostingProtocol {
+    StopPreferencesViewDelegate {
 
     /// The available sections in this view controller.
     enum ListSections {
         case stopHeader
         case donations
-        case surveys
+        case survey
         case emptyData
         case serviceAlerts
         case arrivalDepartures(suffix: String)
@@ -99,22 +98,13 @@ public class StopViewController: UIViewController,
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
-    lazy var surveysVM = SurveysViewModel(
-        stopContext: true,
-        stop: stop,
-        stateManager: application.surveyStateManager,
-        service: application.surveyService,
-        prioritizer: application.surveyPrioritizer,
-        externalLinkBuilder: application.externalSurveyURLBuilder
-    )
-
     // MARK: - Data
     /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
             if stop != oldValue, let stop = stop {
                 stopUpdated(stop)
-                surveysVM.updateCurrentStop(stop)
+
             }
         }
     }
@@ -218,7 +208,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
-        listView.register(listViewItem: HeroQuestionListItem.self)
+        listView.register(listViewItem: SurveyStopListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -242,7 +232,7 @@ public class StopViewController: UIViewController,
             collapsedSections = [ListSections.serviceAlerts.sectionID]
         }
 
-        surveysVM.onAction(.onAppear)
+
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -258,7 +248,7 @@ public class StopViewController: UIViewController,
             await updateData()
         }
 
-        observeSurveysState()
+
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -280,7 +270,6 @@ public class StopViewController: UIViewController,
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
-        stopObserveSurveysState()
     }
 
     // MARK: - Tips
@@ -553,6 +542,12 @@ public class StopViewController: UIViewController,
         }
 
         self.listView.applyData()
+
+        Task { [weak self] in
+            guard let self else { return }
+            await application.surveyService.fetchSurveys()
+            listView.applyData()
+        }
     }
 
     /// Loads more departures for this `Stop` in cases where no `ArrivalDeparture` objects are being returned.
@@ -788,6 +783,83 @@ public class StopViewController: UIViewController,
         alertController.addAction(title: Strings.cancel, style: .cancel, handler: nil)
 
         present(alertController, animated: true)
+    }
+
+    // MARK: - Data/Surveys
+
+    private var surveySection: OBAListViewSection? {
+        guard application.surveyService.shouldShowSurvey() else { return nil }
+        guard let stop = stop else { return nil }
+        let routeIDs = stop.routes.map { $0.id }
+        guard let survey = application.surveyService.findSurveyForStop(
+            stopID: stopID, routeIDs: routeIDs
+        ) else { return nil }
+
+        let item = SurveyStopListItem(
+            survey: survey,
+            stopID: stopID,
+            selectedOption: nil,
+            onNext: { [weak self] answer in
+                self?.handleSurveyAnswer(survey: survey, answer: answer)
+            },
+            onDismiss: { [weak self] in
+                self?.handleSurveyDismiss(survey: survey)
+            },
+            onSelectionChanged: { _ in }
+        )
+        return listViewSection(for: .survey, title: survey.study.name, items: [item])
+    }
+
+    private func handleSurveyAnswer(survey: Survey, answer: String) {
+        guard let heroQuestion = survey.heroQuestion else {
+            Logger.error("handleSurveyAnswer: survey \(survey.id) has no hero question")
+            return
+        }
+        let response = SurveyService.createQuestionResponse(
+            question: heroQuestion, answer: answer
+        )
+
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let submission = try await application.surveyService.submitHeroQuestion(
+                    survey: survey,
+                    heroQuestionResponse: response,
+                    stopID: stopID,
+                    stopLocation: stop?.coordinate
+                )
+
+                if survey.remainingQuestions.isEmpty {
+                    application.surveyService.markSurveyCompleted(survey)
+                } else {
+                    showFullSurvey(survey, heroResponseID: submission.id)
+                }
+
+                application.surveyService.setNextReminderDate()
+                listView.applyData()
+            } catch {
+                Logger.error("Survey submission failed: \(error)")
+                await AlertPresenter.show(error: error, presentingController: self)
+            }
+        }
+    }
+
+    private func handleSurveyDismiss(survey: Survey) {
+        application.surveyService.dismissSurvey(survey)
+        application.surveyService.setNextReminderDate()
+        listView.applyData()
+    }
+
+    private func showFullSurvey(_ survey: Survey, heroResponseID: String? = nil) {
+        let surveyVC = SurveyViewController(
+            survey: survey,
+            surveyService: application.surveyService,
+            stopID: stopID,
+            stopLocation: stop?.coordinate,
+            heroResponseID: heroResponseID
+        )
+        let nav = UINavigationController(rootViewController: surveyVC)
+        present(nav, animated: true)
     }
 
     // MARK: - Data/Stop Arrivals
@@ -1349,57 +1421,6 @@ public class StopViewController: UIViewController,
         else {
             return "User Distance: 03200-INFINITY"
         }
-    }
-
-    // MARK: - Survey Section
-    private var surveySection: OBAListViewSection? {
-        guard let model = surveysVM.heroQuestion, surveysVM.showHeroQuestion else { return nil }
-
-        let heroQuestion = HeroQuestionListItem(
-            question: model,
-            answer: surveysVM.heroQuestionAnswer
-        ) { [weak self] answer in
-            self?.surveysVM.onAction(.updateHeroAnswer(answer))
-        } onSubmitAction: { [weak self] in
-            guard let self else { return }
-            surveysVM.onAction(.onTapNextHeroQuestion)
-        } onCloseAction: { [weak self] in
-            self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-        }
-
-        return listViewSection(for: .surveys, title: nil, items: [heroQuestion])
-    }
-
-    // MARK: - Survey Observation
-
-    var observationActive: Bool = false
-
-    func observeSurveysState() {
-        observationActive = true
-        observeSurveyLoadingState()
-        observeSurveyHeroQuestion()
-        observeSurveyToastMessage()
-        observeSurveyFullQuestionsState(application.viewRouter)
-        observeSurveyDismissActionSheet()
-        observeOpenExternalSurvey(application.viewRouter)
-    }
-
-    func observeSurveyHeroQuestion() {
-        withObservationTracking { [weak self] in
-            guard let self else { return }
-            _ = self.surveysVM.heroQuestion
-            self.listView.applyData()
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyHeroQuestion()
-            }
-        }
-    }
-
-    func stopObserveSurveysState() {
-        observationActive = false
-        ProgressHUD.dismiss()
     }
 
 }

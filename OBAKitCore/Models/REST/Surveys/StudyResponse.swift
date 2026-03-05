@@ -9,7 +9,7 @@
 
 import Foundation
 
-/// Represents a Study surveys response containing the survey data  with associated information
+/// Top-level response containing surveys and region metadata.
 public struct StudyResponse: Codable, Hashable {
 
     public let surveys: [Survey]
@@ -47,7 +47,7 @@ public struct Survey: Codable, Hashable {
 
     public let allowsMultipleResponses: Bool
 
-    public let allowsVisible: Bool
+    public let alwaysVisible: Bool
 
     public let study: Study
 
@@ -65,12 +65,30 @@ public struct Survey: Codable, Hashable {
         case visibleStopsList = "visible_stop_list"
         case visibleRoutesList = "visible_route_list"
         case allowsMultipleResponses = "allows_multiple_responses"
-        case allowsVisible = "always_visible"
+        case alwaysVisible = "always_visible"
         case study
         case questions
     }
 
-    public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, allowsVisible: Bool, study: Study, questions: [SurveyQuestion]) {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(Int.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        showOnMap = try container.decodeIfPresent(Bool.self, forKey: .showOnMap) ?? false
+        showOnStops = try container.decodeIfPresent(Bool.self, forKey: .showOnStops) ?? false
+        startDate = try container.decodeIfPresent(Date.self, forKey: .startDate)
+        endDate = try container.decodeIfPresent(Date.self, forKey: .endDate)
+        visibleStopsList = try container.decodeIfPresent([String].self, forKey: .visibleStopsList)
+        visibleRoutesList = try container.decodeIfPresent([String].self, forKey: .visibleRoutesList)
+        allowsMultipleResponses = try container.decodeIfPresent(Bool.self, forKey: .allowsMultipleResponses) ?? false
+        alwaysVisible = try container.decodeIfPresent(Bool.self, forKey: .alwaysVisible) ?? false
+        study = try container.decode(Study.self, forKey: .study)
+        questions = try container.decode([SurveyQuestion].self, forKey: .questions)
+    }
+
+    public init(id: Int, name: String, createdAt: Date, updatedAt: Date, showOnMap: Bool, showOnStops: Bool, startDate: Date?, endDate: Date?, visibleStopsList: [String]?, visibleRoutesList: [String]?, allowsMultipleResponses: Bool, alwaysVisible: Bool, study: Study, questions: [SurveyQuestion]) {
         self.id = id
         self.name = name
         self.createdAt = createdAt
@@ -82,11 +100,13 @@ public struct Survey: Codable, Hashable {
         self.visibleStopsList = visibleStopsList
         self.visibleRoutesList = visibleRoutesList
         self.allowsMultipleResponses = allowsMultipleResponses
-        self.allowsVisible = allowsVisible
+        self.alwaysVisible = alwaysVisible
         self.study = study
         self.questions = questions
     }
 }
+
+extension Survey: Identifiable { }
 
 extension Survey {
 
@@ -105,6 +125,46 @@ extension Survey {
                 return $0.content.asExternalSurveyContent != nil
             }
         }
+    }
+
+    /// Returns the first question (hero question) if it exists
+    public var heroQuestion: SurveyQuestion? {
+        return questions.first { $0.position == 1 }
+    }
+
+    /// Returns all questions except the hero question
+    public var remainingQuestions: [SurveyQuestion] {
+        guard let hero = heroQuestion else { return questions }
+        return questions.filter { $0.id != hero.id }
+    }
+
+    /// Returns true if the survey is currently active (within date range)
+    public var isActive: Bool {
+        let now = Date()
+        if let startDate = startDate, now < startDate { return false }
+        if let endDate = endDate, now > endDate { return false }
+        return true
+    }
+
+    /// Returns true if the survey should be shown on the specified stop.
+    /// Checks `showOnStops` and `isActive` before matching the stop list.
+    public func shouldShowOnStop(_ stopID: String) -> Bool {
+        guard showOnStops, isActive else { return false }
+        guard let visibleStops = visibleStopsList else { return true }
+        return visibleStops.contains(stopID)
+    }
+
+    /// Returns true if the survey should be shown for the specified route.
+    /// Checks `showOnStops` and `isActive` before matching the route list.
+    public func shouldShowOnRoute(_ routeID: String) -> Bool {
+        guard showOnStops, isActive else { return false }
+        guard let visibleRoutes = visibleRoutesList else { return true }
+        return visibleRoutes.contains(routeID)
+    }
+
+    /// Returns true if the survey should be shown on the map
+    public var shouldShowOnMap: Bool {
+        return showOnMap && isActive
     }
 
 }
@@ -238,4 +298,13 @@ public struct ExternalSurveyContent: Codable, Hashable {
     public let url: String?
     public let provider: String?
     public let embeddedDataFields: [String]?
+}
+
+// MARK: - QuestionContent Compatibility
+
+extension QuestionContent {
+    /// Display text for UI layer compatibility
+    public var displayText: String { labelText }
+    /// Type string for API submission compatibility
+    public var typeString: String { type.rawValue }
 }

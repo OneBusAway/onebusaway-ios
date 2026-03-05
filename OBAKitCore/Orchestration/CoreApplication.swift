@@ -97,7 +97,7 @@ open class CoreApplication: NSObject,
         refreshServices()
 
         /// Updates the app launch count
-        userDataStore.increaseAppLaunchCount()
+        userDataStore.incrementAppLaunchCount()
     }
 
     /// This function reloads the REST API, Obaco Services, and Survey Services.
@@ -170,7 +170,7 @@ open class CoreApplication: NSObject,
             return
         }
 
-        self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier))
+        self.apiService = RESTAPIService(APIServiceConfiguration(baseURL: region.OBABaseURL, apiKey: config.apiKey, uuid: userUUID, appVersion: config.appVersion, regionIdentifier: region.regionIdentifier, surveyBaseURL: region.sidecarBaseURL))
     }
 
     // MARK: - Obaco
@@ -272,52 +272,12 @@ open class CoreApplication: NSObject,
 
     // MARK: - Surveys
 
-    private var surveyServiceAPI: SurveyAPIService?
+    public private(set) lazy var surveyService = SurveyService(apiService: apiService, userDataStore: userDefaultsStore)
 
-    public lazy var surveyService: SurveyServiceProtocol = SurveyService(apiService: surveyServiceAPI, surveyStore: userDefaultsStore)
-
-    public lazy var surveyStateManager: SurveyStateProtocol = SurveyStateManager(surveyStore: userDefaultsStore)
-
-    public lazy var surveyPrioritizer: SurveyPrioritizing = SurveyPrioritizer(surveyStore: userDefaultsStore)
-
-    public lazy var externalSurveyURLBuilder: ExternalSurveyURLBuilderProtocol = ExternalSurveyURLBuilder(
-        userStore: userDataStore,
-        userID: userDefaultsStore.userSurveyId,
-        application: self
-    )
-
-    /// Recreates the Survey API service based on the current region and user survey UUID.
-    /// This should be called when the region refresh/changes.
+    /// Recreates the survey service when the API service changes (region refresh/change).
     private func refreshSurveysService() {
-        guard let region = regionsService.currentRegion, let sidecarBaseURL = region.sidecarBaseURL else {
-            surveyServiceAPI = nil
-            return
+        Task { @MainActor in
+            self.surveyService = SurveyService(apiService: self.apiService, userDataStore: self.userDefaultsStore)
         }
-
-        let surveyUUID = userDefaultsStore.userSurveyId
-
-        let configuration = APIServiceConfiguration(
-            baseURL: sidecarBaseURL,
-            uuid: surveyUUID,
-            regionIdentifier: region.regionIdentifier
-        )
-
-        surveyServiceAPI = SurveyAPIService(configuration)
-
-        surveyService = SurveyService(apiService: surveyServiceAPI, surveyStore: userDefaultsStore)
     }
-}
-
-// MARK: - Survey URL ApplicationContext
-
-extension CoreApplication: SurveyURLApplicationContext {
-
-    public var currentRegionIdentifier: Int? {
-        currentRegion?.regionIdentifier
-    }
-
-    public var currentCoordinate: CLLocationCoordinate2D? {
-        locationService.currentLocation?.coordinate
-    }
-
 }
