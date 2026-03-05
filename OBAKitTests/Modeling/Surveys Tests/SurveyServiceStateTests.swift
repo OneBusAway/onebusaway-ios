@@ -91,6 +91,27 @@ final class SurveyServiceStateTests: OBATestCase {
         expect(result).to(beTrue())
     }
 
+    // MARK: - Issue 9: alwaysShowSurveysOnStops should not bypass isSurveyEnabled
+
+    func test_shouldShowSurvey_returnsFalse_whenDisabled_evenIfAlwaysShowIsOn() {
+        testUserDataStore.isSurveyEnabled = false
+        testUserDataStore.alwaysShowSurveysOnStops = true
+        setAppLaunchCount(3)
+
+        let result = surveyService.shouldShowSurvey()
+        expect(result).to(beFalse())
+    }
+
+    func test_shouldShowSurvey_returnsTrue_whenEnabledAndAlwaysShowIsOn() {
+        testUserDataStore.isSurveyEnabled = true
+        testUserDataStore.alwaysShowSurveysOnStops = true
+        // Launch count 1 — NOT a multiple of 3, but alwaysShow should bypass that
+        setAppLaunchCount(1)
+
+        let result = surveyService.shouldShowSurvey()
+        expect(result).to(beTrue())
+    }
+
     // MARK: - setNextReminderDate
 
     func test_setNextReminderDate_setsDateThreeDaysAhead() {
@@ -154,18 +175,18 @@ final class SurveyServiceStateTests: OBATestCase {
 
     // MARK: - formatCheckboxAnswer
 
-    func test_formatCheckboxAnswer_normalCase() {
-        let result = SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
+    func test_formatCheckboxAnswer_normalCase() throws {
+        let result = try SurveyService.formatCheckboxAnswer(["Option A", "Option B"])
         expect(result).to(equal("[\"Option A\",\"Option B\"]"))
     }
 
-    func test_formatCheckboxAnswer_emptyArray() {
-        let result = SurveyService.formatCheckboxAnswer([])
+    func test_formatCheckboxAnswer_emptyArray() throws {
+        let result = try SurveyService.formatCheckboxAnswer([])
         expect(result).to(equal("[]"))
     }
 
-    func test_formatCheckboxAnswer_singleItem() {
-        let result = SurveyService.formatCheckboxAnswer(["Only"])
+    func test_formatCheckboxAnswer_singleItem() throws {
+        let result = try SurveyService.formatCheckboxAnswer(["Only"])
         expect(result).to(equal("[\"Only\"]"))
     }
 

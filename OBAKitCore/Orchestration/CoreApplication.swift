@@ -276,8 +276,8 @@ open class CoreApplication: NSObject,
 
     /// Recreates the survey service when the API service changes (region refresh/change).
     private func refreshSurveysService() {
-        MainActor.assumeIsolated {
-            surveyService = SurveyService(apiService: apiService, userDataStore: userDefaultsStore)
+        Task { @MainActor in
+            self.surveyService = SurveyService(apiService: self.apiService, userDataStore: self.userDefaultsStore)
         }
     }
 }

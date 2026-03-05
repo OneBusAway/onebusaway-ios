@@ -238,6 +238,39 @@ final class SurveyServicePrioritizationTests: OBATestCase {
         expect(result).to(beNil())
     }
 
+    // MARK: - Issue 1: Expired surveys should not be returned
+
+    func test_findSurveyForStop_expiredSurvey_returnsNil() async {
+        let surveys = [
+            makeSurvey(
+                id: 0,
+                showOnStops: true,
+                startDate: Date().addingTimeInterval(-7200),
+                endDate: Date().addingTimeInterval(-3600),
+                questions: makeQuestions()
+            )
+        ]
+        let service = await fetchAndReturnService(surveys: surveys)
+        // Expired survey should not be found, even though showOnStops is true
+        let result = service.findSurveyForStop(stopID: "STOP_A", routeIDs: [])
+        expect(result).to(beNil())
+    }
+
+    func test_findSurveyForMap_expiredSurvey_returnsNil() async {
+        let surveys = [
+            makeSurvey(
+                id: 0,
+                showOnStops: false,
+                startDate: Date().addingTimeInterval(-7200),
+                endDate: Date().addingTimeInterval(-3600),
+                questions: makeQuestions()
+            )
+        ]
+        let service = await fetchAndReturnService(surveys: surveys)
+        let result = service.findSurveyForMap()
+        expect(result).to(beNil())
+    }
+
     // MARK: - Mark For Later
 
     func test_markedForLater_showsAgainAtCorrectLaunchCount() async {
@@ -268,6 +301,8 @@ extension SurveyServicePrioritizationTests {
         name: String = "Survey",
         showOnMap: Bool = true,
         showOnStops: Bool = true,
+        startDate: Date? = Date().addingTimeInterval(-3600),
+        endDate: Date? = Date().addingTimeInterval(3600),
         stopList: [String]? = nil,
         routesList: [String]? = nil,
         multipleResponses: Bool = false,
@@ -284,8 +319,8 @@ extension SurveyServicePrioritizationTests {
             updatedAt: Date(),
             showOnMap: showOnMap,
             showOnStops: showOnStops,
-            startDate: Date().addingTimeInterval(-3600),
-            endDate: Date().addingTimeInterval(3600),
+            startDate: startDate,
+            endDate: endDate,
             visibleStopsList: stopList,
             visibleRoutesList: routesList,
             allowsMultipleResponses: multipleResponses,

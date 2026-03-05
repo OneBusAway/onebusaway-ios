@@ -61,7 +61,12 @@ public struct SurveySubmission: Codable, Hashable {
 
         // Server expects responses as a JSON string, not a nested array
         let responsesData = try JSONEncoder().encode(responses)
-        let responsesString = String(data: responsesData, encoding: .utf8) ?? "[]"
+        guard let responsesString = String(data: responsesData, encoding: .utf8) else {
+            throw EncodingError.invalidValue(responses, .init(
+                codingPath: container.codingPath + [CodingKeys.responses],
+                debugDescription: "Failed to encode responses as UTF-8 string"
+            ))
+        }
         try container.encode(responsesString, forKey: .responses)
     }
 

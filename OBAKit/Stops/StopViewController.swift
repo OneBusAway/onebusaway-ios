@@ -33,8 +33,7 @@ public class StopViewController: UIViewController,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    StopPreferencesViewDelegate,
-    SurveyViewHostingProtocol {
+    StopPreferencesViewDelegate {
 
     /// The available sections in this view controller.
     enum ListSections {
@@ -111,22 +110,13 @@ public class StopViewController: UIViewController,
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
-    lazy var surveysVM = SurveysViewModel(
-        stopContext: true,
-        stop: stop,
-        stateManager: application.surveyStateManager,
-        service: application.surveyService,
-        prioritizer: application.surveyPrioritizer,
-        externalLinkBuilder: application.externalSurveyURLBuilder
-    )
-
     // MARK: - Data
     /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
             if stop != oldValue, let stop = stop {
                 stopUpdated(stop)
-                surveysVM.updateCurrentStop(stop)
+
             }
         }
     }
@@ -255,7 +245,7 @@ public class StopViewController: UIViewController,
             collapsedSections.insert(ListSections.serviceAlerts.sectionID)
         }
 
-        surveysVM.onAction(.onAppear)
+
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -271,7 +261,7 @@ public class StopViewController: UIViewController,
             await updateData()
         }
 
-        observeSurveysState()
+
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -293,7 +283,6 @@ public class StopViewController: UIViewController,
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
-        stopObserveSurveysState()
     }
 
     // MARK: - Tips
@@ -676,10 +665,6 @@ public class StopViewController: UIViewController,
 
         if let donationsSection {
             sections.append(donationsSection)
-        }
-
-        if let surveySection {
-            sections.append(surveySection)
         }
 
         sections.append(serviceAlertsSection)
@@ -1532,57 +1517,6 @@ public class StopViewController: UIViewController,
         else {
             return "User Distance: 03200-INFINITY"
         }
-    }
-
-    // MARK: - Survey Section
-    private var surveySection: OBAListViewSection? {
-        guard let model = surveysVM.heroQuestion, surveysVM.showHeroQuestion else { return nil }
-
-        let heroQuestion = HeroQuestionListItem(
-            question: model,
-            answer: surveysVM.heroQuestionAnswer
-        ) { [weak self] answer in
-            self?.surveysVM.onAction(.updateHeroAnswer(answer))
-        } onSubmitAction: { [weak self] in
-            guard let self else { return }
-            surveysVM.onAction(.onTapNextHeroQuestion)
-        } onCloseAction: { [weak self] in
-            self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
-        }
-
-        return listViewSection(for: .surveys, title: nil, items: [heroQuestion])
-    }
-
-    // MARK: - Survey Observation
-
-    var observationActive: Bool = false
-
-    func observeSurveysState() {
-        observationActive = true
-        observeSurveyLoadingState()
-        observeSurveyHeroQuestion()
-        observeSurveyToastMessage()
-        observeSurveyFullQuestionsState(application.viewRouter)
-        observeSurveyDismissActionSheet()
-        observeOpenExternalSurvey(application.viewRouter)
-    }
-
-    func observeSurveyHeroQuestion() {
-        withObservationTracking { [weak self] in
-            guard let self else { return }
-            _ = self.surveysVM.heroQuestion
-            self.listView.applyData()
-        } onChange: {
-            Task { @MainActor [weak self] in
-                guard let self, self.observationActive else { return }
-                self.observeSurveyHeroQuestion()
-            }
-        }
-    }
-
-    func stopObserveSurveysState() {
-        observationActive = false
-        ProgressHUD.dismiss()
     }
 
 }
