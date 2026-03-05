@@ -137,9 +137,15 @@ struct TripDetailsView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.green)
                         
-                        Text(status.vehicleID != nil ? String(format: OBALoc("trip_details.vehicle_fmt", value: "Vehicle %@", comment: "Vehicle format"), status.vehicleID!) : OBALoc("trip_details.vehicle_status", value: "Vehicle Status", comment: "Vehicle status title"))
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.white)
+                        if let vehicleID = status.vehicleID {
+                            Text(String(format: OBALoc("trip_details.vehicle_fmt", value: "Vehicle %@", comment: "Vehicle format"), vehicleID))
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.white)
+                        } else {
+                            Text(OBALoc("trip_details.vehicle_status", value: "Vehicle Status", comment: "Vehicle status title"))
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
                     }
                     
                     HStack(spacing: 4) {
@@ -220,10 +226,14 @@ struct TripDetailsView: View {
     
     private func formatTime(seconds: Int, serviceDate: Date?) -> String {
         let date = (serviceDate ?? Date()).addingTimeInterval(TimeInterval(seconds))
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        return Self.timeFormatter.string(from: date)
     }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
 }
 
 struct StopRow: View {
@@ -266,12 +276,13 @@ struct StopRow: View {
             // Content Card
              VStack(alignment: .leading, spacing: 2) {
                  HStack(alignment: .top) {
-                     let displayName: String = {
-                         if let name = stopTime.stopHeadsign, !name.isEmpty {
-                             return name
-                         }
-                         return "Stop \(stopTime.stopId?.components(separatedBy: "_").last ?? "Unknown")"
-                     }()
+                    let displayName: String = {
+                        if let name = stopTime.stopHeadsign, !name.isEmpty {
+                            return name
+                        }
+                        let stopSuffix = stopTime.stopId?.components(separatedBy: "_").last ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value")
+                        return String(format: OBALoc("trip_details.stop_title_fmt", value: "Stop %@", comment: "Stop title format"), stopSuffix)
+                    }()
                      
                      Text(displayName)
                          .font(.system(size: 15, weight: .semibold))
@@ -310,8 +321,12 @@ struct StopRow: View {
     
     private func formatTime(seconds: Int, serviceDate: Date?) -> String {
         let date = (serviceDate ?? Date()).addingTimeInterval(TimeInterval(seconds))
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        return Self.timeFormatter.string(from: date)
     }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
 }

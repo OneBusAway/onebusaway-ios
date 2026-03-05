@@ -37,7 +37,7 @@ struct ItineraryDetailView: View {
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration / 60)
-        return "\(minutes) min"
+        return String(format: OBALoc("itinerary.duration_minutes_fmt", value: "%d min", comment: "Duration minutes format"), minutes)
     }
 }
 
@@ -82,7 +82,7 @@ struct LegDetailRow: View {
         if leg.mode.uppercased() == "WALK" {
             return String(format: OBALoc("itinerary.leg.walk_format", value: "Walk %dm", comment: "Walk distance format"), Int(leg.distance))
         } else {
-            return "\(leg.routeShortName ?? leg.mode) - \(leg.from.name)"
+            return String(format: OBALoc("itinerary.leg.title_fmt", value: "%@ - %@", comment: "Leg title format"), leg.routeShortName ?? leg.mode, leg.from.name)
         }
     }
     
@@ -105,13 +105,17 @@ struct LegDetailRow: View {
     }
     
     private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        return Self.timeFormatter.string(from: date)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration / 60)
-        return "\(minutes)m"
+        return String(format: OBALoc("itinerary.duration_minutes_short_fmt", value: "%dm", comment: "Short duration minutes format"), minutes)
     }
+
+    private static let timeFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f
+    }()
 }

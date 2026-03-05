@@ -114,7 +114,7 @@ class StopArrivalsViewModel: ObservableObject {
         RecentStopsViewModel.shared.addRecentStop(stop)
 
         // Notify other views
-        NotificationCenter.default.post(name: NSNotification.Name("RecentStopsUpdated"), object: nil)
+        NotificationCenter.default.post(name: .RecentStopsUpdated, object: nil)
     }
 
     func loadRoutes() async {
@@ -122,6 +122,8 @@ class StopArrivalsViewModel: ObservableObject {
         do {
             let fetched = try await apiClient.fetchRoutesForStop(stopID: stopID)
             routes = fetched
+        } catch is CancellationError {
+            return
         } catch let apiError as OBAAPIError {
             Logger.error("loadRoutes failed: \(apiError)")
         } catch {
@@ -131,6 +133,7 @@ class StopArrivalsViewModel: ObservableObject {
         }
     }
     
-    var upcomingArrivals: [OBAArrival] { arrivals }
+    var upcomingArrivals: [OBAArrival] {
+        arrivals.filter { $0.minutesFromNow >= 0 }
+    }
 }
-

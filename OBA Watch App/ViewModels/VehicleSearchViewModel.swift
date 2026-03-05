@@ -98,44 +98,16 @@ final class VehicleSearchViewModel: ObservableObject {
         searchTask = Task {
             var searchLocation: CLLocation?
             var searchRegion: MKMapRect?
-            var agencies: [OBAAgencyCoverage]?
 
             do {
-                // Attempt to geocode the query first
-                if !trimmed.isEmpty {
-                    do {
-                        let placemarks = try await geocoder.geocodeAddressString(trimmed)
-                        if let location = placemarks.first?.location {
-                            searchLocation = location
-                        } else {
-                            // Geocoding failed, try to get agency coverage
-                            agencies = try await apiClient.fetchAgenciesWithCoverage()
-                            if let agencyBound = agencies?.first?.agencyRegionBound {
-                                searchRegion = agencyBound.serviceRect
-                            }
-                        }
-                    } catch {
-                        // Geocoding failed, try to get agency coverage for default location
-                        agencies = try await apiClient.fetchAgenciesWithCoverage()
-                        if let agencyBound = agencies?.first?.agencyRegionBound {
-                            searchRegion = agencyBound.serviceRect
-                        }
-                    }
-                }
-
-                if searchLocation == nil {
-                    // If no searchLocation yet, try to get it from agency coverage
-                    if agencies == nil {
-                        agencies = try await apiClient.fetchAgenciesWithCoverage()
-                    }
-                    if let first = agencies?.first {
-                        searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
-                        searchRegion = first.agencyRegionBound.serviceRect
-                    } else {
-                        self.errorMessage = "Location required for search"
-                        self.isLoading = false
-                        return
-                    }
+                do {
+                    let resolved = try await LocationResolver.resolve(query: trimmed, geocoder: geocoder, apiClient: apiClient, locationProvider: locationProvider)
+                    searchLocation = resolved.0
+                    searchRegion = resolved.1
+                } catch {
+                    self.errorMessage = error.watchOSUserFacingMessage
+                    self.isLoading = false
+                    return
                 }
 
                 let request = MKLocalSearch.Request()
@@ -151,7 +123,7 @@ final class VehicleSearchViewModel: ObservableObject {
                 do {
                     response = try await search.start()
                 } catch {
-                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
+                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unexpected", value: "An unexpected error occurred during local search.", comment: "Unexpected error")
                     self.isLoading = false
                     return
                 }

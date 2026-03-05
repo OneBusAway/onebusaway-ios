@@ -33,61 +33,16 @@ class StopSearchViewModel: ObservableObject {
         searchTask = Task {
             var searchLocation: CLLocation?
             var searchRegion: MKMapRect?
-            var agencies: [OBAAgencyCoverage]?
 
             do {
-                if !query.isEmpty {
-                    do {
-                        let placemarks = try await geocoder.geocodeAddressString(query)
-                        if let location = placemarks.first?.location {
-                            searchLocation = location
-                        } else {
-                            // Geocoding failed, try to get agency coverage
-                            agencies = try await apiClient.fetchAgenciesWithCoverage()
-                            if let agencyBound = agencies?.first?.agencyRegionBound {
-                                searchRegion = agencyBound.serviceRect
-                            }
-                            if agencies?.first != nil {
-                                await self.executeSearch(trimmed: query, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                            } else if let location = locationProvider() {
-                                await self.executeSearch(trimmed: query, location: location, searchRegion: searchRegion)
-                            } else {
-                                await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
-                            }
-                            await MainActor.run { self.isLoading = false }
-                            return
-                        }
-                    } catch {
-                        // Geocoding failed, try to get agency coverage for default location
-                        agencies = try await apiClient.fetchAgenciesWithCoverage()
-                        if agencies?.first != nil {
-                            await self.executeSearch(trimmed: query, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                        } else if let location = locationProvider() {
-                            await self.executeSearch(trimmed: query, location: location, searchRegion: searchRegion)
-                        } else {
-                            await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
-                        }
-                        await MainActor.run { self.isLoading = false }
-                        return
-                    }
-                } else {
-                    searchLocation = locationProvider()
-                }
-
-                if searchLocation == nil {
-                    // If no searchLocation yet, try to get it from agency coverage
-                    if agencies == nil {
-                        agencies = try await apiClient.fetchAgenciesWithCoverage()
-                    }
-                    if let first = agencies?.first {
-                        searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
-                        searchRegion = first.agencyRegionBound.serviceRect
-                    } else {
-                        await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
-                        isLoading = false
-                        return
-                    }
-                }
+                let resolved = try await LocationResolver.resolve(
+                    query: query.isEmpty ? nil : query,
+                    geocoder: geocoder,
+                    apiClient: apiClient,
+                    locationProvider: locationProvider
+                )
+                searchLocation = resolved.0
+                searchRegion = resolved.1
 
                 let request = MKLocalSearch.Request()
                 request.naturalLanguageQuery = query
@@ -103,9 +58,7 @@ class StopSearchViewModel: ObservableObject {
                     response = try await search.start()
                 } catch {
                     Logger.error("Search failed: \(error)")
-                    await MainActor.run {
-                        self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unexpected", value: "An unexpected error occurred during local search.", comment: "Unexpected error")
-                    }
+                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unexpected", value: "An unexpected error occurred during local search.", comment: "Unexpected error")
                     isLoading = false
                     return
                 }
@@ -115,19 +68,15 @@ class StopSearchViewModel: ObservableObject {
                 } else if let searchLoc = searchLocation {
                     await self.executeSearch(trimmed: query, location: searchLoc, searchRegion: searchRegion)
                 } else {
-                    await MainActor.run { self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required") }
+                    self.errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
                 }
             } catch {
-                await MainActor.run {
-                    self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("common.error.unexpected", value: "An unexpected error occurred.", comment: "Unexpected error")
-                }
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("common.error.unexpected", value: "An unexpected error occurred.", comment: "Unexpected error")
             }
-            
-            await MainActor.run {
-                self.isLoading = false
-            }
+            self.isLoading = false
         }
     }
+
 
     private func executeSearch(trimmed: String, location: CLLocation, searchRegion: MKMapRect?) async {
         do {
@@ -137,22 +86,15 @@ class StopSearchViewModel: ObservableObject {
                 radius: 5000.0
             )
 
-            await MainActor.run {
-                self.stops = result.stops.sorted { (s1: OBAStop, s2: OBAStop) in
-                    let loc1 = CLLocation(latitude: s1.latitude, longitude: s1.longitude)
-                    let loc2 = CLLocation(latitude: s2.latitude, longitude: s2.longitude)
-                    let d1 = loc1.distance(from: location)
-                    let d2 = loc2.distance(from: location)
-                    return d1 < d2
-                }
-                if self.stops.isEmpty {
-                    // If no error but no stops, keep empty list (view will show empty state)
-                }
+            self.stops = result.stops.sorted { (s1: OBAStop, s2: OBAStop) in
+                let loc1 = CLLocation(latitude: s1.latitude, longitude: s1.longitude)
+                let loc2 = CLLocation(latitude: s2.latitude, longitude: s2.longitude)
+                let d1 = loc1.distance(from: location)
+                let d2 = loc2.distance(from: location)
+                return d1 < d2
             }
         } catch {
-            await MainActor.run {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unable_load_stops", value: "Unable to load stops.", comment: "Unable to load stops")
-            }
+            self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unable_load_stops", value: "Unable to load stops.", comment: "Unable to load stops")
         }
     }
 }

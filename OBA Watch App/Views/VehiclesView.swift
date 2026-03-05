@@ -19,7 +19,7 @@ struct VehiclesView: View {
             .refreshable {
                 await viewModel.loadNearbyVehicles()
             }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("LocationUpdated"))) { _ in
+            .onReceive(NotificationCenter.default.publisher(for: .LocationUpdated)) { _ in
                 Task {
                     await viewModel.loadNearbyVehicles()
                 }
@@ -44,17 +44,11 @@ struct VehiclesView: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "bus")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
-            Text(OBALoc("vehicles.empty.title", value: "No Vehicles Found", comment: "Empty state title"))
-                .font(.headline)
-            Text(OBALoc("vehicles.empty.subtitle", value: "No vehicles currently in service", comment: "Empty state subtitle"))
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding()
+        EmptyStateView(
+            systemImage: "bus",
+            title: OBALoc("vehicles.empty.title", value: "No Vehicles Found", comment: "Empty state title"),
+            message: OBALoc("vehicles.empty.subtitle", value: "No vehicles currently in service", comment: "Empty state subtitle")
+        )
     }
     private var listView: some View {
         let limited = Array(viewModel.trips.prefix(30))
