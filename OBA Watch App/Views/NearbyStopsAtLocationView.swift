@@ -13,6 +13,7 @@ struct NearbyStopsAtLocationView: View {
 
     @StateObject private var viewModel: NearbyStopsViewModel
     @State private var searchText: String = ""
+    @State private var infoMessage: String?
 
     init(title: String, coordinate: CLLocationCoordinate2D) {
         self.title = title
@@ -50,7 +51,8 @@ struct NearbyStopsAtLocationView: View {
                             destLon: nil
                         )
                         if !ok {
-                            WKInterfaceDevice.current().play(.failure)
+                            WatchFeedbackGenerator.shared.error()
+                            infoMessage = OBALoc("deeplink.failure", value: "Unable to contact iPhone. Make sure your devices are connected.", comment: "Deep link failure")
                         }
                     } label: {
                         Label(OBALoc("common.plan_on_phone", value: "Plan on Phone", comment: "Action to plan trip on phone"), systemImage: "figure.walk")
@@ -60,20 +62,23 @@ struct NearbyStopsAtLocationView: View {
         } emptyState: {
             emptyStateView
         }
+        .alert(OBALoc("common.info", value: "Info", comment: "Alert title for information"), isPresented: Binding(
+            get: { infoMessage != nil },
+            set: { newValue in
+                if !newValue { infoMessage = nil }
+            }
+        )) {
+            Button(OBALoc("common.ok", value: "OK", comment: "OK button"), role: .cancel) { }
+        } message: {
+            Text(infoMessage ?? "")
+        }
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "location.slash")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
-            Text(OBALoc("nearby_stops.no_stops", value: "No Stops Found", comment: "Empty state title for nearby stops"))
-                .font(.headline)
-            Text(viewModel.locationStatus)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
+        EmptyStateView(
+            systemImage: "location.slash",
+            title: OBALoc("nearby_stops.no_stops", value: "No Stops Found", comment: "Empty state title for nearby stops"),
+            message: viewModel.locationStatus
+        )
     }
 }

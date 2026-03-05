@@ -22,18 +22,11 @@ struct RecentStopsView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "clock")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
-            Text(OBALoc("recent_stops.no_recent_stops", value: "No Recent Stops", comment: "Empty state title for recent stops"))
-                .font(.headline)
-            Text(OBALoc("recent_stops.view_stops_instruction", value: "View stops to see them here", comment: "Instruction for recent stops"))
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
+        EmptyStateView(
+            systemImage: "clock",
+            title: OBALoc("recent_stops.no_recent_stops", value: "No Recent Stops", comment: "Empty state title for recent stops"),
+            message: OBALoc("recent_stops.view_stops_instruction", value: "View stops to see them here", comment: "Instruction for recent stops")
+        )
     }
     
     private var recentStopsList: some View {

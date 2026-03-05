@@ -386,8 +386,14 @@ struct MainMenuView: View {
             // Show the warning only after a 15-second window, so it doesn't
             // flash briefly on fast connections where sync completes quickly.
             Task {
-                try? await Task.sleep(nanoseconds: 15 * 1_000_000_000)
-                showTimeSyncWarning = true
+                do {
+                    try await Task.sleep(nanoseconds: 15 * 1_000_000_000)
+                    showTimeSyncWarning = true
+                } catch is CancellationError {
+                    return
+                } catch {
+                    return
+                }
             }
         }
         .onChange(of: appState.timeSyncSucceeded) { _, succeeded in

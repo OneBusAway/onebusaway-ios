@@ -23,7 +23,7 @@ class RecentStopsViewModel: ObservableObject {
         loadRecentStops()
         
         // Listen for updates
-        NotificationCenter.default.publisher(for: NSNotification.Name("RecentStopsUpdated"))
+        NotificationCenter.default.publisher(for: .RecentStopsUpdated)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.loadRecentStops()
@@ -71,4 +71,3 @@ class RecentStopsViewModel: ObservableObject {
         }
     }
 }
-

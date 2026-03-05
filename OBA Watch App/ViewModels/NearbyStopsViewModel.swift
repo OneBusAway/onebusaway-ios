@@ -27,7 +27,7 @@ class NearbyStopsViewModel: ObservableObject {
         self.locationProvider = locationProvider
         
         // Listen for location updates
-        NotificationCenter.default.publisher(for: NSNotification.Name("LocationUpdated"))
+        NotificationCenter.default.publisher(for: .LocationUpdated)
             .sink { [weak self] _ in
                 Task { @MainActor in
                     await self?.loadNearbyStops()
