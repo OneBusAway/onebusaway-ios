@@ -175,6 +175,8 @@ public extension OBAAPIClient {
         do {
             let result = try await fetchTripsForLocation(latitude: latitude, longitude: longitude, latSpan: latSpan, lonSpan: lonSpan)
             addUnique(result)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             lastError = error
             Logger.error("fetchTripsForLocation failed: \(error)")
@@ -187,6 +189,8 @@ public extension OBAAPIClient {
             let radius = max(latSpan, lonSpan) * 111000.0
             let routes = try await searchRoutes(query: "", latitude: latitude, longitude: longitude, radius: max(radius, 5000.0))
             addUnique(await fetchTripsForRoutes(routes))
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             lastError = error
             Logger.error("searchRoutes failed: \(error)")
@@ -201,6 +205,8 @@ public extension OBAAPIClient {
                 abs($0.centerLatitude - latitude) < 0.5 && abs($0.centerLongitude - longitude) < 0.5
             }
             addUnique(await fetchVehiclesForAgencies(nearbyAgencies), filterByLocation: true)
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
             lastError = error
             Logger.error("fetchAgenciesWithCoverage failed: \(error)")

@@ -195,45 +195,52 @@ struct OBARawListResponse<Element: Decodable & Sendable>: Decodable, Sendable, O
     }
 
     init(from decoder: Decoder) throws {
-        // Primary path: decode a standard OBA RESTAPIResponse-style envelope.
-        if let container = try? decoder.container(keyedBy: CodingKeys.self),
-           container.contains(.data) {
-            let dataContainer = try container.decode(DataContainer.self, forKey: .data)
-            self.stop = dataContainer.stop
-            self.references = dataContainer.references
+        var tmpList: Element
+        var tmpStop: OBARawStopResponse.StopEntry?
+        var tmpReferences: OBARawStopResponse.References?
 
-            if let entry = dataContainer.entry {
-                self.list = entry
+        do {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            if container.contains(.data) {
+                let dataContainer = try container.decode(DataContainer.self, forKey: .data)
+                tmpStop = dataContainer.stop
+                tmpReferences = dataContainer.references
+
+                if let entry = dataContainer.entry {
+                    tmpList = entry
+                } else if let list = dataContainer.list {
+                    tmpList = list
+                } else if let stops = dataContainer.stops {
+                    tmpList = stops
+                } else if let routes = dataContainer.routes {
+                    tmpList = routes
+                } else if let trips = dataContainer.trips {
+                    tmpList = trips
+                } else if let arrivalsAndDepartures = dataContainer.arrivalsAndDepartures {
+                    tmpList = arrivalsAndDepartures
+                } else {
+                    throw DecodingError.dataCorrupted(
+                        .init(codingPath: [CodingKeys.data],
+                              debugDescription: "Expected a known data key (entry, list, stops, routes, trips, arrivalsAndDepartures) in data container.")
+                    )
+                }
+
+                self.list = tmpList
+                self.stop = tmpStop
+                self.references = tmpReferences
                 return
-            } else if let list = dataContainer.list {
-                self.list = list
-                return
-            } else if let stops = dataContainer.stops {
-                self.list = stops
-                return
-            } else if let routes = dataContainer.routes {
-                self.list = routes
-                return
-            } else if let trips = dataContainer.trips {
-                self.list = trips
-                return
-            } else if let arrivalsAndDepartures = dataContainer.arrivalsAndDepartures {
-                self.list = arrivalsAndDepartures
-                return
-            } else {
-                throw DecodingError.dataCorrupted(
-                    .init(codingPath: [CodingKeys.data],
-                          debugDescription: "Expected a known data key (entry, list, stops, routes, trips, arrivalsAndDepartures) in data container.")
-                )
             }
+        } catch {
+            Logger.error("OBARawListResponse: Failed to decode envelope: \(error)")
         }
 
-        // Fallback: some deployments may return a bare list or single entry
-        // without the usual envelope. In that case, decode Element directly
-        // from the top level.
-        self.list = try Element(from: decoder)
-        self.stop = nil
-        self.references = nil
+        tmpList = try Element(from: decoder)
+        tmpStop = nil
+        tmpReferences = nil
+
+        self.list = tmpList
+        self.stop = tmpStop
+        self.references = tmpReferences
     }
 }
 
@@ -279,13 +286,19 @@ struct OBARawVehicleStatus: Decodable, Sendable {
         self.routeShortName = try container.decodeIfPresent(String.self, forKey: .routeShortName)
         self.tripHeadsign = try container.decodeIfPresent(String.self, forKey: .tripHeadsign)
 
-        if let locationContainer = try? container.nestedContainer(keyedBy: LocationKeys.self, forKey: .location) {
-            self.latitude = try locationContainer.decodeIfPresent(Double.self, forKey: .lat)
-            self.longitude = try locationContainer.decodeIfPresent(Double.self, forKey: .lon)
-        } else {
-            self.latitude = nil
-            self.longitude = nil
+        var tmpLat: Double?
+        var tmpLon: Double?
+        do {
+            let locationContainer = try container.nestedContainer(keyedBy: LocationKeys.self, forKey: .location)
+            tmpLat = try locationContainer.decodeIfPresent(Double.self, forKey: .lat)
+            tmpLon = try locationContainer.decodeIfPresent(Double.self, forKey: .lon)
+        } catch {
+            Logger.error("OBARawVehicleStatus: location decoding failed: \(error)")
+            tmpLat = nil
+            tmpLon = nil
         }
+        self.latitude = tmpLat
+        self.longitude = tmpLon
     }
 
     func toDomainVehicle() -> OBAVehicle {
@@ -316,10 +329,15 @@ struct OBARawStopsForRouteResponse: Decodable, Sendable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        if let dataContainer = try? container.decode(OBARawStopsForRoute.self, forKey: .data) {
+        do {
+            let dataContainer = try container.decode(OBARawStopsForRoute.self, forKey: .data)
             self.data = dataContainer
-        } else if let entryContainer = try? container.decode(OBARawStopsForRoute.DataContainer.self, forKey: .data) {
-            // Some deployments have a double "data" or "entry" wrapper
+            return
+        } catch {
+            Logger.error("OBARawStopsForRouteResponse: Failed to decode OBARawStopsForRoute: \(error)")
+        }
+        do {
+            let entryContainer = try container.decode(OBARawStopsForRoute.DataContainer.self, forKey: .data)
             let stopGroupings = entryContainer.entry?.stopGroupings ?? entryContainer.stopGroupings
             self.data = OBARawStopsForRoute(
                 references: entryContainer.references,
@@ -327,11 +345,12 @@ struct OBARawStopsForRouteResponse: Decodable, Sendable {
                 polylines: entryContainer.polylines,
                 stopGroupings: stopGroupings
             )
-        } else {
-            // Fallback for missing/null data
-            Logger.warn("OBARawStopsForRouteResponse: Unable to decode data container, falling back to empty data")
-            self.data = OBARawStopsForRoute(references: nil, entry: nil, polylines: nil, stopGroupings: nil)
+            return
+        } catch {
+            Logger.error("OBARawStopsForRouteResponse: Failed to decode DataContainer: \(error)")
         }
+        Logger.warn("OBARawStopsForRouteResponse: Unable to decode data container, falling back to empty data")
+        self.data = OBARawStopsForRoute(references: nil, entry: nil, polylines: nil, stopGroupings: nil)
     }
 }
 

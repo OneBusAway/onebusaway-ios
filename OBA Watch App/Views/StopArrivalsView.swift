@@ -157,7 +157,7 @@ struct StopArrivalsView: View {
         }
         .refreshable {
             await viewModel.loadArrivals()
-            WKInterfaceDevice.current().play(.success)
+            WatchFeedbackGenerator.shared.success()
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

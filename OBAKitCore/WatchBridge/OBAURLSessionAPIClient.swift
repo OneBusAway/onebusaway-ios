@@ -377,14 +377,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
 
     public func fetchShapeIDForRoute(routeID: OBARouteID) async throws -> String? {
         let path = "/api/where/schedule-for-route/\(routeID).json"
-        do {
-            let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-            let response: OBARawScheduleForRouteResponse = try await get(url: url)
-            return response.firstShapeID()
-        } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error)")
-            return nil
-        }
+        let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
+        let response: OBARawScheduleForRouteResponse = try await get(url: url)
+        return response.firstShapeID()
     }
 
     public func fetchShape(shapeID: String) async throws -> String {
@@ -614,6 +609,8 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         for (index, closure) in closures.enumerated() {
             do {
                 return try await closure()
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
                 Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error)")
                 lastError = error

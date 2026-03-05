@@ -23,14 +23,14 @@ class SearchViewModel: ObservableObject {
     private let apiClientProvider: () -> OBAAPIClient
     private let locationProvider: () -> CLLocation?
     private var searchTask: Task<Void, Never>?
-    private let recentStopsKey = "watch_recent_search_stops"
+    private let recentStopsKey = "OBASharedRecentStops"
     private let recentSearchTermsKey = "watch_recent_search_terms"
     private let bookmarksKey = "watch.bookmarks"
 
     init(apiClientProvider: @escaping () -> OBAAPIClient, locationProvider: @escaping () -> CLLocation?) {
         self.apiClientProvider = apiClientProvider
         self.locationProvider = locationProvider
-        self.recentStops = Self.loadRecentStops(from: recentStopsKey)
+        self.recentStops = RecentStopsViewModel.shared.recentStops
         self.recentSearchTerms = WatchAppState.userDefaults.stringArray(forKey: recentSearchTermsKey) ?? []
         self.bookmarkResults = Self.loadBookmarks(from: bookmarksKey)
     }
@@ -76,20 +76,8 @@ class SearchViewModel: ObservableObject {
     }
 
     func recordRecent(stop: OBAStop) {
-        // Move stop to front and cap at 10 entries.
-        recentStops.removeAll { $0.id == stop.id }
-        recentStops.insert(stop, at: 0)
-        if recentStops.count > 10 {
-            recentStops = Array(recentStops.prefix(10))
-        }
-
-        // Persist to UserDefaults.
-        do {
-            let data = try JSONEncoder().encode(recentStops)
-            WatchAppState.userDefaults.set(data, forKey: recentStopsKey)
-        } catch {
-            Logger.error("Failed to persist recent stops: \(error)")
-        }
+        RecentStopsViewModel.shared.addRecentStop(stop)
+        recentStops = RecentStopsViewModel.shared.recentStops
     }
     
     private func searchStops(query: String) async {
@@ -98,41 +86,35 @@ class SearchViewModel: ObservableObject {
         errorMessage = nil
         
         defer { isLoading = false }
-        
-        var location = locationProvider()
-        if location == nil {
-            do {
-                let agencies = try await apiClient.fetchAgenciesWithCoverage()
-                if let first = agencies.first {
-                    location = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
-                } else {
-                    errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
-                    return
-                }
-            } catch {
-                errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
-                return
-            }
+
+        var location: CLLocation
+        do {
+            let resolved = try await LocationResolver.resolve(
+                query: query,
+                geocoder: CLGeocoder(),
+                apiClient: apiClient,
+                locationProvider: locationProvider
+            )
+            location = resolved.0
+        } catch {
+            errorMessage = error.watchOSUserFacingMessage
+            return
         }
         
         do {
             let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let loc = location else {
-                errorMessage = OBALoc("search.error.location_required", value: "Location required for search", comment: "Location required")
-                return
-            }
             let fetched = try await apiClient.searchStops(
                 query: trimmed,
-                latitude: loc.coordinate.latitude,
-                longitude: loc.coordinate.longitude,
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
                 radius: 5000.0
             )
 
             searchResults = fetched.stops.sorted { (s1: OBAStop, s2: OBAStop) in
                 let loc1 = CLLocation(latitude: s1.latitude, longitude: s1.longitude)
                 let loc2 = CLLocation(latitude: s2.latitude, longitude: s2.longitude)
-                let d1 = loc1.distance(from: loc)
-                let d2 = loc2.distance(from: loc)
+                let d1 = loc1.distance(from: location)
+                let d2 = loc2.distance(from: location)
                 return d1 < d2
             }
         } catch {
@@ -159,15 +141,7 @@ class SearchViewModel: ObservableObject {
         }
     }
 
-    private static func loadRecentStops(from key: String) -> [OBAStop] {
-        guard let data = WatchAppState.userDefaults.data(forKey: key) else { return [] }
-        do {
-            return try JSONDecoder().decode([OBAStop].self, from: data)
-        } catch {
-            Logger.error("Failed to decode recent stops: \(error)")
-            return []
-        }
-    }
+    private static func loadRecentStops(from key: String) -> [OBAStop] { RecentStopsViewModel.shared.recentStops }
 
     private static func loadBookmarks(from key: String) -> [WatchBookmark] {
         guard let data = WatchAppState.userDefaults.data(forKey: key) else { return [] }
