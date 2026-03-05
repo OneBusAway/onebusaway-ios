@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>OBAWatch</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>CLKComplicationPrincipalClass</key>
+	<string>$(PRODUCT_MODULE_NAME).ComplicationController</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>onebusaway.co</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
+	<dict>
+		<key>MapStatusView</key>
+		<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>See where you are in relation to transit, and help you navigate more easily.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>org.onebusaway.iphone.user_activity.stop</string>
+		<string>org.onebusaway.iphone.user_activity.trip</string>
+	</array>
+	<key>OBAKitConfig</key>
+	<dict>
+		<key>AppDevelopersEmailAddress</key>
+		<string>iphone-app@onebusaway.org</string>
+		<key>AppGroup</key>
+		<string>group.org.onebusaway.iphone</string>
+		<key>BundledRegionsFileName</key>
+		<string>regions.json</string>
+		<key>ExtensionURLScheme</key>
+		<string>onebusaway</string>
+		<key>RESTServerAPIKey</key>
+		<string>org.onebusaway.iphone</string>
+		<key>RegionsServerAPIPath</key>
+		<string>/regions-v3.json</string>
+		<key>RegionsServerBaseAddress</key>
+		<string>https://regions.onebusaway.org</string>
+	</dict>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKRunsIndependentlyOfCompanionApp</key>
+	<true/>
+</dict>
+</plist>

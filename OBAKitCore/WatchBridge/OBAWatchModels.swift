@@ -23,13 +23,28 @@ public struct OBAArrivalsResult: Codable, Equatable, Sendable {
     public let stopName: String?
     public let stopCode: String?
     public let stopDirection: String?
+    /// The geographic latitude of the stop, if available from the server response.
+    /// Nil when the server did not return coordinates (some fallback code paths).
+    public let stopLatitude: Double?
+    /// The geographic longitude of the stop, if available from the server response.
+    public let stopLongitude: Double?
 
-    public init(arrivals: [OBAArrival], routes: [OBARoute], stopName: String?, stopCode: String?, stopDirection: String?) {
+    public init(
+        arrivals: [OBAArrival],
+        routes: [OBARoute],
+        stopName: String?,
+        stopCode: String?,
+        stopDirection: String?,
+        stopLatitude: Double? = nil,
+        stopLongitude: Double? = nil
+    ) {
         self.arrivals = arrivals
         self.routes = routes
         self.stopName = stopName
         self.stopCode = stopCode
         self.stopDirection = stopDirection
+        self.stopLatitude = stopLatitude
+        self.stopLongitude = stopLongitude
     }
 }
 
@@ -594,11 +609,11 @@ public extension OBAArrival {
         case .unknown:
             return nil
         case .early:
-            return "Early"
+            return OBALoc("arrival.schedule_status.early", value: "Early", comment: "Schedule status: early")
         case .onTime:
-            return "On time"
+            return OBALoc("arrival.schedule_status.on_time", value: "On time", comment: "Schedule status: on time")
         case .delayed:
-            return "Delayed"
+            return OBALoc("arrival.schedule_status.delayed", value: "Delayed", comment: "Schedule status: delayed")
         }
     }
 }

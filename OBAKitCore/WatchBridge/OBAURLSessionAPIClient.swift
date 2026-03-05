@@ -243,7 +243,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
                     routes: response.toDomainRoutes(),
                     stopName: domainStop.name,
                     stopCode: domainStop.code,
-                    stopDirection: domainStop.direction
+                    stopDirection: domainStop.direction,
+                    stopLatitude: domainStop.latitude,
+                    stopLongitude: domainStop.longitude
                 )
             }
         ])
@@ -258,7 +260,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
             routes: routes,
             stopName: response.stop?.name,
             stopCode: response.stop?.code,
-            stopDirection: response.stop?.direction
+            stopDirection: response.stop?.direction,
+            stopLatitude: response.stop?.lat,
+            stopLongitude: response.stop?.lon
         )
     }
 
@@ -373,14 +377,9 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
 
     public func fetchShapeIDForRoute(routeID: OBARouteID) async throws -> String? {
         let path = "/api/where/schedule-for-route/\(routeID).json"
-        do {
-            let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
-            let response: OBARawScheduleForRouteResponse = try await get(url: url)
-            return response.firstShapeID()
-        } catch {
-            Logger.error("schedule-for-route failed for \(routeID): \(error.localizedDescription)")
-            return nil
-        }
+        let url = try buildURL(path: path, queryItems: apiKeyQueryItem)
+        let response: OBARawScheduleForRouteResponse = try await get(url: url)
+        return response.firstShapeID()
     }
 
     public func fetchShape(shapeID: String) async throws -> String {
@@ -610,8 +609,10 @@ public final class OBAURLSessionAPIClient: OBAAPIClient {
         for (index, closure) in closures.enumerated() {
             do {
                 return try await closure()
+            } catch is CancellationError {
+                throw CancellationError()
             } catch {
-                Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error.localizedDescription)")
+                Logger.error("\(function) attempt \(index + 1)/\(closures.count) failed: \(error)")
                 lastError = error
             }
         }
