@@ -779,7 +779,14 @@ public class StopViewController: UIViewController,
         let onSelectAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.didSelectArrivalDepartureItem(item) }
         let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
         let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
-        let scheduleAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
+
+        // Only show the schedule-for-route action if the current region supports it.
+        let scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
+        if application.currentRegion?.supportsScheduleForRoute ?? true {
+            scheduleAction = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
+        } else {
+            scheduleAction = nil
+        }
 
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,

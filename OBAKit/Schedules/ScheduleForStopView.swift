@@ -160,7 +160,8 @@ struct ScheduleForStopView: View {
             }
 
             // Segmented control: Stop Focused Schedules vs Full Route Schedules
-            if stopViewModel.selectedRouteID != nil {
+            // Only show the full route schedule option if the region supports the schedule-for-route API.
+            if stopViewModel.selectedRouteID != nil && (application.currentRegion?.supportsScheduleForRoute ?? true) {
                 Picker(StopScheduleStrings.chooseScheduleType, selection: $isShowingFullRouteSchedule) {
                     Text(StopScheduleStrings.stopSchedule).tag(false)
                     Text(StopScheduleStrings.fullRouteSchedule).tag(true)
