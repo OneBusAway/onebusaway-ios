@@ -60,11 +60,18 @@ class PulsingVehicleAnnotationView: PulsingAnnotationView {
                 let tripStatus = annotation.tripStatus
             else { return }
 
-            updateHeading(tripStatus: tripStatus)
-
-            routeType = tripStatus.activeTrip.route.routeType
-            isRealTime = tripStatus.isRealTime
+            applyTripStatus(tripStatus)
         }
+    }
+
+    /// Updates the annotation view to reflect the current trip status.
+    /// Call this when the underlying `VehicleAnnotation.tripStatus` has been
+    /// updated in-place so that heading, route type, and real-time state
+    /// are refreshed without re-creating the annotation.
+    func applyTripStatus(_ tripStatus: TripStatus) {
+        updateHeading(tripStatus: tripStatus)
+        routeType = tripStatus.activeTrip.route.routeType
+        isRealTime = tripStatus.isRealTime
     }
 
     // MARK: - Heading

@@ -12,7 +12,7 @@ import GRDB
 
 /// Manages the SQLite database used to cache transit stops for offline access and faster map rendering.
 /// See: https://github.com/OneBusAway/onebusaway-ios/issues/62
-public class StopCacheDatabase {
+public final class StopCacheDatabase: @unchecked Sendable {
 
     /// The underlying GRDB database queue for serialized access.
     let dbQueue: DatabaseQueue
