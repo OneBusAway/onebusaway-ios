@@ -54,7 +54,12 @@ extension RESTAPIService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let responsesData = try JSONEncoder().encode(additionalResponses)
-        let responsesString = String(data: responsesData, encoding: .utf8) ?? "[]"
+        guard let responsesString = String(data: responsesData, encoding: .utf8) else {
+            throw EncodingError.invalidValue(additionalResponses, .init(
+                codingPath: [],
+                debugDescription: "Failed to encode additional responses as UTF-8 string"
+            ))
+        }
         let requestBody = ["responses": responsesString]
         request.httpBody = try JSONEncoder().encode(requestBody)
 

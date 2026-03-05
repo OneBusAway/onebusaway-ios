@@ -108,9 +108,11 @@ public final class SurveyService: ObservableObject {
     // MARK: - Survey Gating
 
     /// Determines whether a survey should be shown based on launch count and reminder date.
+    /// When `alwaysShowSurveysOnStops` is set, bypasses launch count and reminder checks
+    /// but still respects the global `isSurveyEnabled` toggle.
     public func shouldShowSurvey() -> Bool {
-        if userDataStore.alwaysShowSurveysOnStops { return true }
         guard userDataStore.isSurveyEnabled else { return false }
+        if userDataStore.alwaysShowSurveysOnStops { return true }
 
         let launchCount = userDataStore.appLaunchCount
         guard launchCount > 0 && launchCount % surveyLaunchInterval == 0 else {
@@ -208,18 +210,16 @@ public final class SurveyService: ObservableObject {
     }
 
     /// Formats multiple checkbox selections into a JSON array string.
-    public static func formatCheckboxAnswer(_ selections: [String]) -> String {
-        do {
-            let jsonData = try JSONEncoder().encode(selections)
-            guard let result = String(data: jsonData, encoding: .utf8) else {
-                Logger.error("formatCheckboxAnswer: UTF-8 encoding failed for \(selections.count) selections")
-                return "[]"
-            }
-            return result
-        } catch {
-            Logger.error("Failed to encode checkbox selections: \(error)")
-            return "[]"
+    /// - Throws: If encoding fails.
+    public static func formatCheckboxAnswer(_ selections: [String]) throws -> String {
+        let jsonData = try JSONEncoder().encode(selections)
+        guard let result = String(data: jsonData, encoding: .utf8) else {
+            throw EncodingError.invalidValue(selections, .init(
+                codingPath: [],
+                debugDescription: "Failed to encode checkbox selections as UTF-8 string"
+            ))
         }
+        return result
     }
 
     // MARK: - Private: Visibility Filtering
@@ -243,7 +243,7 @@ public final class SurveyService: ObservableObject {
     }
 
     private func findSurvey(isVisibleOnStop: Bool, stopID: String?, routeIDs: [String]) -> Survey? {
-        let surveys = allSurveys
+        let surveys = visibleSurveys
         guard !surveys.isEmpty else { return nil }
 
         let userID = userDataStore.surveyUserIdentifier

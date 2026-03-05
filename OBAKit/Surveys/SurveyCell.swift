@@ -278,7 +278,7 @@ class SurveyCell: OBAListViewCell {
         let selectedTitles = optionButtons
             .filter { $0.isSelected }
             .compactMap { $0.titleLabel?.text }
-        currentSelection = selectedTitles.isEmpty ? nil : SurveyService.formatCheckboxAnswer(selectedTitles)
+        currentSelection = selectedTitles.isEmpty ? nil : (try? SurveyService.formatCheckboxAnswer(selectedTitles))
         viewModel?.onSelectionChanged(currentSelection)
         updateNextButtonState()
     }

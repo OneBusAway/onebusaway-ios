@@ -158,8 +158,9 @@ class SurveyViewController: FormViewController {
                     }
 
                     let selections = Array(self.checkboxSelections[question.id, default: []])
-                    let jsonAnswer = SurveyService.formatCheckboxAnswer(selections)
-                    self.updateResponse(for: question, answer: jsonAnswer)
+                    if let jsonAnswer = try? SurveyService.formatCheckboxAnswer(selections) {
+                        self.updateResponse(for: question, answer: jsonAnswer)
+                    }
                 }
             }
 

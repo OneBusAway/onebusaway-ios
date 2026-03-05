@@ -22,26 +22,28 @@ public class SurveyDisplayManager {
         self.surveyService = surveyService
     }
 
-    /// Shows a survey in the specified view controller
+    /// Shows a survey in the specified view controller.
+    /// - Returns: `true` if the survey was successfully presented, `false` otherwise.
+    @discardableResult
     public func showSurvey(
         _ survey: Survey,
         in viewController: UIViewController,
         stopID: String? = nil,
         stopLocation: CLLocationCoordinate2D? = nil,
         presentationStyle: SurveyPresentationStyle = .bottomSheet
-    ) {
+    ) -> Bool {
         self.presentingViewController = viewController
 
         switch presentationStyle {
         case .bottomSheet:
-            showBottomSheet(survey: survey, stopID: stopID, stopLocation: stopLocation)
+            return showBottomSheet(survey: survey, stopID: stopID, stopLocation: stopLocation)
         }
     }
 
-    private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: CLLocationCoordinate2D?) {
+    private func showBottomSheet(survey: Survey, stopID: String?, stopLocation: CLLocationCoordinate2D?) -> Bool {
         guard let presentingViewController = presentingViewController else {
             Logger.warn("Cannot present survey bottom sheet: presentingViewController was deallocated")
-            return
+            return false
         }
 
         let bottomSheet = SurveyBottomSheetController(
@@ -52,6 +54,7 @@ public class SurveyDisplayManager {
         )
 
         presentingViewController.present(bottomSheet, animated: true)
+        return true
     }
 }
 

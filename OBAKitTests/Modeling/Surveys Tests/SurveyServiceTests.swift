@@ -450,6 +450,36 @@ final class SurveyServiceTests: OBATestCase {
         )
     }
 
+    // MARK: - Issue 8: SurveySubmission encodes responses as JSON string
+
+    func test_surveySubmission_encodesResponsesToJSONString() throws {
+        let submission = SurveySubmission(
+            userIdentifier: "user-1",
+            surveyId: 42,
+            responses: [
+                QuestionAnswerSubmission(
+                    questionId: 1,
+                    questionType: "text",
+                    questionLabel: "Q1",
+                    answer: "yes"
+                )
+            ]
+        )
+
+        let encoded = try JSONEncoder().encode(submission)
+        let json = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+
+        // responses should be a String (JSON-stringified), not an Array
+        let responsesValue = json["responses"]
+        expect(responsesValue).to(beAKindOf(String.self))
+
+        // The string should be valid JSON containing our response
+        let responsesString = responsesValue as! String
+        let parsed = try JSONSerialization.jsonObject(with: responsesString.data(using: .utf8)!) as! [[String: Any]]
+        expect(parsed.count).to(equal(1))
+        expect(parsed[0]["answer"] as? String).to(equal("yes"))
+    }
+
     // MARK: - Missing Optional Fields
 
     func test_getSurveys_missingOptionalBooleans_defaultsToFalse() async throws {
