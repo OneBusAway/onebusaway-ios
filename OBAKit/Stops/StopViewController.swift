@@ -45,12 +45,14 @@ public class StopViewController: UIViewController,
         case loadMoreButton
         case dataAttribution
 
+        static let pastDeparturesPrefix = "section_past_arrival_departures_"
+
         var sectionID: String {
             switch self {
             case .arrivalDepartures(let suffix):
                 return "section_arrival_departures_\(suffix)"
             case .pastArrivalDepartures(let suffix):
-                return "section_past_arrival_departures_\(suffix)"
+                return ListSections.pastDeparturesPrefix + suffix
             default:
                 return "section_\(self)"
             }
@@ -322,7 +324,7 @@ public class StopViewController: UIViewController,
         ])
     }
 
-    public var pastDeparturesCollapsed: Bool {
+    private var pastDeparturesCollapsed: Bool {
         get { application.userDefaults.bool(forKey: UserDefaultsKeys.pastDeparturesCollapsed) }
         set { application.userDefaults.set(newValue, forKey: UserDefaultsKeys.pastDeparturesCollapsed) }
     }
@@ -1091,11 +1093,18 @@ public class StopViewController: UIViewController,
     }()
 
     public func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
-        return section.id == ListSections.serviceAlerts.sectionID || section.id.hasPrefix("section_past_arrival_departures_")
+        return section.id == ListSections.serviceAlerts.sectionID ||
+                section.id.hasPrefix(ListSections.pastDeparturesPrefix)
     }
 
     func didCollapseSection() {
-        self.stopViewShowsServiceAlerts = !collapsedSections.contains(ListSections.serviceAlerts.sectionID)
+        stopViewShowsServiceAlerts = !collapsedSections.contains(ListSections.serviceAlerts.sectionID)
+
+        let hasPastDepartures = stopArrivals?.arrivalsAndDepartures.contains(where: { $0.arrivalDepartureMinutes < 0 }) ?? false
+
+        if hasPastDepartures {
+            self.pastDeparturesCollapsed = collapsedSections.contains(where: { $0.hasPrefix(ListSections.pastDeparturesPrefix) })
+        }
     }
 
     /// Helper for creating stop view controller sections. There are a lot of sections in stopviewcontroller,
