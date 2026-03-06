@@ -56,9 +56,6 @@ struct WeatherCardView: View {
             closeButton
         }
         .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .onTapGesture {
-            onDismiss()
-        }
     }
 
     // MARK: - Header Row
@@ -114,7 +111,6 @@ struct WeatherCardView: View {
                         )
                     )
 
-                // THE FIX: String(format:) maps the first %@ to High, and the second %@ to Low sequentially
                 Text(
                     String(
                         format: OBALoc(

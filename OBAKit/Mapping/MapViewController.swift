@@ -283,11 +283,6 @@ class MapViewController: UIViewController,
         button.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.3)
         button.tintColor = .label
         button.layer.cornerRadius = 12
-        button.layer.masksToBounds = true
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOpacity = 0.15
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowRadius = 6
 
         return button
     }()
@@ -316,6 +311,11 @@ class MapViewController: UIViewController,
         view.addSubview(hostingController.view)
         hostingController.didMove(toParent: self)
 
+        let widthConstraint = hostingController.view.widthAnchor.constraint(
+            equalTo: view.widthAnchor, constant: -32
+        )
+        widthConstraint.priority = .defaultHigh
+
         NSLayoutConstraint.activate([
             hostingController.view.centerXAnchor.constraint(
                 equalTo: view.centerXAnchor
@@ -324,9 +324,10 @@ class MapViewController: UIViewController,
                 equalTo: view.centerYAnchor
             ),
             hostingController.view.widthAnchor.constraint(
-                equalTo: view.widthAnchor,
-                constant: -32
-            )
+                lessThanOrEqualToConstant: 500
+            ),
+
+            widthConstraint
         ])
 
         weatherCardViewController = hostingController
@@ -356,9 +357,7 @@ class MapViewController: UIViewController,
             card.view.alpha = 0
             card.view.transform = CGAffineTransform(translationX: 0, y: -8)
         } completion: { _ in
-            card.willMove(toParent: nil)
-            card.view.removeFromSuperview()
-            card.removeFromParent()
+            self.removeChildController(card)
             self.weatherCardViewController = nil
 
             self.weatherButton.isUserInteractionEnabled = true
@@ -379,34 +378,25 @@ class MapViewController: UIViewController,
     private var forecast: WeatherForecast? {
         didSet {
             if let forecast = forecast {
-                let formattedTemp = MeasurementFormatter.unitlessConversion(
-                    temperature: forecast.currentForecast.temperature,
-                    unit: .fahrenheit,
-                    to: application.locale
+                let formattedTemp = WeatherFormatter.formatTemp(forecast.currentForecast.temperature, locale: application.locale)
+                let iconName = WeatherFormatter.systemImageName(for: forecast.currentForecast.iconName)
+
+                weatherButton.configuration?.image = UIImage(systemName: iconName)
+                weatherButton.configuration?.title = formattedTemp
+
+                weatherButton.accessibilityLabel = String(
+                    format: OBALoc("map_controller.show_weather_button", value: "Show Weather Forecast for %@", comment: "Accessibility label"),
+                    formattedTemp
                 )
-                let iconName = systemImageName(for: forecast.currentForecast.iconName)
 
-                var config = weatherButton.configuration
-                config?.image = UIImage(systemName: iconName)?
-                    .withConfiguration(UIImage.SymbolConfiguration(pointSize: 14, weight: .medium))
-                config?.title = formattedTemp
-                config?.imagePlacement = .leading
-                config?.imagePadding = 5
-                weatherButton.configuration = config
-
+                let wasHidden = weatherButton.isHidden
                 weatherButton.isHidden = false
 
-                weatherButton.accessibilityLabel = OBALoc(
-                    "map_controller.show_weather_button.with_forecast",
-                    value: "Show Weather Forecast. Currently %@.",
-                    comment: "Accessibility label for the weather button when forecast is loaded. Includes current temperature."
-                ).replacingOccurrences(of: "%@", with: formattedTemp)
-
-                weatherButton.isHidden = false
-
-                weatherButton.alpha = 0
-                UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
-                    self.weatherButton.alpha = 1
+                if wasHidden {
+                    weatherButton.alpha = 0
+                    UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut) {
+                        self.weatherButton.alpha = 1
+                    }
                 }
             } else {
                 weatherButton.isHidden = true
@@ -417,14 +407,12 @@ class MapViewController: UIViewController,
     private func loadWeather() {
         guard let apiService = application.obacoService else { return }
 
-        Task {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
             do {
-                let forecast = try await apiService.getWeather()
-                await MainActor.run {
-                    self.forecast = forecast
-                }
+                self.forecast = try await apiService.getWeather()
             } catch {
-                weatherButton.isHidden = true
+                self.weatherButton.isHidden = true
                 Logger.error(error.localizedDescription)
             }
         }
