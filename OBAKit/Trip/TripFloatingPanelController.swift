@@ -252,12 +252,7 @@ class TripFloatingPanelController: UIViewController,
         // boarding stop — transferring to the same stop is not meaningful.
         guard tripStop.stop.id != arrivalDeparture.stopID else { return nil }
 
-        return TransferContext(
-            arrivalTime: tripStop.stopTime.arrivalDate,
-            fromRouteShortName: arrivalDeparture.routeShortName,
-            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
-            fromRouteDisplay: arrivalDeparture.routeAndHeadsign
-        )
+        return .from(arrivalDeparture: arrivalDeparture, arrivalDate: tripStop.stopTime.arrivalDate)
     }
 
     private func showOnMap(_ tripStop: TripStopViewModel) {

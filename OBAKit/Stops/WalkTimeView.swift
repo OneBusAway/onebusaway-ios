@@ -125,7 +125,7 @@ class WalkTimeView: UIView {
 
     /// Configures this view to show a transfer arrival banner instead of walk time.
     public func setTransferArrival(arrivalTime: Date, routeDisplay: String) {
-        walkerImageView.image = UIImage(systemName: "bus.fill")
+        walkerImageView.image = Icons.vehiclesSelectedTabIcon
 
         let text = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: routeDisplay)
         label.text = text

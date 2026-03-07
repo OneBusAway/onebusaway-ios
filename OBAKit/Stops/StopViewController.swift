@@ -891,10 +891,12 @@ public class StopViewController: UIViewController,
             .map { $0.typeErased }
 
         // Filter departures before transfer arrival time, unless user opted to show all.
+        // Only insert the "Show earlier" button when sorting by time (groupRoute == nil)
+        // to avoid duplicate item IDs across route groups. See #409.
         if let transferContext = transferContext, !showAllTransferDepartures {
             let (visible, hidden) = partitionTransferDepartures(items: items, arrivalTime: transferContext.arrivalTime)
             items = visible
-            if !hidden.isEmpty {
+            if !hidden.isEmpty && groupRoute == nil {
                 let showEarlierItem = showEarlierDeparturesItem(hiddenCount: hidden.count)
                 items.insert(showEarlierItem.typeErased, at: 0)
             }
@@ -909,39 +911,6 @@ public class StopViewController: UIViewController,
         }
 
         return listViewSection(for: .arrivalDepartures(suffix: sectionID), title: sectionName, items: items)
-    }
-
-    /// Splits items into (departures at or after arrivalTime, departures before arrivalTime).
-    private func partitionTransferDepartures(items: [AnyOBAListViewItem], arrivalTime: Date) -> (visible: [AnyOBAListViewItem], hidden: [AnyOBAListViewItem]) {
-        var visible: [AnyOBAListViewItem] = []
-        var hidden: [AnyOBAListViewItem] = []
-        for item in items {
-            if let arrDep = item.as(ArrivalDepartureItem.self),
-               arrDep.arrivalDepartureDate < arrivalTime {
-                hidden.append(item)
-            } else {
-                visible.append(item)
-            }
-        }
-        return (visible, hidden)
-    }
-
-    private func showEarlierDeparturesItem(hiddenCount: Int) -> MessageButtonItem {
-        let fmt = OBALoc(
-            "stop_controller.transfer_show_earlier_departures_fmt",
-            value: "Show %d earlier departures",
-            comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures."
-        )
-        let buttonText = String(format: fmt, hiddenCount)
-        return MessageButtonItem(
-            id: "transfer_show_earlier",
-            buttonText: buttonText,
-            showActivityIndicatorOnSelect: false
-        ) { [weak self] _ in
-            guard let self else { return }
-            self.showAllTransferDepartures = true
-            self.listView.applyData()
-        }
     }
 
     /// Tracks arrival/departure times for `ArrivalDeparture`s.
@@ -1443,6 +1412,52 @@ public class StopViewController: UIViewController,
         }
         else {
             return "User Distance: 03200-INFINITY"
+        }
+    }
+}
+
+// MARK: - Transfer Helpers
+
+private extension StopViewController {
+    /// Splits items into (departures at or after arrivalTime, departures before arrivalTime).
+    func partitionTransferDepartures(items: [AnyOBAListViewItem], arrivalTime: Date) -> (visible: [AnyOBAListViewItem], hidden: [AnyOBAListViewItem]) {
+        var visible: [AnyOBAListViewItem] = []
+        var hidden: [AnyOBAListViewItem] = []
+        for item in items {
+            if let arrDep = item.as(ArrivalDepartureItem.self),
+               arrDep.arrivalDepartureDate < arrivalTime {
+                hidden.append(item)
+            } else {
+                visible.append(item)
+            }
+        }
+        return (visible, hidden)
+    }
+
+    func showEarlierDeparturesItem(hiddenCount: Int) -> MessageButtonItem {
+        let buttonText: String
+        if hiddenCount == 1 {
+            buttonText = OBALoc(
+                "stop_controller.transfer_show_earlier_departure_singular",
+                value: "Show 1 earlier departure",
+                comment: "Button to reveal a single departure that leaves before the rider's transfer arrival."
+            )
+        } else {
+            let fmt = OBALoc(
+                "stop_controller.transfer_show_earlier_departures_fmt",
+                value: "Show %d earlier departures",
+                comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures."
+            )
+            buttonText = String(format: fmt, hiddenCount)
+        }
+        return MessageButtonItem(
+            id: "transfer_show_earlier",
+            buttonText: buttonText,
+            showActivityIndicatorOnSelect: false
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.showAllTransferDepartures = true
+            self.listView.applyData()
         }
     }
 }

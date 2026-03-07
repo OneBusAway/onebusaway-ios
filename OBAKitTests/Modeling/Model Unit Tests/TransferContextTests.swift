@@ -8,9 +8,12 @@
 //
 
 import XCTest
+@testable import OBAKit
 @testable import OBAKitCore
 
-class TransferContextTests: XCTestCase {
+// swiftlint:disable force_try
+
+class TransferContextTests: OBATestCase {
 
     // MARK: - minutesUntilDeparture
 
@@ -114,5 +117,25 @@ class TransferContextTests: XCTestCase {
         // 2 hours after arrival
         let departureDate = arrivalTime.addingTimeInterval(120 * 60)
         XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 120)
+    }
+
+    // MARK: - Factory method
+
+    func test_fromFactory_populatesFieldsCorrectly() {
+        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
+
+        // Use the Fixtures-loaded ArrivalDeparture to test the factory.
+        let stopArrivals = try! Fixtures.loadRESTAPIPayload(
+            type: StopArrivals.self,
+            fileName: "arrivals-and-departures-for-stop-1_75414.json"
+        )
+        let arrDep = stopArrivals.arrivalsAndDepartures.first!
+
+        let context = TransferContext.from(arrivalDeparture: arrDep, arrivalDate: arrivalTime)
+
+        XCTAssertEqual(context.arrivalTime, arrivalTime)
+        XCTAssertEqual(context.fromRouteShortName, arrDep.routeShortName)
+        XCTAssertEqual(context.fromTripHeadsign, arrDep.tripHeadsign ?? "")
+        XCTAssertEqual(context.fromRouteDisplay, arrDep.routeAndHeadsign)
     }
 }

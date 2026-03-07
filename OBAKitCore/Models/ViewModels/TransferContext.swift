@@ -31,6 +31,16 @@ public struct TransferContext {
         self.fromRouteDisplay = fromRouteDisplay
     }
 
+    /// Convenience factory that extracts route info from an `ArrivalDeparture`.
+    public static func from(arrivalDeparture: ArrivalDeparture, arrivalDate: Date) -> TransferContext {
+        TransferContext(
+            arrivalTime: arrivalDate,
+            fromRouteShortName: arrivalDeparture.routeShortName,
+            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
+            fromRouteDisplay: arrivalDeparture.routeAndHeadsign
+        )
+    }
+
     /// Computes minutes from the transfer arrival time to the given departure date.
     /// Positive values mean the departure is after arrival; negative means before.
     public func minutesUntilDeparture(from departureDate: Date) -> Int {

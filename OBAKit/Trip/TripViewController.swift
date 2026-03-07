@@ -476,12 +476,7 @@ class TripViewController: UIViewController,
         var transferContext: TransferContext?
         if let arrivalDeparture = tripConvertible.arrivalDeparture,
            stopTime.stopID != arrivalDeparture.stopID {
-            transferContext = TransferContext(
-                arrivalTime: stopTime.arrivalDate,
-                fromRouteShortName: arrivalDeparture.routeShortName,
-                fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
-                fromRouteDisplay: arrivalDeparture.routeAndHeadsign
-            )
+            transferContext = .from(arrivalDeparture: arrivalDeparture, arrivalDate: stopTime.arrivalDate)
         }
 
         application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
