@@ -812,6 +812,9 @@
 /* Button that launches Google Maps with walking directions to this stop */
 "stops_controller.walking_directions_google" = "Walking Directions (Google Maps)";
 
+/* Button that launches OpenStreetMap with walking directions to this stop */
+"stops_controller.walking_directions_osm" = "Walking Directions (OpenStreetMap)";
+
 /* A notice when a transit alert doesn't have body text. */
 "transit_alert.no_additional_details.body" = "No additional details available.";
 

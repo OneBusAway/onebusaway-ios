@@ -325,7 +325,16 @@ class TripFloatingPanelController: UIViewController,
         googleMapsAction = nil
         #endif
 
-        let actions = [appleMapsAction, googleMapsAction].compactMap { $0 }
+        let osmAction: UIAction?
+        if let osmURL = AppInterop.openStreetMapWalkingDirectionsURL(coordinate: viewModel.stop.coordinate) {
+            osmAction = UIAction(title: OBALoc("stops_controller.walking_directions_osm", value: "Walking Directions (OpenStreetMap)", comment: "Button that launches OpenStreetMap with walking directions to this stop"), image: nil) { [unowned self] _ in
+                self.application.open(osmURL, options: [:], completionHandler: nil)
+            }
+        } else {
+            osmAction = nil
+        }
+
+        let actions = [appleMapsAction, googleMapsAction, osmAction].compactMap { $0 }
         guard !actions.isEmpty else { return nil }
 
         return UIMenu(title: OBALoc("stops_controller.walking_directions", value: "Walking Directions", comment: "Button that launches a maps app with walking directions to this stop"), image: UIImage(systemName: "figure.walk"), children: actions)
