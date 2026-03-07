@@ -93,7 +93,7 @@ struct ScheduleForStopView: View {
             headerSection
             Divider()
 
-            if isShowingFullRouteSchedule {
+            if isShowingFullRouteSchedule && (application.currentRegion?.supportsScheduleForRoute ?? true) {
                 fullRouteScheduleSection
             } else {
                 stopFocusedScheduleSection

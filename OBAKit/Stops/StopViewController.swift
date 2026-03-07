@@ -901,10 +901,13 @@ public class StopViewController: UIViewController,
             }
             actions.append(addBookmark)
 
-            let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-                self.showScheduleForRoute(viewModel: viewModel)
+            // Only show the schedule-for-route action if the current region supports it.
+            if application.currentRegion?.supportsScheduleForRoute ?? true {
+                let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+                    self.showScheduleForRoute(viewModel: viewModel)
+                }
+                actions.append(schedule)
             }
-            actions.append(schedule)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)

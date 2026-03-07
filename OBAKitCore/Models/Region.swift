@@ -401,11 +401,11 @@ public class Region: NSObject, Identifiable, Codable {
     /// Returns `true` if this region's OBA server supports the `schedule-for-route` API endpoint.
     ///
     /// The `schedule-for-route` endpoint was not available in the OBA 2.0.x server rewrite and was
-    /// reintroduced in later 2.x releases (2.1+). Regions running OBA 2.0.x (e.g., San Diego) will
+    /// reintroduced in later 2.x releases (2.1+). Regions running OBA 2.0.x will
     /// receive a 404 error when calling this endpoint.
     ///
-    /// The check is based on parsing the `versionInfo` string, whose format is:
-    /// `version_string|major|minor|patch|qualifier|commit`
+    /// The check is based on parsing the `versionInfo` string, whose format is typically:
+    /// `version_string|major|minor|incremental|qualifier|commit`, though some regions may use fewer components.
     ///
     /// If the version info is empty or cannot be parsed, defaults to `true` (assumes support;
     /// the app will still handle 404 errors gracefully at the network layer).
