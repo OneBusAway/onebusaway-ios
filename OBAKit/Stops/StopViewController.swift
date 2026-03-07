@@ -446,6 +446,14 @@ public class StopViewController: UIViewController,
                 walkingDirectionActions.append(googleMaps)
             }
             #endif
+
+            // Always display OpenStreetMap web link.
+            if let osmURL = AppInterop.openStreetMapWalkingDirectionsURL(coordinate: stop.coordinate) {
+                let osm = UIAction(title: OBALoc("stops_controller.walking_directions_osm", value: "Walking Directions (OpenStreetMap)", comment: "Button that launches OpenStreetMap with walking directions to this stop"), image: nil) { [unowned self] _ in
+                    self.application.open(osmURL, options: [:], completionHandler: nil)
+                }
+                walkingDirectionActions.append(osm)
+            }
         }
 
         let walkingDirectionsElement: UIMenuElement
