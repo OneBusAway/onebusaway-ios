@@ -102,11 +102,6 @@ class MapViewController: UIViewController,
         mapStatusView.addGestureRecognizer(statusTapGesture)
 
         view.addSubview(mapStatusView)
-        NSLayoutConstraint.activate([
-            mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            mapStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
-        ])
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
 
@@ -116,15 +111,30 @@ class MapViewController: UIViewController,
         appearance.configureWithDefaultBackground()
         tabBarItem.scrollEdgeAppearance = appearance
 
+        // Add toolbar before constraining the status pill, since the pill's
+        // trailing constraint references toolbar.leadingAnchor.
         view.insertSubview(toolbar, aboveSubview: mapView)
 
+        // Toolbar: anchored to safe area top-right, independent of status pill.
+        // This matches Apple Maps where right-side buttons stay fixed regardless
+        // of whether a floating status element is visible.
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
             toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
+        ])
+
+        // Status pill: centered horizontally, anchored to safe area top.
+        // Max width prevents overflow on long status text or large Dynamic Type.
+        // Trailing constraint keeps the pill from overlapping the toolbar on narrow devices.
+        NSLayoutConstraint.activate([
+            mapStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            mapStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding),
+            mapStatusView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.85),
+            mapStatusView.trailingAnchor.constraint(lessThanOrEqualTo: toolbar.leadingAnchor, constant: -ThemeMetrics.padding),
         ])
 
         // Long press gesture to add a pin to the map
@@ -699,6 +709,8 @@ class MapViewController: UIViewController,
         // Check if it's the map item controller
         if controller == semiModalMapItemController?.contentViewController,
            let panel = semiModalMapItemController {
+            // Only deselect user-dropped pin annotations — other annotation types
+            // (stops, bookmarks) manage their own selection state.
             mapRegionManager.mapView.selectedAnnotations.forEach { annotation in
                 if annotation is UserDroppedPin {
                     mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
