@@ -447,23 +447,6 @@ class MapViewController: UIViewController,
         }
     }
 
-    private func systemImageName(for weatherIcon: String) -> String {
-        let mapping: [String: String] = [
-            "clear-day": "sun.max.fill",
-            "clear-night": "moon.stars.fill",
-            "rain": "cloud.rain.fill",
-            "snow": "cloud.snow.fill",
-            "sleet": "cloud.sleet.fill",
-            "wind": "wind",
-            "fog": "cloud.fog.fill",
-            "cloudy": "cloud.fill",
-            "partly-cloudy-day": "cloud.sun.fill",
-            "partly-cloudy-night": "cloud.moon.fill"
-        ]
-
-        return mapping[weatherIcon] ?? "thermometer"
-    }
-
     // MARK: - Long Press Gesture
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -476,6 +459,12 @@ class MapViewController: UIViewController,
 
     /// Must return `true` for user-dropped pin removal to work alongside MKMapView's internal gestures.
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Prevent the background dismiss tap from firing if the user tapped inside the SwiftUI for weather card view
+        if gestureRecognizer == weatherCardDismissTapGesture,
+           let cardView = weatherCardViewController?.view,
+           cardView.point(inside: gestureRecognizer.location(in: cardView), with: nil) {
+            return false
+        }
         return true
     }
 

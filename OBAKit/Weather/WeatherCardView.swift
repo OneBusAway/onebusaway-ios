@@ -2,7 +2,9 @@
 //  WeatherCardView.swift
 //  OBAKit
 //
-//  Created by VED PATEL on 20/02/26.
+//  Copyright © Open Transit Software Foundation
+//  This source code is licensed under the Apache 2.0 license found in the
+//  LICENSE file in the root directory of this source tree.
 //
 
 import SwiftUI
@@ -74,7 +76,7 @@ struct WeatherCardView: View {
                     .foregroundColor(.primary)
                     .accessibilityAddTraits(.isHeader)
 
-                Text(conditionText(for: forecast.currentForecast.iconName))
+                Text(WeatherFormatter.conditionText(for: forecast.currentForecast.iconName))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
 
@@ -95,7 +97,7 @@ struct WeatherCardView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                Text(formatTemp(forecast.currentForecast.temperature))
+                Text(WeatherFormatter.formatTemp(forecast.currentForecast.temperature, locale: locale))
                     .font(.system(size: 48, weight: .thin))
                     .foregroundColor(.primary)
                     .lineLimit(1)
@@ -107,7 +109,7 @@ struct WeatherCardView: View {
                                 value: "Current temperature: %@",
                                 comment: "Accessibility label for current temperature. e.g. Current temperature: 21°"
                             ),
-                            formatTemp(forecast.currentForecast.temperature)
+                            WeatherFormatter.formatTemp(forecast.currentForecast.temperature, locale: locale)
                         )
                     )
 
@@ -118,8 +120,8 @@ struct WeatherCardView: View {
                             value: "H:%@  L:%@",
                             comment: "High and low temperature label in weather card. e.g. H:24°  L:17°"
                         ),
-                        formatTemp(hourlyHigh),
-                        formatTemp(hourlyLow)
+                        WeatherFormatter.formatTemp(hourlyHigh, locale: locale),
+                        WeatherFormatter.formatTemp(hourlyLow, locale: locale)
                     )
                 )
                 .font(.footnote)
@@ -131,8 +133,8 @@ struct WeatherCardView: View {
                             value: "High %@, Low %@",
                             comment: "Accessibility label for high and low temperatures. e.g. High 24°, Low 17°"
                         ),
-                        formatTemp(hourlyHigh),
-                        formatTemp(hourlyLow)
+                        WeatherFormatter.formatTemp(hourlyHigh, locale: locale),
+                        WeatherFormatter.formatTemp(hourlyLow, locale: locale)
                     )
                 )
             }
@@ -149,11 +151,11 @@ struct WeatherCardView: View {
                     comment: "Full accessibility description of weather card header."
                 ),
                 forecast.regionName,
-                conditionText(for: forecast.currentForecast.iconName),
-                formatTemp(forecast.currentForecast.temperature),
+                WeatherFormatter.conditionText(for: forecast.currentForecast.iconName),
+                WeatherFormatter.formatTemp(forecast.currentForecast.temperature, locale: locale),
                 "\(Int(forecast.currentForecast.precipProbability * 100))%",
-                formatTemp(hourlyHigh),
-                formatTemp(hourlyLow)
+                WeatherFormatter.formatTemp(hourlyHigh, locale: locale),
+                WeatherFormatter.formatTemp(hourlyLow, locale: locale)
             )
         )
     }
@@ -185,7 +187,7 @@ struct WeatherCardView: View {
     private func hourlyCellView(hour: WeatherForecast.HourlyForecast, isFirst: Bool) -> some View {
         let timeLabel = isFirst
             ? OBALoc("weather_card.now", value: "Now", comment: "Label for the current hour in the hourly forecast")
-            : formatTime(hour.time)
+        : WeatherFormatter.formatTime(hour.time, locale: locale)
 
         return VStack(spacing: 6) {
             Text(timeLabel)
@@ -197,7 +199,7 @@ struct WeatherCardView: View {
                 .font(.body)
                 .accessibilityHidden(true)
 
-            Text(formatTemp(hour.temperature))
+            Text(WeatherFormatter.formatTemp(hour.temperature, locale: locale))
                 .font(.caption)
                 .fontWeight(isFirst ? .bold : .regular)
                 .foregroundColor(isFirst ? .primary : .secondary)
@@ -212,8 +214,8 @@ struct WeatherCardView: View {
                     comment: "Accessibility label for an hourly forecast cell. Arguments: time, condition, temperature. e.g. Now: Clear, 22°"
                 ),
                 timeLabel,
-                conditionText(for: hour.iconName),
-                formatTemp(hour.temperature)
+                WeatherFormatter.conditionText(for: hour.iconName),
+                WeatherFormatter.formatTemp(hour.temperature, locale: locale)
             )
         )
     }
@@ -225,14 +227,14 @@ struct WeatherCardView: View {
             detailPill(
                 icon: "wind",
                 iconColor: .secondary,
-                value: formatWindSpeed(forecast.currentForecast.windSpeed),
+                value: WeatherFormatter.formatWindSpeed(forecast.currentForecast.windSpeed, locale: locale),
                 accessibilityLabel: String(
                     format: OBALoc(
                         "weather_card.wind_speed_fmt",
                         value: "Wind speed: %@",
                         comment: "Accessibility label for wind speed in the weather card. e.g. Wind speed: 9 km/h"
                     ),
-                    formatWindSpeed(forecast.currentForecast.windSpeed)
+                    WeatherFormatter.formatWindSpeed(forecast.currentForecast.windSpeed, locale: locale)
                 )
             )
 
@@ -257,14 +259,14 @@ struct WeatherCardView: View {
             detailPill(
                 icon: "thermometer.medium",
                 iconColor: .orange,
-                value: formatTemp(forecast.currentForecast.temperatureFeelsLike),
+                value: WeatherFormatter.formatTemp(forecast.currentForecast.temperatureFeelsLike, locale: locale),
                 accessibilityLabel: String(
                     format: OBALoc(
                         "weather_card.feels_like_fmt",
                         value: "Feels like: %@",
                         comment: "Accessibility label for feels like temperature in the weather card. e.g. Feels like: 17°"
                     ),
-                    formatTemp(forecast.currentForecast.temperatureFeelsLike)
+                    WeatherFormatter.formatTemp(forecast.currentForecast.temperatureFeelsLike, locale: locale)
                 )
             )
         }
@@ -324,52 +326,6 @@ struct WeatherCardView: View {
         .accessibilityAddTraits(.isButton)
         .padding(.top, 10)
         .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Helpers
-
-    private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        formatter.locale = locale
-        return formatter.string(from: date)
-    }
-
-    private func formatTemp(_ temp: Double) -> String {
-        MeasurementFormatter.unitlessConversion(temperature: temp, unit: .fahrenheit, to: locale)
-    }
-
-    private func formatWindSpeed(_ speed: Double) -> String {
-        let measurement = Measurement(value: speed, unit: UnitSpeed.kilometersPerHour)
-        let formatter = MeasurementFormatter()
-        formatter.locale = locale
-        formatter.unitOptions = .naturalScale
-        formatter.numberFormatter.maximumFractionDigits = 0
-        return formatter.string(from: measurement)
-    }
-
-    private func conditionText(for iconName: String) -> String {
-        switch iconName {
-        case "clear-day", "clear-night":
-            return OBALoc("weather_card.condition.clear", value: "Clear", comment: "Clear weather condition label in weather card")
-        case "rain":
-            return OBALoc("weather_card.condition.rain", value: "Rain", comment: "Rainy weather condition label in weather card")
-        case "snow":
-            return OBALoc("weather_card.condition.snow", value: "Snow", comment: "Snowy weather condition label in weather card")
-        case "sleet":
-            return OBALoc("weather_card.condition.sleet", value: "Sleet", comment: "Sleet weather condition label in weather card")
-        case "wind":
-            return OBALoc("weather_card.condition.wind", value: "Windy", comment: "Windy weather condition label in weather card")
-        case "fog":
-            return OBALoc("weather_card.condition.fog", value: "Foggy", comment: "Foggy weather condition label in weather card")
-        case "cloudy":
-            return OBALoc("weather_card.condition.cloudy", value: "Cloudy", comment: "Cloudy weather condition label in weather card")
-        case "partly-cloudy-day", "partly-cloudy-night":
-            return OBALoc("weather_card.condition.partly_cloudy", value: "Partly Cloudy", comment: "Partly cloudy weather condition label in weather card")
-        default:
-            return OBALoc("weather_card.condition.unknown", value: "Unknown", comment: "Unknown weather condition label in weather card")
-        }
     }
 
     // MARK: - Icon Styling

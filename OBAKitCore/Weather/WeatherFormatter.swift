@@ -7,22 +7,16 @@
 //  LICENSE file in the root directory of this source tree.
 //
 
-
 import Foundation
-import SwiftUI
 
 public struct WeatherFormatter {
 
-    private static let hourlyTimeFormatter: DateFormatter = {
+    public static func formatTime(_ date: Date, locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
-        return formatter
-    }()
-
-    public static func formatTime(_ date: Date, locale: Locale) -> String {
-        hourlyTimeFormatter.locale = locale
-        return hourlyTimeFormatter.string(from: date)
+        formatter.locale = locale
+        return formatter.string(from: date)
     }
 
     public static func formatTemp(_ temp: Double, locale: Locale) -> String {
@@ -52,5 +46,28 @@ public struct WeatherFormatter {
             "partly-cloudy-night": "cloud.moon.fill"
         ]
         return mapping[weatherIcon] ?? "thermometer"
+    }
+
+    public static func conditionText(for iconName: String) -> String {
+        switch iconName {
+        case "clear-day", "clear-night":
+            return OBALoc("weather_card.condition.clear", value: "Clear", comment: "Clear weather condition label in weather card")
+        case "rain":
+            return OBALoc("weather_card.condition.rain", value: "Rain", comment: "Rainy weather condition label in weather card")
+        case "snow":
+            return OBALoc("weather_card.condition.snow", value: "Snow", comment: "Snowy weather condition label in weather card")
+        case "sleet":
+            return OBALoc("weather_card.condition.sleet", value: "Sleet", comment: "Sleet weather condition label in weather card")
+        case "wind":
+            return OBALoc("weather_card.condition.wind", value: "Windy", comment: "Windy weather condition label in weather card")
+        case "fog":
+            return OBALoc("weather_card.condition.fog", value: "Foggy", comment: "Foggy weather condition label in weather card")
+        case "cloudy":
+            return OBALoc("weather_card.condition.cloudy", value: "Cloudy", comment: "Cloudy weather condition label in weather card")
+        case "partly-cloudy-day", "partly-cloudy-night":
+            return OBALoc("weather_card.condition.partly_cloudy", value: "Partly Cloudy", comment: "Partly cloudy weather condition label in weather card")
+        default:
+            return OBALoc("weather_card.condition.unknown", value: "Unknown", comment: "Unknown weather condition label in weather card")
+        }
     }
 }
