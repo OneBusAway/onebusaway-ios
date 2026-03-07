@@ -172,6 +172,37 @@
 /* The title of the Vehicles tab showing real-time vehicle positions on a map. */
 "common.vehicles" = "Vehicles";
 
+/* Description of the privacy policy for sharing data with the external survey service. */
+"common.external_survey_privacy_info.description" = "This survey will share your stop, route, region, current location.";
+
+"common.go" = "Go";
+
+"common.submit" = "Submit";
+
+"common.next" = "Next";
+
+"survey_alert.dismissal.title" = "Dismiss Survey";
+
+"survey_alert.dismissal.body" = "Your feedback helps improve transit services and app experiences.";
+
+"survey_alert.skip.survey" = "Skip This Survey";
+
+"survey_alert.remind.later" = "Remind Me Later";
+
+"survey_error.required_remaining_questions.error" = "Please answer all required questions";
+
+"survey_error.hero_question_answer.error" = "Please enter a valid answer";
+
+"survey_success.submitted" = "Survey answer submitted! Please answer rest of the questions for better feedback.";
+
+"survey_alert.do.not.show.again" = "Don't Show Again";
+
+"survey_service.not.available" = "Survey Service is unavailable.";
+
+"survey.external.url.missing" = "We couldn’t open the survey right now. Please try again later.";
+
+"survey_service.update.path.missing" = "Something went wrong when submitting your responses. Please try again later.";
+
 /* Use for vehicles that arrived X minutes ago. */
 "formatters.arrived_x_min_ago_fmt" = "Arrived %d min ago";
 
@@ -430,3 +461,13 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "scheduled to depart in %1$d minutes at %2$@.";
 
+"surveys.accessibility_selected_value" = "Selected";
+"surveys.accessibility_not_selected_value" = "Not Selected";
+
+"surveys.accessibility_tap_toggle_selection" = "Tap to toggle selection";
+"surveys.accessibility_tap_to_select" = "Tap to select";
+
+"surveys.accessibility_answer.input" = "Answer input";
+"surveys.accessibility.hint_answer.input" = "Enter your answer to the survey question";
+
+"surveys.accessibility_survey_label" = "Survey Label";

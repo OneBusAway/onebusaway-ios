@@ -15,6 +15,7 @@ import FloatingPanel
 import OBAKitCore
 import SwiftUI
 import OTPKit
+import SafariServices
 
 /// Displays a map, a set of stops rendered as annotation views, and the user's location if authorized.
 ///
@@ -58,6 +59,11 @@ class MapViewController: UIViewController,
     var mapRegionManager: MapRegionManager {
         return application.mapRegionManager
     }
+
+    // MARK: - Surveys
+
+    private var surveyDisplayManager: SurveyDisplayManager?
+    private var hasShownMapSurveyThisSession = false
 
     // MARK: - Init
 
@@ -133,6 +139,7 @@ class MapViewController: UIViewController,
         longPressGesture.minimumPressDuration = 0.5
         longPressGesture.delegate = self
         mapView.addGestureRecognizer(longPressGesture)
+
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -149,6 +156,7 @@ class MapViewController: UIViewController,
 
         updateVisibleMapRect()
         layoutMapMargins()
+
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -156,12 +164,36 @@ class MapViewController: UIViewController,
 
         loadWeather()
         updateVoiceover()
+        checkForMapSurvey()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
         navigationController?.setNavigationBarHidden(false, animated: false)
+    }
+
+    // MARK: - Surveys
+
+    private func checkForMapSurvey() {
+        guard !hasShownMapSurveyThisSession else { return }
+
+        let surveyService = application.surveyService
+        guard surveyService.shouldShowSurvey() else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            await surveyService.fetchSurveys()
+
+            guard let survey = surveyService.findSurveyForMap() else { return }
+
+            let displayManager = SurveyDisplayManager(surveyService: surveyService)
+            self.surveyDisplayManager = displayManager
+            let presented = displayManager.showSurvey(survey, in: self, presentationStyle: .bottomSheet)
+            guard presented else { return }
+            surveyService.setNextReminderDate()
+            hasShownMapSurveyThisSession = true
+        }
     }
 
     // MARK: - User Location
@@ -1067,6 +1099,7 @@ class MapViewController: UIViewController,
             didTapMapStatus(interaction)
         }
     }
+
 }
 
 // swiftlint:enable file_length
