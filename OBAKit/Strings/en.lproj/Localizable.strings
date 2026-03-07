@@ -590,6 +590,15 @@
 /* Title for the route picker screen where the user selects their transit route. */
 "route_picker.title" = "Select Your Route";
 
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Unable to connect to the transit service.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "No routes found nearby.";
+
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";
 

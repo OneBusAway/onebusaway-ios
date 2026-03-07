@@ -28,9 +28,17 @@ public enum NearbyTripMatcher {
         public var errorDescription: String? {
             switch self {
             case .noStopsNearby:
-                return "No stops found nearby."
+                return OBALoc(
+                    "nearby_trip_matcher.error.no_stops",
+                    value: "No stops found nearby.",
+                    comment: "Error when no transit stops are found near the user's location."
+                )
             case .noRealtimeData:
-                return "No real-time tracking data is available for this route."
+                return OBALoc(
+                    "nearby_trip_matcher.error.no_realtime",
+                    value: "No real-time tracking data is available for this route.",
+                    comment: "Error when a route has no real-time vehicle tracking data."
+                )
             }
         }
     }
@@ -58,7 +66,7 @@ public enum NearbyTripMatcher {
         maxDistance: CLLocationDistance = 500
     ) async throws -> [MatchResult] {
         let stopsForRoute = try await resolveStops(for: route, near: userLocation, using: apiService, stops: stops)
-        let allArrivals = await fetchArrivals(for: stopsForRoute, userLocation: userLocation, using: apiService)
+        let allArrivals = try await fetchArrivals(for: stopsForRoute, userLocation: userLocation, using: apiService)
         return try filterAndSort(allArrivals, route: route, userLocation: userLocation, maxDistance: maxDistance)
     }
 
@@ -93,12 +101,15 @@ public enum NearbyTripMatcher {
     }
 
     /// Fetches arrivals for each stop, continuing on individual stop failures.
+    /// If all stops fail, rethrows the last error instead of returning empty results.
     private static func fetchArrivals(
         for stops: [Stop],
         userLocation: CLLocation,
         using apiService: RESTAPIService
-    ) async -> [ArrivalDeparture] {
+    ) async throws -> [ArrivalDeparture] {
         var allArrivals = [ArrivalDeparture]()
+        var failureCount = 0
+        var lastError: Error?
 
         for stop in stops {
             do {
@@ -109,10 +120,18 @@ public enum NearbyTripMatcher {
                 )
                 allArrivals.append(contentsOf: response.entry.arrivalsAndDepartures)
             } catch is CancellationError {
-                break
+                throw CancellationError()
             } catch {
+                failureCount += 1
+                lastError = error
                 logger.error("Failed to fetch arrivals for stop \(stop.id): \(error)")
             }
+        }
+
+        // If all stops failed, rethrow the last error so the UI shows a server error
+        // instead of misleading "no vehicles found."
+        if failureCount == stops.count, let lastError {
+            throw lastError
         }
 
         return allArrivals

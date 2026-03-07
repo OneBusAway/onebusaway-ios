@@ -67,6 +67,7 @@ class CurrentTripViewController: UIViewController,
 
     deinit {
         refreshTimer?.invalidate()
+        findVehicleTask?.cancel()
     }
 
     // MARK: - UIViewController Lifecycle
@@ -81,17 +82,19 @@ class CurrentTripViewController: UIViewController,
         listView.pinToSuperview(.edges)
 
         findVehicle()
-        startRefreshTimer()
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         disableIdleTimer()
+        startRefreshTimer()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         enableIdleTimer()
+        refreshTimer?.invalidate()
+        refreshTimer = nil
     }
 
     // MARK: - Idle Timer
@@ -101,6 +104,7 @@ class CurrentTripViewController: UIViewController,
     // MARK: - Refresh Timer
 
     private func startRefreshTimer() {
+        refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(
             withTimeInterval: Self.refreshInterval,
             repeats: true
@@ -131,7 +135,10 @@ class CurrentTripViewController: UIViewController,
             }
 
             guard let apiService = self.application.apiService else {
-                Logger.error("API service unavailable in CurrentTripViewController.")
+                await MainActor.run {
+                    self.state = .error(NearbyTripMatcher.MatchError.noStopsNearby)
+                    self.listView.applyData()
+                }
                 return
             }
 
@@ -238,10 +245,10 @@ class CurrentTripViewController: UIViewController,
                 body: nil
             ))
 
-        case .error:
+        case .error(let error):
             return .standard(.init(
                 alignment: .center,
-                title: noResultsTitle,
+                title: error.localizedDescription,
                 body: nil,
                 buttonConfig: retryButtonConfig
             ))

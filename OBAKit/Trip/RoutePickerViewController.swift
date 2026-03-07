@@ -50,6 +50,10 @@ class RoutePickerViewController: UIViewController,
     /// Routes matching the current search filter.
     private var filteredRoutes = [Route]()
 
+    /// Whether route loading has failed or no routes are available.
+    private var loadError: Error?
+    private var didFinishLoading = false
+
     // MARK: - Init
 
     init(application: Application, delegate: RoutePickerDelegate) {
@@ -113,10 +117,21 @@ class RoutePickerViewController: UIViewController,
         }
 
         // Fallback: fetch nearby stops from the API, then extract routes.
-        guard
-            let apiService = application.apiService,
-            let location = application.locationService.currentLocation
-        else {
+        guard let apiService = application.apiService else {
+            showLoadError(OBALoc(
+                "route_picker.error_no_service",
+                value: "Unable to connect to the transit service.",
+                comment: "Error when the API service is unavailable in the route picker."
+            ))
+            return
+        }
+
+        guard let location = application.locationService.currentLocation else {
+            showLoadError(OBALoc(
+                "route_picker.error_no_location",
+                value: "Location unavailable. Please enable location services to find nearby routes.",
+                comment: "Error when location is unavailable in the route picker."
+            ))
             return
         }
 
@@ -129,6 +144,9 @@ class RoutePickerViewController: UIViewController,
             } catch {
                 if error is CancellationError { return }
                 Logger.error("Failed to load routes for picker: \(error)")
+                await MainActor.run {
+                    self?.showLoadError(error.localizedDescription)
+                }
             }
         }
     }
@@ -146,6 +164,13 @@ class RoutePickerViewController: UIViewController,
 
         allRoutes = uniqueRoutes.localizedCaseInsensitiveSort()
         filteredRoutes = allRoutes
+        didFinishLoading = true
+        listView.applyData()
+    }
+
+    private func showLoadError(_ message: String) {
+        loadError = NSError(domain: "RoutePickerViewController", code: 0, userInfo: [NSLocalizedDescriptionKey: message])
+        didFinishLoading = true
         listView.applyData()
     }
 
@@ -169,6 +194,8 @@ class RoutePickerViewController: UIViewController,
     // MARK: - OBAListViewDataSource
 
     func items(for listView: OBAListView) -> [OBAListViewSection] {
+        if loadError != nil { return [] }
+
         let rows: [AnyOBAListViewItem] = filteredRoutes.map { route in
             let subtitle = route.longName ?? route.agency.name
             return OBAListRowView.SubtitleViewModel(
@@ -181,6 +208,30 @@ class RoutePickerViewController: UIViewController,
         }
 
         return [OBAListViewSection(id: "routes", contents: rows)]
+    }
+
+    func emptyData(for listView: OBAListView) -> OBAListView.EmptyData? {
+        if let loadError {
+            return .standard(.init(
+                alignment: .center,
+                title: loadError.localizedDescription,
+                body: nil
+            ))
+        }
+
+        if didFinishLoading && allRoutes.isEmpty {
+            return .standard(.init(
+                alignment: .center,
+                title: OBALoc(
+                    "route_picker.no_routes",
+                    value: "No routes found nearby.",
+                    comment: "Message when no routes are found near the user's location."
+                ),
+                body: nil
+            ))
+        }
+
+        return nil
     }
 
     // MARK: - Selection

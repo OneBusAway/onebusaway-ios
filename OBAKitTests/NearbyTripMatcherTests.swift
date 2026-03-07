@@ -205,6 +205,56 @@ class NearbyTripMatcherTests: OBATestCase {
         }
     }
 
+    // MARK: - No Realtime Data
+
+    func test_findTrips_noRealtimeData_throwsNoRealtimeError() async {
+        let stops = stopsFromArrivalsFixture()
+
+        // Use the fixture where all `predicted` fields are false (no real-time data).
+        let data = Fixtures.loadData(file: "arrivals_and_departures_for_stop_1_10020_no_realtime.json")
+        dataLoader.mock(data: data) { request in
+            request.url?.absoluteString.contains("arrivals-and-departures-for-stop") ?? false
+        }
+
+        do {
+            _ = try await NearbyTripMatcher.findTrips(
+                for: route30(),
+                near: userLocation,
+                using: restService,
+                stops: stops,
+                maxDistance: 500_000
+            )
+            XCTFail("Expected MatchError.noRealtimeData")
+        } catch let error as NearbyTripMatcher.MatchError {
+            expect(error) == .noRealtimeData
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    // MARK: - Deduplication
+
+    func test_findTrips_deduplicatesSameVehicleAcrossStops() async throws {
+        // Pass the same stop twice so fetchArrivals returns duplicate arrivals.
+        let stops = stopsFromArrivalsFixture()
+        let duplicatedStops = stops + stops
+        stubArrivals()
+
+        let results = try await NearbyTripMatcher.findTrips(
+            for: route30(),
+            near: userLocation,
+            using: restService,
+            stops: duplicatedStops,
+            maxDistance: 500_000
+        )
+
+        // Route 1_30 has 2 unique vehicles (1_7028, 1_7022).
+        // Even with duplicated stops, dedup should keep only 2.
+        expect(results.count) == 2
+        let vehicleIDs = results.compactMap { $0.arrivalDeparture.vehicleID }
+        expect(Set(vehicleIDs).count) == 2
+    }
+
     // MARK: - MatchError
 
     func test_matchError_noStopsNearby_localizedDescription() {

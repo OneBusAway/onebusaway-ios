@@ -272,7 +272,7 @@ class MapViewController: UIViewController,
 
     private lazy var myTripButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "bus.fill"), for: .normal)
+        button.setImage(Icons.busButton, for: .normal)
         button.addTarget(self, action: #selector(showCurrentTrip), for: .touchUpInside)
         button.accessibilityLabel = OBALoc(
             "map_controller.my_trip_button",
