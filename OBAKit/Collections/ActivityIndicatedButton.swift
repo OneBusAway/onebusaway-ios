@@ -8,6 +8,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A button can be replaced with an activity indicator.
 public class ActivityIndicatedButton: UIView {
