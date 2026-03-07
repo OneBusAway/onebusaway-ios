@@ -219,6 +219,18 @@ class RoutePickerViewController: UIViewController,
             ))
         }
 
+        if !didFinishLoading {
+            return .standard(.init(
+                alignment: .center,
+                title: OBALoc(
+                    "route_picker.loading",
+                    value: "Loading routes…",
+                    comment: "Loading message while fetching nearby routes."
+                ),
+                body: nil
+            ))
+        }
+
         if didFinishLoading && allRoutes.isEmpty {
             return .standard(.init(
                 alignment: .center,

@@ -135,8 +135,17 @@ class CurrentTripViewController: UIViewController,
             }
 
             guard let apiService = self.application.apiService else {
+                let error = NSError(
+                    domain: "CurrentTripViewController",
+                    code: 0,
+                    userInfo: [NSLocalizedDescriptionKey: OBALoc(
+                        "current_trip_controller.error_no_service",
+                        value: "Unable to connect to the transit service.",
+                        comment: "Error when the API service is unavailable."
+                    )]
+                )
                 await MainActor.run {
-                    self.state = .error(NearbyTripMatcher.MatchError.noStopsNearby)
+                    self.state = .error(error)
                     self.listView.applyData()
                 }
                 return
@@ -193,6 +202,10 @@ class CurrentTripViewController: UIViewController,
             if var viewControllers = navigationController?.viewControllers {
                 viewControllers[viewControllers.count - 1] = tripController
                 navigationController?.setViewControllers(viewControllers, animated: true)
+            } else {
+                // Fallback: show as disambiguation list so the user can still tap through.
+                state = .multipleResults
+                listView.applyData()
             }
 
         default:

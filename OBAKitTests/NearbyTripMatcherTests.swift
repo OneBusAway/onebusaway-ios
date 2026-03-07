@@ -205,6 +205,38 @@ class NearbyTripMatcherTests: OBATestCase {
         }
     }
 
+    // MARK: - All Stops Fail
+
+    func test_findTrips_allStopsFail_rethrowsError() async {
+        let stops = stopsFromArrivalsFixture()
+
+        // Mock arrivals endpoint to return a 500 server error.
+        let errorResponse = MockDataResponse(
+            data: Data(),
+            urlResponse: dataLoader.buildURLResponse(URL: URL(string: "https://mock.example.com")!, statusCode: 500),
+            error: nil
+        ) { request in
+            request.url?.absoluteString.contains("arrivals-and-departures-for-stop") ?? false
+        }
+        dataLoader.mock(response: errorResponse)
+
+        do {
+            _ = try await NearbyTripMatcher.findTrips(
+                for: route30(),
+                near: userLocation,
+                using: restService,
+                stops: stops,
+                maxDistance: 500_000
+            )
+            XCTFail("Expected error to be rethrown when all stops fail")
+        } catch is NearbyTripMatcher.MatchError {
+            XCTFail("Should rethrow the server error, not a MatchError")
+        } catch {
+            // Expected: the server error is rethrown, not swallowed.
+            expect(error).toNot(beNil())
+        }
+    }
+
     // MARK: - No Realtime Data
 
     func test_findTrips_noRealtimeData_throwsNoRealtimeError() async {
