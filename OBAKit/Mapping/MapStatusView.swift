@@ -63,7 +63,6 @@ class MapStatusView: UIView {
         static let cornerRadius: CGFloat = 18
         static let shadowBlur: CGFloat = 4
         static let shadowOpacity: Float = 0.15
-        static let maxWidthRatio: CGFloat = 0.85
     }
 
     // MARK: - Large Content Properties
@@ -121,11 +120,14 @@ class MapStatusView: UIView {
 
         addSubview(visualEffectView)
 
-        // Shadow on the outer view for the floating effect
+        // Shadow on the outer view for the floating effect.
+        // Start with opacity 0 — the correct value is set in didMoveToWindow()
+        // because traitCollection is unreliable during init (view has no window yet,
+        // so userInterfaceStyle returns .unspecified regardless of actual appearance).
         layer.shadowColor = UIColor.black.cgColor
         layer.shadowOffset = CGSize(width: 0, height: 2)
         layer.shadowRadius = Layout.shadowBlur
-        layer.shadowOpacity = Layout.shadowOpacity
+        layer.shadowOpacity = 0
 
         NSLayoutConstraint.activate([
             // Stack inside the blur pill with padding
@@ -143,8 +145,20 @@ class MapStatusView: UIView {
 
         // Adapt shadow for dark mode
         registerForTraitChanges([UITraitUserInterfaceStyle.self]) { (self: Self, _: UITraitCollection) in
-            self.layer.shadowOpacity = self.traitCollection.userInterfaceStyle == .dark ? 0 : Layout.shadowOpacity
+            self.updateShadowForCurrentAppearance()
         }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // traitCollection is only fully resolved after the view is in the
+        // hierarchy and has completed a layout pass. layoutSubviews is the
+        // earliest reliable point to read userInterfaceStyle.
+        updateShadowForCurrentAppearance()
+    }
+
+    private func updateShadowForCurrentAppearance() {
+        layer.shadowOpacity = traitCollection.userInterfaceStyle == .dark ? 0 : Layout.shadowOpacity
     }
 
     override var intrinsicContentSize: CGSize {
@@ -196,9 +210,16 @@ class MapStatusView: UIView {
             setLabel = OBALoc("map_status_view.zoom_in_for_stops", value: "Zoom in for stops", comment: "Displayed in the map status view at the top of the map when the user must zoom in to see stops on the map")
         }
 
-        // Cancel any in-flight animation to prevent a stale completion
+        // Cancel any in-flight animations to prevent a stale completion
         // from toggling isHidden after a newer state change.
         self.layer.removeAllAnimations()
+        self.subviews.forEach { $0.layer.removeAllAnimations() }
+
+        // Set non-animatable properties outside the animation block.
+        iconView.image = setImage
+        detailLabel.text = setLabel
+        largeContentImage = setLargeImage
+        invalidateIntrinsicContentSize()
 
         if !shouldHide {
             self.isHidden = false
@@ -206,10 +227,6 @@ class MapStatusView: UIView {
 
         UIView.animate(withDuration: 0.25) {
             self.alpha = shouldHide ? 0 : 1
-            self.iconView.image = setImage
-            self.detailLabel.text = setLabel
-            self.largeContentImage = setLargeImage
-            self.invalidateIntrinsicContentSize()
             self.superview?.layoutIfNeeded()
         } completion: { finished in
             // Only hide if the animation completed without being cancelled.
