@@ -56,6 +56,10 @@ docs
 # But do save the docs script
 !scripts/docs
 
+# DocC build intermediates
+.docc-build
+Combined.doccarchive
+
 OBAKitTests.xcresult
 .DS_Store
 .claude/settings.local.json

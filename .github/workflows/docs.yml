@@ -1,0 +1,57 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/cache@v4
+      with:
+        path: .build
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Switch Xcode
+      run: sudo xcode-select -switch /Applications/Xcode_26.2.app
+
+    - name: Install xcodegen
+      run: brew install xcodegen
+
+    - name: Generate xcodeproj for OneBusAway
+      run: scripts/generate_project OneBusAway
+
+    - name: Build documentation
+      run: HOSTING_BASE_PATH=onebusaway-ios scripts/docs
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

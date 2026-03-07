@@ -1,64 +1,36 @@
 #!/bin/bash
+set -euo pipefail
 
-set -e  # Exit on any error
-
-if ! which jazzy >/dev/null; then
-  echo "Jazzy not detected. Consult the README for more information. (tl; dr: run the command \`bundle install\`)"
-  exit 1
-fi
-
-if ! which sourcekitten >/dev/null; then
-  echo "Sourcekitten not detected. Consult the README for more information. (tl; dr: run the command \`brew install sourcekitten\`)"
-  exit 1
-fi
-
-# Check if project exists, if not generate it
+# Generate project if needed
 if [ ! -f "OBAKit.xcodeproj/project.pbxproj" ]; then
-  echo "Xcode project not found. Generating project..."
   scripts/generate_project OneBusAway
 fi
 
-echo "Building project for documentation generation..."
-xcodebuild clean build \
-  -project OBAKit.xcodeproj \
+DERIVED_DATA=".docc-build"
+OUTPUT_DIR="docs"
+
+# Build documentation archives (produces one per framework target)
+xcodebuild docbuild \
   -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'generic/platform=iOS' \
+  -derivedDataPath "$DERIVED_DATA" \
   -quiet
 
-echo "Generating documentation with SourceKitten..."
-mkdir -p docs
+# Locate the .doccarchive files
+CORE_ARCHIVE=$(find "$DERIVED_DATA" -type d -name 'OBAKitCore.doccarchive' | head -1)
+KIT_ARCHIVE=$(find "$DERIVED_DATA" -type d -name 'OBAKit.doccarchive' | head -1)
 
-# Generate documentation for OBAKitCore
-echo "Extracting documentation for OBAKitCore..."
-kitCoreDocs=$(sourcekitten doc \
-  --module-name OBAKitCore \
-  -- -project OBAKit.xcodeproj \
-  -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 16')
+# Merge into a combined archive with a synthesized landing page
+xcrun docc merge \
+  "$CORE_ARCHIVE" \
+  "$KIT_ARCHIVE" \
+  --output-path Combined.doccarchive
 
-# Generate documentation for OBAKit
-echo "Extracting documentation for OBAKit..."
-kitDocs=$(sourcekitten doc \
-  --module-name OBAKit \
-  -- -project OBAKit.xcodeproj \
-  -scheme App \
-  -destination 'platform=iOS Simulator,name=iPhone 16')
+# Transform for static hosting
+rm -rf "$OUTPUT_DIR"
+xcrun docc process-archive transform-for-static-hosting \
+  Combined.doccarchive \
+  --output-path "$OUTPUT_DIR" \
+  --hosting-base-path "${HOSTING_BASE_PATH:-}"
 
-# Combine the JSON files properly
-echo "Combining documentation JSON..."
-if [ -n "$kitCoreDocs" ] && [ -n "$kitDocs" ]; then
-  # Remove the closing bracket from kitCoreDocs and opening bracket from kitDocs, then combine
-  echo "${kitCoreDocs%?}, ${kitDocs:1}" > docs/kitty.json
-elif [ -n "$kitCoreDocs" ]; then
-  echo "$kitCoreDocs" > docs/kitty.json
-elif [ -n "$kitDocs" ]; then
-  echo "$kitDocs" > docs/kitty.json
-else
-  echo "Error: No documentation could be generated from either module"
-  exit 1
-fi
-
-echo "Generating final documentation with Jazzy..."
-jazzy --sourcekitten-sourcefile docs/kitty.json --config .jazzy.json
-
-echo "Documentation generation complete! Check the docs/ directory."
+rm -rf "$DERIVED_DATA" Combined.doccarchive
