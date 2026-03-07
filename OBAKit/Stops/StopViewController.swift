@@ -839,7 +839,14 @@ public class StopViewController: UIViewController,
         let onSelectAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.didSelectArrivalDepartureItem(item) }
         let addAlarmAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addAlarm(viewModel: item) }
         let bookmarkAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.addBookmark(viewModel: item) }
-        let scheduleAction: OBAListViewAction<ArrivalDepartureItem> = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
+
+        // Only show the schedule-for-route action if the current region supports it.
+        let scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
+        if application.currentRegion?.supportsScheduleForRoute ?? true {
+            scheduleAction = { [unowned self] item in self.showScheduleForRoute(viewModel: item) }
+        } else {
+            scheduleAction = nil
+        }
 
         return ArrivalDepartureItem(
             arrivalDeparture: arrivalDeparture,
@@ -958,10 +965,13 @@ public class StopViewController: UIViewController,
             }
             actions.append(addBookmark)
 
-            let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
-                self.showScheduleForRoute(viewModel: viewModel)
+            // Only show the schedule-for-route action if the current region supports it.
+            if application.currentRegion?.supportsScheduleForRoute ?? true {
+                let schedule = UIAction(title: Strings.schedule, image: UIImage(systemName: "calendar")) { [unowned self] _ in
+                    self.showScheduleForRoute(viewModel: viewModel)
+                }
+                actions.append(schedule)
             }
-            actions.append(schedule)
 
             // Create and return a UIMenu with all of the actions as children
             return UIMenu(title: viewModel.name, children: actions)

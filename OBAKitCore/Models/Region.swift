@@ -396,6 +396,38 @@ public class Region: NSObject, Identifiable, Codable {
         return openTripPlannerURL != nil
     }
 
+    // MARK: - API Feature Support
+
+    /// Returns `true` if this region's OBA server supports the `schedule-for-route` API endpoint.
+    ///
+    /// The `schedule-for-route` endpoint was not available in the OBA 2.0.x server rewrite and was
+    /// reintroduced in later 2.x releases (2.1+). Regions running OBA 2.0.x will
+    /// receive a 404 error when calling this endpoint.
+    ///
+    /// The check is based on parsing the `versionInfo` string, whose format is typically:
+    /// `version_string|major|minor|incremental|qualifier|commit`, though some regions may use fewer components.
+    ///
+    /// If the version info is empty or cannot be parsed, defaults to `true` (assumes support;
+    /// the app will still handle 404 errors gracefully at the network layer).
+    public var supportsScheduleForRoute: Bool {
+        let components = versionInfo.split(separator: "|")
+
+        // Need at least major and minor components (indices 1 and 2)
+        guard components.count >= 3,
+              let major = Int(components[1]),
+              let minor = Int(components[2]) else {
+            // Cannot parse version; assume support and rely on 404 error handling.
+            return true
+        }
+
+        // OBA 2.0.x does not have the schedule-for-route endpoint.
+        if major == 2 && minor == 0 {
+            return false
+        }
+
+        return true
+    }
+
     // MARK: - Location Helpers
 
     /// Internal type for constructing regional boundaries from the server's JSON output.
