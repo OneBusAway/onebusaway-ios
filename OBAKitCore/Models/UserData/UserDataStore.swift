@@ -680,11 +680,11 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     public func deleteExpiredProximityAlerts() {
-        let beforeCount = proximityAlerts.count
-        proximityAlerts.removeAll { $0.isExpired }
-        if proximityAlerts.count != beforeCount {
-            NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
-        }
+        let current = proximityAlerts
+        let filtered = current.filter { !$0.isExpired }
+        guard filtered.count != current.count else { return }
+        proximityAlerts = filtered
+        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
     }
 
     // MARK: - Stop Preferences

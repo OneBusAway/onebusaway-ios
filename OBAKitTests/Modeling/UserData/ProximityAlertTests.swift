@@ -82,6 +82,13 @@ class ProximityAlertTests: OBATestCase {
         expect(alert.isExpired).to(beFalse())
     }
 
+    func test_isExpired_trueWhenOlderThan24Hours() {
+        let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
+        let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
+
+        expect(alert.isExpired).to(beTrue())
+    }
+
     // MARK: - Equality
 
     func test_equality_sameID() {
@@ -198,14 +205,51 @@ class ProximityAlertStoreTests: OBATestCase {
 
     // MARK: - Expired Alerts
 
-    func test_deleteExpired_removesOnlyExpiredAlerts() {
+    func test_deleteExpired_keepsNonExpiredAlerts() {
         let alert = ProximityAlert(stop: stop)
         userDefaultsStore.add(proximityAlert: alert)
 
-        // Fresh alert should not be deleted
         userDefaultsStore.deleteExpiredProximityAlerts()
 
         expect(self.userDefaultsStore.proximityAlerts.count) == 1
+    }
+
+    func test_deleteExpired_removesExpiredAlerts() {
+        let expiredDate = Date().addingTimeInterval(-25 * 60 * 60) // 25 hours ago
+        let expiredAlert = ProximityAlert(stop: stop, createdAt: expiredDate)
+        let freshAlert = ProximityAlert(stop: stop)
+        userDefaultsStore.add(proximityAlert: expiredAlert)
+        userDefaultsStore.add(proximityAlert: freshAlert)
+
+        userDefaultsStore.deleteExpiredProximityAlerts()
+
+        expect(self.userDefaultsStore.proximityAlerts.count) == 1
+        expect(self.userDefaultsStore.proximityAlerts.first?.id) == freshAlert.id
+    }
+
+    func test_deleteExpired_removesAllWhenAllExpired() {
+        let stops = try! Fixtures.loadSomeStops()
+        let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
+        let alert1 = ProximityAlert(stop: stops[0], createdAt: expiredDate)
+        let alert2 = ProximityAlert(stop: stops[1], createdAt: expiredDate)
+        userDefaultsStore.add(proximityAlert: alert1)
+        userDefaultsStore.add(proximityAlert: alert2)
+
+        userDefaultsStore.deleteExpiredProximityAlerts()
+
+        expect(self.userDefaultsStore.proximityAlerts).to(beEmpty())
+    }
+
+    func test_deleteExpired_doesNotPostNotification_whenNothingExpired() {
+        let alert = ProximityAlert(stop: stop)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        let notificationExpectation = expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
+        notificationExpectation.isInverted = true
+
+        userDefaultsStore.deleteExpiredProximityAlerts()
+
+        waitForExpectations(timeout: 0.5)
     }
 
     // MARK: - Persistence Across Stores

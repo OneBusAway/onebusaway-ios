@@ -1,6 +1,6 @@
 //
 //  ProximityAlert.swift
-//  OBAKit
+//  OBAKitCore
 //
 //  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
@@ -28,14 +28,14 @@ public class ProximityAlert: NSObject, Codable {
     /// The maximum age (in seconds) before a proximity alert is considered stale and should be removed.
     public static let expirationInterval: TimeInterval = 24 * 60 * 60 // 24 hours
 
-    public init(stop: Stop, radiusMeters: Double = 200.0) {
+    public init(stop: Stop, radiusMeters: Double = 200.0, createdAt: Date = Date()) {
         self.id = UUID()
         self.stopID = stop.id
         self.stopName = stop.name
         self.latitude = stop.location.coordinate.latitude
         self.longitude = stop.location.coordinate.longitude
         self.radiusMeters = radiusMeters
-        self.createdAt = Date()
+        self.createdAt = createdAt
     }
 
     /// Whether this alert has expired based on `expirationInterval`.
