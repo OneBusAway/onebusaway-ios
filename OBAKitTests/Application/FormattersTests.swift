@@ -34,4 +34,38 @@ class FormattersTests: OBATestCase {
 
         expect(str).to(match("Arrived \\d+ min ago"))
     }
+
+    // MARK: - Transfer-Relative Time
+
+    func test_shortFormattedTransferTime_positiveMinutes() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: 4)
+        XCTAssertEqual(result, "4m")
+    }
+
+    func test_shortFormattedTransferTime_negativeMinutes() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: -3)
+        XCTAssertEqual(result, "-3m")
+    }
+
+    func test_shortFormattedTransferTime_zero() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+        let result = formatters.shortFormattedTransferTime(minutes: 0)
+        XCTAssertEqual(result, "NOW")
+    }
+
+    func test_transferArrivalBannerText() {
+        let formatters = Formatters(locale: usLocale, calendar: calendar, themeColors: ThemeColors())
+
+        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
+        // Get the expected time string from the same formatter that the banner uses,
+        // so the test is timezone-agnostic and passes on any machine (local or CI).
+        let expectedTime = formatters.timeFormatter.string(from: arrivalTime)
+
+        let result = formatters.transferArrivalBannerText(arrivalTime: arrivalTime, routeDisplay: "10 - Capitol Hill")
+
+        XCTAssertTrue(result.contains("10 - Capitol Hill"), "Banner should contain route display: \(result)")
+        XCTAssertTrue(result.contains(expectedTime), "Banner should contain formatted time '\(expectedTime)': \(result)")
+    }
 }

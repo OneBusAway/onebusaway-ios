@@ -80,10 +80,11 @@ public class ViewRouter: NSObject, UINavigationControllerDelegate {
         fromController.navigationController?.pushViewController(viewController, animated: animated)
     }
 
-    public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil) {
+    public func navigateTo(stop: Stop, from fromController: UIViewController, bookmark: Bookmark? = nil, transferContext: TransferContext? = nil) {
         guard shouldNavigate(from: fromController, to: .stop(stop)) else { return }
         let stopController = StopViewController(application: application, stop: stop)
         stopController.bookmarkContext = bookmark
+        stopController.transferContext = transferContext
         navigate(to: stopController, from: fromController)
     }
 

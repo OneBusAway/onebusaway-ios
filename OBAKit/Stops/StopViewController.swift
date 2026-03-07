@@ -77,6 +77,13 @@ public class StopViewController: UIViewController,
 
     public var bookmarkContext: Bookmark?
 
+    /// When non-nil, the stop was opened as a transfer destination from an in-progress trip.
+    /// This filters departures, adjusts ETAs, and replaces the walk-time banner.
+    var transferContext: TransferContext?
+
+    /// Controls whether departures before the transfer arrival time are visible.
+    private var showAllTransferDepartures = false
+
     let minutesBefore: UInt = 5
     static let defaultMinutesAfter: UInt = 35
     var minutesAfter: UInt = StopViewController.defaultMinutesAfter
@@ -210,6 +217,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: MessageButtonItem.self)
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
+        listView.register(listViewItem: TransferArrivalItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -837,6 +845,7 @@ public class StopViewController: UIViewController,
             arrivalDeparture: arrivalDeparture,
             isAlarmAvailable: alarmAvailable,
             highlightTimeOnDisplay: highlightTimeOnDisplay,
+            transferContext: transferContext,
             onSelectAction: onSelectAction,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
@@ -881,11 +890,23 @@ public class StopViewController: UIViewController,
             .sorted(by: \.arrivalDepartureDate)
             .map { $0.typeErased }
 
+        // Filter departures before transfer arrival time, unless user opted to show all.
+        // Only insert the "Show earlier" button when sorting by time (groupRoute == nil)
+        // to avoid duplicate item IDs across route groups. See #409.
+        if let transferContext = transferContext, !showAllTransferDepartures {
+            let (visible, hidden) = partitionTransferDepartures(items: items, arrivalTime: transferContext.arrivalTime)
+            items = visible
+            if !hidden.isEmpty && groupRoute == nil {
+                let showEarlierItem = showEarlierDeparturesItem(hiddenCount: hidden.count)
+                items.insert(showEarlierItem.typeErased, at: 0)
+            }
+        }
+
         // Only show the walk-time divider and load-more button when sorting by time.
         // When sorting by route, each section is a separate route group where these
         // elements are either redundant or cause duplicate item IDs. See #409.
         if groupRoute == nil {
-            addWalkTimeRow(to: &items)
+            addWalkTimeOrTransferBanner(to: &items)
             items.append(contentsOf: loadMoreItems)
         }
 
@@ -992,6 +1013,21 @@ public class StopViewController: UIViewController,
             if interval >= walkTimeInterval { return idx }
         }
         return nil
+    }
+
+    /// Inserts either a transfer arrival banner or the GPS-based walk time row.
+    private func addWalkTimeOrTransferBanner(to items: inout [AnyOBAListViewItem]) {
+        if let transferContext = transferContext {
+            let bannerItem = TransferArrivalItem(
+                id: "transfer_arrival_banner",
+                arrivalTime: transferContext.arrivalTime,
+                routeDisplay: transferContext.fromRouteDisplay
+            )
+            items.insert(bannerItem.typeErased, at: 0)
+            return
+        }
+
+        addWalkTimeRow(to: &items)
     }
 
     private func addWalkTimeRow(to items: inout [AnyOBAListViewItem]) {
@@ -1376,6 +1412,52 @@ public class StopViewController: UIViewController,
         }
         else {
             return "User Distance: 03200-INFINITY"
+        }
+    }
+}
+
+// MARK: - Transfer Helpers
+
+private extension StopViewController {
+    /// Splits items into (departures at or after arrivalTime, departures before arrivalTime).
+    func partitionTransferDepartures(items: [AnyOBAListViewItem], arrivalTime: Date) -> (visible: [AnyOBAListViewItem], hidden: [AnyOBAListViewItem]) {
+        var visible: [AnyOBAListViewItem] = []
+        var hidden: [AnyOBAListViewItem] = []
+        for item in items {
+            if let arrDep = item.as(ArrivalDepartureItem.self),
+               arrDep.arrivalDepartureDate < arrivalTime {
+                hidden.append(item)
+            } else {
+                visible.append(item)
+            }
+        }
+        return (visible, hidden)
+    }
+
+    func showEarlierDeparturesItem(hiddenCount: Int) -> MessageButtonItem {
+        let buttonText: String
+        if hiddenCount == 1 {
+            buttonText = OBALoc(
+                "stop_controller.transfer_show_earlier_departure_singular",
+                value: "Show 1 earlier departure",
+                comment: "Button to reveal a single departure that leaves before the rider's transfer arrival."
+            )
+        } else {
+            let fmt = OBALoc(
+                "stop_controller.transfer_show_earlier_departures_fmt",
+                value: "Show %d earlier departures",
+                comment: "Button to reveal departures that leave before the rider's transfer arrival. Parameter is the count of hidden departures."
+            )
+            buttonText = String(format: fmt, hiddenCount)
+        }
+        return MessageButtonItem(
+            id: "transfer_show_earlier",
+            buttonText: buttonText,
+            showActivityIndicatorOnSelect: false
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.showAllTransferDepartures = true
+            self.listView.applyData()
         }
     }
 }

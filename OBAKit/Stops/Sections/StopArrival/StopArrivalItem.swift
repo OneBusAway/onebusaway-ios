@@ -48,6 +48,9 @@ struct ArrivalDepartureItem: OBAListViewItem {
     /// Whether to highlight the time (to indicate a change) when this item is displayed on the list.
     let highlightTimeOnDisplay: Bool
 
+    /// When set, minutes are computed relative to the transfer arrival time instead of now.
+    let transferContext: TransferContext?
+
     var trailingContextualActions: [OBAListViewContextualAction<ArrivalDepartureItem>]? {
         var actions: [OBAListViewContextualAction<ArrivalDepartureItem>] = []
 
@@ -96,6 +99,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
     init(arrivalDeparture: ArrivalDeparture,
          isAlarmAvailable: Bool,
          highlightTimeOnDisplay: Bool = false,
+         transferContext: TransferContext? = nil,
          onSelectAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          alarmAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
          bookmarkAction: OBAListViewAction<ArrivalDepartureItem>? = nil,
@@ -109,11 +113,18 @@ struct ArrivalDepartureItem: OBAListViewItem {
         self.scheduledDate = arrivalDeparture.scheduledDate
         self.scheduleStatus = arrivalDeparture.scheduleStatus
         self.deviationFromScheduleInMinutes = arrivalDeparture.deviationFromScheduleInMinutes
-        self.temporalState = arrivalDeparture.temporalState
+        self.transferContext = transferContext
+
+        if let transferContext = transferContext {
+            self.temporalState = transferContext.temporalState(for: arrivalDeparture.arrivalDepartureDate)
+            self.arrivalDepartureMinutes = transferContext.minutesUntilDeparture(from: arrivalDeparture.arrivalDepartureDate)
+        } else {
+            self.temporalState = arrivalDeparture.temporalState
+            self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
+        }
 
         self.arrivalDepartureDate = arrivalDeparture.arrivalDepartureDate
         self.arrivalDepartureStatus = arrivalDeparture.arrivalDepartureStatus
-        self.arrivalDepartureMinutes = arrivalDeparture.arrivalDepartureMinutes
 
         self.occupancyStatus = arrivalDeparture.occupancyStatus
         self.historicalOccupancyStatus = arrivalDeparture.historicalOccupancyStatus
@@ -169,6 +180,9 @@ struct ArrivalDepartureContentConfiguration: OBAContentConfiguration {
     }
 
     var untilMinutesText: String? {
+        if viewModel.transferContext != nil {
+            return formatters?.shortFormattedTransferTime(minutes: viewModel.arrivalDepartureMinutes)
+        }
         return formatters?.shortFormattedTime(untilMinutes: viewModel.arrivalDepartureMinutes, temporalState: viewModel.temporalState)
     }
 
