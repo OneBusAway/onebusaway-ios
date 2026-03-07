@@ -1,8 +1,10 @@
 name: TestFlight Deploy
 
 on:
-  push:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["OBAKitTests"]
+    types: [completed]
+    branches: [main]
 
 # Prevent multiple deploys from running simultaneously.
 concurrency:
@@ -11,6 +13,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: macos-15
     timeout-minutes: 45
 
@@ -50,16 +53,16 @@ jobs:
         CERTIFICATE_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       run: |
-        KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-        security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-        security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+        KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
 
-        CERT_PATH=$RUNNER_TEMP/certificate.p12
-        echo -n "$CERTIFICATE_BASE64" | base64 --decode -o $CERT_PATH
-        security import $CERT_PATH -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-        security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-        security list-keychain -d user -s $KEYCHAIN_PATH
+        CERT_PATH="$RUNNER_TEMP/certificate.p12"
+        echo -n "$CERTIFICATE_BASE64" | base64 --decode -o "$CERT_PATH"
+        security import "$CERT_PATH" -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+        security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security list-keychain -d user -s "$KEYCHAIN_PATH"
 
     - name: Install provisioning profiles
       env:
@@ -70,16 +73,16 @@ jobs:
         mkdir -p "$PP_DIR"
 
         # Install the main app provisioning profile (org.onebusaway.iphone).
-        APP_PP_PATH=$RUNNER_TEMP/app.mobileprovision
-        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o $APP_PP_PATH
-        cp $APP_PP_PATH "$PP_DIR/"
+        APP_PP_PATH="$RUNNER_TEMP/app.mobileprovision"
+        echo -n "$PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$APP_PP_PATH"
+        cp "$APP_PP_PATH" "$PP_DIR/"
 
         # Install the widget provisioning profile (org.onebusaway.iphone.OBAWidget)
         # if provided. Not needed when using a wildcard profile.
         if [ -n "$WIDGET_PROVISIONING_PROFILE_BASE64" ]; then
-          WIDGET_PP_PATH=$RUNNER_TEMP/widget.mobileprovision
-          echo -n "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode -o $WIDGET_PP_PATH
-          cp $WIDGET_PP_PATH "$PP_DIR/"
+          WIDGET_PP_PATH="$RUNNER_TEMP/widget.mobileprovision"
+          echo -n "$WIDGET_PROVISIONING_PROFILE_BASE64" | base64 --decode -o "$WIDGET_PP_PATH"
+          cp "$WIDGET_PP_PATH" "$PP_DIR/"
         fi
 
     - name: Deploy to TestFlight
@@ -91,4 +94,4 @@ jobs:
 
     - name: Clean up keychain
       if: always()
-      run: security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
+      run: security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db"
