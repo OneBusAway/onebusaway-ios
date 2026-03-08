@@ -89,6 +89,13 @@ class ProximityAlertTests: OBATestCase {
         expect(alert.isExpired).to(beTrue())
     }
 
+    func test_isExpired_falseAtExactly24Hours() {
+        let boundaryDate = Date().addingTimeInterval(-24 * 60 * 60)
+        let alert = ProximityAlert(stop: stop, createdAt: boundaryDate)
+
+        expect(alert.isExpired).to(beFalse())
+    }
+
     // MARK: - Equality
 
     func test_equality_sameID() {
@@ -250,6 +257,17 @@ class ProximityAlertStoreTests: OBATestCase {
         userDefaultsStore.deleteExpiredProximityAlerts()
 
         waitForExpectations(timeout: 0.5)
+    }
+
+    func test_deleteExpired_postsNotification_whenExpiredAlertsRemoved() {
+        let expiredDate = Date().addingTimeInterval(-25 * 60 * 60)
+        let alert = ProximityAlert(stop: stop, createdAt: expiredDate)
+        userDefaultsStore.add(proximityAlert: alert)
+
+        expectation(forNotification: .proximityAlertsDidChange, object: userDefaultsStore)
+        userDefaultsStore.deleteExpiredProximityAlerts()
+
+        waitForExpectations(timeout: 1.0)
     }
 
     // MARK: - Persistence Across Stores
