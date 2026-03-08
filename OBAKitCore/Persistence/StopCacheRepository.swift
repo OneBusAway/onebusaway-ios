@@ -52,12 +52,15 @@ public final class StopCacheRepository: @unchecked Sendable {
     // MARK: - Write
 
     /// Saves an array of stops into the cache, upserting on the composite key (regionId, id).
+    /// Stops that fail to encode are skipped rather than persisting corrupted data.
     /// All writes happen in a single transaction for atomicity.
     public func saveStops(_ stops: [Stop], regionId: Int) {
         do {
             try database.dbQueue.write { db in
                 for stop in stops {
-                    let record = CachedStop(stop: stop, regionId: regionId)
+                    guard let record = CachedStop(stop: stop, regionId: regionId) else {
+                        continue
+                    }
                     try record.save(db)
                 }
             }
