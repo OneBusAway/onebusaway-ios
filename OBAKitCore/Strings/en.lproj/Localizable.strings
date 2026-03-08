@@ -430,3 +430,9 @@
 /* VoiceOver text describing a route that is scheduled to depart. (no realtime data was available) */
 "voiceover.arrivaldeparture_scheduled_departs_in_x_minutes_fmt" = "scheduled to depart in %1$d minutes at %2$@.";
 
+/* Error when no transit stops are found near the user's location. */
+"nearby_trip_matcher.error.no_stops" = "No stops found nearby.";
+
+/* Error when a route has no real-time vehicle tracking data. */
+"nearby_trip_matcher.error.no_realtime" = "No real-time tracking data is available for this route.";
+
