@@ -71,6 +71,8 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
 
     private var watchSession: WCSession?
 
+    private var pendingWatchSync = false
+
     // MARK: - Public Properties
 
     lazy var donationsManager = DonationsManager(
@@ -558,8 +560,14 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
         analytics?.reportEvent(pageURL: "app://localhost/regions", label: label, value: nil)
     }
 
+    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        sendAllDataToWatch()
+    }
+
     public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         super.regionsService(service, updatedRegion: region)
+
+        sendAllDataToWatch()
 
         if let analytics {
             analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
@@ -694,7 +702,7 @@ extension Application {
             return
         }
 
-        if activationState == .activated {
+        if activationState == .activated && pendingWatchSync {
             sendAllDataToWatch()
         }
     }
@@ -707,7 +715,9 @@ extension Application {
         // Re-activate the session
         WCSession.default.activate()
     }
+}
 
+extension Application {
     // MARK: - Watch Sync
 
     @objc private func bookmarksUpdated(_ notification: Notification) {
@@ -720,6 +730,10 @@ extension Application {
 
     @objc private func serviceAlertsUpdated(_ notification: Notification) {
         sendServiceAlertsToWatch()
+    }
+
+    @objc private func regionsUpdated(_ notification: Notification) {
+        sendAllDataToWatch()
     }
 
     private func sendBookmarksToWatch() {
@@ -736,6 +750,8 @@ extension Application {
 
     private func sendAllDataToWatch() {
         guard let session = watchSession, session.activationState == .activated else {
+            pendingWatchSync = true
+            Logger.info("Watch sync skipped: WCSession not activated. Data queued.")
             return
         }
 
@@ -744,11 +760,42 @@ extension Application {
         context["bookmarks"] = buildBookmarkData() ?? []
         context["alarms"] = buildAlarmData() ?? []
         context["alerts"] = buildAlertData() ?? []
+        context["regions"] = buildRegionData() ?? []
 
         do {
             try session.updateApplicationContext(context)
+            pendingWatchSync = false
         } catch {
             Logger.error("Watch sync failed: \(error)")
+        }
+    }
+
+    private func buildRegionData() -> [Data]? {
+        let regions = regionsService.regions
+        guard !regions.isEmpty else { return nil }
+
+        return regions.compactMap { region -> Data? in
+            let coordinate = region.centerCoordinate
+            
+            struct SimpleRegion: Encodable {
+                let id: String
+                let name: String
+                let latitude: Double
+                let longitude: Double
+                let obaBaseURL: URL?
+                let otpBaseURL: URL?
+            }
+            
+            let simple = SimpleRegion(
+                id: String(region.regionIdentifier),
+                name: region.name,
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude,
+                obaBaseURL: region.OBABaseURL,
+                otpBaseURL: region.openTripPlannerURL
+            )
+            
+            return try? JSONEncoder().encode(simple)
         }
     }
 

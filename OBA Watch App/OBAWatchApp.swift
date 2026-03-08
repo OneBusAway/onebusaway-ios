@@ -73,15 +73,52 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         #endif
     }
 
-    struct RegionOption: Identifiable {
+    /// Default region ID used across the app
+    static let defaultRegionID = "mta-new-york"
+
+    struct RegionOption: Identifiable, Codable {
         let id: String
         let name: String
         let coordinate: CLLocationCoordinate2D
         let obaBaseURL: URL?
         let otpBaseURL: URL?
+
+        enum CodingKeys: String, CodingKey {
+            case id, name, latitude, longitude, obaBaseURL, otpBaseURL
+        }
+
+        init(id: String, name: String, coordinate: CLLocationCoordinate2D, obaBaseURL: URL?, otpBaseURL: URL?) {
+            self.id = id
+            self.name = name
+            self.coordinate = coordinate
+            self.obaBaseURL = obaBaseURL
+            self.otpBaseURL = otpBaseURL
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(String.self, forKey: .id)
+            name = try container.decode(String.self, forKey: .name)
+            let latitude = try container.decode(Double.self, forKey: .latitude)
+            let longitude = try container.decode(Double.self, forKey: .longitude)
+            coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            obaBaseURL = try container.decodeIfPresent(URL.self, forKey: .obaBaseURL)
+            otpBaseURL = try container.decodeIfPresent(URL.self, forKey: .otpBaseURL)
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(id, forKey: .id)
+            try container.encode(name, forKey: .name)
+            try container.encode(coordinate.latitude, forKey: .latitude)
+            try container.encode(coordinate.longitude, forKey: .longitude)
+            try container.encodeIfPresent(obaBaseURL, forKey: .obaBaseURL)
+            try container.encodeIfPresent(otpBaseURL, forKey: .otpBaseURL)
+        }
     }
 
-    static let regions: [RegionOption] = [
+    /// Hardcoded regions as fallback. These will be updated from the iOS app via WCSession if available.
+    static let fallbackRegions: [RegionOption] = [
         .init(
             id: "tampa-bay",
             name: OBALoc("region.tampa_bay", value: "Tampa Bay", comment: "Region: Tampa Bay"),
@@ -97,7 +134,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
             otpBaseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")
         ),
         .init(
-            id: "mta-new-york",
+            id: defaultRegionID,
             name: OBALoc("region.mta_new_york", value: "MTA New York", comment: "Region: MTA New York"),
             coordinate: .init(latitude: 40.7128, longitude: -74.0060),
             obaBaseURL: URL(string: "https://bustime.mta.info/"),
@@ -133,9 +170,12 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         )
     ]
 
+    /// Dynamically synced regions from the iOS app.
+    @Published var regions: [RegionOption] = fallbackRegions
+
     var currentOTPBaseURL: URL? {
-        let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        return Self.regions.first(where: { $0.id == regionID })?.otpBaseURL
+        let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? Self.defaultRegionID
+        return self.regions.first(where: { $0.id == regionID })?.otpBaseURL
     }
 
     /// Returns the location to use for nearby stops, taking into account
@@ -149,8 +189,8 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         }
         
         // Fallback to selected region
-        let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        if let region = Self.regions.first(where: { $0.id == regionID }) {
+        let regionID = Self.userDefaults.string(forKey: "watch_selected_region_id") ?? Self.defaultRegionID
+        if let region = self.regions.first(where: { $0.id == regionID }) {
             return CLLocation(latitude: region.coordinate.latitude, longitude: region.coordinate.longitude)
         }
         
@@ -177,7 +217,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
 
     /// Updates the current region and API client.
     func updateRegion(id: String) {
-         guard let region = Self.regions.first(where: { $0.id == id }) else { return }
+         guard let region = self.regions.first(where: { $0.id == id }) else { return }
          guard let url = region.obaBaseURL else {
              Logger.error("Selected region has no obaBaseURL: \(region.name)")
              return
@@ -211,11 +251,18 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         let manager = CLLocationManager()
         
         let defaults = Self.userDefaults
-        defaults.register(defaults: ["DataLoadFeedbackGenerator.enabled": true])
+        defaults.register(defaults: [
+            "watch_map_shows_scale": true,
+            "watch_map_shows_traffic": false,
+            "watch_map_shows_heading": true,
+            "watch_show_route_labels": true,
+            "watch_haptic_on_reload": true,
+            "watch_share_current_location": true
+        ])
 
         // Use the saved region if available, otherwise fall back to MTA New York.
         let savedRegionID = defaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
-        let savedRegion = Self.regions.first(where: { $0.id == savedRegionID })
+        let savedRegion = Self.fallbackRegions.first(where: { $0.id == savedRegionID })
         
         // Ensure we have a valid URL without force unwrapping
         var baseURL: URL
@@ -283,30 +330,49 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         }
     }
 
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String : Any]) {
+        processWatchData(applicationContext)
+    }
+
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String : Any] = [:]) {
+        processWatchData(userInfo)
+    }
+
+    nonisolated private func processWatchData(_ data: [String: Any]) {
         // Forward to managers
         Task { @MainActor in
-            if let bookmarks = userInfo["bookmarks"] as? [[String: Any]] {
+            if let bookmarks = data["bookmarks"] as? [[String: Any]] {
                 BookmarksSyncManager.shared.updateBookmarks(bookmarks)
-            } else if let rawBookmarks = userInfo["bookmarks"] {
+            } else if let rawBookmarks = data["bookmarks"] {
                 Logger.error("Received 'bookmarks' in unexpected format: \(type(of: rawBookmarks))")
             }
 
-            if let alerts = userInfo["alerts"] as? [[String: Any]] {
+            if let alerts = data["alerts"] as? [[String: Any]] {
                 ServiceAlertsSyncManager.shared.updateAlerts(alerts)
-            } else if let rawAlerts = userInfo["alerts"] {
+            } else if let rawAlerts = data["alerts"] {
                 Logger.error("Received 'alerts' in unexpected format: \(type(of: rawAlerts))")
             }
 
-            if let alarms = userInfo["alarms"] as? [[String: Any]] {
+            if let alarms = data["alarms"] as? [[String: Any]] {
                 AlarmsSyncManager.shared.updateAlarms(alarms)
-            } else if let rawAlarms = userInfo["alarms"] {
+            } else if let rawAlarms = data["alarms"] {
                 Logger.error("Received 'alarms' in unexpected format: \(type(of: rawAlarms))")
             }
 
-            let knownKeys: Set<String> = ["bookmarks", "alerts", "alarms"]
-            for key in userInfo.keys where !knownKeys.contains(key) {
-                Logger.error("Received unrecognized key in userInfo: '\(key)'")
+            if let regionsData = data["regions"] as? [Data] {
+                do {
+                    let decodedRegions = try regionsData.map { try JSONDecoder().decode(RegionOption.self, from: $0) }
+                    if !decodedRegions.isEmpty {
+                        self.regions = decodedRegions
+                    }
+                } catch {
+                    Logger.error("Failed to decode regions from watch data: \(error)")
+                }
+            }
+
+            let knownKeys: Set<String> = ["bookmarks", "alerts", "alarms", "regions"]
+            for key in data.keys where !knownKeys.contains(key) {
+                Logger.error("Received unrecognized key in watch data: '\(key)'")
             }
         }
     }

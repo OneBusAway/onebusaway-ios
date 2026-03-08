@@ -303,7 +303,8 @@ class OBAWatchDTOsTests: XCTestCase {
         let decoder = JSONDecoder()
         let dateFormats = ["yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd'T'HH:mm:ss.SSSZ"]
         let formatter = DateFormatter()
-        // Mirror exactly what OTPService does (no POSIX locale set).
+        // Mirror exactly what OTPService does (sets en_US_POSIX locale).
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         decoder.dateDecodingStrategy = .custom { container in
             let c = try container.singleValueContainer()
             if let ms = try? c.decode(Int64.self) {
