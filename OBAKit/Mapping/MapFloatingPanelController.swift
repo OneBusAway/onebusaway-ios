@@ -32,7 +32,6 @@ class MapFloatingPanelController: VisualEffectViewController,
     OBAListViewContextMenuDelegate,
     NearbyStopsListDataSource,
     NearbyStopsListDelegate,
-    SearchListViewControllerDelegate,
     UISearchBarDelegate,
     UIPopoverPresentationControllerDelegate {
 
@@ -58,7 +57,7 @@ class MapFloatingPanelController: VisualEffectViewController,
     }
 
     // Search
-    private var searchListViewController: SearchListViewController!
+    private var searchListViewController: UIHostingController<SearchListView>!
     var searchBarText: String = ""
 
     // MARK: - Init/Deinit
@@ -193,9 +192,10 @@ class MapFloatingPanelController: VisualEffectViewController,
             DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: workItem)
         }
 
-        searchListViewController = SearchListViewController()
+        let searchListView = UIHostingController(rootView: SearchListView(searchInteractor: searchInteractor))
+        searchListViewController = searchListView
         searchListViewController.view.translatesAutoresizingMaskIntoConstraints = false
-        searchListViewController.delegate = self
+        searchListViewController.view.backgroundColor = .clear
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -293,15 +293,11 @@ class MapFloatingPanelController: VisualEffectViewController,
         mapPanelDelegate?.mapPanelController(self, didSelectStop: stop.id)
     }
 
-    func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor) {
-        searchListViewController.updateSearch()
-    }
-
     func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor) {
         let alertController = UIAlertController.deletionAlert(title: Strings.clearRecentSearchesConfirmation) { [weak self] _ in
             guard let self = self else { return }
             self.application.userDataStore.deleteAllRecentMapItems()
-            self.searchListViewController.updateSearch()
+            self.searchInteractor.searchModeObjects(text: searchBarText)
         }
 
         present(alertController, animated: true, completion: nil)
@@ -313,7 +309,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchBarText = searchText
-        searchListViewController.updateSearch()
+        searchInteractor.searchModeObjects(text: searchBarText)
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
