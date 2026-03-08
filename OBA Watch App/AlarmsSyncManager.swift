@@ -29,7 +29,9 @@ final class AlarmsSyncManager {
             WatchAppState.userDefaults.set(encodedData, forKey: storageKey)
             NotificationCenter.default.post(name: Self.alarmsUpdatedNotification, object: nil)
         } catch {
-            Logger.error("updateAlarms failed: \(error)")
+            Logger.error("updateAlarms failed: \(error). Clearing stale data.")
+            WatchAppState.userDefaults.removeObject(forKey: storageKey)
+            NotificationCenter.default.post(name: Self.alarmsUpdatedNotification, object: nil)
         }
     }
 }

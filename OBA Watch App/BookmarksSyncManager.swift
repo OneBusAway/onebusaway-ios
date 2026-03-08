@@ -25,7 +25,9 @@ final class BookmarksSyncManager {
             WatchAppState.userDefaults.set(encodedData, forKey: storageKey)
             NotificationCenter.default.post(name: Self.bookmarksUpdatedNotification, object: nil)
         } catch {
-            Logger.error("updateBookmarks failed: \(error)")
+            Logger.error("updateBookmarks failed: \(error). Clearing stale data.")
+            WatchAppState.userDefaults.removeObject(forKey: storageKey)
+            NotificationCenter.default.post(name: Self.bookmarksUpdatedNotification, object: nil)
         }
     }
 

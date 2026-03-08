@@ -315,18 +315,11 @@ extension OBAArrival {
 
 struct EmptyArrivalsView: View {
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "clock.badge.xmark")
-                .font(.system(size: 30))
-                .foregroundColor(.secondary)
-            Text(OBALoc("stop_arrivals.no_upcoming_arrivals", value: "No Upcoming Arrivals", comment: "Empty state: no upcoming arrivals"))
-                .font(.headline)
-            Text(OBALoc("stop_arrivals.check_back_later", value: "Check back later", comment: "Empty state: check back later"))
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
+        EmptyStateView(
+            systemImage: "clock.badge.xmark",
+            title: OBALoc("stop_arrivals.no_upcoming_arrivals", value: "No Upcoming Arrivals", comment: "Empty state: no upcoming arrivals"),
+            message: OBALoc("stop_arrivals.check_back_later", value: "Check back later", comment: "Empty state: check back later")
+        )
     }
 }
 
@@ -335,19 +328,11 @@ struct ErrorView: View {
     let message: String
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 30))
-                .foregroundColor(.orange)
-            Text(OBALoc("common.error", value: "Error", comment: "Error title"))
-                .font(.headline)
-            Text(message)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
+        EmptyStateView(
+            systemImage: "exclamationmark.triangle",
+            title: OBALoc("common.error", value: "Error", comment: "Error title"),
+            message: message
+        )
     }
 }
 

@@ -121,7 +121,7 @@ struct RegionOnboardingView: View {
         // Use the saved region if available, otherwise fall back to MTA New York.
         let savedRegionID = WatchAppState.userDefaults.string(forKey: "watch_selected_region_id") ?? "mta-new-york"
         
-        let region = WatchAppState.regions.first(where: { $0.id == savedRegionID })
+        let region = WatchAppState.shared.regions.first(where: { $0.id == savedRegionID })
         let initialCoordinate = region?.coordinate ?? CLLocationCoordinate2D(latitude: 40.7128, longitude: -74.0060)
         
         _mapRegion = State(initialValue: MKCoordinateRegion(
@@ -144,7 +144,7 @@ struct RegionOnboardingView: View {
             }
 
             Section {
-                ForEach(WatchAppState.regions.filter { $0.obaBaseURL != nil }) { region in
+                ForEach(appState.regions.filter { $0.obaBaseURL != nil }) { region in
                     Button {
                         appState.updateRegion(id: region.id)
                         mapRegion.center = region.coordinate
@@ -214,7 +214,7 @@ struct RegionPreviewMapView: View {
     @StateObject private var viewModel = RegionPreviewMapViewModel()
 
     private var centerCoordinate: CLLocationCoordinate2D {
-        if let region = WatchAppState.regions.first(where: { $0.id == selectedRegionID }) {
+        if let region = appState.regions.first(where: { $0.id == selectedRegionID }) {
             return region.coordinate
         }
         return .init(latitude: 40.7128, longitude: -74.0060)
@@ -277,7 +277,7 @@ struct MainMenuView: View {
     @State private var showTimeSyncWarning: Bool = false
 
     private var regionName: String {
-        return WatchAppState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application")
+        return appState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.app_name", value: "OneBusAway", comment: "The name of the application")
     }
     
     var body: some View {

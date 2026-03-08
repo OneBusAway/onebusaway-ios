@@ -4,7 +4,7 @@ import SwiftUI
 public class WatchFeedbackGenerator {
     public static let shared = WatchFeedbackGenerator()
     
-    private let enabledKey = "DataLoadFeedbackGenerator.enabled"
+    private let enabledKey = "watch_haptic_on_reload"
     
     public func play(_ type: WKHapticType) {
         guard WatchAppState.userDefaults.bool(forKey: enabledKey) else { return }

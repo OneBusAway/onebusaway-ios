@@ -11,7 +11,7 @@ struct SettingsView: View {
     @AppStorage("watch_display_test_alerts", store: WatchAppState.userDefaults) private var displayTestAlerts: Bool = false
 
     // Accessibility
-    @AppStorage("watch_haptic_on_reload", store: WatchAppState.userDefaults) private var hapticOnReload: Bool = false
+    @AppStorage("watch_haptic_on_reload", store: WatchAppState.userDefaults) private var hapticOnReload: Bool = true
     @AppStorage("watch_always_show_full_sheet_voice", store: WatchAppState.userDefaults) private var alwaysShowFullSheetVoice: Bool = false
 
     // Debug
@@ -29,7 +29,7 @@ struct SettingsView: View {
                     HStack {
                         Text(OBALoc("settings.choose_region", value: "Choose Region", comment: "Choose region button"))
                         Spacer()
-                        Text(WatchAppState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value"))
+                        Text(appState.regions.first(where: { $0.id == selectedRegionID })?.name ?? OBALoc("common.unknown", value: "Unknown", comment: "Unknown value"))
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
@@ -75,7 +75,7 @@ struct ChooseRegionView: View {
     
     var body: some View {
         List {
-            ForEach(WatchAppState.regions.filter { $0.obaBaseURL != nil }) { region in
+            ForEach(appState.regions.filter { $0.obaBaseURL != nil }) { region in
                 Button {
                     appState.updateRegion(id: region.id)
                     dismiss()
