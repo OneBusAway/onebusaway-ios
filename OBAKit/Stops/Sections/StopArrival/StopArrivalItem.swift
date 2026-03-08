@@ -147,6 +147,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
         hasher.combine(scheduledDate)
         hasher.combine(scheduleStatus)
         hasher.combine(temporalState)
+        hasher.combine(transferContext)
     }
 
     static func == (lhs: ArrivalDepartureItem, rhs: ArrivalDepartureItem) -> Bool {
@@ -157,7 +158,8 @@ struct ArrivalDepartureItem: OBAListViewItem {
             lhs.name == rhs.name &&
             lhs.scheduledDate == rhs.scheduledDate &&
             lhs.scheduleStatus == rhs.scheduleStatus &&
-            lhs.temporalState == rhs.temporalState
+            lhs.temporalState == rhs.temporalState &&
+            lhs.transferContext == rhs.transferContext
     }
 }
 
