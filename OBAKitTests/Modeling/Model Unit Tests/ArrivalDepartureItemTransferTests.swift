@@ -37,8 +37,7 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: transferArrival,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
 
         let itemWithTransfer = ArrivalDepartureItem(
@@ -71,8 +70,7 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrDep.arrivalDepartureDate,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
 
         let item = ArrivalDepartureItem(
@@ -98,8 +96,7 @@ class ArrivalDepartureItemTransferTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: transferArrival,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
 
         let item = ArrivalDepartureItem(

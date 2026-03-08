@@ -11,7 +11,7 @@ import Foundation
 
 /// Context about an in-progress trip transfer, used to customize the stop view
 /// when navigating from a trip's stop list to a connecting stop.
-public struct TransferContext {
+public struct TransferContext: Equatable, Hashable {
     /// The time the rider is expected to arrive at the transfer stop.
     public let arrivalTime: Date
 
@@ -22,13 +22,18 @@ public struct TransferContext {
     public let fromTripHeadsign: String
 
     /// Combined route and headsign for display (e.g., "10 - Capitol Hill").
-    public let fromRouteDisplay: String
+    /// Derived from `fromRouteShortName` and `fromTripHeadsign` so it can
+    /// never contradict the component fields.
+    public var fromRouteDisplay: String {
+        [fromRouteShortName, fromTripHeadsign]
+            .filter { !$0.isEmpty }
+            .joined(separator: " - ")
+    }
 
-    public init(arrivalTime: Date, fromRouteShortName: String, fromTripHeadsign: String, fromRouteDisplay: String) {
+    public init(arrivalTime: Date, fromRouteShortName: String, fromTripHeadsign: String) {
         self.arrivalTime = arrivalTime
         self.fromRouteShortName = fromRouteShortName
         self.fromTripHeadsign = fromTripHeadsign
-        self.fromRouteDisplay = fromRouteDisplay
     }
 
     /// Convenience factory that extracts route info from an `ArrivalDeparture`.
@@ -36,8 +41,7 @@ public struct TransferContext {
         TransferContext(
             arrivalTime: arrivalDate,
             fromRouteShortName: arrivalDeparture.routeShortName,
-            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? "",
-            fromRouteDisplay: arrivalDeparture.routeAndHeadsign
+            fromTripHeadsign: arrivalDeparture.tripHeadsign ?? ""
         )
     }
 
