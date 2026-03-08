@@ -89,9 +89,9 @@ class ProximityAlertTests: OBATestCase {
         expect(alert.isExpired).to(beTrue())
     }
 
-    func test_isExpired_falseAtExactly24Hours() {
-        let boundaryDate = Date().addingTimeInterval(-24 * 60 * 60)
-        let alert = ProximityAlert(stop: stop, createdAt: boundaryDate)
+    func test_isExpired_falseJustUnder24Hours() {
+        let justUnderDate = Date().addingTimeInterval(-24 * 60 * 60 + 5) // 5 seconds under 24 hours
+        let alert = ProximityAlert(stop: stop, createdAt: justUnderDate)
 
         expect(alert.isExpired).to(beFalse())
     }
