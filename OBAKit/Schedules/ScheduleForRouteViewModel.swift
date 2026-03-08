@@ -260,6 +260,22 @@ class ScheduleForRouteViewModel: ObservableObject {
         do {
             let response = try await apiService.getScheduleForRoute(routeID: routeID, date: selectedDate)
             scheduleData = response.entry
+        } catch let apiError as APIError {
+            if case .requestNotFound = apiError {
+                if application.currentRegion?.supportsScheduleForRoute == false {
+                    self.error = UnstructuredError(
+                        OBALoc(
+                            "schedule_view.feature_not_supported",
+                            value: "The timetable feature is not available for this region. The transit agency's server does not support this feature.",
+                            comment: "Error message shown when the schedule-for-route API endpoint is not available on the server."
+                        )
+                    )
+                } else {
+                    self.error = apiError // Let the generic error show for actual 404s
+                }
+            } else {
+                self.error = apiError
+            }
         } catch {
             self.error = error
         }

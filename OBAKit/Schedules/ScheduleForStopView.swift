@@ -75,7 +75,7 @@ struct ScheduleForStopView: View {
         if stopViewModel.isLoading && stopViewModel.scheduleData == nil {
             ProgressView()
         } else if let error = stopViewModel.error {
-            ErrorView(headline: StopScheduleStrings.unableToLoad, error: error) {
+            ErrorView(headline: StopScheduleStrings.unableToLoad, error: error, regionName: application.currentRegionName) {
                 Task {
                     await stopViewModel.fetchSchedule()
                 }
@@ -93,7 +93,7 @@ struct ScheduleForStopView: View {
             headerSection
             Divider()
 
-            if isShowingFullRouteSchedule {
+            if isShowingFullRouteSchedule && (application.currentRegion?.supportsScheduleForRoute ?? true) {
                 fullRouteScheduleSection
             } else {
                 stopFocusedScheduleSection
@@ -160,7 +160,8 @@ struct ScheduleForStopView: View {
             }
 
             // Segmented control: Stop Focused Schedules vs Full Route Schedules
-            if stopViewModel.selectedRouteID != nil {
+            // Only show the full route schedule option if the region supports the schedule-for-route API.
+            if stopViewModel.selectedRouteID != nil && (application.currentRegion?.supportsScheduleForRoute ?? true) {
                 Picker(StopScheduleStrings.chooseScheduleType, selection: $isShowingFullRouteSchedule) {
                     Text(StopScheduleStrings.stopSchedule).tag(false)
                     Text(StopScheduleStrings.fullRouteSchedule).tag(true)
@@ -212,7 +213,7 @@ struct ScheduleForStopView: View {
     @ViewBuilder
     private var fullRouteScheduleSection: some View {
         if let routeVM = routeViewModel {
-            RouteScheduleContentView(viewModel: routeVM, showDatePicker: false)
+            RouteScheduleContentView(viewModel: routeVM, showDatePicker: false, regionName: application.currentRegionName)
                 .id(routeVM.routeID)
         } else {
             ProgressView()

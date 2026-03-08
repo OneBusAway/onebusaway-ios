@@ -262,12 +262,17 @@ class TripViewController: UIViewController,
     private var currentTripStatus: TripStatus? {
         didSet {
             guard let currentTripStatus = currentTripStatus else {
-                vehicleAnnotation = nil
+                removeVehicleAnnotation()
                 return
             }
 
             if let vehicleAnnotation = vehicleAnnotation {
                 vehicleAnnotation.tripStatus = currentTripStatus
+                // Update the annotation view's heading and real-time state since
+                // the annotation property didSet on the view won't re-fire.
+                if let vehicleAnnotationView = vehicleAnnotationView as? PulsingVehicleAnnotationView {
+                    vehicleAnnotationView.applyTripStatus(currentTripStatus)
+                }
             }
             else {
                 vehicleAnnotation = VehicleAnnotation(tripStatus: currentTripStatus)
@@ -276,6 +281,15 @@ class TripViewController: UIViewController,
 
             updateTitleView()
         }
+    }
+
+    /// Removes the vehicle annotation from the map and clears the reference.
+    private func removeVehicleAnnotation() {
+        if let annotation = vehicleAnnotation {
+            mapView.removeAnnotation(annotation)
+        }
+        vehicleAnnotation = nil
+        vehicleAnnotationView = nil
     }
 
     private func loadTripConvertible(isProgrammatic: Bool) async throws {
@@ -458,7 +472,14 @@ class TripViewController: UIViewController,
 
     public func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
         guard let stopTime = view.annotation as? TripStopTime else { return }
-        application.viewRouter.navigateTo(stop: stopTime.stop, from: self)
+
+        var transferContext: TransferContext?
+        if let arrivalDeparture = tripConvertible.arrivalDeparture,
+           stopTime.stopID != arrivalDeparture.stopID {
+            transferContext = .from(arrivalDeparture: arrivalDeparture, arrivalDate: stopTime.arrivalDate)
+        }
+
+        application.viewRouter.navigateTo(stop: stopTime.stop, from: self, transferContext: transferContext)
     }
 
     // TODO FIXME: DRY up with MapRegionManager

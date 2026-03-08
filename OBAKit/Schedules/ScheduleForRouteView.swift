@@ -39,6 +39,9 @@ struct RouteScheduleContentView: View {
     /// Whether to show the date picker (false when embedded in ScheduleForStopView which has its own)
     var showDatePicker: Bool = true
 
+    /// The current region name for error classification.
+    var regionName: String?
+
     var body: some View {
         content
             .task {
@@ -55,7 +58,7 @@ struct RouteScheduleContentView: View {
         if viewModel.isLoading && viewModel.scheduleData == nil {
             ProgressView()
         } else if let error = viewModel.error {
-            ErrorView(headline: ScheduleStrings.unableToLoad, error: error) {
+            ErrorView(headline: ScheduleStrings.unableToLoad, error: error, regionName: regionName) {
                 Task {
                     await viewModel.fetchSchedule()
                 }
@@ -146,13 +149,16 @@ struct ScheduleForRouteView: View {
     @StateObject private var viewModel: ScheduleForRouteViewModel
     @Environment(\.dismiss) private var dismiss
 
+    private let application: Application
+
     init(routeID: RouteID, application: Application) {
+        self.application = application
         _viewModel = StateObject(wrappedValue: ScheduleForRouteViewModel(routeID: routeID, application: application))
     }
 
     var body: some View {
         NavigationStack {
-            RouteScheduleContentView(viewModel: viewModel)
+            RouteScheduleContentView(viewModel: viewModel, regionName: application.currentRegionName)
                 .navigationTitle(viewModel.routeName)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

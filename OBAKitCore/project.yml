@@ -8,6 +8,7 @@ targets:
     sources: ["."]
     dependencies:
       - package: SwiftProtobuf
+      - package: GRDB
     scheme:
       gatherCoverageData: true
     info:

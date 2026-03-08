@@ -45,6 +45,18 @@ class ManageBookmarksViewController: FormViewController {
         }
     }
 
+    /// Rebuilds the form from the current userDataStore on the next run loop iteration.
+    /// Deferral avoids index-out-of-bounds inside Eureka during child controller transitions.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/922
+    func reloadFormFromStore() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            UIView.performWithoutAnimation {
+                self.loadForm()
+            }
+        }
+    }
+
     // MARK: - TableView Delegate Overrides
 
     override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
@@ -57,13 +69,7 @@ class ManageBookmarksViewController: FormViewController {
 
         // Defer refresh to avoid index-out-of-bounds during Eureka's internal animation.
         // See: https://github.com/OneBusAway/onebusaway-ios/issues/922
-        // Use performWithoutAnimation to prevent visual glitches.
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            UIView.performWithoutAnimation {
-                self.loadForm()
-            }
-        }
+        reloadFormFromStore()
     }
 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
@@ -164,6 +170,21 @@ class ManageBookmarksViewController: FormViewController {
 
     // MARK: - Bookmark Name Updates
 
+    /// Derives the original transit-provided name for a bookmark
+    /// (e.g., "57 - Downtown Seattle Via SR-99" for a trip bookmark,
+    /// or the formatted stop title for a stop bookmark).
+    private func originalTransitName(for bookmark: Bookmark) -> String {
+        if bookmark.isTripBookmark,
+           let routeShortName = bookmark.routeShortName,
+           let tripHeadsign = bookmark.tripHeadsign {
+            return "\(routeShortName) - \(tripHeadsign)"
+        }
+        return Formatters.formattedTitle(stop: bookmark.stop)
+    }
+
+    /// Persists a non-empty name change as the user types.
+    /// Empty names are deferred to `restoreEmptyBookmarkNames()` at dismissal,
+    /// so the user can freely clear the field before typing a new name.
     private func saveBookmarkNameChange(row: NameRow) {
         guard
             let bookmarkID = UUID(optionalUUIDString: row.tag),
@@ -174,12 +195,40 @@ class ManageBookmarksViewController: FormViewController {
             return
         }
 
+        bookmark.name = newName
+
         // Look up current group from bookmark's groupID
         let currentGroup = bookmark.groupID.flatMap {
             application.userDataStore.findGroup(id: $0)
         }
 
-        bookmark.name = newName
         application.userDataStore.add(bookmark, to: currentGroup)
+    }
+
+    /// Called when the user closes the screen. Any bookmark whose name field
+    /// was left empty gets its original transit-derived name restored.
+    func restoreEmptyBookmarkNames() {
+        for section in bookmarksSections {
+            for row in section.allRows {
+                guard let nameRow = row as? NameRow else { continue }
+                let trimmed = nameRow.value?.trimmingCharacters(in: .whitespaces) ?? ""
+                guard trimmed.isEmpty else { continue }
+
+                guard
+                    let bookmarkID = UUID(optionalUUIDString: nameRow.tag),
+                    let bookmark = application.userDataStore.findBookmark(id: bookmarkID)
+                else {
+                    continue
+                }
+
+                let restored = originalTransitName(for: bookmark)
+                bookmark.name = restored
+
+                let currentGroup = bookmark.groupID.flatMap {
+                    application.userDataStore.findGroup(id: $0)
+                }
+                application.userDataStore.add(bookmark, to: currentGroup)
+            }
+        }
     }
 }

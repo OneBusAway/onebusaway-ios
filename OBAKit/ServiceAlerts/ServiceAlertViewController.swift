@@ -102,11 +102,14 @@ final class ServiceAlertViewController: UIViewController, WKNavigationDelegate {
 
     // MARK: - Page Content
     private func preparePage() {
-        queue.async { self.buildPageContent() }
+        queue.async { [weak self] in
+            self?.buildPageContent()
+        }
     }
 
     private func displayPage(contents html: String) {
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
             self.view.addSubview(self.webView)
             self.webView.pinToSuperview(.edges)
             self.webView.setPageContent(html)

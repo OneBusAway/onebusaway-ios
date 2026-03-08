@@ -660,6 +660,37 @@ public class Formatters: NSObject {
         }
     }
 
+    // MARK: - Transfer-Relative Time
+
+    /// Formats minutes relative to a transfer arrival time for the short time badge.
+    /// Positive = future departure after arrival, zero = on arrival, negative = already departed.
+    public func shortFormattedTransferTime(minutes: Int) -> String {
+        if minutes == 0 {
+            return OBALoc(
+                "formatters.transfer.on_arrival",
+                value: "NOW",
+                comment: "Short text shown when a departure occurs at the same time as the rider's transfer arrival."
+            )
+        }
+        let fmt = OBALoc(
+            "formatters.short_time_fmt",
+            value: "%dm",
+            comment: "Short formatted time text for arrivals/departures. Example: 7m means that this event happens 7 minutes in the future. -7m means 7 minutes in the past."
+        )
+        return String(format: fmt, minutes)
+    }
+
+    /// Formats a transfer arrival banner string. e.g., "Arriving at 4:10 PM via 10 - Capitol Hill"
+    public func transferArrivalBannerText(arrivalTime: Date, routeDisplay: String) -> String {
+        let formattedTime = timeFormatter.string(from: arrivalTime)
+        let fmt = OBALoc(
+            "formatters.transfer.arrival_banner_fmt",
+            value: "Arriving at %@ via %@",
+            comment: "Transfer arrival banner. First parameter is the arrival time, second is the route name and headsign. e.g. 'Arriving at 4:10 PM via 10 - Capitol Hill'"
+        )
+        return String(format: fmt, formattedTime, routeDisplay)
+    }
+
     // MARK: - Search
 
     /// Creates search bar placeholder text for the specified region. e.g. 'Search in Puget Sound'.

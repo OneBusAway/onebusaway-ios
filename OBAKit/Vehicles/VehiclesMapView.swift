@@ -155,7 +155,8 @@ struct VehiclesMapView: View {
                         .font(.caption)
                 }
             } else if let error = viewModel.error {
-                Label(error.localizedDescription, systemImage: "exclamationmark.triangle.fill")
+                let classified = ErrorClassifier.classify(error, regionName: viewModel.application.currentRegionName)
+                Label(classified.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundColor(.red)
                     .lineLimit(2)

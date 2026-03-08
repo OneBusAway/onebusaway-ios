@@ -55,6 +55,7 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         groupsController.updateModelState()
+        bookmarksController.restoreEmptyBookmarkNames()
         delegate?.manageBookmarksReloadData(self)
     }
 
@@ -82,14 +83,19 @@ class ManageBookmarksAndGroupsViewController: UIViewController {
 
     @objc private func toggleControllers() {
         if controllerToggle.selectedSegmentIndex == 0 {
+            bookmarksController.restoreEmptyBookmarkNames()
             removeChildController(bookmarksController)
             addChildController(groupsController)
             groupsController.view.pinToSuperview(.edges)
         }
         else {
+            // Persist group additions/deletions/renames so the bookmarks
+            // tab sees the current groups when it rebuilds its sections.
+            groupsController.updateModelState()
             removeChildController(groupsController)
             addChildController(bookmarksController)
             bookmarksController.view.pinToSuperview(.edges)
+            bookmarksController.reloadFormFromStore()
         }
     }
 }

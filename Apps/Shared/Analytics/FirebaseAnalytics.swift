@@ -14,6 +14,10 @@ import FirebaseCrashlytics
 class FirebaseAnalytics: NSObject {
     init(userID: String) {
         FirebaseApp.configure()
+        #if DEBUG
+        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+        Analytics.setAnalyticsCollectionEnabled(false)
+        #endif
         Analytics.setUserID(userID)
     }
 

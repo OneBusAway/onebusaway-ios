@@ -13,13 +13,17 @@ import BLTNBoard
 import Hyperconnectivity
 import OBAKitCore
 
-/// This class knows how to present a modal alert that tells the user that their Internet connection is compromised and unable to retrieve data.
+/// Presents a modal alert that tells the user their Internet connection is compromised and unable to retrieve data.
 class ReachabilityBulletin: NSObject {
     private let bulletinManager: BLTNItemManager
     private let connectivityPage: ThemedBulletinPage
 
     override init() {
-        connectivityPage = ThemedBulletinPage(title: OBALoc("reachability_bulletin.title", value: "No Internet", comment: "Title of the alert that appears when the app can't connect to the server."))
+        connectivityPage = ThemedBulletinPage(title: OBALoc(
+            "reachability_bulletin.title",
+            value: "No Internet",
+            comment: "Title of the alert that appears when the app can't connect to the server."
+        ))
         bulletinManager = BLTNItemManager(rootItem: connectivityPage)
 
         super.init()
@@ -35,7 +39,7 @@ class ReachabilityBulletin: NSObject {
         bulletinManager.edgeSpacing = .compact
     }
 
-    func showStatus(_ status: ConnectivityResult, in application: UIApplication) {
+    func showStatus(_ status: ConnectivityResult, in application: UIApplication, isCellularDataRestricted: Bool = false) {
         guard
             !status.isConnected,
             !bulletinManager.isShowingBulletin
@@ -43,13 +47,37 @@ class ReachabilityBulletin: NSObject {
             return
         }
 
-        switch status.connection {
-        case .wifi:
-            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.wifi_no_internet", value: "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.", comment: "Reachability bulletin for a WiFi network that can't access the Internet.")
-        case .cellular:
-            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.cellular_no_internet", value: "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.", comment: "Reachability bulletin for a cellular connection that can't access the Internet.")
-        default:
-            connectivityPage.descriptionText = OBALoc("reachability_bulletin.description.not_connected", value: "We can't access the Internet. Try connecting via WiFi or cellular data.", comment: "Reachability bulletin for a phone with no connection.")
+        // Check for cellular data restriction before falling through
+        // to the generic connectivity messages. This provides a specific,
+        // actionable recovery message instead of a vague "no internet" alert.
+        if isCellularDataRestricted {
+            let fmt = OBALoc(
+                "reachability_bulletin.description.cellular_data_restricted_fmt",
+                value: "%@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %@, or connect to a WiFi network.",
+                comment: "Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name."
+            )
+            connectivityPage.descriptionText = String(format: fmt, Bundle.main.appName, Bundle.main.appName)
+        } else {
+            switch status.connection {
+            case .wifi:
+                connectivityPage.descriptionText = OBALoc(
+                    "reachability_bulletin.description.wifi_no_internet",
+                    value: "We can't access the Internet via your WiFi connection.\r\n\r\nTry turning off WiFi or connecting to a different network.",
+                    comment: "Reachability bulletin for a WiFi network that can't access the Internet."
+                )
+            case .cellular:
+                connectivityPage.descriptionText = OBALoc(
+                    "reachability_bulletin.description.cellular_no_internet",
+                    value: "We can't access the Internet via your cellular connection.\r\n\r\nTry connecting to WiFi or moving to a new area.",
+                    comment: "Reachability bulletin for a cellular connection that can't access the Internet."
+                )
+            default:
+                connectivityPage.descriptionText = OBALoc(
+                    "reachability_bulletin.description.not_connected",
+                    value: "We can't access the Internet. Try connecting via WiFi or cellular data.",
+                    comment: "Reachability bulletin for a phone with no connection."
+                )
+            }
         }
 
         dismiss()

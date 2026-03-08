@@ -274,7 +274,40 @@ public class MapRegionManager: NSObject,
                 // Some UI code is dependent on this being changed on Main.
                 self.stops = stops
             }
+
+            // Save to cache in the background for offline use.
+            // See: https://github.com/OneBusAway/onebusaway-ios/issues/62
+            if let regionId = application.currentRegion?.regionIdentifier,
+               let repository = application.stopCacheRepository {
+                repository.saveStops(stops, regionId: regionId)
+            }
         } catch {
+            // Don't attempt cache fallback for cancelled tasks (e.g., user navigated away).
+            if error is CancellationError { return }
+
+            Logger.error("API stop request failed, attempting cache fallback: \(error)")
+
+            // On API failure, try serving from cache before showing error
+            if let regionId = application.currentRegion?.regionIdentifier,
+               let repository = application.stopCacheRepository {
+                let minLat = mapRegion.center.latitude - mapRegion.span.latitudeDelta / 2.0
+                let maxLat = mapRegion.center.latitude + mapRegion.span.latitudeDelta / 2.0
+                let minLon = mapRegion.center.longitude - mapRegion.span.longitudeDelta / 2.0
+                let maxLon = mapRegion.center.longitude + mapRegion.span.longitudeDelta / 2.0
+
+                let cachedStops = repository.stopsInRegion(
+                    minLat: minLat, maxLat: maxLat,
+                    minLon: minLon, maxLon: maxLon,
+                    regionId: regionId
+                )
+
+                if !cachedStops.isEmpty {
+                    await MainActor.run {
+                        self.stops = cachedStops
+                    }
+                    return
+                }
+            }
             await self.application.displayError(error)
         }
     }
@@ -390,9 +423,10 @@ public class MapRegionManager: NSObject,
         }
 
         let existingAnnotations = mapView.annotations
-        let existingBookmarkIDs = Set(existingAnnotations.compactMap { ($0 as? Bookmark)?.stopID })
         let existingStopIDs = Set(existingAnnotations.compactMap { ($0 as? Stop)?.id })
         var affectedStopIDs: Set<StopID> = []
+
+        // Remove Stop annotations that now have a corresponding Bookmark
         let stopAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
             guard
                 let stop = annotation as? Stop,
@@ -404,27 +438,45 @@ public class MapRegionManager: NSObject,
             affectedStopIDs.insert(stop.id)
             return stop
         }
+
+        // Remove Bookmark annotations that are stale:
+        //   - The bookmark's stop no longer has ANY bookmark (deleted), OR
+        //   - The bookmark on the map is a different object than the current one (replaced)
         let bookmarkAnnotationsToRemove = existingAnnotations.compactMap { annotation -> MKAnnotation? in
-            guard
-                let bookmark = annotation as? Bookmark,
-                bookmarksHash[bookmark.stopID] == nil
-            else {
+            guard let bookmark = annotation as? Bookmark else {
                 return nil
             }
-            affectedStopIDs.insert(bookmark.stopID)
-            return bookmark
+
+            guard let currentBookmark = bookmarksHash[bookmark.stopID] else {
+                // No bookmark exists for this stop anymore, remove the stale annotation
+                affectedStopIDs.insert(bookmark.stopID)
+                return bookmark
+            }
+
+            // If a different bookmark now represents this stop, remove the old one
+            if currentBookmark.id != bookmark.id {
+                affectedStopIDs.insert(bookmark.stopID)
+                return bookmark
+            }
+
+            return nil
         }
+
         let allAnnotationsToRemove = stopAnnotationsToRemove + bookmarkAnnotationsToRemove
         for annotation in allAnnotationsToRemove where mapView.selectedAnnotations.contains(where: { $0 === annotation }) {
             mapView.deselectAnnotation(annotation, animated: false)
         }
         mapView.removeAnnotations(allAnnotationsToRemove)
 
+        // Add new Bookmark annotations that aren't already on the map
+        // Check by bookmark ID (not just stopID) to correctly add replacements
+        let existingBookmarkIDs = Set(mapView.annotations.compactMap { ($0 as? Bookmark)?.id })
         let bookmarksToAdd = bookmarksHash.values.filter {
-            !existingBookmarkIDs.contains($0.stopID)
+            !existingBookmarkIDs.contains($0.id)
         }
         mapView.addAnnotations(Array(bookmarksToAdd))
 
+        // Re-add Stop annotations for stops that no longer have bookmarks
         let stopsToAdd = stops.filter {
             !bookmarksHash.keys.contains($0.id) &&
             !existingStopIDs.contains($0.id)

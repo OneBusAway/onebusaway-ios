@@ -253,14 +253,16 @@ class SearchInteractor: NSObject {
             return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
 
         case .error(let error):
-            var item = OBAListRowView.DefaultViewModel(title: error.localizedDescription, accessoryType: .none)
-            // Set appropriate error icon based on error type
-            if let apiError = error as? APIError {
+            let classified = ErrorClassifier.classify(error, regionName: application.currentRegionName)
+            var item = OBAListRowView.DefaultViewModel(title: classified.localizedDescription, accessoryType: .none)
+            if let apiError = classified as? APIError {
                 switch apiError {
-                case .networkFailure:
+                case .networkFailure, .cellularDataRestricted:
                     item.image = UIImage(systemName: "wifi.slash")
                 case .captivePortal:
                     item.image = UIImage(systemName: "wifi.exclamationmark")
+                case .serverError, .serverUnavailable:
+                    item.image = UIImage(systemName: "server.rack")
                 default:
                     item.image = UIImage(systemName: "exclamationmark.triangle")
                 }

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 struct ErrorCaptionItem: OBAListViewItem {
     var configuration: OBAListViewItemConfiguration {
@@ -26,9 +27,10 @@ struct ErrorCaptionItem: OBAListViewItem {
     var id: UUID
     var text: String
 
-    init(id: UUID = UUID(), error: Error) {
+    init(id: UUID = UUID(), error: Error, regionName: String? = nil) {
         self.id = id
-        self.text = error.localizedDescription
+        let classified = ErrorClassifier.classify(error, regionName: regionName)
+        self.text = classified.localizedDescription
     }
 
     init(id: UUID = UUID(), text: String) {

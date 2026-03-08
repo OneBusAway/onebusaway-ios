@@ -85,6 +85,10 @@ class StopAnnotationView: MKAnnotationView {
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     // MARK: - Annotation View Overrides
 
     public override func prepareForReuse() {

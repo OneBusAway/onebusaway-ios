@@ -76,6 +76,7 @@ class MapViewController: UIViewController,
 
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationDidBecomeActive(_:)), name: UIApplication.didBecomeActiveNotification, object: nil)
         self.application.notificationCenter.addObserver(self, selector: #selector(applicationWillResignActive(_:)), name: UIApplication.willResignActiveNotification, object: nil)
+        self.application.notificationCenter.addObserver(self, selector: #selector(reloadBookmarkAnnotations), name: .bookmarksDidChange, object: nil)
     }
 
     required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -83,6 +84,7 @@ class MapViewController: UIViewController,
     deinit {
         application.mapRegionManager.removeDelegate(self)
         application.locationService.removeDelegate(self)
+        application.notificationCenter.removeObserver(self)
     }
 
     // MARK: - UIViewController
@@ -95,7 +97,10 @@ class MapViewController: UIViewController,
         mapView.pinToSuperview(.edges)
 
         mapStatusView.configure(with: application.locationService)
-        mapStatusView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(didTapMapStatus)))
+
+        let statusTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleMapStatusTap(_:)))
+        mapStatusView.addGestureRecognizer(statusTapGesture)
+
         view.addSubview(mapStatusView)
         NSLayoutConstraint.activate([
             mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -185,6 +190,32 @@ class MapViewController: UIViewController,
         if floatingPanel.state == .full {
             floatingPanel.move(to: .half, animated: true)
         }
+    }
+
+    // MARK: - Status View Handlers
+
+    private var isShowingZoomWarning = false
+
+    private static let zoomInForStopsSpan = 0.01
+
+    @objc private func handleMapStatusTap(_ sender: UITapGestureRecognizer) {
+        if isShowingZoomWarning {
+            didTapZoomInForStops()
+        } else {
+            didTapMapStatus(sender)
+        }
+    }
+
+    private func didTapZoomInForStops() {
+        let currentCenter = mapRegionManager.mapView.region.center
+
+        let targetSpan = MKCoordinateSpan(
+            latitudeDelta: MapViewController.zoomInForStopsSpan,
+            longitudeDelta: MapViewController.zoomInForStopsSpan
+        )
+
+        let newRegion = MKCoordinateRegion(center: currentCenter, span: targetSpan)
+        mapRegionManager.mapView.setRegion(newRegion, animated: true)
     }
 
     @objc func didTapMapStatus(_ sender: Any) {
@@ -523,6 +554,13 @@ class MapViewController: UIViewController,
         centerMapOnUserLocation()
     }
 
+    @objc private func reloadBookmarkAnnotations() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self, let region = self.application.currentRegion else { return }
+            self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
+        }
+    }
+
     // MARK: - Content Presentation
 
     /// Displays the specified stop.
@@ -632,7 +670,9 @@ class MapViewController: UIViewController,
 
         // Disables voiceover interacting with map elements (such as streets and POIs).
         // See #431.
-        mapRegionManager.mapView.accessibilityElementsHidden = !floatingPanelPositionIsCollapsed
+        // Only hide the map from VoiceOver if the sheet is covering the ENTIRE screen.
+        // This allows users to interact with map pins when the sheet is in .half or .tip state.
+        mapRegionManager.mapView.accessibilityElementsHidden = (vc.state == .full)
 
         if mapPanelController.inSearchMode && floatingPanelPositionIsCollapsed {
             mapPanelController.exitSearchMode()
@@ -643,7 +683,7 @@ class MapViewController: UIViewController,
         mapRegionManager.preferredLoadDataRegionFudgeFactor = UIAccessibility.isVoiceOverRunning ? 1.5 : MapRegionManager.DefaultLoadDataRegionFudgeFactor
 
         if UIAccessibility.isVoiceOverRunning {
-            floatingPanel.move(to: .full, animated: true)
+            floatingPanel.move(to: .half, animated: true)
 
             if !floatingPanel.userHasSeenFullSheetVoiceoverChange {
                 self.present(floatingPanel.fullSheetVoiceoverAlert(), animated: true)
@@ -889,6 +929,8 @@ class MapViewController: UIViewController,
         dismissExistingMapItemController(animated: true)
     }
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
+        isShowingZoomWarning = showStatus
+
         mapStatusView.configure(
             for: mapStatusView.state(for: application.locationService),
             zoomInStatus: showStatus

@@ -45,7 +45,7 @@ extension OBAListView {
             switch error {
             case let apiError as APIError:
                 switch apiError {
-                case .networkFailure:
+                case .networkFailure, .cellularDataRestricted:
                     icon = UIImage(systemName: "wifi.slash")
                 case .captivePortal:
                     icon = UIImage(systemName: "wifi.exclamationmark")
@@ -53,6 +53,8 @@ extension OBAListView {
                     icon = UIImage(systemName: "bolt.horizontal.circle")
                 case .requestNotFound:
                     icon = UIImage(systemName: "questionmark.square.dashed")
+                case .serverError, .serverUnavailable:
+                    icon = UIImage(systemName: "server.rack")
                 }
             default:
                 break

@@ -231,7 +231,10 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        let date = Date(timeIntervalSince1970: 0) // Midnight (00:00)
+        // Construct midnight using the same timezone the formatter uses.
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current
+        let date = calendar.startOfDay(for: Date())
 
         let result = viewModel.formatTime(date)
 
@@ -245,7 +248,10 @@ class ScheduleForRouteViewModelTests: OBATestCase {
         let app = createApplication(dataLoader: dataLoader)
         let viewModel = ScheduleForRouteViewModel(routeID: routeID, application: app)
 
-        let date = Date(timeIntervalSince1970: 43200) // Noon (12:00)
+        // Construct noon using the same timezone the formatter uses.
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone.current
+        let date = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: Date())!
 
         let result = viewModel.formatTime(date)
 
