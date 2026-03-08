@@ -99,6 +99,19 @@ class TransferContextTests: OBATestCase {
         XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 1)
     }
 
+    func test_minutesUntilDeparture_negativeFractionalRoundsTowardZero() {
+        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
+        let context = TransferContext(
+            arrivalTime: arrivalTime,
+            fromRouteShortName: "10",
+            fromTripHeadsign: "Capitol Hill",
+            fromRouteDisplay: "10 - Capitol Hill"
+        )
+        // -90 seconds = -1.5 minutes, Int truncation toward zero -> -1
+        let departureDate = arrivalTime.addingTimeInterval(-90)
+        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), -1)
+    }
+
     func test_minutesUntilDeparture_largeOffset() {
         let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
         let context = TransferContext(
