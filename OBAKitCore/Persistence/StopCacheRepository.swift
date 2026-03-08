@@ -42,7 +42,12 @@ public final class StopCacheRepository: @unchecked Sendable {
                     .filter(CachedStop.Columns.longitude <= maxLon)
                     .fetchAll(db)
             }
-            return cachedStops.compactMap { $0.toStop() }
+            let stops = cachedStops.compactMap { $0.toStop() }
+            let failedCount = cachedStops.count - stops.count
+            if failedCount > 0 {
+                Logger.warn("Failed to decode \(failedCount) of \(cachedStops.count) cached stops in region \(regionId)")
+            }
+            return stops
         } catch {
             Logger.error("Failed to fetch cached stops in region \(regionId): \(error)")
             return []
@@ -55,10 +60,12 @@ public final class StopCacheRepository: @unchecked Sendable {
     /// Stops that fail to encode are skipped rather than persisting corrupted data.
     /// All writes happen in a single transaction for atomicity.
     public func saveStops(_ stops: [Stop], regionId: Int) {
+        var skippedCount = 0
         do {
             try database.dbQueue.write { db in
                 for stop in stops {
                     guard let record = CachedStop(stop: stop, regionId: regionId) else {
+                        skippedCount += 1
                         continue
                     }
                     try record.save(db)
@@ -66,6 +73,9 @@ public final class StopCacheRepository: @unchecked Sendable {
             }
         } catch {
             Logger.error("Failed to save \(stops.count) stops to cache for region \(regionId): \(error)")
+        }
+        if skippedCount > 0 {
+            Logger.warn("Skipped \(skippedCount) of \(stops.count) stops during cache save for region \(regionId) due to encoding failures")
         }
     }
 

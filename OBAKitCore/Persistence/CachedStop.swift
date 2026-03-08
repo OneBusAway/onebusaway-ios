@@ -51,11 +51,16 @@ struct CachedStop: Codable, FetchableRecord, PersistableRecord {
     func toStop() -> Stop? {
         do {
             let stop = try JSONDecoder().decode(Stop.self, from: stopData)
+            // Restore region context from the indexed column. The blob may have
+            // been encoded before loadReferences() set regionIdentifier, and
+            // Stop.isEqual() / hash use regionIdentifier for identity.
+            stop.regionIdentifier = regionId
             // Ensure routes is never nil to prevent force-unwrap crashes.
             // In production, API stops have routes populated via loadReferences()
             // before caching. But as a safety net (e.g., if a stop was cached before
             // loadReferences ran), we default to an empty array.
             if stop.routes == nil {
+                Logger.info("Cached stop \(id) has nil routes; defaulting to empty array")
                 stop.routes = []
             }
             return stop

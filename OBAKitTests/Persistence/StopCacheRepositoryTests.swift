@@ -83,6 +83,7 @@ class StopCacheRepositoryTests: XCTestCase {
         XCTAssertEqual(cached.locationType, .stop)
         XCTAssertEqual(cached.routeIDs, ["1_10", "1_49"])
         XCTAssertEqual(cached.wheelchairBoarding, .unknown)
+        XCTAssertEqual(cached.regionIdentifier, 1)
     }
 
     func test_saveStops_upsertsOnCompositeKey() {
@@ -322,9 +323,11 @@ class StopCacheRepositoryTests: XCTestCase {
 
     // MARK: - Failable Init
 
-    func test_saveStops_skipsStopsThatFailToEncode() {
-        // All well-formed stops should be saved; this verifies the failable init
-        // path doesn't accidentally skip valid stops.
+    func test_saveStops_persistsAllValidStops() {
+        // Verifies the failable CachedStop.init? doesn't accidentally skip valid stops.
+        // Note: The encoding-failure path (init? returning nil) isn't practically testable
+        // because Stop always encodes successfully. The read-side filtering of corrupted
+        // data is covered by test_stopsInRegion_gracefullyHandlesCorruptedStopData.
         let stops = (1...5).map { makeStop(id: "stop_\($0)", lat: 47.6 + Double($0) * 0.001, lon: -122.3) }
         repository.saveStops(stops, regionId: 1)
 
