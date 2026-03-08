@@ -39,60 +39,22 @@ final class RouteSearchViewModel: ObservableObject {
 
         var searchLocation: CLLocation?
         var searchRegion: MKMapRect?
-        var agencies: [OBAAgencyCoverage]?
 
         do {
-            if !trimmed.isEmpty {
-                do {
-                    let placemarks = try await geocoder.geocodeAddressString(trimmed)
-                    if let location = placemarks.first?.location {
-                        searchLocation = location
-                    } else {
-                        // Geocoding failed, try to get agency coverage
-                        agencies = try await apiClient.fetchAgenciesWithCoverage()
-                        if let agencyBound = agencies?.first?.agencyRegionBound {
-                            searchRegion = agencyBound.serviceRect
-                        }
-                        if agencies?.first != nil {
-                            await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                        } else if let location = locationProvider() {
-                            await self.executeSearch(trimmed: trimmed, location: location, searchRegion: searchRegion)
-                        } else {
-                            self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
-                        }
-                        isLoading = false
-                        return
-                    }
-                } catch {
-                    // Geocoding failed, try to get agency coverage for default location
-                    agencies = try await apiClient.fetchAgenciesWithCoverage()
-                    if agencies?.first != nil {
-                        await self.executeSearch(trimmed: trimmed, location: locationProvider() ?? CLLocation(latitude: agencies!.first!.centerLatitude, longitude: agencies!.first!.centerLongitude), searchRegion: searchRegion)
-                    } else if let location = locationProvider() {
-                        await self.executeSearch(trimmed: trimmed, location: location, searchRegion: searchRegion)
-                    } else {
-                        self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
-                    }
-                    isLoading = false
-                    return
-                }
-            } else {
-                searchLocation = locationProvider()
+            do {
+                let resolved = try await LocationResolver.resolve(query: trimmed.isEmpty ? nil : trimmed, geocoder: geocoder, apiClient: apiClient, locationProvider: locationProvider)
+                searchLocation = resolved.0
+                searchRegion = resolved.1
+            } catch {
+                self.errorMessage = error.watchOSUserFacingMessage
+                isLoading = false
+                return
             }
 
             if searchLocation == nil {
-                // If no searchLocation yet, try to get it from agency coverage
-                if agencies == nil {
-                    agencies = try await apiClient.fetchAgenciesWithCoverage()
-                }
-                if let first = agencies?.first {
-                    searchLocation = CLLocation(latitude: first.centerLatitude, longitude: first.centerLongitude)
-                    searchRegion = first.agencyRegionBound.serviceRect
-                } else {
-                    self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
-                    isLoading = false
-                    return
-                }
+                self.errorMessage = OBALoc("search.error.location_required", value: "Location required for route search", comment: "Location required error message")
+                isLoading = false
+                return
             }
 
             let request = MKLocalSearch.Request()
@@ -108,7 +70,7 @@ final class RouteSearchViewModel: ObservableObject {
             do {
                 response = try await search.start()
             } catch {
-                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? "An unexpected error occurred during local search."
+                self.errorMessage = (error as? LocalizedError)?.errorDescription ?? OBALoc("search.error.unexpected", value: "An unexpected error occurred during local search.", comment: "Unexpected error")
                 isLoading = false
                 return
             }
@@ -142,4 +104,3 @@ final class RouteSearchViewModel: ObservableObject {
         }
     }
 }
-

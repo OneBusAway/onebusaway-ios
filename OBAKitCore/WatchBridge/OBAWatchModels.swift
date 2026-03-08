@@ -609,11 +609,11 @@ public extension OBAArrival {
         case .unknown:
             return nil
         case .early:
-            return "Early"
+            return OBALoc("arrival.schedule_status.early", value: "Early", comment: "Schedule status: early")
         case .onTime:
-            return "On time"
+            return OBALoc("arrival.schedule_status.on_time", value: "On time", comment: "Schedule status: on time")
         case .delayed:
-            return "Delayed"
+            return OBALoc("arrival.schedule_status.delayed", value: "Delayed", comment: "Schedule status: delayed")
         }
     }
 }

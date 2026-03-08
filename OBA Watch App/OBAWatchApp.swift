@@ -193,8 +193,7 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
          )
          self.apiClient = OBAURLSessionAPIClient(configuration: config)
         
-        // Notify listeners that location/region might have changed
-        NotificationCenter.default.post(name: NSNotification.Name("LocationUpdated"), object: nil)
+        NotificationCenter.default.post(name: .LocationUpdated, object: nil)
     }
 
     /// Shared user defaults for the app group
@@ -289,20 +288,20 @@ class WatchAppState: NSObject, ObservableObject, CLLocationManagerDelegate, WCSe
         Task { @MainActor in
             if let bookmarks = userInfo["bookmarks"] as? [[String: Any]] {
                 BookmarksSyncManager.shared.updateBookmarks(bookmarks)
-            } else if userInfo["bookmarks"] != nil {
-                Logger.error("Received 'bookmarks' in unexpected format: \(type(of: userInfo["bookmarks"]!))")
+            } else if let rawBookmarks = userInfo["bookmarks"] {
+                Logger.error("Received 'bookmarks' in unexpected format: \(type(of: rawBookmarks))")
             }
 
             if let alerts = userInfo["alerts"] as? [[String: Any]] {
                 ServiceAlertsSyncManager.shared.updateAlerts(alerts)
-            } else if userInfo["alerts"] != nil {
-                Logger.error("Received 'alerts' in unexpected format: \(type(of: userInfo["alerts"]!))")
+            } else if let rawAlerts = userInfo["alerts"] {
+                Logger.error("Received 'alerts' in unexpected format: \(type(of: rawAlerts))")
             }
 
             if let alarms = userInfo["alarms"] as? [[String: Any]] {
                 AlarmsSyncManager.shared.updateAlarms(alarms)
-            } else if userInfo["alarms"] != nil {
-                Logger.error("Received 'alarms' in unexpected format: \(type(of: userInfo["alarms"]!))")
+            } else if let rawAlarms = userInfo["alarms"] {
+                Logger.error("Received 'alarms' in unexpected format: \(type(of: rawAlarms))")
             }
 
             let knownKeys: Set<String> = ["bookmarks", "alerts", "alarms"]
@@ -418,7 +417,8 @@ extension Error {
         }
         
         let desc = self.localizedDescription.lowercased()
-        if desc.contains("the data couldn’t be read") || desc.contains("the data couldn't be read") || desc.contains("format") {
+        let normalized = desc.replacingOccurrences(of: "’", with: "'")
+        if normalized.contains("the data couldn't be read") || normalized.contains("format") {
             return OBALoc("common.error.decoding", value: "Data format error.", comment: "Decoding error")
         }
         
