@@ -261,7 +261,7 @@ class SearchInteractor: NSObject {
                     item.image = UIImage(systemName: "wifi.slash")
                 case .captivePortal:
                     item.image = UIImage(systemName: "wifi.exclamationmark")
-                case .serverError, .serverUnavailable:
+                case .serverUnavailable:
                     item.image = UIImage(systemName: "server.rack")
                 default:
                     item.image = UIImage(systemName: "exclamationmark.triangle")

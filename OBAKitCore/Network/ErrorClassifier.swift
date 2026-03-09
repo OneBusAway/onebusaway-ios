@@ -9,6 +9,9 @@
 
 import Foundation
 import os.log
+#if canImport(CoreTelephony) && os(iOS)
+import CoreTelephony
+#endif
 
 /// Classifies raw network errors into user-friendly `APIError` cases.
 public enum ErrorClassifier {
@@ -51,6 +54,18 @@ public enum ErrorClassifier {
         }
 
         return error
+    }
+
+    // MARK: - Cellular Data Restriction Detection
+
+    /// Returns `true` if iOS has restricted cellular data access for this app.
+    public static var isCellularDataRestricted: Bool {
+        #if canImport(CoreTelephony) && os(iOS)
+        let cellularData = CTCellularData()
+        return cellularData.restrictedState == .restricted
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Private Classification Methods
