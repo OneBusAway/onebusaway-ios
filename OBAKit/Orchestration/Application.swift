@@ -273,7 +273,7 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
                         self.reachabilityBulletin = ReachabilityBulletin()
                     }
 
-                    self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
+                    self.reachabilityBulletin?.showStatus(result, in: app)
                 }
             })
     }
@@ -600,13 +600,13 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
     /// Classifies and displays an error to the end user.
     @MainActor
     public override func displayError(_ error: Error) async {
-        let classified = ErrorClassifier.classify(error, regionName: currentRegionName, isCellularDataRestricted: isCellularDataRestricted)
+        let classified = ErrorClassifier.classify(error, regionName: currentRegionName)
         Logger.error("Error: \(classified.localizedDescription)")
 
         analytics?.reportError?(error)
 
         guard let uiApp = delegate?.uiApplication else { return }
-        let bulletin = ErrorBulletin(application: self, classifiedError: classified)
+        let bulletin = ErrorBulletin(application: self, error: classified)
         bulletin.show(in: uiApp)
         self.errorBulletin = bulletin
     }
