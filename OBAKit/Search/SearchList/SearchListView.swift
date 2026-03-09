@@ -18,7 +18,7 @@ struct SearchListView: View {
             if searchInteractor.sections.isEmpty {
                 SearchListEmptyStateView()
             } else {
-                SearchListContentView(sections: $searchInteractor.sections)
+                SearchListContentView(sections: searchInteractor.sections)
             }
         }
     }
@@ -27,7 +27,7 @@ struct SearchListView: View {
 // MARK: - SearchListContentView
 
 private struct SearchListContentView: View {
-    @Binding var sections: [SearchListSection]
+    let sections: [SearchListSection]
 
     var body: some View {
         List {

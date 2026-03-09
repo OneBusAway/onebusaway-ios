@@ -10,11 +10,11 @@ import Foundation
 struct SearchListSection: Identifiable {
     typealias ID = SearchListSectionType
 
-    var id: ID
+    let id: ID
 
-    var title: String
+    let title: String
 
-    var content: [SearchListRow]
+    let content: [SearchListRow]
 
 }
 

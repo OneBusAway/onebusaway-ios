@@ -93,18 +93,13 @@ struct SearchListRowView: View {
         if let icon = row.icon {
             switch row.kind {
             case .placemark:
-                badgedIcon(icon)
+                badgedIcon(icon, size: 32, imagePadding: 14)
             case .quickSearch, .recentStop, .bookmark:
                 badgedIcon(icon, size: 24, imagePadding: 8)
             default:
                 plainIcon(icon)
             }
         }
-    }
-
-    private var isPlacemark: Bool {
-        if case .placemark = row.kind { return true }
-        return false
     }
 
     private var labelStack: some View {
@@ -114,7 +109,7 @@ struct SearchListRowView: View {
             } else if let title = row.title {
                 Text(title)
                     .font(.body)
-                    .fontWeight(isPlacemark ? .semibold : .regular)
+                    .fontWeight(row.kind.isPlacemark ? .semibold : .regular)
             }
 
             if let subtitle = row.subtitle {
@@ -126,8 +121,8 @@ struct SearchListRowView: View {
     }
 
     @ViewBuilder
-    private func badgedIcon(_ icon: SearchListRow.Icon, size: CGFloat = 32, imagePadding: CGFloat = 0) -> some View {
-        iconImage(icon, size: 16)
+    private func badgedIcon(_ icon: SearchListRow.Icon, size: CGFloat, imagePadding: CGFloat = 0) -> some View {
+        iconImage(icon, size: size, padding: imagePadding)
             .foregroundStyle(.white)
             .frame(width: size, height: size)
             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 8))
@@ -147,7 +142,7 @@ struct SearchListRowView: View {
         switch icon {
         case .system(let name):
             Image(systemName: name)
-                .font(.system(size: size, weight: .medium))
+                .font(.system(size: size - padding, weight: .medium))
         case .uiImage(let name):
             Image(uiImage: name)
                 .resizable()

@@ -1,3 +1,4 @@
+
 //
 //  SearchListRow.swift
 //  OBAKit
@@ -7,6 +8,7 @@
 
 import Foundation
 import MapKit
+import UIKit
 
 struct SearchListRow: Identifiable {
     enum Accessory {
@@ -23,6 +25,11 @@ struct SearchListRow: Identifiable {
         case loading
         case noResults
         case error(String, systemImage: String)
+
+        var isPlacemark: Bool {
+            if case .placemark = self { return true }
+            return false
+        }
     }
 
     enum Icon {

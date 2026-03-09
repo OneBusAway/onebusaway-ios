@@ -16,7 +16,6 @@ protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func showMapItem(_ mapItem: MKMapItem)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
-//    func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
     func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
 }
@@ -54,15 +53,11 @@ class SearchInteractor: NSObject {
     private var debounceTimer: Timer?
     private let debounceInterval: TimeInterval = 0.35
 
-    private var placemarkSearchTask: Task<Void, Never>?
-    private var cachedPlacemarks: [MKMapItem] = [] {
-        didSet {
-            searchModeObjects(text: lastQuery)
-        }
-    }
+    private var cachedPlacemarks: [MKMapItem] = []
 
     var sections: [SearchListSection] = []
 
+    // MARK: - Init
     /// Creates a new `SearchInteractor`
     /// - Parameter application: The global Application object
     /// - Parameter delegate: A delegate that will receive callbacks when events occur
@@ -70,6 +65,12 @@ class SearchInteractor: NSObject {
         self.application = application
         self.userDataStore = application.userDataStore
         self.delegate = delegate
+    }
+
+    // MARK: - Deinit
+    deinit {
+        debounceTimer?.invalidate()
+        localSearch?.cancel()
     }
 
     func searchModeObjects(text: String?) {
@@ -109,13 +110,13 @@ class SearchInteractor: NSObject {
             return nil
         }
 
-        return .init(id: .recentStops, title:  Strings.recentStops, content: recentStops)
+        return .init(id: .recentStops, title: Strings.recentStops, content: recentStops)
     }
 
     // MARK: - Bookmarks
     private func buildBookmarksSection(searchText: String) -> SearchListSection? {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
-            SearchListRow(kind: .recentStop, title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
+            SearchListRow(kind: .bookmark, title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
             }
@@ -193,36 +194,40 @@ class SearchInteractor: NSObject {
             }
             searchRequest.region = searchRegion
             let search = MKLocalSearch(request: searchRequest)
-            search.start { response, error in
-                if let error {
-                    self.placemarkSearchState = .error(error)
-                    return
-                }
-
-                guard let response else {
-                    let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
-                    self.placemarkSearchState = .error(unknownError)
-                    return
-                }
-
-                // Filter results to only include items within the current region's bounds
-                var filteredItems = response.mapItems
-                if let currentRegion = self.application.currentRegion {
-                    filteredItems = response.mapItems.filter { mapItem in
-                        guard let location = mapItem.placemark.location else { return false }
-                        return currentRegion.contains(location: location)
+            search.start { [weak self] response, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        self.placemarkSearchState = .error(error)
+                        return
                     }
-                }
 
-                if filteredItems.isEmpty {
-                    self.placemarkSearchState = .noResults
-                } else {
-                    self.placemarkSearchState = .success
-                    self.cachedPlacemarks = filteredItems
+                    guard let response else {
+                        let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
+                        self.placemarkSearchState = .error(unknownError)
+                        return
+                    }
+
+                    // Filter results to only include items within the current region's bounds
+                    var filteredItems = response.mapItems
+                    if let currentRegion = self.application.currentRegion {
+                        filteredItems = response.mapItems.filter { mapItem in
+                            guard let location = mapItem.placemark.location else { return false }
+                            return currentRegion.contains(location: location)
+                        }
+                    }
+
+                    if filteredItems.isEmpty {
+                        self.placemarkSearchState = .noResults
+                    } else {
+                        self.cachedPlacemarks = filteredItems
+                        self.placemarkSearchState = .success
+                    }
+
+                    self.localSearch = search
+
                 }
             }
-
-            self.localSearch = search
         }
     }
 
