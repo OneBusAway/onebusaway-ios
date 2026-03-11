@@ -380,12 +380,13 @@ class TripFloatingPanelController: UIViewController,
         )
 
         // Compute ETA to user's destination stop, if available.
+        // Uses arrivalDepartureMinutes from ArrivalDeparture which already
+        // accounts for predicted/real-time arrival — same value as the "Xm" badge.
         var etaText: String?
         if let arrivalDeparture = tripConvertible?.arrivalDeparture {
             let userStopIndex = tripDetails.stopTimes.firstIndex { $0.stopID == arrivalDeparture.stopID }
             if let userStopIndex = userStopIndex {
                 if userStopIndex < currentIndex {
-                    // Vehicle has already passed the user's stop.
                     etaText = OBALoc(
                         "trip_progress.passed_your_stop",
                         value: "Passed your stop",
@@ -398,17 +399,15 @@ class TripFloatingPanelController: UIViewController,
                         comment: "Shown when the vehicle is arriving at the user's stop"
                     )
                 } else {
-                    let userStopTime = tripDetails.stopTimes[userStopIndex]
-                    let secondsUntilArrival = userStopTime.arrivalDate.timeIntervalSince(Date())
-                    let minutesUntilArrival = Int(ceil(secondsUntilArrival / 60.0))
-                    if minutesUntilArrival > 0 {
+                    let minutes = arrivalDeparture.arrivalDepartureMinutes
+                    if minutes > 0 {
                         etaText = String(
                             format: OBALoc(
                                 "trip_progress.eta_to_stop_fmt",
                                 value: "~%d min to your stop",
                                 comment: "Estimated time of arrival to the user's stop. e.g. ~8 min to your stop"
                             ),
-                            minutesUntilArrival
+                            minutes
                         )
                     } else {
                         etaText = OBALoc(
