@@ -45,6 +45,9 @@ class TripSegmentView: UIView {
 
     var routeType: Route.RouteType = .unknown
 
+    /// The temporal state of this stop relative to the vehicle's current position.
+    var temporalState: TripStopTemporalState = .future
+
     private var isUserDestination: Bool = false
     private var isCurrentVehicleLocation: Bool = false
 
@@ -60,6 +63,10 @@ class TripSegmentView: UIView {
 
     override public var intrinsicContentSize: CGSize {
         CGSize(width: circleRadius + (2.0 * lineWidth), height: UIView.noIntrinsicMetric)
+    }
+
+    private var pastLineColor: UIColor {
+        ThemeColors.shared.secondaryLabel.withAlphaComponent(0.4)
     }
 
     override public func draw(_ rect: CGRect) {
@@ -94,10 +101,25 @@ class TripSegmentView: UIView {
     }
 
     private func drawRegularTripSegment(_ rect: CGRect, context: CGContext?) {
+        // Top line color depends on temporal state:
+        // past/current → gray (the vehicle has reached or passed here)
+        // future → brand color
+        let topColor: UIColor
+        switch temporalState {
+        case .past, .current:
+            topColor = pastLineColor
+        case .future:
+            topColor = lineColor
+        }
+
+        topColor.setFill()
         let topLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.minY), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         topLine.fill()
 
         let bezierFrame = CGRect(origin: CGPoint(x: rect.midX - halfRadius, y: rect.midY - halfRadius), size: CGSize(width: circleRadius, height: circleRadius))
+
+        let strokeColor: UIColor = temporalState == .past ? pastLineColor : lineColor
+        strokeColor.setStroke()
 
         let bezierPath = UIBezierPath(roundedRect: bezierFrame, cornerRadius: ThemeMetrics.compactCornerRadius)
         bezierPath.lineWidth = lineWidth
@@ -112,6 +134,9 @@ class TripSegmentView: UIView {
 
         bezierPath.stroke()
 
+        // Bottom line: past → gray, current/future → brand color
+        let bottomColor: UIColor = temporalState == .past ? pastLineColor : lineColor
+        bottomColor.setFill()
         let bottomLine = UIBezierPath(rect: CGRect(origin: CGPoint(x: rect.midX - (lineWidth / 2.0), y: rect.midY + halfRadius), size: CGSize(width: lineWidth, height: rect.midY - halfRadius)))
         bottomLine.fill()
     }
