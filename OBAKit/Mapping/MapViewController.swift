@@ -64,6 +64,11 @@ class MapViewController: UIViewController,
         return application.mapRegionManager
     }
 
+    // MARK: - Surveys
+
+    private var surveyDisplayManager: SurveyDisplayManager?
+    private var hasShownMapSurveyThisSession = false
+
     // MARK: - Init
 
     public init(application: Application) {
@@ -176,6 +181,7 @@ class MapViewController: UIViewController,
 
         loadWeather()
         updateVoiceover()
+        checkForMapSurvey()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -183,6 +189,27 @@ class MapViewController: UIViewController,
 
         navigationController?.setNavigationBarHidden(false, animated: false)
         stopObserveSurveysState()
+    }
+
+    // MARK: - Surveys
+
+    private func checkForMapSurvey() {
+        guard !hasShownMapSurveyThisSession else { return }
+
+        let surveyService = application.surveyService
+        guard surveyService.shouldShowSurvey() else { return }
+
+        Task {
+            await surveyService.fetchSurveys()
+
+            guard let survey = surveyService.findSurveyForMap() else { return }
+
+            let displayManager = SurveyDisplayManager(surveyService: surveyService)
+            self.surveyDisplayManager = displayManager
+            displayManager.showSurvey(survey, in: self, presentationStyle: .bottomSheet)
+            surveyService.setNextReminderDate()
+            hasShownMapSurveyThisSession = true
+        }
     }
 
     // MARK: - User Location

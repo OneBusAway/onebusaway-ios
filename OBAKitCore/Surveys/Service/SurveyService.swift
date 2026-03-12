@@ -36,6 +36,11 @@ public final class SurveyService: ObservableObject {
     // MARK: - Constants
 
     private let surveyLaunchInterval = 3
+    private let fetchCooldown: TimeInterval = 300 // 5 minutes
+
+    // MARK: - Fetch Staleness
+
+    private var lastFetchDate: Date?
 
     // MARK: - Initialization
 
@@ -47,9 +52,17 @@ public final class SurveyService: ObservableObject {
     // MARK: - Fetching
 
     /// Fetches surveys from the API for the current user.
-    public func fetchSurveys() async {
+    /// - Parameter force: If `true`, bypasses the staleness cooldown and fetches regardless.
+    public func fetchSurveys(force: Bool = false) async {
         guard !isLoading else {
             Logger.info("fetchSurveys skipped: already loading")
+            return
+        }
+
+        if !force,
+           !allSurveys.isEmpty,
+           let lastFetch = lastFetchDate,
+           abs(lastFetch.timeIntervalSinceNow) < fetchCooldown {
             return
         }
 
@@ -69,6 +82,7 @@ public final class SurveyService: ObservableObject {
 
             allSurveys = response.entry.surveys
             updateVisibleSurveys()
+            lastFetchDate = Date()
         } catch {
             Logger.error("Failed to fetch surveys: \(error)")
             lastError = error
