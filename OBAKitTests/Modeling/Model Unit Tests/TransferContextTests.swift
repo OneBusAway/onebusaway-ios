@@ -104,8 +104,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         // -90 seconds = -1.5 minutes, Int truncation toward zero -> -1
         let departureDate = arrivalTime.addingTimeInterval(-90)
