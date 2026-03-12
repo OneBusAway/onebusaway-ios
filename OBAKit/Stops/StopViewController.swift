@@ -11,8 +11,9 @@ import UIKit
 import OBAKitCore
 import CoreLocation
 import SwiftUI
+import SafariServices
 
-// swiftlint:disable file_length
+// swiftlint:disable file_length type_body_length
 
 /// This is the core view controller for displaying information about a transit stop.
 ///
@@ -32,12 +33,14 @@ public class StopViewController: UIViewController,
     OBAListViewCollapsibleSectionsDelegate,
     ModalDelegate,
     Previewable,
-    StopPreferencesViewDelegate {
+    StopPreferencesViewDelegate,
+    SurveyViewHostingProtocol {
 
     /// The available sections in this view controller.
     enum ListSections {
         case stopHeader
         case donations
+        case surveys
         case emptyData
         case serviceAlerts
         case pastArrivalDepartures(suffix: String)
@@ -108,12 +111,22 @@ public class StopViewController: UIViewController,
     /// The amount of time that must elapse before `timerFired()` will update data.
     private static let defaultTimerReloadInterval: TimeInterval = 30.0
 
+    lazy var surveysVM = SurveysViewModel(
+        stopContext: true,
+        stop: stop,
+        stateManager: application.surveyStateManager,
+        service: application.surveyService,
+        prioritizer: application.surveyPrioritizer,
+        externalLinkBuilder: application.externalSurveyURLBuilder
+    )
+
     // MARK: - Data
     /// The stop displayed by this controller.
     var stop: Stop? {
         didSet {
             if stop != oldValue, let stop = stop {
                 stopUpdated(stop)
+                surveysVM.updateCurrentStop(stop)
             }
         }
     }
@@ -218,6 +231,7 @@ public class StopViewController: UIViewController,
         listView.register(listViewItem: StopArrivalWalkItem.self)
         listView.register(listViewItem: StopHeaderItem.self)
         listView.register(listViewItem: TransferArrivalItem.self)
+        listView.register(listViewItem: HeroQuestionListItem.self)
 
         view.addSubview(statusLabel)
         view.addSubview(listView)
@@ -240,6 +254,9 @@ public class StopViewController: UIViewController,
         if !stopViewShowsServiceAlerts {
             collapsedSections.insert(ListSections.serviceAlerts.sectionID)
         }
+
+        surveysVM.onAction(.onAppear)
+        observeSurveysState()
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -254,6 +271,8 @@ public class StopViewController: UIViewController,
         Task {
             await updateData()
         }
+
+        observeSurveysState()
     }
 
     public override func viewDidAppear(_ animated: Bool) {
@@ -274,8 +293,8 @@ public class StopViewController: UIViewController,
 
     public override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-
         enableIdleTimer()
+        stopObserveSurveysState()
     }
 
     // MARK: - Tips
@@ -645,6 +664,10 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection?] = []
 
         sections.append(stopHeaderSection)
+
+        if let surveySection {
+            sections.append(surveySection)
+        }
 
         if let donationsSection {
             sections.append(donationsSection)
@@ -1424,6 +1447,84 @@ public class StopViewController: UIViewController,
             return "User Distance: 03200-INFINITY"
         }
     }
+
+    // MARK: - Survey Section
+    private var surveySection: OBAListViewSection? {
+        guard let model = surveysVM.heroQuestion, surveysVM.showHeroQuestion else { return nil }
+
+        let heroQuestion = HeroQuestionListItem(
+            question: model,
+            answer: surveysVM.heroQuestionAnswer
+        ) { [weak self] answer in
+            self?.surveysVM.onAction(.updateHeroAnswer(answer))
+        } onSubmitAction: { [weak self] in
+            guard let self else { return }
+            surveysVM.onAction(.onTapNextHeroQuestion)
+        } onCloseAction: { [weak self] in
+            self?.surveysVM.onAction(.onCloseSurveyHeroQuestion)
+        }
+
+        return listViewSection(for: .surveys, title: nil, items: [heroQuestion])
+    }
+
+    // MARK: - Survey Observation
+
+    var observationActive: Bool = false
+
+    func observeSurveysState() {
+        observationActive = true
+        observeSurveyError()
+        observeSurveyLoadingState()
+        observeSurveyHeroQuestion()
+        observeSurveyToastMessage()
+        observeSurveyFullQuestionsState()
+        observeSurveyDismissActionSheet()
+        observeOpenExternalSurvey()
+    }
+
+    func observeSurveyHeroQuestion() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            _ = self.surveysVM.heroQuestion
+            self.listView.applyData()
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self, self.observationActive else { return }
+                self.observeSurveyHeroQuestion()
+            }
+        }
+    }
+
+    func stopObserveSurveysState() {
+        observationActive = false
+    }
+
+    func presentFullSurveyQuestions() {
+        let surveyQuestionsForm = SurveyQuestionsForm(viewModel: self.surveysVM) { [weak self] in
+            self?.observeSurveysState()
+        }
+        let hosting = UIHostingController(rootView: surveyQuestionsForm)
+        application.viewRouter.present(hosting, from: self, isModal: true, isPopover: true)
+    }
+
+    func openSafari(with url: URL) {
+        let safariView = SFSafariViewController(url: url)
+        application.viewRouter.present(safariView, from: self, isModal: true)
+    }
+
+    func observeSurveyDismissActionSheet() {
+        withObservationTracking { [weak self] in
+            guard let self else { return }
+            if self.surveysVM.showSurveyDismissSheet {
+                self.showSurveyDismissActionSheet(self)
+            }
+        } onChange: {
+            Task { @MainActor [weak self] in
+                guard let self, self.observationActive else { return }
+                self.observeSurveyDismissActionSheet()
+            }
+        }
+    }
 }
 
 // MARK: - Transfer Helpers
@@ -1471,3 +1572,5 @@ private extension StopViewController {
         }
     }
 }
+
+// swiftlint:enable file_length
