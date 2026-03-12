@@ -47,7 +47,7 @@ open class CoreApplication: NSObject,
     @objc public let locationService: LocationService
 
     /// Responsible for managing `Region`s and determining the correct `Region` for the user.
-    @objc public lazy var regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath)
+    @objc public lazy var regionsService = RegionsService(apiService: regionsAPIService, locationService: locationService, userDefaults: userDefaults, bundledRegionsFilePath: self.config.bundledRegionsFilePath, apiPath: self.config.regionsAPIPath, fixedRegionName: self.config.fixedRegionName, fixedRegionOBABaseURL: self.config.fixedRegionOBABaseURL)
 
     /// Helper property that returns `regionsService.currentRegion`.
     @objc public var currentRegion: Region? {
