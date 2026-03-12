@@ -116,10 +116,10 @@ struct SelectionQuestionView: View {
 
     // MARK: - Accessibility Helpers
     private func accessibilityValue(for option: String) -> String {
-        isOptionSelected(option) ? "Selected" : "Not selected"
+        isOptionSelected(option) ? Strings.selectedValueAccessibility : Strings.notSelectedAccessibility
     }
 
     private var accessibilityHint: String {
-        isMultipleSelection ? "Tap to toggle selection" : "Tap to select"
+        isMultipleSelection ? Strings.toggleSelectionAccessibility : Strings.tapSelectAccessibility
     }
 }

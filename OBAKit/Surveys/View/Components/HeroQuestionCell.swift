@@ -93,10 +93,11 @@ struct HeroQuestionListItem: OBAListViewItem {
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
+        hasher.combine(answer)
     }
 
     static func == (lhs: HeroQuestionListItem, rhs: HeroQuestionListItem) -> Bool {
-        return lhs.id == rhs.id
+        return lhs.id == rhs.id && lhs.answer == rhs.answer
     }
 }
 
