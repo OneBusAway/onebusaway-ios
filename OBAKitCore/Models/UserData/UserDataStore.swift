@@ -190,6 +190,38 @@ public protocol UserDataStore: NSObjectProtocol {
 
     /// Deletes all proximity alerts that have expired (older than 24 hours).
     func deleteExpiredProximityAlerts()
+    // MARK: - Survey Tracking
+
+    /// Stores information about completed surveys to avoid showing them again
+    /// - Parameter surveyId: The ID of the survey that was completed
+    /// - Parameter userIdentifier: The user's UUID
+    func markSurveyCompleted(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey has been completed by the user
+    /// - Parameter surveyId: The ID of the survey to check
+    /// - Parameter userIdentifier: The user's UUID
+    /// - Returns: True if the survey has been completed
+    func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool
+
+    /// Stores information about surveys the user chose to answer later
+    /// - Parameter surveyId: The ID of the survey to show later
+    /// - Parameter userIdentifier: The user's UUID
+    func markSurveyForLater(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey should be shown again based on app launch count
+    /// - Parameter surveyId: The ID of the survey to check
+    /// - Parameter userIdentifier: The user's UUID
+    /// - Returns: True if the survey should be shown again
+    func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool
+
+    /// Stores the user's unique identifier for survey responses
+    var surveyUserIdentifier: String { get set }
+
+    /// Increments the app launch count for "answer later" logic
+    func incrementAppLaunchCount()
+
+    /// Returns the current app launch count
+    var appLaunchCount: Int { get }
 
     // MARK: - View State/Last Selected Tab
 
@@ -247,6 +279,36 @@ public protocol UserDataStore: NSObjectProtocol {
 
 }
 
+// MARK: - Survey Tracking Data Models
+
+/// Represents a completed survey entry
+public struct CompletedSurvey: Codable, Hashable {
+    public let surveyId: Int
+    public let userIdentifier: String
+    public let completedAt: Date
+
+    public init(surveyId: Int, userIdentifier: String, completedAt: Date = Date()) {
+        self.surveyId = surveyId
+        self.userIdentifier = userIdentifier
+        self.completedAt = completedAt
+    }
+}
+
+/// Represents a survey marked for later viewing
+public struct SurveyForLater: Codable, Hashable {
+    public let surveyId: Int
+    public let userIdentifier: String
+    public let markedAt: Date
+    public let appLaunchCountWhenMarked: Int
+
+    public init(surveyId: Int, userIdentifier: String, markedAt: Date = Date(), appLaunchCountWhenMarked: Int) {
+        self.surveyId = surveyId
+        self.userIdentifier = userIdentifier
+        self.markedAt = markedAt
+        self.appLaunchCountWhenMarked = appLaunchCountWhenMarked
+    }
+}
+
 // MARK: - Stop Preferences
 
 public protocol StopPreferencesStore: NSObjectProtocol {
@@ -286,6 +348,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let appLaunchCounter = "UserDataStore.appLaunchCounter"
         static let surveyResponse = "UserDataStore.surveyResponse"
         static let userSurveyId = "UserDataStore.userSurveyIdentifier"
+        static let completedSurveys = "UserDataStore.completedSurveys"
+          static let surveysForLater = "UserDataStore.surveysForLater"
+          static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
+          static let appLaunchCount = "UserDataStore.appLaunchCount"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -685,6 +751,103 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         guard filtered.count != current.count else { return }
         proximityAlerts = filtered
         NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
+    }
+
+    // MARK: - Survey Tracking
+
+    public func markSurveyCompleted(surveyId: Int, userIdentifier: String) {
+        let completedSurvey = CompletedSurvey(surveyId: surveyId, userIdentifier: userIdentifier)
+        var completedSurveys = self.completedSurveys
+
+        // Remove any existing completion record for this survey and user
+        completedSurveys.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
+
+        // Add the new completion record
+        completedSurveys.append(completedSurvey)
+
+        self.completedSurveys = completedSurveys
+
+        // Also remove from "for later" if it exists
+        var surveysForLater = self.surveysForLater
+        surveysForLater.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
+        self.surveysForLater = surveysForLater
+    }
+
+    public func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool {
+        return completedSurveys.contains { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
+    }
+
+    public func markSurveyForLater(surveyId: Int, userIdentifier: String) {
+        let surveyForLater = SurveyForLater(
+            surveyId: surveyId,
+            userIdentifier: userIdentifier,
+            appLaunchCountWhenMarked: appLaunchCount
+        )
+
+        var surveysForLater = self.surveysForLater
+
+        // Remove any existing "for later" record for this survey and user
+        surveysForLater.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
+
+        // Add the new "for later" record
+        surveysForLater.append(surveyForLater)
+
+        self.surveysForLater = surveysForLater
+    }
+
+    public func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool {
+        guard let surveyForLater = surveysForLater.first(where: { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }) else {
+            return false
+        }
+
+        // Show survey again after 3, 6, 9, 12, etc. app launches
+        let launchesSinceMarked = appLaunchCount - surveyForLater.appLaunchCountWhenMarked
+        return launchesSinceMarked > 0 && launchesSinceMarked % 3 == 0
+    }
+
+    public var surveyUserIdentifier: String {
+        get {
+            if let existingIdentifier = userDefaults.string(forKey: UserDefaultsKeys.surveyUserIdentifier) {
+                return existingIdentifier
+            } else {
+                // Generate a new UUID for the user
+                let newIdentifier = UUID().uuidString
+                userDefaults.set(newIdentifier, forKey: UserDefaultsKeys.surveyUserIdentifier)
+                return newIdentifier
+            }
+        }
+        set {
+            userDefaults.set(newValue, forKey: UserDefaultsKeys.surveyUserIdentifier)
+        }
+    }
+
+    public func incrementAppLaunchCount() {
+        let currentCount = appLaunchCount
+        userDefaults.set(currentCount + 1, forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    public var appLaunchCount: Int {
+        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    // MARK: - Survey Tracking Private Properties
+
+    private var completedSurveys: [CompletedSurvey] {
+        get {
+            return decodeUserDefaultsObjects(type: [CompletedSurvey].self, key: UserDefaultsKeys.completedSurveys) ?? []
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.completedSurveys) // swiftlint:disable:this force_try
+        }
+    }
+
+    private var surveysForLater: [SurveyForLater] {
+        get {
+            return decodeUserDefaultsObjects(type: [SurveyForLater].self, key: UserDefaultsKeys.surveysForLater) ?? []
+        }
+        set {
+            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater) // swiftlint:disable:this force_try
+        }
     }
 
     // MARK: - Stop Preferences
