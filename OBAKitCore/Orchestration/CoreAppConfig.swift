@@ -28,6 +28,10 @@ open class CoreAppConfig: NSObject {
     public let locationService: LocationService
     public let bundledRegionsFilePath: String
     public let dataLoader: URLDataLoader
+    public let defaultArrivalDepartureFilter: ArrivalDepartureFilter
+
+    /// UserDefaults key for the user's global arrival/departure filter preference.
+    public static let arrivalDepartureFilterUserDefaultsKey = "CoreAppConfig.arrivalDepartureFilter"
 
     /// Convenience initializer that pulls from the host application's main `Bundle`.
     /// - Parameter appBundle: The application `Bundle` from which initialization properties will be extracted.
@@ -47,7 +51,8 @@ open class CoreAppConfig: NSObject {
             locationService: LocationService(userDefaults: userDefaults, locationManager: CLLocationManager()),
             bundledRegionsFilePath: bundledRegionsFilePath,
             regionsAPIPath: appBundle.regionsServerAPIPath!,
-            dataLoader: URLSession.shared
+            dataLoader: URLSession.shared,
+            defaultArrivalDepartureFilter: .all
         )
     }
 
@@ -69,7 +74,8 @@ open class CoreAppConfig: NSObject {
         locationService: LocationService,
         bundledRegionsFilePath: String,
         regionsAPIPath: String?,
-        dataLoader: URLDataLoader
+        dataLoader: URLDataLoader,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) {
         self.regionsBaseURL = regionsBaseURL
         self.apiKey = apiKey
@@ -80,5 +86,6 @@ open class CoreAppConfig: NSObject {
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.regionsAPIPath = regionsAPIPath
         self.dataLoader = dataLoader
+        self.defaultArrivalDepartureFilter = defaultArrivalDepartureFilter
     }
 }

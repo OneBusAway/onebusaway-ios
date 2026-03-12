@@ -36,6 +36,7 @@ class SettingsViewController: FormViewController {
 
         form
             +++ mapSection
+            +++ arrivalDisplaySection
             +++ alertsSection
             +++ accessibilitySection
             +++ surveySection
@@ -114,7 +115,56 @@ class SettingsViewController: FormViewController {
         } else {
             application.userDefaults.set(false, forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey)
         }
+
+        if let selectedFilterTitle = values[arrivalFilterTag] as? String {
+            let filter = Self.arrivalFilterFromDisplayTitle(selectedFilterTitle)
+            application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        }
     }
+
+    private static func arrivalFilterFromDisplayTitle(_ title: String) -> ArrivalDepartureFilter {
+        for filter in ArrivalDepartureFilter.allCases where arrivalFilterDisplayTitle(for: filter) == title {
+            return filter
+        }
+        return .all
+    }
+
+    // MARK: - Arrival Display Section
+
+    private let arrivalFilterTag = "arrivalDepartureFilter"
+
+    private func currentArrivalFilterDisplayTitle() -> String {
+        let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? .all
+        return Self.arrivalFilterDisplayTitle(for: filter)
+    }
+
+    private static func arrivalFilterDisplayTitle(for filter: ArrivalDepartureFilter) -> String {
+        switch filter {
+        case .all:
+            return OBALoc("settings_controller.arrival_filter.all", value: "All Departures", comment: "Settings option to show all departures")
+        case .estimatedOnly:
+            return OBALoc("settings_controller.arrival_filter.real_time", value: "Real-Time Only", comment: "Settings option to show only real-time departures")
+        case .scheduledOnly:
+            return OBALoc("settings_controller.arrival_filter.scheduled", value: "Scheduled Only", comment: "Settings option to show only scheduled departures")
+        }
+    }
+
+    private lazy var arrivalDisplaySection: Section = {
+        let section = Section(
+            OBALoc("settings_controller.arrival_display_section.title", value: "Arrival Display", comment: "Settings section title for controlling which arrivals/departures are shown")
+        )
+
+        section <<< AlertRow<String> {
+            $0.tag = arrivalFilterTag
+            $0.title = OBALoc("settings_controller.arrival_filter.title", value: "Show Departures", comment: "Title for the departure filter setting row")
+            $0.selectorTitle = OBALoc("settings_controller.arrival_filter.selector_title", value: "Show Departures", comment: "Title for the departure filter selection alert")
+            $0.options = ArrivalDepartureFilter.allCases.map { Self.arrivalFilterDisplayTitle(for: $0) }
+            $0.value = self.currentArrivalFilterDisplayTitle()
+        }
+
+        return section
+    }()
 
     // MARK: - Map Section
 
