@@ -21,7 +21,7 @@ import SafariServices
 /// arrivals and departures at this stop, along with the ability to create push
 /// notification 'alarms' and bookmarks, view information about the location of a
 /// particular vehicle, and report problems with a trip.
-public class StopViewController: UIViewController,
+public class StopViewController: UIViewController, // swiftlint:disable:this type_body_length
     AlarmBuilderDelegate,
     AgencyAlertListViewConverters,
     AppContext,
@@ -370,7 +370,7 @@ public class StopViewController: UIViewController,
     }
 
     fileprivate func pulldownMenu() -> UIMenu {
-        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), helpMenu()])
+        return UIMenu(children: [fileMenu(), locationMenu(), sortMenu(), arrivalDepartureFilterMenu(), helpMenu()])
     }
 
     func filterMenu() -> UIMenu {
@@ -497,6 +497,36 @@ public class StopViewController: UIViewController,
         sortMenu = UIMenu(title: sortMenuTitle, image: sortMenuImage, children: [sortByTime, sortByRoute])
 
         return sortMenu
+    }
+
+    private var activeArrivalDepartureFilter: ArrivalDepartureFilter {
+        if let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey),
+           let filter = ArrivalDepartureFilter(rawValue: saved) {
+            return filter
+        }
+        return .all
+    }
+
+    fileprivate func arrivalDepartureFilterMenu() -> UIMenu {
+        let currentFilter = activeArrivalDepartureFilter
+        let filters: [(ArrivalDepartureFilter, String)] = [
+            (.all, OBALoc("stop_controller.arrival_filter.all_departures", value: "All Departures", comment: "Filter option to show all departures regardless of real-time data availability")),
+            (.estimatedOnly, OBALoc("stop_controller.arrival_filter.estimated_only", value: "Real-Time Only", comment: "Filter option to show only departures with real-time estimated data")),
+            (.scheduledOnly, OBALoc("stop_controller.arrival_filter.scheduled_only", value: "Scheduled Only", comment: "Filter option to show only departures with scheduled data and no real-time information"))
+        ]
+
+        let actions = filters.map { filter, title -> UIAction in
+            let action = UIAction(title: title) { [weak self] _ in
+                guard let self else { return }
+                self.application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
+                self.dataDidReload()
+            }
+            if filter == currentFilter { action.image = UIImage(systemName: "checkmark") }
+            return action
+        }
+
+        let menuTitle = OBALoc("stop_controller.arrival_filter.menu_title", value: "Departure Type", comment: "Title for the menu that filters departures by data type")
+        return UIMenu(title: menuTitle, image: UIImage(systemName: "antenna.radiowaves.left.and.right"), children: actions)
     }
 
     fileprivate func helpMenu() -> UIMenu {
@@ -880,15 +910,9 @@ public class StopViewController: UIViewController,
         var sections: [OBAListViewSection] = []
 
         if stopPreferences.sortType == .time {
-            let arrDeps: [ArrivalDeparture]
-            if isListFiltered {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filter(preferences: stopPreferences)
-                    .filteringTerminalDuplicates()
-            } else {
-                arrDeps = stopArrivals.arrivalsAndDepartures
-                    .filteringTerminalDuplicates()
-            }
+            var arrDeps = stopArrivals.arrivalsAndDepartures
+            if isListFiltered { arrDeps = arrDeps.filter(preferences: stopPreferences) }
+            arrDeps = arrDeps.filter(by: activeArrivalDepartureFilter).filteringTerminalDuplicates()
 
             let pastDeps = arrDeps.filter { $0.arrivalDepartureMinutes < 0 }
             let upcomingDeps = arrDeps.filter { $0.arrivalDepartureMinutes >= 0 }
@@ -901,6 +925,7 @@ public class StopViewController: UIViewController,
 
         } else {
             let groups = stopArrivals.arrivalsAndDepartures
+                .filter(by: activeArrivalDepartureFilter)
                 .group(preferences: stopPreferences, filter: isListFiltered)
                 .localizedStandardCompare()
 
@@ -916,7 +941,6 @@ public class StopViewController: UIViewController,
 
                 // Always append upcoming section to keep the main route header visible
                 groupSections.append(sectionForGroup(groupRoute: group.route, arrDeps: upcomingDeps))
-
                 return groupSections
             }
         }
