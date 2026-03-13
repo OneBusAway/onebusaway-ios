@@ -88,6 +88,33 @@
 /* Title of the Credits controller */
 "credits_controller.title" = "Credits";
 
+/* Loading message while searching for the user's vehicle. */
+"current_trip_controller.detecting" = "Finding your vehicle…";
+
+/* Distance from user to vehicle. e.g. '0.2 mi away' */
+"current_trip_controller.distance_fmt" = "%@ away";
+
+/* Error message when the user's location is not available. */
+"current_trip_controller.location_unavailable" = "Location unavailable. Please enable location services.";
+
+/* Section header when multiple vehicles are found on the selected route. */
+"current_trip_controller.multiple_vehicles" = "Multiple vehicles found";
+
+/* Title for the current trip screen. */
+"current_trip_controller.my_trip" = "My Trip";
+
+/* Message when the route has no real-time tracking data. */
+"current_trip_controller.no_realtime" = "No real-time tracking available for this route";
+
+/* Message when no active vehicle is found near the user on the selected route. */
+"current_trip_controller.no_results" = "No active vehicle found on this route near you";
+
+/* Error when the API service is unavailable. */
+"current_trip_controller.error_no_service" = "Unable to connect to the transit service.";
+
+/* Button to retry finding the user's vehicle. */
+"current_trip_controller.retry" = "Try Again";
+
 /* Title of the Base URL header. */
 "custom_region_builder_controller.base_url_section.header_title" = "Base URL";
 
@@ -306,6 +333,9 @@
 
 /* Voiceover text indicating the current map type as the standard base map. */
 "map_controller.map_type.standard.accessibility_value" = "standard";
+
+/* Accessibility label for the My Trip button on the map toolbar. */
+"map_controller.my_trip_button" = "My Trip";
 
 /* A generic message shown when the user's search query produces no search results. */
 "map_controller.no_search_results_found" = "No search results were found.";
@@ -556,6 +586,24 @@
 
 /* Error message of Custom Region URL if it's invalid or does not point to a functional OBA server */
 "region_url.error_messsage" = "The provided region URL is invalid or does not point to a functional OBA server.";
+
+/* Placeholder text in the route search field. */
+"route_picker.search_placeholder" = "Search routes…";
+
+/* Title for the route picker screen where the user selects their transit route. */
+"route_picker.title" = "Select Your Route";
+
+/* Error when API service is unavailable in the route picker. */
+"route_picker.error_no_service" = "Unable to connect to the transit service.";
+
+/* Error when location is unavailable in the route picker. */
+"route_picker.error_no_location" = "Location unavailable. Please enable location services to find nearby routes.";
+
+/* Loading message while fetching nearby routes. */
+"route_picker.loading" = "Loading routes…";
+
+/* Message when no routes are found near the user's location. */
+"route_picker.no_routes" = "No routes found nearby.";
 
 /* Title of the Report Problem view controller. */
 "report_problem.title" = "Report a Problem";

@@ -22,8 +22,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         // Departure 10 minutes after arrival
         let departureDate = arrivalTime.addingTimeInterval(10 * 60)
@@ -35,8 +34,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         // Departure 5 minutes before arrival
         let departureDate = arrivalTime.addingTimeInterval(-5 * 60)
@@ -48,8 +46,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         XCTAssertEqual(context.minutesUntilDeparture(from: arrivalTime), 0)
     }
@@ -61,8 +58,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         let departureDate = arrivalTime.addingTimeInterval(5 * 60)
         XCTAssertEqual(context.temporalState(for: departureDate), .future)
@@ -73,8 +69,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         let departureDate = arrivalTime.addingTimeInterval(-3 * 60)
         XCTAssertEqual(context.temporalState(for: departureDate), .past)
@@ -85,8 +80,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         XCTAssertEqual(context.temporalState(for: arrivalTime), .present)
     }
@@ -98,12 +92,23 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         // 90 seconds = 1.5 minutes, Int truncation -> 1
         let departureDate = arrivalTime.addingTimeInterval(90)
         XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), 1)
+    }
+
+    func test_minutesUntilDeparture_negativeFractionalRoundsTowardZero() {
+        let arrivalTime = Date(timeIntervalSince1970: 1_000_000)
+        let context = TransferContext(
+            arrivalTime: arrivalTime,
+            fromRouteShortName: "10",
+            fromTripHeadsign: "Capitol Hill"
+        )
+        // -90 seconds = -1.5 minutes, Int truncation toward zero -> -1
+        let departureDate = arrivalTime.addingTimeInterval(-90)
+        XCTAssertEqual(context.minutesUntilDeparture(from: departureDate), -1)
     }
 
     func test_minutesUntilDeparture_largeOffset() {
@@ -111,8 +116,7 @@ class TransferContextTests: OBATestCase {
         let context = TransferContext(
             arrivalTime: arrivalTime,
             fromRouteShortName: "10",
-            fromTripHeadsign: "Capitol Hill",
-            fromRouteDisplay: "10 - Capitol Hill"
+            fromTripHeadsign: "Capitol Hill"
         )
         // 2 hours after arrival
         let departureDate = arrivalTime.addingTimeInterval(120 * 60)
@@ -136,6 +140,10 @@ class TransferContextTests: OBATestCase {
         XCTAssertEqual(context.arrivalTime, arrivalTime)
         XCTAssertEqual(context.fromRouteShortName, arrDep.routeShortName)
         XCTAssertEqual(context.fromTripHeadsign, arrDep.tripHeadsign ?? "")
-        XCTAssertEqual(context.fromRouteDisplay, arrDep.routeAndHeadsign)
+        // fromRouteDisplay is now computed from the component fields.
+        let expectedDisplay = [arrDep.routeShortName, arrDep.tripHeadsign ?? ""]
+            .filter { !$0.isEmpty }
+            .joined(separator: " - ")
+        XCTAssertEqual(context.fromRouteDisplay, expectedDisplay)
     }
 }
