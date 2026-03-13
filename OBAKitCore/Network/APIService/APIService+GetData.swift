@@ -6,6 +6,9 @@
 //
 
 import Foundation
+#if canImport(CFNetwork)
+import CFNetwork
+#endif
 
 extension APIService {
     nonisolated func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
@@ -104,7 +107,13 @@ extension APIService {
             return true
         }
 
-        if error.domain == (kCFErrorDomainCFNetwork as String) && error.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
+        #if os(watchOS)
+        let cfNetworkDomain = "kCFErrorDomainCFNetwork"
+        #else
+        let cfNetworkDomain = kCFErrorDomainCFNetwork as String
+        #endif
+
+        if error.domain == cfNetworkDomain && error.code == NSURLErrorAppTransportSecurityRequiresSecureConnection {
             return true
         }
 

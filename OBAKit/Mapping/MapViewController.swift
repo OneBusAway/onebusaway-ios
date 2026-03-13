@@ -48,9 +48,6 @@ class MapViewController: UIViewController,
             hover.stackView.addArrangedSubview(weatherButton)
         }
 
-        hover.stackView.addArrangedSubview(HoverBarSeparator())
-        hover.stackView.addArrangedSubview(myTripButton)
-
         return hover
     }()
 
@@ -87,7 +84,6 @@ class MapViewController: UIViewController,
     deinit {
         application.mapRegionManager.removeDelegate(self)
         application.locationService.removeDelegate(self)
-        application.notificationCenter.removeObserver(self)
     }
 
     // MARK: - UIViewController
@@ -105,6 +101,11 @@ class MapViewController: UIViewController,
         mapStatusView.addGestureRecognizer(statusTapGesture)
 
         view.addSubview(mapStatusView)
+        NSLayoutConstraint.activate([
+            mapStatusView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            mapStatusView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            mapStatusView.topAnchor.constraint(equalTo: view.topAnchor)
+        ])
 
         mapStatusView.addInteraction(UILargeContentViewerInteraction(delegate: self))
 
@@ -114,31 +115,15 @@ class MapViewController: UIViewController,
         appearance.configureWithDefaultBackground()
         tabBarItem.scrollEdgeAppearance = appearance
 
-        // Add toolbar before constraining the status pill, since the pill's
-        // trailing constraint references toolbar.leadingAnchor.
         view.insertSubview(toolbar, aboveSubview: mapView)
 
-        // Toolbar: anchored to safe area top-right, independent of status pill.
-        // This matches Apple Maps where right-side buttons stay fixed regardless
-        // of whether a floating status element is visible.
         NSLayoutConstraint.activate([
             toolbar.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -ThemeMetrics.controllerMargin),
-            toolbar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.controllerMargin),
+            toolbar.topAnchor.constraint(equalTo: mapStatusView.bottomAnchor, constant: ThemeMetrics.controllerMargin),
             toolbar.widthAnchor.constraint(equalToConstant: 42.0),
             locationButton.heightAnchor.constraint(equalTo: locationButton.widthAnchor),
             weatherButton.heightAnchor.constraint(equalTo: weatherButton.widthAnchor),
-            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor),
-            myTripButton.heightAnchor.constraint(equalTo: myTripButton.widthAnchor)
-        ])
-
-        // Status pill: centered horizontally, anchored to safe area top.
-        // Max width prevents overflow on long status text or large Dynamic Type.
-        // Trailing constraint keeps the pill from overlapping the toolbar on narrow devices.
-        NSLayoutConstraint.activate([
-            mapStatusView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            mapStatusView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.padding),
-            mapStatusView.widthAnchor.constraint(lessThanOrEqualTo: view.widthAnchor, multiplier: 0.85),
-            mapStatusView.trailingAnchor.constraint(lessThanOrEqualTo: toolbar.leadingAnchor, constant: -ThemeMetrics.padding),
+            toggleMapTypeButton.heightAnchor.constraint(equalTo: toggleMapTypeButton.widthAnchor)
         ])
 
         // Long press gesture to add a pin to the map
@@ -278,24 +263,6 @@ class MapViewController: UIViewController,
         return button
     }()
 
-    // MARK: - My Trip
-
-    private lazy var myTripButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(Icons.busButton, for: .normal)
-        button.addTarget(self, action: #selector(showCurrentTrip), for: .touchUpInside)
-        button.accessibilityLabel = OBALoc(
-            "map_controller.my_trip_button",
-            value: "My Trip",
-            comment: "Accessibility label for the My Trip button on the map toolbar."
-        )
-        return button
-    }()
-
-    @objc private func showCurrentTrip() {
-        application.viewRouter.navigateToCurrentTrip(from: self)
-    }
-
     // MARK: - Weather
 
     private lazy var weatherButton: UIButton = {
@@ -360,7 +327,7 @@ class MapViewController: UIViewController,
                 }
             } catch {
                 weatherButton.isHidden = true
-                Logger.error(error.localizedDescription)
+                Logger.error("\(error)")
             }
         }
     }
@@ -423,15 +390,13 @@ class MapViewController: UIViewController,
         }
     }
 
-    private func buildTripPlanner(otpURL: URL) -> TripPlanner {
-        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
-
+    private func buildTripPlanner(otpURL: URL, searchRegion: MKCoordinateRegion) -> TripPlanner {
         let config = OTPConfiguration(
             otpServerURL: otpURL,
             themeConfiguration: .init(
                 primaryColor: Color(uiColor: ThemeColors().brand)
             ),
-            searchRegion: MKCoordinateRegion(searchRect)
+            searchRegion: searchRegion
         )
 
         let apiService = RestAPIService(baseURL: otpURL)
@@ -477,7 +442,8 @@ class MapViewController: UIViewController,
 
         subscribeToTripPlannerNotifications()
 
-        let tripPlanner = buildTripPlanner(otpURL: otpURL)
+        let searchRect = application.currentRegion?.serviceRect ?? mapRegionManager.mapView.visibleMapRect
+        let tripPlanner = buildTripPlanner(otpURL: otpURL, searchRegion: MKCoordinateRegion(searchRect))
 
         let tripPlannerView = tripPlanner.createTripPlannerView(origin: origin, destination: destinationLocation) { [weak self] in
             guard let self else { return }
@@ -589,7 +555,7 @@ class MapViewController: UIViewController,
 
     @objc private func reloadBookmarkAnnotations() {
         DispatchQueue.main.async { [weak self] in
-            guard let self, let region = self.application.currentRegion else { return }
+            guard let self = self, let region = self.application.currentRegion else { return }
             self.application.mapRegionManager.bookmarks = self.application.userDataStore.findBookmarks(in: region)
         }
     }
@@ -731,8 +697,6 @@ class MapViewController: UIViewController,
         // Check if it's the map item controller
         if controller == semiModalMapItemController?.contentViewController,
            let panel = semiModalMapItemController {
-            // Only deselect user-dropped pin annotations — other annotation types
-            // (stops, bookmarks) manage their own selection state.
             mapRegionManager.mapView.selectedAnnotations.forEach { annotation in
                 if annotation is UserDroppedPin {
                     mapRegionManager.mapView.deselectAnnotation(annotation, animated: true)
@@ -963,7 +927,6 @@ class MapViewController: UIViewController,
         // Dismiss any open map item controller when a pin is removed
         dismissExistingMapItemController(animated: true)
     }
-
     @objc public func mapRegionManagerShowZoomInStatus(_ manager: MapRegionManager, showStatus: Bool) {
         isShowingZoomWarning = showStatus
 

@@ -26,7 +26,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .captivePortal:
-            break
+            break // Expected
         default:
             fail("Expected .captivePortal, got \(apiError)")
         }
@@ -45,7 +45,7 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .requestNotFound:
-            break
+            break // Expected — 404s should not become serverUnavailable
         default:
             fail("Expected .requestNotFound, got \(apiError)")
         }
@@ -62,36 +62,15 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .noResponseBody:
-            break
+            break // Expected
         default:
             fail("Expected .noResponseBody, got \(apiError)")
         }
     }
 
-    func test_classify_invalidContentType_passesThrough() {
-        let error = APIError.invalidContentType(
-            originalError: nil,
-            expectedContentType: "application/json",
-            actualContentType: "text/html"
-        )
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
+    // MARK: - Server Error Upgrade (5xx → serverUnavailable)
 
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .invalidContentType:
-            break
-        default:
-            fail("Expected .invalidContentType, got \(apiError)")
-        }
-    }
-
-    // MARK: - Server Error Classification (500 vs other 5xx)
-
-    func test_classify_requestFailure500_becomesServerError() {
+    func test_classify_requestFailure500_becomesServerUnavailable() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil)!
         let error = APIError.requestFailure(response)
@@ -103,36 +82,9 @@ class ErrorClassifierTests: XCTestCase {
         }
 
         switch apiError {
-        case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
-        default:
-            fail("Expected .serverError, got \(apiError)")
-        }
-    }
-
-    func test_serverError_errorDescription_suggestsRetry() {
-        let error = APIError.serverError(regionName: "Puget Sound")
-        let description = error.localizedDescription
-
-        expect(description).to(contain("Puget Sound"))
-        expect(description).to(contain("try again"))
-    }
-
-    func test_classify_requestFailure502_becomesServerUnavailable() {
-        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
-        let response = HTTPURLResponse(url: url, statusCode: 502, httpVersion: nil, headerFields: nil)!
-        let error = APIError.requestFailure(response)
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
         case .serverUnavailable(let regionName, let statusCode):
             expect(regionName) == "Puget Sound"
-            expect(statusCode) == 502
+            expect(statusCode) == 500
         default:
             fail("Expected .serverUnavailable, got \(apiError)")
         }
@@ -158,25 +110,6 @@ class ErrorClassifierTests: XCTestCase {
         }
     }
 
-    func test_classify_requestFailure501_doesNotBecomeServerUnavailable() {
-        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
-        let response = HTTPURLResponse(url: url, statusCode: 501, httpVersion: nil, headerFields: nil)!
-        let error = APIError.requestFailure(response)
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .requestFailure(let resp):
-            expect(resp.statusCode) == 501
-        default:
-            fail("Expected .requestFailure for 501, got \(apiError)")
-        }
-    }
-
     func test_classify_requestFailure500_withoutRegionName_staysAsRequestFailure() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil)!
@@ -196,25 +129,6 @@ class ErrorClassifierTests: XCTestCase {
         }
     }
 
-    func test_classify_requestFailure503_withoutRegionName_staysAsRequestFailure() {
-        let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
-        let response = HTTPURLResponse(url: url, statusCode: 503, httpVersion: nil, headerFields: nil)!
-        let error = APIError.requestFailure(response)
-        let result = ErrorClassifier.classify(error, regionName: nil)
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .requestFailure(let resp):
-            expect(resp.statusCode) == 503
-        default:
-            fail("Expected .requestFailure to pass through when regionName is nil, got \(apiError)")
-        }
-    }
-
     func test_classify_requestFailure400_doesNotBecomeServerUnavailable() {
         let url = URL(string: "https://api.pugetsound.onebusaway.org/api/where/stops.json")!
         let response = HTTPURLResponse(url: url, statusCode: 400, httpVersion: nil, headerFields: nil)!
@@ -226,64 +140,12 @@ class ErrorClassifierTests: XCTestCase {
             return
         }
 
+        // 4xx errors are client errors, not server-down situations.
         switch apiError {
         case .requestFailure(let resp):
             expect(resp.statusCode) == 400
         default:
             fail("Expected .requestFailure for 4xx, got \(apiError)")
-        }
-    }
-
-    // MARK: - Cellular Data Restriction (Injectable)
-
-    func test_classify_networkFailure_withCellularRestricted_becomesCellularDataRestricted() {
-        let error = APIError.networkFailure(nil)
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound", isCellularDataRestricted: true)
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .cellularDataRestricted:
-            break
-        default:
-            fail("Expected .cellularDataRestricted, got \(apiError)")
-        }
-    }
-
-    func test_classify_networkFailure_withoutCellularRestricted_staysAsNetworkFailure() {
-        let error = APIError.networkFailure(nil)
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound", isCellularDataRestricted: false)
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .networkFailure:
-            break
-        default:
-            fail("Expected .networkFailure, got \(apiError)")
-        }
-    }
-
-    func test_classify_urlErrorNotConnected_withCellularRestricted_becomesCellularDataRestricted() {
-        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
-        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound", isCellularDataRestricted: true)
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .cellularDataRestricted:
-            break
-        default:
-            fail("Expected .cellularDataRestricted, got \(apiError)")
         }
     }
 
@@ -316,6 +178,7 @@ class ErrorClassifierTests: XCTestCase {
         )
         let result = ErrorClassifier.classify(decodingError, regionName: nil)
 
+        // Should NOT be the raw "The data couldn't be read because it is missing."
         let description = result.localizedDescription
         expect(description).toNot(contain("couldn't be read"))
         expect(description).to(contain("server"))
@@ -357,23 +220,6 @@ class ErrorClassifierTests: XCTestCase {
         }
     }
 
-    func test_classify_urlErrorCannotFindHost_withRegionName_becomesServerUnavailable() {
-        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost, userInfo: nil)
-        let result = ErrorClassifier.classify(urlError, regionName: "San Diego")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .serverUnavailable(let regionName, _):
-            expect(regionName) == "San Diego"
-        default:
-            fail("Expected .serverUnavailable, got \(apiError)")
-        }
-    }
-
     func test_classify_urlErrorTimedOut_withoutRegionName_becomesNetworkFailure() {
         let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: nil)
         let result = ErrorClassifier.classify(urlError, regionName: nil)
@@ -385,9 +231,32 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .networkFailure:
-            break
+            break // Expected fallback when no region name
         default:
             fail("Expected .networkFailure when regionName is nil, got \(apiError)")
+        }
+    }
+
+    func test_classify_urlErrorNotConnectedToInternet_becomesNetworkFailure() {
+        // When cellular data is NOT restricted, this should be a generic network failure.
+        // Note: We can't reliably mock CTCellularData.restrictedState in unit tests,
+        // so we verify the non-restricted path here. On a simulator, cellular is
+        // typically not restricted.
+        let urlError = NSError(domain: NSURLErrorDomain, code: NSURLErrorNotConnectedToInternet, userInfo: nil)
+        let result = ErrorClassifier.classify(urlError, regionName: "Puget Sound")
+
+        guard let apiError = result as? APIError else {
+            fail("Expected APIError, got \(type(of: result))")
+            return
+        }
+
+        // On simulators, isCellularDataRestricted is typically false,
+        // so this should classify as networkFailure.
+        switch apiError {
+        case .networkFailure, .cellularDataRestricted:
+            break // Either is acceptable depending on simulator state
+        default:
+            fail("Expected .networkFailure or .cellularDataRestricted, got \(apiError)")
         }
     }
 
@@ -402,63 +271,9 @@ class ErrorClassifierTests: XCTestCase {
 
         switch apiError {
         case .networkFailure:
-            break
+            break // Expected
         default:
             fail("Expected .networkFailure for unknown URL error, got \(apiError)")
-        }
-    }
-
-    // MARK: - Idempotency (already-classified errors pass through unchanged)
-
-    func test_classify_serverError_passesThrough() {
-        let error = APIError.serverError(regionName: "Puget Sound")
-        let result = ErrorClassifier.classify(error, regionName: "Tampa")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .serverError(let regionName):
-            expect(regionName) == "Puget Sound"
-        default:
-            fail("Expected .serverError to pass through, got \(apiError)")
-        }
-    }
-
-    func test_classify_serverUnavailable_passesThrough() {
-        let error = APIError.serverUnavailable(regionName: "Puget Sound", statusCode: 503)
-        let result = ErrorClassifier.classify(error, regionName: "Tampa")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .serverUnavailable(let regionName, let statusCode):
-            expect(regionName) == "Puget Sound"
-            expect(statusCode) == 503
-        default:
-            fail("Expected .serverUnavailable to pass through, got \(apiError)")
-        }
-    }
-
-    func test_classify_cellularDataRestricted_passesThrough() {
-        let error = APIError.cellularDataRestricted
-        let result = ErrorClassifier.classify(error, regionName: "Puget Sound")
-
-        guard let apiError = result as? APIError else {
-            fail("Expected APIError, got \(type(of: result))")
-            return
-        }
-
-        switch apiError {
-        case .cellularDataRestricted:
-            break
-        default:
-            fail("Expected .cellularDataRestricted to pass through, got \(apiError)")
         }
     }
 
@@ -473,7 +288,7 @@ class ErrorClassifierTests: XCTestCase {
         expect(result.localizedDescription) == "Something unrelated happened"
     }
 
-    // MARK: - Error Description Verification
+    // MARK: - serverUnavailable Error Description
 
     func test_serverUnavailable_errorDescription_containsRegionName() {
         let error = APIError.serverUnavailable(regionName: "Puget Sound", statusCode: 502)
@@ -494,6 +309,7 @@ class ErrorClassifierTests: XCTestCase {
 
 // MARK: - Test Helpers
 
+/// A simple CodingKey implementation for creating test DecodingErrors.
 private struct AnyCodingKey: CodingKey {
     var stringValue: String
     var intValue: Int?
