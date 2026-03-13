@@ -51,7 +51,7 @@ public class RESTAPIResponse<T>: CoreRESTAPIResponse where T: Decodable {
     public var entry: T { list }
 
     private enum DataCodingKeys: String, CodingKey {
-        case data, limitExceeded, entry, list, outOfRange, references
+        case data, limitExceeded, entry, list, stops, routes, trips, arrivalsAndDepartures, outOfRange, references
     }
 
     public required init(from decoder: Decoder) throws {
@@ -63,8 +63,23 @@ public class RESTAPIResponse<T>: CoreRESTAPIResponse where T: Decodable {
         if let entry = try dataContainer.decodeIfPresent(T.self, forKey: .entry) {
             list = entry
         }
+        else if let l = try dataContainer.decodeIfPresent(T.self, forKey: .list) {
+            list = l
+        }
+        else if let stops = try dataContainer.decodeIfPresent(T.self, forKey: .stops) {
+            list = stops
+        }
+        else if let routes = try dataContainer.decodeIfPresent(T.self, forKey: .routes) {
+            list = routes
+        }
+        else if let trips = try dataContainer.decodeIfPresent(T.self, forKey: .trips) {
+            list = trips
+        }
+        else if let arrivalsAndDepartures = try dataContainer.decodeIfPresent(T.self, forKey: .arrivalsAndDepartures) {
+            list = arrivalsAndDepartures
+        }
         else {
-            list = try dataContainer.decode(T.self, forKey: .list)
+            throw DecodingError.keyNotFound(DataCodingKeys.list, .init(codingPath: dataContainer.codingPath, debugDescription: "No value associated with key 'list', 'entry', 'stops', 'routes', 'trips', or 'arrivalsAndDepartures'."))
         }
 
         references = try dataContainer.decodeIfPresent(References.self, forKey: .references)

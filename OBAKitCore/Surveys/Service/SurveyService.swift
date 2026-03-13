@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 public final class SurveyService: SurveyServiceProtocol, ObservableObject {
 

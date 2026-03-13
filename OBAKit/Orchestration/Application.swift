@@ -17,6 +17,7 @@ import SafariServices
 import MapKit
 import SwiftUI
 import TipKit
+import WatchConnectivity
 
 // MARK: - Protocols
 
@@ -60,13 +61,17 @@ public protocol ApplicationDelegate {
 ///
 /// - Note: See `OBAKitCore.CoreApplication` for a version of this class suitable for running in an application extension.
 @objc(OBAApplication)
-public class Application: CoreApplication, PushServiceDelegate {
+public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegate {
 
     // MARK: - Private Properties
 
     /// App configuration parameters: API keys, region server, user UUID, and other
     /// configuration values.
     private let config: AppConfig
+
+    private var watchSession: WCSession?
+
+    private var pendingWatchSync = false
 
     // MARK: - Public Properties
 
@@ -146,7 +151,20 @@ public class Application: CoreApplication, PushServiceDelegate {
 
         super.init(config: config)
 
+        NotificationCenter.default.addObserver(self, selector: #selector(bookmarksUpdated(_:)), name: .OBABookmarksUpdated, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(alarmsUpdated(_:)), name: .OBAAlarmsUpdated, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(serviceAlertsUpdated(_:)), name: .OBAServiceAlertsUpdated, object: nil)
+
         configureAppearanceProxies()
+        configureWatchSession()
+    }
+
+    private func configureWatchSession() {
+        if WCSession.isSupported() {
+            watchSession = WCSession.default
+            watchSession?.delegate = self
+            watchSession?.activate()
+        }
     }
 
     private func configureTipKit() {
@@ -255,7 +273,7 @@ public class Application: CoreApplication, PushServiceDelegate {
                         self.reachabilityBulletin = ReachabilityBulletin()
                     }
 
-                    self.reachabilityBulletin?.showStatus(result, in: app, isCellularDataRestricted: self.isCellularDataRestricted)
+                    self.reachabilityBulletin?.showStatus(result, in: app)
                 }
             })
     }
@@ -360,7 +378,7 @@ public class Application: CoreApplication, PushServiceDelegate {
 
     /// Provides access the topmost view controller in the app, if one exists.
     private var topViewController: UIViewController? {
-        delegate?.uiApplication?.keyWindowFromScene?.topViewController
+        delegate?.uiApplication?.keyWindowFromScene?.topViewController()
     }
 
     @objc public func application(_ application: UIApplication, didFinishLaunching options: [AnyHashable: Any]) {
@@ -542,8 +560,14 @@ public class Application: CoreApplication, PushServiceDelegate {
         analytics?.reportEvent(pageURL: "app://localhost/regions", label: label, value: nil)
     }
 
+    public func regionsService(_ service: RegionsService, updatedRegionsList regions: [Region]) {
+        sendAllDataToWatch()
+    }
+
     public override func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         super.regionsService(service, updatedRegion: region)
+
+        sendAllDataToWatch()
 
         if let analytics {
             analytics.updateServer!(defaultDomainURL: region.OBABaseURL, analyticsServerURL: region.plausibleAnalyticsServerURL)
@@ -576,13 +600,13 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// Classifies and displays an error to the end user.
     @MainActor
     public override func displayError(_ error: Error) async {
-        let classified = ErrorClassifier.classify(error, regionName: currentRegionName, isCellularDataRestricted: isCellularDataRestricted)
+        let classified = ErrorClassifier.classify(error, regionName: currentRegionName)
         Logger.error("Error: \(classified.localizedDescription)")
 
         analytics?.reportError?(error)
 
         guard let uiApp = delegate?.uiApplication else { return }
-        let bulletin = ErrorBulletin(application: self, classifiedError: classified)
+        let bulletin = ErrorBulletin(application: self, error: classified)
         bulletin.show(in: uiApp)
         self.errorBulletin = bulletin
     }
@@ -668,4 +692,147 @@ public class Application: CoreApplication, PushServiceDelegate {
     /// `.notRunning` means that a feature is available, but not fully configured. This might be due to a race condition, for instance, and the caller should assume that the feature may be available in the future.
     /// `.running` means that the feature is ready to use.
     public lazy var features = FeatureAvailability(config: self.config, application: self)
+}
+
+// MARK: - WCSessionDelegate
+extension Application {
+    public func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        if let error = error {
+            Logger.error("WCSession activation failed: \(error)")
+            return
+        }
+
+        if activationState == .activated && pendingWatchSync {
+            sendAllDataToWatch()
+        }
+    }
+
+    public func sessionDidBecomeInactive(_ session: WCSession) {
+        // nop
+    }
+
+    public func sessionDidDeactivate(_ session: WCSession) {
+        // Re-activate the session
+        WCSession.default.activate()
+    }
+}
+
+extension Application {
+    // MARK: - Watch Sync
+
+    @objc private func bookmarksUpdated(_ notification: Notification) {
+        sendBookmarksToWatch()
+    }
+
+    @objc private func alarmsUpdated(_ notification: Notification) {
+        sendAlarmsToWatch()
+    }
+
+    @objc private func serviceAlertsUpdated(_ notification: Notification) {
+        sendServiceAlertsToWatch()
+    }
+
+    @objc private func regionsUpdated(_ notification: Notification) {
+        sendAllDataToWatch()
+    }
+
+    private func sendBookmarksToWatch() {
+        sendAllDataToWatch()
+    }
+
+    private func sendAlarmsToWatch() {
+        sendAllDataToWatch()
+    }
+
+    private func sendServiceAlertsToWatch() {
+        sendAllDataToWatch()
+    }
+
+    private func sendAllDataToWatch() {
+        guard let session = watchSession, session.activationState == .activated else {
+            pendingWatchSync = true
+            Logger.info("Watch sync skipped: WCSession not activated. Data queued.")
+            return
+        }
+
+        var context: [String: Any] = [:]
+
+        context["bookmarks"] = buildBookmarkData() ?? []
+        context["alarms"] = buildAlarmData() ?? []
+        context["alerts"] = buildAlertData() ?? []
+        context["regions"] = buildRegionData() ?? []
+
+        do {
+            try session.updateApplicationContext(context)
+            pendingWatchSync = false
+        } catch {
+            Logger.error("Watch sync failed: \(error)")
+        }
+    }
+
+    private func buildRegionData() -> [Data]? {
+        let regions = regionsService.regions
+        guard !regions.isEmpty else { return nil }
+
+        return regions.compactMap { region -> Data? in
+            let coordinate = region.centerCoordinate
+            
+            struct SimpleRegion: Encodable {
+                let id: String
+                let name: String
+                let latitude: Double
+                let longitude: Double
+                let obaBaseURL: URL?
+                let otpBaseURL: URL?
+            }
+            
+            let simple = SimpleRegion(
+                id: String(region.regionIdentifier),
+                name: region.name,
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude,
+                obaBaseURL: region.OBABaseURL,
+                otpBaseURL: region.openTripPlannerURL
+            )
+            
+            return try? JSONEncoder().encode(simple)
+        }
+    }
+
+    private func buildWatchData<T: Encodable>(items: [T], defaultsKey: String, logName: String) -> [[String: Any]]? {
+        guard !items.isEmpty else {
+            userDefaults.removeObject(forKey: defaultsKey)
+            return nil
+        }
+
+        // Write to shared container (App Group) if possible
+        do {
+            let data = try JSONEncoder().encode(items)
+            userDefaults.set(data, forKey: defaultsKey)
+        } catch {
+            Logger.error("Failed to encode watch \(logName): \(error)")
+        }
+
+        return items.compactMap { item -> [String: Any]? in
+            do {
+                let data = try JSONEncoder().encode(item)
+                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            } catch {
+                Logger.error("Failed to encode individual watch \(logName) item: \(error)")
+                return nil
+            }
+        }
+    }
+
+    private func buildBookmarkData() -> [[String: Any]]? {
+        buildWatchData(items: userDataStore.bookmarks.map { $0.watchBookmarkObject }, defaultsKey: "watch.bookmarks", logName: "bookmarks")
+    }
+
+    private func buildAlarmData() -> [[String: Any]]? {
+        buildWatchData(items: userDataStore.alarms.map { $0.watchAlarmItem }, defaultsKey: "watch.alarms", logName: "alarms")
+    }
+
+    private func buildAlertData() -> [[String: Any]]? {
+        buildWatchData(items: alertsStore.agencyAlerts.map { $0.watchServiceAlert }, defaultsKey: "watch.service_alerts", logName: "service alerts")
+    }
 }
