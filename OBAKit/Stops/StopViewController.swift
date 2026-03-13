@@ -245,7 +245,6 @@ public class StopViewController: UIViewController,
             collapsedSections.insert(ListSections.serviceAlerts.sectionID)
         }
 
-
     }
 
     public override func viewWillAppear(_ animated: Bool) {
@@ -260,7 +259,6 @@ public class StopViewController: UIViewController,
         Task {
             await updateData()
         }
-
 
     }
 
