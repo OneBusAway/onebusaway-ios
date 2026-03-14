@@ -16,24 +16,27 @@ struct PanelStopViewControllerWrapper: UIViewControllerRepresentable {
     let application: Application
     let stop: Stop
     var onArrivalDepartureTapped: ((ArrivalDeparture) -> Void)?
-    /// Called when the close button is tapped.
-    var onClose: (() -> Void)?
-
-    @Environment(\.dismiss) private var dismiss
+    var onClose: () -> Void
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(dismiss: dismiss, onClose: onClose)
+        Coordinator(onClose: onClose)
     }
 
     func makeUIViewController(context: Context) -> UINavigationController {
         let stopVC = StopViewController(application: application, stop: stop)
         stopVC.onArrivalDepartureTapped = onArrivalDepartureTapped
-        stopVC.navigationItem.largeTitleDisplayMode = .always
-        stopVC.navigationItem.leftBarButtonItem = UIBarButtonItem(
+
+        let closeButton = UIBarButtonItem(
             barButtonSystemItem: .close,
             target: context.coordinator,
             action: #selector(Coordinator.close)
         )
+        closeButton.accessibilityLabel = OBALoc(
+            "panel_stop_view_controller_wrapper.close_button.accessibility_label",
+            value: "Close",
+            comment: "Accessibility label for the close button on the stop panel."
+        )
+        stopVC.navigationItem.leftBarButtonItem = closeButton
 
         let navController = UINavigationController(rootViewController: stopVC)
         navController.navigationBar.prefersLargeTitles = true
@@ -42,23 +45,22 @@ struct PanelStopViewControllerWrapper: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
+        // Refresh callbacks so the coordinator always has the latest closures
+        context.coordinator.onClose = onClose
+        if let stopVC = uiViewController.viewControllers.first as? StopViewController {
+            stopVC.onArrivalDepartureTapped = onArrivalDepartureTapped
+        }
     }
 
     final class Coordinator {
-        let dismiss: DismissAction
-        let onClose: (() -> Void)?
+        var onClose: () -> Void
 
-        init(dismiss: DismissAction, onClose: (() -> Void)?) {
-            self.dismiss = dismiss
+        init(onClose: @escaping () -> Void) {
             self.onClose = onClose
         }
 
         @objc func close() {
-            if let onClose {
-                onClose()
-            } else {
-                dismiss()
-            }
+            onClose()
         }
     }
 }
