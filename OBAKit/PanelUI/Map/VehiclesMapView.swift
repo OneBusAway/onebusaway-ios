@@ -65,7 +65,7 @@ struct VehiclesMapView: View {
                     }
                 )
             } else if let stop = selectedStop {
-                StopViewControllerWrapper(
+                PanelStopViewControllerWrapper(
                     application: viewModel.application,
                     stop: stop,
                     onArrivalDepartureTapped: { arrivalDeparture in
