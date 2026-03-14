@@ -61,7 +61,9 @@ public class BookmarkDataLoader: NSObject {
             bookmark.isTripBookmark
         else { return }
 
-        Task(priority: .userInitiated) {
+        Task(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+
             do {
                 let stopArrivals = try await apiService.getArrivalsAndDeparturesForStop(id: bookmark.stopID, minutesBefore: 0, minutesAfter: 60).entry
 
@@ -72,6 +74,13 @@ public class BookmarkDataLoader: NSObject {
                     }
 
                     self.delegate?.dataLoaderDidUpdate(self)
+
+                    // All bookmarks belong to the user's currently selected region, so every
+                    // concurrent load here resolves to the same agency timezone. Writing it
+                    // multiple times is harmless — each write is an identical value.
+                    if let regionTimeZone = stopArrivals.stop.routes.first?.agency.regionTimeZone {
+                        self.application.formatters.updateTimeZone(timeZone: regionTimeZone)
+                    }
                 }
             } catch {
                 await self.application.displayError(error)
