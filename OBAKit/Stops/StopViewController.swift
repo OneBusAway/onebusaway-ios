@@ -41,9 +41,8 @@ public struct StopViewControllerWrapper: UIViewControllerRepresentable {
         // Configure large title to always be visible
         stopVC.navigationItem.largeTitleDisplayMode = .always
 
-        // Add close button on leading side so it remains visible when
-        // StopViewController configures right-side action buttons.
-        stopVC.navigationItem.leftBarButtonItem = UIBarButtonItem(
+        // Add close button on trailing side
+        stopVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close,
             target: context.coordinator,
             action: #selector(Coordinator.close)
