@@ -37,6 +37,8 @@ targets:
               NSTemporaryExceptionAllowsInsecureHTTPLoads: true
               NSIncludesSubdomains: true
         NSHumanReadableCopyright: © goEuropa
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
         NSLocationAlwaysAndWhenInUseUsageDescription: Show your location on the map
         NSLocationWhenInUseUsageDescription: Show your location on the map
         NSUserActivityTypes:

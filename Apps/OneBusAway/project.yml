@@ -47,6 +47,8 @@ targets:
             }
           }
         NSHumanReadableCopyright: © Open Transit Software Foundation
+        NSSupportsLiveActivities: true
+        NSSupportsLiveActivitiesFrequentUpdates: true
         NSUserActivityTypes:
           - org.onebusaway.iphone.user_activity.stop
           - org.onebusaway.iphone.user_activity.trip

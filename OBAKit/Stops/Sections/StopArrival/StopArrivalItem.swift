@@ -20,6 +20,7 @@ struct ArrivalDepartureItem: OBAListViewItem {
 
     var alarmAction: OBAListViewAction<ArrivalDepartureItem>?
     var bookmarkAction: OBAListViewAction<ArrivalDepartureItem>?
+    var liveActivityAction: OBAListViewAction<ArrivalDepartureItem>?
     var scheduleAction: OBAListViewAction<ArrivalDepartureItem>?
 
     let id: UUID = UUID()
@@ -65,6 +66,18 @@ struct ArrivalDepartureItem: OBAListViewItem {
                 handler: bookmarkAction)
 
             actions.append(bookmarkAction)
+        }
+
+        if #available(iOS 16.2, *), let liveActivityAction = self.liveActivityAction {
+            let action = OBAListViewContextualAction(
+                style: .normal,
+                title: OBALoc("live_activity.swipe_action.title", value: "Live", comment: "Swipe action title to start a Live Activity from an arrival row"),
+                image: UIImage(systemName: "livephoto"),
+                backgroundColor: UIColor.systemPurple,
+                hidesWhenSelected: true,
+                item: self,
+                handler: liveActivityAction)
+            actions.append(action)
         }
 
         if isAlarmAvailable, let alarmAction = self.alarmAction {
