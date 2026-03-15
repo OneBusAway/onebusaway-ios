@@ -62,6 +62,8 @@ public final class StopCacheDatabase: @unchecked Sendable {
     private func runMigrations() throws {
         var migrator = DatabaseMigrator()
 
+        // v1: Original schema with individual columns for every Stop field.
+        // Kept so GRDB's migrator can track migration history correctly.
         migrator.registerMigration("v1_createCachedStops") { db in
             try db.create(table: "cachedStop", options: .ifNotExists) { t in
                 t.column("id", .text).notNull()
@@ -90,6 +92,38 @@ public final class StopCacheDatabase: @unchecked Sendable {
                 on: "cachedStop",
                 columns: ["regionId", "lastUpdated"],
                 ifNotExists: true
+            )
+        }
+
+        // v2: Replace individual columns with a single stopData blob.
+        // This is a cache — dropping the table and recreating is safe.
+        // Benefits:
+        //   - Compile-time safety: no hardcoded CodingKeys dictionary
+        //   - Preserves full Route objects for cached stops
+        //   - Automatically adapts if Stop fields change
+        migrator.registerMigration("v2_stopDataBlob") { db in
+            try db.drop(table: "cachedStop")
+
+            try db.create(table: "cachedStop") { t in
+                t.column("id", .text).notNull()
+                t.column("regionId", .integer).notNull()
+                t.column("latitude", .double).notNull()
+                t.column("longitude", .double).notNull()
+                t.column("lastUpdated", .double).notNull()
+                t.column("stopData", .blob).notNull()
+                t.primaryKey(["regionId", "id"])
+            }
+
+            try db.create(
+                index: "idx_cachedStop_location",
+                on: "cachedStop",
+                columns: ["regionId", "latitude", "longitude"]
+            )
+
+            try db.create(
+                index: "idx_cachedStop_lastUpdated",
+                on: "cachedStop",
+                columns: ["regionId", "lastUpdated"]
             )
         }
 
