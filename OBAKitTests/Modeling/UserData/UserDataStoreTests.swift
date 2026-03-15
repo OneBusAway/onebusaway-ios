@@ -178,91 +178,71 @@ class UserDefaultsStoreTests: OBATestCase {
         expect(newStore.debugMode).to(beTrue())
     }
 
-    // MARK: - SurveyPreferencesStore
+    // MARK: - Survey Properties
 
-    func test_userSurveyId_generatesUUID() {
-        let id = userDefaultsStore.userSurveyId
-
+    func test_surveyUserIdentifier_generatesUUID() {
+        let id = userDefaultsStore.surveyUserIdentifier
         expect(id).toNot(beEmpty())
     }
 
-    func test_userSurveyId_persistsBetweenCalls() {
-        let first = userDefaultsStore.userSurveyId
-        let second = userDefaultsStore.userSurveyId
-
+    func test_surveyUserIdentifier_persistsBetweenCalls() {
+        let first = userDefaultsStore.surveyUserIdentifier
+        let second = userDefaultsStore.surveyUserIdentifier
         expect(first) == second
     }
 
     // MARK: - App Launch Counter
 
-    func test_appLaunch_defaultValueIsZero() {
-        expect(self.userDefaultsStore.appLaunch) == 0
+    func test_appLaunchCount_defaultValueIsZero() {
+        expect(self.userDefaultsStore.appLaunchCount) == 0
     }
 
-    func test_appLaunch_readsStoredValue() {
-        userDefaultsStore.increaseAppLaunchCount()
+    func test_appLaunchCount_incrementsCorrectly() {
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 1
 
-        expect(self.userDefaultsStore.appLaunch) == 1
+        userDefaultsStore.incrementAppLaunchCount()
+        expect(self.userDefaultsStore.appLaunchCount) == 2
     }
 
-    // MARK: - Survey Preferences
+    // MARK: - Survey Enabled
 
-    func test_surveyPreferences_defaultValue() {
-        let preferences = userDefaultsStore.surveyPreferences()
-
-        expect(preferences.isSurveyEnabled).to(beTrue())
-        expect(preferences.completedSurveyIDs).to(beEmpty())
-        expect(preferences.skippedSurveyIDs).to(beEmpty())
-        expect(preferences.nextReminderDate).to(beNil())
+    func test_isSurveyEnabled_defaultsToTrue() {
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
     }
 
-    func test_surveyPreferences_persistedValue() {
-        let preferences = SurveyPreferences(
-            isSurveyEnabled: true,
-            completedSurveyIDs: [1, 2], skippedSurveyIDs: [3], nextReminderDate: Date()
-        )
+    func test_isSurveyEnabled_persistsValue() {
+        userDefaultsStore.isSurveyEnabled = false
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beFalse())
 
-        userDefaultsStore.setSurveyPreferences(preferences)
-
-        let storedPreferences = userDefaultsStore.surveyPreferences()
-
-        expect(storedPreferences.completedSurveyIDs).to(equal(preferences.completedSurveyIDs))
-        expect(storedPreferences.isSurveyEnabled).to(equal(preferences.isSurveyEnabled))
-        expect(storedPreferences.skippedSurveyIDs).to(equal(preferences.skippedSurveyIDs))
-        expect(storedPreferences.nextReminderDate).to(equal(preferences.nextReminderDate))
+        userDefaultsStore.isSurveyEnabled = true
+        expect(self.userDefaultsStore.isSurveyEnabled).to(beTrue())
     }
 
-    func test_surveyPreferences_overwritesExistingValue() {
-        userDefaultsStore.setSurveyPreferences(.init(isSurveyEnabled: false))
-        userDefaultsStore.setSurveyPreferences(.init(isSurveyEnabled: true))
+    // MARK: - Next Survey Reminder Date
 
-        expect(self.userDefaultsStore.surveyPreferences().isSurveyEnabled).to(beTrue())
+    func test_nextSurveyReminderDate_defaultsToNil() {
+        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beNil())
     }
 
-    // MARK: - Completed Surveys
-
-    func test_completedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.completedSurveys).to(beEmpty())
+    func test_nextSurveyReminderDate_persistsValue() {
+        let date = Date().addingTimeInterval(3600)
+        userDefaultsStore.nextSurveyReminderDate = date
+        expect(self.userDefaultsStore.nextSurveyReminderDate).to(beCloseTo(date, within: 1))
     }
 
-    func test_completedSurveys_returnsStoredValues() {
-        let preferences = SurveyPreferences(completedSurveyIDs: [1, 2, 3])
-        userDefaultsStore.setSurveyPreferences(preferences)
+    // MARK: - Survey Completion Tracking
 
-        expect(self.userDefaultsStore.completedSurveys) == [1, 2, 3]
+    func test_markSurveyCompleted_tracksCompletedSurvey() {
+        userDefaultsStore.markSurveyCompleted(surveyId: 1, userIdentifier: "user1")
+        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 1, userIdentifier: "user1")).to(beTrue())
+        expect(self.userDefaultsStore.isSurveyCompleted(surveyId: 2, userIdentifier: "user1")).to(beFalse())
     }
 
-    // MARK: - Skipped Surveys
-
-    func test_skippedSurveys_defaultEmpty() {
-        expect(self.userDefaultsStore.skippedSurveys).to(beEmpty())
-    }
-
-    func test_skippedSurveys_returnsStoredValues() {
-        let preferences = SurveyPreferences(skippedSurveyIDs: [4, 5])
-        userDefaultsStore.setSurveyPreferences(preferences)
-
-        expect(self.userDefaultsStore.skippedSurveys) == [4, 5]
+    func test_markSurveyForLater_tracksLaterSurvey() {
+        userDefaultsStore.markSurveyForLater(surveyId: 1, userIdentifier: "user1")
+        // Immediately after marking, shouldShowSurveyLater returns false (0 launches since marking)
+        expect(self.userDefaultsStore.shouldShowSurveyLater(surveyId: 1, userIdentifier: "user1")).to(beFalse())
     }
 
 }

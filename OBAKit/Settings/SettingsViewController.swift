@@ -38,6 +38,7 @@ class SettingsViewController: FormViewController {
             +++ mapSection
             +++ alertsSection
             +++ accessibilitySection
+            +++ surveySection
             +++ debugSection
 
         if application.analytics != nil {
@@ -56,7 +57,8 @@ class SettingsViewController: FormViewController {
             AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts: application.userDefaults.bool(forKey: AgencyAlertsStore.UserDefaultKeys.displayRegionalTestAlerts),
             RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey: application.userDefaults.bool(forKey: RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey),
             MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey: application.userDefaults.bool(forKey: MapRegionManager.mapViewShowsStopAnnotationLabelsDefaultsKey),
-            debugModeEnabled: application.userDataStore.debugMode
+            debugModeEnabled: application.userDataStore.debugMode,
+            alwaysShowSurveysOnStops: application.userDataStore.alwaysShowSurveysOnStops
         ])
     }
 
@@ -101,6 +103,10 @@ class SettingsViewController: FormViewController {
 
         if let debugEnabled = values[debugModeEnabled] as? Bool {
             application.userDataStore.debugMode = debugEnabled
+        }
+
+        if let alwaysShowSurveys = values[alwaysShowSurveysOnStops] as? Bool {
+            application.userDataStore.alwaysShowSurveysOnStops = alwaysShowSurveys
         }
 
         if let alwaysRefreshRegions = values[RegionsService.alwaysRefreshRegionsOnLaunchUserDefaultsKey] as? Bool {
@@ -181,6 +187,21 @@ class SettingsViewController: FormViewController {
         section <<< SwitchRow {
             $0.tag = privacySectionReportingEnabled
             $0.title = OBALoc("settings_controller.privacy_section.reporting_enabled", value: "Send usage data to developer", comment: "Settings > Privacy section > Send usage data")
+        }
+
+        return section
+    }()
+
+    // MARK: - Surveys Section
+
+    private let alwaysShowSurveysOnStops = "alwaysShowSurveysOnStops"
+
+    private lazy var surveySection: Section = {
+        let section = Section(OBALoc("settings_controller.survey_section.title", value: "Surveys", comment: "Settings > Surveys section title"))
+
+        section <<< SwitchRow {
+            $0.tag = alwaysShowSurveysOnStops
+            $0.title = OBALoc("settings_controller.survey_section.always_show_on_stops", value: "Always show on stops", comment: "Settings > Surveys section > Always show surveys on stops")
         }
 
         return section
