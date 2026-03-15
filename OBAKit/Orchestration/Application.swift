@@ -93,6 +93,8 @@ public class Application: CoreApplication, PushServiceDelegate, WCSessionDelegat
 
     lazy var searchManager = SearchManager(application: self)
 
+    lazy var toastManager = ToastManager()
+
     @objc lazy var userActivityBuilder = UserActivityBuilder(application: self)
 
     /// Handles all deep-linking into the app.
