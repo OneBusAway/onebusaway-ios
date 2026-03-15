@@ -18,12 +18,22 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
     public let serviceDate: Date
     public let stopSequence: Int
     public let vehicleID: String?
+    public let destinationStopID: StopID?
 
-    public convenience init(arrivalDeparture: ArrivalDeparture, regionID: Int) {
-        self.init(title: arrivalDeparture.routeAndHeadsign, regionID: regionID, stopID: arrivalDeparture.stopID, tripID: arrivalDeparture.tripID, serviceDate: arrivalDeparture.serviceDate, stopSequence: arrivalDeparture.stopSequence, vehicleID: arrivalDeparture.vehicleID)
+    public convenience init(arrivalDeparture: ArrivalDeparture, regionID: Int, destinationStopID: StopID? = nil) {
+        self.init(
+            title: arrivalDeparture.routeAndHeadsign,
+            regionID: regionID,
+            stopID: arrivalDeparture.stopID,
+            tripID: arrivalDeparture.tripID,
+            serviceDate: arrivalDeparture.serviceDate,
+            stopSequence: arrivalDeparture.stopSequence,
+            vehicleID: arrivalDeparture.vehicleID,
+            destinationStopID: destinationStopID
+        )
     }
 
-    public init(title: String, regionID: Int, stopID: StopID, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?) {
+    public init(title: String, regionID: Int, stopID: StopID, tripID: String, serviceDate: Date, stopSequence: Int, vehicleID: String?, destinationStopID: StopID? = nil) {
         self.title = title
         self.regionID = regionID
         self.stopID = stopID
@@ -31,6 +41,7 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
         self.serviceDate = serviceDate
         self.stopSequence = stopSequence
         self.vehicleID = vehicleID
+        self.destinationStopID = destinationStopID
     }
 
     public override func isEqual(_ object: Any?) -> Bool {
@@ -42,7 +53,8 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
             serviceDate == rhs.serviceDate &&
             stopSequence == rhs.stopSequence &&
             vehicleID == rhs.vehicleID &&
-            regionID == rhs.regionID
+            regionID == rhs.regionID &&
+            destinationStopID == rhs.destinationStopID
     }
 
     override public var hash: Int {
@@ -54,6 +66,7 @@ public class ArrivalDepartureDeepLink: NSObject, Codable {
         hasher.combine(stopSequence)
         hasher.combine(vehicleID)
         hasher.combine(regionID)
+        hasher.combine(destinationStopID)
         return hasher.finalize()
     }
 }
