@@ -174,6 +174,35 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter alarm: The alarm object to delete.
     func delete(alarm: Alarm)
 
+    // MARK: - Survey Tracking
+
+    /// Stores the user's unique identifier for survey responses.
+    var surveyUserIdentifier: String { get set }
+
+    /// Whether the survey feature is enabled.
+    var isSurveyEnabled: Bool { get set }
+
+    /// Whether to always show surveys on stops, bypassing gating checks.
+    var alwaysShowSurveysOnStops: Bool { get set }
+
+    /// The next date at which the user should be reminded about surveys.
+    var nextSurveyReminderDate: Date? { get set }
+
+    /// Returns the current app launch count.
+    var appLaunchCount: Int { get }
+
+    /// Stores information about a completed survey.
+    func markSurveyCompleted(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey has been completed by the user.
+    func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool
+
+    /// Stores information about a survey the user chose to answer later.
+    func markSurveyForLater(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey should be shown again based on app launch count.
+    func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool
+
     // MARK: - View State/Last Selected Tab
 
     /// Stores the last selected tab that the user viewed.
@@ -666,6 +695,77 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func delete(alarm: Alarm) {
         alarms.removeAll { $0 == alarm }
+    }
+
+    // MARK: - Survey Tracking
+
+    public var surveyUserIdentifier: String {
+        get {
+            if let existing = userDefaults.string(forKey: UserDefaultsKeys.surveyUserIdentifier), !existing.isEmpty {
+                return existing
+            }
+            let newID = UUID().uuidString
+            userDefaults.set(newID, forKey: UserDefaultsKeys.surveyUserIdentifier)
+            return newID
+        }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.surveyUserIdentifier) }
+    }
+
+    public var isSurveyEnabled: Bool {
+        get {
+            guard userDefaults.object(forKey: UserDefaultsKeys.isSurveyEnabled) != nil else { return true }
+            return userDefaults.bool(forKey: UserDefaultsKeys.isSurveyEnabled)
+        }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.isSurveyEnabled) }
+    }
+
+    public var alwaysShowSurveysOnStops: Bool {
+        get { userDefaults.bool(forKey: UserDefaultsKeys.alwaysShowSurveysOnStops) }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.alwaysShowSurveysOnStops) }
+    }
+
+    public var nextSurveyReminderDate: Date? {
+        get { userDefaults.object(forKey: UserDefaultsKeys.nextSurveyReminderDate) as? Date }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.nextSurveyReminderDate) }
+    }
+
+    public var appLaunchCount: Int {
+        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    public func markSurveyCompleted(surveyId: Int, userIdentifier: String) {
+        var completed = completedSurveyKeys
+        completed.insert("\(surveyId):\(userIdentifier)")
+        completedSurveyKeys = completed
+        var forLater = surveysForLaterKeys
+        forLater.removeValue(forKey: "\(surveyId):\(userIdentifier)")
+        surveysForLaterKeys = forLater
+    }
+
+    public func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool {
+        completedSurveyKeys.contains("\(surveyId):\(userIdentifier)")
+    }
+
+    public func markSurveyForLater(surveyId: Int, userIdentifier: String) {
+        var forLater = surveysForLaterKeys
+        forLater["\(surveyId):\(userIdentifier)"] = appLaunchCount
+        surveysForLaterKeys = forLater
+    }
+
+    public func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool {
+        guard let markedAt = surveysForLaterKeys["\(surveyId):\(userIdentifier)"] else { return false }
+        let launches = appLaunchCount - markedAt
+        return launches > 0 && launches % 3 == 0
+    }
+
+    private var completedSurveyKeys: Set<String> {
+        get { Set(userDefaults.stringArray(forKey: UserDefaultsKeys.completedSurveys) ?? []) }
+        set { userDefaults.set(Array(newValue), forKey: UserDefaultsKeys.completedSurveys) }
+    }
+
+    private var surveysForLaterKeys: [String: Int] {
+        get { decodeUserDefaultsObjects(type: [String: Int].self, key: UserDefaultsKeys.surveysForLater) ?? [:] }
+        set { try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater) } // swiftlint:disable:this force_try
     }
 
     // MARK: - Stop Preferences
