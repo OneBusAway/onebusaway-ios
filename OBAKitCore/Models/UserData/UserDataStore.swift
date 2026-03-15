@@ -191,6 +191,9 @@ public protocol UserDataStore: NSObjectProtocol {
     /// Returns the current app launch count.
     var appLaunchCount: Int { get }
 
+    /// Increments the app launch count by one.
+    func incrementAppLaunchCount()
+
     /// Stores information about a completed survey.
     func markSurveyCompleted(surveyId: Int, userIdentifier: String)
 
@@ -731,6 +734,10 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public var appLaunchCount: Int {
         return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    public func incrementAppLaunchCount() {
+        userDefaults.set(appLaunchCount + 1, forKey: UserDefaultsKeys.appLaunchCount)
     }
 
     public func markSurveyCompleted(surveyId: Int, userIdentifier: String) {
