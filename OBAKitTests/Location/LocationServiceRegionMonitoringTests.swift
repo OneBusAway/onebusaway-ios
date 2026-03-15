@@ -194,3 +194,4 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         expect(self.delegate.monitoringFailedError).toNot(beNil())
     }
 }
+
