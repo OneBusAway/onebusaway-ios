@@ -113,6 +113,16 @@ public extension Bundle {
         return dict["AppDevelopersEmailAddress"] as? String
     }
 
+    // MARK: - More Tab Configuration
+
+    /// Returns the More tab configuration from OBAKitConfig.MoreTab, or defaults.
+    var moreTabConfiguration: MoreTabConfiguration {
+        guard let config = moreTabConfig else {
+            return .default
+        }
+        return MoreTabConfiguration(from: config)
+    }
+
     // MARK: - Bundle/Private
 
     private var OBAKitConfig: [AnyHashable: Any]? {
@@ -125,6 +135,13 @@ public extension Bundle {
         }
 
         return OBAKitConfig["Donations"] as? [AnyHashable: Any]
+    }
+
+    private var moreTabConfig: [AnyHashable: Any]? {
+        guard let OBAKitConfig else {
+            return nil
+        }
+        return OBAKitConfig["MoreTab"] as? [AnyHashable: Any]
     }
 
     private func url(for key: String) -> URL? {
