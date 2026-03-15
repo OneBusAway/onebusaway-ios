@@ -58,6 +58,10 @@ targets:
             Enabled: true
             DonationManagementPortal: "https://onebusaway.co/manage-donations"
           ExtensionURLScheme: onebusaway
+          MoreTab:
+            ShowHelpOutSection: true
+            TranslateURL: "https://www.transifex.com/open-transit-software-foundation/onebusaway-ios/"
+            DevelopURL: "https://github.com/oneBusAway/onebusaway-ios"
           PrivacyPolicyURL: https://onebusaway.org/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
           RESTServerAPIKey: org.onebusaway.iphone
