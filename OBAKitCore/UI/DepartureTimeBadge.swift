@@ -14,6 +14,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
         var accessibilityLabel: String
         var displayText: String
         var backgroundColor: CGColor
+        var textColor: CGColor
 
         public init(arrivalDepartureMinutes: Int,
                     arrivalDepartureStatus: ArrivalDepartureStatus,
@@ -22,7 +23,9 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
                     formatters: Formatters) {
             self.accessibilityLabel = formatters.explanationForArrivalDeparture(tempuraState: temporalState, arrivalDepartureStatus: arrivalDepartureStatus, arrivalDepartureMinutes: arrivalDepartureMinutes)
             self.displayText = formatters.shortFormattedTime(untilMinutes: arrivalDepartureMinutes, temporalState: temporalState)
-            self.backgroundColor = formatters.backgroundColorForScheduleStatus(scheduleStatus).cgColor
+            let bgColor = formatters.backgroundColorForScheduleStatus(scheduleStatus)
+            self.backgroundColor = bgColor.cgColor
+            self.textColor = bgColor.contrastingTextColor.cgColor
         }
 
         public init(withArrivalDeparture arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
@@ -37,6 +40,7 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
             self.accessibilityLabel = accessibilityLabel
             self.displayText = displayText
             self.backgroundColor = backgroundColor
+            self.textColor = UIColor(cgColor: backgroundColor).contrastingTextColor.cgColor
         }
     }
 
@@ -57,6 +61,8 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
 
     public var highlightedBackgroundColor: UIColor = ThemeColors.shared.propertyChanged
 
+    private var currentConfig: Configuration?
+
     public override init(frame: CGRect) {
         super.init(frame: frame)
 
@@ -69,10 +75,28 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
         layer.backgroundColor = UIColor.clear.cgColor
         layer.masksToBounds = true
         layer.cornerRadius = 8
+
+        // Re-apply styling when the user toggles "Differentiate Without Color" at runtime.
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(accessibilityDifferentiateWithoutColorDidChange),
+            name: UIAccessibility.differentiateWithoutColorDidChangeNotification,
+            object: nil
+        )
+
+        // Re-apply when "Increase Contrast" changes (handled via traitCollectionDidChange,
+        // but also register for the notification for views not in a window).
+        registerForTraitChanges([UITraitAccessibilityContrast.self]) { (self: Self, _) in
+            self.configure(self.currentConfig)
+        }
     }
 
     required public init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    @objc private func accessibilityDifferentiateWithoutColorDidChange() {
+        configure(currentConfig)
     }
 
     public override func drawText(in rect: CGRect) {
@@ -81,9 +105,12 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
     }
 
     public func prepareForReuse() {
+        currentConfig = nil
         accessibilityLabel = nil
         text = nil
         layer.backgroundColor = nil
+        layer.borderWidth = 0
+        layer.borderColor = UIColor.clear.cgColor
     }
 
     public func configure(with arrivalDeparture: ArrivalDeparture, formatters: Formatters) {
@@ -91,9 +118,23 @@ public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {
     }
 
     public func configure(_ config: Configuration?) {
+        currentConfig = config
         accessibilityLabel = config?.accessibilityLabel
         text = config?.displayText
         layer.backgroundColor = config?.backgroundColor
+        if let textCGColor = config?.textColor {
+            textColor = UIColor(cgColor: textCGColor)
+        }
+
+        // When "Differentiate Without Color" is enabled, add a border matching the
+        // background color so the badge is distinguishable without relying on color alone.
+        if UIAccessibility.shouldDifferentiateWithoutColor, let bgColor = config?.backgroundColor {
+            layer.borderWidth = 2.0
+            layer.borderColor = bgColor
+        } else {
+            layer.borderWidth = 0
+            layer.borderColor = UIColor.clear.cgColor
+        }
     }
 
     public func highlightBackground() {
