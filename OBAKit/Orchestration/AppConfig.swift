@@ -61,7 +61,8 @@ public class AppConfig: CoreAppConfig {
         locationService: LocationService,
         bundledRegionsFilePath: String,
         regionsAPIPath: String?,
-        dataLoader: URLDataLoader
+        dataLoader: URLDataLoader,
+        defaultArrivalDepartureFilter: ArrivalDepartureFilter = .all
     ) {
         self.analytics = analytics
         super.init(
@@ -73,7 +74,8 @@ public class AppConfig: CoreAppConfig {
             locationService: locationService,
             bundledRegionsFilePath: bundledRegionsFilePath,
             regionsAPIPath: regionsAPIPath,
-            dataLoader: dataLoader
+            dataLoader: dataLoader,
+            defaultArrivalDepartureFilter: defaultArrivalDepartureFilter
         )
     }
 }

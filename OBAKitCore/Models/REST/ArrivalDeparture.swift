@@ -471,6 +471,19 @@ public extension Sequence where Element == ArrivalDeparture {
         filter { !preferences.isRouteIDHidden($0.routeID) }
     }
 
+    /// Filters arrivals/departures based on real-time data availability.
+    /// - Parameter arrivalDepartureFilter: Controls whether to show all, only estimated, or only scheduled arrivals.
+    func filter(by arrivalDepartureFilter: ArrivalDepartureFilter) -> [ArrivalDeparture] {
+        switch arrivalDepartureFilter {
+        case .all:
+            return Array(self)
+        case .estimatedOnly:
+            return filter { $0.predicted }
+        case .scheduledOnly:
+            return filter { !$0.predicted }
+        }
+    }
+
     /// Filters out `Route`s that are marked as hidden by `preferences`, and then groups the remaining `ArrivalDeparture`s by `Route`.
     /// - Parameter preferences: The `StopPreferences` object that will be used to hide `ArrivalDeparture`s.
     /// - Parameter filter: Whether the groups should also be filtered (i.e. have `Route`s hidden).
