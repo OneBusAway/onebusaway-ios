@@ -5,48 +5,64 @@
 //  Created by Mohamed Sliem on 04/12/2025.
 //
 
-import OBAKitCore
 import XCTest
 import Nimble
 @testable import OBAKitCore
 
 final class SurveyServiceTests: OBATestCase {
 
+    // MARK: - Helpers
+
+    private var mockDataLoader: MockDataLoader!
+    private var testRESTService: RESTAPIService!
+
+    override func setUp() {
+        super.setUp()
+        mockDataLoader = MockDataLoader(testName: name)
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: pugetSoundRegionIdentifier,
+            surveyBaseURL: surveyBaseURL
+        )
+        testRESTService = RESTAPIService(config, dataLoader: mockDataLoader)
+    }
+
     // MARK: - GET Surveys
+
     private func loadSurveys() async throws -> StudyResponse {
-        let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
         let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
 
-        dataLoader.mock(
+        mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345",
             with: data
         )
-        return try await surveyAPIService.getSurveys()
+        return try await testRESTService.getSurveys(userID: uuid)
     }
 
-    // Test metadata (region + survey list basics)
     func test_getSurveys_success_metadata() async throws {
-        let surveys = try await loadSurveys()
+        let response = try await loadSurveys()
 
-        expect(surveys.region.name).to(equal("Puget Sound"))
-        expect(surveys.region.id).to(equal(1))
+        expect(response.region.name).to(equal("Puget Sound"))
+        expect(response.region.id).to(equal(1))
 
-        expect(surveys.surveys.count).to(equal(5))
-        expect(surveys).toNot(beNil())
+        expect(response.surveys.count).to(equal(5))
+        expect(response).toNot(beNil())
     }
 
-    // Test the FIRST survey basic fields (id, names, flags)
     func test_firstSurvey_basicProperties() async throws {
-        let surveys = try await loadSurveys()
+        let response = try await loadSurveys()
+        let survey = response.surveys.first
 
-        let survey = surveys.surveys.first
         expect(survey).toNot(beNil())
 
         expect(survey?.id).to(equal(1))
         expect(survey?.name).to(equal("Always Visible — One-Time"))
         expect(survey?.showOnMap).to(beTrue())
         expect(survey?.showOnStops).to(beTrue())
-        expect(survey?.allowsVisible).to(beTrue())
+        expect(survey?.alwaysVisible).to(beTrue())
         expect(survey?.allowsMultipleResponses).to(beFalse())
 
         expect(survey?.visibleStopsList?.count).to(equal(2))
@@ -54,10 +70,9 @@ final class SurveyServiceTests: OBATestCase {
         expect(survey?.questions.count).to(equal(5))
     }
 
-    // Test question decoding and types
     func test_firstSurvey_questionDecoding() async throws {
-        let surveys = try await loadSurveys()
-        let survey = surveys.surveys.first!
+        let response = try await loadSurveys()
+        let survey = response.surveys.first!
 
         let questions = survey.questions
         expect(questions.count).to(equal(5))
@@ -84,39 +99,35 @@ final class SurveyServiceTests: OBATestCase {
         expect(q4.content.surveyProvider).to(equal("google_forms"))
     }
 
-    // Test getQuestions() filtering logic
     func test_firstSurvey_getQuestions_filtersCorrectly() async throws {
-        let surveys = try await loadSurveys()
-        let survey = surveys.surveys.first!
+        let response = try await loadSurveys()
+        let survey = response.surveys.first!
 
         let filtered = survey.getQuestions()
 
-        expect(filtered.count).to(equal(5)) // all valid
+        expect(filtered.count).to(equal(5))
         expect(filtered.map(\.content.type)).to(equal([
             .text, .radio, .checkbox, .externalSurvey, .label
         ]))
     }
 
     // MARK: - Survey Hero Question Submission
-    func test_submitSurvey_first_question() async throws {
 
+    func test_submitSurvey_first_question() async throws {
         setupMockSubmissionSuccess()
 
         let submissionModel = makeFirstQuestionSubmissionModel()
 
-        let submissionResponse = try await surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+        let response = try await testRESTService.submitSurveyResponse(submissionModel)
 
-        expect(submissionResponse.id).to(equal("808d3a515daa39f4c15a"))
-        expect(submissionResponse.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(submissionResponse.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
-
+        expect(response.id).to(equal("808d3a515daa39f4c15a"))
+        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
+        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
     }
 
-
     private func setupMockSubmissionSuccess(_ surveyId: String = "") {
-        let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
         let data = Fixtures.loadData(file: "survey_submission_response.json")
-        dataLoader.mock(
+        mockDataLoader.mock(
             URLString: "https://onebusaway.co/api/v1/survey_responses/\(surveyId)",
             with: data
         )
@@ -140,55 +151,26 @@ final class SurveyServiceTests: OBATestCase {
     // MARK: - Submit Additional Questions
 
     func test_submitSurvey_additional_questions() async throws {
-
         setupMockSubmissionSuccess("surveyResponseId")
 
-        let submissionModel = makeAdditionalQuestionSubmissionModel()
+        let additionalResponses: [QuestionAnswerSubmission] = [
+            .init(questionId: 15, questionType: "text", questionLabel: "Do you like OBA IOS App ?", answer: "yes"),
+            .init(questionId: 16, questionType: "radio", questionLabel: "Do you ?", answer: "Yes"),
+            .init(questionId: 17, questionType: "checkbox", questionLabel: "Choose", answer: ["1", "3"].joined(separator: ","))
+        ]
 
-        let submissionResponse = try await surveyAPIService.updateSurveyResponse(
-            surveyResponseId: "surveyResponseId",
-            surveyResponses: submissionModel
+        let response = try await testRESTService.updateSurveyResponse(
+            responseID: "surveyResponseId",
+            additionalResponses: additionalResponses
         )
 
-        expect(submissionResponse.id).to(equal("808d3a515daa39f4c15a"))
-        expect(submissionResponse.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
-        expect(submissionResponse.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
-
-    }
-
-    private func makeAdditionalQuestionSubmissionModel() -> SurveySubmission {
-        SurveySubmission(
-            userIdentifier: uuid,
-            surveyId: 1,
-            responses: [
-                // Q1: Text
-                .init(
-                    questionId: 15,
-                    questionType: "text",
-                    questionLabel: "Do you like OBA IOS App ?",
-                    answer: "yes"
-                ),
-                // Q2: Radio
-                .init(
-                    questionId: 16,
-                    questionType: "radio",
-                    questionLabel: "Do you ?",
-                    answer: "Yes"
-                ),
-                // Q3: Checkbox
-                .init(
-                    questionId: 17,
-                    questionType: "checkbox",
-                    questionLabel: "Choose",
-                    answer: ["1", "3"].joined(separator: ",")
-                )
-            ]
-        )
+        expect(response.id).to(equal("808d3a515daa39f4c15a"))
+        expect(response.updatePath).to(equal("/api/v1/survey_responses/808d3a515daa39f4c15a"))
+        expect(response.userIdentifier).to(equal("b94e83ae-5337-42f4-bec7-2736e7929dcb"))
     }
 
     // MARK: - Error Scenarios
 
-    // MARK: - Get Surveys Failures
     func test_get_surveys_captive_portal() async throws {
         let data = Fixtures.loadData(file: "captive_portal.html")
         let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345")!
@@ -197,16 +179,14 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
 
         await expect {
-            try await self.surveyAPIService.getSurveys()
+            try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         .to(throwError { error in
             if case APIError.captivePortal = error {
                 return
             }
-
             fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
         })
-
     }
 
     func test_get_surveys_malformed_response_data() async throws {
@@ -216,7 +196,7 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(malformedJsonResponse, url: url, statusCode: 200)
 
         await expect {
-            try await self.surveyAPIService.getSurveys()
+            try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         .to(throwError { error in
             if case let DecodingError.dataCorrupted(context) = error {
@@ -236,14 +216,12 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(response, url: url, statusCode: 500)
 
         await expect {
-            try await self.surveyAPIService.getSurveys()
+            try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         .to(throwError { error in
-
             if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
                 return
             }
-
             fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
         })
     }
@@ -255,19 +233,18 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(response, url: url, statusCode: 404)
 
         await expect {
-            try await self.surveyAPIService.getSurveys()
+            try await self.testRESTService.getSurveys(userID: self.uuid)
         }
         .to(throwError { error in
-
             if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
                 return
             }
-
             fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
         })
     }
 
-    //MARK: -  Submit First Question Failures
+    // MARK: - Submit First Question Failures
+
     func test_submit_first_question_malformed_response_data() async throws {
         let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/")!
@@ -276,7 +253,7 @@ final class SurveyServiceTests: OBATestCase {
 
         await expect {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
-            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+            _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         .to(throwError { error in
             if case let DecodingError.dataCorrupted(context) = error {
@@ -287,7 +264,6 @@ final class SurveyServiceTests: OBATestCase {
                 fail("Expected DecodingError.dataCorrupted but got \(error)")
             }
         })
-
     }
 
     func test_submit_first_question_captive_portal() async throws {
@@ -299,16 +275,14 @@ final class SurveyServiceTests: OBATestCase {
 
         await expect {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
-            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+            _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         .to(throwError { error in
             if case APIError.captivePortal = error {
                 return
             }
-
             fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
         })
-
     }
 
     func test_submit_first_question_internal_server_error() async throws {
@@ -319,14 +293,12 @@ final class SurveyServiceTests: OBATestCase {
 
         await expect {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
-            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+            _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         .to(throwError { error in
-
             if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
                 return
             }
-
             fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
         })
     }
@@ -339,19 +311,18 @@ final class SurveyServiceTests: OBATestCase {
 
         await expect {
             let submissionModel = self.makeFirstQuestionSubmissionModel()
-            let _ = try await self.surveyAPIService.submitSurveyResponse(surveyResponse: submissionModel)
+            _ = try await self.testRESTService.submitSurveyResponse(submissionModel)
         }
         .to(throwError { error in
-
             if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
                 return
             }
-
             fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
         })
     }
 
     // MARK: - Submit Additional Question Failures
+
     func test_submit_additional_question_malformed_response_data() async throws {
         let response = Fixtures.loadData(file: "survey_submission_malformed_response.json")
         let url = URL(string: "https://onebusaway.co/api/v1/survey_responses/surveyResponseId")!
@@ -359,10 +330,9 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(response, url: url, statusCode: 200)
 
         await expect {
-            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
-            try await self.surveyAPIService.updateSurveyResponse(
-                surveyResponseId: "surveyResponseId",
-                surveyResponses: submissionModel
+            try await self.testRESTService.updateSurveyResponse(
+                responseID: "surveyResponseId",
+                additionalResponses: []
             )
         }
         .to(throwError { error in
@@ -374,7 +344,6 @@ final class SurveyServiceTests: OBATestCase {
                 fail("Expected DecodingError.dataCorrupted but got \(error)")
             }
         })
-
     }
 
     func test_submit_additional_question_captive_portal() async throws {
@@ -385,20 +354,17 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(data, url: url, statusCode: 200, error: error)
 
         await expect {
-            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
-            try await self.surveyAPIService.updateSurveyResponse(
-                surveyResponseId: "surveyResponseId",
-                surveyResponses: submissionModel
+            try await self.testRESTService.updateSurveyResponse(
+                responseID: "surveyResponseId",
+                additionalResponses: []
             )
         }
         .to(throwError { error in
             if case APIError.captivePortal = error {
                 return
             }
-
             fail("Expected captive portal response to throw APIError.CaptivePortal. Actual value: \(error)")
         })
-
     }
 
     func test_submit_additional_question_internal_server_error() async throws {
@@ -408,18 +374,15 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(response, url: url, statusCode: 500)
 
         await expect {
-            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
-            try await self.surveyAPIService.updateSurveyResponse(
-                surveyResponseId: "surveyResponseId",
-                surveyResponses: submissionModel
+            try await self.testRESTService.updateSurveyResponse(
+                responseID: "surveyResponseId",
+                additionalResponses: []
             )
         }
         .to(throwError { error in
-
             if case APIError.requestFailure(let response) = error, response.statusCode == 500 {
                 return
             }
-
             fail("Expected APIError.requestFailure with 500 as status code but got \(error)")
         })
     }
@@ -431,39 +394,333 @@ final class SurveyServiceTests: OBATestCase {
         makeResponseFailureMock(response, url: url, statusCode: 404)
 
         await expect {
-            let submissionModel = self.makeAdditionalQuestionSubmissionModel()
-            try await self.surveyAPIService.updateSurveyResponse(
-                surveyResponseId: "surveyResponseId",
-                surveyResponses: submissionModel
+            try await self.testRESTService.updateSurveyResponse(
+                responseID: "surveyResponseId",
+                additionalResponses: []
             )
         }
         .to(throwError { error in
-
             if case APIError.requestNotFound(let response) = error, response.statusCode == 404 {
                 return
             }
-
             fail("Expected APIError.requestNotFound with 404 as status code but got \(error)")
         })
     }
 
-    private func makeResponseFailureMock(_ data: Data, url: URL, statusCode: Int, error: Error? = nil) {
-        let dataLoader = surveyAPIService.dataLoader as! MockDataLoader
-        let urlResponse = dataLoader.buildURLResponse(URL: url, statusCode: statusCode)
-        let response = MockDataResponse(data: data, urlResponse: urlResponse, error: error) { request in
-            request.url == url
-        }
-        dataLoader.mock(response: response)
+    // MARK: - isActive
+
+    func test_isActive_withinDateRange_returnsTrue() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(-3600),
+            endDate: Date().addingTimeInterval(3600)
+        )
+        expect(survey.isActive).to(beTrue())
     }
 
-    // MARK: - Missed Region Identifier
+    func test_isActive_pastEndDate_returnsFalse() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(-7200),
+            endDate: Date().addingTimeInterval(-3600)
+        )
+        expect(survey.isActive).to(beFalse())
+    }
 
-    func test_missing_region_identifier() async throws {
-        let apiConfig = APIServiceConfiguration(baseURL: URL(string: "https://onebusaway.co/api/v1/")!, uuid: "userIdentifier", regionIdentifier: nil)
-        expect {
-            SurveyAPIService(apiConfig, dataLoader: MockDataLoader(testName: self.name))
+    func test_isActive_futureStartDate_returnsFalse() {
+        let survey = makeSurveyForIsActive(
+            startDate: Date().addingTimeInterval(3600),
+            endDate: Date().addingTimeInterval(7200)
+        )
+        expect(survey.isActive).to(beFalse())
+    }
+
+    func test_isActive_nilDates_returnsTrue() {
+        let survey = makeSurveyForIsActive(startDate: nil, endDate: nil)
+        expect(survey.isActive).to(beTrue())
+    }
+
+    private func makeSurveyForIsActive(startDate: Date?, endDate: Date?) -> Survey {
+        Survey(
+            id: 1, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: true,
+            startDate: startDate, endDate: endDate,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: false,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: []
+        )
+    }
+
+    // MARK: - Issue 8: SurveySubmission encodes responses as JSON string
+
+    func test_surveySubmission_encodesResponsesToJSONString() throws {
+        let submission = SurveySubmission(
+            userIdentifier: "user-1",
+            surveyId: 42,
+            responses: [
+                QuestionAnswerSubmission(
+                    questionId: 1,
+                    questionType: "text",
+                    questionLabel: "Q1",
+                    answer: "yes"
+                )
+            ]
+        )
+
+        let encoded = try JSONEncoder().encode(submission)
+        let json = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+
+        // responses should be a String (JSON-stringified), not an Array
+        let responsesValue = json["responses"]
+        expect(responsesValue).to(beAKindOf(String.self))
+
+        // The string should be valid JSON containing our response
+        let responsesString = responsesValue as! String
+        let parsed = try JSONSerialization.jsonObject(with: responsesString.data(using: .utf8)!) as! [[String: Any]]
+        expect(parsed.count).to(equal(1))
+        expect(parsed[0]["answer"] as? String).to(equal("yes"))
+    }
+
+    // MARK: - Missing Optional Fields
+
+    func test_getSurveys_missingOptionalBooleans_defaultsToFalse() async throws {
+        let data = Fixtures.loadData(file: "surveys_missing_optional_fields.json")
+
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=12345-12345-12345-12345-12345",
+            with: data
+        )
+
+        let response = try await testRESTService.getSurveys(userID: uuid)
+        let survey = response.surveys.first!
+
+        expect(survey.allowsMultipleResponses).to(beFalse())
+        expect(survey.alwaysVisible).to(beFalse())
+    }
+
+    // MARK: - getSurveys nil region
+
+    func test_getSurveys_nilRegionIdentifier_throwsNoRegionSelected() async {
+        let config = APIServiceConfiguration(
+            baseURL: baseURL,
+            apiKey: apiKey,
+            uuid: uuid,
+            appVersion: appVersion,
+            regionIdentifier: nil,
+            surveyBaseURL: surveyBaseURL
+        )
+        let service = RESTAPIService(config, dataLoader: mockDataLoader)
+
+        await expect {
+            try await service.getSurveys(userID: self.uuid)
+        }.to(throwError { error in
+            if case APIError.noRegionSelected = error {
+                return
+            }
+            fail("Expected APIError.noRegionSelected but got \(error)")
+        })
+    }
+
+    // MARK: - remainingQuestions
+
+    func test_remainingQuestions_doesNotDropQuestionsWithSamePositionAsHero() {
+        let q1 = SurveyQuestion(id: 10, position: 1, required: true, content: QuestionContent(labelText: "Hero", type: .text))
+        let q2 = SurveyQuestion(id: 20, position: 1, required: false, content: QuestionContent(labelText: "Also position 1", type: .label))
+        let q3 = SurveyQuestion(id: 30, position: 2, required: false, content: QuestionContent(labelText: "Position 2", type: .radio, options: ["A", "B"]))
+
+        let survey = Survey(
+            id: 99, name: "Test", createdAt: Date(), updatedAt: Date(),
+            showOnMap: true, showOnStops: true, startDate: nil, endDate: nil,
+            visibleStopsList: nil, visibleRoutesList: nil,
+            allowsMultipleResponses: false, alwaysVisible: false,
+            study: Study(id: 1, name: "S", description: nil),
+            questions: [q1, q2, q3]
+        )
+
+        expect(survey.heroQuestion?.id).to(equal(10))
+        expect(survey.remainingQuestions.count).to(equal(2))
+        expect(survey.remainingQuestions.map(\.id)).to(equal([20, 30]))
+    }
+
+    private func makeResponseFailureMock(_ data: Data, url: URL, statusCode: Int, error: Error? = nil) {
+        let urlResponse = mockDataLoader.buildURLResponse(URL: url, statusCode: statusCode)
+        let response = MockDataResponse(data: data, urlResponse: urlResponse, error: error) { request in
+            let requestURL = request.url!
+            return requestURL.host == url.host && requestURL.path == url.path
         }
-        .to(throwAssertion())
+        mockDataLoader.mock(response: response)
+    }
+
+    // MARK: - SurveyService.fetchSurveys()
+
+    @MainActor
+    func test_fetchSurveys_nilApiService_setsError() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let service = SurveyService(apiService: nil, userDataStore: store)
+
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.visibleSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+
+        if case APIError.surveyServiceNotConfigured = service.lastError! {
+            // Expected
+        } else {
+            fail("Expected APIError.surveyServiceNotConfigured but got \(service.lastError!)")
+        }
+    }
+
+    @MainActor
+    func test_fetchSurveys_success_populatesSurveys() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let data = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
+        let userID = store.surveyUserIdentifier
+
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: data
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.lastError).to(beNil())
+        expect(service.allSurveys.count).to(equal(5))
+        expect(service.visibleSurveys.count).to(equal(5))
+        expect(service.isLoading).to(beFalse())
+    }
+
+    @MainActor
+    func test_fetchSurveys_failure_clearsWhenEmpty() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.visibleSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+        expect(service.isLoading).to(beFalse())
+    }
+
+    // MARK: - Staleness / Cooldown Tests
+
+    @MainActor
+    func test_fetchSurveys_cooldownSkipsSecondFetch() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // Replace mock with different data — but cooldown should prevent fetching
+        mockDataLoader.removeMappedResponses()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        await service.fetchSurveys()
+
+        // Should still have original surveys (cooldown prevented re-fetch)
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).to(beNil()) // no error because fetch was skipped
+    }
+
+    @MainActor
+    func test_fetchSurveys_forceBypassesCooldown() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // force: true should bypass cooldown and actually fetch
+        await service.fetchSurveys(force: true)
+
+        // Fetch went through (no error since same mock data is still valid)
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).to(beNil())
+    }
+
+    @MainActor
+    func test_fetchSurveys_emptySurveysBypassesCooldown() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        // First fetch fails, leaving allSurveys empty
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        expect(service.allSurveys).to(beEmpty())
+        expect(service.lastError).toNot(beNil())
+
+        // Replace with success data — should fetch because allSurveys is empty
+        mockDataLoader.removeMappedResponses()
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        await service.fetchSurveys()
+
+        // Should have fetched despite cooldown because allSurveys was empty
+        expect(service.allSurveys.count).to(beGreaterThan(0))
+        expect(service.lastError).to(beNil())
+    }
+
+    @MainActor
+    func test_fetchSurveys_failure_preservesExistingSurveys() async {
+        let store = UserDefaultsStore(userDefaults: userDefaults)
+        let userID = store.surveyUserIdentifier
+
+        // First, load surveys successfully
+        let successData = Fixtures.loadData(file: "surveys_always_visible_one_time.json")
+        mockDataLoader.mock(
+            URLString: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)",
+            with: successData
+        )
+
+        let service = SurveyService(apiService: testRESTService, userDataStore: store)
+        await service.fetchSurveys()
+
+        let initialCount = service.allSurveys.count
+        expect(initialCount).to(beGreaterThan(0))
+
+        // Now simulate a failure on second fetch
+        mockDataLoader.removeMappedResponses()
+        let url = URL(string: "https://onebusaway.co/api/v1/regions/1/surveys.json?user_id=\(userID)")!
+        makeResponseFailureMock(Data(), url: url, statusCode: 500)
+
+        await service.fetchSurveys(force: true)
+
+        // Surveys should be preserved, not cleared
+        expect(service.allSurveys.count).to(equal(initialCount))
+        expect(service.lastError).toNot(beNil())
     }
 
 }

@@ -25,6 +25,12 @@ public enum APIError: Error, LocalizedError {
     /// The regional server returned a 5xx error or timed out.
     case serverUnavailable(regionName: String, statusCode: Int?)
 
+    /// Survey service is not configured or survey base URL is missing.
+    case surveyServiceNotConfigured
+
+    /// No region has been selected.
+    case noRegionSelected
+
     public var errorDescription: String? {
         switch self {
         case .captivePortal:
@@ -94,6 +100,10 @@ public enum APIError: Error, LocalizedError {
                 comment: "An error shown when the regional transit server is unavailable. The substituted value is the region name, e.g. 'Puget Sound'."
             )
             return String(format: fmt, regionName)
+        case .surveyServiceNotConfigured:
+            return OBALoc("api_error.survey_service_not_configured", value: "Survey service is not available in this region.", comment: "An error message that tells the user that surveys are not available.")
+        case .noRegionSelected:
+            return OBALoc("api_error.no_region_selected", value: "No region has been selected. Please select a region to continue.", comment: "An error message that tells the user that no region has been selected.")
         }
     }
 }

@@ -203,10 +203,6 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - region: The region to set trip planning status for.
     func setTripPlanningEnabled(_ enabled: Bool, for region: Region)
 
-    /// Increments the stored app launch counter by one.
-    /// - Note: This value is used to decide whether a survey should be shown
-    func increaseAppLaunchCount()
-
     // MARK: - Vehicle Feed Agency Filters
 
     /// Returns whether the agency is enabled for vehicle feed display.
@@ -228,6 +224,36 @@ public protocol UserDataStore: NSObjectProtocol {
     ///   - agencyIDs: All agency IDs to update.
     func setAllAgenciesEnabledForVehicleFeed(_ enabled: Bool, agencyIDs: [String])
 
+}
+
+// MARK: - Survey Tracking Data Models
+
+/// Represents a completed survey entry
+public struct CompletedSurvey: Codable, Hashable {
+    public let surveyId: Int
+    public let userIdentifier: String
+    public let completedAt: Date
+
+    public init(surveyId: Int, userIdentifier: String, completedAt: Date = Date()) {
+        self.surveyId = surveyId
+        self.userIdentifier = userIdentifier
+        self.completedAt = completedAt
+    }
+}
+
+/// Represents a survey marked for later viewing
+public struct SurveyForLater: Codable, Hashable {
+    public let surveyId: Int
+    public let userIdentifier: String
+    public let markedAt: Date
+    public let appLaunchCountWhenMarked: Int
+
+    public init(surveyId: Int, userIdentifier: String, markedAt: Date = Date(), appLaunchCountWhenMarked: Int) {
+        self.surveyId = surveyId
+        self.userIdentifier = userIdentifier
+        self.markedAt = markedAt
+        self.appLaunchCountWhenMarked = appLaunchCountWhenMarked
+    }
 }
 
 // MARK: - Stop Preferences
@@ -264,10 +290,13 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let recentMapItems = "UserDataStore.recentMapItems"
         static let stopPreferences = "UserDataStore.stopPreferences"
         static let tripPlanningEnabled = "UserDataStore.tripPlanningEnabled"
-        static let surveyPreferencesKey = "UserDataStore.surveyPreferences"
-        static let appLaunchCounter = "UserDataStore.appLaunchCounter"
-        static let surveyResponse = "UserDataStore.surveyResponse"
-        static let userSurveyId = "UserDataStore.userSurveyIdentifier"
+        static let completedSurveys = "UserDataStore.completedSurveys"
+        static let surveysForLater = "UserDataStore.surveysForLater"
+        static let surveyUserIdentifier = "UserDataStore.surveyUserIdentifier"
+        static let appLaunchCount = "UserDataStore.appLaunchCount"
+        static let isSurveyEnabled = "UserDataStore.isSurveyEnabled"
+        static let nextSurveyReminderDate = "UserDataStore.nextSurveyReminderDate"
+        static let alwaysShowSurveysOnStops = "UserDataStore.alwaysShowSurveysOnStops"
     }
 
     public init(userDefaults: UserDefaults) {
@@ -794,100 +823,4 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     private func encodeUserDefaultsObjects<T>(_ object: T, key: String) throws where T: Encodable {
         try userDefaults.encodeUserDefaultsObjects(object, key: key)
     }
-}
-
-extension UserDefaultsStore {
-
-    public func increaseAppLaunchCount() {
-        let newValue = appLaunch + 1
-        userDefaults.set(newValue, forKey: UserDefaultsKeys.appLaunchCounter)
-    }
-
-}
-
-// MARK: - Survey Preferences Store
-extension UserDefaultsStore: SurveyPreferencesStore {
-
-    /// A persistent unique identifier used to associate all survey submissions
-    /// from this user/device.
-    ///
-    /// The value is:
-    /// - Retrieved from `UserDefaults` if it already exists.
-    /// - Automatically generated and stored if it does not exist.
-    /// - Returns: A UUID string representing the user's survey identity.
-    public var userSurveyId: String {
-        if let uuid = userDefaults.string(forKey: UserDefaultsKeys.userSurveyId), !uuid.isEmpty {
-            return uuid
-        } else {
-            let uuid = UUID().uuidString
-            userDefaults.set(uuid, forKey: UserDefaultsKeys.userSurveyId)
-            return uuid
-        }
-    }
-
-    /// Returns the number of times the app has been launched,
-    /// used to determine when to show surveys based on launch count logic.
-    public var appLaunch: Int {
-        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCounter)
-    }
-
-    /// Returns the list of completed survey IDs stored in user preferences.
-    /// - Note: If no preferences exist yet, an empty array is returned.
-    public var completedSurveys: Set<Int> {
-        let preferences = surveyPreferences()
-        return preferences.completedSurveyIDs
-    }
-
-    /// Returns the list of survey IDs the user has skipped.
-    /// - Note: If no preferences exist yet, an empty array is returned.
-    public var skippedSurveys: Set<Int> {
-        let preferences = surveyPreferences()
-        return preferences.skippedSurveyIDs
-    }
-
-    /// Saves the provided `SurveyPreferences` to UserDefaults.
-    /// - Parameter preferences: The preferences object containing all survey-related user settings.
-    public func setSurveyPreferences(_ preferences: SurveyPreferences) {
-        do {
-            try encodeUserDefaultsObjects(preferences, key: UserDefaultsKeys.surveyPreferencesKey)
-        } catch {
-            Logger.error("Unable to encode SurveyPreferences to UserDefaults")
-        }
-    }
-
-    /// Retrieves the saved `SurveyPreferences` from UserDefaults.
-    /// - Returns: A `SurveyPreferences` object if it exists, otherwise `nil`.
-    public func surveyPreferences() -> SurveyPreferences {
-        return decodeUserDefaultsObjects(type: SurveyPreferences.self, key: UserDefaultsKeys.surveyPreferencesKey) ?? .init()
-    }
-
-}
-
-extension UserDefaultsStore {
-
-    /// Retrieves the last saved survey response from `UserDefaults`.
-    ///
-    /// This is typically used to:
-    /// - Check if the user already submitted a survey
-    /// - Retrieve the `surveyPathId` needed for updating an existing response
-    ///
-    /// - Returns: A `SurveySubmissionResponse` if stored, otherwise `nil`.
-    public func getSurveyResponse() -> SurveySubmissionResponse? {
-        return decodeUserDefaultsObjects(type: SurveySubmissionResponse.self, key: UserDefaultsKeys.surveyResponse)
-    }
-
-    /// Persists a survey submission response in `UserDefaults`.
-    ///
-    /// This stored response is used for follow-up update operations (PATCH),
-    /// since the server returns a path identifier that must be reused.
-    ///
-    /// - Parameter submissionResponse: The survey submission response returned by the backend.
-    public func setSurveyResponse(_ submissionResponse: SurveySubmissionResponse) {
-        do {
-           try encodeUserDefaultsObjects(submissionResponse, key: UserDefaultsKeys.surveyResponse)
-        } catch {
-            Logger.error("Unable to encode SurveySubmissionResponse to UserDefaults")
-        }
-    }
-
 }
