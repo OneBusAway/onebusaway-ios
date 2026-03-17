@@ -44,10 +44,14 @@ struct RouteScheduleContentView: View {
 
     var body: some View {
         content
-            .task {
+            .task(id: viewModel.routeID) {
                 if viewModel.scheduleData == nil {
                     await viewModel.fetchSchedule()
                 }
+            }
+            .task(id: viewModel.selectedDate) {
+                // Refetch when date changes
+                await viewModel.fetchSchedule()
             }
     }
 
