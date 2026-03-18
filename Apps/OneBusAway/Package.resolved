@@ -191,15 +191,6 @@
       }
     },
     {
-      "identity" : "onesignal-ios-sdk",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/OneSignal/OneSignal-iOS-SDK.git",
-      "state" : {
-        "revision" : "de878af84cfd9f302f10ac2e8a4febacbd5fbb7a",
-        "version" : "3.12.10"
-      }
-    },
-    {
       "identity" : "otpkit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/OneBusAway/otpkit.git",
