@@ -6,6 +6,7 @@
 //
 
 import OBAKitCore
+import Combine
 
 /// The coordinator for a SwiftUI-friendly (`ObservableObject`) version of `RegionsServices`.
 /// Under-the-hood, this class implements RegionsServiceDelegate, which subsequently publishes new values.

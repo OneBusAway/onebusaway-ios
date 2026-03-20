@@ -142,7 +142,13 @@ class VehiclesViewModel: ObservableObject {
 
             while !Task.isCancelled {
                 await self.fetchVehicles()
-                try? await Task.sleep(for: .seconds(self.refreshInterval))
+                do {
+                    try await Task.sleep(for: .seconds(self.refreshInterval))
+                } catch is CancellationError {
+                    return
+                } catch {
+                    return
+                }
             }
         }
     }

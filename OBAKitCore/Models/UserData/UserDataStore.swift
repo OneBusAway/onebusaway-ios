@@ -8,6 +8,13 @@
 //
 
 import Foundation
+
+extension NSNotification.Name {
+    public static let OBABookmarksUpdated = NSNotification.Name("OBABookmarksUpdatedNotification")
+    public static let OBAAlarmsUpdated = NSNotification.Name("OBAAlarmsUpdatedNotification")
+    public static let OBAServiceAlertsUpdated = NSNotification.Name("OBAServiceAlertsUpdatedNotification")
+}
+
 import MapKit
 
 @objc(OBASelectedTab) public enum SelectedTab: Int {
@@ -17,9 +24,6 @@ import MapKit
 public extension Notification.Name {
     /// Posted whenever bookmarks are added, updated, or deleted in the UserDataStore.
     static let bookmarksDidChange = Notification.Name("UserDataStore.bookmarksDidChange")
-
-    /// Posted whenever proximity alerts are added or deleted in the UserDataStore.
-    static let proximityAlertsDidChange = Notification.Name("UserDataStore.proximityAlertsDidChange")
 }
 
 /// `UserDataStore` is a repository for the user's data, such as bookmarks, and recent stops.
@@ -139,7 +143,6 @@ public protocol UserDataStore: NSObjectProtocol {
     var maximumRecentStopsCount: Int { get }
 
     // MARK: - Recent Map Items
-
     /// A list of recently-selected map items from search
     var recentMapItems: [MKMapItem] { get }
 
@@ -147,7 +150,6 @@ public protocol UserDataStore: NSObjectProtocol {
     ///
     /// - Parameter mapItem: The map item to add to the list
     func addRecentMapItem(_ mapItem: MKMapItem)
-
     /// Deletes all recent map items.
     func deleteAllRecentMapItems()
 
@@ -172,65 +174,37 @@ public protocol UserDataStore: NSObjectProtocol {
     /// - Parameter alarm: The alarm object to delete.
     func delete(alarm: Alarm)
 
-    // MARK: - Proximity Alerts
-
-    /// All currently-stored proximity alerts.
-    var proximityAlerts: [ProximityAlert] { get }
-
-    /// Store a new proximity alert.
-    /// - Parameter proximityAlert: The proximity alert to store.
-    func add(proximityAlert: ProximityAlert)
-
-    /// Delete a proximity alert.
-    /// - Parameter proximityAlert: The proximity alert to delete.
-    func delete(proximityAlert: ProximityAlert)
-
-    /// Delete all proximity alerts.
-    func deleteAllProximityAlerts()
-
-    /// Deletes all proximity alerts that have expired (older than 24 hours).
-    func deleteExpiredProximityAlerts()
     // MARK: - Survey Tracking
 
-    /// Stores information about completed surveys to avoid showing them again
-    /// - Parameter surveyId: The ID of the survey that was completed
-    /// - Parameter userIdentifier: The user's UUID
-    func markSurveyCompleted(surveyId: Int, userIdentifier: String)
-
-    /// Checks if a survey has been completed by the user
-    /// - Parameter surveyId: The ID of the survey to check
-    /// - Parameter userIdentifier: The user's UUID
-    /// - Returns: True if the survey has been completed
-    func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool
-
-    /// Stores information about surveys the user chose to answer later
-    /// - Parameter surveyId: The ID of the survey to show later
-    /// - Parameter userIdentifier: The user's UUID
-    func markSurveyForLater(surveyId: Int, userIdentifier: String)
-
-    /// Checks if a survey should be shown again based on app launch count
-    /// - Parameter surveyId: The ID of the survey to check
-    /// - Parameter userIdentifier: The user's UUID
-    /// - Returns: True if the survey should be shown again
-    func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool
-
-    /// Stores the user's unique identifier for survey responses
+    /// Stores the user's unique identifier for survey responses.
     var surveyUserIdentifier: String { get set }
 
-    /// Whether the survey feature is enabled
+    /// Whether the survey feature is enabled.
     var isSurveyEnabled: Bool { get set }
 
-    /// The next date at which the user should be reminded about surveys
-    var nextSurveyReminderDate: Date? { get set }
-
-    /// Whether to always show surveys on stops, bypassing gating checks
+    /// Whether to always show surveys on stops, bypassing gating checks.
     var alwaysShowSurveysOnStops: Bool { get set }
 
-    /// Increments the app launch count for "answer later" logic
+    /// The next date at which the user should be reminded about surveys.
+    var nextSurveyReminderDate: Date? { get set }
+
+    /// Returns the current app launch count.
+    var appLaunchCount: Int { get }
+
+    /// Increments the app launch count by one.
     func incrementAppLaunchCount()
 
-    /// Returns the current app launch count
-    var appLaunchCount: Int { get }
+    /// Stores information about a completed survey.
+    func markSurveyCompleted(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey has been completed by the user.
+    func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool
+
+    /// Stores information about a survey the user chose to answer later.
+    func markSurveyForLater(surveyId: Int, userIdentifier: String)
+
+    /// Checks if a survey should be shown again based on app launch count.
+    func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool
 
     // MARK: - View State/Last Selected Tab
 
@@ -341,7 +315,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         static let bookmarks = "UserDataStore.bookmarks"
         static let bookmarkGroups = "UserDataStore.bookmarkGroups"
         static let debugMode = "UserDataStore.debugMode"
-        static let proximityAlerts = "UserDataStore.proximityAlerts"
         static let disabledVehicleFeedAgencies = "UserDataStore.disabledVehicleFeedAgencies"
         static let lastSelectedView = "UserDataStore.lastSelectedView"
         static let readServiceAlerts = "UserDataStore.readServiceAlerts"
@@ -360,6 +333,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public init(userDefaults: UserDefaults) {
         self.userDefaults = userDefaults
+
+        super.init()
 
         self.userDefaults.register(defaults: [UserDefaultsKeys.debugMode: false])
     }
@@ -454,6 +429,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.bookmarks) // swiftlint:disable:this force_try
+            NotificationCenter.default.post(name: .OBABookmarksUpdated, object: self)
         }
     }
 
@@ -493,7 +469,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         bookmark.groupID = group?.id ?? nil
 
         if let existing = findBookmark(id: bookmark.id) {
-            delete(bookmark: existing, reorderGroup: true)
+            delete(bookmark: existing)
         }
 
         var newGroupBookmarks = bookmarksInGroup(group)
@@ -526,7 +502,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
 
     public func delete(bookmark: Bookmark) {
         delete(bookmark: bookmark, reorderGroup: true)
-        NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
     }
 
     private func delete(bookmark: Bookmark, reorderGroup: Bool) {
@@ -545,6 +520,8 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 elt.sortOrder = idx
                 bookmarks.append(elt)
             }
+
+            NotificationCenter.default.post(name: .bookmarksDidChange, object: self)
         }
     }
 
@@ -632,7 +609,6 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
     }
 
     // MARK: - Recent Map Items
-
     public var recentMapItems: [MKMapItem] {
         get {
             guard let data = userDefaults.data(forKey: UserDefaultsKeys.recentMapItems) else {
@@ -712,6 +688,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         }
         set {
             try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.alarms) // swiftlint:disable:this force_try
+            NotificationCenter.default.post(name: .OBAAlarmsUpdated, object: self)
         }
     }
 
@@ -723,137 +700,26 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         alarms.removeAll { $0 == alarm }
     }
 
-    // MARK: - Proximity Alerts
-
-    public var proximityAlerts: [ProximityAlert] {
-        get {
-            return decodeUserDefaultsObjects(type: [ProximityAlert].self, key: UserDefaultsKeys.proximityAlerts) ?? []
-        }
-        set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.proximityAlerts) // swiftlint:disable:this force_try
-        }
-    }
-
-    public func add(proximityAlert: ProximityAlert) {
-        proximityAlerts.append(proximityAlert)
-        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
-    }
-
-    public func delete(proximityAlert: ProximityAlert) {
-        proximityAlerts.removeAll { $0 == proximityAlert }
-        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
-    }
-
-    public func deleteAllProximityAlerts() {
-        proximityAlerts.removeAll()
-        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
-    }
-
-    public func deleteExpiredProximityAlerts() {
-        let current = proximityAlerts
-        let filtered = current.filter { !$0.isExpired }
-        guard filtered.count != current.count else { return }
-        proximityAlerts = filtered
-        NotificationCenter.default.post(name: .proximityAlertsDidChange, object: self)
-    }
-
     // MARK: - Survey Tracking
-
-    public func markSurveyCompleted(surveyId: Int, userIdentifier: String) {
-        let completedSurvey = CompletedSurvey(surveyId: surveyId, userIdentifier: userIdentifier)
-        var completedSurveys = self.completedSurveys
-
-        // Remove any existing completion record for this survey and user
-        completedSurveys.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
-
-        // Add the new completion record
-        completedSurveys.append(completedSurvey)
-
-        self.completedSurveys = completedSurveys
-
-        // Also remove from "for later" if it exists
-        var surveysForLater = self.surveysForLater
-        surveysForLater.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
-        self.surveysForLater = surveysForLater
-    }
-
-    public func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool {
-        return completedSurveys.contains { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
-    }
-
-    public func markSurveyForLater(surveyId: Int, userIdentifier: String) {
-        let surveyForLater = SurveyForLater(
-            surveyId: surveyId,
-            userIdentifier: userIdentifier,
-            appLaunchCountWhenMarked: appLaunchCount
-        )
-
-        var surveysForLater = self.surveysForLater
-
-        // Remove any existing "for later" record for this survey and user
-        surveysForLater.removeAll { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }
-
-        // Add the new "for later" record
-        surveysForLater.append(surveyForLater)
-
-        self.surveysForLater = surveysForLater
-    }
-
-    public func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool {
-        guard let surveyForLater = surveysForLater.first(where: { $0.surveyId == surveyId && $0.userIdentifier == userIdentifier }) else {
-            return false
-        }
-
-        // Show survey again after 3, 6, 9, 12, etc. app launches
-        let launchesSinceMarked = appLaunchCount - surveyForLater.appLaunchCountWhenMarked
-        return launchesSinceMarked > 0 && launchesSinceMarked % 3 == 0
-    }
 
     public var surveyUserIdentifier: String {
         get {
-            if let existingIdentifier = userDefaults.string(forKey: UserDefaultsKeys.surveyUserIdentifier) {
-                return existingIdentifier
-            } else {
-                // Generate a new UUID for the user
-                let newIdentifier = UUID().uuidString
-                userDefaults.set(newIdentifier, forKey: UserDefaultsKeys.surveyUserIdentifier)
-                return newIdentifier
+            if let existing = userDefaults.string(forKey: UserDefaultsKeys.surveyUserIdentifier), !existing.isEmpty {
+                return existing
             }
+            let newID = UUID().uuidString
+            userDefaults.set(newID, forKey: UserDefaultsKeys.surveyUserIdentifier)
+            return newID
         }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.surveyUserIdentifier)
-        }
-    }
-
-    public func incrementAppLaunchCount() {
-        let currentCount = appLaunchCount
-        userDefaults.set(currentCount + 1, forKey: UserDefaultsKeys.appLaunchCount)
-    }
-
-    public var appLaunchCount: Int {
-        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.surveyUserIdentifier) }
     }
 
     public var isSurveyEnabled: Bool {
         get {
-            // Default to true if never set
-            if userDefaults.object(forKey: UserDefaultsKeys.isSurveyEnabled) == nil {
-                return true
-            }
+            guard userDefaults.object(forKey: UserDefaultsKeys.isSurveyEnabled) != nil else { return true }
             return userDefaults.bool(forKey: UserDefaultsKeys.isSurveyEnabled)
         }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.isSurveyEnabled)
-        }
-    }
-
-    public var nextSurveyReminderDate: Date? {
-        get {
-            return userDefaults.object(forKey: UserDefaultsKeys.nextSurveyReminderDate) as? Date
-        }
-        set {
-            userDefaults.set(newValue, forKey: UserDefaultsKeys.nextSurveyReminderDate)
-        }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.isSurveyEnabled) }
     }
 
     public var alwaysShowSurveysOnStops: Bool {
@@ -861,24 +727,52 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
         set { userDefaults.set(newValue, forKey: UserDefaultsKeys.alwaysShowSurveysOnStops) }
     }
 
-    // MARK: - Survey Tracking Private Properties
-
-    private var completedSurveys: [CompletedSurvey] {
-        get {
-            return decodeUserDefaultsObjects(type: [CompletedSurvey].self, key: UserDefaultsKeys.completedSurveys) ?? []
-        }
-        set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.completedSurveys) // swiftlint:disable:this force_try
-        }
+    public var nextSurveyReminderDate: Date? {
+        get { userDefaults.object(forKey: UserDefaultsKeys.nextSurveyReminderDate) as? Date }
+        set { userDefaults.set(newValue, forKey: UserDefaultsKeys.nextSurveyReminderDate) }
     }
 
-    private var surveysForLater: [SurveyForLater] {
-        get {
-            return decodeUserDefaultsObjects(type: [SurveyForLater].self, key: UserDefaultsKeys.surveysForLater) ?? []
-        }
-        set {
-            try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater) // swiftlint:disable:this force_try
-        }
+    public var appLaunchCount: Int {
+        return userDefaults.integer(forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    public func incrementAppLaunchCount() {
+        userDefaults.set(appLaunchCount + 1, forKey: UserDefaultsKeys.appLaunchCount)
+    }
+
+    public func markSurveyCompleted(surveyId: Int, userIdentifier: String) {
+        var completed = completedSurveyKeys
+        completed.insert("\(surveyId):\(userIdentifier)")
+        completedSurveyKeys = completed
+        var forLater = surveysForLaterKeys
+        forLater.removeValue(forKey: "\(surveyId):\(userIdentifier)")
+        surveysForLaterKeys = forLater
+    }
+
+    public func isSurveyCompleted(surveyId: Int, userIdentifier: String) -> Bool {
+        completedSurveyKeys.contains("\(surveyId):\(userIdentifier)")
+    }
+
+    public func markSurveyForLater(surveyId: Int, userIdentifier: String) {
+        var forLater = surveysForLaterKeys
+        forLater["\(surveyId):\(userIdentifier)"] = appLaunchCount
+        surveysForLaterKeys = forLater
+    }
+
+    public func shouldShowSurveyLater(surveyId: Int, userIdentifier: String) -> Bool {
+        guard let markedAt = surveysForLaterKeys["\(surveyId):\(userIdentifier)"] else { return false }
+        let launches = appLaunchCount - markedAt
+        return launches > 0 && launches % 3 == 0
+    }
+
+    private var completedSurveyKeys: Set<String> {
+        get { Set(userDefaults.stringArray(forKey: UserDefaultsKeys.completedSurveys) ?? []) }
+        set { userDefaults.set(Array(newValue), forKey: UserDefaultsKeys.completedSurveys) }
+    }
+
+    private var surveysForLaterKeys: [String: Int] {
+        get { decodeUserDefaultsObjects(type: [String: Int].self, key: UserDefaultsKeys.surveysForLater) ?? [:] }
+        set { try! encodeUserDefaultsObjects(newValue, key: UserDefaultsKeys.surveysForLater) } // swiftlint:disable:this force_try
     }
 
     // MARK: - Stop Preferences
@@ -915,11 +809,7 @@ public class UserDefaultsStore: NSObject, UserDataStore, StopPreferencesStore {
                 return .map
             }
             let raw = userDefaults.integer(forKey: UserDefaultsKeys.lastSelectedView)
-            guard let tab = SelectedTab(rawValue: raw) else {
-                Logger.warn("Invalid SelectedTab raw value \(raw) in UserDefaults. Falling back to .map.")
-                return .map
-            }
-            return tab
+            return SelectedTab(rawValue: raw)!
         }
         set {
             userDefaults.set(newValue.rawValue, forKey: UserDefaultsKeys.lastSelectedView)

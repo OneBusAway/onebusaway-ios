@@ -9,6 +9,7 @@
 
 import CoreLocation
 import Foundation
+import Combine
 
 /// Consolidated service for survey fetching, prioritization, state management, and submission.
 @MainActor
