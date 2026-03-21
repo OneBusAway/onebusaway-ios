@@ -250,8 +250,7 @@ struct OccupancyStatusView_Previews: PreviewProvider {
             views.append(buildView(occupancyStatus: s, realtimeData: false))
         }
 
-        let stack = UIStackView.stack(arrangedSubviews: views)
-        stack.axis = .vertical
+        let stack = UIStackView.stack(axis: .vertical, arrangedSubviews: views)
         stack.spacing = 8.0
         return stack
     }()

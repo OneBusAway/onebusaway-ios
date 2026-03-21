@@ -39,7 +39,7 @@ class ReachabilityBulletin: NSObject {
         bulletinManager.edgeSpacing = .compact
     }
 
-    func showStatus(_ status: ConnectivityResult, in application: UIApplication, isCellularDataRestricted: Bool = false) {
+    func showStatus(_ status: ConnectivityResult, in application: UIApplication) {
         guard
             !status.isConnected,
             !bulletinManager.isShowingBulletin
@@ -50,13 +50,12 @@ class ReachabilityBulletin: NSObject {
         // Check for cellular data restriction before falling through
         // to the generic connectivity messages. This provides a specific,
         // actionable recovery message instead of a vague "no internet" alert.
-        if isCellularDataRestricted {
-            let fmt = OBALoc(
-                "reachability_bulletin.description.cellular_data_restricted_fmt",
-                value: "%@ is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for %@, or connect to a WiFi network.",
-                comment: "Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings. Both substituted values are the app name."
+        if ErrorClassifier.isCellularDataRestricted {
+            connectivityPage.descriptionText = OBALoc(
+                "reachability_bulletin.description.cellular_data_restricted",
+                value: "OneBusAway is not currently allowed to access cellular data. To fix this, go to Settings > Cellular and enable cellular data for OneBusAway, or connect to a WiFi network.",
+                comment: "Reachability bulletin shown when the user has disabled cellular data for this app in iOS Settings."
             )
-            connectivityPage.descriptionText = String(format: fmt, Bundle.main.appName, Bundle.main.appName)
         } else {
             switch status.connection {
             case .wifi:
