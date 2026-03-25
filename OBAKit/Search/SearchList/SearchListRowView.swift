@@ -19,7 +19,7 @@ struct SearchListRowView: View {
             statusRow
         case .clearRecents:
             clearRecentsRow
-        default:
+        case .quickSearch, .recentStop, .bookmark, .placemark:
             actionRow
         }
     }
@@ -75,8 +75,8 @@ struct SearchListRowView: View {
             row.action?()
         } label: {
             HStack(spacing: 12) {
-                if let icon = row.icon, case let .system(icon) = icon {
-                    Image(systemName: icon)
+                if let icon = row.icon, case let .system(name) = icon {
+                    Image(systemName: name)
                 }
                 if let title = row.title {
                     Text(title)
@@ -96,7 +96,7 @@ struct SearchListRowView: View {
                 badgedIcon(icon, size: 32, imagePadding: 14)
             case .quickSearch, .recentStop, .bookmark:
                 badgedIcon(icon, size: 24, imagePadding: 8)
-            default:
+            case .clearRecents, .loading, .noResults, .error:
                 plainIcon(icon)
             }
         }
@@ -143,8 +143,8 @@ struct SearchListRowView: View {
         case .system(let name):
             Image(systemName: name)
                 .font(.system(size: size - padding, weight: .medium))
-        case .uiImage(let name):
-            Image(uiImage: name)
+        case .uiImage(let image):
+            Image(uiImage: image)
                 .resizable()
                 .frame(width: size - padding, height: size - padding)
                 .scaledToFit()

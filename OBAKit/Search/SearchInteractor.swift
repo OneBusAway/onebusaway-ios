@@ -42,8 +42,13 @@ class SearchInteractor: NSObject {
     private let userDataStore: UserDataStore
     weak var delegate: SearchDelegate?
 
+    private var isUpdatingSections = false
+
     private var placemarkSearchState: PlacemarkSearchState = .idle {
-        didSet { searchModeObjects(text: lastQuery) }
+        didSet {
+            guard !isUpdatingSections else { return }
+            searchModeObjects(text: lastQuery)
+        }
     }
 
     private var lastQuery: String = ""
@@ -55,7 +60,7 @@ class SearchInteractor: NSObject {
 
     private var cachedPlacemarks: [MKMapItem] = []
 
-    var sections: [SearchListSection] = []
+    private(set) var sections: [SearchListSection] = []
 
     // MARK: - Init
     /// Creates a new `SearchInteractor`
@@ -74,15 +79,19 @@ class SearchInteractor: NSObject {
     }
 
     func searchModeObjects(text: String?) {
+        isUpdatingSections = true
+        defer { isUpdatingSections = false }
+
         lastQuery = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         // Show recent map items when search is empty
         if lastQuery.isEmpty {
+            lastSearchText = ""
             self.sections = [buildRecentMapItemsSection()].compactMap { $0 }
             return
         }
 
-        var sections: [SearchListSection?] = [
+        var newSections: [SearchListSection?] = [
             quickSearchSection(searchText: lastQuery),
             buildRecentStopsSection(searchText: lastQuery),
             buildBookmarksSection(searchText: lastQuery)
@@ -90,10 +99,10 @@ class SearchInteractor: NSObject {
 
         if let mapRect = application.mapRegionManager.lastVisibleMapRect {
             placemarkSearch(searchText: lastQuery, mapRect: mapRect)
-            sections.append(buildPlacemarksSection())
+            newSections.append(buildPlacemarksSection())
         }
 
-        self.sections = sections.compactMap { $0 }
+        self.sections = newSections.compactMap { $0 }
     }
 
     // MARK: - Recent Stops
@@ -102,11 +111,10 @@ class SearchInteractor: NSObject {
             SearchListRow(kind: .recentStop, title: stop.name, accessory: .disclosureIndicator) { [weak self] in
                 guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: stop)
-
             }
         }
 
-        guard recentStops.count > 0 else {
+        guard !recentStops.isEmpty else {
             return nil
         }
 
@@ -122,7 +130,7 @@ class SearchInteractor: NSObject {
             }
         }
 
-        guard bookmarks.count > 0 else {
+        guard !bookmarks.isEmpty else {
             return nil
         }
 
@@ -186,7 +194,7 @@ class SearchInteractor: NSObject {
             // Use the current OBA region's service bounds instead of the visible map area
             // to constrain search results to the transit agency's coverage area
             let searchRegion: MKCoordinateRegion
-            if let currentRegion = application.currentRegion {
+            if let currentRegion = self.application.currentRegion {
                 searchRegion = MKCoordinateRegion(currentRegion.serviceRect)
             } else {
                 // Fallback to visible map area if no region is set
@@ -194,10 +202,14 @@ class SearchInteractor: NSObject {
             }
             searchRequest.region = searchRegion
             let search = MKLocalSearch(request: searchRequest)
+            self.localSearch = search
             search.start { [weak self] response, error in
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if let error {
+                        if (error as NSError).code == NSURLErrorCancelled {
+                            return
+                        }
                         self.placemarkSearchState = .error(error)
                         return
                     }
@@ -223,8 +235,6 @@ class SearchInteractor: NSObject {
                         self.cachedPlacemarks = filteredItems
                         self.placemarkSearchState = .success
                     }
-
-                    self.localSearch = search
 
                 }
             }
@@ -341,14 +351,15 @@ class SearchInteractor: NSObject {
     private func mapPlacemarkItems(_ items: [MKMapItem]) -> [SearchListRow] {
         items.compactMap { [weak self] mapItem -> SearchListRow? in
             guard let self else { return nil }
+            guard let title = mapItem.name ?? mapItem.placemark.title, !title.isEmpty else { return nil }
             return SearchListRow(
                 kind: .placemark(mapItem),
-                title: mapItem.name ?? mapItem.placemark.title ?? "",
+                title: title,
                 subtitle: SearchListRow.subtitleForMapItem(self.application, mapItem),
                 icon: SearchListRow.systemImageForMapItem(mapItem),
                 accessory: .none
-            ) {
-                self.delegate?.showMapItem(mapItem)
+            ) { [weak self] in
+                self?.delegate?.showMapItem(mapItem)
             }
         }
     }

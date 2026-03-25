@@ -1,4 +1,3 @@
-
 //
 //  SearchListRow.swift
 //  OBAKit
@@ -30,6 +29,28 @@ struct SearchListRow: Identifiable {
             if case .placemark = self { return true }
             return false
         }
+
+        var stableIdentifier: String {
+            switch self {
+            case .quickSearch(let type):
+                return "quickSearch-\(type.rawValue)"
+            case .recentStop:
+                return "recentStop"
+            case .bookmark:
+                return "bookmark"
+            case .placemark(let item):
+                let coord = item.placemark.coordinate
+                return "placemark-\(coord.latitude)-\(coord.longitude)"
+            case .clearRecents:
+                return "clearRecents"
+            case .loading:
+                return "loading"
+            case .noResults:
+                return "noResults"
+            case .error(let message, _):
+                return "error-\(message)"
+            }
+        }
     }
 
     enum Icon {
@@ -37,7 +58,7 @@ struct SearchListRow: Identifiable {
         case uiImage(UIImage)
     }
 
-    let id: UUID
+    let id: String
     let kind: Kind
     let title: String?
     let attributedTitle: NSAttributedString?
@@ -47,7 +68,6 @@ struct SearchListRow: Identifiable {
     let action: (() -> Void)?
 
     init(
-        id: UUID = UUID(),
         kind: Kind,
         title: String? = nil,
         attributedTitle: NSAttributedString? = nil,
@@ -56,7 +76,7 @@ struct SearchListRow: Identifiable {
         accessory: Accessory = .none,
         action: (() -> Void)? = nil
     ) {
-        self.id = id
+        self.id = "\(kind.stableIdentifier)-\(title ?? "")"
         self.kind = kind
         self.title = title
         self.attributedTitle = attributedTitle

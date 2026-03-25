@@ -11,7 +11,7 @@ import OBAKitCore
 // MARK: - SearchListView
 
 struct SearchListView: View {
-    @Bindable var searchInteractor: SearchInteractor
+    var searchInteractor: SearchInteractor
 
     var body: some View {
         Group {
@@ -44,6 +44,7 @@ private struct SearchListContentView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollDismissesKeyboard(.interactively)
         .scrollContentBackground(.hidden)
         .contentMargins(.horizontal, 8, for: .scrollContent)
         .background(.clear)
