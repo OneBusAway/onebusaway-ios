@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import Combine
 import SwiftUI
 import OBAKitCore
 
@@ -88,27 +87,12 @@ class ScheduleForStopViewModel: ObservableObject {
         return departures.sorted { $0.time < $1.time }
     }
 
-    // MARK: - Private Properties
-
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - Initialization
 
     init(stopID: StopID, application: Application, initialDate: Date = Date()) {
         self.stopID = stopID
         self.application = application
         self.selectedDate = initialDate
-
-        // Observe date changes and refetch
-        $selectedDate
-            .dropFirst()
-            .removeDuplicates { Calendar.current.isDate($0, inSameDayAs: $1) }
-            .sink { [weak self] _ in
-                Task { [weak self] in
-                    await self?.fetchSchedule()
-                }
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Public Methods

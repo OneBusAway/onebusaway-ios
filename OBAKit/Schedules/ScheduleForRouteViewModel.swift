@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import Combine
 import SwiftUI
 import OBAKitCore
 
@@ -120,10 +119,6 @@ class ScheduleForRouteViewModel: ObservableObject {
         return sortedDepartureTimes
     }
 
-    // MARK: - Private Properties
-
-    private var cancellables = Set<AnyCancellable>()
-
     /// Calculates the actual start time for a trip by finding the earliest departure across all stops.
     /// This is used for sorting trips chronologically, since some trips may not serve the first stop.
     private func actualStartTime(for trip: ScheduleForRoute.TripWithStopTimes, scheduleDate: Date) -> Date? {
@@ -158,17 +153,6 @@ class ScheduleForRouteViewModel: ObservableObject {
         self.routeID = routeID
         self.application = application
         self.selectedDate = initialDate
-
-        // Observe date changes and refetch
-        $selectedDate
-            .dropFirst()
-            .removeDuplicates { Calendar.current.isDate($0, inSameDayAs: $1) }
-            .sink { [weak self] _ in
-                Task { [weak self] in
-                    await self?.fetchSchedule()
-                }
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Public Methods
