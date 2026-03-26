@@ -10,32 +10,25 @@
 import Foundation
 import OBAKitCore
 import MapKit
+import Observation
 
 protocol SearchDelegate: NSObjectProtocol {
     func performSearch(request: SearchRequest)
     func showMapItem(_ mapItem: MKMapItem)
     func searchInteractor(_ searchInteractor: SearchInteractor, showStop stop: Stop)
-    func searchInteractorNewResultsAvailable(_ searchInteractor: SearchInteractor)
     func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor)
     var isVehicleSearchAvailable: Bool { get }
 }
 
 /// This class is responsible for building all of the data objects that power the search experience without actually creating the UI.
-/// In other words, use an object of this class to power your `IGListKit` data source.
-///
 /// The intention behind making `SearchInteractor` responsible for creating data and not a UI is that the default app
-/// experience does not provide an easy path for building out a separate search view controller. Thus, in order to avoid having
+/// experience does not provide an easy path for building out a separate search view. Thus, in order to avoid having
 /// to duplicate the data elements in order to provide different search experiences, `SearchInteractor` was born.
-class SearchInteractor: NSObject {
-    enum ListSection: String {
-        case recentStops
-        case recentMapItems
-        case bookmarks
-        case quickSearch
-        case placemarks
-    }
 
-    enum PlacemarkSearchState {
+@Observable
+class SearchInteractor: NSObject {
+
+    private enum PlacemarkSearchState {
         case idle
         case loading
         case success
@@ -43,10 +36,33 @@ class SearchInteractor: NSObject {
         case noResults
     }
 
+    // MARK: - Properties
+
     private let application: Application
     private let userDataStore: UserDataStore
-    public weak var delegate: SearchDelegate?
+    weak var delegate: SearchDelegate?
 
+    private var isUpdatingSections = false
+
+    private var placemarkSearchState: PlacemarkSearchState = .idle {
+        didSet {
+            guard !isUpdatingSections else { return }
+            searchModeObjects(text: lastQuery)
+        }
+    }
+
+    private var lastQuery: String = ""
+
+    private var lastSearchText: String = ""
+    private var localSearch: MKLocalSearch?
+    private var debounceTimer: Timer?
+    private let debounceInterval: TimeInterval = 0.35
+
+    private var cachedPlacemarks: [MKMapItem] = []
+
+    private(set) var sections: [SearchListSection] = []
+
+    // MARK: - Init
     /// Creates a new `SearchInteractor`
     /// - Parameter application: The global Application object
     /// - Parameter delegate: A delegate that will receive callbacks when events occur
@@ -56,114 +72,96 @@ class SearchInteractor: NSObject {
         self.delegate = delegate
     }
 
-    func searchModeObjects(text: String?) -> [OBAListViewSection] {
-        let cleanedSearchText = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    // MARK: - Deinit
+    deinit {
+        debounceTimer?.invalidate()
+        localSearch?.cancel()
+    }
+
+    func searchModeObjects(text: String?) {
+        isUpdatingSections = true
+        defer { isUpdatingSections = false }
+
+        lastQuery = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         // Show recent map items when search is empty
-        if cleanedSearchText.isEmpty {
-            var sections: [OBAListViewSection?] = []
-            sections.append(buildRecentMapItemsSection())
-            return sections.compactMap { $0 }
+        if lastQuery.isEmpty {
+            lastSearchText = ""
+            self.sections = [buildRecentMapItemsSection()].compactMap { $0 }
+            return
         }
 
-        var sections: [OBAListViewSection?] = []
-
-        sections.append(quickSearchSection(searchText: cleanedSearchText))
-        sections.append(buildRecentStopsSection(searchText: cleanedSearchText))
-        sections.append(buildBookmarksSection(searchText: cleanedSearchText))
+        var newSections: [SearchListSection?] = [
+            quickSearchSection(searchText: lastQuery),
+            buildRecentStopsSection(searchText: lastQuery),
+            buildBookmarksSection(searchText: lastQuery)
+        ]
 
         if let mapRect = application.mapRegionManager.lastVisibleMapRect {
-            placemarkSearch(searchText: cleanedSearchText, mapRect: mapRect)
-            sections.append(buildPlacemarksSection())
+            placemarkSearch(searchText: lastQuery, mapRect: mapRect)
+            newSections.append(buildPlacemarksSection())
         }
 
-        return sections.compactMap { $0 }
+        self.sections = newSections.compactMap { $0 }
     }
 
-    // MARK: - Private
-    private func listSection<Item: OBAListViewItem>(for section: ListSection, title: String? = nil, contents: [Item]) -> OBAListViewSection {
-        return OBAListViewSection(id: section.rawValue, title: title, contents: contents)
-    }
-
-    private func buildRecentStopsSection(searchText: String) -> OBAListViewSection? {
+    // MARK: - Recent Stops
+    private func buildRecentStopsSection(searchText: String) -> SearchListSection? {
         let recentStops = userDataStore.findRecentStops(matching: searchText).map { stop in
-            OBAListRowView.DefaultViewModel(title: stop.name, accessoryType: .disclosureIndicator) { _ in
+            SearchListRow(kind: .recentStop, title: stop.name, accessory: .disclosureIndicator) { [weak self] in
+                guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: stop)
             }
         }
 
-        guard recentStops.count > 0 else {
+        guard !recentStops.isEmpty else {
             return nil
         }
 
-        return listSection(for: .recentStops, title: Strings.recentStops, contents: recentStops)
+        return .init(id: .recentStops, title: Strings.recentStops, content: recentStops)
     }
 
-    private func buildBookmarksSection(searchText: String) -> OBAListViewSection? {
+    // MARK: - Bookmarks
+    private func buildBookmarksSection(searchText: String) -> SearchListSection? {
         let bookmarks = userDataStore.findBookmarks(matching: searchText).map { bookmark in
-            OBAListRowView.DefaultViewModel(title: bookmark.name, accessoryType: .disclosureIndicator) { _ in
+            SearchListRow(kind: .bookmark, title: bookmark.name, accessory: .disclosureIndicator) { [weak self] in
+                guard let self else { return }
                 self.delegate?.searchInteractor(self, showStop: bookmark.stop)
             }
         }
 
-        guard bookmarks.count > 0 else {
+        guard !bookmarks.isEmpty else {
             return nil
         }
 
-        return listSection(for: .bookmarks, title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"), contents: bookmarks)
+        return .init(
+            id: .bookmarks,
+            title: OBALoc("search_controller.bookmarks.header", value: "Bookmarks", comment: "Title of the Bookmarks search header"),
+            content: bookmarks
+        )
     }
 
-    private func buildRecentMapItemsSection() -> OBAListViewSection? {
+    private func buildRecentMapItemsSection() -> SearchListSection? {
         let recentItems = userDataStore.recentMapItems
 
         guard !recentItems.isEmpty else {
             return nil
         }
 
-        var items: [AnyOBAListViewItem] = recentItems.map { mapItem in
-            SearchPlacemarkViewModel(
-                mapItem: mapItem,
-                currentLocation: application.locationService.currentLocation,
-                distanceFormatter: application.formatters.distanceFormatter
-            ) { [weak self] viewModel in
-                guard let self = self else { return }
-                self.delegate?.showMapItem(viewModel.mapItem)
-            }.typeErased
-        }
+        var items: [SearchListRow] = mapPlacemarkItems(recentItems)
 
         // Add clear button at the end
-        let clearTitle = NSAttributedString(
-            string: Strings.clearRecentSearches,
-            attributes: [.foregroundColor: UIColor.systemRed]
-        )
-        var clearButton = OBAListRowView.DefaultViewModel(title: clearTitle, accessoryType: .none) { [weak self] _ in
+        let clearButton: SearchListRow = .init(kind: .clearRecents, title: Strings.clearRecentSearches, icon: .system("trash")) { [weak self] in
             guard let self = self else { return }
             self.delegate?.searchInteractorClearRecentSearches(self)
         }
-        clearButton.image = UIImage(systemName: "trash")
 
-        items.append(clearButton.typeErased)
+        items.append(clearButton)
 
-        return listSection(for: .recentMapItems, title: Strings.recentSearches, contents: items)
+        return .init(id: .recentMapItems, title: Strings.recentSearches, content: items)
     }
 
     // MARK: - Placemarks Section
-
-    private var placemarkSearchTask: Task<Void, Never>?
-    private var cachedPlacemarks: [MKMapItem] = [] {
-        didSet {
-            delegate?.searchInteractorNewResultsAvailable(self)
-        }
-    }
-    private var placemarkSearchState: PlacemarkSearchState = .idle {
-        didSet {
-            delegate?.searchInteractorNewResultsAvailable(self)
-        }
-    }
-    private var lastSearchText: String = ""
-    private let placemarkSearchDebounceInterval: TimeInterval = 0.35 // 350ms
-    private var localSearch: MKLocalSearch?
-    private var debounceTimer: Timer?
 
     private func placemarkSearch(searchText: String, mapRect: MKMapRect) {
         guard
@@ -179,7 +177,7 @@ class SearchInteractor: NSObject {
         debounceTimer = nil
 
         debounceTimer = Timer.scheduledTimer(
-            withTimeInterval: placemarkSearchDebounceInterval,
+            withTimeInterval: debounceInterval,
             repeats: false
         ) { [weak self] _ in
             guard let self = self else { return }
@@ -196,7 +194,7 @@ class SearchInteractor: NSObject {
             // Use the current OBA region's service bounds instead of the visible map area
             // to constrain search results to the transit agency's coverage area
             let searchRegion: MKCoordinateRegion
-            if let currentRegion = application.currentRegion {
+            if let currentRegion = self.application.currentRegion {
                 searchRegion = MKCoordinateRegion(currentRegion.serviceRect)
             } else {
                 // Fallback to visible map area if no region is set
@@ -204,99 +202,102 @@ class SearchInteractor: NSObject {
             }
             searchRequest.region = searchRegion
             let search = MKLocalSearch(request: searchRequest)
-            search.start { response, error in
-                if let error {
-                    self.placemarkSearchState = .error(error)
-                    return
-                }
-
-                guard let response else {
-                    let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
-                    self.placemarkSearchState = .error(unknownError)
-                    return
-                }
-
-                // Filter results to only include items within the current region's bounds
-                var filteredItems = response.mapItems
-                if let currentRegion = self.application.currentRegion {
-                    filteredItems = response.mapItems.filter { mapItem in
-                        guard let location = mapItem.placemark.location else { return false }
-                        return currentRegion.contains(location: location)
+            self.localSearch = search
+            search.start { [weak self] response, error in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    if let error {
+                        if (error as NSError).code == NSURLErrorCancelled {
+                            return
+                        }
+                        self.placemarkSearchState = .error(error)
+                        return
                     }
-                }
 
-                if filteredItems.isEmpty {
-                    self.placemarkSearchState = .noResults
-                } else {
-                    self.placemarkSearchState = .success
-                    self.cachedPlacemarks = filteredItems
+                    guard let response else {
+                        let unknownError = NSError(domain: "SearchInteractor", code: -1, userInfo: [NSLocalizedDescriptionKey: "Local search response is nil"])
+                        self.placemarkSearchState = .error(unknownError)
+                        return
+                    }
+
+                    // Filter results to only include items within the current region's bounds
+                    var filteredItems = response.mapItems
+                    if let currentRegion = self.application.currentRegion {
+                        filteredItems = response.mapItems.filter { mapItem in
+                            guard let location = mapItem.placemark.location else { return false }
+                            return currentRegion.contains(location: location)
+                        }
+                    }
+
+                    if filteredItems.isEmpty {
+                        self.placemarkSearchState = .noResults
+                    } else {
+                        self.cachedPlacemarks = filteredItems
+                        self.placemarkSearchState = .success
+                    }
+
                 }
             }
-
-            self.localSearch = search
         }
     }
 
-    // swiftlint:disable cyclomatic_complexity
-
-    private func buildPlacemarksSection() -> OBAListViewSection? {
+    private func buildPlacemarksSection() -> SearchListSection? {
         let sectionTitle = OBALoc("search_controller.placemarks.header", value: "Results", comment: "Placemark search header")
+
+        var items: [SearchListRow] = []
 
         switch placemarkSearchState {
         case .idle:
             return nil
 
         case .loading:
-            let loadingMessage = OBALoc("search_controller.placemarks.loading", value: "Searching for places...", comment: "Loading message for placemark search")
-            var item = OBAListRowView.DefaultViewModel(title: loadingMessage, accessoryType: .none)
-            item.image = UIImage(systemName: "magnifyingglass")
-            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
-
+            items = [
+                .init(
+                    kind: .loading,
+                    title: OBALoc("search_controller.placemarks.loading", value: "Searching for places...", comment: "Loading message for placemark search"),
+                    icon: .system("magnifyingglass")
+                )
+            ]
         case .error(let error):
             let classified = ErrorClassifier.classify(error, regionName: application.currentRegionName)
-            var item = OBAListRowView.DefaultViewModel(title: classified.localizedDescription, accessoryType: .none)
-            if let apiError = classified as? APIError {
-                switch apiError {
-                case .networkFailure, .cellularDataRestricted:
-                    item.image = UIImage(systemName: "wifi.slash")
-                case .captivePortal:
-                    item.image = UIImage(systemName: "wifi.exclamationmark")
-                case .serverError, .serverUnavailable:
-                    item.image = UIImage(systemName: "server.rack")
-                default:
-                    item.image = UIImage(systemName: "exclamationmark.triangle")
-                }
-            } else {
-                item.image = UIImage(systemName: "exclamationmark.triangle")
-            }
-            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
+            let icon = systemImageForError(classified)
+            items = [SearchListRow(
+                kind: .error(classified.localizedDescription, systemImage: icon),
+                title: classified.localizedDescription,
+                icon: .system(icon)
+            )]
 
         case .noResults:
-            let noResultsMessage = OBALoc("search_controller.placemarks.no_results", value: "No results found", comment: "No results message for placemark search")
-            var item = OBAListRowView.DefaultViewModel(title: noResultsMessage, accessoryType: .none)
-            item.image = UIImage(systemName: "magnifyingglass")
-            return OBAListViewSection(id: ListSection.placemarks.rawValue, title: sectionTitle, contents: [item])
+            items = [
+                .init(
+                    kind: .noResults,
+                    title: OBALoc("search_controller.placemarks.no_results", value: "No results found", comment: "No results message for placemark search"),
+                    icon: .system("magnifyingglass")
+                )
+            ]
 
         case .success:
-            var items: [SearchPlacemarkViewModel] = []
-
-            for p in cachedPlacemarks {
-                let item = SearchPlacemarkViewModel(
-                    mapItem: p,
-                    currentLocation: application.locationService.currentLocation,
-                    distanceFormatter: application.formatters.distanceFormatter
-                ) { [weak self] viewModel in
-                    guard let self = self else { return }
-                    self.delegate?.showMapItem(viewModel.mapItem)
-                }
-                items.append(item)
-            }
-
-            return listSection(for: .placemarks, title: sectionTitle, contents: items)
+            items = mapPlacemarkItems(cachedPlacemarks)
         }
+
+        return .init(id: .placemarks, title: sectionTitle, content: items)
     }
 
-    // swiftlint:enable cyclomatic_complexity
+    private func systemImageForError(_ error: Error) -> String {
+        guard let apiError = error as? APIError else {
+            return "exclamationmark.triangle"
+        }
+        switch apiError {
+        case .networkFailure, .cellularDataRestricted:
+            return "wifi.slash"
+        case .captivePortal:
+            return "wifi.exclamationmark"
+        case .serverError, .serverUnavailable:
+            return "server.rack"
+        default:
+            return "exclamationmark.triangle"
+        }
+    }
 
     // MARK: - Private/Quick Search
 
@@ -309,7 +310,7 @@ class SearchInteractor: NSObject {
         return string
     }
 
-    private func quickSearchSection(searchText: String) -> OBAListViewSection {
+    private func quickSearchSection(searchText: String) -> SearchListSection {
 
         // swiftlint:disable large_tuple
 
@@ -325,22 +326,42 @@ class SearchInteractor: NSObject {
             quickSearchTypes.append((.vehicleID, OBALoc("search_interactor.quick_search.vehicle_prefix", value: "Vehicle:", comment: "Quick search prefix for Vehicle."), Icons.busTransport))
         }
 
-        var items: [OBAListRowView.DefaultViewModel] = []
-
-        let badgeRenderer = ImageBadgeRenderer(fillColor: .white, backgroundColor: ThemeColors.shared.brand, badgeSize: 20.0)
-
-        for (searchType, title, image) in quickSearchTypes {
-            var item = OBAListRowView.DefaultViewModel(title: quickSearchLabel(prefix: title, searchText: searchText), accessoryType: .disclosureIndicator) { [weak self] _ in
-                guard let self = self else { return }
-                let request = SearchRequest(query: searchText, type: searchType)
-                self.delegate?.performSearch(request: request)
-            }
-
-            item.image = badgeRenderer.drawImageOnRoundedRect(image)
-
-            items.append(item)
+        let items = quickSearchTypes.map { (searchType, prefix, icon) in
+            SearchListRow(
+                kind: .quickSearch(searchType),
+                attributedTitle: quickSearchLabel(prefix: prefix, searchText: searchText),
+                icon: .uiImage(icon),
+                accessory: .disclosureIndicator,
+                action: { [weak self] in
+                    let request = SearchRequest(query: searchText, type: searchType)
+                    self?.delegate?.performSearch(request: request)
+                }
+            )
         }
 
-        return listSection(for: .quickSearch, title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"), contents: items)
+        return .init(
+            id: .quickSearch,
+            title: OBALoc("search_controller.quick_search.header", value: "Quick Search", comment: "Quick Search section header in search"),
+            content: items
+        )
     }
+
+    // MARK: - Helpers
+
+    private func mapPlacemarkItems(_ items: [MKMapItem]) -> [SearchListRow] {
+        items.compactMap { [weak self] mapItem -> SearchListRow? in
+            guard let self else { return nil }
+            guard let title = mapItem.name ?? mapItem.placemark.title, !title.isEmpty else { return nil }
+            return SearchListRow(
+                kind: .placemark(mapItem),
+                title: title,
+                subtitle: SearchListRow.subtitleForMapItem(self.application, mapItem),
+                icon: SearchListRow.systemImageForMapItem(mapItem),
+                accessory: .none
+            ) { [weak self] in
+                self?.delegate?.showMapItem(mapItem)
+            }
+        }
+    }
+
 }
