@@ -99,46 +99,38 @@ class MapFloatingPanelController: VisualEffectViewController,
     /// Converts the current SearchInteractor results into SwiftUI-renderable sections
     /// and pushes them onto the view model.
     private func refreshSearchSheetSections() {
-        let rawSections = searchInteractor.searchModeObjects(text: searchBarText)
+        searchInteractor.searchModeObjects(text: searchBarText)
+        let rawSections = searchInteractor.sections
         searchSheetViewModel.sections = rawSections.map { section in
-            let rows = section.contents.compactMap { item -> SearchResultRow? in
-                // OBAListRowView.DefaultViewModel — stops, bookmarks, quick search, recent
-                if let vm = item.as(OBAListRowView.DefaultViewModel.self) {
-                    let title: AttributedString
-                    switch vm.title {
-                    case .string(let str):
-                        title = AttributedString(str ?? "")
-                    case .attributed(let attr):
-                        title = (try? AttributedString(attr ?? NSAttributedString(), including: \.uiKit)) ?? AttributedString(attr?.string ?? "")
-                    }
-                    return SearchResultRow(
-                        id: vm.id.description,
-                        title: title,
-                        subtitle: nil,
-                        image: vm.image,
-                        action: { [weak self] in
-                            vm.onSelectAction?(vm)
+            let rows = section.content.compactMap { row -> SearchResultRow? in
+                let title: AttributedString
+                if let attributed = row.attributedTitle {
+                    title = (try? AttributedString(attributed, including: \.uiKit)) ?? AttributedString(attributed.string)
+                } else {
+                    title = AttributedString(row.title ?? "")
+                }
+
+                let image: UIImage?
+                switch row.icon {
+                case .system(let name): image = UIImage(systemName: name)
+                case .uiImage(let img): image = img
+                case nil:               image = nil
+                }
+
+                return SearchResultRow(
+                    id: row.id,
+                    title: title,
+                    subtitle: row.subtitle,
+                    image: image,
+                    action: { [weak self] in
+                        row.action?()
+                        if case .clearRecents = row.kind { } else {
                             self?.exitSearchMode()
                         }
-                    )
-                }
-                // SearchPlacemarkViewModel — geocoded map items
-                if let vm = item.as(SearchPlacemarkViewModel.self) {
-                    let name = vm.mapItem.name ?? ""
-                    let subtitle = vm.mapItem.placemark.title
-                    return SearchResultRow(
-                        id: vm.id.description,
-                        title: AttributedString(name),
-                        subtitle: subtitle,
-                        image: UIImage(systemName: "mappin.circle.fill"),
-                        action: { [weak self] in
-                            vm.onSelectAction?(vm)
-                        }
-                    )
-                }
-                return nil
+                    }
+                )
             }
-            return SearchResultSection(id: section.id, title: section.title, rows: rows)
+            return SearchResultSection(id: section.id.rawValue, title: section.title, rows: rows)
         }.filter { !$0.rows.isEmpty }
     }
 
@@ -400,7 +392,7 @@ class MapFloatingPanelController: VisualEffectViewController,
         let alertController = UIAlertController.deletionAlert(title: Strings.clearRecentSearchesConfirmation) { [weak self] _ in
             guard let self else { return }
             self.application.userDataStore.deleteAllRecentMapItems()
-            self.searchInteractor.searchModeObjects(text: searchBarText)
+            self.refreshSearchSheetSections()
         }
 
         present(alertController, animated: true, completion: nil)
@@ -412,7 +404,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchBarText = searchText
-        searchInteractor.searchModeObjects(text: searchBarText)
+        refreshSearchSheetSections()
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {

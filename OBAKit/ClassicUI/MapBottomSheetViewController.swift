@@ -186,7 +186,7 @@ final class MapBottomSheetViewController: UIViewController {
     // MARK: - Search data
 
     private lazy var searchInteractor = SearchInteractor(application: application, delegate: self)
-    private var searchSections: [OBAListViewSection] = []
+    private var searchSections: [SearchListSection] = []
 
     // MARK: - Init
 
@@ -356,10 +356,10 @@ final class MapBottomSheetViewController: UIViewController {
     }
 
     private func reloadSearchResults(text: String) {
-        let sections = searchInteractor.searchModeObjects(text: text)
+        searchInteractor.searchModeObjects(text: text)
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            self.searchSections = sections
+            self.searchSections = self.searchInteractor.sections
             self.resultsTable.reloadData()
         }
     }
@@ -478,7 +478,7 @@ extension MapBottomSheetViewController: UITableViewDataSource, UITableViewDelega
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         guard section < searchSections.count else { return 0 }
-        return searchSections[section].contents.count
+        return searchSections[section].content.count
     }
 
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
@@ -489,27 +489,30 @@ extension MapBottomSheetViewController: UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         guard indexPath.section < searchSections.count,
-              indexPath.row < searchSections[indexPath.section].contents.count else {
+              indexPath.row < searchSections[indexPath.section].content.count else {
             return cell
         }
 
-        let item = searchSections[indexPath.section].contents[indexPath.row]
+        let row = searchSections[indexPath.section].content[indexPath.row]
         var config = cell.defaultContentConfiguration()
 
-        if let vm = item.as(OBAListRowView.DefaultViewModel.self) {
-            switch vm.title {
-            case .string(let s):     config.text = s
-            case .attributed(let a): config.attributedText = a
-            }
-            config.image = vm.image
-            cell.accessoryType = vm.accessoryType == .disclosureIndicator ? .disclosureIndicator : .none
-        } else if let vm = item.as(SearchPlacemarkViewModel.self) {
-            config.text = vm.mapItem.name
-            config.secondaryText = vm.mapItem.placemark.title
-            config.image = UIImage(systemName: "mappin.circle.fill")
-            cell.accessoryType = .disclosureIndicator
+        if let attributed = row.attributedTitle {
+            config.attributedText = attributed
+        } else {
+            config.text = row.title
+        }
+        config.secondaryText = row.subtitle
+
+        switch row.icon {
+        case .system(let name):
+            config.image = UIImage(systemName: name)
+        case .uiImage(let image):
+            config.image = image
+        case nil:
+            config.image = nil
         }
 
+        cell.accessoryType = row.accessory == .disclosureIndicator ? .disclosureIndicator : .none
         cell.contentConfiguration = config
         return cell
     }
@@ -517,15 +520,10 @@ extension MapBottomSheetViewController: UITableViewDataSource, UITableViewDelega
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         guard indexPath.section < searchSections.count,
-              indexPath.row < searchSections[indexPath.section].contents.count else { return }
+              indexPath.row < searchSections[indexPath.section].content.count else { return }
 
-        let item = searchSections[indexPath.section].contents[indexPath.row]
-
-        if let vm = item.as(OBAListRowView.DefaultViewModel.self) {
-            vm.onSelectAction?(vm)
-        } else if let vm = item.as(SearchPlacemarkViewModel.self) {
-            vm.onSelectAction?(vm)
-        }
+        let row = searchSections[indexPath.section].content[indexPath.row]
+        row.action?()
     }
 }
 
