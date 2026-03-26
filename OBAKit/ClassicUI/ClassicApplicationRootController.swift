@@ -74,7 +74,7 @@ public class ClassicApplicationRootController: UITabBarController {
         application.userDataStore.lastSelectedView = selectedTab
     }
 
-    func navigate(to destination: Page) {
+    public func navigate(to destination: Page) {
         navigationController?.popToViewController(self, animated: true)
         selectedIndex = destination.rawValue
     }
