@@ -8,37 +8,9 @@
 //
 
 import UIKit
-
-// MARK: - Autolayoutable
+import OBAKitCore
 
 extension UIView {
-    /// Returns true if the app's is running in a right-to-left language, like Hebrew or Arabic.
-    public var layoutDirectionIsRTL: Bool {
-        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .rightToLeft
-    }
-
-    /// Returns true if the app's is running in a left-to-right language, like English.
-    public var layoutDirectionIsLTR: Bool {
-        return UIView.userInterfaceLayoutDirection(for: semanticContentAttribute) == .leftToRight
-    }
-}
-
-/// Protocol support for improving Auto Layout-compatible view creation.
-public protocol Autolayoutable {
-    static func autolayoutNew() -> Self
-}
-
-extension UIView: Autolayoutable {
-
-    /// Creates a new instance of the receiver class, configured for use with Auto Layout.
-    ///
-    /// - Returns: An instance of the receiver class.
-    public static func autolayoutNew() -> Self {
-        let view = self.init(frame: .zero)
-        view.translatesAutoresizingMaskIntoConstraints = false
-        return view
-    }
-
     public enum AutoLayoutPinTarget: Int {
         case edges, layoutMargins, readableContent, safeArea
     }

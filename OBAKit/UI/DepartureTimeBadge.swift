@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// A rounded time badge representing the provided upcoming departure time and deviation status.
 public class DepartureTimeBadge: UILabel, ArrivalDepartureDrivenUI {

@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import OBAKitCore
 
 /// Tracks arrival/departure times for `ArrivalDeparture`s.
 public typealias ArrivalDepartureTimes = [TripIdentifier: Int]
