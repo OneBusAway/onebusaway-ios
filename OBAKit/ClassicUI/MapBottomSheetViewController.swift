@@ -46,7 +46,7 @@ final class MapBottomSheetViewController: UIViewController {
     // MARK: - Private
 
     private let application: Application
-    private var isInSearchMode = false
+    private(set) var isInSearchMode = false
 
     // MARK: - Shared pill container (used in both states)
 
@@ -201,7 +201,7 @@ final class MapBottomSheetViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = .clear
 
         // Build pill content: [🔍] [placeholder / textfield]
         let pillRow = UIStackView(arrangedSubviews: [searchIcon, placeholderLabel, searchTextField])
@@ -265,10 +265,10 @@ final class MapBottomSheetViewController: UIViewController {
 
     @objc private func pillTapped() {
         guard !isInSearchMode else { return }
-        enterSearchMode()
+        enterSearchMode(focusTextField: true)
     }
 
-    func enterSearchMode() {
+    func enterSearchMode(focusTextField: Bool = true) {
         guard !isInSearchMode else { return }
         isInSearchMode = true
 
@@ -277,16 +277,15 @@ final class MapBottomSheetViewController: UIViewController {
         searchTextField.isHidden = false
         searchTextField.text = ""
 
-        // ☰ stays as-is — clear is handled by the text field's built-in X button
-        // No changes to rightButton
-
         // Load recent searches immediately
         reloadSearchResults(text: "")
         resultsTable.isHidden = false
 
-        DispatchQueue.main.async {
-            self.searchTextField.becomeFirstResponder()
-            self.onSearchBecameActive?()
+        if focusTextField {
+            DispatchQueue.main.async {
+                self.searchTextField.becomeFirstResponder()
+                self.onSearchBecameActive?()
+            }
         }
     }
 

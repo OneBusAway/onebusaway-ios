@@ -284,16 +284,20 @@ extension MapsStyleRootController: UISheetPresentationControllerDelegate {
     public func sheetPresentationControllerDidChangeSelectedDetentIdentifier(
         _ sheetPresentationController: UISheetPresentationController
     ) {
-        // Update map bottom inset so controls stay above the sheet at all detents.
-        // At compact the sheet is ~90pt; at medium it's ~50% of screen height.
-        // We keep a fixed inset equal to the compact height — the map is still
-        // usable at medium because largestUndimmedDetentIdentifier = .medium.
         let isExpanded = sheetPresentationController.selectedDetentIdentifier != Self.compactDetentID
         mapController.additionalSafeAreaInsets = UIEdgeInsets(
             top: 0, left: 0,
             bottom: isExpanded ? 0 : Self.compactDetentHeight,
             right: 0
         )
+
+        // When the user drags the sheet up to medium/large without tapping the search bar,
+        // enter search mode so the sheet has content (recent searches) instead of being blank.
+        if isExpanded && !bottomSheet.isInSearchMode {
+            bottomSheet.enterSearchMode(focusTextField: false)
+        } else if !isExpanded {
+            bottomSheet.exitSearchMode()
+        }
     }
 }
 
