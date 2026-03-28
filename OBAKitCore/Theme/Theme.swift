@@ -1,6 +1,6 @@
 //
 //  Theme.swift
-//  OBAKit
+//  OBAKitCore
 //
 //  Copyright © Open Transit Software Foundation
 //  This source code is licensed under the Apache 2.0 license found in the
