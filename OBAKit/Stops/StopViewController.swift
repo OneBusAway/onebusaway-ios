@@ -135,6 +135,14 @@ public class StopViewController: UIViewController,
                 dataDidReload() // Refresh UI to reflect the change
             }
         }
+
+        updateTimeZone()
+    }
+
+    private func updateTimeZone() {
+        if let timeZone = stop?.routes.first?.agency.regionTimeZone {
+            application.formatters.updateTimeZone(timeZone: timeZone)
+        }
     }
 
     /// Arrival/Departure data for this stop.

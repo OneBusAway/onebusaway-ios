@@ -88,6 +88,10 @@ class TripViewController: UIViewController,
         let appearance = UINavigationBarAppearance()
         appearance.configureWithDefaultBackground()
         navigationItem.scrollEdgeAppearance = appearance
+
+        if let regionTimeZone = tripConvertible.arrivalDeparture?.route.agency.regionTimeZone {
+            application.formatters.updateTimeZone(timeZone: regionTimeZone)
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {

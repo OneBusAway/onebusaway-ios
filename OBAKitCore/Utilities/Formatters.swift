@@ -15,6 +15,12 @@ public class Formatters: NSObject {
     private let themeColors: ThemeColors
     private let calendar: Calendar
 
+    private var timeZone: TimeZone? {
+        didSet {
+            timeFormatter = makeTimeFormatter()
+        }
+    }
+
     /// Creates a new `Formatters` object that will use the provided `Calendar` and `Locale` for locale-specific customization.
     ///
     /// - Note: You probably should pass in the `autoupdatingCurrent` instances of `Locale` and `Calendar` to this method.
@@ -36,6 +42,15 @@ public class Formatters: NSObject {
     }()
 
     // MARK: - Formatted Times
+
+    /// Updates the timezone used when formatting times.
+    ///
+    /// `Formatters` is created once by `Application` and shared across all view controllers,
+    /// so reassigning `timeFormatter` here is immediately reflected everywhere — no caller
+    /// caches the underlying `DateFormatter` directly.
+    public func updateTimeZone(timeZone: TimeZone?) {
+        self.timeZone = timeZone
+    }
 
     /// Returns a representation of `date` that varies depending on whether `date` happens to be from today or another day.
     ///
@@ -61,15 +76,7 @@ public class Formatters: NSObject {
         return formatter
     }()
 
-    /// Converts a date into a human-readable time string that conforms to the user's locale.
-    public lazy var timeFormatter: DateFormatter = {
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateStyle = .none
-        timeFormatter.timeStyle = .short
-        timeFormatter.locale = locale
-
-        return timeFormatter
-    }()
+    public lazy var timeFormatter: DateFormatter = makeTimeFormatter()
 
     public lazy var dateIntervalFormatter: DateIntervalFormatter = {
         let formatter = DateIntervalFormatter()
@@ -105,6 +112,24 @@ public class Formatters: NSObject {
         formatter.unitsStyle = .full
         return formatter
     }()
+
+    /// Converts a date into a human-readable time string that conforms to the user's locale.
+    private func makeTimeFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        formatter.locale = locale
+        formatter.timeZone = timeZone ?? .current
+
+        if let abbreviation = timeZone?.timeZoneAbbreviation {
+            let timeFormatTemplate = DateFormatter.dateFormat(fromTemplate: "jm", options: 0, locale: locale) ?? "h:mm a"
+            formatter.dateFormat = "\(timeFormatTemplate) '\(abbreviation)'"
+        } else {
+            formatter.setLocalizedDateFormatFromTemplate("jm")
+        }
+
+        return formatter
+    }
 
     // MARK: - ArrivalDeparture
     // MARK: Full attributed explanation
@@ -696,3 +721,4 @@ public class Formatters: NSObject {
         return String(format: fmt, region.name)
     }
 }
+
