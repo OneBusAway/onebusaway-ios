@@ -47,16 +47,24 @@ public class AppLinksRouter: NSObject {
     /// - Parameters:
     ///   - arrivalDeparture: The object that will be encoded into a deep link URL.
     ///   - region: The region in which the `ArrivalDeparture` exists.
-    public func encode(arrivalDeparture: ArrivalDeparture, region: Region) -> URL? {
+    ///   - destinationStopID: The stop where the passenger intends to exit. See: https://github.com/OneBusAway/onebusaway-ios/issues/449
+    public func encode(arrivalDeparture: ArrivalDeparture, region: Region, destinationStopID: StopID? = nil) -> URL? {
         guard let baseURL else { return nil }
 
         var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
         components.path = String(format: deepLinkPathFormat, region.regionIdentifier, arrivalDeparture.stopID)
-        components.queryItems = [
+
+        var queryItems = [
             URLQueryItem(name: "trip_id", value: arrivalDeparture.tripID),
             URLQueryItem(name: "service_date", value: String(arrivalDeparture.serviceDate.timeIntervalSince1970)),
             URLQueryItem(name: "stop_sequence", value: String(arrivalDeparture.stopSequence))
         ]
+
+        if let destinationStopID {
+            queryItems.append(URLQueryItem(name: "destination_stop_id", value: destinationStopID))
+        }
+
+        components.queryItems = queryItems
 
         return components.url!
     }
@@ -93,8 +101,18 @@ public class AppLinksRouter: NSObject {
         let title = components.queryItem(named: "title")?.value ?? "???"
         let serviceDate = Date(timeIntervalSince1970: serviceDateScalar)
         let vehicleID = components.queryItem(named: "vehicle_id")?.value
+        let destinationStopID = components.queryItem(named: "destination_stop_id")?.value
 
-        let deepLink = ArrivalDepartureDeepLink(title: title, regionID: regionID, stopID: stopID, tripID: tripID, serviceDate: serviceDate, stopSequence: stopSequence, vehicleID: vehicleID)
+        let deepLink = ArrivalDepartureDeepLink(
+            title: title,
+            regionID: regionID,
+            stopID: stopID,
+            tripID: tripID,
+            serviceDate: serviceDate,
+            stopSequence: stopSequence,
+            vehicleID: vehicleID,
+            destinationStopID: destinationStopID
+        )
 
         return deepLink
     }
