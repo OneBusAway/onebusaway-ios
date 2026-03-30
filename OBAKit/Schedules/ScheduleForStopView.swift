@@ -53,7 +53,7 @@ struct ScheduleForStopView: View {
                         }
                     }
                 }
-                .task {
+                .task(id: stopViewModel.selectedDate) {
                     await stopViewModel.fetchSchedule()
                 }
                 .onChange(of: stopViewModel.selectedRouteID) { _, newRouteID in
