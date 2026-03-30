@@ -7,6 +7,7 @@ targets:
       - target: OBAKitCore
       - sdk: SwiftUI.framework
       - sdk: WidgetKit.framework
+      - sdk: ActivityKit.framework
     entitlements:
       path: OBAWidget.entitlements
     info:

@@ -331,12 +331,80 @@ public class BookmarksViewController: UIViewController,
         }
     }
 
+    @available(iOS 16.2, *)
+    private func liveActivityAction(for viewModel: BookmarkArrivalViewModel) -> UIAction {
+        let bookmark = viewModel.bookmark
+        let manager = application.liveActivityManager
+        let routeShortName = bookmark.routeShortName ?? ""
+        let tripHeadsign = bookmark.tripHeadsign ?? ""
+
+        let hasActive = manager.hasActiveActivity(
+            stopID: bookmark.stopID,
+            regionIdentifier: bookmark.regionIdentifier,
+            routeShortName: routeShortName,
+            tripHeadsign: tripHeadsign
+        )
+
+        if hasActive {
+            return UIAction(
+                title: OBALoc("live_activity.action.stop", value: "Stop Live Activity", comment: "Context menu action to stop a Live Activity"),
+                image: UIImage(systemName: "livephoto.slash")
+            ) { _ in
+                Task {
+                    await manager.stopActivities(
+                        stopID: bookmark.stopID,
+                        regionIdentifier: bookmark.regionIdentifier,
+                        routeShortName: routeShortName,
+                        tripHeadsign: tripHeadsign
+                    )
+                }
+            }
+        } else {
+            return UIAction(
+                title: OBALoc("live_activity.action.start", value: "Start Live Activity", comment: "Context menu action to start a Live Activity"),
+                image: UIImage(systemName: "livephoto")
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.startLiveActivityFromBookmark(viewModel)
+            }
+        }
+    }
+
+    @available(iOS 16.2, *)
+    private func startLiveActivityFromBookmark(_ viewModel: BookmarkArrivalViewModel) {
+        let bookmark = viewModel.bookmark
+        // Find the best arrival departure from the loaded data
+        let arrivalDeparture = viewModel.arrivalDepartures?.first {
+            $0.arrivalDepartureMinutes >= 0
+        } ?? viewModel.arrivalDepartures?.first
+
+        guard let arrivalDeparture else {
+            // No arrival data yet — fall back to navigating to the stop page
+            application.viewRouter.navigateTo(stop: bookmark.stop, from: self, bookmark: bookmark)
+            return
+        }
+
+        let builder = LiveActivityBuilder(
+            bookmark: bookmark,
+            arrivalDeparture: arrivalDeparture,
+            manager: application.liveActivityManager
+        )
+        builder.onActivityStarted = { [weak self] in
+            self?.listView.applyData()
+        }
+        bookmarksLiveActivityBuilder = builder
+        builder.showBulletin(above: self)
+    }
+
     var currentPreviewingViewController: UIViewController?
     public func contextMenu(_ listView: OBAListView, for item: AnyOBAListViewItem) -> OBAListViewMenuActions? {
         guard let item = item.as(BookmarkArrivalViewModel.self) else { return nil }
 
         let menu: OBAListViewMenuActions.MenuProvider = { _ -> UIMenu? in
-            let children: [UIMenuElement] = [self.editAction(for: item), self.deleteAction(for: item)]
+            var children: [UIMenuElement] = [self.editAction(for: item), self.deleteAction(for: item)]
+            if #available(iOS 16.2, *), item.bookmark.isTripBookmark {
+                children.insert(self.liveActivityAction(for: item), at: 0)
+            }
             return UIMenu(title: item.name, children: children)
         }
 
@@ -358,6 +426,9 @@ public class BookmarksViewController: UIViewController,
 
     // MARK: - Arrival departure highlight updates
     private var arrivalDepartureTimes = ArrivalDepartureTimes()
+
+    // Retained so the bulletin isn't deallocated mid-presentation
+    private var bookmarksLiveActivityBuilder: AnyObject?
 
     /// Used to determine if the highlight change label in the `ArrivalDeparture`'s collection cell should 'flash' when next rendered.
     ///
@@ -396,6 +467,42 @@ public class BookmarksViewController: UIViewController,
 
         // TOOD: handle error cases. currently, this view is not notified of an error.
         dataLoadFeedbackGenerator.dataLoad(.success)
+
+        // Push fresh data to any active Live Activities
+        if #available(iOS 16.2, *) {
+            updateLiveActivities(from: dataLoader)
+        }
+    }
+
+    @available(iOS 16.2, *)
+    private func updateLiveActivities(from dataLoader: BookmarkDataLoader) {
+        let manager = application.liveActivityManager
+        guard manager.isSupported else { return }
+
+        for bookmark in application.userDataStore.bookmarks where bookmark.isTripBookmark {
+            guard
+                let key = TripBookmarkKey(bookmark: bookmark),
+                let routeShortName = bookmark.routeShortName,
+                let tripHeadsign = bookmark.tripHeadsign,
+                manager.hasActiveActivity(
+                    stopID: bookmark.stopID,
+                    regionIdentifier: bookmark.regionIdentifier,
+                    routeShortName: routeShortName,
+                    tripHeadsign: tripHeadsign
+                ),
+                let arrivalDeparture = dataLoader.dataForKey(key).first
+            else { continue }
+
+            Task {
+                await manager.updateActivities(
+                    stopID: bookmark.stopID,
+                    regionIdentifier: bookmark.regionIdentifier,
+                    routeShortName: routeShortName,
+                    tripHeadsign: tripHeadsign,
+                    arrivalDeparture: arrivalDeparture
+                )
+            }
+        }
     }
 
     // MARK: - Notifications

@@ -12,5 +12,8 @@ import SwiftUI
 struct CBWidgetBundle: WidgetBundle {
     var body: some Widget {
         OBAWidget()
+        if #available(iOS 16.2, *) {
+            TransitLiveActivityWidget()
+        }
     }
 }

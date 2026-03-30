@@ -77,6 +77,10 @@ public class Application: CoreApplication, PushServiceDelegate {
         analytics: analytics
     )
 
+    /// Manages Live Activity lifecycle for transit arrival tracking.
+    @available(iOS 16.2, *)
+    lazy var liveActivityManager = LiveActivityManager(userDefaults: userDefaults)
+
     /// Responsible for figuring out how to navigate between view controllers.
     @MainActor
     lazy var viewRouter = ViewRouter(application: self)

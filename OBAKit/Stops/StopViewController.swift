@@ -45,6 +45,7 @@ public class StopViewController: UIViewController,
         case pastArrivalDepartures(suffix: String)
         case arrivalDepartures(suffix: String)
         case loadMoreButton
+        case liveActivity
         case dataAttribution
 
         static let pastDeparturesPrefix = "section_past_arrival_departures_"
@@ -144,6 +145,9 @@ public class StopViewController: UIViewController,
                 stop = stopArrivals.stop
                 dataDidReload()
                 beginUserActivity()
+                if #available(iOS 16.2, *) {
+                    updateLiveActivitiesIfNeeded(from: stopArrivals)
+                }
             }
         }
     }
@@ -407,23 +411,8 @@ public class StopViewController: UIViewController,
         return UIMenu(children: children)
     }
 
-    fileprivate func fileMenu() -> UIMenu {
-        let bookmarkAction = UIAction(title: Strings.addBookmark, image: UIImage(systemName: "bookmark")) { [unowned self] action in
-            self.addBookmark(sender: action)
-        }
-
-        let alertsAction = UIAction(title: Strings.serviceAlerts, image: UIImage(systemName: "exclamationmark.circle")) { [unowned self] _ in
-            let controller = ServiceAlertListController(application: self.application, serviceAlerts: self.stopArrivals?.serviceAlerts ?? [])
-            self.application.viewRouter.navigate(to: controller, from: self)
-        }
-
-        // Disable the alerts action if there are no service alerts.
-        if (stopArrivals?.serviceAlerts ?? []).isEmpty {
-            alertsAction.attributes = .disabled
-        }
-
-        return UIMenu(title: "File", options: .displayInline, children: [bookmarkAction, alertsAction])
-    }
+    // Implemented in StopViewController+LiveActivity.swift to keep this file under the line limit.
+    fileprivate func fileMenu() -> UIMenu { buildFileMenu() }
 
     fileprivate func locationMenu() -> UIMenu {
         let nearbyAction = UIAction(title: OBALoc("stops_controller.nearby_stops", value: "Nearby Stops", comment: "Title of the row that will show stops that are near this one."), image: UIImage(systemName: "location")) { [unowned self] _ in
@@ -663,6 +652,12 @@ public class StopViewController: UIViewController,
 
         if let donationsSection {
             sections.append(donationsSection)
+        }
+
+        // Show "Stop Live Activity" row under the map/header and above service alerts
+        // only when there is already an active activity for this stop — per spec.
+        if #available(iOS 16.2, *) {
+            sections.append(stopLiveActivitySection)
         }
 
         sections.append(serviceAlertsSection)
@@ -949,6 +944,7 @@ public class StopViewController: UIViewController,
             alarmAction: addAlarmAction,
             bookmarkAction: bookmarkAction,
             scheduleAction: scheduleAction)
+            .withLiveActivityAction(from: self)
     }
 
     func sectionForPastDepartures(groupRoute: Route?, arrDeps: [ArrivalDeparture]) -> OBAListViewSection {
@@ -1056,6 +1052,16 @@ public class StopViewController: UIViewController,
                 self.addBookmark(viewModel: viewModel)
             }
             actions.append(addBookmark)
+
+            if #available(iOS 16.2, *), self.application.liveActivityManager.isSupported {
+                let liveActivity = UIAction(
+                    title: OBALoc("live_activity.context_menu.start", value: "Start Live Activity", comment: "Context menu action to start a Live Activity from an arrival row"),
+                    image: UIImage(systemName: "livephoto")
+                ) { [unowned self] _ in
+                    self.startLiveActivityFromArrivalItem(viewModel)
+                }
+                actions.append(liveActivity)
+            }
 
             // Only show the schedule-for-route action if the current region supports it.
             if application.currentRegion?.supportsScheduleForRoute ?? true {
@@ -1216,7 +1222,7 @@ public class StopViewController: UIViewController,
 //    }
 
     // MARK: - Collection Controller
-    private lazy var listView = OBAListView()
+    lazy var listView = OBAListView()
     public var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
     public var collapsedSections: Set<OBAListViewSection.ID> = [] {
         didSet {
@@ -1395,7 +1401,7 @@ public class StopViewController: UIViewController,
     }
 
     /// Initiates the 'Add Bookmark' workflow.
-    @objc private func addBookmark(sender: Any?) {
+    @objc func addBookmark(sender: Any?) {
         guard let stop = stop else { return }
 
         let bookmarkController = AddBookmarkViewController(application: application, stop: stop, delegate: self)
