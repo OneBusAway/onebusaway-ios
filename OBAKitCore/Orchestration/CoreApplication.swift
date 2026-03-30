@@ -41,6 +41,11 @@ open class CoreApplication: NSObject,
         return userDefaultsStore
     }
 
+    /// The default arrival/departure filter configured by the white-label app.
+    public var defaultArrivalDepartureFilter: ArrivalDepartureFilter {
+        return config.defaultArrivalDepartureFilter
+    }
+
     @objc public let notificationCenter: NotificationCenter
 
     /// Provides access to the user's location and heading.
