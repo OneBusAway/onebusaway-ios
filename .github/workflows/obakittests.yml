@@ -25,21 +25,37 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-spm-
 
+    - uses: actions/cache@v4
+      with:
+        path: DerivedData
+        key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/Package.resolved', '**/*.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-deriveddata-
+
     - name: Switch Xcode
       # FIX: Updated from 26.0 to 26.2 because 26.0 was removed in the Jan 27 update
       run: sudo xcode-select -switch /Applications/Xcode_26.2.app
 
     - name: Install xcodegen
+      env:
+        HOMEBREW_NO_AUTO_UPDATE: 1
+        HOMEBREW_NO_INSTALL_CLEANUP: 1
       run: brew install xcodegen
+
+    - name: Boot iOS Simulator
+      run: |
+        DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "import sys,json; devs=[d for dv in json.load(sys.stdin)['devices'].values() for d in dv if d['name']=='iPhone 16']; print(devs[0]['udid'])")
+        xcrun simctl boot "$DEVICE_ID" || true
 
     - name: Generate xcodeproj for OneBusAway
       run: scripts/generate_project OneBusAway
 
     # Build
     - name: Build OneBusAway
-      run: xcodebuild clean build-for-testing
+      run: xcodebuild build-for-testing
         -scheme 'App'
         -destination 'platform=iOS Simulator,name=iPhone 16'
+        -derivedDataPath DerivedData
         -quiet
 
     # Unit Test
@@ -49,6 +65,9 @@ jobs:
         -project 'OBAKit.xcodeproj'
         -scheme 'App'
         -destination 'platform=iOS Simulator,name=iPhone 16'
+        -derivedDataPath DerivedData
+        -parallel-testing-enabled YES
+        -enableCodeCoverage NO
         -resultBundlePath OBAKitTests.xcresult
         -quiet
 

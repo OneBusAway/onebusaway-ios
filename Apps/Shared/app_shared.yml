@@ -60,7 +60,7 @@ targets:
       gatherCoverageData: true
       testTargets:
         - name: OBAKitTests
-          parallelizable: false
+          parallelizable: true
           randomExecutionOrder: true
     settings:
       base:
