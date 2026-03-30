@@ -207,7 +207,7 @@ class SearchInteractor: NSObject {
                 DispatchQueue.main.async {
                     guard let self else { return }
                     if let error {
-                        if (error as NSError).code == NSURLErrorCancelled {
+                        if (error as? URLError)?.code == .cancelled {
                             return
                         }
                         self.placemarkSearchState = .error(error)
@@ -261,10 +261,13 @@ class SearchInteractor: NSObject {
         case .error(let error):
             let classified = ErrorClassifier.classify(error, regionName: application.currentRegionName)
             let icon = systemImageForError(classified)
+            let errorMessage = classified.localizedDescription
             items = [SearchListRow(
-                kind: .error(classified.localizedDescription, systemImage: icon),
-                title: classified.localizedDescription,
-                icon: .system(icon)
+                kind: .error(errorMessage, systemImage: icon),
+                title: errorMessage,
+                subtitle: OBALoc("search_controller.placemarks.error_retry", value: "Tap to retry", comment: "Subtitle on search error row prompting the user to retry."),
+                icon: .system(icon),
+                action: { [weak self] in self?.retryPlacemarkSearch() }
             )]
 
         case .noResults:
@@ -281,6 +284,11 @@ class SearchInteractor: NSObject {
         }
 
         return .init(id: .placemarks, title: sectionTitle, content: items)
+    }
+
+    private func retryPlacemarkSearch() {
+        lastSearchText = ""
+        searchModeObjects(text: lastQuery)
     }
 
     private func systemImageForError(_ error: Error) -> String {
