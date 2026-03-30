@@ -17,8 +17,6 @@ import SwiftUI
 protocol MapPanelDelegate: NSObjectProtocol {
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectStop stopID: Stop.ID)
     func mapPanelController(_ controller: MapFloatingPanelController, didSelectMapItem mapItem: MKMapItem)
-    func mapPanelControllerDidChangeChildViewController(_ controller: MapFloatingPanelController)
-    func mapPanelControllerDisplaySearch(_ controller: MapFloatingPanelController)
     func mapPanelController(_ controller: MapFloatingPanelController, moveTo state: FloatingPanelState, animated: Bool)
 }
 
@@ -33,12 +31,12 @@ class MapFloatingPanelController: VisualEffectViewController,
     NearbyStopsListDataSource,
     NearbyStopsListDelegate,
     UISearchBarDelegate,
-    UIPopoverPresentationControllerDelegate {
+    UIPopoverPresentationControllerDelegate,
+    UISheetPresentationControllerDelegate {
 
     let mapRegionManager: MapRegionManager
 
     public weak var mapPanelDelegate: MapPanelDelegate?
-    public private(set) var currentScrollView: UIScrollView?
 
     public let application: Application
 
@@ -59,6 +57,10 @@ class MapFloatingPanelController: VisualEffectViewController,
     // Search
     private var searchListViewController: UIHostingController<SearchListView>!
     var searchBarText: String = ""
+
+    // Search Sheet (SwiftUI)
+    let searchSheetViewModel = MapSearchSheetViewModel()
+    private var searchSheetHostingController: UIHostingController<MapSearchSheet>?
 
     // MARK: - Init/Deinit
     init(application: Application, mapRegionManager: MapRegionManager, delegate: MapPanelDelegate) {
@@ -84,7 +86,7 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     // MARK: - UI
 
-    /// Used to hide or show content when the floating panel disappears behind the tab bar on iOS 26.
+    /// Used to hide or show content when the floating panel is collapsed to tip state.
     func didCollapse(_ collapsed: Bool) {
         childContentContainerView.isHidden = collapsed
         nearbyStopsListViewController.view.isHidden = collapsed
@@ -92,28 +94,103 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     private var childContentContainerView: UIView!
 
-    func toggleSearch(showingSearch: Bool) {
-        let oldViewController: UIViewController = showingSearch ? nearbyStopsListViewController : searchListViewController
-        let newViewController: UIViewController = showingSearch ? searchListViewController : nearbyStopsListViewController
+    // MARK: - Search Sheet
 
-        oldViewController.willMove(toParent: nil)
-        oldViewController.view.removeFromSuperview()
-        oldViewController.removeFromParent()
+    /// Converts the current SearchInteractor results into SwiftUI-renderable sections
+    /// and pushes them onto the view model.
+    private func refreshSearchSheetSections() {
+        searchInteractor.searchModeObjects(text: searchBarText)
+        let rawSections = searchInteractor.sections
+        searchSheetViewModel.sections = rawSections.map { section in
+            let rows = section.content.compactMap { row -> SearchResultRow? in
+                let title: AttributedString
+                if let attributed = row.attributedTitle {
+                    title = (try? AttributedString(attributed, including: \.uiKit)) ?? AttributedString(attributed.string)
+                } else {
+                    title = AttributedString(row.title ?? "")
+                }
 
-        newViewController.willMove(toParent: self)
-        addChild(newViewController)
-        childContentContainerView.addSubview(newViewController.view)
-        newViewController.view.pinToSuperview(.edges)
-        newViewController.didMove(toParent: self)
+                let image: UIImage?
+                switch row.icon {
+                case .system(let name): image = UIImage(systemName: name)
+                case .uiImage(let img): image = img
+                case nil:               image = nil
+                }
 
-        // Update the current scroll view, so FloatingPanel can track the newly installed view.
-        if let scrollableViewController = newViewController as? Scrollable {
-            currentScrollView = scrollableViewController.scrollView
-        } else {
-            currentScrollView = nil
+                return SearchResultRow(
+                    id: row.id,
+                    title: title,
+                    subtitle: row.subtitle,
+                    image: image,
+                    action: { [weak self] in
+                        row.action?()
+                        if case .clearRecents = row.kind { } else {
+                            self?.exitSearchMode()
+                        }
+                    }
+                )
+            }
+            return SearchResultSection(id: section.id.rawValue, title: section.title, rows: rows)
+        }.filter { !$0.rows.isEmpty }
+    }
+
+    private func presentSearchSheet() {
+        guard searchSheetHostingController == nil else { return }
+
+        searchSheetViewModel.searchText = searchBarText
+        searchSheetViewModel.sections = []
+
+        searchSheetViewModel.onSearchTextChanged = { [weak self] text in
+            guard let self else { return }
+            self.searchBarText = text
+            self.refreshSearchSheetSections()
+        }
+        searchSheetViewModel.onCancel = { [weak self] in
+            self?.exitSearchMode()
         }
 
-        mapPanelDelegate?.mapPanelControllerDidChangeChildViewController(self)
+        // Populate immediately so recent searches show before the user types.
+        refreshSearchSheetSections()
+
+        let sheet = MapSearchSheet(viewModel: searchSheetViewModel)
+        let hostingController = UIHostingController(rootView: sheet)
+        hostingController.modalPresentationStyle = .pageSheet
+        hostingController.view.backgroundColor = .clear
+
+        if let sheetPresentation = hostingController.sheetPresentationController {
+            // Small detent: just tall enough to show the search bar row (~100pt),
+            // matching the Apple Maps "pill expands into sheet" behaviour.
+            let searchBarDetent = UISheetPresentationController.Detent.custom(identifier: .init("searchBar")) { context in
+                return 100
+            }
+            sheetPresentation.detents = [searchBarDetent, .medium(), .large()]
+            sheetPresentation.selectedDetentIdentifier = .init("searchBar")
+            sheetPresentation.prefersGrabberVisible = true
+            sheetPresentation.prefersScrollingExpandsWhenScrolledToEdge = true
+            sheetPresentation.largestUndimmedDetentIdentifier = .medium
+            sheetPresentation.prefersEdgeAttachedInCompactHeight = true
+            // Detect interactive swipe-to-dismiss so we can reset state.
+            sheetPresentation.delegate = self
+        }
+
+        searchSheetHostingController = hostingController
+
+        // Find the topmost presented VC that isn't already presenting something else,
+        // so the search sheet always stacks correctly above the persistent bottom sheet
+        // in mapsStyleMode without being blocked by it.
+        let root = sequence(first: self as UIViewController, next: { $0.parent })
+            .first(where: { $0.parent == nil }) ?? self
+        var presenter: UIViewController = root
+        while let next = presenter.presentedViewController, !next.isBeingDismissed {
+            presenter = next
+        }
+        presenter.present(hostingController, animated: true)
+    }
+
+    private func dismissSearchSheet() {
+        guard let hostingController = searchSheetHostingController else { return }
+        hostingController.dismiss(animated: true)
+        searchSheetHostingController = nil
     }
 
     // MARK: - UI/Search
@@ -122,15 +199,24 @@ class MapFloatingPanelController: VisualEffectViewController,
         didSet {
             if inSearchMode {
                 application.analytics?.reportEvent(pageURL: "app://localhost/map", label: AnalyticsLabels.searchSelected, value: nil)
-                mapPanelDelegate?.mapPanelControllerDisplaySearch(self)
-            }
-            else {
+                presentSearchSheet()
+            } else {
+                dismissSearchSheet()
                 mapPanelDelegate?.mapPanelController(self, moveTo: .tip, animated: true)
             }
-
-            toggleSearch(showingSearch: inSearchMode)
         }
     }
+
+    /// Programmatically enters search mode — used by MapsStyleRootController's search pill.
+    public func enterSearchMode() {
+        guard !inSearchMode else { return }
+        inSearchMode = true
+    }
+
+    /// When `true`, the built-in search bar is hidden and the content list
+    /// fills the full panel height. Set this when the host controller (e.g.
+    /// `MapsStyleRootController`) provides its own search entry point.
+    var hidesSearchBar: Bool = false
 
     private lazy var searchBar: UISearchBar = {
         let searchBar = UISearchBar.autolayoutNew()
@@ -144,24 +230,34 @@ class MapFloatingPanelController: VisualEffectViewController,
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        // Add search bar
+        // Add search bar — hidden when the host provides its own search UI.
         visualEffectView.contentView.addSubview(searchBar)
         searchBar.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            searchBar.topAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.floatingPanelTopInset),
-            searchBar.leadingAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.leadingAnchor),
-            searchBar.trailingAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.trailingAnchor)
-        ])
+        searchBar.isHidden = hidesSearchBar
 
         // Add child content container view
         childContentContainerView = UIView.autolayoutNew()
         visualEffectView.contentView.addSubview(childContentContainerView)
-        NSLayoutConstraint.activate([
-            childContentContainerView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: 0),
-            childContentContainerView.leadingAnchor.constraint(equalTo: visualEffectView.contentView.leadingAnchor),
-            childContentContainerView.trailingAnchor.constraint(equalTo: visualEffectView.contentView.trailingAnchor),
-            childContentContainerView.bottomAnchor.constraint(equalTo: visualEffectView.contentView.bottomAnchor)
-        ])
+
+        if hidesSearchBar {
+            // Pin content directly to the top — no search bar above it.
+            NSLayoutConstraint.activate([
+                childContentContainerView.topAnchor.constraint(equalTo: visualEffectView.contentView.topAnchor),
+                childContentContainerView.leadingAnchor.constraint(equalTo: visualEffectView.contentView.leadingAnchor),
+                childContentContainerView.trailingAnchor.constraint(equalTo: visualEffectView.contentView.trailingAnchor),
+                childContentContainerView.bottomAnchor.constraint(equalTo: visualEffectView.contentView.bottomAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                searchBar.topAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.topAnchor, constant: ThemeMetrics.floatingPanelTopInset),
+                searchBar.leadingAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.leadingAnchor),
+                searchBar.trailingAnchor.constraint(equalTo: visualEffectView.contentView.safeAreaLayoutGuide.trailingAnchor),
+                childContentContainerView.topAnchor.constraint(equalTo: searchBar.bottomAnchor),
+                childContentContainerView.leadingAnchor.constraint(equalTo: visualEffectView.contentView.leadingAnchor),
+                childContentContainerView.trailingAnchor.constraint(equalTo: visualEffectView.contentView.trailingAnchor),
+                childContentContainerView.bottomAnchor.constraint(equalTo: visualEffectView.contentView.bottomAnchor)
+            ])
+        }
 
         // Initialize view controllers
         nearbyStopsListViewController = NearbyStopsListViewController()
@@ -200,8 +296,6 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
-        toggleSearch(showingSearch: false)
         updateSearchBarPlaceholderText()
     }
 
@@ -274,7 +368,8 @@ class MapFloatingPanelController: VisualEffectViewController,
         }
 
         searchBar.resignFirstResponder()
-        mapPanelDelegate?.mapPanelController(self, moveTo: .half, animated: true)
+        // Dismiss the search sheet — results will be shown on the map.
+        exitSearchMode()
 
         Task {
             await application.searchManager.search(request: request)
@@ -295,9 +390,9 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     func searchInteractorClearRecentSearches(_ searchInteractor: SearchInteractor) {
         let alertController = UIAlertController.deletionAlert(title: Strings.clearRecentSearchesConfirmation) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self else { return }
             self.application.userDataStore.deleteAllRecentMapItems()
-            self.searchInteractor.searchModeObjects(text: searchBarText)
+            self.refreshSearchSheetSections()
         }
 
         present(alertController, animated: true, completion: nil)
@@ -309,16 +404,13 @@ class MapFloatingPanelController: VisualEffectViewController,
 
     public func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         searchBarText = searchText
-        searchInteractor.searchModeObjects(text: searchBarText)
+        refreshSearchSheetSections()
     }
 
     public func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         inSearchMode = true
-        searchBar.showsCancelButton = true
-    }
-
-    public func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        exitSearchMode()
+        // The sheet has its own Cancel button; hide the search bar's to avoid duplication.
+        searchBar.showsCancelButton = false
     }
 
     /// Cancels searching and exits search mode
@@ -327,10 +419,8 @@ class MapFloatingPanelController: VisualEffectViewController,
         searchBar.resignFirstResponder()
         searchBar.showsCancelButton = false
         inSearchMode = false
-    }
-
-    public func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        inSearchMode = false
+        searchSheetViewModel.searchText = ""
+        searchSheetViewModel.onDismiss?()
     }
 
     lazy var searchInteractor = SearchInteractor(application: application, delegate: self)
@@ -370,5 +460,23 @@ extension MapFloatingPanelController: MapRegionDelegate {
 
     public func regionsService(_ service: RegionsService, updatedRegion region: Region) {
         updateSearchBarPlaceholderText()
+    }
+}
+
+// MARK: - UISheetPresentationControllerDelegate
+
+extension MapFloatingPanelController {
+    /// Called when the user swipe-dismisses the search sheet interactively.
+    /// Resets search state so the sheet can be opened again.
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        guard presentationController.presentedViewController === searchSheetHostingController else { return }
+        searchSheetHostingController = nil
+        // Reset without triggering dismissSearchSheet (sheet is already gone).
+        searchBar.text = nil
+        searchBar.resignFirstResponder()
+        searchBar.showsCancelButton = false
+        inSearchMode = false
+        searchSheetViewModel.searchText = ""
+        searchSheetViewModel.onDismiss?()
     }
 }

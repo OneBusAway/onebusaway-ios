@@ -24,6 +24,22 @@ final class MapPanelLayout: FloatingPanelBottomLayout {
     }
 }
 
+/// Layout used in Maps-style mode: no tip state, panel starts hidden.
+/// The floating search row at the bottom is the only persistent UI.
+final class MapPanelMapsStyleLayout: FloatingPanelLayout {
+    var position: FloatingPanelPosition = .bottom
+    var initialState: FloatingPanelState = .hidden
+
+    var anchors: [FloatingPanelState: FloatingPanelLayoutAnchoring] {
+        return [
+            .full: FloatingPanelLayoutAnchor(absoluteInset: 18.0, edge: .top, referenceGuide: .safeArea),
+            .half: FloatingPanelLayoutAnchor(fractionalInset: 0.5, edge: .bottom, referenceGuide: .safeArea)
+        ]
+    }
+
+    func backdropAlpha(for state: FloatingPanelState) -> CGFloat { 0.0 }
+}
+
 /// A layout object used with `FloatingPanel` on `MapViewController`.
 final class MapPanelLandscapeLayout: FloatingPanelLayout {
     static let WidthSize: CGFloat = 291

@@ -70,7 +70,7 @@ class HoverBarPassThroughView: UIView {
     }
 
     fileprivate lazy var shadowView = self.lazyShadowView()
-    fileprivate lazy var visualEffectView = self.lazyVisualEffectView()
+    lazy var visualEffectView = self.lazyVisualEffectView()
 
     convenience init() {
         self.init(frame: CGRect())
