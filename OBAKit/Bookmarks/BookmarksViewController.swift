@@ -121,6 +121,7 @@ public class BookmarksViewController: UIViewController,
         }
 
         listView.applyData(animated: false)
+        reindexSpotlight()
     }
 
     public override func viewWillDisappear(_ animated: Bool) {
@@ -163,6 +164,13 @@ public class BookmarksViewController: UIViewController,
     func reloadWidget() {
         Logger.info("Reloading the widget")
         WidgetCenter.shared.reloadTimelines(ofKind: "OBAWidget")
+    }
+
+    // MARK: - Spotlight
+
+    /// Re-indexes all bookmarks in Spotlight. Called on appear and after any bookmark change.
+    private func reindexSpotlight() {
+        BookmarkSpotlightIndexer.indexAll(application.userDataStore.bookmarks)
     }
 
     // MARK: - Refresh Control
@@ -314,8 +322,9 @@ public class BookmarksViewController: UIViewController,
                         stopID: bookmark.stopID))
             }
 
-            // Delete bookmark
+            // Delete bookmark and remove from Spotlight
             self.application.userDataStore.delete(bookmark: bookmark)
+            BookmarkSpotlightIndexer.remove(bookmark)
             self.listView.applyData(animated: true)
         }
 
@@ -385,6 +394,7 @@ public class BookmarksViewController: UIViewController,
     func bookmarkEditor(_ viewController: UIViewController, editedBookmark bookmark: Bookmark, isNewBookmark: Bool) {
         viewController.dismiss(animated: true, completion: nil)
         listView.applyData(animated: false)
+        reindexSpotlight()
     }
 
     // MARK: - Data Loading
