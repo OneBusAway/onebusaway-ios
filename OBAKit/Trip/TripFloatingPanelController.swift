@@ -161,7 +161,7 @@ class TripFloatingPanelController: UIViewController,
             stopArrivalView.topAnchor.constraint(equalTo: wrapper.topAnchor, constant: ThemeMetrics.padding),
             stopArrivalView.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
             stopArrivalView.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor),
-            stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor, constant: -ThemeMetrics.compactPadding)
+            stopArrivalView.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor)
         ])
         return wrapper
     }()
@@ -183,7 +183,44 @@ class TripFloatingPanelController: UIViewController,
         return view
     }()
 
-    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, separatorView, listView])
+    // MARK: - ETA Info Panel
+    // Displays distance from stop and number of stops away for the arriving vehicle.
+    // Added to address feature #2 in issue #1109.
+    private lazy var etaInfoPanel: UIView = {
+        let distanceLabel = UILabel.autolayoutNew()
+        distanceLabel.font = .preferredFont(forTextStyle: .footnote)
+        distanceLabel.textColor = ThemeColors.shared.label
+        distanceLabel.textAlignment = .natural
+
+        let stopsLabel = UILabel.autolayoutNew()
+        stopsLabel.font = .preferredFont(forTextStyle: .footnote)
+        stopsLabel.textColor = ThemeColors.shared.label
+        stopsLabel.textAlignment = .right
+
+        if let arrDep = tripConvertible?.arrivalDeparture {
+            let meters = arrDep.distanceFromStop
+            let distance = meters >= 1000
+                ? String(format: "%.1f km away", meters / 1000)
+                : String(format: "%.0f m away", meters)
+            distanceLabel.text = "\(distance)"
+            stopsLabel.text = "\(arrDep.numberOfStopsAway) stop(s) away"
+        }
+
+        let stack = UIStackView.horizontalStack(arrangedSubviews: [distanceLabel, stopsLabel])
+        stack.distribution = .fillEqually
+        stack.spacing = ThemeMetrics.compactPadding
+
+        let wrapper = stack.embedInWrapperView(setConstraints: false)
+        NSLayoutConstraint.activate([
+            stack.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: wrapper.readableContentGuide.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: wrapper.readableContentGuide.trailingAnchor)
+        ])
+        return wrapper
+    }()
+
+    private lazy var outerStack = UIStackView.verticalStack(arrangedSubviews: [topPaddingView, stopArrivalWrapper, etaInfoPanel, separatorView, listView])
 
     // MARK: - ListAdapterDataSource (Data Loading)
     func canCollapseSection(_ listView: OBAListView, section: OBAListViewSection) -> Bool {
