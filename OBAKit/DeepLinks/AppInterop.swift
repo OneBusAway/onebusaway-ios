@@ -49,4 +49,22 @@ public class AppInterop: NSObject {
 
         return components.url
     }
+
+    /// Creates a URL that can open OpenStreetMap in a web browser with the user's desired
+    /// destination in walking directions mode.
+    ///
+    /// - Parameter coordinate: The destination coordinate
+    /// - Returns: An URL that will launch OpenStreetMap in walking directions mode
+    public class func openStreetMapWalkingDirectionsURL(coordinate: CLLocationCoordinate2D) -> URL? {
+        let lat = coordinate.latitude
+        let lon = coordinate.longitude
+        var components = URLComponents(string: "https://www.openstreetmap.org/directions")
+        components?.queryItems = [
+            URLQueryItem(name: "engine", value: "osrm_foot"),
+            URLQueryItem(name: "from", value: ""),
+            URLQueryItem(name: "to", value: "\(lat),\(lon)")
+        ]
+        components?.fragment = "map=16/\(lat)/\(lon)"
+        return components?.url
+    }
 }
