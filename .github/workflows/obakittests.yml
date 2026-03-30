@@ -66,7 +66,6 @@ jobs:
         -scheme 'App'
         -destination 'platform=iOS Simulator,name=iPhone 16'
         -derivedDataPath DerivedData
-        -parallel-testing-enabled YES
         -enableCodeCoverage NO
         -resultBundlePath OBAKitTests.xcresult
         -quiet
