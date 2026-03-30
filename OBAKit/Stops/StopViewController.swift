@@ -504,19 +504,13 @@ public class StopViewController: UIViewController, // swiftlint:disable:this typ
            let filter = ArrivalDepartureFilter(rawValue: saved) {
             return filter
         }
-        return .all
+        return application.defaultArrivalDepartureFilter
     }
 
     fileprivate func arrivalDepartureFilterMenu() -> UIMenu {
         let currentFilter = activeArrivalDepartureFilter
-        let filters: [(ArrivalDepartureFilter, String)] = [
-            (.all, OBALoc("stop_controller.arrival_filter.all_departures", value: "All Departures", comment: "Filter option to show all departures regardless of real-time data availability")),
-            (.estimatedOnly, OBALoc("stop_controller.arrival_filter.estimated_only", value: "Real-Time Only", comment: "Filter option to show only departures with real-time estimated data")),
-            (.scheduledOnly, OBALoc("stop_controller.arrival_filter.scheduled_only", value: "Scheduled Only", comment: "Filter option to show only departures with scheduled data and no real-time information"))
-        ]
-
-        let actions = filters.map { filter, title -> UIAction in
-            let action = UIAction(title: title) { [weak self] _ in
+        let actions = ArrivalDepartureFilter.allCases.map { filter -> UIAction in
+            let action = UIAction(title: filter.displayTitle) { [weak self] _ in
                 guard let self else { return }
                 self.application.userDefaults.set(filter.rawValue, forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
                 self.dataDidReload()

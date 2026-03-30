@@ -123,7 +123,7 @@ class SettingsViewController: FormViewController {
     }
 
     private static func arrivalFilterFromDisplayTitle(_ title: String) -> ArrivalDepartureFilter {
-        for filter in ArrivalDepartureFilter.allCases where arrivalFilterDisplayTitle(for: filter) == title {
+        for filter in ArrivalDepartureFilter.allCases where filter.displayTitle == title {
             return filter
         }
         return .all
@@ -135,19 +135,8 @@ class SettingsViewController: FormViewController {
 
     private func currentArrivalFilterDisplayTitle() -> String {
         let saved = application.userDefaults.string(forKey: CoreAppConfig.arrivalDepartureFilterUserDefaultsKey)
-        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? .all
-        return Self.arrivalFilterDisplayTitle(for: filter)
-    }
-
-    private static func arrivalFilterDisplayTitle(for filter: ArrivalDepartureFilter) -> String {
-        switch filter {
-        case .all:
-            return OBALoc("settings_controller.arrival_filter.all", value: "All Departures", comment: "Settings option to show all departures")
-        case .estimatedOnly:
-            return OBALoc("settings_controller.arrival_filter.real_time", value: "Real-Time Only", comment: "Settings option to show only real-time departures")
-        case .scheduledOnly:
-            return OBALoc("settings_controller.arrival_filter.scheduled", value: "Scheduled Only", comment: "Settings option to show only scheduled departures")
-        }
+        let filter = ArrivalDepartureFilter(rawValue: saved ?? "") ?? application.defaultArrivalDepartureFilter
+        return filter.displayTitle
     }
 
     private lazy var arrivalDisplaySection: Section = {
@@ -159,7 +148,7 @@ class SettingsViewController: FormViewController {
             $0.tag = arrivalFilterTag
             $0.title = OBALoc("settings_controller.arrival_filter.title", value: "Show Departures", comment: "Title for the departure filter setting row")
             $0.selectorTitle = OBALoc("settings_controller.arrival_filter.selector_title", value: "Show Departures", comment: "Title for the departure filter selection alert")
-            $0.options = ArrivalDepartureFilter.allCases.map { Self.arrivalFilterDisplayTitle(for: $0) }
+            $0.options = ArrivalDepartureFilter.allCases.map { $0.displayTitle }
             $0.value = self.currentArrivalFilterDisplayTitle()
         }
 

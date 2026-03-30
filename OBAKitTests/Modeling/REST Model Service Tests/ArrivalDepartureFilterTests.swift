@@ -103,9 +103,8 @@ class ArrivalDepartureFilterTests: OBATestCase {
         ).entry
         let allArrivals = stopArrivals.arrivalsAndDepartures
 
-        let predictedCount = allArrivals.filter({ $0.predicted }).count
         let result = allArrivals.filter(by: .estimatedOnly)
-        expect(result.count) == predictedCount
+        expect(result).to(beEmpty())
     }
 
     // MARK: - Filter .scheduledOnly
