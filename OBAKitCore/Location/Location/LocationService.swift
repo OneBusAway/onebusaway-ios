@@ -268,12 +268,19 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     // MARK: - Region Monitoring
 
+    static let proximityRegionPrefix = "oba.proximity."
+
     /// Starts monitoring a geofence region for the given proximity alert.
+    ///
+    /// - Note: Region monitoring requires `.authorizedAlways` for background delivery.
+    ///   The caller (e.g. ProximityAlertManager) is responsible for ensuring appropriate authorization.
     public func startMonitoringProximity(for alert: ProximityAlert) {
+        guard isLocationUseAuthorized else { return }
+
         let region = CLCircularRegion(
             center: alert.coordinate,
             radius: alert.radiusMeters,
-            identifier: alert.id.uuidString
+            identifier: Self.proximityRegionPrefix + alert.id.uuidString
         )
         region.notifyOnEntry = true
         region.notifyOnExit = false
@@ -282,9 +289,11 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Stops monitoring the geofence region for the given proximity alert.
     public func stopMonitoringProximity(for alert: ProximityAlert) {
+        let identifier = Self.proximityRegionPrefix + alert.id.uuidString
         guard let matchingRegion = locationManager.monitoredRegions.first(where: {
-            $0.identifier == alert.id.uuidString
+            $0.identifier == identifier
         }) else {
+            Logger.warn("No monitored region found for proximity alert \(alert.id)")
             return
         }
         locationManager.stopMonitoring(for: matchingRegion)
@@ -292,13 +301,13 @@ public protocol LocationServiceDelegate: NSObjectProtocol {
 
     /// Stops monitoring all proximity alert regions without affecting other monitored regions.
     public func stopMonitoringAllProximityAlerts() {
-        for region in locationManager.monitoredRegions where UUID(uuidString: region.identifier) != nil {
+        for region in locationManager.monitoredRegions where region.identifier.hasPrefix(Self.proximityRegionPrefix) {
             locationManager.stopMonitoring(for: region)
         }
     }
 
     public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
-        guard region is CLCircularRegion else { return }
+        guard region is CLCircularRegion, region.identifier.hasPrefix(Self.proximityRegionPrefix) else { return }
         notifyDelegatesDidEnterMonitoredRegion(region.identifier)
     }
 

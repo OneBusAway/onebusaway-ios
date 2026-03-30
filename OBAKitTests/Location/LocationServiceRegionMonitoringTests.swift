@@ -18,14 +18,16 @@ import Nimble
 
 class LocationServiceRegionMonitoringTests: OBATestCase {
 
-    var locationManagerMock: LocationManagerMock!
+    var locationManagerMock: AuthorizableLocationManagerMock!
     var service: LocationService!
     var delegate: LocDelegate!
     var stop: Stop!
 
     override func setUp() {
         super.setUp()
-        locationManagerMock = LocationManagerMock()
+        let location = CLLocation(latitude: 47.0, longitude: -122.0)
+        locationManagerMock = AuthorizableLocationManagerMock(updateLocation: location, updateHeading: OBAMockHeading(heading: 0.0))
+        locationManagerMock._authorizationStatus = .authorizedWhenInUse
         service = LocationService(userDefaults: userDefaults, locationManager: locationManagerMock)
         delegate = LocDelegate()
         service.addDelegate(delegate)
@@ -43,12 +45,22 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         let region = locationManagerMock.monitoredRegions.first as? CLCircularRegion
         expect(region).toNot(beNil())
-        expect(region?.identifier) == alert.id.uuidString
+        expect(region?.identifier) == "oba.proximity.\(alert.id.uuidString)"
         expect(region?.center.latitude) == stop.location.coordinate.latitude
         expect(region?.center.longitude) == stop.location.coordinate.longitude
         expect(region?.radius) == 300.0
         expect(region?.notifyOnEntry).to(beTrue())
         expect(region?.notifyOnExit).to(beFalse())
+    }
+
+    func test_startMonitoringProximity_unauthorized_doesNotMonitor() {
+        let unauthorizedMock = LocationManagerMock()
+        let unauthorizedService = LocationService(userDefaults: userDefaults, locationManager: unauthorizedMock)
+        let alert = ProximityAlert(stop: stop)
+
+        unauthorizedService.startMonitoringProximity(for: alert)
+
+        expect(unauthorizedMock.monitoredRegions).to(beEmpty())
     }
 
     func test_startMonitoringProximity_defaultRadius() {
@@ -58,6 +70,17 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         let region = locationManagerMock.monitoredRegions.first as? CLCircularRegion
         expect(region?.radius) == 200.0
+    }
+
+    func test_startMonitoringProximity_duplicateAlert_replacesRegion() {
+        let alert = ProximityAlert(stop: stop)
+
+        service.startMonitoringProximity(for: alert)
+        service.startMonitoringProximity(for: alert)
+
+        // CLRegion uses identifier for equality in Set, so duplicate insert replaces
+        expect(self.locationManagerMock.monitoredRegions.count) == 1
+        expect(self.locationManagerMock.monitoredRegions.first?.identifier) == "oba.proximity.\(alert.id.uuidString)"
     }
 
     func test_startMonitoringProximity_multipleAlerts() {
@@ -106,12 +129,12 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         expect(self.locationManagerMock.monitoredRegions.count) == 1
         let remaining = self.locationManagerMock.monitoredRegions.first
-        expect(remaining?.identifier) == alert2.id.uuidString
+        expect(remaining?.identifier) == "oba.proximity.\(alert2.id.uuidString)"
     }
 
     // MARK: - Stop All Monitoring
 
-    func test_stopMonitoringAllProximityAlerts_removesAllUUIDRegions() {
+    func test_stopMonitoringAllProximityAlerts_removesAllPrefixedRegions() {
         let stops = try! Fixtures.loadSomeStops()
         let alert1 = ProximityAlert(stop: stops[0])
         let alert2 = ProximityAlert(stop: stops[1])
@@ -124,14 +147,14 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
     }
 
-    func test_stopMonitoringAllProximityAlerts_preservesNonUUIDRegions() {
+    func test_stopMonitoringAllProximityAlerts_preservesNonPrefixedRegions() {
         let alert = ProximityAlert(stop: stop)
         service.startMonitoringProximity(for: alert)
 
         let otherRegion = CLCircularRegion(
             center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
             radius: 100,
-            identifier: "not-a-uuid-region"
+            identifier: "some-other-region"
         )
         locationManagerMock.startMonitoring(for: otherRegion)
 
@@ -140,7 +163,15 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         service.stopMonitoringAllProximityAlerts()
 
         expect(self.locationManagerMock.monitoredRegions.count) == 1
-        expect(self.locationManagerMock.monitoredRegions.first?.identifier) == "not-a-uuid-region"
+        expect(self.locationManagerMock.monitoredRegions.first?.identifier) == "some-other-region"
+    }
+
+    func test_stopMonitoringAllProximityAlerts_emptyRegions_isNoOp() {
+        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
+
+        service.stopMonitoringAllProximityAlerts()
+
+        expect(self.locationManagerMock.monitoredRegions).to(beEmpty())
     }
 
     // MARK: - Delegate: didEnterRegion
@@ -150,18 +181,30 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
         let region = CLCircularRegion(
             center: alert.coordinate,
             radius: alert.radiusMeters,
-            identifier: alert.id.uuidString
+            identifier: "oba.proximity.\(alert.id.uuidString)"
         )
 
         service.locationManager(CLLocationManager(), didEnterRegion: region)
 
-        expect(self.delegate.enteredRegionIdentifier) == alert.id.uuidString
+        expect(self.delegate.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
+    }
+
+    func test_didEnterRegion_nonPrefixedCircularRegion_doesNotNotify() {
+        let region = CLCircularRegion(
+            center: CLLocationCoordinate2D(latitude: 47.0, longitude: -122.0),
+            radius: 200,
+            identifier: "some-other-region"
+        )
+
+        service.locationManager(CLLocationManager(), didEnterRegion: region)
+
+        expect(self.delegate.enteredRegionIdentifier).to(beNil())
     }
 
     func test_didEnterRegion_nonCircularRegion_doesNotNotify() {
         let beaconRegion = CLBeaconRegion(
             uuid: UUID(),
-            identifier: "beacon-test"
+            identifier: "oba.proximity.beacon-test"
         )
 
         service.locationManager(CLLocationManager(), didEnterRegion: beaconRegion)
@@ -192,6 +235,25 @@ class LocationServiceRegionMonitoringTests: OBATestCase {
 
         expect(self.delegate.monitoringFailedIdentifier).to(beNil())
         expect(self.delegate.monitoringFailedError).toNot(beNil())
+    }
+
+    // MARK: - Multiple Delegates
+
+    func test_didEnterRegion_notifiesMultipleDelegates() {
+        let delegate2 = LocDelegate()
+        service.addDelegate(delegate2)
+
+        let alert = ProximityAlert(stop: stop)
+        let region = CLCircularRegion(
+            center: alert.coordinate,
+            radius: alert.radiusMeters,
+            identifier: "oba.proximity.\(alert.id.uuidString)"
+        )
+
+        service.locationManager(CLLocationManager(), didEnterRegion: region)
+
+        expect(self.delegate.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
+        expect(delegate2.enteredRegionIdentifier) == "oba.proximity.\(alert.id.uuidString)"
     }
 }
 
