@@ -134,11 +134,13 @@ public class ThemeColors: NSObject {
         // Hex #129900 is better visibility for small text in light mode.
         // UIColor.systemGreen is better visibility for small text in dark mode.
         // See #506 and #508 for user feedback.
+        // In high contrast mode, use darker greens to ensure sufficient contrast with white text.
         let departureOnTimeColor = UIColor { traitCollection in
+            let isHighContrast = traitCollection.accessibilityContrast == .high
             if traitCollection.userInterfaceStyle == .dark {
-                return UIColor.systemGreen
+                return isHighContrast ? UIColor(red: 0.00, green: 0.60, blue: 0.00, alpha: 1.00) : UIColor.systemGreen
             } else {
-                return UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
+                return isHighContrast ? UIColor(red: 0.00, green: 0.45, blue: 0.00, alpha: 1.00) : UIColor(red: 0.07, green: 0.60, blue: 0.00, alpha: 1.00)
             }
         }
         departureOnTime = departureOnTimeColor
@@ -147,8 +149,12 @@ public class ThemeColors: NSObject {
         departureUnknown = .label
         departureUnknownBackground = .systemGray
 
-        departureLate = .systemBlue
-        departureLateBackground = .systemBlue
+        // In high contrast mode, use a darker blue for better contrast with white text.
+        let departureLateColor = UIColor { traitCollection in
+            traitCollection.accessibilityContrast == .high ? UIColor.systemIndigo : UIColor.systemBlue
+        }
+        departureLate = departureLateColor
+        departureLateBackground = departureLateColor
 
         gray = .systemGray
         green = .systemGreen
