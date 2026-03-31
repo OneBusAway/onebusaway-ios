@@ -32,6 +32,7 @@ class TripFloatingPanelController: UIViewController,
         didSet {
             if isLoadedAndOnScreen, let arrivalDeparture = tripConvertible?.arrivalDeparture {
                 stopArrivalView.arrivalDeparture = arrivalDeparture
+                updateETAInfoPanel(with: arrivalDeparture)
             }
         }
     }
@@ -145,6 +146,9 @@ class TripFloatingPanelController: UIViewController,
 
     var collapsedSections: Set<OBAListViewSection.ID> = []
     var selectionFeedbackGenerator: UISelectionFeedbackGenerator? = UISelectionFeedbackGenerator()
+    
+    private var etaDistanceLabel: UILabel?
+    private var etaStopsLabel: UILabel?
 
     private lazy var stopArrivalView: StopArrivalView = {
         let view = StopArrivalView.autolayoutNew()
@@ -186,24 +190,31 @@ class TripFloatingPanelController: UIViewController,
     // MARK: - ETA Info Panel
     // Displays distance from stop and number of stops away for the arriving vehicle.
     // Added to address feature #2 in issue #1109.
+    private func updateETAInfoPanel(with arrDep: ArrivalDeparture) {
+        let distance = application.formatters.distanceFormatter.string(fromDistance: arrDep.distanceFromStop)
+        etaDistanceLabel?.text = distance
+        let stopCount = arrDep.numberOfStopsAway
+        let stopsFormat = stopCount == 1
+            ? OBALoc("trip_floating_panel.one_stop_away", value: "%d stop away", comment: "One stop away from the vehicle")
+            : OBALoc("trip_floating_panel.multiple_stops_away", value: "%d stops away", comment: "Multiple stops away from the vehicle")
+        etaStopsLabel?.text = String(format: stopsFormat, stopCount)
+    }
+    
     private lazy var etaInfoPanel: UIView = {
         let distanceLabel = UILabel.autolayoutNew()
+        etaDistanceLabel = distanceLabel
         distanceLabel.font = .preferredFont(forTextStyle: .footnote)
         distanceLabel.textColor = ThemeColors.shared.label
         distanceLabel.textAlignment = .natural
 
         let stopsLabel = UILabel.autolayoutNew()
+        etaStopsLabel = stopsLabel
         stopsLabel.font = .preferredFont(forTextStyle: .footnote)
         stopsLabel.textColor = ThemeColors.shared.label
         stopsLabel.textAlignment = .right
 
         if let arrDep = tripConvertible?.arrivalDeparture {
-            let meters = arrDep.distanceFromStop
-            let distance = meters >= 1000
-                ? String(format: "%.1f km away", meters / 1000)
-                : String(format: "%.0f m away", meters)
-            distanceLabel.text = "\(distance)"
-            stopsLabel.text = "\(arrDep.numberOfStopsAway) stop(s) away"
+            updateETAInfoPanel(with: arrDep)
         }
 
         let stack = UIStackView.horizontalStack(arrangedSubviews: [distanceLabel, stopsLabel])
