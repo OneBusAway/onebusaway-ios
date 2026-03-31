@@ -22,7 +22,7 @@ targets:
         com.apple.developer.associated-domains:
           - applinks:onebusaway.co
           - applinks:www.onebusaway.co
-          - applinks:alerts.onebusaway.org
+          - applinks:sidecar.onebusaway.org
         com.apple.developer.in-app-payments:
           - merchant.org.onebusaway.iphone
     info:
@@ -44,6 +44,10 @@ targets:
             "onebusaway.co": {
                 NSIncludesSubdomains: true,
                 NSExceptionAllowsInsecureHTTPLoads: true
+            },
+            "sidecar.onebusaway.org": {
+                NSIncludesSubdomains: true,
+                NSExceptionAllowsInsecureHTTPLoads: true
             }
           }
         NSHumanReadableCopyright: © Open Transit Software Foundation
@@ -56,9 +60,9 @@ targets:
           BundledRegionsFileName: regions.json
           Donations:
             Enabled: true
-            DonationManagementPortal: "https://onebusaway.co/manage-donations"
+            DonationManagementPortal: "https://opentransitsoftwarefoundation.org/manage-donations"
           ExtensionURLScheme: onebusaway
-          PrivacyPolicyURL: https://onebusaway.org/privacy/
+          PrivacyPolicyURL: https://opentransitsoftwarefoundation.org/onebusaway/privacy/
           PushNotificationAPIKey: d5d0d28a-6091-46cd-9627-0ce01ffa9f9e
           RESTServerAPIKey: org.onebusaway.iphone
           RegionsServerBaseAddress: https://regions.onebusaway.org

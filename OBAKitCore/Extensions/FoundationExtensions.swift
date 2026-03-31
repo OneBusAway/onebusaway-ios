@@ -113,6 +113,18 @@ public extension Bundle {
         return dict["AppDevelopersEmailAddress"] as? String
     }
 
+    /// The name of a fixed region to auto-select at launch, bypassing the region picker.
+    /// See: https://github.com/OneBusAway/onebusaway-ios/issues/608
+    var fixedRegionName: String? {
+        OBAKitConfig?["FixedRegionName"] as? String
+    }
+
+    /// The OBA base URL for a fixed region, used as a fallback when `FixedRegionName` doesn't match.
+    var fixedRegionOBABaseURL: URL? {
+        guard let str = OBAKitConfig?["FixedRegionOBABaseURL"] as? String else { return nil }
+        return URL(string: str)
+    }
+
     // MARK: - Bundle/Private
 
     private var OBAKitConfig: [AnyHashable: Any]? {

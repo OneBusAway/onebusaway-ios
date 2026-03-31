@@ -34,7 +34,10 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     private let userDefaults: UserDefaults
     private let bundledRegionsFilePath: String
     private let apiPath: String?
+
     private let fileStorage: RegionsFileStorageProtocol
+    private let fixedRegionName: String?
+    private let fixedRegionOBABaseURL: URL?
 
     /// Initializes a `RegionsService` object, which coordinates the current region, downloading new data, and storage.
     /// - Parameters:
@@ -45,13 +48,18 @@ public class RegionsService: NSObject, LocationServiceDelegate {
     ///   - apiPath: The path to the remote regions.json file on the server. e.g. /path/to/regions.json
     ///   - fileStorage: The file-based storage implementation. Defaults to `RegionsFileStorage`.
     ///   - delegate: A delegate object for callbacks.
-    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, bundledRegionsFilePath: String, apiPath: String?, fileStorage: RegionsFileStorageProtocol = RegionsFileStorage(), delegate: RegionsServiceDelegate? = nil) {
+    ///   - fixedRegionName: A region name from `OBAKitConfig` to auto-select, bypassing the region picker.
+    ///   - fixedRegionOBABaseURL: A fallback OBA base URL used when `fixedRegionName` doesn't match any known region.
+    public init(apiService: RegionsAPIService?, locationService: LocationService, userDefaults: UserDefaults, fileStorage: RegionsFileStorageProtocol = RegionsFileStorage(), bundledRegionsFilePath: String, apiPath: String?, delegate: RegionsServiceDelegate? = nil, fixedRegionName: String? = nil, fixedRegionOBABaseURL: URL? = nil) {
         self.apiService = apiService
         self.locationService = locationService
         self.userDefaults = userDefaults
         self.bundledRegionsFilePath = bundledRegionsFilePath
         self.apiPath = apiPath
         self.fileStorage = fileStorage
+
+        self.fixedRegionName = fixedRegionName
+        self.fixedRegionOBABaseURL = fixedRegionOBABaseURL
 
         self.userDefaults.register(defaults: [
             RegionsService.automaticallySelectRegionUserDefaultsKey: true,
@@ -78,6 +86,28 @@ public class RegionsService: NSObject, LocationServiceDelegate {
 
         if autoSelectRegion, let location = locationService.currentLocation {
             currentRegion = RegionsService.firstRegion(in: self.regions, containing: location)
+        }
+
+        // Fixed region from OBAKitConfig: match by name, then fall back to URL.
+        // See: https://github.com/OneBusAway/onebusaway-ios/issues/608
+        if currentRegion == nil, let fixedName = fixedRegionName {
+            let match = self.regions.first(where: { $0.name == fixedName })
+                ?? self.regions.first(where: { fixedRegionOBABaseURL != nil && $0.OBABaseURL == fixedRegionOBABaseURL })
+
+            if let match {
+                currentRegion = match
+                userDefaults.set(false, forKey: RegionsService.automaticallySelectRegionUserDefaultsKey)
+            } else {
+                Logger.error("Fixed region '\(fixedName)' not found in bundled or stored regions")
+            }
+        }
+
+        // Auto-select when only one active region is available.
+        if currentRegion == nil {
+            let activeRegions = self.regions.filter { $0.isActive }
+            if activeRegions.count == 1, let onlyRegion = activeRegions.first {
+                currentRegion = onlyRegion
+            }
         }
 
         self.locationService.addDelegate(self)

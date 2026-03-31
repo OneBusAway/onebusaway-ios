@@ -665,6 +665,9 @@
 /* No results message for placemark search */
 "search_controller.placemarks.no_results" = "No results found";
 
+/* Subtitle on search error row prompting the user to retry. */
+"search_controller.placemarks.error_retry" = "Tap to retry";
+
 /* Quick Search section header in search */
 "search_controller.quick_search.header" = "Quick Search";
 
