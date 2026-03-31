@@ -21,8 +21,9 @@ public protocol RegionsFileStorageProtocol {
     func saveDefaultRegions(_ regions: [Region]) throws
 
     /// Loads all custom (user-created) regions from disk.
+    /// Throws for total-failure conditions (inaccessible directory, directory listing failure).
     /// Corrupted individual region files are logged and skipped; the rest are returned.
-    func loadCustomRegions() -> [Region]
+    func loadCustomRegions() throws -> [Region]
 
     /// Persists a single custom region to disk.
     /// If a file for this region already exists, it is replaced.
@@ -46,39 +47,34 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
 
     // MARK: - URL Helpers
 
-    private var defaultRegionsFileURL: URL {
-        get throws {
-            let appSupport = try fileManager.url(
-                for: .applicationSupportDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true
-            )
-            return appSupport
-                .appendingPathComponent("Regions/default-regions.json")
-        }
+    private func defaultRegionsFileURL() throws -> URL {
+        let appSupport = try fileManager.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return appSupport.appendingPathComponent("Regions/default-regions.json")
     }
 
-    private var customRegionsDirectoryURL: URL {
-        get throws {
-            let documents = try fileManager.url(
-                for: .documentDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: true
-            )
-            return documents.appendingPathComponent("custom-regions")
-        }
+    private func customRegionsDirectoryURL() throws -> URL {
+        let documents = try fileManager.url(
+            for: .documentDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return documents.appendingPathComponent("custom-regions")
     }
 
     private func customRegionFileURL(identifier: RegionIdentifier) throws -> URL {
-        try customRegionsDirectoryURL.appendingPathComponent("\(identifier).json")
+        try customRegionsDirectoryURL().appendingPathComponent("\(identifier).json")
     }
 
     // MARK: - Default Regions
 
     public func loadDefaultRegions() throws -> [Region]? {
-        let url = try defaultRegionsFileURL
+        let url = try defaultRegionsFileURL()
 
         guard fileManager.fileExists(atPath: url.path) else {
             return nil
@@ -89,7 +85,7 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
     }
 
     public func saveDefaultRegions(_ regions: [Region]) throws {
-        let url = try defaultRegionsFileURL
+        let url = try defaultRegionsFileURL()
         try createDirectoryIfNeeded(for: url)
         let data = try JSONEncoder().encode(regions)
         try data.write(to: url, options: .atomic)
@@ -97,27 +93,18 @@ public final class RegionsFileStorage: RegionsFileStorageProtocol {
 
     // MARK: - Custom Regions
 
-    public func loadCustomRegions() -> [Region] {
-        guard let directoryURL = try? customRegionsDirectoryURL else {
-            Logger.error("RegionsFileStorage: Unable to resolve custom regions directory URL")
-            return []
-        }
+    public func loadCustomRegions() throws -> [Region] {
+        let directoryURL = try customRegionsDirectoryURL()
 
         guard fileManager.fileExists(atPath: directoryURL.path) else {
             return []
         }
 
-        let contents: [URL]
-        do {
-            contents = try fileManager.contentsOfDirectory(
-                at: directoryURL,
-                includingPropertiesForKeys: nil,
-                options: .skipsHiddenFiles
-            )
-        } catch {
-            Logger.error("RegionsFileStorage: Failed to list custom regions directory: \(error)")
-            return []
-        }
+        let contents = try fileManager.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        )
 
         return contents.compactMap { fileURL -> Region? in
             guard fileURL.pathExtension == "json" else { return nil }
